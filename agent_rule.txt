@@ -1,0 +1,34 @@
+### Non-Negotiable Engineering Framework
+
+- TDD is mandatory.
+- State-machine thinking is mandatory.
+
+### TDD Rules
+
+- Follow Red -> Green -> Refactor for every feature.
+- Write failing tests before writing production code.
+- Keep tests deterministic, isolated, and fast.
+- Add regression tests for every bug fix.
+- Do not consider a task done unless tests pass.
+
+### State-Machine Rules
+
+- Define states, events, transitions, guards, and side effects before implementation.
+- Prefer explicit enums/value types for states and events.
+- Reject invalid transitions explicitly and test them.
+- Cover both happy-path and invalid-path transitions in tests.
+- Keep state transitions pure where possible; isolate side effects in services.
+
+### Code Guidance
+
+- Write extremely easy-to-consume code.
+- Optimize for readability first.
+- Make code skimmable with clear naming and small functions.
+- Avoid cleverness and hidden logic.
+- Prefer early returns to reduce nesting and cognitive load.
+
+### Definition of Done (Per Task)
+
+- Required state transitions are documented in code or test fixtures.
+- Tests are added first and passing.
+- Existing tests remain green.
