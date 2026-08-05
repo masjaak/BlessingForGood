@@ -27,8 +27,10 @@
 
 [FIXED] The existing Vercel project now uses Framework Preset `Next.js` and Next.js automatic Output Directory detection. Local `vercel build` passes with the Preview target; no `vercel.json` override or application-code change was needed.
 
-[PENDING] A new Preview deployment and deployed-route verification must be completed from the pushed fix.
+[CONFIRMED] Preview deployment `dpl_HwuopThbRTvjF2YrNZs3K8i3mRGr` is READY at `https://blessing-for-good-bxlsx6rog-masjaaks-projects.vercel.app`. All 12 implemented routes returned HTTP 200 through authenticated Vercel CLI requests, and the Preview runtime error query returned no logs.
+
+[LIMITATION] Browser automation was unavailable in this session, so viewport and browser-console checks were not run.
 
 ## Status
 
-`validated` — Prototype v0.1 passes the local and Vercel build gates; the deployment repair is ready for a Preview deployment. No merge to `main` was performed.
+`validated` — Prototype v0.1 passes local checks, Vercel Build Output validation, Preview deployment, route checks, and runtime-log checks. No merge to `main` was performed.

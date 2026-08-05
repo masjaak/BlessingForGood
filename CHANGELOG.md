@@ -21,6 +21,7 @@ source: conversation
 
 - Corrected the existing Vercel project from the `Other` preset with `dist` output to the Next.js preset with automatic output detection. The remote build had already completed `next build`; only Vercel's post-build output lookup failed.
 - Added `.vercel/` to Git ignore rules so local Vercel metadata and environment files cannot be committed.
+- Verified Preview deployment `dpl_HwuopThbRTvjF2YrNZs3K8i3mRGr` and all implemented route responses; Production and `main` were not changed.
 
 ### Deferred
 

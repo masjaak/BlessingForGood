@@ -35,3 +35,14 @@ npx vercel@latest deploy --logs
 ```
 
 Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, Vercel tokens, Clerk secrets, or Convex secrets.
+
+## Latest Preview verification
+
+- Deployment: `dpl_HwuopThbRTvjF2YrNZs3K8i3mRGr`
+- URL: `https://blessing-for-good-bxlsx6rog-masjaaks-projects.vercel.app`
+- Target: Preview
+- Status: Ready
+- Route smoke check: all 12 implemented App Router routes returned HTTP 200 through authenticated Vercel CLI requests.
+- Runtime error logs: no logs returned for the 30-minute query.
+- Browser viewport/console check: unavailable because `agent-browser` was not installed in the session.
+- Production and `main`: unchanged.
