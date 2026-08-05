@@ -17,6 +17,11 @@ source: conversation
 - Added public community, how-to-order, help, ready-stock empty, customer account, and desktop admin foundations.
 - Added prototype assumptions, asset audit, route matrix, open questions, and known limitations.
 
+### Fixed
+
+- Corrected the existing Vercel project from the `Other` preset with `dist` output to the Next.js preset with automatic output detection. The remote build had already completed `next build`; only Vercel's post-build output lookup failed.
+- Added `.vercel/` to Git ignore rules so local Vercel metadata and environment files cannot be committed.
+
 ### Deferred
 
 - Official brand assets and mockups are absent from the canonical GitHub snapshot; no replacement assets were generated.
