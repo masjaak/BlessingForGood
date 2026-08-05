@@ -15,6 +15,7 @@ export default defineConfig([
     "test-results/**",
     "playwright-report/**",
     "artifacts/browser-qa/**",
+    "convex/_generated/**",
     "next-env.d.ts",
   ]),
 ]);
