@@ -8,6 +8,22 @@ source: conversation
 
 # Changelog
 
+## [phase-02.2-qa] — 2026-08-05
+
+### Added
+
+- Added Playwright Chromium browser QA at 375×812, 768×1024, 1024×768, and 1440×900.
+- Added navigation and interactive UX issue matrices with evidence labels and P0–P3 priorities.
+
+### Validated
+
+- The approved Preview passed `52/52` public route, responsive overflow, logo, console, and navigation smoke tests.
+- Preview usability is classified as B: public routes work, while protected prototype flows intentionally fail closed.
+
+### In progress
+
+- Guarded Preview Demo Mode and a presentation-only book-cover fallback are required before full core-flow QA.
+
 ## [phase-02.1] — 2026-08-05
 
 ### Added

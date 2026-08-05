@@ -7,6 +7,31 @@
 - Automated browser review: blocked. `agent-browser`, Playwright, and Puppeteer are not installed, and the sandbox denies binding a local Next server (`listen EPERM`). No browser screenshot or console result is claimed below.
 - Build review: `npm run check` and `npx vercel@latest build` completed successfully.
 
+## Phase 02.2 browser verification
+
+- [BROWSER VERIFIED] Playwright Chromium ran against the approved Preview at
+  `https://blessing-for-good-akpj94htk-masjaaks-projects.vercel.app`.
+- [BROWSER VERIFIED] `52/52` route and navigation smoke tests passed at 375×812, 768×1024, 1024×768, and
+  1440×900.
+- [BROWSER VERIFIED] The tests found no browser console errors, page errors, or accidental horizontal overflow.
+- [BROWSER VERIFIED] Screenshots were captured outside tracked source under `artifacts/browser-qa/` for Home,
+  Catalog boundary, and Admin boundary at each viewport project.
+- [BROWSER VERIFIED] Direct browser access is protected by Vercel sign-in; the test runner used the existing
+  automation bypass header in memory. Deployment Protection was not disabled.
+- [BROWSER VERIFIED] Public routes are usable. Catalog, account, and admin prototype actions fail closed because
+  the Preview does not have the explicit development-only prototype flag.
+
+### Phase 02.2 comparison result
+
+| Anchor | Browser result | Mockup comparison | Core finding |
+| --- | --- | --- | --- |
+| Welcome / Home | [BROWSER VERIFIED] renders at four viewports | mostly aligned | Logo, editorial hierarchy, mascot, and CTAs are present; platform toolbar is external |
+| Secret access / catalog list | [BROWSER VERIFIED] boundary renders | partially aligned | Flow cannot be unlocked on Preview; book-cover area is missing in the implementation |
+| Book detail / format selection | [BROWSER VERIFIED] not reachable on Preview | blocked | Requires guarded Preview Demo Mode and cover presentation foundation |
+| Order review / tracking | [BROWSER VERIFIED] not reachable on Preview | blocked | Requires a manually-created prototype record in the same browser |
+| Admin dashboard | [BROWSER VERIFIED] boundary renders | partially aligned | Zero-data policy is preserved; operational flow requires guarded Preview Demo Mode |
+| Catalog / order management | [BROWSER VERIFIED] boundaries render | partially aligned | Admin unavailable items are clearly non-links; richer screens remain deferred |
+
 ## Preview verification
 
 - Deployment: `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj`

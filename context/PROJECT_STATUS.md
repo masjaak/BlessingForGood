@@ -10,7 +10,7 @@
 
 ## Current priority
 
-[IN_PROGRESS] Phase 02.1 brand integration, visual system, and core screen alignment on `design/visual-alignment-v0.1`. Production remains untouched.
+[IN_PROGRESS] Phase 02.2 browser QA, UX refinement, and Preview usability on `qa/ux-refinement-v0.1`. Production remains untouched.
 
 ## Active constraints
 
@@ -31,7 +31,9 @@
 
 [CONFIRMED] `npm run check` passes with 15 tests. `npx vercel@latest build` passes with the Preview target and all implemented routes statically generated.
 
-[LIMITATION] Browser screenshot, hydration, and console verification are blocked because browser automation is not installed and local server binding is denied by the sandbox. Vercel Preview route and runtime checks remain the final delivery gate.
+[BROWSER VERIFIED] Playwright Chromium now verifies the protected Preview through an in-memory Vercel automation bypass. Public route smoke, responsive overflow, logo rendering, and browser error checks pass at all four required viewports.
+
+[LIMITATION] The Preview currently fails closed for catalog, account, and admin prototype actions because the local adapter is development-only. A guarded Preview Demo Mode is required for full customer/admin flow QA; Production must remain disabled.
 
 [CONFIRMED] Preview deployment `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj` is READY at `https://blessing-for-good-akpj94htk-masjaaks-projects.vercel.app`. All 12 implemented routes returned HTTP 200 through authenticated Vercel CLI HEAD requests, the five runtime logo/mascot assets returned HTTP 200 with `image/png`, and the Preview runtime error query returned no logs.
 
@@ -45,8 +47,8 @@
 
 [CONFIRMED] Preview deployment `dpl_HwuopThbRTvjF2YrNZs3K8i3mRGr` is READY at `https://blessing-for-good-bxlsx6rog-masjaaks-projects.vercel.app`. All 12 implemented routes returned HTTP 200 through authenticated Vercel CLI requests, and the Preview runtime error query returned no logs.
 
-[LIMITATION] Browser automation was unavailable in this session, so viewport and browser-console checks were not run.
+[SUPERSEDED] The Phase 02.1 browser-tooling limitation is superseded by the Phase 02.2 Playwright setup; its historical note remains in the Phase 02.1 section.
 
 ## Status
 
-`validated` — Phase 02.1 source changes, Vercel Build Output, Preview deployment, route checks, asset checks, and runtime-log checks pass on the visual branch. Browser-level screenshot/console checks remain blocked by environment tooling. No merge to `main` has been performed.
+`in_progress` — Phase 02.1 foundation is validated. Phase 02.2 browser smoke is green, while Preview Demo Mode and full customer/admin flow QA remain active. No merge to `main` has been performed.
