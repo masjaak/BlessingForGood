@@ -10,7 +10,7 @@
 
 ## Current priority
 
-[IN_PROGRESS] Phase 02.2 browser QA, UX refinement, and Preview usability on `qa/ux-refinement-v0.1`. Production remains untouched.
+[COMPLETED] Phase 02.2 browser QA, UX refinement, and Preview usability on `qa/ux-refinement-v0.1`. Awaiting visual review; Production remains untouched.
 
 ## Active constraints
 
@@ -19,6 +19,7 @@
 - Official logo, mascot, and mockup files are now committed; no replacement assets or mockup business data were generated.
 - Prototype-only behavior is guarded by `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true` in development.
 - The local adapter persists only in the browser that enabled prototype mode; it is not production persistence.
+- Preview Demo Mode is configured only for the Vercel Preview environment and remains guarded by the server-side Preview boundary.
 - The existing Vercel project `blessing-for-good` is configured for Next.js Preview deployments; Production remains untouched by this repair.
 
 ## Phase 02.1 visual alignment
@@ -29,13 +30,13 @@
 
 [CONFIRMED] Customer navigation, admin navigation, welcome/catalog/order surfaces, admin sidebar fallback, empty states, form controls, status badges, and tracking/invoice surfaces were refined without changing domain transitions.
 
-[CONFIRMED] `npm run check` passes with 15 tests. `npx vercel@latest build` passes with the Preview target and all implemented routes statically generated.
+[CONFIRMED] `npm run check` passes with 21 tests. `npx vercel@latest build` passes with the Preview target and all implemented routes statically generated.
 
-[BROWSER VERIFIED] Playwright Chromium now verifies the protected Preview through an in-memory Vercel automation bypass. Public route smoke, responsive overflow, logo rendering, and browser error checks pass at all four required viewports.
+[BROWSER VERIFIED] Playwright Chromium verifies the protected Preview through an in-memory Vercel automation bypass. The full 56-test matrix passes at 375×812, 768×1024, 1024×768, and 1440×900, including the zero-data customer/admin flow.
 
-[LIMITATION] The Preview currently fails closed for catalog, account, and admin prototype actions because the local adapter is development-only. A guarded Preview Demo Mode is required for full customer/admin flow QA; Production must remain disabled.
+[BROWSER VERIFIED] Preview Demo Mode remains visibly labelled, starts with zero records, persists only in the test browser, and does not alter the Production boundary.
 
-[CONFIRMED] Preview deployment `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj` is READY at `https://blessing-for-good-akpj94htk-masjaaks-projects.vercel.app`. All 12 implemented routes returned HTTP 200 through authenticated Vercel CLI HEAD requests, the five runtime logo/mascot assets returned HTTP 200 with `image/png`, and the Preview runtime error query returned no logs.
+[CONFIRMED] Final Preview deployment `dpl_GrBVzaVHbcFLuKpxCCzWscutaDz2` is READY at `https://blessing-for-good-6h90y7tgw-masjaaks-projects.vercel.app`. The target is `preview`; authenticated CLI root verification returned HTTP 200 and the runtime error query returned no logs.
 
 ## Deployment diagnosis
 
@@ -51,4 +52,4 @@
 
 ## Status
 
-`in_progress` — Phase 02.1 foundation is validated. Phase 02.2 browser smoke is green, while Preview Demo Mode and full customer/admin flow QA remain active. No merge to `main` has been performed.
+`completed` — Phase 02.1 foundation and Phase 02.2 browser QA are validated on `qa/ux-refinement-v0.1`. No merge to `main` has been performed.

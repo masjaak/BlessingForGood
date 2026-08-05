@@ -14,15 +14,26 @@ source: conversation
 
 - Added Playwright Chromium browser QA at 375×812, 768×1024, 1024×768, and 1440×900.
 - Added navigation and interactive UX issue matrices with evidence labels and P0–P3 priorities.
+- Added guarded Preview Demo Mode, visible Preview status copy, and browser-local zero-data flow coverage.
+- Added the presentation-only `BookCover` fallback; no fake cover art or image persistence was introduced.
+- Added generated Playwright artifact ignores and deterministic ESLint ignores for browser reports.
 
 ### Validated
 
-- The approved Preview passed `52/52` public route, responsive overflow, logo, console, and navigation smoke tests.
-- Preview usability is classified as B: public routes work, while protected prototype flows intentionally fail closed.
+- The final Preview passed `56/56` Playwright tests across all four required viewports, including customer and admin prototype flows.
+- Navigation, wrong-code feedback, format/ISBN/price changes, quantity, preorder, tracking, status transition, invoice, and append-only ledger interactions passed in a zero-data browser session.
+- The final Preview build passed with all 14 App Router routes generated; authenticated CLI root verification returned HTTP 200 and runtime error logs returned no entries.
+- Preview environment availability was audited by name only; Production remains untouched.
 
-### In progress
+### Fixed
 
-- Guarded Preview Demo Mode and a presentation-only book-cover fallback are required before full core-flow QA.
+- Corrected client-bundle environment access so the explicitly configured Preview flag is available in the browser production bundle.
+- Removed the admin prototype shortcut from customer primary navigation.
+- Corrected mobile footer spacing and the admin mode metric (`Preview` when Demo Mode is active).
+
+### Remaining
+
+- Real authentication, shared persistence, uploads, final policy decisions, and unavailable admin modules remain deferred to later phases.
 
 ## [phase-02.1] — 2026-08-05
 
@@ -45,7 +56,8 @@ source: conversation
 
 ### Deferred
 
-- Browser screenshot, hydration, and console checks remain blocked because browser automation is not installed and local server binding is denied by the sandbox.
+- [SUPERSEDED] Browser screenshot, hydration, and console checks were blocked before Phase 02.2 tooling was added;
+  the final Phase 02.2 Preview matrix is green.
 - Approved book-cover data and unimplemented admin destinations remain out of scope; no mockup sample records were seeded.
 
 ## [prototype-v0.1] — 2026-08-05

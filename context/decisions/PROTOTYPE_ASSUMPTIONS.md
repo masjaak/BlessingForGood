@@ -55,5 +55,6 @@ All entries below are `prototype-only`. They are reversible implementation choic
   `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE=true` and the server marks the deployment as `VERCEL_ENV=preview`.
 - Trade-off: this is a QA-only browser workspace, not authentication, shared persistence, or production access.
 - Safety boundary: Production rejects the same public flag because the server Preview boundary is false there.
+- Validation: [BROWSER VERIFIED] the zero-data customer and admin flow passed on the final Preview at all four required viewports.
 - Replacement trigger: Convex and Clerk development/test environments are restored.
 - Affected files: `src/app/layout.tsx`, `src/domain/prototype/store.tsx`, `src/lib/environment.ts`.
