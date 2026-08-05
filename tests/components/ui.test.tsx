@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import HomePage from "@/app/page";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
@@ -42,5 +43,14 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
     expect(screen.getByRole("link", { name: "Orders" }).getAttribute("href")).toBe("/account/orders");
     expect(screen.getByRole("link", { name: "Account" }).getAttribute("href")).toBe("/account/invoices");
+  });
+
+  it("gives the welcome screen one branded entry point per supported path", () => {
+    render(<HomePage />);
+
+    expect(screen.getByRole("img", { name: "Blessing For Goods mascot" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Community guide" }).getAttribute("href")).toBe("/community");
+    expect(screen.getAllByRole("link", { name: "How to order" })[0].getAttribute("href")).toBe("/how-to-order");
+    expect(screen.getAllByRole("link", { name: "Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
   });
 });

@@ -268,6 +268,12 @@ p {
   gap: 12px;
   margin-top: 28px;
 }
+.hero-support-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+}
 .button {
   display: inline-flex;
   min-height: 44px;
@@ -325,6 +331,11 @@ p {
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 90px;
+}
+.hero-mascot {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 4px;
 }
 .hero-panel .panel-label {
   color: var(--color-brand-gold);
@@ -466,6 +477,9 @@ p {
   gap: 18px;
   align-items: start;
 }
+.catalog-access .page-header {
+  margin-bottom: 0;
+}
 .form-card {
   display: grid;
   gap: 20px;
@@ -533,6 +547,35 @@ p {
   border-radius: var(--radius-sm);
   background: #eef9f3;
 }
+.success-card {
+  position: relative;
+  min-height: 180px;
+  padding-left: 150px;
+}
+.success-mascot {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: 104px;
+  height: 104px;
+}
+.catalog-access-mascot {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 4px;
+}
+.communication-card {
+  position: relative;
+  min-height: 170px;
+  padding-right: 156px;
+}
+.guide-mascot {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  width: 112px;
+  height: 112px;
+}
 .catalog-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -546,6 +589,7 @@ p {
 .book-card {
   display: grid;
   gap: 18px;
+  border-top: 3px solid var(--color-brand-secondary);
 }
 .book-meta {
   display: flex;
@@ -561,12 +605,13 @@ p {
 }
 .variant-option {
   display: grid;
+  min-height: 116px;
   gap: 4px;
-  padding: 13px;
+  padding: 15px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  background: #fff;
+  background: var(--surface);
 }
 .variant-option:has(input:checked) {
   border-color: var(--accent);
@@ -591,10 +636,10 @@ p {
   gap: 10px;
 }
 .quantity-control button {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   background: var(--surface);
 }
@@ -608,6 +653,7 @@ p {
   top: 18px;
   display: grid;
   gap: 18px;
+  border-top: 3px solid var(--color-brand-primary);
 }
 .summary-line {
   display: flex;
@@ -950,6 +996,22 @@ p {
   }
   .hero-panel-top {
     padding-bottom: 54px;
+  }
+  .hero-mascot {
+    width: 72px;
+    height: 72px;
+  }
+  .success-card,
+  .communication-card {
+    min-height: 0;
+    padding: 24px;
+  }
+  .success-mascot,
+  .guide-mascot {
+    position: static;
+    width: 96px;
+    height: 96px;
+    margin: 0 0 8px;
   }
   .feature-grid,
   .two-column,

@@ -1,3 +1,4 @@
+import { BrandMascot } from "@/components/brand";
 import { LinkButton, Card } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
@@ -37,7 +38,8 @@ export default function HowToOrderPage() {
             </Card>
           ))}
         </div>
-        <Card className="notice-card">
+        <Card className="notice-card communication-card">
+          <BrandMascot variant="warm" className="guide-mascot" />
           <span className="card-kicker">Prototype note</span>
           <h2>Rules that are not final stay visible as gaps.</h2>
           <p>Deposit requirements, refund behavior, and production account rules are deliberately not guessed here.</p>

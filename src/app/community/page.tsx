@@ -1,3 +1,4 @@
+import { BrandMascot } from "@/components/brand";
 import { LinkButton, Card } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
@@ -16,6 +17,7 @@ export default function CommunityPage() {
         </header>
         <div className="content-stack">
           <Card className="accent-card">
+            <BrandMascot variant="warm" className="guide-mascot" />
             <span className="card-kicker">Community foundation</span>
             <h2>Welcome, Blessfriend.</h2>
             <p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { BrandMascot } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 import { usePrototype } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
@@ -16,6 +17,7 @@ export function CustomerCatalog() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedItems = useMemo(() => {
@@ -40,11 +42,14 @@ export function CustomerCatalog() {
   async function handleUnlock(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAccessError("");
+    setIsUnlocking(true);
     try {
       const unlocked = await unlockCatalog(accessCode);
       if (!unlocked) setAccessError("Kode belum cocok, katalog sudah ditutup, atau akses belum tersedia.");
     } catch (error) {
       setAccessError(error instanceof Error ? error.message : "Catalog access failed");
+    } finally {
+      setIsUnlocking(false);
     }
   }
 
@@ -74,7 +79,8 @@ export function CustomerCatalog() {
           title="Your preorder is in the book."
           description="The prototype recorded the order locally. WhatsApp remains a communication handoff, not the data source."
         />
-        <Card className="success-banner">
+        <Card className="success-banner success-card">
+          <BrandMascot variant="success" className="success-mascot" />
           <strong>{submittedOrder.id}</strong>
           <p>
             Total {formatIdr(submittedOrder.total)} · {submittedOrder.items.length} selected line
@@ -121,10 +127,13 @@ export function CustomerCatalog() {
                 {accessError}
               </p>
             ) : null}
-            <Button type="submit">Unlock catalog</Button>
+            <Button type="submit" disabled={isUnlocking}>
+              {isUnlocking ? "Checking access…" : "Unlock catalog"}
+            </Button>
           </form>
         </Card>
         <Card className="accent-card">
+          <BrandMascot className="catalog-access-mascot" />
           <span className="card-kicker">No catalog data yet</span>
           <h2>A clean start.</h2>
           <p>An admin must create an open catalog in the prototype before a customer can browse it.</p>

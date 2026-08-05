@@ -1,3 +1,4 @@
+import { BrandMascot } from "@/components/brand";
 import { LinkButton, Card } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
@@ -16,14 +17,25 @@ export default function HomePage() {
             <div className="actions">
               <LinkButton href="/catalog">Unlock a catalog</LinkButton>
               <LinkButton href="/community" variant="secondary">
-                Meet the community
+                Community guide
+              </LinkButton>
+            </div>
+            <div className="hero-support-links">
+              <LinkButton href="/how-to-order" variant="quiet">
+                How to order
+              </LinkButton>
+              <LinkButton href="/ready-stock" variant="quiet">
+                Ready Stock
               </LinkButton>
             </div>
             <p className="microcopy">Prototype boundary: this workspace starts empty and records no business data.</p>
           </div>
           <div className="hero-panel" aria-label="Prototype focus">
             <div className="hero-panel-top">
-              <span className="panel-label">The first slice</span>
+              <div>
+                <BrandMascot className="hero-mascot" />
+                <span className="panel-label">The first slice</span>
+              </div>
               <span className="status-badge status-positive">Ready to explore</span>
             </div>
             <div className="hero-sequence">
