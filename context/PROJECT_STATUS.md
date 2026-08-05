@@ -8,7 +8,7 @@
 
 ## Current priority
 
-[REPOSITORY] Deliver the zero-data functional prototype on `prototype/v0.1`: public guidance, secret-catalog-to-order, tracking, and invoice/deposit foundation.
+[REPOSITORY] Handoff review for the zero-data functional prototype on `prototype/v0.1`. No next milestone has started.
 
 ## Active constraints
 
@@ -20,4 +20,4 @@
 
 ## Status
 
-`in-progress` — core prototype slices implemented; final handoff validation and repository commit remain.
+`validated` — Prototype v0.1 is committed and pushed to `origin/prototype/v0.1`; no merge to `main` was performed.

@@ -22,7 +22,7 @@ Admin menggunakan dashboard untuk mengelola katalog, batch/cargo, publisher, cus
 
 ## Current stage
 
-**Prototype v0.1 is in progress on `prototype/v0.1`.** The canonical GitHub repository is the active source; see `context/PROJECT_STATUS.md` for the intake gap and current status.
+**Prototype v0.1 is implemented on `prototype/v0.1` and awaiting review.** The canonical GitHub repository is the active source; see `context/PROJECT_STATUS.md` for the intake gap and current status.
 
 ## Technology direction
 
