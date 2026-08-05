@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { BrandMascot } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 
 type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
@@ -70,9 +71,7 @@ export function StatusBadge({
 export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
   return (
     <div className="empty-state">
-      <span className="empty-mark" aria-hidden="true">
-        —
-      </span>
+      <BrandMascot className="empty-mascot" decorative />
       <h2>{title}</h2>
       <p>{description}</p>
       {action}
