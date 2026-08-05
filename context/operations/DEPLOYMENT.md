@@ -3,7 +3,7 @@
 ## Current deployment boundary
 
 - Repository: `https://github.com/masjaak/BlessingForGood.git`
-- Implementation branch: `prototype/v0.1`
+- Implementation branch: `design/visual-alignment-v0.1` (branched from `prototype/v0.1`)
 - Vercel project: `blessing-for-good`
 - This repair is Preview-only. Do not merge to `main`, use `--prod`, promote a deployment, or change the production domain.
 
@@ -24,7 +24,7 @@ The current prototype build does not require Clerk or Convex environment variabl
 
 ## Validation
 
-Run from the repository root:
+Run from the repository root on the visual branch:
 
 ```bash
 npm ci
@@ -36,7 +36,7 @@ npx vercel@latest deploy --logs
 
 Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, Vercel tokens, Clerk secrets, or Convex secrets.
 
-## Latest Preview verification
+## Baseline Preview verification
 
 - Deployment: `dpl_HwuopThbRTvjF2YrNZs3K8i3mRGr`
 - URL: `https://blessing-for-good-bxlsx6rog-masjaaks-projects.vercel.app`
@@ -46,3 +46,11 @@ Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, 
 - Runtime error logs: no logs returned for the 30-minute query.
 - Browser viewport/console check: unavailable because `agent-browser` was not installed in the session.
 - Production and `main`: unchanged.
+
+## Phase 02.1 Preview verification
+
+- Status: pending after the visual branch is pushed.
+- Target: Preview only.
+- Required checks: inspect deployment logs, verify implemented routes with authenticated Vercel CLI requests, and inspect Preview runtime error logs.
+- Browser viewport/console check: blocked in the current environment; do not claim it passed without an installed browser runner.
+- Production and `main`: must remain unchanged.

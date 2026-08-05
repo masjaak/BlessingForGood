@@ -8,6 +8,29 @@ source: conversation
 
 # Changelog
 
+## [phase-02.1] — 2026-08-05
+
+### Added
+
+- Copied and checksum-mapped four logo candidates, four mascot candidates, eight mobile mockups, and ten admin mockups into the canonical repository.
+- Added the BFG asset registry, asset manifest, mockup manifest, visual gap audit, and visual QA report.
+
+### Changed
+
+- Established warm ivory, forest green, sage, peach, gold, and pale-blue visual tokens with editorial heading and compact UI typography fallbacks.
+- Integrated reusable `BrandLogo` and `BrandMascot` components, favicon metadata, customer navigation, admin navigation, responsive sidebar fallback, empty states, and anchor screen hierarchy.
+- Preserved zero-data startup and existing catalog, order, tracking, invoice, and deposit logic.
+
+### Validated
+
+- `npm run check`: 15 tests passed, lint/typecheck/build green.
+- `npx vercel@latest build`: Preview-target Build Output passed.
+
+### Deferred
+
+- Browser screenshot, hydration, and console checks remain blocked because browser automation is not installed and local server binding is denied by the sandbox.
+- Approved book-cover data and unimplemented admin destinations remain out of scope; no mockup sample records were seeded.
+
 ## [prototype-v0.1] — 2026-08-05
 
 ### Added

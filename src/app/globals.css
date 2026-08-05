@@ -1011,7 +1011,11 @@ p {
     backdrop-filter: blur(8px);
   }
   .site-nav a {
+    display: inline-flex;
     flex: 1;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
     padding: 7px 3px;
     text-align: center;
   }

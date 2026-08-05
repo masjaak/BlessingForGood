@@ -2,22 +2,36 @@
 
 ## Repository intake
 
-[REPOSITORY] The canonical GitHub repository is readable at `prototype/v0.1`.
+[CONFIRMED] The canonical GitHub repository is readable at `design/visual-alignment-v0.1`, branched from `prototype/v0.1`.
 
-[BLOCKED] The remote repository does not contain the product context pack listed in `FILE_MANIFEST.md`, nor the expected `public/`, `src/`, `tests/`, or `convex/` implementation tree. The prototype therefore uses the current implementation brief as its highest available product input and does not claim missing documents are approved.
+[CONFIRMED] The official readable asset source was copied into `public/brand/` and `public/mockups/` with exact binary checksums. Asset roles and mockup mappings are documented in `context/brand/` and `context/mockups/`.
+
+[LIMITATION] The remote repository still does not contain several product context folders listed in the original file manifest (`context/product`, `context/screens`, `context/features`, `src/features`, and `context/SOURCE_OF_TRUTH.md`). The visual pass uses the available implementation brief, audited physical references, and existing route/domain behavior without inventing missing product decisions.
 
 ## Current priority
 
-[REPOSITORY] Preview deployment verification for the zero-data functional prototype on `prototype/v0.1`. No next milestone has started.
+[IN_PROGRESS] Phase 02.1 brand integration, visual system, and core screen alignment on `design/visual-alignment-v0.1`. Production remains untouched.
 
 ## Active constraints
 
 - No production authentication, payment, WhatsApp API, or deployment.
 - No business records are seeded at runtime.
-- Missing logo, mascot, and mockup files are recorded; no replacement assets are generated.
+- Official logo, mascot, and mockup files are now committed; no replacement assets or mockup business data were generated.
 - Prototype-only behavior is guarded by `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true` in development.
 - The local adapter persists only in the browser that enabled prototype mode; it is not production persistence.
 - The existing Vercel project `blessing-for-good` is configured for Next.js Preview deployments; Production remains untouched by this repair.
+
+## Phase 02.1 visual alignment
+
+[CONFIRMED] Brand assets were copied exactly and mapped. `Logo-4.png` is the runtime primary wordmark, `Logo-2.png` is the symbol/app-icon candidate, and Mascott-1/3/4 are used only for communication states.
+
+[CONFIRMED] Centralized semantic color, typography, spacing, radius, border, shadow, focus, motion, and responsive tokens were added. A visual gap audit and QA report record the evidence and remaining gaps.
+
+[CONFIRMED] Customer navigation, admin navigation, welcome/catalog/order surfaces, admin sidebar fallback, empty states, form controls, status badges, and tracking/invoice surfaces were refined without changing domain transitions.
+
+[CONFIRMED] `npm run check` passes with 15 tests. `npx vercel@latest build` passes with the Preview target and all implemented routes statically generated.
+
+[LIMITATION] Browser screenshot, hydration, and console verification are blocked because browser automation is not installed and local server binding is denied by the sandbox. Vercel Preview route and runtime checks remain the final delivery gate.
 
 ## Deployment diagnosis
 
@@ -33,4 +47,4 @@
 
 ## Status
 
-`validated` — Prototype v0.1 passes local checks, Vercel Build Output validation, Preview deployment, route checks, and runtime-log checks. No merge to `main` was performed.
+`implementation-ready` — Phase 02.1 source changes and Vercel Build Output validation pass on the visual branch. Preview deployment and deployed-route/runtime verification are pending. No merge to `main` has been performed.
