@@ -39,6 +39,8 @@ describe("public UI foundation", () => {
   it("keeps customer navigation on implemented routes", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
+    expect(screen.getByRole("navigation", { name: "Primary navigation" }).querySelectorAll("a")).toHaveLength(5);
+    expect(screen.queryByRole("link", { name: "Admin prototype" })).toBeNull();
     expect(screen.getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
     expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/catalog");
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");

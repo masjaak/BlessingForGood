@@ -60,9 +60,10 @@ test("primary navigation exposes working customer destinations", async ({ page }
         label: item.textContent?.trim(),
       })),
     );
+  expect(links.map((link) => link.label)).toEqual(["Home", "Catalog", "Ready Stock", "Orders", "Account"]);
 
   for (const link of links) {
-    if (!link.href || link.href === "/admin") continue;
+    if (!link.href) continue;
     const response = await page.goto(link.href, { waitUntil: "networkidle" });
     expect(response?.status(), `${link.label} (${link.href}) response`).toBeLessThan(400);
     await expect(page.locator("h1")).toHaveCount(1);

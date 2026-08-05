@@ -27,9 +27,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
               {link.label}
             </Link>
           ))}
-          <Link className="nav-admin" href="/admin">
-            Admin prototype
-          </Link>
         </nav>
       </header>
       <main>{children}</main>
