@@ -1,4 +1,4 @@
-export type AssetStatus = "missing";
+export type AssetStatus = "confirmed" | "candidate" | "unmapped" | "missing";
 
 export interface AssetReference {
   status: AssetStatus;
@@ -6,25 +6,74 @@ export interface AssetReference {
   notes: string;
 }
 
+export const brandAssets = {
+  logos: {
+    primary: {
+      src: "/brand/logos/Logo-4.png",
+      alt: "Blessing For Goods",
+      width: 4000,
+      height: 4000,
+    },
+    symbol: {
+      src: "/brand/logos/Logo-2.png",
+      alt: "Blessing For Goods symbol",
+      width: 4000,
+      height: 4000,
+    },
+  },
+  mascots: {
+    default: {
+      src: "/brand/mascot/Mascott-1.png",
+      alt: "Blessing For Goods mascot",
+      width: 5000,
+      height: 5000,
+    },
+    success: {
+      src: "/brand/mascot/Mascott-3.png",
+      alt: "Blessing For Goods mascot celebrating",
+      width: 5000,
+      height: 5000,
+    },
+    warm: {
+      src: "/brand/mascot/Mascott-4.png",
+      alt: "Blessing For Goods mascot with hearts",
+      width: 5000,
+      height: 5000,
+    },
+  },
+} as const;
+
 export const assetReferences = {
   logo: {
-    status: "missing",
-    expectedPaths: ["/brand/logos/"],
-    notes: "No official logo file is present in the canonical GitHub repository.",
+    status: "confirmed",
+    expectedPaths: [
+      "/brand/logos/Logo-1",
+      "/brand/logos/Logo-2.png",
+      "/brand/logos/Logo-3.png",
+      "/brand/logos/Logo-4.png",
+    ],
+    notes:
+      "Four readable RGBA PNG logo candidates were copied exactly; Logo-4 is the runtime primary and Logo-2 is the symbol.",
   },
   mascot: {
-    status: "missing",
-    expectedPaths: ["/brand/mascot/"],
-    notes: "No mascot file is present in the canonical GitHub repository.",
+    status: "confirmed",
+    expectedPaths: [
+      "/brand/mascot/Mascott-1.png",
+      "/brand/mascot/Mascott-2.png",
+      "/brand/mascot/Mascott-3.png",
+      "/brand/mascot/Mascott-4.png",
+    ],
+    notes:
+      "Four readable RGBA PNG mascot candidates were copied exactly; runtime roles use the default, success, and warm expressions.",
   },
   mobileMockups: {
-    status: "missing",
+    status: "confirmed",
     expectedPaths: ["/mockups/mobile/"],
-    notes: "No mobile mockup file is present in the canonical GitHub repository.",
+    notes: "Eight RGB mobile reference mockups were copied exactly and mapped in context/mockups/.",
   },
   adminMockups: {
-    status: "missing",
+    status: "confirmed",
     expectedPaths: ["/mockups/admin/"],
-    notes: "No admin mockup file is present in the canonical GitHub repository.",
+    notes: "Ten RGB admin reference mockups were copied exactly and mapped in context/mockups/.",
   },
 } as const satisfies Record<string, AssetReference>;
