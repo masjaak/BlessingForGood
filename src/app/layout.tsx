@@ -12,10 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const isPreviewEnvironment = process.env.VERCEL_ENV === "preview";
+
   return (
     <html lang="en">
       <body>
-        <PrototypeProvider>{children}</PrototypeProvider>
+        <PrototypeProvider previewEnvironment={isPreviewEnvironment}>{children}</PrototypeProvider>
       </body>
     </html>
   );

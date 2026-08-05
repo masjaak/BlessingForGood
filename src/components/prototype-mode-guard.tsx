@@ -13,7 +13,8 @@ export function PrototypeModeGuard({ children }: { children: ReactNode }) {
         <h1>Prototype mode is off</h1>
         <p>
           Protected prototype flows fail closed. Run this local app with
-          <code>NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true</code> when you intentionally want to test them.
+          <code>NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true</code>, or explicitly enable
+          <code>NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE=true</code> for a Vercel Preview.
         </p>
       </div>
     );

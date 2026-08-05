@@ -3,7 +3,7 @@
 ## Current deployment boundary
 
 - Repository: `https://github.com/masjaak/BlessingForGood.git`
-- Implementation branch: `design/visual-alignment-v0.1` (branched from `prototype/v0.1`)
+- Implementation branch: `qa/ux-refinement-v0.1` (branched from `design/visual-alignment-v0.1`)
 - Vercel project: `blessing-for-good`
 - This repair is Preview-only. Do not merge to `main`, use `--prod`, promote a deployment, or change the production domain.
 
@@ -21,6 +21,15 @@
 The failed deployment at commit `cf1c5b7` on `prototype/v0.1` successfully compiled and prerendered all routes. It failed afterward because the project setting requested `dist`, which the Next.js build does not create. The project preset and output-directory setting were corrected in Vercel; no source `vercel.json` override was added.
 
 The current prototype build does not require Clerk or Convex environment variables. Vercel environment-variable names were audited without reading values; no project environment variables are configured.
+
+## Preview Demo Mode
+
+- `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` may be configured as `true` for Preview only when browser QA needs the
+  zero-data local adapter.
+- The application also requires the server-side `VERCEL_ENV=preview` boundary. Production rejects the flag.
+- The UI visibly labels the workspace `Prototype Preview` and states that data is stored only in that browser.
+- Do not configure this flag as `true` for Production. Do not use it as authentication or as a production admin
+  bypass.
 
 ## Validation
 
@@ -44,7 +53,8 @@ Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, 
 - Status: Ready
 - Route smoke check: all 12 implemented App Router routes returned HTTP 200 through authenticated Vercel CLI requests.
 - Runtime error logs: no logs returned for the 30-minute query.
-- Browser viewport/console check: unavailable because `agent-browser` was not installed in the session.
+- Browser viewport/console check: Phase 02.2 Playwright smoke passed at all four required viewports; protected
+  flow testing requires the Preview Demo Mode flag.
 - Production and `main`: unchanged.
 
 ## Phase 02.1 Preview verification
@@ -57,5 +67,6 @@ Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, 
 - Route smoke check: all 12 implemented routes returned HTTP 200 through authenticated Vercel CLI HEAD requests.
 - Asset smoke check: runtime primary/symbol logos and Mascott-1/3/4 returned HTTP 200 with `image/png`.
 - Runtime logs: no error logs returned for the 30-minute Preview query.
-- Browser viewport/console check: blocked in the current environment; do not claim it passed without an installed browser runner.
+- Browser viewport/console check: Phase 02.2 uses Playwright with the Vercel automation bypass in memory; no
+  Deployment Protection setting was disabled.
 - Production and `main`: must remain unchanged.

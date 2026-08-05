@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { isPrototypeMode } from "@/lib/environment";
+import { isPreviewDemoMode, isPrototypeMode } from "@/lib/environment";
 import {
   appendDepositTransaction,
   createCatalogFromInput,
@@ -27,6 +27,7 @@ const STORAGE_KEY = "bfg-prototype-state-v0.1";
 
 interface PrototypeContextValue {
   enabled: boolean;
+  previewDemo: boolean;
   hydrated: boolean;
   state: PrototypeState;
   unlockedCatalog: SecretCatalog | undefined;
@@ -54,8 +55,15 @@ function isPrototypeState(
   );
 }
 
-export function PrototypeProvider({ children }: { children: ReactNode }) {
-  const enabled = isPrototypeMode(process.env);
+export function PrototypeProvider({
+  children,
+  previewEnvironment = false,
+}: {
+  children: ReactNode;
+  previewEnvironment?: boolean;
+}) {
+  const previewDemo = isPreviewDemoMode(process.env, previewEnvironment);
+  const enabled = isPrototypeMode(process.env, previewEnvironment);
   const [state, setState] = useState<PrototypeState>(emptyPrototypeState);
   const [hydrated, setHydrated] = useState(!enabled);
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
@@ -178,6 +186,7 @@ export function PrototypeProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PrototypeContextValue>(
     () => ({
       enabled,
+      previewDemo,
       hydrated,
       state,
       unlockedCatalog: state.catalogs.find((catalog) => catalog.id === unlockedCatalogId),
@@ -194,6 +203,7 @@ export function PrototypeProvider({ children }: { children: ReactNode }) {
       closeCatalog,
       createCatalog,
       enabled,
+      previewDemo,
       hydrated,
       createInvoice,
       recordDeposit,
@@ -206,7 +216,17 @@ export function PrototypeProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <PrototypeContext.Provider value={value}>{children}</PrototypeContext.Provider>;
+  return (
+    <PrototypeContext.Provider value={value}>
+      {previewDemo ? (
+        <aside className="prototype-preview-banner" role="status">
+          <strong>Prototype Preview</strong>
+          <span>Data is stored only in this browser.</span>
+        </aside>
+      ) : null}
+      {children}
+    </PrototypeContext.Provider>
+  );
 }
 
 export function usePrototype(): PrototypeContextValue {

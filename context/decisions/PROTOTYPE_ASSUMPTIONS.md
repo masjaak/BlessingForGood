@@ -46,3 +46,14 @@ All entries below are `prototype-only`. They are reversible implementation choic
 - Trade-off: payment verification remains a foundation only.
 - Replacement trigger: approved deposit and payment rules are restored.
 - Affected files: `src/domain/prototype/types.ts`, `src/domain/prototype/logic.ts`
+
+## PA-006 — Guarded Preview Demo Mode
+
+- Area: Preview usability
+- Reason: browser QA needs the existing local adapter, but Vercel Preview builds use production `NODE_ENV`.
+- Temporary behavior: browser-local prototype persistence is enabled only when
+  `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE=true` and the server marks the deployment as `VERCEL_ENV=preview`.
+- Trade-off: this is a QA-only browser workspace, not authentication, shared persistence, or production access.
+- Safety boundary: Production rejects the same public flag because the server Preview boundary is false there.
+- Replacement trigger: Convex and Clerk development/test environments are restored.
+- Affected files: `src/app/layout.tsx`, `src/domain/prototype/store.tsx`, `src/lib/environment.ts`.
