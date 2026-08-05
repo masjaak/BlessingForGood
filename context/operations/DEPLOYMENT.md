@@ -3,7 +3,7 @@
 ## Current deployment boundary
 
 - Repository: `https://github.com/masjaak/BlessingForGood.git`
-- Implementation branch: `qa/ux-refinement-v0.1` (branched from `design/visual-alignment-v0.1`)
+- Implementation branch: `feat/convex-core-persistence-v0.1` (branched from `qa/ux-refinement-v0.1`)
 - Vercel project: `blessing-for-good`
 - This repair is Preview-only. Do not merge to `main`, use `--prod`, promote a deployment, or change the production domain.
 
@@ -56,6 +56,17 @@ Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, 
 - Browser QA: `56/56` Playwright tests passed across 375×812, 768×1024, 1024×768, and 1440×900.
 - Runtime error logs: no entries returned for the final 30-minute query.
 - Production and `main`: unchanged.
+
+## Phase 03.1 Convex Preview boundary
+
+- Convex project: `blessing-for-good` in the authenticated personal team.
+- Local development uses a personal cloud dev deployment selected through `.env.local` (ignored).
+- Vercel Preview uses a Preview-only `CONVEX_DEPLOY_KEY`; its value is sensitive and is not stored in Git or
+  included in reports.
+- Preview build command: `npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"`.
+- No `--preview-run` function is configured, so Convex Preview starts with zero business records.
+- Production remains intentionally blocked: no Production Convex deployment key, no Clerk identity, and no
+  Production Vercel deployment.
 
 ## Historical Preview verification
 

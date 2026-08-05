@@ -10,7 +10,9 @@
 
 ## Current priority
 
-[COMPLETED] Phase 02.2 browser QA, UX refinement, and Preview usability on `qa/ux-refinement-v0.1`. Awaiting visual review; Production remains untouched.
+[IN PROGRESS] Phase 03.1 Convex core persistence on `feat/convex-core-persistence-v0.1`. The schema and guarded
+Preview session boundary are implemented on the personal Convex dev deployment; frontend adapter migration and
+isolated Vercel Preview verification remain.
 
 ## Active constraints
 
@@ -21,6 +23,10 @@
 - The local adapter persists only in the browser that enabled prototype mode; it is not production persistence.
 - Preview Demo Mode is configured only for the Vercel Preview environment and remains guarded by the server-side Preview boundary.
 - The existing Vercel project `blessing-for-good` is configured for Next.js Preview deployments; Production remains untouched by this repair.
+- A separate Convex project `blessing-for-good` now has a personal cloud development deployment. A Convex Preview
+  deploy key is configured only in the linked Vercel Preview environment; no Production Convex key is configured.
+- Phase 03.1 Convex tests pass and a real dev deployment smoke verified guarded session creation with zero business
+  records. The Preview build has not yet been run with the new Convex adapter.
 
 ## Phase 02.1 visual alignment
 

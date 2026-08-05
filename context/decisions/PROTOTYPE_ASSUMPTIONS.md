@@ -58,3 +58,16 @@ All entries below are `prototype-only`. They are reversible implementation choic
 - Validation: [BROWSER VERIFIED] the zero-data customer and admin flow passed on the final Preview at all four required viewports.
 - Replacement trigger: Convex and Clerk development/test environments are restored.
 - Affected files: `src/app/layout.tsx`, `src/domain/prototype/store.tsx`, `src/lib/environment.ts`.
+
+## PA-007 — Convex Preview prototype persistence
+
+- Area: Phase 03.1 persistence and identity boundary
+- Reason: the approved vertical slice needs shared Preview data before Clerk is available.
+- Temporary behavior: Convex Preview stores catalog and preorder records; anonymous browser sessions are represented by
+  expiring server-side token digests, and admin access requires a server-verified Preview code.
+- Safety boundary: this capability is enabled only by Convex Preview configuration. It is not authentication,
+  Production authorization, or a substitute for Clerk.
+- Migration behavior: existing browser-local records are never uploaded or merged automatically; Convex deployments
+  start empty.
+- Replacement trigger: Clerk and approved Production authorization are implemented.
+- Affected files: `convex/`, `src/domain/prototype/`, and the Convex/Vercel Preview configuration.
