@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { BrandMascot } from "@/components/brand";
+import { BookCover } from "@/components/book-cover";
 import { formatIdr } from "@/domain/prototype/logic";
 import { usePrototype } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
@@ -161,61 +162,67 @@ export function CustomerCatalog() {
           {catalog.books.map((book) => {
             const selectedVariantId = selectedVariants[book.id] || book.variants[0]?.id;
             const selectedQuantity = selectedVariantId ? quantities[selectedVariantId] || 0 : 0;
+            const selectedFormat = book.variants.find((variant) => variant.id === selectedVariantId)?.format;
             return (
               <Card className="book-card" key={book.id}>
-                <div className="book-meta">
-                  <div>
-                    <span className="card-kicker">{book.publisher}</span>
-                    <h2>{book.title}</h2>
-                  </div>
-                  <span className="subtle">Choose one format</span>
-                </div>
-                <div className="variant-list" role="radiogroup" aria-label={`Format for ${book.title}`}>
-                  {book.variants.map((variant) => (
-                    <label className="variant-option" key={variant.id}>
-                      <input
-                        type="radio"
-                        name={book.id}
-                        value={variant.id}
-                        checked={selectedVariantId === variant.id}
-                        onChange={() => setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))}
-                        disabled={variant.availability !== "available"}
-                      />
-                      <strong>{variant.format}</strong>
-                      <span>
-                        <Money amount={variant.price} />
-                      </span>
-                      <small>{variant.isbn}</small>
-                    </label>
-                  ))}
-                </div>
-                <div className="quantity-row">
-                  <span>Quantity</span>
-                  <div className="quantity-control">
-                    <button
-                      type="button"
-                      aria-label={`Decrease quantity for ${book.title}`}
-                      onClick={() =>
-                        selectedVariantId &&
-                        setQuantities((current) => ({
-                          ...current,
-                          [selectedVariantId]: Math.max(0, selectedQuantity - 1),
-                        }))
-                      }
-                    >
-                      −
-                    </button>
-                    <output aria-label={`Quantity for ${book.title}`}>{selectedQuantity}</output>
-                    <button
-                      type="button"
-                      aria-label={`Increase quantity for ${book.title}`}
-                      onClick={() =>
-                        selectedVariantId &&
-                        setQuantities((current) => ({ ...current, [selectedVariantId]: selectedQuantity + 1 }))
-                      }
-                    >
-                      +
-                    </button>
+                <div className="book-card-layout">
+                  <BookCover title={book.title} publisher={book.publisher} format={selectedFormat} />
+                  <div className="book-card-details">
+                    <div className="book-meta">
+                      <div>
+                        <span className="card-kicker">{book.publisher}</span>
+                        <h2>{book.title}</h2>
+                      </div>
+                      <span className="subtle">Choose one format</span>
+                    </div>
+                    <div className="variant-list" role="radiogroup" aria-label={`Format for ${book.title}`}>
+                      {book.variants.map((variant) => (
+                        <label className="variant-option" key={variant.id}>
+                          <input
+                            type="radio"
+                            name={book.id}
+                            value={variant.id}
+                            checked={selectedVariantId === variant.id}
+                            onChange={() => setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))}
+                            disabled={variant.availability !== "available"}
+                          />
+                          <strong>{variant.format}</strong>
+                          <span>
+                            <Money amount={variant.price} />
+                          </span>
+                          <small>{variant.isbn}</small>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="quantity-row">
+                      <span>Quantity</span>
+                      <div className="quantity-control">
+                        <button
+                          type="button"
+                          aria-label={`Decrease quantity for ${book.title}`}
+                          onClick={() =>
+                            selectedVariantId &&
+                            setQuantities((current) => ({
+                              ...current,
+                              [selectedVariantId]: Math.max(0, selectedQuantity - 1),
+                            }))
+                          }
+                        >
+                          −
+                        </button>
+                        <output aria-label={`Quantity for ${book.title}`}>{selectedQuantity}</output>
+                        <button
+                          type="button"
+                          aria-label={`Increase quantity for ${book.title}`}
+                          onClick={() =>
+                            selectedVariantId &&
+                            setQuantities((current) => ({ ...current, [selectedVariantId]: selectedQuantity + 1 }))
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </Card>
