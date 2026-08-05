@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import HomePage from "@/app/page";
+import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
@@ -52,5 +53,14 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Community guide" }).getAttribute("href")).toBe("/community");
     expect(screen.getAllByRole("link", { name: "How to order" })[0].getAttribute("href")).toBe("/how-to-order");
     expect(screen.getAllByRole("link", { name: "Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
+  });
+
+  it("marks unimplemented admin destinations without creating dead links", () => {
+    render(<AdminNav />);
+
+    expect(screen.getByRole("link", { name: "Overview" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/admin/catalogs");
+    expect(screen.getByText("Books").getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByText("Settings").getAttribute("aria-disabled")).toBe("true");
   });
 });

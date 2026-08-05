@@ -167,39 +167,43 @@ function AdminInvoices() {
     (order) => !state.invoices.some((invoice) => invoice.orderId === order.id),
   );
   return (
-    <div className="page">
+    <div className="page admin-page">
       <PageHeader
         eyebrow="Invoice and deposit prototype"
         title="Make the money state explicit."
         description="Invoices use order price snapshots. Deposit records append to a ledger; historical entries are never edited in place."
       />
-      <AdminNav />
-      <div className="content-stack">
-        {ordersWithoutInvoices.length ? (
-          <Card>
-            <span className="card-kicker">Orders needing invoices</span>
-            <h2>Issue the next document.</h2>
-            {ordersWithoutInvoices.map((order) => (
-              <div className="invoice-issue-row" key={order.id}>
-                <div>
-                  <strong>{order.customerName}</strong>
-                  <span className="subtle">
-                    {order.id} · <Money amount={order.total} />
-                  </span>
-                </div>
-                <RequirementForm orderId={order.id} />
-              </div>
-            ))}
-          </Card>
-        ) : null}
-        {state.invoices.length ? (
-          state.invoices.map((invoice) => <InvoiceCard key={invoice.id} invoiceId={invoice.id} />)
-        ) : (
-          <EmptyState
-            title="No invoices yet"
-            description="Submit an order, then issue an invoice here. The prototype will not create one automatically."
-          />
-        )}
+      <div className="admin-workspace">
+        <AdminNav />
+        <div className="admin-content">
+          <div className="content-stack">
+            {ordersWithoutInvoices.length ? (
+              <Card>
+                <span className="card-kicker">Orders needing invoices</span>
+                <h2>Issue the next document.</h2>
+                {ordersWithoutInvoices.map((order) => (
+                  <div className="invoice-issue-row" key={order.id}>
+                    <div>
+                      <strong>{order.customerName}</strong>
+                      <span className="subtle">
+                        {order.id} · <Money amount={order.total} />
+                      </span>
+                    </div>
+                    <RequirementForm orderId={order.id} />
+                  </div>
+                ))}
+              </Card>
+            ) : null}
+            {state.invoices.length ? (
+              state.invoices.map((invoice) => <InvoiceCard key={invoice.id} invoiceId={invoice.id} />)
+            ) : (
+              <EmptyState
+                title="No invoices yet"
+                description="Submit an order, then issue an invoice here. The prototype will not create one automatically."
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

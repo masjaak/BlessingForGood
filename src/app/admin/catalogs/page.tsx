@@ -212,17 +212,21 @@ function CatalogList() {
 
 function AdminCatalogs() {
   return (
-    <div className="page">
+    <div className="page admin-page">
       <PageHeader
         eyebrow="Catalog operations"
         title="Create the door before opening the room."
         description="The prototype keeps secret catalog access separate from customer accounts and starts with no catalog records."
       />
-      <AdminNav />
-      <div className="two-column">
-        <CatalogForm />
-        <div>
-          <CatalogList />
+      <div className="admin-workspace">
+        <AdminNav />
+        <div className="admin-content">
+          <div className="two-column">
+            <CatalogForm />
+            <div>
+              <CatalogList />
+            </div>
+          </div>
         </div>
       </div>
     </div>

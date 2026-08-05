@@ -131,16 +131,20 @@ function OrderTimeline({ orderId }: { orderId: string }) {
 function AdminOrders() {
   const { state } = usePrototype();
   return (
-    <div className="page">
+    <div className="page admin-page">
       <PageHeader
         eyebrow="Order operations"
         title="See the preorder, then move its stage."
         description="Status transitions are explicit and recorded with timestamps. This prototype has no live customer or payment service behind it."
         actions={<span className="button button-secondary">{state.orders.length} recorded</span>}
       />
-      <AdminNav />
-      <OrderTable />
-      {state.orders[0] ? <OrderTimeline orderId={state.orders[0].id} /> : null}
+      <div className="admin-workspace">
+        <AdminNav />
+        <div className="admin-content">
+          <OrderTable />
+          {state.orders[0] ? <OrderTimeline orderId={state.orders[0].id} /> : null}
+        </div>
+      </div>
     </div>
   );
 }

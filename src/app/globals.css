@@ -723,6 +723,17 @@ p {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 18px;
 }
+.admin-workspace {
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.admin-content {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
+}
 .metric {
   min-height: 140px;
 }
@@ -738,12 +749,15 @@ p {
   font-size: 0.85rem;
 }
 .admin-nav {
-  display: flex;
-  flex-wrap: wrap;
+  position: sticky;
+  top: 18px;
+  display: grid;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 .admin-nav a {
+  display: block;
+  width: 100%;
   padding: 9px 13px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -934,6 +948,29 @@ p {
   .catalog-access,
   .catalog-grid {
     grid-template-columns: 1fr;
+  }
+  .admin-workspace {
+    grid-template-columns: 1fr;
+  }
+  .admin-nav {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+  .admin-nav a,
+  .admin-nav-unavailable {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .admin-nav-unavailable {
+    flex-direction: row;
+    align-items: center;
+  }
+  .admin-nav-unavailable small {
+    margin-left: 2px;
   }
   .order-summary {
     position: static;
