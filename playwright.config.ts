@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.BFG_E2E_BASE_URL || "http://127.0.0.1:3000";
+const localBaseURL = "http://127.0.0.1:3100";
+const baseURL = process.env.BFG_E2E_BASE_URL || localBaseURL;
 const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 export default defineConfig({
@@ -25,8 +26,8 @@ export default defineConfig({
   webServer: process.env.BFG_E2E_BASE_URL
     ? undefined
     : {
-        command: "npm run dev -- --hostname 127.0.0.1",
-        url: "http://127.0.0.1:3000",
+        command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+        url: localBaseURL,
         reuseExistingServer: true,
       },
 });

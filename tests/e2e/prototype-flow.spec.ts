@@ -1,74 +1,179 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 
-test("Preview Demo Mode supports a zero-data customer and admin flow", async ({ page }, testInfo) => {
+function previewBaseUrl(): string {
+  return process.env.BFG_E2E_BASE_URL || "http://127.0.0.1:3100";
+}
+
+async function unlockAdmin(page: Page): Promise<void> {
+  const codeInput = page.getByLabel("Preview admin access code");
+  if (!(await codeInput.count())) return;
+  const accessCode = process.env.BFG_E2E_ADMIN_ACCESS_CODE;
+  if (!accessCode) throw new Error("BFG_E2E_ADMIN_ACCESS_CODE is required for Convex Preview E2E.");
+  await codeInput.fill(accessCode);
+  await page.getByRole("button", { name: "Unlock admin workspace" }).click();
+  await expect(page.getByRole("heading", { name: "Create the door before opening the room." })).toBeVisible();
+}
+
+async function newBrowserContext(browser: Browser, page: Page) {
+  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  return browser.newContext({
+    baseURL: previewBaseUrl(),
+    viewport: page.viewportSize() || { width: 1440, height: 900 },
+    extraHTTPHeaders: protectionBypass ? { "x-vercel-protection-bypass": protectionBypass } : undefined,
+  });
+}
+
+async function cleanupConvexTest(
+  adminSessionToken: string,
+  customerSessionToken: string,
+  testId: string,
+): Promise<void> {
+  const convexUrl = process.env.BFG_E2E_CONVEX_URL;
+  if (!convexUrl) throw new Error("BFG_E2E_CONVEX_URL is required to clean Convex E2E records.");
+  const client = new ConvexHttpClient(convexUrl);
+  await client.mutation(api.prototypeSessions.cleanupTest, {
+    sessionToken: adminSessionToken,
+    customerSessionToken,
+    testId,
+  });
+}
+
+test("Preview persistence supports isolated customer and admin flow", async ({ page, browser }, testInfo) => {
+  test.setTimeout(60_000);
   const suffix = `${Date.now()}-${testInfo.project.name}`;
   const catalogName = `Browser QA ${suffix}`;
   const accessCode = `qa-code-${suffix}`;
+  const publisherName = `QA Publisher ${suffix}`;
+  const bookTitle = `QA Book ${suffix}`;
+  const customerName = `QA Blessfriend ${suffix}`;
+  const projectSeed =
+    Array.from(testInfo.project.name).reduce((sum, character) => sum + character.charCodeAt(0), 0) % 1000;
+  const isbnSuffix = `${Date.now().toString().slice(-3)}${projectSeed.toString().padStart(3, "0")}`;
+
+  let adminSessionToken: string | null = null;
+  let customerSessionToken: string | null = null;
 
   await page.goto("/admin/catalogs", { waitUntil: "networkidle" });
-  await expect(page.getByText("Prototype Preview")).toBeVisible();
-  await expect(page.getByText("Data is stored only in this browser.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Catalog list is empty" })).toBeVisible();
+  await page.waitForFunction(
+    () =>
+      document.body.innerText.includes("Preview admin access code") ||
+      document.body.innerText.includes("Create the door before opening the room."),
+  );
+  const previewBanner = page.getByText("Prototype Preview");
+  const previewData = page.getByText("Data is stored in the BFG Preview environment.");
+  const usesConvex =
+    (await previewData.count()) > 0 ||
+    (await page.getByLabel("Preview admin access code").count()) > 0 ||
+    (await page.getByText(/enter Convex/).count()) > 0;
+  if (usesConvex) {
+    if (await previewBanner.count()) await expect(previewData).toBeVisible();
+  } else {
+    await expect(previewBanner).toBeVisible();
+    await expect(page.getByText("Data is stored only in this browser.")).toBeVisible();
+  }
+  await unlockAdmin(page);
+  if (usesConvex) adminSessionToken = await page.evaluate(() => sessionStorage.getItem("bfg-prototype-session-v0.1"));
 
   await page.getByLabel("Catalog name").fill(catalogName);
   await page.getByLabel("Access code").fill(accessCode);
-  await page.getByLabel("Publisher").fill("QA Publisher");
-  await page.getByLabel("Book title").fill("QA Book");
+  await page.getByLabel("Publisher").fill(publisherName);
+  await page.getByLabel("Book title").fill(bookTitle);
   for (const format of ["BB", "HB"]) {
     await page.getByRole("checkbox", { name: format }).check();
   }
-  await page.getByLabel("BB ISBN").fill("9780000000001");
+  let catalogCreated = false;
+  await page.getByLabel("BB ISBN").fill(`9780000${isbnSuffix}`);
   await page.getByLabel("BB price").fill("100000");
-  await page.getByLabel("PB ISBN").fill("9780000000002");
+  await page.getByLabel("PB ISBN").fill(`9780001${isbnSuffix}`);
   await page.getByLabel("PB price").fill("125000");
-  await page.getByLabel("HB ISBN").fill("9780000000003");
+  await page.getByLabel("HB ISBN").fill(`9780002${isbnSuffix}`);
   await page.getByLabel("HB price").fill("150000");
   await page.getByRole("button", { name: "Create open catalog" }).click();
   await expect(page.getByText(`${catalogName} is open and ready for the customer preview.`)).toBeVisible();
+  catalogCreated = true;
 
-  await page.goto("/catalog", { waitUntil: "networkidle" });
-  await page.getByLabel("Catalog access code").fill("wrong-code");
-  await page.getByRole("button", { name: "Unlock catalog" }).click();
-  await expect(page.locator("p[role=alert]")).toContainText("Kode belum cocok");
-  await page.getByLabel("Catalog access code").fill(accessCode);
-  await page.getByRole("button", { name: "Unlock catalog" }).click();
+  const customerContext = usesConvex ? await newBrowserContext(browser, page) : null;
+  const customerPage = customerContext ? await customerContext.newPage() : page;
+  try {
+    await customerPage.goto("/catalog", { waitUntil: "networkidle" });
+    if (usesConvex)
+      customerSessionToken = await customerPage.evaluate(() => sessionStorage.getItem("bfg-prototype-session-v0.1"));
+    await customerPage.getByLabel("Catalog access code").fill("wrong-code");
+    await customerPage.getByRole("button", { name: "Unlock catalog" }).click();
+    await expect(customerPage.locator("p[role=alert]")).toContainText("Kode belum cocok");
+    await customerPage.getByLabel("Catalog access code").fill(accessCode);
+    await customerPage.getByRole("button", { name: "Unlock catalog" }).click();
 
-  await expect(page.getByRole("heading", { name: catalogName })).toBeVisible();
-  const formatGroup = page.getByRole("radiogroup", { name: "Format for QA Book" });
-  await expect(formatGroup.getByRole("radio", { name: /BB/ })).toBeChecked();
-  await expect(page.locator(".book-cover")).toContainText("BB");
-  await formatGroup.getByRole("radio", { name: /PB/ }).check();
-  await expect(page.locator(".book-cover")).toContainText("PB");
-  await expect(page.getByText("9780000000002")).toBeVisible();
-  await expect(page.getByText("Rp 125.000")).toBeVisible();
-  await formatGroup.getByRole("radio", { name: /BB/ }).check();
-  await expect(page.locator(".book-cover")).toContainText("BB");
-  await expect(page.getByText("9780000000001")).toBeVisible();
-  await expect(page.getByText("Rp 100.000")).toBeVisible();
-  await page.getByRole("button", { name: "Increase quantity for QA Book" }).click();
-  await expect(page.locator('output[aria-label="Quantity for QA Book"]')).toHaveText("1");
+    await expect(customerPage.getByRole("heading", { name: catalogName })).toBeVisible();
+    const formatGroup = customerPage.getByRole("radiogroup", { name: `Format for ${bookTitle}` });
+    await expect(formatGroup.getByRole("radio", { name: /BB/ })).toBeChecked();
+    await expect(customerPage.locator(".book-cover")).toContainText("BB");
+    await formatGroup.getByRole("radio", { name: /PB/ }).check();
+    await expect(customerPage.locator(".book-cover")).toContainText("PB");
+    await expect(customerPage.getByText("9780001")).toBeVisible();
+    await expect(customerPage.getByText("Rp 125.000")).toBeVisible();
+    await formatGroup.getByRole("radio", { name: /BB/ }).check();
+    await expect(customerPage.locator(".book-cover")).toContainText("BB");
+    await expect(customerPage.getByText("9780000")).toBeVisible();
+    await expect(customerPage.getByText("Rp 100.000")).toBeVisible();
+    await customerPage.getByRole("button", { name: `Increase quantity for ${bookTitle}` }).click();
+    await expect(customerPage.locator(`output[aria-label="Quantity for ${bookTitle}"]`)).toHaveText("1");
 
-  await page.getByLabel("Your name").fill("QA Blessfriend");
-  await page.getByLabel("Email (optional)").fill("qa@example.com");
-  await page.getByRole("button", { name: "Record preorder" }).click();
-  await expect(page.getByRole("heading", { name: "Your preorder is in the book." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Continue in WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\//);
-  await page.getByRole("link", { name: "View order status" }).click();
-  await expect(page.getByRole("heading", { name: "Keep the next step close." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "QA Book" })).toBeVisible();
+    await customerPage.getByLabel("Your name").fill(customerName);
+    await customerPage.getByLabel("Email (optional)").fill("qa@example.com");
+    await customerPage.getByRole("button", { name: "Record preorder" }).click();
+    await expect(customerPage.getByRole("heading", { name: "Your preorder is in the book." })).toBeVisible();
+    await expect(customerPage.getByRole("link", { name: "Continue in WhatsApp" })).toHaveAttribute(
+      "href",
+      /^https:\/\/wa\.me\//,
+    );
+    await customerPage.getByRole("link", { name: "View order status" }).click();
+    await expect(customerPage.getByRole("heading", { name: "Keep the next step close." })).toBeVisible();
+    await expect(customerPage.getByRole("heading", { name: bookTitle })).toBeVisible();
+    await customerPage.reload({ waitUntil: "networkidle" });
+    await expect(customerPage.getByRole("heading", { name: bookTitle })).toBeVisible();
 
-  await page.goto("/admin/orders", { waitUntil: "networkidle" });
-  await expect(page.getByRole("heading", { name: "QA Blessfriend" })).toBeVisible();
-  const statusControl = page.getByRole("combobox", { name: /Update status for/ });
-  await statusControl.selectOption("po_closed");
-  await expect(page.getByRole("table").getByText("PO Ditutup")).toBeVisible();
+    if (usesConvex) {
+      const isolatedCustomerContext: BrowserContext = await newBrowserContext(browser, page);
+      try {
+        const isolatedCustomerPage = await isolatedCustomerContext.newPage();
+        await isolatedCustomerPage.goto("/account/orders", { waitUntil: "networkidle" });
+        await expect(isolatedCustomerPage.getByRole("heading", { name: "No orders yet" })).toBeVisible();
+        await isolatedCustomerPage.goto("/catalog", { waitUntil: "networkidle" });
+        await expect(isolatedCustomerPage.getByLabel("Catalog access code")).toBeVisible();
+      } finally {
+        await isolatedCustomerContext.close();
+      }
+    }
 
-  await page.goto("/admin/invoices", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Issue invoice" }).click();
-  await expect(page.getByRole("heading", { name: /Rp/ })).toBeVisible();
-  await expect(page.getByText("Ledger balance")).toBeVisible();
-  await page.getByLabel("Record credit").fill("100000");
-  await page.getByLabel("Note").fill("QA browser verification");
-  await page.getByRole("button", { name: "Append ledger entry" }).click();
-  await expect(page.getByText("1 append-only ledger entry recorded.")).toBeVisible();
+    await page.goto("/admin/orders", { waitUntil: "networkidle" });
+    const orderRow = page.getByRole("row").filter({ hasText: customerName });
+    await expect(orderRow).toHaveCount(1, { timeout: 20_000 });
+    const statusControl = orderRow.getByRole("combobox", { name: /Update status for/ });
+    await statusControl.selectOption(usesConvex ? "completed" : "po_closed");
+    await expect(
+      page
+        .getByRole("table")
+        .locator(".status-badge", { hasText: usesConvex ? "Selesai" : "PO Ditutup" })
+        .first(),
+    ).toBeVisible();
+
+    if (!usesConvex) {
+      await page.goto("/admin/invoices", { waitUntil: "networkidle" });
+      await page.getByRole("button", { name: "Issue invoice" }).click();
+      await expect(page.getByRole("heading", { name: /Rp/ })).toBeVisible();
+      await expect(page.getByText("Ledger balance")).toBeVisible();
+      await page.getByLabel("Record credit").fill("100000");
+      await page.getByLabel("Note").fill("QA browser verification");
+      await page.getByRole("button", { name: "Append ledger entry" }).click();
+      await expect(page.getByText("1 append-only ledger entry recorded.")).toBeVisible();
+    }
+  } finally {
+    if (usesConvex && catalogCreated && adminSessionToken && customerSessionToken) {
+      await cleanupConvexTest(adminSessionToken, customerSessionToken, suffix);
+    }
+    await customerContext?.close();
+  }
 });

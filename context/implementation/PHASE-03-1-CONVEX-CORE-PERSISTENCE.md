@@ -34,4 +34,6 @@ Production: untouched and fail-closed
 ```
 
 No seed data is created during deployment. Test records are created only by
-isolated tests and removed by their guarded cleanup path.
+isolated tests and removed by their guarded cleanup path. The cleanup path is
+Preview-capability-only, requires an explicit test marker and exact catalog or
+book IDs/names, and is not a general reset.

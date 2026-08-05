@@ -119,6 +119,7 @@ describe("BFG Convex core persistence", () => {
       accessCode: "catalog-secret",
     });
     expect(grant.catalogId).toBe(bundle.catalogId);
+    expect(grant.catalog).toMatchObject({ name: "Test Catalog", status: "open" });
 
     const catalog = await t.query(api.catalogAccess.getUnlocked, {
       sessionToken: customerToken,
@@ -194,5 +195,52 @@ describe("BFG Convex core persistence", () => {
         items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
       }),
     ).rejects.toThrow("ORDER_LOCKED");
+  });
+
+  it("cleans only the explicitly identified Browser QA catalog", async () => {
+    const t = testConvex();
+    const admin = await createAdmin(t);
+    const bundle = await t.mutation(api.secretCatalogs.createBundle, {
+      sessionToken: admin,
+      name: "Browser QA cleanup-test",
+      publisherName: "Cleanup Publisher",
+      bookTitle: "Cleanup Book",
+      accessCode: "cleanup-code",
+      variants: [{ format: "BB", isbn: "9780000099999", priceAmount: 100000 }],
+    });
+    await t.mutation(api.secretCatalogs.open, { sessionToken: admin, catalogId: bundle.catalogId });
+
+    await t.mutation(api.prototypeSessions.createCustomer, { token: customerToken });
+    await t.mutation(api.catalogAccess.unlock, { sessionToken: customerToken, accessCode: "cleanup-code" });
+    await t.mutation(api.orders.submit, {
+      sessionToken: customerToken,
+      catalogId: bundle.catalogId,
+      customerName: "Cleanup Customer",
+      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+    });
+
+    await expect(
+      t.mutation(api.prototypeSessions.cleanupTest, {
+        sessionToken: admin,
+        customerSessionToken: customerToken,
+        testId: "cleanup-test",
+      }),
+    ).resolves.toMatchObject({ ok: true });
+
+    const counts = await t.run(async (ctx) =>
+      Promise.all([
+        ctx.db.query("publishers").collect(),
+        ctx.db.query("books").collect(),
+        ctx.db.query("bookVariants").collect(),
+        ctx.db.query("secretCatalogs").collect(),
+        ctx.db.query("catalogAccessCodes").collect(),
+        ctx.db.query("catalogItems").collect(),
+        ctx.db.query("catalogAccessGrants").collect(),
+        ctx.db.query("orders").collect(),
+        ctx.db.query("orderItems").collect(),
+        ctx.db.query("orderStatusHistory").collect(),
+      ]),
+    );
+    expect(counts.every((records) => records.length === 0)).toBe(true);
   });
 });

@@ -114,6 +114,7 @@ export default defineSchema({
   })
     .index("by_session", ["sessionId"])
     .index("by_session_and_catalog", ["sessionId", "catalogId"])
+    .index("by_catalog", ["catalogId"])
     .index("by_expiration", ["expiresAt"]),
 
   orders: defineTable({
