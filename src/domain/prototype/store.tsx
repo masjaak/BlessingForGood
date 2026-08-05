@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { ConvexPrototypeProvider } from "@/domain/prototype/convex-store";
+import { PrototypeContext, type PrototypeContextValue } from "@/domain/prototype/context";
 import { isPreviewDemoMode, isPrototypeMode } from "@/lib/environment";
 import {
   appendDepositTransaction,
@@ -16,32 +18,12 @@ import type {
   CreateCatalogInput,
   CreateOrderInput,
   DepositTransactionType,
-  Invoice,
-  Order,
   OrderStatus,
   PrototypeState,
-  SecretCatalog,
 } from "@/domain/prototype/types";
+import { ConvexProviderBoundary } from "@/providers/convex-provider";
 
 const STORAGE_KEY = "bfg-prototype-state-v0.1";
-
-interface PrototypeContextValue {
-  enabled: boolean;
-  previewDemo: boolean;
-  hydrated: boolean;
-  state: PrototypeState;
-  unlockedCatalog: SecretCatalog | undefined;
-  createCatalog: (input: CreateCatalogInput) => Promise<SecretCatalog>;
-  unlockCatalog: (accessCode: string) => Promise<SecretCatalog | undefined>;
-  submitOrder: (catalogId: string, input: CreateOrderInput) => Promise<Order>;
-  updateOrderStatus: (orderId: string, nextStatus: OrderStatus) => void;
-  closeCatalog: (catalogId: string) => void;
-  createInvoice: (orderId: string, requirement: Parameters<typeof createInvoiceFromOrder>[1]) => Invoice;
-  recordDeposit: (invoiceId: string, type: DepositTransactionType, amount: number, note: string) => Invoice;
-  editOrder: (orderId: string, input: CreateOrderInput) => Promise<Order>;
-}
-
-const PrototypeContext = createContext<PrototypeContextValue | null>(null);
 
 function isPrototypeState(
   value: unknown,
@@ -55,20 +37,17 @@ function isPrototypeState(
   );
 }
 
-export function PrototypeProvider({
+function LocalPrototypeProvider({
   children,
-  previewEnvironment = false,
+  enabled,
+  previewDemo,
+  dataSource,
 }: {
   children: ReactNode;
-  previewEnvironment?: boolean;
+  enabled: boolean;
+  previewDemo: boolean;
+  dataSource: "local" | "unavailable";
 }) {
-  const runtimeEnvironment = {
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_BFG_PROTOTYPE_MODE: process.env.NEXT_PUBLIC_BFG_PROTOTYPE_MODE,
-    NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE: process.env.NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE,
-  };
-  const previewDemo = isPreviewDemoMode(runtimeEnvironment, previewEnvironment);
-  const enabled = isPrototypeMode(runtimeEnvironment, previewEnvironment);
   const [state, setState] = useState<PrototypeState>(emptyPrototypeState);
   const [hydrated, setHydrated] = useState(!enabled);
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
@@ -96,8 +75,8 @@ export function PrototypeProvider({
   }, [enabled]);
 
   useEffect(() => {
-    if (enabled && hydrated) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [enabled, hydrated, state]);
+    if (enabled && hydrated && dataSource === "local") window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [dataSource, enabled, hydrated, state]);
 
   const createCatalog = useCallback(async (input: CreateCatalogInput) => {
     const catalog = await createCatalogFromInput(input);
@@ -193,6 +172,8 @@ export function PrototypeProvider({
       enabled,
       previewDemo,
       hydrated,
+      dataSource,
+      sessionRole: enabled ? "admin" : null,
       state,
       unlockedCatalog: state.catalogs.find((catalog) => catalog.id === unlockedCatalogId),
       createCatalog,
@@ -203,16 +184,18 @@ export function PrototypeProvider({
       createInvoice,
       recordDeposit,
       editOrder,
+      claimAdmin: async () => enabled,
     }),
     [
       closeCatalog,
       createCatalog,
-      enabled,
-      previewDemo,
-      hydrated,
       createInvoice,
-      recordDeposit,
+      dataSource,
       editOrder,
+      enabled,
+      hydrated,
+      previewDemo,
+      recordDeposit,
       state,
       submitOrder,
       unlockCatalog,
@@ -223,7 +206,7 @@ export function PrototypeProvider({
 
   return (
     <PrototypeContext.Provider value={value}>
-      {previewDemo ? (
+      {previewDemo && dataSource === "local" ? (
         <aside className="prototype-preview-banner" role="status">
           <strong>Prototype Preview</strong>
           <span>Data is stored only in this browser.</span>
@@ -231,6 +214,53 @@ export function PrototypeProvider({
       ) : null}
       {children}
     </PrototypeContext.Provider>
+  );
+}
+
+function hasValidConvexUrl(value: string | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+export function PrototypeProvider({
+  children,
+  previewEnvironment = false,
+}: {
+  children: ReactNode;
+  previewEnvironment?: boolean;
+}) {
+  const runtimeEnvironment = {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_BFG_PROTOTYPE_MODE: process.env.NEXT_PUBLIC_BFG_PROTOTYPE_MODE,
+    NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE: process.env.NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE,
+  };
+  const previewDemo = isPreviewDemoMode(runtimeEnvironment, previewEnvironment);
+  const enabled = isPrototypeMode(runtimeEnvironment, previewEnvironment);
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+
+  if (enabled && hasValidConvexUrl(convexUrl)) {
+    return (
+      <ConvexProviderBoundary url={convexUrl}>
+        <ConvexPrototypeProvider enabled={enabled} previewDemo={previewDemo}>
+          {children}
+        </ConvexPrototypeProvider>
+      </ConvexProviderBoundary>
+    );
+  }
+
+  return (
+    <LocalPrototypeProvider
+      enabled={enabled && !previewDemo}
+      previewDemo={previewDemo}
+      dataSource={enabled && !previewDemo ? "local" : "unavailable"}
+    >
+      {children}
+    </LocalPrototypeProvider>
   );
 }
 

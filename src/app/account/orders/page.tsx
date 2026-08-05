@@ -75,13 +75,13 @@ function EditOrderForm({ orderId }: { orderId: string }) {
 }
 
 function CustomerOrders() {
-  const { state } = usePrototype();
+  const { state, dataSource } = usePrototype();
   return (
     <div className="page narrow-page">
       <PageHeader
         eyebrow="Order status"
         title="Keep the next step close."
-        description="This account foundation shows orders recorded in the local prototype. Production account ownership is not enabled yet."
+        description={`This account foundation shows orders recorded in ${dataSource === "convex" ? "Convex Preview" : "the local prototype"}. Production account ownership is not enabled yet.`}
         actions={
           <LinkButton href="/catalog" variant="secondary">
             Back to catalog

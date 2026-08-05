@@ -9,7 +9,7 @@ import { usePrototype } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function OrderTable() {
-  const { state, updateOrderStatus } = usePrototype();
+  const { state, updateOrderStatus, dataSource } = usePrototype();
   if (state.orders.length === 0)
     return (
       <EmptyState
@@ -36,54 +36,62 @@ function OrderTable() {
           </tr>
         </thead>
         <tbody>
-          {state.orders.map((order) => (
-            <tr key={order.id}>
-              <td>
-                <strong>{order.customerName}</strong>
-                <br />
-                <span className="subtle">{order.customerEmail || "No email"}</span>
-                <br />
-                <span className="subtle">{order.id}</span>
-              </td>
-              <td>
-                {order.items.map((item) => (
-                  <div key={item.id}>
-                    {item.quantity} × {item.bookTitle} ({item.format})
-                  </div>
-                ))}
-              </td>
-              <td>
-                <Money amount={order.total} />
-              </td>
-              <td>
-                <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
-                <br />
-                <span className="subtle">Updated {new Date(order.updatedAt).toLocaleString("en-GB")}</span>
-              </td>
-              <td>
-                {nextOrderStatuses(order.status).length ? (
-                  <select
-                    className="select"
-                    aria-label={`Update status for ${order.id}`}
-                    defaultValue=""
-                    onChange={(event) => {
-                      const next = event.target.value as OrderStatus;
-                      if (next) updateOrderStatus(order.id, next);
-                    }}
-                  >
-                    <option value="">Choose stage…</option>
-                    {nextOrderStatuses(order.status).map((status) => (
-                      <option value={status} key={status}>
-                        {orderStatusLabels[status]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="subtle">No next stage</span>
-                )}
-              </td>
-            </tr>
-          ))}
+          {state.orders.map((order) => {
+            const statuses: OrderStatus[] =
+              dataSource === "convex"
+                ? order.status === "submitted"
+                  ? ["cancelled", "completed"]
+                  : []
+                : nextOrderStatuses(order.status);
+            return (
+              <tr key={order.id}>
+                <td>
+                  <strong>{order.customerName}</strong>
+                  <br />
+                  <span className="subtle">{order.customerEmail || "No email"}</span>
+                  <br />
+                  <span className="subtle">{order.id}</span>
+                </td>
+                <td>
+                  {order.items.map((item) => (
+                    <div key={item.id}>
+                      {item.quantity} × {item.bookTitle} ({item.format})
+                    </div>
+                  ))}
+                </td>
+                <td>
+                  <Money amount={order.total} />
+                </td>
+                <td>
+                  <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
+                  <br />
+                  <span className="subtle">Updated {new Date(order.updatedAt).toLocaleString("en-GB")}</span>
+                </td>
+                <td>
+                  {statuses.length ? (
+                    <select
+                      className="select"
+                      aria-label={`Update status for ${order.id}`}
+                      defaultValue=""
+                      onChange={(event) => {
+                        const next = event.target.value as OrderStatus;
+                        if (next) void updateOrderStatus(order.id, next);
+                      }}
+                    >
+                      <option value="">Choose stage…</option>
+                      {statuses.map((status) => (
+                        <option value={status} key={status}>
+                          {orderStatusLabels[status]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="subtle">No next stage</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -152,7 +160,7 @@ function AdminOrders() {
 export default function AdminOrdersPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <PrototypeModeGuard requiredRole="admin">
         <AdminOrders />
       </PrototypeModeGuard>
     </SiteShell>

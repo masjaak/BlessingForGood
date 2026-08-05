@@ -87,7 +87,7 @@ export const unlock = mutation({
         expiresAt,
       });
     }
-    return { catalogId: record.catalogId, expiresAt };
+    return { catalogId: record.catalogId, expiresAt, catalog: await getCatalogView(ctx, record.catalogId) };
   },
 });
 

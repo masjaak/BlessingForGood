@@ -212,7 +212,7 @@ function AdminInvoices() {
 export default function AdminInvoicesPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <PrototypeModeGuard requiredRole="admin">
         <AdminInvoices />
       </PrototypeModeGuard>
     </SiteShell>

@@ -3,13 +3,15 @@
 import { useMemo, useState } from "react";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
+import { prototypeErrorMessage } from "@/domain/prototype/errors";
 import { formatIdr } from "@/domain/prototype/logic";
 import { usePrototype } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
 import { Button, Card, Field, LinkButton, Money, PageHeader } from "@/components/ui";
 
 export function CustomerCatalog() {
-  const { unlockedCatalog: catalog, unlockCatalog, submitOrder } = usePrototype();
+  const { unlockedCatalog: catalog, unlockCatalog, submitOrder, dataSource } = usePrototype();
+  const dataSourceLabel = dataSource === "convex" ? "Convex Preview" : "the local prototype";
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
@@ -48,7 +50,7 @@ export function CustomerCatalog() {
       const unlocked = await unlockCatalog(accessCode);
       if (!unlocked) setAccessError("Kode belum cocok, katalog sudah ditutup, atau akses belum tersedia.");
     } catch (error) {
-      setAccessError(error instanceof Error ? error.message : "Catalog access failed");
+      setAccessError(prototypeErrorMessage(error, "Catalog access failed"));
     } finally {
       setIsUnlocking(false);
     }
@@ -63,7 +65,7 @@ export function CustomerCatalog() {
       const order = await submitOrder(catalog.id, { customerName, customerEmail, items: selectedItems });
       setSubmittedOrder(order);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Order could not be recorded");
+      setSubmitError(prototypeErrorMessage(error, "Order could not be recorded"));
     } finally {
       setIsSubmitting(false);
     }
@@ -78,7 +80,7 @@ export function CustomerCatalog() {
         <PageHeader
           eyebrow="Order recorded"
           title="Your preorder is in the book."
-          description="The prototype recorded the order locally. WhatsApp remains a communication handoff, not the data source."
+          description={`The prototype recorded the order in ${dataSourceLabel}. WhatsApp remains a communication handoff, not the data source.`}
         />
         <Card className="success-banner success-card">
           <BrandMascot variant="success" className="success-mascot" />
@@ -111,7 +113,7 @@ export function CustomerCatalog() {
           <PageHeader
             eyebrow="Private catalog"
             title="Enter your access code."
-            description="Secret catalogs are separate from account passwords. This prototype checks a catalog-specific hash."
+            description={`Secret catalogs are separate from account passwords. This prototype checks a catalog-specific hash in ${dataSourceLabel}.`}
           />
           <form onSubmit={handleUnlock} className="form-card">
             <Field label="Catalog access code" hint="Use the code shared with you by the community.">

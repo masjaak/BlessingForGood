@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
 import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
+import { prototypeErrorMessage } from "@/domain/prototype/errors";
 import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
 import { usePrototype } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
@@ -18,7 +19,7 @@ const initialVariants: VariantDrafts = {
 };
 
 function CatalogForm() {
-  const { createCatalog } = usePrototype();
+  const { createCatalog, dataSource } = usePrototype();
   const [name, setName] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [closingAt, setClosingAt] = useState("");
@@ -59,7 +60,7 @@ function CatalogForm() {
       setTitle("");
       setVariants(initialVariants);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Catalog could not be created");
+      setError(prototypeErrorMessage(reason, "Catalog could not be created"));
     }
   }
 
@@ -68,7 +69,10 @@ function CatalogForm() {
       <div>
         <span className="card-kicker">Create secret catalog</span>
         <h2>Set up one useful starting point.</h2>
-        <p>Prototype behavior creates the catalog open. Access codes are hashed before they enter local storage.</p>
+        <p>
+          Prototype behavior creates the catalog open. Access codes are hashed before they enter{" "}
+          {dataSource === "convex" ? "Convex" : "local storage"}.
+        </p>
       </div>
       <form onSubmit={handleSubmit} className="form-card">
         <div className="form-grid">
@@ -236,7 +240,7 @@ function AdminCatalogs() {
 export default function AdminCatalogsPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <PrototypeModeGuard requiredRole="admin">
         <AdminCatalogs />
       </PrototypeModeGuard>
     </SiteShell>

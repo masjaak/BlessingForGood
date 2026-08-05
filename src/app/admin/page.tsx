@@ -8,7 +8,7 @@ import { usePrototype } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminOverview() {
-  const { state, previewDemo } = usePrototype();
+  const { state, previewDemo, dataSource } = usePrototype();
   const openCatalogs = state.catalogs.filter((catalog) => catalog.status === "open").length;
 
   return (
@@ -16,7 +16,7 @@ function AdminOverview() {
       <PageHeader
         eyebrow="Operations prototype"
         title="A calm view of the work in motion."
-        description="This local dashboard starts empty. Every count below comes from records created in the prototype during this browser session."
+        description={`This dashboard starts empty. Every count below comes from records created in ${dataSource === "convex" ? "the shared Convex Preview" : "this browser"}.`}
         actions={<LinkButton href="/admin/catalogs">Create a catalog</LinkButton>}
       />
       <div className="admin-workspace">
@@ -110,7 +110,7 @@ function AdminOverview() {
 export default function AdminPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <PrototypeModeGuard requiredRole="admin">
         <AdminOverview />
       </PrototypeModeGuard>
     </SiteShell>
