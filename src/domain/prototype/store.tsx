@@ -62,8 +62,13 @@ export function PrototypeProvider({
   children: ReactNode;
   previewEnvironment?: boolean;
 }) {
-  const previewDemo = isPreviewDemoMode(process.env, previewEnvironment);
-  const enabled = isPrototypeMode(process.env, previewEnvironment);
+  const runtimeEnvironment = {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_BFG_PROTOTYPE_MODE: process.env.NEXT_PUBLIC_BFG_PROTOTYPE_MODE,
+    NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE: process.env.NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE,
+  };
+  const previewDemo = isPreviewDemoMode(runtimeEnvironment, previewEnvironment);
+  const enabled = isPrototypeMode(runtimeEnvironment, previewEnvironment);
   const [state, setState] = useState<PrototypeState>(emptyPrototypeState);
   const [hydrated, setHydrated] = useState(!enabled);
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);

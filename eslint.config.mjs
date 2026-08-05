@@ -7,5 +7,14 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
-  globalIgnores([".next/**", ".vercel/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    ".vercel/**",
+    "out/**",
+    "build/**",
+    "test-results/**",
+    "playwright-report/**",
+    "artifacts/browser-qa/**",
+    "next-env.d.ts",
+  ]),
 ]);
