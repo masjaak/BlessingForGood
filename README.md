@@ -22,7 +22,7 @@ Admin menggunakan dashboard untuk mengelola katalog, batch/cargo, publisher, cus
 
 ## Current stage
 
-**Phase 01 foundation implemented locally; awaiting user review.** Lihat `context/PROJECT_STATUS.md`.
+**Prototype v0.1 is in progress on `prototype/v0.1`.** The canonical GitHub repository is the active source; see `context/PROJECT_STATUS.md` for the intake gap and current status.
 
 ## Technology direction
 
@@ -36,6 +36,8 @@ Admin menggunakan dashboard untuk mengelola katalog, batch/cargo, publisher, cus
 - Messaging in MVP: semi-automatic WhatsApp handoff
 
 Clerk and Convex are present only as fail-closed integration boundaries; production credentials, schema, and deployment are not configured.
+
+The prototype can be exercised locally with `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true`. It starts with zero business data and uses a browser-local adapter until Convex and Clerk development configuration are restored.
 
 ## Start here
 

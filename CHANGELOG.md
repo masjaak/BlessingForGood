@@ -8,6 +8,20 @@ source: conversation
 
 # Changelog
 
+## [prototype-v0.1] — 2026-08-05
+
+### Added
+
+- Reconstructed the missing local application tree from the approved implementation brief on branch `prototype/v0.1`.
+- Added zero-data catalog unlock, format selection, preorder, status timeline, invoice, and append-only deposit prototype flows.
+- Added public community, how-to-order, help, ready-stock empty, customer account, and desktop admin foundations.
+- Added prototype assumptions, asset audit, route matrix, open questions, and known limitations.
+
+### Deferred
+
+- Official brand assets and mockups are absent from the canonical GitHub snapshot; no replacement assets were generated.
+- Clerk production authentication, Convex persistence/schema, payment processing, WhatsApp API, and deployment remain deferred.
+
 ## [phase-01] — 2026-08-04
 
 ### Added

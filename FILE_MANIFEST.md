@@ -10,6 +10,10 @@ source: conversation
 
 Total files: **238**
 
+## Canonical repository intake note
+
+[REPOSITORY] The manifest describes the intended product repository, but the canonical GitHub snapshot used for Prototype v0.1 did not contain the listed context pack, implementation tree, or physical public assets. The discrepancy is preserved as an intake finding in `context/PROJECT_STATUS.md`; the manifest's approved status and intended inventory were not silently rewritten.
+
 - `.env.example`
 - `.gitignore`
 - `AGENTS.md`
