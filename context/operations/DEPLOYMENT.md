@@ -49,8 +49,13 @@ Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, 
 
 ## Phase 02.1 Preview verification
 
-- Status: pending after the visual branch is pushed.
-- Target: Preview only.
-- Required checks: inspect deployment logs, verify implemented routes with authenticated Vercel CLI requests, and inspect Preview runtime error logs.
+- Deployment: `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj`
+- URL: `https://blessing-for-good-akpj94htk-masjaaks-projects.vercel.app`
+- Status: Ready
+- Target: Preview only; no `--prod` or promotion was used.
+- Build: remote Vercel build passed on Node 24.x with Next.js 16.3.0 and generated all 14 static App Router routes.
+- Route smoke check: all 12 implemented routes returned HTTP 200 through authenticated Vercel CLI HEAD requests.
+- Asset smoke check: runtime primary/symbol logos and Mascott-1/3/4 returned HTTP 200 with `image/png`.
+- Runtime logs: no error logs returned for the 30-minute Preview query.
 - Browser viewport/console check: blocked in the current environment; do not claim it passed without an installed browser runner.
 - Production and `main`: must remain unchanged.

@@ -25,6 +25,7 @@ source: conversation
 
 - `npm run check`: 15 tests passed, lint/typecheck/build green.
 - `npx vercel@latest build`: Preview-target Build Output passed.
+- Preview `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj` is READY; 12 routes and five runtime brand assets returned HTTP 200, with no Preview runtime error logs.
 
 ### Deferred
 

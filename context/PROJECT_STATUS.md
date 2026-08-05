@@ -33,6 +33,8 @@
 
 [LIMITATION] Browser screenshot, hydration, and console verification are blocked because browser automation is not installed and local server binding is denied by the sandbox. Vercel Preview route and runtime checks remain the final delivery gate.
 
+[CONFIRMED] Preview deployment `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj` is READY at `https://blessing-for-good-akpj94htk-masjaaks-projects.vercel.app`. All 12 implemented routes returned HTTP 200 through authenticated Vercel CLI HEAD requests, the five runtime logo/mascot assets returned HTTP 200 with `image/png`, and the Preview runtime error query returned no logs.
+
 ## Deployment diagnosis
 
 [CONFIRMED] The failed deployment `dpl_sKtouPU4wmT1npv42vrPFLbwar2x` cloned `prototype/v0.1` at commit `cf1c5b7` and completed `next build` successfully.
@@ -47,4 +49,4 @@
 
 ## Status
 
-`implementation-ready` — Phase 02.1 source changes and Vercel Build Output validation pass on the visual branch. Preview deployment and deployed-route/runtime verification are pending. No merge to `main` has been performed.
+`validated` — Phase 02.1 source changes, Vercel Build Output, Preview deployment, route checks, asset checks, and runtime-log checks pass on the visual branch. Browser-level screenshot/console checks remain blocked by environment tooling. No merge to `main` has been performed.

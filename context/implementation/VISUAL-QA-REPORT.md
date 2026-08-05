@@ -7,6 +7,15 @@
 - Automated browser review: blocked. `agent-browser`, Playwright, and Puppeteer are not installed, and the sandbox denies binding a local Next server (`listen EPERM`). No browser screenshot or console result is claimed below.
 - Build review: `npm run check` and `npx vercel@latest build` completed successfully.
 
+## Preview verification
+
+- Deployment: `dpl_F1aiDK2SSsFL4NNV931uQqaXHmCj`
+- URL: `https://blessing-for-good-akpj94htk-masjaaks-projects.vercel.app`
+- Status: `READY`
+- 12 implemented routes returned HTTP 200 through authenticated Vercel CLI HEAD requests.
+- Runtime `Logo-4.png`, `Logo-2.png`, `Mascott-1.png`, `Mascott-3.png`, and `Mascott-4.png` returned HTTP 200 with `image/png`.
+- Preview runtime error query returned no logs.
+
 ## Screen review
 
 | Screen | Viewport | Reference mockup | Visual fidelity | Hierarchy | Typography | Spacing | Components | Responsive behavior | Accessibility | Functional regression | Known gap |
