@@ -185,6 +185,11 @@ p {
   color: var(--ink-muted);
   font-size: 0.78rem;
 }
+.site-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 .wordmark {
   display: inline-flex;
   align-items: center;
@@ -1089,9 +1094,6 @@ p {
     justify-content: center;
     padding: 7px 3px;
     text-align: center;
-  }
-  .site-nav .nav-admin {
-    display: none;
   }
   .site-footer {
     align-items: flex-start;

@@ -8,7 +8,7 @@ import { usePrototype } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminOverview() {
-  const { state } = usePrototype();
+  const { state, previewDemo } = usePrototype();
   const openCatalogs = state.catalogs.filter((catalog) => catalog.status === "open").length;
 
   return (
@@ -42,7 +42,7 @@ function AdminOverview() {
             </Card>
             <Card className="metric">
               <span className="card-kicker">Mode</span>
-              <strong className="metric-value">Dev</strong>
+              <strong className="metric-value">{previewDemo ? "Preview" : "Dev"}</strong>
               <p>Explicit prototype boundary</p>
             </Card>
           </div>

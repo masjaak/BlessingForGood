@@ -29,14 +29,18 @@ test("Preview Demo Mode supports a zero-data customer and admin flow", async ({ 
   await page.goto("/catalog", { waitUntil: "networkidle" });
   await page.getByLabel("Catalog access code").fill("wrong-code");
   await page.getByRole("button", { name: "Unlock catalog" }).click();
-  await expect(page.getByRole("alert")).toContainText("Kode belum cocok");
+  await expect(page.locator("p[role=alert]")).toContainText("Kode belum cocok");
   await page.getByLabel("Catalog access code").fill(accessCode);
   await page.getByRole("button", { name: "Unlock catalog" }).click();
 
   await expect(page.getByRole("heading", { name: catalogName })).toBeVisible();
   const formatGroup = page.getByRole("radiogroup", { name: "Format for QA Book" });
-  await expect(formatGroup.getByRole("radio", { name: /PB/ })).toBeChecked();
+  await expect(formatGroup.getByRole("radio", { name: /BB/ })).toBeChecked();
+  await expect(page.locator(".book-cover")).toContainText("BB");
+  await formatGroup.getByRole("radio", { name: /PB/ }).check();
   await expect(page.locator(".book-cover")).toContainText("PB");
+  await expect(page.getByText("9780000000002")).toBeVisible();
+  await expect(page.getByText("Rp 125.000")).toBeVisible();
   await formatGroup.getByRole("radio", { name: /BB/ }).check();
   await expect(page.locator(".book-cover")).toContainText("BB");
   await expect(page.getByText("9780000000001")).toBeVisible();
@@ -54,14 +58,15 @@ test("Preview Demo Mode supports a zero-data customer and admin flow", async ({ 
   await expect(page.getByRole("heading", { name: "QA Book" })).toBeVisible();
 
   await page.goto("/admin/orders", { waitUntil: "networkidle" });
-  await expect(page.getByText("QA Blessfriend")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "QA Blessfriend" })).toBeVisible();
   const statusControl = page.getByRole("combobox", { name: /Update status for/ });
   await statusControl.selectOption("po_closed");
-  await expect(page.getByText("PO closed")).toBeVisible();
+  await expect(page.getByRole("table").getByText("PO Ditutup")).toBeVisible();
 
   await page.goto("/admin/invoices", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Issue invoice" }).click();
-  await expect(page.getByText("Invoice issued.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Rp/ })).toBeVisible();
+  await expect(page.getByText("Ledger balance")).toBeVisible();
   await page.getByLabel("Record credit").fill("100000");
   await page.getByLabel("Note").fill("QA browser verification");
   await page.getByRole("button", { name: "Append ledger entry" }).click();
