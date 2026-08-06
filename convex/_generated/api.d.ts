@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as batchTracking from "../batchTracking.js";
+import type * as batches from "../batches.js";
 import type * as bookVariants from "../bookVariants.js";
 import type * as books from "../books.js";
 import type * as catalogAccess from "../catalogAccess.js";
@@ -37,6 +39,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  batchTracking: typeof batchTracking;
+  batches: typeof batches;
   bookVariants: typeof bookVariants;
   books: typeof books;
   catalogAccess: typeof catalogAccess;
