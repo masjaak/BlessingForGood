@@ -14,8 +14,16 @@
 - WhatsApp is represented by a generated handoff link only.
 - `BookCover` uses a neutral typographic fallback until approved cover image persistence is designed.
 - Catalog creation is intentionally one-title-per-form; richer publisher/book management is deferred.
-- Tracking/cargo, invoice, deposit, payment, upload, email, and WhatsApp API persistence remain deferred to later phases.
-- Books, Customers, Tracking, Content, and Settings remain clearly marked unavailable in the admin navigation.
+- Batch/cargo tracking, order fulfillment, invoice, and append-only deposit persistence are implemented in Phase
+  03.2. Payment settlement, upload, email, and WhatsApp API persistence remain deferred to later phases.
+- Shipment and fulfillment correction workflows are forward-only prototypes; backward correction and detailed
+  reassignment audit history are deferred.
+- Invoice numbering is collision-safe for Preview but is not final accounting numbering policy. Invoice calculations
+  do not add shipping, customs, tax, discount, or exchange-rate lines.
+- Deposit accounts and allocations are operational ledger projections, not payment settlement, bank reconciliation,
+  refunds, withdrawals, or final financial policy.
+- Books, Customers, Content, and Settings remain clearly marked unavailable in the admin navigation. Batch tracking,
+  orders, and invoices are active Preview operational surfaces.
 - Full manual keyboard and contrast review remains a follow-up; automated accessible-name, heading, form, focus,
   and browser-error checks pass.
 - Next.js reports the unrelated `/Users/masjak/package-lock.json` as an ignored parent lockfile; the repository build still succeeds with the canonical local lockfile, so the parent file remains untouched.

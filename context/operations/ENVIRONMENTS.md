@@ -18,3 +18,15 @@
   sharing business data.
 - [PREVIEW VERIFIED] The final Preview flow passed with zero initial business records; created QA records were
   explicitly cleaned. Production was not deployed or modified.
+
+## Phase 03.2 boundary
+
+[REPOSITORY] The operations branch adds batch, shipment, fulfillment, invoice,
+and deposit records to the same isolated Convex project. Development tests and
+browser QA use the Development deployment selected through ignored local
+configuration. Preview verification must use the branch-scoped Preview
+deployment and must never reuse Production.
+
+[PROTOTYPE ASSUMPTION] These records belong to expiring Preview sessions, not
+Clerk users. The local adapter remains an explicit fallback and is never merged
+with Convex records in active Preview screens.

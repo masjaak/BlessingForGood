@@ -29,3 +29,28 @@
 The bounded ceilings are the current prototype ceiling. Pagination is the
 upgrade path for catalog items and nested order history when those surfaces
 become independently managed.
+
+## Phase 03.2 audience and ownership contract
+
+| Query | Table | Filter | Index | Pagination / maximum | Audience | Ownership rule |
+| --- | --- | --- | --- | --- | --- | --- |
+| `batches.listForAdmin` | `batches` | creation order | `by_created_at` | paginated; UI 50 | admin | admin session required |
+| `batches.getForAdmin` | `batches` + links | batch ID | `by_batch` for links | links max 200 | admin | admin session required |
+| `batchTracking.getMine` | orders/items/assignments/batches/history | owned order ID | `by_order`, `by_order_item`, `by_batch_and_changed_at` | items/assignments max 200; history max 100 | customer | order session must equal current customer session |
+| `batchTracking.getForOrderAdmin` | order items/assignments | order ID | `by_order`, `by_order_item` | items/assignments max 200 | admin | admin session required |
+| `batchTracking.getForAdmin` | batch/assignments/history | batch ID | `by_batch`, `by_batch_and_changed_at` | assignments max 200; history max 100 | admin | admin session required |
+| `orderFulfillment.getMine` | order/history | owned order ID | `by_order_and_changed_at` | history max 100 | customer | order session must equal current customer session |
+| `orderFulfillment.getForAdmin` | order/history | order ID | `by_order_and_changed_at` | history max 100 | admin | admin session required |
+| `invoices.listMine` | `invoices` + `invoiceItems` | customer + creation | `by_customer_and_created_at`, `by_invoice` | paginated; UI 50; items max 200 | customer | current customer session owns invoice |
+| `invoices.getMine` | `invoices` + `invoiceItems` | invoice ID | `by_invoice` | items max 200 | customer | server rejects another customer |
+| `invoices.listForAdmin` | `invoices` + `invoiceItems` | creation order | `by_created_at`, `by_invoice` | paginated; UI 50; items max 200 | admin | admin session required |
+| `invoices.getForAdmin` | `invoices` + `invoiceItems` | invoice ID | `by_invoice` | items max 200 | admin | admin session required |
+| `depositAccounts.getMine` | `depositAccounts` | customer + IDR | `by_customer_and_currency` | one | customer | current customer session owns account |
+| `depositAccounts.getForInvoice` | invoice/account | invoice ID | `by_order`, `by_customer_and_currency` | one | admin | account must match invoice customer |
+| `depositTransactions.listMine` | `depositTransactions` | account + time | `by_account_and_created_at` | paginated; UI 100 | customer | account must be owned by current customer |
+| `depositTransactions.listForInvoice` | `depositTransactions` | account + invoice + time | `by_invoice`, `by_account_and_created_at` | paginated; UI 100 | admin | invoice/account relationship is checked |
+| `invoiceDepositAllocations.listMine` | allocations | invoice + status | `by_invoice_and_status` | max 100 | customer | invoice must be owned by current customer |
+| `invoiceDepositAllocations.listForAdmin` | allocations | invoice + status | `by_invoice_and_status` | max 100 | admin | admin session required |
+
+Client components consume these reactive queries directly. No customer query
+loads an unbounded table or applies ownership filtering after the response.

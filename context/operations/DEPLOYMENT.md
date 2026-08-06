@@ -3,7 +3,7 @@
 ## Current deployment boundary
 
 - Repository: `https://github.com/masjaak/BlessingForGood.git`
-- Implementation branch: `feat/convex-core-persistence-v0.1` (branched from `qa/ux-refinement-v0.1`)
+- Implementation branch: `feat/convex-operations-persistence-v0.1` (branched from `feat/convex-core-persistence-v0.1`)
 - Vercel project: `blessing-for-good`
 - This repair is Preview-only. Do not merge to `main`, use `--prod`, promote a deployment, or change the production domain.
 
@@ -36,7 +36,7 @@ for Preview only; Production must not contain an enabled value for that flag.
 
 ## Validation
 
-Run from the repository root on the Phase 03.1 branch:
+Run from the repository root on the Phase 03.2 branch:
 
 ```bash
 npm ci
@@ -50,6 +50,25 @@ Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, 
 
 The shared build command intentionally has no Production Convex deploy key. Production remains fail-closed until a
 separate Production Convex deployment, Clerk identity, and authorization approval exist in a later phase.
+
+## Phase 03.2 Preview handoff
+
+[REPOSITORY] Preview deployment for this phase must be branch-isolated from
+`feat/convex-operations-persistence-v0.1`. Use the existing Preview-only
+`CONVEX_DEPLOY_KEY` and the existing Vercel build integration. Do not use
+`--prod`, promote a deployment, select the Production Convex deployment, or
+configure a Production key.
+
+Required evidence after deployment:
+
+- Convex Preview functions and indexes match the current branch and all new
+  operational tables start empty.
+- Vercel Preview is READY and route checks pass.
+- Operational E2E proves persistence after reload, realtime tracking and
+  financial updates, and cross-customer isolation.
+- Vercel and Convex logs contain no critical errors or secret values.
+- Test-created operational records are removed by the guarded targeted
+  cleanup; Development remains separate and Production remains untouched.
 
 ## Final Phase 03.1 Preview verification
 

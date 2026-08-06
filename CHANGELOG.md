@@ -8,6 +8,31 @@ source: conversation
 
 # Changelog
 
+## [phase-03.2-operations] — 2026-08-06
+
+### Added
+
+- Added persistent batches, catalog-batch links, order-item assignments, shipment-stage history, and separate order
+  fulfillment history to Convex.
+- Added immutable invoice snapshots with collision-safe prototype invoice numbers, exact IDR deposit requirements,
+  draft/issued/void states, and customer ownership filtering.
+- Added zero-start deposit accounts, append-only credit/reservation/release/debit/reversal transactions, and atomic
+  invoice allocations.
+- Connected customer tracking, fulfillment, invoice, and deposit screens plus admin batch/order/invoice operations
+  to reactive Convex queries and guarded Preview mutations.
+
+### Validated
+
+- [CONVEX VERIFIED] Convex codegen and 27 Convex tests pass on the isolated Development deployment.
+- [REPOSITORY] 51 Vitest tests, lint, typecheck, build, and the complete 60-test Playwright matrix pass across
+  375×812, 768×1024, 1024×768, and 1440×900.
+- Preview deployment verification remains the final handoff step for this branch.
+
+### Deferred
+
+- Clerk, Production authorization, Production Convex, payment gateway/reconciliation, refund policy, shipping or
+  customs calculation, WhatsApp API, and `main` merge remain outside this phase.
+
 ## [phase-03.1-convex] — 2026-08-05
 
 ### Added

@@ -1,4 +1,4 @@
-# Phase 03.1 indexes
+# Convex indexes (Phase 03.1 + 03.2)
 
 Indexes are defined in `convex/schema.ts` and used by the corresponding
 functions. Relationship/status lists use indexed pagination or bounded reads;
@@ -27,3 +27,10 @@ depositAccounts: by_customer, by_customer_and_currency
 depositTransactions: by_account, by_account_and_created_at, by_invoice, by_reference_transaction
 invoiceDepositAllocations: by_invoice, by_account, by_reservation_transaction, by_invoice_and_status
 ```
+
+Phase 03.2 uses the relationship indexes for server-side ownership and
+eligibility checks. Customer reads start from `by_session_and_created_at`,
+`by_customer_and_created_at`, `by_customer_and_currency`, or
+`by_account_and_created_at`; they do not collect a full table and filter in
+React. Operational history is read through the parent relationship plus the
+timestamp index.

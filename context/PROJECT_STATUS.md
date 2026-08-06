@@ -1,5 +1,24 @@
 # Project Status
 
+## Phase 03.2 current state
+
+[REPOSITORY] The canonical repository is `/Users/masjak/Developer/BlessingForGood` on
+`feat/convex-operations-persistence-v0.1`, based on the approved
+`feat/convex-core-persistence-v0.1` source branch. `main` is untouched.
+
+[REPOSITORY] Phase 03.2 persists batch tracking, order fulfillment, invoice
+snapshots, deposit accounts, append-only ledger transactions, and invoice
+allocations through the existing Preview-session boundary. No Clerk, payment
+gateway, WhatsApp API, Production deployment, or automatic seed data was added.
+
+[CONVEX VERIFIED] The current code and schema are deployed to the isolated
+Convex Development deployment. Convex tests and the complete local operational
+flow pass against real Convex queries and mutations.
+
+[REPOSITORY] Preview deployment and final zero-data/runtime-log verification are
+the remaining handoff checks. Until those checks are complete, this phase is
+not marked complete.
+
 ## Repository intake
 
 [CONFIRMED] The canonical GitHub repository is readable at `design/visual-alignment-v0.1`, branched from `prototype/v0.1`.
@@ -10,8 +29,9 @@
 
 ## Current priority
 
-[COMPLETED] Phase 03.1 Convex core persistence on `feat/convex-core-persistence-v0.1`. The secret-catalog-to-
-preorder vertical slice is backed by an isolated Convex Preview deployment and verified through Vercel Preview.
+[IN PROGRESS] Phase 03.2 batch tracking, fulfillment, invoice, and deposit persistence on
+`feat/convex-operations-persistence-v0.1`. Complete Preview deployment and handoff verification without changing
+Production or `main`.
 
 ## Active constraints
 
@@ -74,5 +94,6 @@ access-code/session errors from browser QA and teardown; no secret values were l
 
 ## Status
 
-`completed` — Phase 02.1, Phase 02.2, and Phase 03.1 are validated on their dedicated branches. No merge to
-`main` or Production deployment has been performed.
+`in progress` — Phase 03.1 remains validated on its dedicated branch. Phase 03.2 implementation and Development
+verification are complete; isolated Preview verification is pending. No merge to `main` or Production deployment
+has been performed.
