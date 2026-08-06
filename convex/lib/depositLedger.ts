@@ -11,7 +11,8 @@ function positiveAmount(amount: number): void {
 
 export function ledgerDeltas(type: LedgerTransactionType, amount: number): LedgerDeltas {
   positiveAmount(amount);
-  if (type === "credit" || type === "release") return { availableDelta: amount, reservedDelta: 0 };
+  if (type === "credit") return { availableDelta: amount, reservedDelta: 0 };
+  if (type === "release") return { availableDelta: amount, reservedDelta: -amount };
   if (type === "reservation") return { availableDelta: -amount, reservedDelta: amount };
   return { availableDelta: -amount, reservedDelta: 0 };
 }
