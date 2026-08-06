@@ -12,3 +12,8 @@ mutation. It rejects edits after catalog close or the editable deadline.
 Convex Production is not configured in this phase. The rules are deployed and
 smoke-tested on the personal dev deployment and the branch-scoped Preview
 deployment. Production remains fail-closed until a later approved phase.
+
+Operational mutations keep related writes atomic: batch stage plus history,
+fulfillment stage plus history, invoice plus snapshot items, account ledger
+append plus account summary, and allocation/release plus invoice summary.
+Financial history is corrected with inverse ledger rows rather than edits.

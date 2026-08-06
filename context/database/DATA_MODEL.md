@@ -11,3 +11,11 @@ submission time so later catalog edits cannot change historical totals.
 `prototypeSessions` is an expiring Preview-only boundary, not a user account.
 Only token digests are stored. Raw access codes and raw session tokens never
 enter Convex documents.
+
+Batches link operationally to catalogs, while order-item assignments record the
+actual quantity allocation. Batch status history and order fulfillment history
+are separate append-only timelines.
+
+Invoices copy order-item snapshots and store integer IDR totals. Deposit
+accounts expose available and reserved balances; deposit transactions are
+append-only and invoice allocations connect reservations to invoices.

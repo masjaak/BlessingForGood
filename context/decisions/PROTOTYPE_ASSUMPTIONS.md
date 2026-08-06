@@ -83,3 +83,58 @@ indicator and local fallback guard.
   visibility, second-customer isolation, and zero-data cleanup.
 - Replacement trigger: Clerk and approved Production authorization are implemented.
 - Affected files: `convex/`, `src/domain/prototype/`, and the Convex/Vercel Preview configuration.
+
+## PA-008 — Shipment stage progression
+
+Status: prototype-only
+
+- Area: batch tracking
+- Temporary behavior: shipment stages are `po_closed`, `ordered_to_supplier`, `shipped_internationally`, `customs`, `to_indonesia_warehouse`, and `at_store`.
+- Guard: progression is forward-only; skipped forward movement requires explicit admin confirmation; backward correction is deferred.
+
+## PA-009 — Fulfillment stage progression
+
+Status: prototype-only
+
+- Area: order fulfillment
+- Temporary behavior: fulfillment stages are `awaiting_payment`, `awaiting_address`, `packing`, `shipped`, and `completed`.
+- Guard: progression is forward-only; correction workflow is deferred.
+
+## PA-010 — Invoice scope
+
+Status: prototype-only
+
+- Area: invoices
+- Temporary behavior: invoice items use authoritative order snapshots, currency is IDR, and no shipping, customs, exchange-rate, tax, discount, or arbitrary manual line is calculated.
+
+## PA-011 — Deposit requirement
+
+Status: prototype-only
+
+- Area: invoice requirements
+- Temporary behavior: admin explicitly selects `none`, `fixed`, or `percentage`; percentage values are integer basis points from 0 to 10000 and round to the nearest whole Rupiah.
+- Guard: no universal default percentage and no floating-point persistence.
+
+## PA-012 — Deposit allocation
+
+Status: prototype-only
+
+- Area: customer deposit
+- Temporary behavior: credit increases available balance, allocation reserves it against an invoice, release returns it, and invoice outstanding is derived from allocated amount.
+- Boundary: allocation is not payment-gateway settlement.
+
+## PA-013 — Financial corrections
+
+Status: prototype-only
+
+- Area: deposit ledger
+- Temporary behavior: transactions are append-only; correction inserts one inverse reversal referencing the original transaction.
+- Guard: an original transaction can be reversed once; a reversal cannot reverse another reversal.
+
+## PA-014 — Prototype invoice numbering
+
+Status: prototype-only
+
+- Area: invoice identity
+- Temporary behavior: the invoice number is `BFG-YYYYMM-<full Convex invoice id>`, generated after the unique invoice document id exists inside one mutation.
+- Trade-off: this is collision-safe for the prototype and is not final production accounting policy.

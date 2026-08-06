@@ -16,4 +16,14 @@ catalogAccessGrants: by_session, by_session_and_catalog, by_catalog, by_expirati
 orders: by_session, by_catalog, by_status, by_catalog_and_status, by_session_and_created_at, by_created_at
 orderItems: by_order, by_book, by_variant
 orderStatusHistory: by_order, by_order_and_changed_at
+batches: by_reference_code, by_current_stage, by_created_at, by_archived
+catalogBatchLinks: by_catalog, by_batch, by_catalog_and_batch
+orderItemBatchAssignments: by_order_item, by_batch, by_order_item_and_batch
+batchStatusHistory: by_batch, by_batch_and_changed_at, by_stage
+orderFulfillmentHistory: by_order, by_order_and_changed_at, by_stage
+invoices: by_order, by_customer, by_status, by_invoice_number, by_customer_and_created_at, by_created_at
+invoiceItems: by_invoice, by_order_item
+depositAccounts: by_customer, by_customer_and_currency
+depositTransactions: by_account, by_account_and_created_at, by_invoice, by_reference_transaction
+invoiceDepositAllocations: by_invoice, by_account, by_reservation_transaction, by_invoice_and_status
 ```

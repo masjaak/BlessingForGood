@@ -15,3 +15,12 @@
 - Customer edits require a submitted order, an open catalog, and an unexpired editable window.
 - Submitted orders contain at least one valid, available catalog item.
 - Status changes are limited to the Phase 03.1 order states: submitted, cancelled, completed.
+- A catalog-batch pair is unique.
+- Order-item assignment quantities are positive integers and their sum cannot exceed the ordered quantity.
+- A batch shipment stage is nullable before the first admin update and then moves forward only; skipped movement requires explicit confirmation.
+- Fulfillment stages move forward only and remain separate from order status.
+- An order has at most one non-void invoice.
+- Invoice totals equal the sum of immutable item snapshots and outstanding amount cannot be negative.
+- Deposit account available and reserved balances cannot be negative and are updated with every ledger append.
+- Deposit transactions cannot be edited or deleted; a reversal references one non-reversal transaction at most once.
+- An allocation belongs to the same customer as its invoice and deposit account and cannot exceed invoice outstanding or account available balance.
