@@ -10,5 +10,5 @@ current catalog authority, patches the order, and records an edit event in one
 mutation. It rejects edits after catalog close or the editable deadline.
 
 Convex Production is not configured in this phase. The rules are deployed and
-smoke-tested on the personal dev deployment; Preview verification follows
-after frontend migration.
+smoke-tested on the personal dev deployment and the branch-scoped Preview
+deployment. Production remains fail-closed until a later approved phase.

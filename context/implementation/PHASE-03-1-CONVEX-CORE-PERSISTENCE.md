@@ -37,3 +37,28 @@ No seed data is created during deployment. Test records are created only by
 isolated tests and removed by their guarded cleanup path. The cleanup path is
 Preview-capability-only, requires an explicit test marker and exact catalog or
 book IDs/names, and is not a general reset.
+
+## Verified handoff
+
+[CONVEX VERIFIED] Development and branch Preview deployments passed schema
+deployment, codegen, Convex tests, keyed access-code/session handling, atomic
+order snapshots, ownership checks, and edit-before-close/lock-after-close
+transitions.
+
+[PREVIEW VERIFIED] Vercel Preview `dpl_4BxuvP1MvDzS9kktZyGfTmrmcAGk` is READY
+at `https://blessing-for-good-1zm4ur6w9-masjaaks-projects.vercel.app`. All 56
+Playwright tests passed across the required viewport projects. The route matrix
+returned HTTP 200 for all 12 implemented routes, and all Phase 03.1 business
+tables were empty after cleanup.
+
+## Adapter status
+
+`ConvexPrototypeProvider` is the primary adapter when a valid
+`NEXT_PUBLIC_CONVEX_URL` is injected. The local adapter remains an explicit
+development fallback. Existing invoice/deposit UI foundation remains local and
+is intentionally not part of Phase 03.1 persistence.
+
+## Exit status
+
+`implemented` on `feat/convex-core-persistence-v0.1`. Production Vercel,
+Production Convex, Clerk, and `main` remain untouched.

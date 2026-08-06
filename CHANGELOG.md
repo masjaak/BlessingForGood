@@ -8,6 +8,33 @@ source: conversation
 
 # Changelog
 
+## [phase-03.1-convex] — 2026-08-05
+
+### Added
+
+- Added the Phase 03.1 Convex schema for prototype sessions, publishers, books, variants, secret catalogs, access
+  grants, catalog items, orders, order-item snapshots, and order status history.
+- Added Preview-only server capability checks, expiring token-digest sessions, keyed catalog-code verification, and
+  atomic order persistence with server-calculated IDR snapshots.
+- Connected the active catalog-to-preorder screens to Convex Preview while retaining an explicit local development
+  adapter fallback.
+- Added guarded test cleanup scoped to explicit Browser QA records; no seed or dummy business data is deployed.
+
+### Validated
+
+- `npm run check`: 31 tests passed; Convex tests: 7 passed; Convex typecheck/codegen passed.
+- Local Vercel Build Output and the remote Preview build passed with Convex deployment and Next.js build integration.
+- Vercel Preview `dpl_4BxuvP1MvDzS9kktZyGfTmrmcAGk` is READY at
+  `https://blessing-for-good-1zm4ur6w9-masjaaks-projects.vercel.app`.
+- `56/56` Playwright tests passed against the new Preview, including reload persistence, cross-browser admin
+  visibility, customer isolation, and required viewport projects.
+- All 12 implemented routes returned HTTP 200; Preview business tables were empty before and after QA cleanup.
+
+### Deferred
+
+- Clerk, Production authorization, Production Convex, batch/cargo tracking, invoice/deposit persistence, payment,
+  uploads, email, WhatsApp API, and `main` merge remain outside this phase.
+
 ## [phase-02.2-qa] — 2026-08-05
 
 ### Added

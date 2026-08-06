@@ -17,6 +17,16 @@ npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run b
 No `--preview-run` seed function is used. A new Preview starts with zero
 business records.
 
+[CONVEX VERIFIED] The personal development deployment passed schema/codegen
+checks and the Convex test suite. The branch Preview deployment
+`youthful-retriever-820` deployed the same functions and indexes through the
+Vercel build.
+
+[PREVIEW VERIFIED] The Vercel Preview flow passed `56/56` Playwright tests,
+including reload persistence, admin visibility from another browser context,
+customer ownership isolation, and explicit zero-data cleanup. The business
+tables were empty before and after the run.
+
 ## Security boundary
 
 Phase 03.1 uses a server-side Preview capability and expiring prototype
@@ -26,6 +36,12 @@ Production Convex deployment exist.
 
 Environment variable names are documented in `.env.example`; values and deploy
 keys stay in Convex/Vercel configuration and are never committed.
+
+Preview-only server names are `BFG_PREVIEW_DEMO_MODE`,
+`BFG_CATALOG_CODE_PEPPER`, `BFG_SESSION_TOKEN_PEPPER`, and
+`BFG_PREVIEW_ADMIN_ACCESS_CODE`. The Vercel Preview-only name
+`CONVEX_DEPLOY_KEY` is used only by the branch build. No Production key is
+configured.
 
 ## Deferred
 

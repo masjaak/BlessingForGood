@@ -6,7 +6,8 @@ The following remain open and were not silently resolved:
 
 - approved brand copy and official logo/mascot asset roles;
 - final customer and admin authentication/authorization wiring;
-- Convex schema and deployment boundary;
+- [RESOLVED FOR PHASE 03.1] Convex core schema and isolated dev/Preview deployment boundary;
+- Production Convex deployment, Clerk identity, and final authorization boundary;
 - catalog access-code rate limiting and expiry policy;
 - deposit, refund, cancellation, payment-verification, and legal rules;
 - final ready-stock inventory behavior;

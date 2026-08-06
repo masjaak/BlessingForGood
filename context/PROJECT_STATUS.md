@@ -10,9 +10,8 @@
 
 ## Current priority
 
-[IN PROGRESS] Phase 03.1 Convex core persistence on `feat/convex-core-persistence-v0.1`. The schema and guarded
-Preview session boundary are implemented on the personal Convex dev deployment; frontend adapter migration and
-isolated Vercel Preview verification remain.
+[COMPLETED] Phase 03.1 Convex core persistence on `feat/convex-core-persistence-v0.1`. The secret-catalog-to-
+preorder vertical slice is backed by an isolated Convex Preview deployment and verified through Vercel Preview.
 
 ## Active constraints
 
@@ -20,13 +19,30 @@ isolated Vercel Preview verification remain.
 - No business records are seeded at runtime.
 - Official logo, mascot, and mockup files are now committed; no replacement assets or mockup business data were generated.
 - Prototype-only behavior is guarded by `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true` in development.
-- The local adapter persists only in the browser that enabled prototype mode; it is not production persistence.
-- Preview Demo Mode is configured only for the Vercel Preview environment and remains guarded by the server-side Preview boundary.
+- The local adapter is an explicit local-development fallback; it is not production persistence and Preview fails closed without a valid Convex URL.
+- Preview Demo Mode is configured only for Vercel/Convex Preview and remains guarded by the server-side Preview boundary.
 - The existing Vercel project `blessing-for-good` is configured for Next.js Preview deployments; Production remains untouched by this repair.
 - A separate Convex project `blessing-for-good` now has a personal cloud development deployment. A Convex Preview
   deploy key is configured only in the linked Vercel Preview environment; no Production Convex key is configured.
-- Phase 03.1 Convex tests pass and a real dev deployment smoke verified guarded session creation with zero business
-  records. The Preview build has not yet been run with the new Convex adapter.
+- Phase 03.1 Convex tests pass. Real dev and branch Preview deployments verified guarded sessions, keyed secret
+  handling, zero-data startup, persistence, reload behavior, admin visibility, and customer isolation.
+
+## Phase 03.1 Convex core persistence
+
+[CONVEX VERIFIED] The schema, indexes, validators, Preview capability, expiring prototype sessions, catalog
+access-code verification, catalog persistence, order snapshots, ownership checks, and edit/lock transitions are
+deployed to the personal development deployment and the branch-scoped Convex Preview deployment.
+
+[PREVIEW VERIFIED] Vercel Preview `dpl_4BxuvP1MvDzS9kktZyGfTmrmcAGk` is READY at
+`https://blessing-for-good-1zm4ur6w9-masjaaks-projects.vercel.app`. The build deployed the Convex Preview
+deployment `youthful-retriever-820`, generated all 14 App Router routes, and used the Preview-only deploy key.
+
+[PREVIEW VERIFIED] All 56 Playwright tests passed against the new Preview across 375×812, 768×1024, 1024×768,
+and 1440×900. The 12 implemented routes returned HTTP 200 through authenticated Vercel CLI requests. Convex
+Preview business tables were empty before/after the test run; test records were explicitly cleaned.
+
+[PREVIEW VERIFIED] Vercel runtime logs returned no entries. Convex history contained only expected negative-path
+access-code/session errors from browser QA and teardown; no secret values were logged.
 
 ## Phase 02.1 visual alignment
 
@@ -58,4 +74,5 @@ isolated Vercel Preview verification remain.
 
 ## Status
 
-`completed` — Phase 02.1 foundation and Phase 02.2 browser QA are validated on `qa/ux-refinement-v0.1`. No merge to `main` has been performed.
+`completed` — Phase 02.1, Phase 02.2, and Phase 03.1 are validated on their dedicated branches. No merge to
+`main` or Production deployment has been performed.

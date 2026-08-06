@@ -12,17 +12,18 @@
 - Framework preset: `Next.js`
 - Root directory: repository root (`.`)
 - Install command: automatic npm detection using `package-lock.json`
-- Build command: `npm run build`
+- Build command: `vercel.json` runs `npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"`
 - Output directory: Next.js default / automatic detection
 - Node.js: `24.x`, satisfying the package engine requirement `>=20.9.0`
 
 ## Diagnosis and repair
 
-The failed deployment at commit `cf1c5b7` on `prototype/v0.1` successfully compiled and prerendered all routes. It failed afterward because the project setting requested `dist`, which the Next.js build does not create. The project preset and output-directory setting were corrected in Vercel; no source `vercel.json` override was added.
+The failed deployment at commit `cf1c5b7` on `prototype/v0.1` successfully compiled and prerendered all routes. It failed afterward because the project setting requested `dist`, which the Next.js build does not create. The project preset and output-directory setting were corrected in Vercel. Phase 03.1 later added the tracked `vercel.json` build wrapper solely to deploy Convex Preview before the Next.js build.
 
-The current prototype build does not require Clerk or Convex environment variables. Vercel environment-variable
-names were audited without reading values. `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` is configured for Preview only;
-Production must not contain an enabled value for that flag.
+The Vercel Preview build requires the Preview-only `CONVEX_DEPLOY_KEY` and uses the branch-scoped Convex
+deployment created by `npx convex deploy`. The command injects `NEXT_PUBLIC_CONVEX_URL` only for the build. Vercel
+environment-variable names were audited without reading values. `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` is configured
+for Preview only; Production must not contain an enabled value for that flag.
 
 ## Preview Demo Mode
 
@@ -35,17 +36,36 @@ Production must not contain an enabled value for that flag.
 
 ## Validation
 
-Run from the repository root on the visual branch:
+Run from the repository root on the Phase 03.1 branch:
 
 ```bash
 npm ci
 npm run check
-npx vercel@latest pull --yes --environment=preview --git-branch=qa/ux-refinement-v0.1
+npx vercel@latest pull --yes --environment=preview --git-branch=feat/convex-core-persistence-v0.1
 npx vercel@latest build
-npx vercel@latest deploy --target preview --logs
+npx vercel@latest deploy --logs
 ```
 
 Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, Vercel tokens, Clerk secrets, or Convex secrets.
+
+The shared build command intentionally has no Production Convex deploy key. Production remains fail-closed until a
+separate Production Convex deployment, Clerk identity, and authorization approval exist in a later phase.
+
+## Final Phase 03.1 Preview verification
+
+- Deployment: `dpl_4BxuvP1MvDzS9kktZyGfTmrmcAGk`
+- URL: `https://blessing-for-good-1zm4ur6w9-masjaaks-projects.vercel.app`
+- Target: Preview; status: Ready; build region: `iad1`
+- Convex Preview: branch deployment `youthful-retriever-820`; environment names were configured on Preview only.
+- Remote build: Next.js 16.3.0, Node.js 24.x, Convex deploy completed, all 14 App Router routes generated.
+- Route smoke check: all 12 implemented routes returned HTTP 200 through authenticated Vercel CLI requests.
+- Browser QA: `56/56` Playwright tests passed against Vercel Preview, including reload persistence, admin order
+  visibility, wrong-code handling, and second-customer isolation.
+- Convex data check: all Phase 03.1 business tables were empty before and after the QA run.
+- Vercel runtime error logs: no entries returned for the final 30-minute query.
+- Convex logs: only expected negative-path access-code and teardown session errors were observed; no secret values
+  were logged.
+- Production and `main`: unchanged.
 
 ## Final Phase 02.2 Preview verification
 
