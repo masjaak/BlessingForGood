@@ -137,8 +137,11 @@ test("Preview persistence supports isolated customer and admin flow", async ({ p
     await expect(customerPage.getByRole("heading", { name: bookTitle })).toBeVisible();
 
     if (usesConvex) {
-      await customerPage.getByRole("link", { name: "View tracking" }).click();
-      await expect(customerPage.getByText("No batch assigned")).toBeVisible();
+      const trackingLink = customerPage.getByRole("link", { name: "View tracking" });
+      await expect(trackingLink).toHaveAttribute("href", /\/account\/orders\//);
+      await trackingLink.click();
+      await expect(customerPage).toHaveURL(/\/account\/orders\//, { timeout: 20_000 });
+      await expect(customerPage.getByText("No batch assigned")).toBeVisible({ timeout: 20_000 });
 
       await page.goto("/admin/batches", { waitUntil: "networkidle" });
       await page.getByLabel("Name").fill(batchName);
@@ -184,14 +187,15 @@ test("Preview persistence supports isolated customer and admin flow", async ({ p
 
       await page.goto("/admin/invoices", { waitUntil: "networkidle" });
       const invoiceIssueRow = page.locator(".invoice-issue-row").filter({ hasText: customerName }).first();
+      const orderReference = (await invoiceIssueRow.locator(".subtle").innerText()).split(" · ")[0];
       await invoiceIssueRow.getByLabel("Deposit rule").selectOption("percentage");
       await invoiceIssueRow.getByLabel("Basis points (0–10000)").fill("5000");
       await invoiceIssueRow.getByRole("button", { name: "Save draft" }).click();
-      const invoiceLink = page.getByRole("link", { name: "Open invoice operations" }).first();
-      const invoiceHref = await invoiceLink.getAttribute("href");
-      if (!invoiceHref) throw new Error("invoice detail link was not created");
+      const invoiceCard = page.locator(".card").filter({ hasText: orderReference }).last();
+      const invoiceLink = invoiceCard.getByRole("link", { name: "Open invoice operations" });
+      await expect(invoiceLink).toHaveAttribute("href", /\/admin\/invoices\//);
       await invoiceLink.click();
-      await expect(page).toHaveURL(/\/admin\/invoices\//);
+      await expect(page).toHaveURL(/\/admin\/invoices\//, { timeout: 20_000 });
       await expect(page.getByRole("button", { name: "Issue invoice" })).toBeVisible();
       const invoiceNumber = await page.getByRole("heading", { level: 1 }).innerText();
       await page.getByRole("button", { name: "Issue invoice" }).click();
