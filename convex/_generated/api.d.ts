@@ -14,6 +14,7 @@ import type * as bookVariants from "../bookVariants.js";
 import type * as books from "../books.js";
 import type * as catalogAccess from "../catalogAccess.js";
 import type * as catalogItems from "../catalogItems.js";
+import type * as invoices from "../invoices.js";
 import type * as lib_accessCodes from "../lib/accessCodes.js";
 import type * as lib_catalogView from "../lib/catalogView.js";
 import type * as lib_crypto from "../lib/crypto.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   books: typeof books;
   catalogAccess: typeof catalogAccess;
   catalogItems: typeof catalogItems;
+  invoices: typeof invoices;
   "lib/accessCodes": typeof lib_accessCodes;
   "lib/catalogView": typeof lib_catalogView;
   "lib/crypto": typeof lib_crypto;
