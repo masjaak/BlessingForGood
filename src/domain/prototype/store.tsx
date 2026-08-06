@@ -3,6 +3,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ConvexPrototypeProvider } from "@/domain/prototype/convex-store";
 import { PrototypeContext, type PrototypeContextValue } from "@/domain/prototype/context";
+import { LocalOperationsProvider } from "@/domain/prototype/operations-context";
 import { isPreviewDemoMode, isPrototypeMode } from "@/lib/environment";
 import {
   appendDepositTransaction,
@@ -206,13 +207,15 @@ function LocalPrototypeProvider({
 
   return (
     <PrototypeContext.Provider value={value}>
-      {previewDemo && dataSource === "local" ? (
-        <aside className="prototype-preview-banner" role="status">
-          <strong>Prototype Preview</strong>
-          <span>Data is stored only in this browser.</span>
-        </aside>
-      ) : null}
-      {children}
+      <LocalOperationsProvider enabled={enabled} dataSource={dataSource}>
+        {previewDemo && dataSource === "local" ? (
+          <aside className="prototype-preview-banner" role="status">
+            <strong>Prototype Preview</strong>
+            <span>Data is stored only in this browser.</span>
+          </aside>
+        ) : null}
+        {children}
+      </LocalOperationsProvider>
     </PrototypeContext.Provider>
   );
 }

@@ -111,6 +111,9 @@ function CustomerOrders() {
                 </span>
                 <Money amount={order.total} />
               </div>
+              <LinkButton href={`/account/orders/${order.id}`} variant="secondary">
+                View tracking
+              </LinkButton>
               <EditOrderForm orderId={order.id} />
               <ul className="timeline">
                 {order.statusHistory.map((event) => (

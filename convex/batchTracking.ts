@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { getBatchSummary } from "./batches";
@@ -122,7 +122,18 @@ export const getMine = query({
       .query("orderItems")
       .withIndex("by_order", (index) => index.eq("orderId", order._id))
       .take(200);
-    const sections = new Map<string, { batchId: Id<"batches">; assignments: unknown[] }>();
+    const sections = new Map<
+      string,
+      {
+        batchId: Id<"batches">;
+        assignments: Array<{
+          orderItemId: Id<"orderItems">;
+          bookTitle: string;
+          format: Doc<"orderItems">["formatSnapshot"];
+          quantity: number;
+        }>;
+      }
+    >();
     for (const item of items) {
       const assignments = await ctx.db
         .query("orderItemBatchAssignments")
@@ -155,6 +166,48 @@ export const getMine = query({
       }),
     );
     return { orderId: order._id, batches: batches.filter((batch) => batch !== null) };
+  },
+});
+
+export const getForOrderAdmin = query({
+  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    await requireSession(ctx, args.sessionToken, "admin");
+    const order = await ctx.db.get(args.orderId);
+    if (!order) fail("ORDER_NOT_FOUND");
+    const items = await ctx.db
+      .query("orderItems")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(200);
+    return {
+      orderId: order._id,
+      items: await Promise.all(
+        items.map(async (item) => {
+          const assignments = await ctx.db
+            .query("orderItemBatchAssignments")
+            .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+            .take(200);
+          return {
+            orderItemId: item._id,
+            bookTitle: item.bookTitleSnapshot,
+            format: item.formatSnapshot,
+            orderedQuantity: item.quantity,
+            assignments: await Promise.all(
+              assignments.map(async (assignment) => {
+                const batch = await ctx.db.get(assignment.batchId);
+                return {
+                  assignmentId: assignment._id,
+                  batchId: assignment.batchId,
+                  batchName: batch?.name || "Unknown batch",
+                  currentShipmentStage: batch?.currentShipmentStage || null,
+                  assignedQuantity: assignment.assignedQuantity,
+                };
+              }),
+            ),
+          };
+        }),
+      ),
+    };
   },
 });
 

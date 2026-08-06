@@ -2,11 +2,77 @@
 
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { calculateDepositRequired, calculateLedgerBalance, formatIdr } from "@/domain/prototype/logic";
+import { invoiceStatusLabel } from "@/domain/prototype/operations";
+import { useOperations } from "@/domain/prototype/operations-context";
 import { usePrototype } from "@/domain/prototype/store";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
 import { SiteShell } from "@/components/site-shell";
 
-function CustomerInvoices() {
+function PersistentCustomerInvoices() {
+  const { customerInvoiceList } = useOperations();
+  const invoices = customerInvoiceList?.page || [];
+  if (!customerInvoiceList) return <div className="state-panel">Loading persistent invoices…</div>;
+  return (
+    <div className="page narrow-page">
+      <PageHeader
+        eyebrow="Invoice status"
+        title="Know what is due, without guessing."
+        description="Invoices use immutable order-item snapshots. Deposit allocations and outstanding amounts update from Convex Preview."
+        actions={
+          <LinkButton href="/account/orders" variant="secondary">
+            View order status
+          </LinkButton>
+        }
+      />
+      {invoices.length === 0 ? (
+        <EmptyState
+          title="No invoices yet"
+          description="Your invoice will appear here after an admin creates it for a recorded order."
+          action={<LinkButton href="/catalog">Browse a catalog</LinkButton>}
+        />
+      ) : (
+        <div className="content-stack">
+          {invoices.map((invoice) => (
+            <Card key={invoice.invoiceId}>
+              <div className="split-heading">
+                <div>
+                  <span className="card-kicker">{invoice.invoiceNumber}</span>
+                  <h2>{formatIdr(invoice.totalAmount)}</h2>
+                </div>
+                <StatusBadge tone={invoice.status === "issued" ? "positive" : "warning"}>
+                  {invoiceStatusLabel(invoice.status)}
+                </StatusBadge>
+              </div>
+              {invoice.items.map((item) => (
+                <div className="summary-line" key={item.invoiceItemId}>
+                  <span>
+                    {item.quantity} × {item.description}
+                  </span>
+                  <Money amount={item.subtotalAmount} />
+                </div>
+              ))}
+              <div className="summary-line">
+                <span>Deposit requirement</span>
+                <strong>{formatIdr(invoice.depositRequiredAmount)}</strong>
+              </div>
+              <div className="summary-line">
+                <span>Allocated deposit · outstanding</span>
+                <strong>
+                  {formatIdr(invoice.allocatedDepositAmount)} · {formatIdr(invoice.outstandingAmount)}
+                </strong>
+              </div>
+              <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">
+                Open invoice and ledger
+              </LinkButton>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LegacyCustomerInvoices() {
   const { state } = usePrototype();
   return (
     <div className="page narrow-page">
@@ -65,6 +131,11 @@ function CustomerInvoices() {
       )}
     </div>
   );
+}
+
+function CustomerInvoices() {
+  const { dataSource } = usePrototype();
+  return dataSource === "convex" ? <PersistentCustomerInvoices /> : <LegacyCustomerInvoices />;
 }
 
 export default function CustomerInvoicesPage() {

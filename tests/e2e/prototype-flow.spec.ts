@@ -41,13 +41,14 @@ async function cleanupConvexTest(
 }
 
 test("Preview persistence supports isolated customer and admin flow", async ({ page, browser }, testInfo) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   const suffix = `${Date.now()}-${testInfo.project.name}`;
   const catalogName = `Browser QA ${suffix}`;
   const accessCode = `qa-code-${suffix}`;
   const publisherName = `QA Publisher ${suffix}`;
   const bookTitle = `QA Book ${suffix}`;
   const customerName = `QA Blessfriend ${suffix}`;
+  const batchName = `Browser QA Batch ${suffix}`;
   const projectSeed =
     Array.from(testInfo.project.name).reduce((sum, character) => sum + character.charCodeAt(0), 0) % 1000;
   const isbnSuffix = `${Date.now().toString().slice(-3)}${projectSeed.toString().padStart(3, "0")}`;
@@ -136,11 +137,92 @@ test("Preview persistence supports isolated customer and admin flow", async ({ p
     await expect(customerPage.getByRole("heading", { name: bookTitle })).toBeVisible();
 
     if (usesConvex) {
+      await customerPage.getByRole("link", { name: "View tracking" }).click();
+      await expect(customerPage.getByText("No batch assigned")).toBeVisible();
+
+      await page.goto("/admin/batches", { waitUntil: "networkidle" });
+      await page.getByLabel("Name").fill(batchName);
+      await page.getByLabel("Reference code").fill(`REF-${suffix}`);
+      await page.getByRole("button", { name: "Create batch" }).click();
+      const batchCard = page.locator(".card").filter({ hasText: batchName }).first();
+      await expect(batchCard).toBeVisible();
+      await batchCard.getByRole("link", { name: "Open batch operations" }).click();
+      await page.getByLabel("Catalog to link").selectOption({ label: catalogName });
+      await page.getByRole("button", { name: "Link catalog" }).click();
+      await expect(page.getByText(catalogName)).toBeVisible();
+
+      await page.goto("/admin/orders", { waitUntil: "networkidle" });
+      const operationsRow = page.getByRole("row").filter({ hasText: customerName });
+      await operationsRow.getByRole("link", { name: "Operations detail" }).click();
+      await page.getByLabel("Assignment batch").selectOption({ label: batchName });
+      await page.getByLabel("Assignment quantity").fill("1");
+      await page.getByRole("button", { name: "Assign" }).click();
+      await expect(page.locator(".summary-line").filter({ hasText: batchName }).first()).toBeVisible();
+
+      await page.goto("/admin/batches", { waitUntil: "networkidle" });
+      await page
+        .locator(".card")
+        .filter({ hasText: batchName })
+        .first()
+        .getByRole("link", { name: "Open batch operations" })
+        .click();
+      await page.getByRole("button", { name: "Advance to PO Ditutup" }).click();
+      await expect(customerPage.getByText("PO Ditutup").first()).toBeVisible();
+      await page.getByRole("button", { name: "Advance to Dipesan ke Supplier" }).click();
+      await expect(customerPage.getByText("Dipesan ke Supplier").first()).toBeVisible();
+
+      await page.goto("/admin/orders", { waitUntil: "networkidle" });
+      await page
+        .getByRole("row")
+        .filter({ hasText: customerName })
+        .getByRole("link", { name: "Operations detail" })
+        .click();
+      await page.getByRole("button", { name: "Advance to Menunggu Pelunasan" }).click();
+      await expect(customerPage.getByText("Menunggu Pelunasan").first()).toBeVisible();
+      await page.getByRole("button", { name: "Advance to Menunggu Alamat" }).click();
+      await expect(customerPage.getByText("Menunggu Alamat").first()).toBeVisible();
+
+      await page.goto("/admin/invoices", { waitUntil: "networkidle" });
+      const invoiceIssueRow = page.locator(".invoice-issue-row").filter({ hasText: customerName }).first();
+      await invoiceIssueRow.getByLabel("Deposit rule").selectOption("percentage");
+      await invoiceIssueRow.getByLabel("Basis points (0–10000)").fill("5000");
+      await invoiceIssueRow.getByRole("button", { name: "Save draft" }).click();
+      const invoiceLink = page.getByRole("link", { name: "Open invoice operations" }).first();
+      const invoiceHref = await invoiceLink.getAttribute("href");
+      if (!invoiceHref) throw new Error("invoice detail link was not created");
+      await invoiceLink.click();
+      await expect(page).toHaveURL(/\/admin\/invoices\//);
+      await expect(page.getByRole("button", { name: "Issue invoice" })).toBeVisible();
+      const invoiceNumber = await page.getByRole("heading", { level: 1 }).innerText();
+      await page.getByRole("button", { name: "Issue invoice" }).click();
+      await expect(page.getByRole("button", { name: "Void invoice" })).toBeVisible();
+
+      await customerPage.goto("/account/invoices", { waitUntil: "networkidle" });
+      await customerPage.getByRole("link", { name: "Open invoice and ledger" }).click();
+      await expect(customerPage).toHaveURL(/\/account\/invoices\//);
+      await expect(customerPage.getByRole("heading", { name: invoiceNumber })).toBeVisible();
+      await page.getByLabel("Record credit").fill("100000");
+      await page.getByLabel("Note (optional)").fill("QA deposit credit");
+      await page.getByRole("button", { name: "Append credit" }).click();
+      await expect(customerPage.locator(".summary-line").filter({ hasText: "Available" })).toContainText("100.000");
+      await page.getByLabel(/Allocate \(outstanding/).fill("50000");
+      await page.getByRole("button", { name: "Allocate deposit" }).click();
+      await expect(customerPage.locator(".summary-line").filter({ hasText: "Available" })).toContainText("50.000");
+      await expect(customerPage.locator(".summary-line").filter({ hasText: "Reserved" })).toContainText("50.000");
+      await expect(customerPage.locator(".summary-line").filter({ hasText: "Allocated to invoice" })).toContainText(
+        "50.000",
+      );
+      await page.getByRole("button", { name: "Release" }).first().click();
+      await expect(customerPage.locator(".summary-line").filter({ hasText: "Available" })).toContainText("100.000");
+      await expect(customerPage.locator(".summary-line").filter({ hasText: "Reserved" })).toContainText("0");
+
       const isolatedCustomerContext: BrowserContext = await newBrowserContext(browser, page);
       try {
         const isolatedCustomerPage = await isolatedCustomerContext.newPage();
         await isolatedCustomerPage.goto("/account/orders", { waitUntil: "networkidle" });
         await expect(isolatedCustomerPage.getByRole("heading", { name: "No orders yet" })).toBeVisible();
+        await isolatedCustomerPage.goto("/account/invoices", { waitUntil: "networkidle" });
+        await expect(isolatedCustomerPage.getByRole("heading", { name: "No invoices yet" })).toBeVisible();
         await isolatedCustomerPage.goto("/catalog", { waitUntil: "networkidle" });
         await expect(isolatedCustomerPage.getByLabel("Catalog access code")).toBeVisible();
       } finally {

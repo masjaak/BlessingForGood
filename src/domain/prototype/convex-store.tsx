@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { PrototypeContext, type PrototypeContextValue } from "@/domain/prototype/context";
+import { ConvexOperationsProvider } from "@/domain/prototype/operations-context";
 import { createInvoiceFromOrder, appendDepositTransaction } from "@/domain/prototype/logic";
 import {
   getOrCreatePrototypeSessionToken,
@@ -387,13 +388,15 @@ export function ConvexPrototypeProvider({
 
   return (
     <PrototypeContext.Provider value={value}>
-      {previewDemo ? (
-        <aside className="prototype-preview-banner" role="status">
-          <strong>Prototype Preview</strong>
-          <span>Data is stored in the BFG Preview environment.</span>
-        </aside>
-      ) : null}
-      {children}
+      <ConvexOperationsProvider enabled={enabled} role={me?.role || null} sessionToken={sessionToken}>
+        {previewDemo ? (
+          <aside className="prototype-preview-banner" role="status">
+            <strong>Prototype Preview</strong>
+            <span>Data is stored in the BFG Preview environment.</span>
+          </aside>
+        ) : null}
+        {children}
+      </ConvexOperationsProvider>
     </PrototypeContext.Provider>
   );
 }

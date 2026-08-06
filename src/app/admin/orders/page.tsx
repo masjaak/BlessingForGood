@@ -51,6 +51,10 @@ function OrderTable() {
                   <span className="subtle">{order.customerEmail || "No email"}</span>
                   <br />
                   <span className="subtle">{order.id}</span>
+                  <br />
+                  <LinkButton href={`/admin/orders/${order.id}`} variant="secondary">
+                    Operations detail
+                  </LinkButton>
                 </td>
                 <td>
                   {order.items.map((item) => (

@@ -135,6 +135,7 @@ export const cleanupTest = mutation({
     }
     const expectedName = `Browser QA ${testId}`;
     const allowedNames = new Set([expectedName, `CLI smoke ${testId}`, `CLI shape ${testId}`]);
+    const allowedBatchNames = new Set([`Browser QA Batch ${testId}`, `CLI smoke batch ${testId}`, `CLI shape batch ${testId}`]);
     const catalogSlug = slugify(expectedName, "catalog slug");
     const catalog = args.catalogId
       ? await ctx.db.get(args.catalogId)
@@ -144,6 +145,20 @@ export const cleanupTest = mutation({
           .unique();
     if (!catalog || !allowedNames.has(catalog.name) || (!args.catalogId && catalog.createdBySessionId !== admin._id)) {
       fail("TEST_CLEANUP_NOT_ALLOWED");
+    }
+
+    const batchIds = new Set<Id<"batches">>();
+    const catalogBatchLinks = await ctx.db
+      .query("catalogBatchLinks")
+      .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+      .take(500);
+    for (const link of catalogBatchLinks) {
+      batchIds.add(link.batchId);
+      await ctx.db.delete(link._id);
+    }
+    const recentBatches = await ctx.db.query("batches").withIndex("by_created_at").order("desc").take(500);
+    for (const batch of recentBatches) {
+      if (batch.createdBySessionId === admin._id && allowedBatchNames.has(batch.name)) batchIds.add(batch._id);
     }
 
     const grants = await ctx.db
@@ -174,13 +189,83 @@ export const cleanupTest = mutation({
         .query("orderItems")
         .withIndex("by_order", (query) => query.eq("orderId", order._id))
         .take(500);
-      for (const item of items) await ctx.db.delete(item._id);
+      for (const item of items) {
+        const assignments = await ctx.db
+          .query("orderItemBatchAssignments")
+          .withIndex("by_order_item", (query) => query.eq("orderItemId", item._id))
+          .take(500);
+        for (const assignment of assignments) await ctx.db.delete(assignment._id);
+        await ctx.db.delete(item._id);
+      }
       const history = await ctx.db
         .query("orderStatusHistory")
         .withIndex("by_order", (query) => query.eq("orderId", order._id))
         .take(500);
       for (const event of history) await ctx.db.delete(event._id);
+      const fulfillmentHistory = await ctx.db
+        .query("orderFulfillmentHistory")
+        .withIndex("by_order", (query) => query.eq("orderId", order._id))
+        .take(500);
+      for (const event of fulfillmentHistory) await ctx.db.delete(event._id);
+      const invoices = await ctx.db
+        .query("invoices")
+        .withIndex("by_order", (query) => query.eq("orderId", order._id))
+        .take(500);
+      for (const invoice of invoices) {
+        const invoiceItems = await ctx.db
+          .query("invoiceItems")
+          .withIndex("by_invoice", (query) => query.eq("invoiceId", invoice._id))
+          .take(500);
+        for (const item of invoiceItems) await ctx.db.delete(item._id);
+        const allocations = await ctx.db
+          .query("invoiceDepositAllocations")
+          .withIndex("by_invoice", (query) => query.eq("invoiceId", invoice._id))
+          .take(500);
+        for (const allocation of allocations) await ctx.db.delete(allocation._id);
+        const transactions = await ctx.db
+          .query("depositTransactions")
+          .withIndex("by_invoice", (query) => query.eq("invoiceId", invoice._id))
+          .take(500);
+        for (const transaction of transactions) await ctx.db.delete(transaction._id);
+        await ctx.db.delete(invoice._id);
+      }
       await ctx.db.delete(order._id);
+    }
+
+    const customer = args.customerSessionToken ? await findSession(ctx, args.customerSessionToken) : null;
+    if (customer) {
+      const account = await ctx.db
+        .query("depositAccounts")
+        .withIndex("by_customer_and_currency", (query) => query.eq("customerSessionId", customer._id).eq("currency", "IDR"))
+        .unique();
+      if (account) {
+        const transactions = await ctx.db
+          .query("depositTransactions")
+          .withIndex("by_account", (query) => query.eq("accountId", account._id))
+          .take(500);
+        for (const transaction of transactions) await ctx.db.delete(transaction._id);
+        await ctx.db.delete(account._id);
+      }
+    }
+
+    for (const batchId of batchIds) {
+      const assignments = await ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_batch", (query) => query.eq("batchId", batchId))
+        .take(500);
+      for (const assignment of assignments) await ctx.db.delete(assignment._id);
+      const history = await ctx.db
+        .query("batchStatusHistory")
+        .withIndex("by_batch", (query) => query.eq("batchId", batchId))
+        .take(500);
+      for (const event of history) await ctx.db.delete(event._id);
+      const links = await ctx.db
+        .query("catalogBatchLinks")
+        .withIndex("by_batch", (query) => query.eq("batchId", batchId))
+        .take(500);
+      for (const link of links) await ctx.db.delete(link._id);
+      const batch = await ctx.db.get(batchId);
+      if (batch?.createdBySessionId === admin._id) await ctx.db.delete(batch._id);
     }
 
     const bookIds = new Set<Id<"books">>();

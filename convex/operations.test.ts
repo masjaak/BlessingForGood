@@ -143,6 +143,39 @@ describe("BFG batches and shipment tracking", () => {
     ).rejects.toThrow("BATCH_ASSIGNMENT_EXCEEDS_QUANTITY");
   });
 
+  it("returns order assignments for the admin order workspace", async () => {
+    const t = testConvex();
+    await createAdmin(t);
+    const catalog = await createOpenCatalog(t, "Operations Order", "1005");
+    const order = await createOwnedOrder(
+      t,
+      catalog.catalogId as string,
+      catalog.variantIds[0] as string,
+      catalog.accessCode,
+    );
+    const batch = await t.mutation(api.batches.create, { sessionToken: adminToken, name: "Cargo Order" });
+    await t.mutation(api.batches.linkCatalog, {
+      sessionToken: adminToken,
+      batchId: batch.batchId,
+      catalogId: catalog.catalogId,
+    });
+    await t.mutation(api.batchTracking.assignOrderItem, {
+      sessionToken: adminToken,
+      orderItemId: order.items[0]._id,
+      batchId: batch.batchId,
+      assignedQuantity: 1,
+    });
+    const detail = await t.query(api.batchTracking.getForOrderAdmin, {
+      sessionToken: adminToken,
+      orderId: order.orderId,
+    });
+    expect(detail.items[0]).toMatchObject({
+      orderItemId: order.items[0]._id,
+      orderedQuantity: 2,
+      assignments: [{ batchId: batch.batchId, assignedQuantity: 1 }],
+    });
+  });
+
   it("persists forward shipment history and protects customer ownership", async () => {
     const t = testConvex();
     await createAdmin(t);

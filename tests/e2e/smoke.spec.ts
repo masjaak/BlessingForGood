@@ -12,6 +12,7 @@ const routes = [
   "/admin",
   "/admin/catalogs",
   "/admin/orders",
+  "/admin/batches",
   "/admin/invoices",
 ];
 
