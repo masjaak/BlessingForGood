@@ -2,7 +2,7 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-04
+last_updated: 2026-08-06
 source: conversation
 ---
 
@@ -26,7 +26,15 @@ source: conversation
 - [CONVEX VERIFIED] Convex codegen and 27 Convex tests pass on the isolated Development deployment.
 - [REPOSITORY] 51 Vitest tests, lint, typecheck, build, and the complete 60-test Playwright matrix pass across
   375×812, 768×1024, 1024×768, and 1440×900.
-- Preview deployment verification remains the final handoff step for this branch.
+- [CONVEX VERIFIED] Branch Preview `preview/feat-convex-operations-persistence-v0-1` is isolated as
+  `charming-horse-40`; the four required server-side Preview environment names are configured outside Git.
+- [PREVIEW VERIFIED] Vercel Preview `dpl_As6GRhi5NcGWCPALZMTbkMYUstJC` is READY at
+  `https://blessing-for-good-a2nl9jhjf-masjaaks-projects.vercel.app`; the build deployed all 19 App Router routes.
+- [PREVIEW VERIFIED] `60/60` Playwright tests pass against the deployed Preview, including tracking and deposit
+  realtime updates, reload persistence, targeted cleanup, and second-customer isolation.
+- [PREVIEW VERIFIED] All Phase 03.1 and Phase 03.2 business tables are empty after cleanup; no seed or dummy business
+  data is present. Vercel error-level runtime logs are empty; Convex logs contain only expected unauthenticated
+  negative-path entries from route smoke checks.
 
 ### Deferred
 

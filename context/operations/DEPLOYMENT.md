@@ -46,6 +46,12 @@ npx vercel@latest build
 npx vercel@latest deploy --logs
 ```
 
+The Preview pull does not download sensitive deploy-key values. Before a
+local Build Output check, source the existing Preview-only `CONVEX_DEPLOY_KEY`
+in process memory and confirm the Convex output says `[Preview]`; stop if it
+reports `[Production]`. Never answer a Convex Production confirmation during
+local validation.
+
 Keep `.env*` and `.vercel/` local and ignored. Never commit environment values, Vercel tokens, Clerk secrets, or Convex secrets.
 
 The shared build command intentionally has no Production Convex deploy key. Production remains fail-closed until a
@@ -69,6 +75,26 @@ Required evidence after deployment:
 - Vercel and Convex logs contain no critical errors or secret values.
 - Test-created operational records are removed by the guarded targeted
   cleanup; Development remains separate and Production remains untouched.
+
+## Final Phase 03.2 Preview verification
+
+- Branch: `feat/convex-operations-persistence-v0.1`; `main` was not changed.
+- Convex Preview: `preview/feat-convex-operations-persistence-v0-1`, deployment
+  `charming-horse-40`, URL `https://charming-horse-40.convex.cloud`.
+- Convex server-side Preview environment names were configured on the isolated
+  deployment outside Git. No Production Convex deployment or key was used.
+- Vercel Preview: `dpl_As6GRhi5NcGWCPALZMTbkMYUstJC`, READY at
+  `https://blessing-for-good-a2nl9jhjf-masjaaks-projects.vercel.app`.
+- Remote build: Convex deploy completed, all 19 App Router routes generated,
+  and the Next.js build completed successfully.
+- Browser QA: `60/60` Playwright tests passed across 375×812, 768×1024,
+  1024×768, and 1440×900, including operational persistence, realtime
+  updates, targeted cleanup, and customer isolation.
+- Zero-data check: all Phase 03.1 and Phase 03.2 business tables reported no
+  documents after cleanup; no seed or dummy business data was present.
+- Runtime logs: no Vercel error-level logs for the final run; Convex history
+  contained only expected unauthenticated negative-path entries.
+- Production and `main`: unchanged.
 
 ## Final Phase 03.1 Preview verification
 

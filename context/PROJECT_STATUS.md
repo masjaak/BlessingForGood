@@ -12,12 +12,19 @@ allocations through the existing Preview-session boundary. No Clerk, payment
 gateway, WhatsApp API, Production deployment, or automatic seed data was added.
 
 [CONVEX VERIFIED] The current code and schema are deployed to the isolated
-Convex Development deployment. Convex tests and the complete local operational
-flow pass against real Convex queries and mutations.
+Convex Development deployment and branch Preview deployment
+`preview/feat-convex-operations-persistence-v0-1` (`charming-horse-40`). Convex
+tests and the complete operational flow pass against real Convex queries and
+mutations.
 
-[REPOSITORY] Preview deployment and final zero-data/runtime-log verification are
-the remaining handoff checks. Until those checks are complete, this phase is
-not marked complete.
+[PREVIEW VERIFIED] Vercel Preview `dpl_As6GRhi5NcGWCPALZMTbkMYUstJC` is READY at
+`https://blessing-for-good-a2nl9jhjf-masjaaks-projects.vercel.app`. All 60
+Playwright tests pass across 375×812, 768×1024, 1024×768, and 1440×900.
+
+[PREVIEW VERIFIED] Tracking, fulfillment, invoice, deposit allocation,
+targeted cleanup, reload persistence, realtime updates, and second-customer
+ownership isolation pass. All Phase 03.1 and Phase 03.2 business tables are
+empty after cleanup. Production and `main` are unchanged.
 
 ## Repository intake
 
@@ -29,9 +36,9 @@ not marked complete.
 
 ## Current priority
 
-[IN PROGRESS] Phase 03.2 batch tracking, fulfillment, invoice, and deposit persistence on
-`feat/convex-operations-persistence-v0.1`. Complete Preview deployment and handoff verification without changing
-Production or `main`.
+[COMPLETE] Phase 03.2 batch tracking, fulfillment, invoice, and deposit persistence on
+`feat/convex-operations-persistence-v0.1` is verified on isolated Preview infrastructure. The next milestone is
+Phase 04 Clerk authentication, roles, and authorization; do not start it automatically.
 
 ## Active constraints
 
@@ -94,6 +101,6 @@ access-code/session errors from browser QA and teardown; no secret values were l
 
 ## Status
 
-`in progress` — Phase 03.1 remains validated on its dedicated branch. Phase 03.2 implementation and Development
-verification are complete; isolated Preview verification is pending. No merge to `main` or Production deployment
-has been performed.
+`complete` — Phase 03.1 remains validated on its dedicated branch. Phase 03.2 implementation, Development
+verification, isolated Convex Preview verification, Vercel Preview verification, and handoff documentation are
+complete. No merge to `main` or Production deployment has been performed.

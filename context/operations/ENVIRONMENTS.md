@@ -18,6 +18,9 @@
   sharing business data.
 - [PREVIEW VERIFIED] The final Preview flow passed with zero initial business records; created QA records were
   explicitly cleaned. Production was not deployed or modified.
+- [PREVIEW VERIFIED] Phase 03.2 branch Preview is `charming-horse-40` and uses the server-side Preview names
+  `BFG_CATALOG_CODE_PEPPER`, `BFG_PREVIEW_ADMIN_ACCESS_CODE`, `BFG_PREVIEW_DEMO_MODE`, and
+  `BFG_SESSION_TOKEN_PEPPER`. Values remain outside Git and are not included in reports.
 
 ## Phase 03.2 boundary
 

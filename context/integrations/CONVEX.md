@@ -57,8 +57,10 @@ customer ownership, and zero-data behavior.
 
 [REPOSITORY] The full browser matrix passes against real Convex Development:
 60/60 tests across 375×812, 768×1024, 1024×768, and 1440×900. The final
-branch-scoped Preview verification is recorded in the Phase 03.2 handoff after
-deployment.
+[PREVIEW VERIFIED] The same 60/60 matrix passes against the branch-scoped
+Preview deployment `charming-horse-40`. The four server-side Preview
+environment names are configured on that deployment outside Git; no
+Production Convex deployment or key is configured.
 
 ## Deferred
 

@@ -1,7 +1,7 @@
 # Phase 03.2 — Batch tracking, invoice & deposit persistence
 
-Status: implementation complete; isolated Preview handoff pending until the
-deployment verification section is updated.
+Status: complete; isolated Convex Preview and Vercel Preview verification is
+recorded below.
 
 ## Objective
 
@@ -101,14 +101,36 @@ invoice and deposit updates, release behavior, and second-customer isolation.
 
 ## Preview handoff checklist
 
-Update this section only after evidence exists:
+- [x] isolated Convex Preview deployment identified by name
+- [x] Vercel Preview is READY from this branch
+- [x] Preview route and runtime-log checks pass
+- [x] Preview operational E2E passes with targeted cleanup
+- [x] new operational tables are empty after cleanup
+- [x] Development remains separate and Production remains untouched
 
-- [ ] isolated Convex Preview deployment identified by name
-- [ ] Vercel Preview is READY from this branch
-- [ ] Preview route and runtime-log checks pass
-- [ ] Preview operational E2E passes with targeted cleanup
-- [ ] new operational tables are empty before QA and after cleanup
-- [ ] Development remains separate and Production remains untouched
+## Preview verification
+
+[PREVIEW VERIFIED] Convex Preview deployment
+`preview/feat-convex-operations-persistence-v0-1` is `charming-horse-40` at
+`https://charming-horse-40.convex.cloud`. The current branch schema and
+functions are deployed, and the four server-side Preview environment names
+are configured outside Git. No Production Convex deployment was selected.
+
+[PREVIEW VERIFIED] Vercel Preview deployment
+`dpl_As6GRhi5NcGWCPALZMTbkMYUstJC` is READY at
+`https://blessing-for-good-a2nl9jhjf-masjaaks-projects.vercel.app`. The remote
+build deployed the Convex functions and generated all 19 App Router routes.
+
+[PREVIEW VERIFIED] `60/60` Playwright tests pass across 375×812, 768×1024,
+1024×768, and 1440×900. The operational flow proves batch assignment,
+shipment and fulfillment realtime updates, invoice snapshots, deposit credit,
+allocation, release, reload persistence, targeted cleanup, and
+cross-customer isolation.
+
+[PREVIEW VERIFIED] All Phase 03.1 and Phase 03.2 business tables report no
+documents after guarded cleanup. Vercel has no error-level runtime logs for
+the final run. Convex history contains only expected unauthenticated
+negative-path entries from route smoke checks; no secret values are logged.
 
 ## Known limitations
 
@@ -120,5 +142,6 @@ authorization before real customer or financial use.
 
 ## Exit gate
 
-Completion requires the Preview checklist above, no committed secrets, no seed
-records, no Production changes, and no merge to `main`.
+Completion is satisfied: the Preview checklist is complete, no secrets or seed
+records are committed, Production is unchanged, and no merge to `main` was
+performed.
