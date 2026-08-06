@@ -197,6 +197,110 @@ describe("BFG Convex core persistence", () => {
     ).rejects.toThrow("ORDER_LOCKED");
   });
 
+  it("enforces role, catalog, book, variant, and access invariants", async () => {
+    const t = testConvex();
+    const admin = await createAdmin(t);
+    const publisherId = await t.mutation(api.publishers.create, { sessionToken: admin, name: "Invariant Publisher" });
+    await expect(
+      t.mutation(api.publishers.create, { sessionToken: admin, name: "Invariant Publisher" }),
+    ).rejects.toThrow("DUPLICATE_SLUG");
+
+    await t.mutation(api.prototypeSessions.createCustomer, { token: secondCustomerToken });
+    await expect(
+      t.mutation(api.publishers.create, { sessionToken: secondCustomerToken, name: "Customer Publisher" }),
+    ).rejects.toThrow("ADMIN_REQUIRED");
+
+    const bookId = await t.mutation(api.books.create, {
+      sessionToken: admin,
+      publisherId,
+      title: "Invariant Book",
+    });
+    await expect(
+      t.mutation(api.books.create, { sessionToken: admin, publisherId, title: "Invariant Book" }),
+    ).rejects.toThrow("DUPLICATE_SLUG");
+    const variantId = await t.mutation(api.bookVariants.create, {
+      sessionToken: admin,
+      bookId,
+      format: "BB",
+      isbn: "9780000011111",
+      priceAmount: 100000,
+    });
+    await expect(
+      t.mutation(api.bookVariants.create, {
+        sessionToken: admin,
+        bookId,
+        format: "PB",
+        isbn: "9780000011111",
+        priceAmount: 100000,
+      }),
+    ).rejects.toThrow("DUPLICATE_ISBN");
+    await expect(
+      t.mutation(api.bookVariants.create, {
+        sessionToken: admin,
+        bookId,
+        format: "PB",
+        isbn: "9780000011112",
+        priceAmount: -1,
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+    await expect(
+      t.mutation(api.bookVariants.create, {
+        sessionToken: admin,
+        bookId,
+        format: "BB",
+        isbn: "9780000011113",
+        priceAmount: 100000,
+      }),
+    ).rejects.toThrow("DUPLICATE_VARIANT");
+    await expect(
+      t.mutation(api.bookVariants.create, {
+        sessionToken: admin,
+        bookId,
+        format: "XX" as never,
+        isbn: "9780000011114",
+        priceAmount: 100000,
+      }),
+    ).rejects.toThrow();
+    expect(variantId).toBeDefined();
+
+    const bundle = await createOpenCatalog(t, admin);
+    await t.mutation(api.prototypeSessions.createCustomer, { token: customerToken });
+    await t.mutation(api.catalogAccess.unlock, { sessionToken: customerToken, accessCode: "catalog-secret" });
+    await expect(
+      t.mutation(api.orders.submit, {
+        sessionToken: customerToken,
+        catalogId: bundle.catalogId,
+        customerName: "Empty Order",
+        items: [],
+      }),
+    ).rejects.toThrow("ORDER_EMPTY");
+
+    await t.run(async (ctx) => {
+      const grant = await ctx.db.query("catalogAccessGrants").first();
+      if (!grant) throw new Error("grant missing");
+      await ctx.db.patch(grant._id, { expiresAt: 0 });
+    });
+    await expect(
+      t.mutation(api.orders.submit, {
+        sessionToken: customerToken,
+        catalogId: bundle.catalogId,
+        customerName: "Expired Grant",
+        items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      }),
+    ).rejects.toThrow("ACCESS_GRANT_REQUIRED");
+
+    await t.mutation(api.catalogAccess.unlock, { sessionToken: customerToken, accessCode: "catalog-secret" });
+    await t.mutation(api.secretCatalogs.close, { sessionToken: admin, catalogId: bundle.catalogId });
+    await expect(
+      t.mutation(api.orders.submit, {
+        sessionToken: customerToken,
+        catalogId: bundle.catalogId,
+        customerName: "Closed Catalog",
+        items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      }),
+    ).rejects.toThrow("CATALOG_NOT_OPEN");
+  });
+
   it("cleans only the explicitly identified Browser QA catalog", async () => {
     const t = testConvex();
     const admin = await createAdmin(t);
