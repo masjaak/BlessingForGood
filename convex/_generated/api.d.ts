@@ -26,6 +26,7 @@ import type * as lib_previewCapability from "../lib/previewCapability.js";
 import type * as lib_sessions from "../lib/sessions.js";
 import type * as lib_shipmentTransitions from "../lib/shipmentTransitions.js";
 import type * as lib_validation from "../lib/validation.js";
+import type * as orderFulfillment from "../orderFulfillment.js";
 import type * as orders from "../orders.js";
 import type * as prototypeSessions from "../prototypeSessions.js";
 import type * as publishers from "../publishers.js";
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   "lib/sessions": typeof lib_sessions;
   "lib/shipmentTransitions": typeof lib_shipmentTransitions;
   "lib/validation": typeof lib_validation;
+  orderFulfillment: typeof orderFulfillment;
   orders: typeof orders;
   prototypeSessions: typeof prototypeSessions;
   publishers: typeof publishers;
