@@ -239,6 +239,25 @@ p {
   color: var(--ink);
   border-color: var(--color-brand-peach);
 }
+.site-auth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.site-auth button {
+  padding: 8px 10px;
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+}
+.site-auth button:hover {
+  color: var(--ink);
+  border-color: var(--color-brand-peach);
+}
 .page {
   width: min(calc(100% - 40px), var(--content));
   margin: 0 auto;

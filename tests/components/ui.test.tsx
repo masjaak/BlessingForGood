@@ -1,10 +1,17 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import HomePage from "@/app/page";
 import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+
+vi.mock("@clerk/nextjs", () => ({
+  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SignInButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
+  SignUpButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
+  UserButton: () => <button aria-label="User profile" type="button" />,
+}));
 
 describe("public UI foundation", () => {
   it("renders one accessible page heading and named navigation links", () => {
@@ -46,6 +53,14 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
     expect(screen.getByRole("link", { name: "Orders" }).getAttribute("href")).toBe("/account/orders");
     expect(screen.getByRole("link", { name: "Account" }).getAttribute("href")).toBe("/account/invoices");
+  });
+
+  it("exposes Clerk authentication controls without adding public admin links", () => {
+    render(<SiteShell>Navigation content</SiteShell>);
+
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Accept invitation" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "User profile" })).toBeTruthy();
   });
 
   it("gives the welcome screen one branded entry point per supported path", () => {

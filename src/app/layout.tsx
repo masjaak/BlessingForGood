@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { PrototypeProvider } from "@/domain/prototype/store";
 import "./globals.css";
 
@@ -17,7 +18,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        <PrototypeProvider previewEnvironment={isPreviewEnvironment}>{children}</PrototypeProvider>
+        <ClerkProvider>
+          <PrototypeProvider previewEnvironment={isPreviewEnvironment}>{children}</PrototypeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

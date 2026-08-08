@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 
 const customerLinks = [
@@ -28,6 +29,15 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="site-auth" aria-label="Account access">
+          <Show when="signed-out">
+            <SignInButton mode="modal">Sign in</SignInButton>
+            <SignUpButton mode="modal">Accept invitation</SignUpButton>
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
+        </div>
       </header>
       <main>{children}</main>
       <footer className="site-footer">
