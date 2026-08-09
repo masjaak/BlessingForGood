@@ -11,14 +11,17 @@ import {
 } from "./validators";
 
 const bookFormat = bookFormatValidator;
-const sessionRole = v.union(v.literal("customer"), v.literal("admin"));
+const legacySessionRole = v.union(v.literal("customer"), v.literal("admin"));
+const role = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer"));
+const userStatus = v.union(v.literal("active"), v.literal("suspended"));
 const catalogStatus = v.union(v.literal("draft"), v.literal("open"), v.literal("closed"), v.literal("archived"));
 const orderStatus = v.union(v.literal("submitted"), v.literal("cancelled"), v.literal("completed"));
 
 export default defineSchema({
+  // Retained only for isolated legacy tests/local fallback. Active Preview never reads or writes this table.
   prototypeSessions: defineTable({
     tokenDigest: v.string(),
-    role: sessionRole,
+    role: legacySessionRole,
     createdAt: v.number(),
     expiresAt: v.number(),
     lastSeenAt: v.optional(v.number()),
@@ -29,13 +32,71 @@ export default defineSchema({
     .index("by_token_digest", ["tokenDigest"])
     .index("by_expiration", ["expiresAt"]),
 
+  appUsers: defineTable({
+    clerkUserId: v.string(),
+    role,
+    status: userStatus,
+    emailSnapshot: v.optional(v.string()),
+    displayNameSnapshot: v.optional(v.string()),
+    imageUrlSnapshot: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastSeenAt: v.number(),
+    suspendedAt: v.optional(v.number()),
+    suspendedByUserId: v.optional(v.id("appUsers")),
+  })
+    .index("by_clerk_user_id", ["clerkUserId"])
+    .index("by_role", ["role"])
+    .index("by_status", ["status"])
+    .index("by_role_and_status", ["role", "status"])
+    .index("by_created_at", ["createdAt"]),
+
+  customerProfiles: defineTable({
+    userId: v.id("appUsers"),
+    displayName: v.string(),
+    phone: v.optional(v.string()),
+    whatsappNumber: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_id", ["userId"]),
+
+  customerAddresses: defineTable({
+    userId: v.id("appUsers"),
+    label: v.string(),
+    recipientName: v.string(),
+    phone: v.string(),
+    addressLine1: v.string(),
+    addressLine2: v.optional(v.string()),
+    city: v.string(),
+    province: v.string(),
+    postalCode: v.string(),
+    isDefault: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_user_id_and_default", ["userId", "isDefault"])
+    .index("by_user_id_and_created_at", ["userId", "createdAt"]),
+
+  auditEvents: defineTable({
+    actorUserId: v.id("appUsers"),
+    action: v.string(),
+    targetType: v.string(),
+    targetId: v.string(),
+    createdAt: v.number(),
+    safeMetadata: v.optional(v.record(v.string(), v.string())),
+  })
+    .index("by_actor_user_id", ["actorUserId"])
+    .index("by_target", ["targetType", "targetId"])
+    .index("by_created_at", ["createdAt"]),
+
   publishers: defineTable({
     name: v.string(),
     slug: v.string(),
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_slug", ["slug"])
     .index("by_active", ["isActive"])
@@ -50,7 +111,7 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_publisher", ["publisherId"])
     .index("by_publisher_and_slug", ["publisherId", "slug"])
@@ -80,7 +141,7 @@ export default defineSchema({
     closesAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_slug", ["slug"])
     .index("by_status", ["status"])
@@ -115,19 +176,19 @@ export default defineSchema({
     .index("by_catalog_and_variant", ["catalogId", "bookVariantId"]),
 
   catalogAccessGrants: defineTable({
-    sessionId: v.id("prototypeSessions"),
+    appUserId: v.id("appUsers"),
     catalogId: v.id("secretCatalogs"),
     grantedAt: v.number(),
     expiresAt: v.number(),
     revokedAt: v.optional(v.number()),
   })
-    .index("by_session", ["sessionId"])
-    .index("by_session_and_catalog", ["sessionId", "catalogId"])
+    .index("by_app_user_id", ["appUserId"])
+    .index("by_app_user_id_and_catalog_id", ["appUserId", "catalogId"])
     .index("by_catalog", ["catalogId"])
     .index("by_expiration", ["expiresAt"]),
 
   orders: defineTable({
-    sessionId: v.id("prototypeSessions"),
+    customerUserId: v.id("appUsers"),
     catalogId: v.id("secretCatalogs"),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
@@ -143,11 +204,11 @@ export default defineSchema({
     editableUntil: v.number(),
     cancelledAt: v.optional(v.number()),
   })
-    .index("by_session", ["sessionId"])
+    .index("by_customer_user_id", ["customerUserId"])
     .index("by_catalog", ["catalogId"])
     .index("by_status", ["status"])
     .index("by_catalog_and_status", ["catalogId", "status"])
-    .index("by_session_and_created_at", ["sessionId", "createdAt"])
+    .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_created_at", ["createdAt"]),
 
   orderItems: defineTable({
@@ -174,7 +235,7 @@ export default defineSchema({
     fromStatus: v.optional(orderStatus),
     toStatus: orderStatus,
     changedAt: v.number(),
-    changedBySessionId: v.id("prototypeSessions"),
+    changedByUserId: v.id("appUsers"),
     note: v.optional(v.string()),
   })
     .index("by_order", ["orderId"])
@@ -187,7 +248,7 @@ export default defineSchema({
     currentShipmentStage: v.optional(shipmentStageValidator),
     createdAt: v.number(),
     updatedAt: v.number(),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
     isArchived: v.boolean(),
   })
     .index("by_reference_code", ["referenceCode"])
@@ -199,7 +260,7 @@ export default defineSchema({
     catalogId: v.id("secretCatalogs"),
     batchId: v.id("batches"),
     createdAt: v.number(),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_catalog", ["catalogId"])
     .index("by_batch", ["batchId"])
@@ -211,7 +272,7 @@ export default defineSchema({
     assignedQuantity: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
-    assignedBySessionId: v.id("prototypeSessions"),
+    assignedByUserId: v.id("appUsers"),
   })
     .index("by_order_item", ["orderItemId"])
     .index("by_batch", ["batchId"])
@@ -222,7 +283,7 @@ export default defineSchema({
     fromStage: v.optional(shipmentStageValidator),
     toStage: shipmentStageValidator,
     changedAt: v.number(),
-    changedBySessionId: v.id("prototypeSessions"),
+    changedByUserId: v.id("appUsers"),
     note: v.optional(v.string()),
   })
     .index("by_batch", ["batchId"])
@@ -234,7 +295,7 @@ export default defineSchema({
     fromStage: v.optional(fulfillmentStageValidator),
     toStage: fulfillmentStageValidator,
     changedAt: v.number(),
-    changedBySessionId: v.id("prototypeSessions"),
+    changedByUserId: v.id("appUsers"),
     note: v.optional(v.string()),
   })
     .index("by_order", ["orderId"])
@@ -243,7 +304,7 @@ export default defineSchema({
 
   invoices: defineTable({
     orderId: v.id("orders"),
-    customerSessionId: v.id("prototypeSessions"),
+    customerUserId: v.id("appUsers"),
     invoiceNumber: v.string(),
     status: invoiceStatusValidator,
     currency: v.literal("IDR"),
@@ -258,13 +319,13 @@ export default defineSchema({
     updatedAt: v.number(),
     issuedAt: v.optional(v.number()),
     voidedAt: v.optional(v.number()),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_order", ["orderId"])
-    .index("by_customer", ["customerSessionId"])
+    .index("by_customer_user_id", ["customerUserId"])
     .index("by_status", ["status"])
     .index("by_invoice_number", ["invoiceNumber"])
-    .index("by_customer_and_created_at", ["customerSessionId", "createdAt"])
+    .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_created_at", ["createdAt"]),
 
   invoiceItems: defineTable({
@@ -284,15 +345,15 @@ export default defineSchema({
     .index("by_order_item", ["orderItemId"]),
 
   depositAccounts: defineTable({
-    customerSessionId: v.id("prototypeSessions"),
+    userId: v.id("appUsers"),
     currency: v.literal("IDR"),
     availableAmount: v.number(),
     reservedAmount: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_customer", ["customerSessionId"])
-    .index("by_customer_and_currency", ["customerSessionId", "currency"]),
+    .index("by_user_id", ["userId"])
+    .index("by_user_id_and_currency", ["userId", "currency"]),
 
   depositTransactions: defineTable({
     accountId: v.id("depositAccounts"),
@@ -305,7 +366,7 @@ export default defineSchema({
     reversedByTransactionId: v.optional(v.id("depositTransactions")),
     note: v.optional(v.string()),
     createdAt: v.number(),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_account", ["accountId"])
     .index("by_account_and_created_at", ["accountId", "createdAt"])
@@ -321,7 +382,7 @@ export default defineSchema({
     createdAt: v.number(),
     releasedAt: v.optional(v.number()),
     releasedByTransactionId: v.optional(v.id("depositTransactions")),
-    createdBySessionId: v.id("prototypeSessions"),
+    createdByUserId: v.id("appUsers"),
   })
     .index("by_invoice", ["invoiceId"])
     .index("by_account", ["accountId"])

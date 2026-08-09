@@ -14,11 +14,15 @@ import type * as bookVariants from "../bookVariants.js";
 import type * as books from "../books.js";
 import type * as catalogAccess from "../catalogAccess.js";
 import type * as catalogItems from "../catalogItems.js";
+import type * as customerAddresses from "../customerAddresses.js";
+import type * as customerProfiles from "../customerProfiles.js";
 import type * as depositAccounts from "../depositAccounts.js";
 import type * as depositTransactions from "../depositTransactions.js";
 import type * as invoiceDepositAllocations from "../invoiceDepositAllocations.js";
 import type * as invoices from "../invoices.js";
 import type * as lib_accessCodes from "../lib/accessCodes.js";
+import type * as lib_audit from "../lib/audit.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogView from "../lib/catalogView.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_depositLedger from "../lib/depositLedger.js";
@@ -35,6 +39,7 @@ import type * as orders from "../orders.js";
 import type * as prototypeSessions from "../prototypeSessions.js";
 import type * as publishers from "../publishers.js";
 import type * as secretCatalogs from "../secretCatalogs.js";
+import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 
 import type {
@@ -50,11 +55,15 @@ declare const fullApi: ApiFromModules<{
   books: typeof books;
   catalogAccess: typeof catalogAccess;
   catalogItems: typeof catalogItems;
+  customerAddresses: typeof customerAddresses;
+  customerProfiles: typeof customerProfiles;
   depositAccounts: typeof depositAccounts;
   depositTransactions: typeof depositTransactions;
   invoiceDepositAllocations: typeof invoiceDepositAllocations;
   invoices: typeof invoices;
   "lib/accessCodes": typeof lib_accessCodes;
+  "lib/audit": typeof lib_audit;
+  "lib/auth": typeof lib_auth;
   "lib/catalogView": typeof lib_catalogView;
   "lib/crypto": typeof lib_crypto;
   "lib/depositLedger": typeof lib_depositLedger;
@@ -71,6 +80,7 @@ declare const fullApi: ApiFromModules<{
   prototypeSessions: typeof prototypeSessions;
   publishers: typeof publishers;
   secretCatalogs: typeof secretCatalogs;
+  users: typeof users;
   validators: typeof validators;
 }>;
 

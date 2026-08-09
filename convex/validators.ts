@@ -26,7 +26,8 @@ export const depositTransactionTypeValidator = v.union(
   v.literal("reversal"),
 );
 export const allocationStatusValidator = v.union(v.literal("active"), v.literal("released"), v.literal("reversed"));
-export const sessionTokenValidator = v.string();
+export const roleValidator = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer"));
+export const userStatusValidator = v.union(v.literal("active"), v.literal("suspended"));
 export const paginationValidator = v.object({
   numItems: v.number(),
   cursor: v.union(v.string(), v.null()),
