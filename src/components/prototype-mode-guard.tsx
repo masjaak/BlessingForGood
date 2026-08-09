@@ -1,92 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { SignInButton, UserButton } from "@clerk/nextjs";
 import type { ReactNode } from "react";
 import { usePrototype } from "@/domain/prototype/store";
-
-function AdminAccessGate({ claimAdmin }: { claimAdmin: (accessCode: string) => Promise<boolean> }) {
-  const [accessCode, setAccessCode] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setSubmitting(true);
-    try {
-      if (!(await claimAdmin(accessCode))) setError("Admin access could not be verified.");
-      else setAccessCode("");
-    } catch {
-      setError("Admin access could not be verified.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="guard-card">
-      <span className="eyebrow">Preview admin boundary</span>
-      <h1>Unlock the admin workspace</h1>
-      <p>This guarded Preview session is separate from production authentication.</p>
-      <form className="form-card" onSubmit={handleSubmit}>
-        <label className="field">
-          <span className="field-label">Preview admin access code</span>
-          <input
-            className="input"
-            type="password"
-            value={accessCode}
-            onChange={(event) => setAccessCode(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {error ? (
-          <p className="error-text" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <button className="button button-primary" type="submit" disabled={submitting}>
-          {submitting ? "Checking access…" : "Unlock admin workspace"}
-        </button>
-      </form>
-    </div>
-  );
-}
 
 export function PrototypeModeGuard({
   children,
   requiredRole,
 }: {
   children: ReactNode;
-  requiredRole?: "admin" | "customer";
+  requiredRole?: "admin" | "customer" | "owner";
 }) {
-  const { enabled, hydrated, dataSource, sessionRole, claimAdmin } = usePrototype();
+  const { enabled, hydrated, dataSource, sessionRole, userStatus, authState } = usePrototype();
 
-  if (dataSource === "unavailable") {
+  if (dataSource === "unavailable" || authState === "configuration-missing") {
     return (
       <div className="guard-card">
         <span className="eyebrow">Prototype boundary</span>
         <h1>Convex Preview configuration is missing</h1>
-        <p>The Preview prototype fails closed until a valid Convex deployment URL is configured.</p>
+        <p>Protected data is unavailable until the isolated Convex deployment is configured.</p>
       </div>
     );
   }
-
   if (!enabled) {
     return (
       <div className="guard-card">
         <span className="eyebrow">Prototype boundary</span>
         <h1>Prototype mode is off</h1>
-        <p>
-          Protected prototype flows fail closed. Run this local app with
-          <code>NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true</code>, or explicitly enable
-          <code>NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE=true</code> for a Vercel Preview.
-        </p>
+        <p>This protected flow fails closed until the local prototype is explicitly enabled.</p>
       </div>
     );
   }
-
-  if (!hydrated) return <div className="state-panel">Preparing the empty prototype workspace…</div>;
-  if (requiredRole === "admin" && sessionRole !== "admin") return <AdminAccessGate claimAdmin={claimAdmin} />;
+  if (authState === "signed-out") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Authentication required</span>
+        <h1>Masuk untuk melanjutkan</h1>
+        <p>BFG is invite-only. Use your Clerk Development invitation to continue.</p>
+        <SignInButton mode="redirect">Masuk</SignInButton>
+      </div>
+    );
+  }
+  if (authState === "suspended" || userStatus === "suspended") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Account suspended</span>
+        <h1>Protected access is unavailable</h1>
+        <p>Your BFG account is suspended. You can sign out below.</p>
+        <UserButton />
+      </div>
+    );
+  }
+  if (authState === "network-error") {
+    return <div className="state-panel">BFG authentication could not be confirmed. Try again.</div>;
+  }
+  if (!hydrated || authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
+    return <div className="state-panel">Confirming your BFG access…</div>;
+  }
+  const allowed =
+    !requiredRole ||
+    (requiredRole === "admin" && (sessionRole === "admin" || sessionRole === "owner")) ||
+    (requiredRole === "owner" && sessionRole === "owner") ||
+    (requiredRole === "customer" && sessionRole === "customer");
+  if (!allowed) {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Permission denied</span>
+        <h1>This workspace is not available</h1>
+        <p>Your authenticated BFG role does not allow this resource.</p>
+      </div>
+    );
+  }
   return children;
 }

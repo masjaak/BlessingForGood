@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
+import { AdminShellLink } from "@/components/admin-shell-link";
 
 const customerLinks = [
   { href: "/", label: "Home" },
@@ -9,6 +10,8 @@ const customerLinks = [
   { href: "/ready-stock", label: "Ready Stock" },
   { href: "/account/orders", label: "Orders" },
   { href: "/account/invoices", label: "Account" },
+  { href: "/account/profile", label: "Profile" },
+  { href: "/account/addresses", label: "Addresses" },
 ];
 
 const supportLinks = [
@@ -23,16 +26,18 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <header className="site-header">
         <BrandLogo />
         <nav className="site-nav" aria-label="Primary navigation">
-          {customerLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              {link.label}
-            </Link>
-          ))}
+          <Show when="signed-in">
+            <AdminShellLink />
+            {customerLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            ))}
+          </Show>
         </nav>
         <div className="site-auth" aria-label="Account access">
           <Show when="signed-out">
-            <SignInButton mode="modal">Sign in</SignInButton>
-            <SignUpButton mode="modal">Accept invitation</SignUpButton>
+            <SignInButton mode="redirect">Masuk</SignInButton>
           </Show>
           <Show when="signed-in">
             <UserButton />

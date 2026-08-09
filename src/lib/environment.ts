@@ -10,3 +10,7 @@ export function isPrototypeMode(env: Environment, isPreviewEnvironment = false):
     isPreviewDemoMode(env, isPreviewEnvironment)
   );
 }
+
+export function shouldUseConvex(env: Environment, isPreviewEnvironment: boolean, hasConvexUrl: boolean): boolean {
+  return hasConvexUrl && (isPreviewEnvironment || isPrototypeMode(env, isPreviewEnvironment));
+}

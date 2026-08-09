@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
@@ -8,14 +9,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { PrototypeContext, type PrototypeContextValue } from "@/domain/prototype/context";
 import { ConvexOperationsProvider } from "@/domain/prototype/operations-context";
 import { createInvoiceFromOrder, appendDepositTransaction } from "@/domain/prototype/logic";
-import {
-  getOrCreatePrototypeSessionToken,
-  getStoredPrototypeRole,
-  getStoredUnlockedCatalogId,
-  setStoredUnlockedCatalogId,
-  setStoredPrototypeRole,
-  type PrototypeRole,
-} from "@/domain/prototype/session";
+import { getStoredUnlockedCatalogId, setStoredUnlockedCatalogId } from "@/domain/prototype/session";
 import type {
   BookFormat,
   CreateCatalogInput,
@@ -135,14 +129,15 @@ export function ConvexPrototypeProvider({
   enabled: boolean;
   previewDemo: boolean;
 }) {
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [sessionReady, setSessionReady] = useState(false);
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
-  const [storedRole, setStoredRole] = useState<PrototypeRole | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState(false);
 
-  const createCustomer = useMutation(api.prototypeSessions.createCustomer);
-  const claimAdminMutation = useMutation(api.prototypeSessions.claimAdmin);
+  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
+
+  const ensureCurrentUser = useMutation(api.users.ensureCurrentUser);
   const createBundle = useMutation(api.secretCatalogs.createBundle);
   const openCatalog = useMutation(api.secretCatalogs.open);
   const closeCatalogMutation = useMutation(api.secretCatalogs.close);
@@ -151,75 +146,76 @@ export function ConvexPrototypeProvider({
   const edit = useMutation(api.orders.edit);
   const updateStatus = useMutation(api.orders.updateStatus);
 
-  const me = useQuery(api.prototypeSessions.me, sessionToken ? { token: sessionToken } : "skip");
+  const me = useQuery(api.users.current, enabled && isSignedIn && isAuthenticated ? {} : "skip");
+  const activeUser = me?.status === "active" && isAuthenticated;
+  const isAdmin = activeUser && (me?.role === "admin" || me?.role === "owner");
+  const isCustomer = activeUser && me?.role === "customer";
   const adminCatalogs = useQuery(
     api.secretCatalogs.list,
-    me?.role === "admin" && sessionToken ? { sessionToken, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const adminOrders = useQuery(
     api.orders.listForAdmin,
-    me?.role === "admin" && sessionToken ? { sessionToken, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const unlocked = useQuery(
     api.catalogAccess.getUnlocked,
-    me?.role === "customer" && sessionToken && unlockedCatalogId
-      ? { sessionToken, catalogId: unlockedCatalogId as Id<"secretCatalogs"> }
-      : "skip",
+    isCustomer && unlockedCatalogId ? { catalogId: unlockedCatalogId as Id<"secretCatalogs"> } : "skip",
   );
   const customerOrders = useQuery(
     api.orders.listMine,
-    me?.role === "customer" && sessionToken ? { sessionToken, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isCustomer ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
 
   useEffect(() => {
     if (!enabled) return;
     queueMicrotask(() => {
-      setSessionToken(getOrCreatePrototypeSessionToken());
       setUnlockedCatalogId(getStoredUnlockedCatalogId());
-      setStoredRole(getStoredPrototypeRole());
     });
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || !sessionToken) return;
+    if (!enabled || !isLoaded || !isSignedIn || convexAuthLoading || !isAuthenticated || me !== null || provisioning)
+      return;
     let active = true;
-    void createCustomer({ token: sessionToken })
-      .then((result) => {
-        if (!active) return;
-        setStoredRole(result.role);
-        setSessionReady(true);
-      })
-      .catch(() => {
-        if (active) setSessionReady(true);
-      });
+    queueMicrotask(() => {
+      if (!active) return;
+      setProvisioning(true);
+      setProvisionError(false);
+      void ensureCurrentUser({})
+        .catch(() => {
+          if (active) setProvisionError(true);
+        })
+        .finally(() => {
+          if (active) setProvisioning(false);
+        });
+    });
     return () => {
       active = false;
     };
-  }, [createCustomer, enabled, sessionToken]);
+  }, [convexAuthLoading, enabled, ensureCurrentUser, isAuthenticated, isLoaded, isSignedIn, me, provisioning]);
 
   const catalogs = useMemo(
     () =>
-      me?.role === "admin"
+      isAdmin
         ? pageOf(adminCatalogs)
             .map((catalog) => asCatalog(catalog as CatalogView))
             .filter(Boolean)
         : [asCatalog(unlocked as CatalogView | null | undefined)].filter(Boolean),
-    [adminCatalogs, me?.role, unlocked],
+    [adminCatalogs, isAdmin, unlocked],
   ) as SecretCatalog[];
   const orders = useMemo(
     () =>
-      (me?.role === "admin" ? pageOf(adminOrders) : pageOf(customerOrders))
+      (isAdmin ? pageOf(adminOrders) : pageOf(customerOrders))
         .map((order) => asOrder(order as OrderView))
         .filter(Boolean),
-    [adminOrders, customerOrders, me?.role],
+    [adminOrders, customerOrders, isAdmin],
   ) as Order[];
   const state = useMemo<PrototypeState>(() => ({ catalogs, orders, invoices }), [catalogs, invoices, orders]);
 
   const createCatalog = useCallback(
     async (input: CreateCatalogInput) => {
-      if (!sessionToken) throw new Error("Preview session is not ready");
       const bundle = await createBundle({
-        sessionToken,
         name: input.name,
         publisherName: input.publisher,
         bookTitle: input.title,
@@ -231,18 +227,17 @@ export function ConvexPrototypeProvider({
           priceAmount: variant.price,
         })),
       });
-      const opened = await openCatalog({ sessionToken, catalogId: bundle.catalogId });
+      const opened = await openCatalog({ catalogId: bundle.catalogId });
       const catalog = asCatalog(opened as CatalogView);
       if (!catalog) throw new Error("catalog creation failed");
       return catalog;
     },
-    [createBundle, openCatalog, sessionToken],
+    [createBundle, openCatalog],
   );
 
   const unlockCatalog = useCallback(
     async (accessCode: string) => {
-      if (!sessionToken) throw new Error("Preview session is not ready");
-      const result = await unlock({ sessionToken, accessCode });
+      const result = await unlock({ accessCode });
       const catalog = asCatalog((result as UnlockView).catalog as CatalogView);
       if (catalog) {
         setUnlockedCatalogId(catalog.id);
@@ -250,14 +245,12 @@ export function ConvexPrototypeProvider({
       }
       return catalog;
     },
-    [sessionToken, unlock],
+    [unlock],
   );
 
   const submitOrder = useCallback(
     async (catalogId: string, input: CreateOrderInput) => {
-      if (!sessionToken) throw new Error("Preview session is not ready");
       const result = await submit({
-        sessionToken,
         catalogId: catalogId as Id<"secretCatalogs">,
         customerName: input.customerName,
         customerEmail: input.customerEmail?.trim() || undefined,
@@ -270,14 +263,12 @@ export function ConvexPrototypeProvider({
       if (!order) throw new Error("order submission failed");
       return order;
     },
-    [sessionToken, submit],
+    [submit],
   );
 
   const editOrder = useCallback(
     async (orderId: string, input: CreateOrderInput) => {
-      if (!sessionToken) throw new Error("Preview session is not ready");
       const result = await edit({
-        sessionToken,
         orderId: orderId as Id<"orders">,
         customerName: input.customerName,
         customerEmail: input.customerEmail?.trim() || undefined,
@@ -290,26 +281,24 @@ export function ConvexPrototypeProvider({
       if (!order) throw new Error("order update failed");
       return order;
     },
-    [edit, sessionToken],
+    [edit],
   );
 
   const updateOrderStatus = useCallback(
     async (orderId: string, nextStatus: OrderStatus) => {
-      if (!sessionToken) throw new Error("Preview session is not ready");
       if (nextStatus !== "cancelled" && nextStatus !== "completed") {
         throw new Error("This Convex phase supports only cancelled and completed order status updates.");
       }
-      await updateStatus({ sessionToken, orderId: orderId as Id<"orders">, status: nextStatus });
+      await updateStatus({ orderId: orderId as Id<"orders">, status: nextStatus });
     },
-    [sessionToken, updateStatus],
+    [updateStatus],
   );
 
   const closeCatalog = useCallback(
     async (catalogId: string) => {
-      if (!sessionToken) throw new Error("Preview session is not ready");
-      await closeCatalogMutation({ sessionToken, catalogId: catalogId as Id<"secretCatalogs"> });
+      await closeCatalogMutation({ catalogId: catalogId as Id<"secretCatalogs"> });
     },
-    [closeCatalogMutation, sessionToken],
+    [closeCatalogMutation],
   );
 
   const createInvoice = useCallback(
@@ -335,25 +324,31 @@ export function ConvexPrototypeProvider({
     [invoices],
   );
 
-  const claimAdmin = useCallback(
-    async (accessCode: string) => {
-      if (!sessionToken) return false;
-      const result = await claimAdminMutation({ token: sessionToken, accessCode });
-      if (!result.ok) return false;
-      setStoredPrototypeRole("admin");
-      setStoredRole("admin");
-      return true;
-    },
-    [claimAdminMutation, sessionToken],
-  );
+  const authState = !enabled
+    ? "configuration-missing"
+    : !isLoaded
+      ? "loading"
+      : !isSignedIn
+        ? "signed-out"
+        : convexAuthLoading || !isAuthenticated
+          ? "convex-loading"
+          : provisionError
+            ? "network-error"
+            : provisioning || me === null || me === undefined
+              ? "provisioning"
+              : me.status === "suspended"
+                ? "suspended"
+                : "authenticated";
 
   const value = useMemo<PrototypeContextValue>(
     () => ({
       enabled,
       previewDemo,
-      hydrated: enabled && sessionReady && me !== undefined,
+      hydrated: enabled && isLoaded && (!isSignedIn || (me !== undefined && me !== null) || provisionError),
       dataSource: "convex",
-      sessionRole: me?.role || storedRole,
+      sessionRole: me?.role || null,
+      userStatus: me?.status || null,
+      authState,
       state,
       unlockedCatalog: asCatalog(unlocked as CatalogView | null | undefined),
       createCatalog,
@@ -364,21 +359,21 @@ export function ConvexPrototypeProvider({
       createInvoice,
       recordDeposit,
       editOrder,
-      claimAdmin,
     }),
     [
-      claimAdmin,
       closeCatalog,
       createCatalog,
       createInvoice,
       editOrder,
       enabled,
+      authState,
       me,
       previewDemo,
       recordDeposit,
-      sessionReady,
+      isLoaded,
+      isSignedIn,
+      provisionError,
       state,
-      storedRole,
       submitOrder,
       unlockCatalog,
       unlocked,
@@ -388,7 +383,7 @@ export function ConvexPrototypeProvider({
 
   return (
     <PrototypeContext.Provider value={value}>
-      <ConvexOperationsProvider enabled={enabled} role={me?.role || null} sessionToken={sessionToken}>
+      <ConvexOperationsProvider enabled={enabled} role={me?.role || null} active={authState === "authenticated"}>
         {previewDemo ? (
           <aside className="prototype-preview-banner" role="status">
             <strong>Prototype Preview</strong>

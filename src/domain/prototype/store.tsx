@@ -4,7 +4,7 @@ import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode }
 import { ConvexPrototypeProvider } from "@/domain/prototype/convex-store";
 import { PrototypeContext, type PrototypeContextValue } from "@/domain/prototype/context";
 import { LocalOperationsProvider } from "@/domain/prototype/operations-context";
-import { isPreviewDemoMode, isPrototypeMode } from "@/lib/environment";
+import { isPreviewDemoMode, isPrototypeMode, shouldUseConvex } from "@/lib/environment";
 import {
   appendDepositTransaction,
   createCatalogFromInput,
@@ -175,6 +175,8 @@ function LocalPrototypeProvider({
       hydrated,
       dataSource,
       sessionRole: enabled ? "admin" : null,
+      userStatus: enabled ? "active" : null,
+      authState: enabled ? "authenticated" : "configuration-missing",
       state,
       unlockedCatalog: state.catalogs.find((catalog) => catalog.id === unlockedCatalogId),
       createCatalog,
@@ -185,7 +187,6 @@ function LocalPrototypeProvider({
       createInvoice,
       recordDeposit,
       editOrder,
-      claimAdmin: async () => enabled,
     }),
     [
       closeCatalog,
@@ -245,11 +246,12 @@ export function PrototypeProvider({
   const previewDemo = isPreviewDemoMode(runtimeEnvironment, previewEnvironment);
   const enabled = isPrototypeMode(runtimeEnvironment, previewEnvironment);
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  const useConvex = shouldUseConvex(runtimeEnvironment, previewEnvironment, hasValidConvexUrl(convexUrl));
 
-  if (enabled && hasValidConvexUrl(convexUrl)) {
+  if (useConvex && hasValidConvexUrl(convexUrl)) {
     return (
       <ConvexProviderBoundary url={convexUrl}>
-        <ConvexPrototypeProvider enabled={enabled} previewDemo={previewDemo}>
+        <ConvexPrototypeProvider enabled={useConvex} previewDemo={previewDemo}>
           {children}
         </ConvexPrototypeProvider>
       </ConvexProviderBoundary>
@@ -258,9 +260,9 @@ export function PrototypeProvider({
 
   return (
     <LocalPrototypeProvider
-      enabled={enabled && !previewDemo}
+      enabled={enabled && !previewDemo && !previewEnvironment}
       previewDemo={previewDemo}
-      dataSource={enabled && !previewDemo ? "local" : "unavailable"}
+      dataSource={enabled && !previewDemo && !previewEnvironment ? "local" : "unavailable"}
     >
       {children}
     </LocalPrototypeProvider>
