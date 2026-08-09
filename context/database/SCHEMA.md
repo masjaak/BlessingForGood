@@ -1,10 +1,26 @@
-# Phase 03.1 Convex schema
+# BFG Convex Schema
 
-The deployed schema contains the catalog-to-preorder vertical slice, the
-temporary Preview session boundary, and the Phase 03.2 operational records:
+[REPOSITORY] `convex/schema.ts` is the schema source of truth. All timestamps
+are epoch milliseconds; money is safe integer IDR; relationships use Convex
+document IDs.
+
+## Identity and security tables
+
+| Table | Purpose | Required identity fields |
+| --- | --- | --- |
+| `appUsers` | one BFG authorization record per Clerk subject | `clerkUserId`, `role`, `status`, safe snapshots, lifecycle timestamps |
+| `customerProfiles` | customer-owned profile | `userId`, display name, optional phone/WhatsApp, timestamps |
+| `customerAddresses` | customer-owned fulfillment addresses | `userId`, recipient/contact/address fields, default flag, timestamps |
+| `auditEvents` | privileged actor history | actor, action, target, timestamp, safe metadata |
+| `prototypeSessions` | retained legacy test/local table | token digest and expiry only; active Preview never reads/writes |
+
+`appUsers` roles are `owner`, `admin`, `customer`; statuses are `active` and
+`suspended`. Its indexes are `by_clerk_user_id`, `by_role`, `by_status`,
+`by_role_and_status`, and `by_created_at`.
+
+## Catalog and order tables
 
 ```text
-prototypeSessions
 publishers
 books
 bookVariants
@@ -15,6 +31,15 @@ catalogAccessGrants
 orders
 orderItems
 orderStatusHistory
+```
+
+Catalog grants use `appUserId` and catalog ID. Orders use `customerUserId`;
+order items retain immutable product and price snapshots. Access codes remain
+keyed digests and are never stored as plaintext.
+
+## Operations and finance tables
+
+```text
 batches
 catalogBatchLinks
 orderItemBatchAssignments
@@ -27,31 +52,14 @@ depositTransactions
 invoiceDepositAllocations
 ```
 
-Money is stored as non-negative integer IDR amounts. Dates are UTC epoch
-milliseconds. Convex document IDs are used for relationships.
+Operational actors use `createdByUserId`, `changedByUserId`, or
+`assignedByUserId`. Invoices use `customerUserId` and `createdByUserId`.
+Deposits use `userId` for the customer account and `createdByUserId` for the
+ledger actor.
 
-Payments, uploads, and customer identity remain deliberately absent from this
-schema. Shipment tracking belongs to batches; fulfillment tracking belongs to
-orders. Deposit accounts keep denormalized balances while the ledger remains
-append-only.
+## Migration boundary
 
-## Phase 03.2 operations extension
-
-[REPOSITORY] The operational tables add the following persisted records:
-
-| Table | Purpose | Historical rule |
-| --- | --- | --- |
-| `batches` | Admin-defined cargo/batch record and nullable current shipment stage | Current stage is a projection; history is separate. |
-| `catalogBatchLinks` | Many-to-many operational catalog relationship | One catalog/batch pair only once. |
-| `orderItemBatchAssignments` | Quantity allocation of an order item to one or more batches | Positive integer quantities; total never exceeds the order item quantity. |
-| `batchStatusHistory` | Customer-visible shipment-stage events | Append-only; created in the same mutation as the batch projection update. |
-| `orderFulfillmentHistory` | Customer order fulfillment-stage events | Append-only; separate from preorder order status. |
-| `invoices` | IDR invoice header, requirement, allocation, outstanding, and lifecycle state | Issued financial history is not overwritten; revisions use void plus a new record. |
-| `invoiceItems` | Immutable order-item description and amount snapshots | Totals derive only from these rows. |
-| `depositAccounts` | One IDR account summary per Preview customer session | Available and reserved amounts are maintained transactionally. |
-| `depositTransactions` | Append-only credit, reservation, release, debit, and reversal ledger | No update or delete mutation exists. |
-| `invoiceDepositAllocations` | Reservation-backed invoice allocation history | Release/reversal preserves the allocation row and writes ledger history. |
-
-Operational documents use Convex IDs for relationships and UTC epoch
-milliseconds for timestamps. Financial amounts are safe integer Rupiah values;
-percentage requirements are integer basis points (`0..10000`).
+[CONVEX VERIFIED] Development preflight found zero records in the affected
+business tables, so no unknown record was assigned, deleted, or rewritten.
+Current active code has no session ownership fields. A future non-empty
+Preview preflight must classify data before any migration.

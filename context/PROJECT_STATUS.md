@@ -1,106 +1,102 @@
-# Project Status
+# BFG Project Status
 
-## Phase 03.2 current state
+## Anchored summary
 
-[REPOSITORY] The canonical repository is `/Users/masjak/Developer/BlessingForGood` on
-`feat/convex-operations-persistence-v0.1`, based on the approved
-`feat/convex-core-persistence-v0.1` source branch. `main` is untouched.
+**Objective:** complete Phase 04.1 Clerk identity, Convex authentication,
+application RBAC, resource ownership, customer account data, and owner user
+management without touching `main` or Production.
 
-[REPOSITORY] Phase 03.2 persists batch tracking, order fulfillment, invoice
-snapshots, deposit accounts, append-only ledger transactions, and invoice
-allocations through the existing Preview-session boundary. No Clerk, payment
-gateway, WhatsApp API, Production deployment, or automatic seed data was added.
+**Source of truth:** the repository on
+`feat/clerk-identity-authorization-v0.1`, plus the current files listed in
+`agent_rule.txt` and the context pack.
 
-[CONVEX VERIFIED] The current code and schema are deployed to the isolated
-Convex Development deployment and branch Preview deployment
-`preview/feat-convex-operations-persistence-v0-1` (`charming-horse-40`). Convex
-tests and the complete operational flow pass against real Convex queries and
-mutations.
+**Final decisions:** Clerk supplies identity; Convex validates the Clerk JWT
+and enforces BFG roles, permissions, ownership, and suspension. Application
+roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 
-[PREVIEW VERIFIED] Vercel Preview `dpl_As6GRhi5NcGWCPALZMTbkMYUstJC` is READY at
-`https://blessing-for-good-a2nl9jhjf-masjaaks-projects.vercel.app`. All 60
-Playwright tests pass across 375×812, 768×1024, 1024×768, and 1440×900.
+**Prototype assumptions:** local development may use the explicit local
+adapter when enabled. `prototypeSessions` and Preview admin-code flows are
+legacy-only and disabled for active Preview. No business seed data is created.
 
-[PREVIEW VERIFIED] Tracking, fulfillment, invoice, deposit allocation,
-targeted cleanup, reload persistence, realtime updates, and second-customer
-ownership isolation pass. All Phase 03.1 and Phase 03.2 business tables are
-empty after cleanup. Production and `main` are unchanged.
+**Current priority:** obtain real Clerk Development sign-in and isolated
+Convex/Vercel Preview evidence, then run authenticated Playwright QA.
 
-## Repository intake
+## Evidence
 
-[CONFIRMED] The canonical GitHub repository is readable at `design/visual-alignment-v0.1`, branched from `prototype/v0.1`.
+- [REPOSITORY] The Clerk foundation is present: `clerkMiddleware()` in
+  `src/proxy.ts`, one `ClerkProvider` in the root layout, and Clerk controls
+  in the site shell. Public signed-out UX exposes `Masuk`, not a signup CTA.
+- [REPOSITORY] `ConvexProviderWithClerk` wraps the BFG provider with one
+  memoized `ConvexReactClient`.
+- [REPOSITORY] `convex/auth.config.ts` reads `CLERK_JWT_ISSUER_DOMAIN` and
+  uses the `convex` application ID. It contains no issuer value.
+- [REPOSITORY] Active Convex functions resolve identity through
+  `ctx.auth.getUserIdentity()`, then `appUsers`, never through a client role,
+  Clerk subject, email, or prototype session token.
+- [CONVEX VERIFIED] Convex Development codegen succeeds; the current
+  `convex:test` suite passes 7 files / 32 tests. Development ownership
+  preflight found zero records in the affected business tables.
+- [REPOSITORY] `npm run format:check`, lint, typecheck, 59 Vitest tests, and
+  Next.js build pass locally. The local Chromium run is not authentication
+  evidence.
+- [CLERK VERIFIED] Read-only Development configuration inspection confirmed
+  the configured Clerk environment is Development and the required local
+  key names exist. Restricted Mode is recorded from the manual setup supplied
+  for this phase; no Production Clerk configuration was changed.
+- [BLOCKED] Real invitation acceptance, a signed-in Convex identity proof from
+  the browser, and current branch Preview QA are not claimed until the
+  isolated Preview deployment and non-secret QA identity setup are available.
 
-[CONFIRMED] The official readable asset source was copied into `public/brand/` and `public/mockups/` with exact binary checksums. Asset roles and mockup mappings are documented in `context/brand/` and `context/mockups/`.
+## Identity and migration status
 
-[LIMITATION] The remote repository still does not contain several product context folders listed in the original file manifest (`context/product`, `context/screens`, `context/features`, `src/features`, and `context/SOURCE_OF_TRUTH.md`). The visual pass uses the available implementation brief, audited physical references, and existing route/domain behavior without inventing missing product decisions.
+| Area | Status |
+| --- | --- |
+| Clerk middleware/provider/auth routes | [REPOSITORY] implemented |
+| Clerk ↔ Convex provider | [REPOSITORY] implemented; runtime proof pending |
+| Convex issuer config | [REPOSITORY] implemented; Dev codegen passes |
+| `appUsers` provisioning | [REPOSITORY] implemented; synthetic Convex tests pass |
+| Roles and centralized permissions | [REPOSITORY] implemented; synthetic tests pass |
+| Suspension and owner protections | [REPOSITORY] implemented; synthetic tests pass |
+| Ownership fields | [REPOSITORY] migrated to `appUsers` references; Dev is empty |
+| Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
+| Owner user management | [REPOSITORY] implemented; Preview runtime QA pending |
+| Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
+| Current branch Convex Preview | [BLOCKED] not yet runtime-verified |
+| Current branch Vercel Preview | [BLOCKED] not yet runtime-verified |
+| Production | [CONFIRMED] untouched and not configured for this phase |
+| `main` | [CONFIRMED] untouched |
 
-## Current priority
+## Constraints
 
-[COMPLETE] Phase 03.2 batch tracking, fulfillment, invoice, and deposit persistence on
-`feat/convex-operations-persistence-v0.1` is verified on isolated Preview infrastructure. The next milestone is
-Phase 04 Clerk authentication, roles, and authorization; do not start it automatically.
+- Never print or commit keys, issuer values, Clerk subjects, emails, tokens,
+  invitation URLs, passwords, or auth storage.
+- Never merge to `main`, force-push, deploy Production, use `--prod`, promote
+  a Preview, or connect Production Clerk/Convex.
+- Unknown non-empty Preview business data requires a stop before migration.
+- Existing Phase 03 operational invariants remain in force.
 
-## Active constraints
+## Validation plan
 
-- No production authentication, payment, WhatsApp API, or deployment.
-- No business records are seeded at runtime.
-- Official logo, mascot, and mockup files are now committed; no replacement assets or mockup business data were generated.
-- Prototype-only behavior is guarded by `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true` in development.
-- The local adapter is an explicit local-development fallback; it is not production persistence and Preview fails closed without a valid Convex URL.
-- Preview Demo Mode is configured only for Vercel/Convex Preview and remains guarded by the server-side Preview boundary.
-- The existing Vercel project `blessing-for-good` is configured for Next.js Preview deployments; Production remains untouched by this repair.
-- A separate Convex project `blessing-for-good` now has a personal cloud development deployment. A Convex Preview
-  deploy key is configured only in the linked Vercel Preview environment; no Production Convex key is configured.
-- Phase 03.1 Convex tests pass. Real dev and branch Preview deployments verified guarded sessions, keyed secret
-  handling, zero-data startup, persistence, reload behavior, admin visibility, and customer isolation.
+1. Run format, lint, typecheck, Vitest, Convex tests/codegen, build, and local
+   Vercel build.
+2. Inspect Development and branch-isolated Preview record counts by name and
+   count only.
+3. Verify real Clerk sign-in, JWT delivery to Convex, provisioning, role
+   behavior, suspension, invitation acceptance, and cross-customer isolation.
+4. Inspect Vercel/Convex runtime logs for safe errors only.
 
-## Phase 03.1 Convex core persistence
+## Rollback plan
 
-[CONVEX VERIFIED] The schema, indexes, validators, Preview capability, expiring prototype sessions, catalog
-access-code verification, catalog persistence, order snapshots, ownership checks, and edit/lock transitions are
-deployed to the personal development deployment and the branch-scoped Convex Preview deployment.
+The migration is source-controlled on the current feature branch. Convex
+Development is empty for affected tables, so no data rewrite is required.
+Preview rollout remains isolated; rollback is a branch deployment rollback,
+not a Production change.
 
-[PREVIEW VERIFIED] Vercel Preview `dpl_4BxuvP1MvDzS9kktZyGfTmrmcAGk` is READY at
-`https://blessing-for-good-1zm4ur6w9-masjaaks-projects.vercel.app`. The build deployed the Convex Preview
-deployment `youthful-retriever-820`, generated all 14 App Router routes, and used the Preview-only deploy key.
+## Next action
 
-[PREVIEW VERIFIED] All 56 Playwright tests passed against the new Preview across 375×812, 768×1024, 1024×768,
-and 1440×900. The 12 implemented routes returned HTTP 200 through authenticated Vercel CLI requests. Convex
-Preview business tables were empty before/after the test run; test records were explicitly cleaned.
+Configure or identify the isolated current-branch Convex/Vercel Preview and
+run the real invited-user QA matrix. Do not start Phase 04.2 until that proof
+exists.
 
-[PREVIEW VERIFIED] Vercel runtime logs returned no entries. Convex history contained only expected negative-path
-access-code/session errors from browser QA and teardown; no secret values were logged.
-
-## Phase 02.1 visual alignment
-
-[CONFIRMED] Brand assets were copied exactly and mapped. `Logo-4.png` is the runtime primary wordmark, `Logo-2.png` is the symbol/app-icon candidate, and Mascott-1/3/4 are used only for communication states.
-
-[CONFIRMED] Centralized semantic color, typography, spacing, radius, border, shadow, focus, motion, and responsive tokens were added. A visual gap audit and QA report record the evidence and remaining gaps.
-
-[CONFIRMED] Customer navigation, admin navigation, welcome/catalog/order surfaces, admin sidebar fallback, empty states, form controls, status badges, and tracking/invoice surfaces were refined without changing domain transitions.
-
-[CONFIRMED] `npm run check` passes with 21 tests. `npx vercel@latest build` passes with the Preview target and all implemented routes statically generated.
-
-[BROWSER VERIFIED] Playwright Chromium verifies the protected Preview through an in-memory Vercel automation bypass. The full 56-test matrix passes at 375×812, 768×1024, 1024×768, and 1440×900, including the zero-data customer/admin flow.
-
-[BROWSER VERIFIED] Preview Demo Mode remains visibly labelled, starts with zero records, persists only in the test browser, and does not alter the Production boundary.
-
-[CONFIRMED] Final Preview deployment `dpl_GrBVzaVHbcFLuKpxCCzWscutaDz2` is READY at `https://blessing-for-good-6h90y7tgw-masjaaks-projects.vercel.app`. The target is `preview`; authenticated CLI root verification returned HTTP 200 and the runtime error query returned no logs.
-
-## Deployment diagnosis
-
-[CONFIRMED] The failed deployment `dpl_sKtouPU4wmT1npv42vrPFLbwar2x` cloned `prototype/v0.1` at commit `cf1c5b7` and completed `next build` successfully.
-
-[CONFIRMED] The first causal error was Vercel looking for an Output Directory named `dist` after the Next.js build completed. The existing project had Framework Preset `Other` and Output Directory `dist`.
-
-[FIXED] The existing Vercel project now uses Framework Preset `Next.js` and Next.js automatic Output Directory detection. Local `vercel build` passes with the Preview target; no `vercel.json` override or application-code change was needed.
-
-[CONFIRMED] Preview deployment `dpl_HwuopThbRTvjF2YrNZs3K8i3mRGr` is READY at `https://blessing-for-good-bxlsx6rog-masjaaks-projects.vercel.app`. All 12 implemented routes returned HTTP 200 through authenticated Vercel CLI requests, and the Preview runtime error query returned no logs.
-
-[SUPERSEDED] The Phase 02.1 browser-tooling limitation is superseded by the Phase 02.2 Playwright setup; its historical note remains in the Phase 02.1 section.
-
-## Status
-
-`complete` — Phase 03.1 remains validated on its dedicated branch. Phase 03.2 implementation, Development
-verification, isolated Convex Preview verification, Vercel Preview verification, and handoff documentation are
-complete. No merge to `main` or Production deployment has been performed.
+Historical Phase 03 context below this line is superseded by the Phase 04.1
+identity model and retained only for product history.

@@ -1,69 +1,50 @@
-# Convex integration boundary
+# BFG Convex Integration
 
-## Phase 03.1 status
+## Runtime
 
-The BFG Convex project is `blessing-for-good` in the authenticated personal
-team. A personal cloud development deployment is selected locally. The
-Vercel `CONVEX_DEPLOY_KEY` is Preview-only; no Production Convex key or
-deployment has been configured.
+The client hierarchy is:
 
-Convex Preview deployments are branch-scoped and isolated from development
-and Production. The Vercel Preview build will use:
+```text
+ClerkProvider
+└── ConvexProviderWithClerk
+    └── PrototypeProvider / BFG application
+```
+
+`ConvexProviderWithClerk` owns one memoized `ConvexReactClient`. `useConvexAuth`
+is checked separately from Clerk loading and sign-in state. The app provisions
+`users.ensureCurrentUser` only after Convex reports an authenticated identity.
+
+## Server configuration
+
+`convex/auth.config.ts` uses the server-side name
+`CLERK_JWT_ISSUER_DOMAIN` and application ID `convex`. The issuer is never
+hard-coded or returned to the client. `BFG_OWNER_CLERK_USER_ID` is server-only
+and controls the single owner bootstrap match.
+
+## Preview boundary
+
+The Vercel build wrapper is:
 
 ```text
 npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"
 ```
 
-No `--preview-run` seed function is used. A new Preview starts with zero
-business records.
+It is allowed only for the current branch's isolated Convex Preview. No
+Production Convex deploy key, deployment, or `--prod` operation is in scope.
+Preview without a valid Convex URL fails closed; it cannot select the local
+adapter or an anonymous session.
 
-[CONVEX VERIFIED] The personal development deployment passed schema/codegen
-checks and the Convex test suite. The branch Preview deployment
-`youthful-retriever-820` deployed the same functions and indexes through the
-Vercel build.
+## Ownership
 
-[PREVIEW VERIFIED] The Vercel Preview flow passed `56/56` Playwright tests,
-including reload persistence, admin visibility from another browser context,
-customer ownership isolation, and explicit zero-data cleanup. The business
-tables were empty before and after the run.
+Convex functions derive the current user from `ctx.auth.getUserIdentity()` and
+`appUsers`. Business references use `appUserId`, `customerUserId`, `userId`,
+and authenticated actor fields. Client-supplied Clerk subjects, roles, and
+ownership claims are ignored/rejected.
 
-## Security boundary
+## Evidence
 
-Phase 03.1 uses a server-side Preview capability and expiring prototype
-sessions. This is Preview infrastructure, not Clerk identity or Production
-authorization. Production remains fail-closed until Clerk and an approved
-Production Convex deployment exist.
-
-Environment variable names are documented in `.env.example`; values and deploy
-keys stay in Convex/Vercel configuration and are never committed.
-
-Preview-only server names are `BFG_PREVIEW_DEMO_MODE`,
-`BFG_CATALOG_CODE_PEPPER`, `BFG_SESSION_TOKEN_PEPPER`, and
-`BFG_PREVIEW_ADMIN_ACCESS_CODE`. The Vercel Preview-only name
-`CONVEX_DEPLOY_KEY` is used only by the branch build. No Production key is
-configured.
-
-## Phase 03.2 operations persistence
-
-[REPOSITORY] The existing Convex project now includes persistent batches,
-shipment and fulfillment histories, invoice snapshots, deposit accounts,
-append-only transactions, and invoice allocations. The frontend uses reactive
-queries for customer and admin operational screens.
-
-[CONVEX VERIFIED] The isolated Development deployment accepted the current
-schema and functions. The 27-test Convex suite covers transition guards,
-financial calculations, ledger invariants, atomic allocation/release/reversal,
-customer ownership, and zero-data behavior.
-
-[REPOSITORY] The full browser matrix passes against real Convex Development:
-60/60 tests across 375×812, 768×1024, 1024×768, and 1440×900. The final
-[PREVIEW VERIFIED] The same 60/60 matrix passes against the branch-scoped
-Preview deployment `charming-horse-40`. The four server-side Preview
-environment names are configured on that deployment outside Git; no
-Production Convex deployment or key is configured.
-
-## Deferred
-
-Clerk, Production authorization, payment settlement, uploads, email, and
-WhatsApp API remain outside Phase 03.2. Final refund, tax, customs, shipping,
-exchange-rate, and cancellation policies remain deferred.
+- [CONVEX VERIFIED] Codegen succeeds and 32 Convex tests pass against the
+  configured Development deployment.
+- [CONVEX VERIFIED] Development preflight found zero affected business rows.
+- [BLOCKED] Current branch Preview JWT identity proof and runtime logs remain
+  pending isolated Preview deployment.

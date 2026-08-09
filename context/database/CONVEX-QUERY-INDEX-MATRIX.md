@@ -1,56 +1,29 @@
-# Phase 03.1 Convex query/index matrix
+# Convex Query / Index Matrix
 
-| Query               | Table               | Filter              | Index                       | Pagination/bound |
-| ------------------- | ------------------- | ------------------- | --------------------------- | ---------------- |
-| active publishers   | publishers          | `isActive`          | `by_active`                 | paginated        |
-| active books        | books               | `isActive`          | `by_active`                 | paginated        |
-| variants for book   | bookVariants        | `bookId`            | `by_book`                   | bounded list     |
-| admin catalogs      | secretCatalogs      | creation order      | `by_created_at`             | paginated        |
-| catalog items       | catalogItems        | `catalogId`         | `by_catalog`                | max 200          |
-| access code lookup  | catalogAccessCodes  | keyed lookup digest | `by_lookup_digest`          | one active match |
-| customer grant      | catalogAccessGrants | session + catalog   | `by_session_and_catalog`    | one              |
-| test cleanup grants | catalogAccessGrants | catalog             | `by_catalog`                | max 500          |
-| customer orders     | orders              | session + creation  | `by_session_and_created_at` | paginated        |
-| admin orders        | orders              | creation order      | `by_created_at`             | paginated        |
-| order items         | orderItems          | `orderId`           | `by_order`                  | max 200          |
-| order history       | orderStatusHistory  | order + time        | `by_order_and_changed_at`   | max 100          |
-| admin batches       | batches              | archived + creation | `by_archived`, `by_created_at` | paginated      |
-| batch catalogs      | catalogBatchLinks    | batch or catalog    | `by_batch`, `by_catalog`       | max 200        |
-| order assignments   | orderItemBatchAssignments | order item/batch | `by_order_item`, `by_batch` | max 200       |
-| shipment history    | batchStatusHistory   | batch + time       | `by_batch_and_changed_at`     | max 100        |
-| fulfillment history | orderFulfillmentHistory | order + time    | `by_order_and_changed_at`     | max 100        |
-| customer invoices   | invoices             | customer + creation | `by_customer_and_created_at` | paginated     |
-| admin invoices      | invoices             | creation order     | `by_created_at`                | paginated      |
-| invoice items       | invoiceItems         | invoice            | `by_invoice`                   | max 200        |
-| customer deposit account | depositAccounts  | customer + currency | `by_customer_and_currency`  | one            |
-| deposit ledger      | depositTransactions  | account + time     | `by_account_and_created_at`   | paginated      |
-| invoice allocations | invoiceDepositAllocations | invoice + status | `by_invoice_and_status` | max 200       |
+| Query family | Ownership/filter | Index used | Bound |
+| --- | --- | --- | --- |
+| current user | Clerk subject → app user | `appUsers.by_clerk_user_id` | unique |
+| owner user list | role/status/created-at filter | `by_role_and_status`, `by_role`, `by_status`, `by_created_at` | paginated |
+| customer profile | current app user | `customerProfiles.by_user_id` | unique |
+| customer addresses | current app user | `by_user_id_and_created_at` | 100 |
+| default addresses | current app user + default flag | `by_user_id_and_default` | bounded |
+| catalog grants | current app user + catalog | `catalogAccessGrants.by_app_user_id_and_catalog_id` | one |
+| accessible catalogs | current app user | `catalogAccessGrants.by_app_user_id` | paginated |
+| customer orders | `customerUserId` | `orders.by_customer_user_id_and_created_at` | paginated |
+| order items/history | parent order | `orderItems.by_order`, `orderStatusHistory.by_order_and_changed_at` | bounded |
+| admin orders | created-at operations list | `orders.by_created_at` | paginated |
+| customer invoices | `customerUserId` | `invoices.by_customer_user_id_and_created_at` | paginated |
+| invoice items | parent invoice | `invoiceItems.by_invoice` | bounded |
+| customer deposit account | current app user + IDR | `depositAccounts.by_user_id_and_currency` | unique |
+| customer deposit history | current account | `depositTransactions.by_account_and_created_at` | paginated |
+| invoice allocations | parent invoice | `invoiceDepositAllocations.by_invoice` | 100 |
+| batches | operational created/archived | `batches.by_created_at`, `by_archived` | paginated/bounded |
+| batch links | catalog + batch | `catalogBatchLinks.by_catalog_and_batch` | unique |
+| assignments | order item or batch | `orderItemBatchAssignments.by_order_item`, `by_batch` | bounded |
+| shipment history | parent batch + timestamp | `batchStatusHistory.by_batch_and_changed_at` | 100 |
+| fulfillment history | parent order + timestamp | `orderFulfillmentHistory.by_order_and_changed_at` | 100 |
+| audit events | actor, target, or time | `auditEvents.by_actor_user_id`, `by_target`, `by_created_at` | query-specific |
 
-The bounded ceilings are the current prototype ceiling. Pagination is the
-upgrade path for catalog items and nested order history when those surfaces
-become independently managed.
-
-## Phase 03.2 audience and ownership contract
-
-| Query | Table | Filter | Index | Pagination / maximum | Audience | Ownership rule |
-| --- | --- | --- | --- | --- | --- | --- |
-| `batches.listForAdmin` | `batches` | creation order | `by_created_at` | paginated; UI 50 | admin | admin session required |
-| `batches.getForAdmin` | `batches` + links | batch ID | `by_batch` for links | links max 200 | admin | admin session required |
-| `batchTracking.getMine` | orders/items/assignments/batches/history | owned order ID | `by_order`, `by_order_item`, `by_batch_and_changed_at` | items/assignments max 200; history max 100 | customer | order session must equal current customer session |
-| `batchTracking.getForOrderAdmin` | order items/assignments | order ID | `by_order`, `by_order_item` | items/assignments max 200 | admin | admin session required |
-| `batchTracking.getForAdmin` | batch/assignments/history | batch ID | `by_batch`, `by_batch_and_changed_at` | assignments max 200; history max 100 | admin | admin session required |
-| `orderFulfillment.getMine` | order/history | owned order ID | `by_order_and_changed_at` | history max 100 | customer | order session must equal current customer session |
-| `orderFulfillment.getForAdmin` | order/history | order ID | `by_order_and_changed_at` | history max 100 | admin | admin session required |
-| `invoices.listMine` | `invoices` + `invoiceItems` | customer + creation | `by_customer_and_created_at`, `by_invoice` | paginated; UI 50; items max 200 | customer | current customer session owns invoice |
-| `invoices.getMine` | `invoices` + `invoiceItems` | invoice ID | `by_invoice` | items max 200 | customer | server rejects another customer |
-| `invoices.listForAdmin` | `invoices` + `invoiceItems` | creation order | `by_created_at`, `by_invoice` | paginated; UI 50; items max 200 | admin | admin session required |
-| `invoices.getForAdmin` | `invoices` + `invoiceItems` | invoice ID | `by_invoice` | items max 200 | admin | admin session required |
-| `depositAccounts.getMine` | `depositAccounts` | customer + IDR | `by_customer_and_currency` | one | customer | current customer session owns account |
-| `depositAccounts.getForInvoice` | invoice/account | invoice ID | `by_order`, `by_customer_and_currency` | one | admin | account must match invoice customer |
-| `depositTransactions.listMine` | `depositTransactions` | account + time | `by_account_and_created_at` | paginated; UI 100 | customer | account must be owned by current customer |
-| `depositTransactions.listForInvoice` | `depositTransactions` | account + invoice + time | `by_invoice`, `by_account_and_created_at` | paginated; UI 100 | admin | invoice/account relationship is checked |
-| `invoiceDepositAllocations.listMine` | allocations | invoice + status | `by_invoice_and_status` | max 100 | customer | invoice must be owned by current customer |
-| `invoiceDepositAllocations.listForAdmin` | allocations | invoice + status | `by_invoice_and_status` | max 100 | admin | admin session required |
-
-Client components consume these reactive queries directly. No customer query
-loads an unbounded table or applies ownership filtering after the response.
+[CONVEX VERIFIED] Codegen and Convex tests pass against the configured
+Development deployment. No client-side full-table ownership filtering is
+used by active customer queries.

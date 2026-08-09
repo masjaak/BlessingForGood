@@ -8,6 +8,37 @@ source: conversation
 
 # Changelog
 
+## [phase-04.1-identity-authorization] — 2026-08-08
+
+### Added
+
+- Connected the existing Clerk foundation to Convex with
+  `ConvexProviderWithClerk` and a Clerk issuer-based Convex auth config.
+- Added `appUsers`, owner bootstrap, customer-default provisioning, centralized
+  permissions, server-side authorization helpers, suspension rules, and audit
+  events.
+- Migrated active ownership from prototype sessions to `appUsers` references
+  for catalog grants, orders, tracking, invoices, deposits, and actor fields.
+- Added customer profiles, customer addresses with atomic default handling, and
+  owner-only `/admin/users` management.
+- Added invite-only sign-in/sign-up routes, route guards, authenticated state
+  handling, and Clerk-aware Playwright scaffolding without committed auth state.
+- Disabled the legacy anonymous Preview identity for active Convex functions.
+
+### Validated
+
+- [REPOSITORY] Format check, lint, typecheck, 59 Vitest tests, Next.js build,
+  Convex codegen, and 32 Convex tests pass locally.
+- [CONVEX VERIFIED] Development ownership preflight found zero affected
+  business records; no migration assignment or deletion was required.
+- [BLOCKED] Real Clerk invitation, authenticated browser QA, and current
+  branch Preview runtime verification remain pending isolated Preview setup.
+
+### Deferred
+
+- Invitation management, MFA enforcement, Clerk user deletion/password reset,
+  Production authentication, Production deployment, and Phase 04.2 hardening.
+
 ## [phase-03.2-operations] — 2026-08-06
 
 ### Added
