@@ -6,9 +6,13 @@ const routes = [
   "/how-to-order",
   "/help",
   "/ready-stock",
+  "/sign-in",
+  "/sign-up",
   "/catalog",
   "/account/orders",
   "/account/invoices",
+  "/account/profile",
+  "/account/addresses",
   "/admin",
   "/admin/catalogs",
   "/admin/orders",
@@ -46,11 +50,27 @@ test.describe("BFG public route smoke", () => {
 
       expect(consoleErrors, `${route} console errors`).toEqual([]);
       expect(pageErrors, `${route} page errors`).toEqual([]);
+      if (
+        [
+          "/catalog",
+          "/account/orders",
+          "/account/invoices",
+          "/account/profile",
+          "/account/addresses",
+          "/admin",
+          "/admin/catalogs",
+          "/admin/orders",
+          "/admin/batches",
+          "/admin/invoices",
+        ].includes(route)
+      ) {
+        await expect(page).toHaveURL(/\/sign-in/);
+      }
     });
   }
 });
 
-test("primary navigation exposes working customer destinations", async ({ page }) => {
+test("signed-out navigation keeps protected destinations out of the public shell", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   const links = await page
     .getByRole("navigation", { name: "Primary navigation" })
@@ -61,12 +81,6 @@ test("primary navigation exposes working customer destinations", async ({ page }
         label: item.textContent?.trim(),
       })),
     );
-  expect(links.map((link) => link.label)).toEqual(["Home", "Catalog", "Ready Stock", "Orders", "Account"]);
-
-  for (const link of links) {
-    if (!link.href) continue;
-    const response = await page.goto(link.href, { waitUntil: "networkidle" });
-    expect(response?.status(), `${link.label} (${link.href}) response`).toBeLessThan(400);
-    await expect(page.locator("h1")).toHaveCount(1);
-  }
+  expect(links.map((link) => link.label)).toEqual([]);
+  await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible();
 });

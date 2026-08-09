@@ -6,6 +6,8 @@ const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
+  testIgnore: process.env.BFG_E2E_AUTH === "true" ? undefined : ["**/clerk-auth.spec.ts"],
   fullyParallel: true,
   timeout: 30_000,
   expect: { timeout: 5_000 },

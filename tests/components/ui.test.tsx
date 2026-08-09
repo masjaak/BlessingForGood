@@ -1,13 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import HomePage from "@/app/page";
+import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { PrototypeContext } from "@/domain/prototype/context";
 
 vi.mock("@clerk/nextjs", () => ({
-  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Show: ({ children, when }: { children: React.ReactNode; when: "signed-in" | "signed-out" }) =>
+    when === "signed-out" ? <>{children}</> : null,
   SignInButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
   SignUpButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
   UserButton: () => <button aria-label="User profile" type="button" />,
@@ -46,21 +49,16 @@ describe("public UI foundation", () => {
   it("keeps customer navigation on implemented routes", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
-    expect(screen.getByRole("navigation", { name: "Primary navigation" }).querySelectorAll("a")).toHaveLength(5);
+    expect(screen.getByRole("navigation", { name: "Primary navigation" }).querySelectorAll("a")).toHaveLength(0);
     expect(screen.queryByRole("link", { name: "Admin prototype" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
-    expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/catalog");
-    expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
-    expect(screen.getByRole("link", { name: "Orders" }).getAttribute("href")).toBe("/account/orders");
-    expect(screen.getByRole("link", { name: "Account" }).getAttribute("href")).toBe("/account/invoices");
   });
 
   it("exposes Clerk authentication controls without adding public admin links", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Accept invitation" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "User profile" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Masuk" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Accept invitation" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "User profile" })).toBeNull();
   });
 
   it("gives the welcome screen one branded entry point per supported path", () => {
@@ -79,5 +77,21 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/admin/catalogs");
     expect(screen.getByText("Books").getAttribute("aria-disabled")).toBe("true");
     expect(screen.getByText("Settings").getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("shows the shell admin link only for a resolved elevated role", () => {
+    const { rerender } = render(
+      <PrototypeContext.Provider value={{ sessionRole: "owner" } as never}>
+        <AdminShellLink />
+      </PrototypeContext.Provider>,
+    );
+    expect(screen.getByRole("link", { name: "Admin" }).getAttribute("href")).toBe("/admin");
+
+    rerender(
+      <PrototypeContext.Provider value={{ sessionRole: "customer" } as never}>
+        <AdminShellLink />
+      </PrototypeContext.Provider>,
+    );
+    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
   });
 });
