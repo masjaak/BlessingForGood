@@ -141,7 +141,7 @@ function CustomerInvoices() {
 export default function CustomerInvoicesPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <PrototypeModeGuard requiredRole="customer">
         <CustomerInvoices />
       </PrototypeModeGuard>
     </SiteShell>

@@ -138,7 +138,7 @@ function CustomerOrders() {
 export default function CustomerOrdersPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <PrototypeModeGuard requiredRole="customer">
         <CustomerOrders />
       </PrototypeModeGuard>
     </SiteShell>

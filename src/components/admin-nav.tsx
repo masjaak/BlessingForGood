@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useContext } from "react";
+import { PrototypeContext } from "@/domain/prototype/context";
 
 const links = [
   ["/admin", "Overview"],
@@ -14,9 +18,11 @@ const links = [
 ] as const;
 
 export function AdminNav() {
+  const sessionRole = useContext(PrototypeContext)?.sessionRole;
+  const visibleLinks = sessionRole === "owner" ? [...links, ["/admin/users", "Users"] as const] : links;
   return (
     <nav className="admin-nav" aria-label="Admin prototype navigation">
-      {links.map(([href, label]) =>
+      {visibleLinks.map(([href, label]) =>
         href ? (
           <Link key={label} href={href}>
             {label}
