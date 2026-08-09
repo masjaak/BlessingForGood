@@ -4,9 +4,10 @@ import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { accountView, applyLedgerDeltas, findDepositAccount, getOrCreateDepositAccount } from "./depositAccounts";
+import { requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { inverseLedgerDeltas, ledgerDeltas, type LedgerTransactionType } from "./lib/depositLedger";
-import { requireSession } from "./lib/sessions";
 
 export type DepositTransactionType = LedgerTransactionType | "reversal";
 
@@ -20,7 +21,7 @@ type TransactionInput = {
   referenceTransactionId?: Id<"depositTransactions">;
   note?: string;
   createdAt: number;
-  createdBySessionId: Id<"prototypeSessions">;
+  createdByUserId: Id<"appUsers">;
 };
 
 function noteValue(note?: string) {
@@ -57,17 +58,16 @@ export function transactionView(transaction: Doc<"depositTransactions">, include
 
 export const recordCredit = mutation({
   args: {
-    sessionToken: v.string(),
     invoiceId: v.id("invoices"),
     amount: v.number(),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "deposits.manage");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     const now = Date.now();
-    const account = await getOrCreateDepositAccount(ctx, invoice.customerSessionId, now);
+    const account = await getOrCreateDepositAccount(ctx, invoice.customerUserId, now);
     const deltas = positiveDeltas("credit", args.amount);
     const updatedAccount = await applyLedgerDeltas(ctx, account, deltas);
     const transactionId = await appendDepositTransaction(ctx, {
@@ -77,22 +77,22 @@ export const recordCredit = mutation({
       ...deltas,
       note: noteValue(args.note),
       createdAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     const transaction = await ctx.db.get(transactionId);
     if (!transaction) fail("DEPOSIT_TRANSACTION_NOT_FOUND");
+    await recordAudit(ctx, user._id, "deposit.credit_recorded", "invoice", args.invoiceId);
     return { ...transactionView(transaction, true), account: accountView(updatedAccount) };
   },
 });
 
 export const reverse = mutation({
   args: {
-    sessionToken: v.string(),
     transactionId: v.id("depositTransactions"),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "deposits.manage");
     const original = await ctx.db.get(args.transactionId);
     if (!original) fail("DEPOSIT_TRANSACTION_NOT_FOUND");
     if (original.type === "reversal") fail("DEPOSIT_REVERSAL_INVALID");
@@ -136,20 +136,21 @@ export const reverse = mutation({
       referenceTransactionId: original._id,
       note: noteValue(args.note),
       createdAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     await ctx.db.patch(original._id, { reversedByTransactionId: reversalId });
     const reversal = await ctx.db.get(reversalId);
     if (!reversal) fail("DEPOSIT_TRANSACTION_NOT_FOUND");
+    await recordAudit(ctx, user._id, "deposit.reversed", "depositTransaction", original._id);
     return { ...transactionView(reversal, true), account: accountView(updatedAccount) };
   },
 });
 
 export const listMine = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
-    const account = await findDepositAccount(ctx, session._id);
+    const user = await requirePermission(ctx, "deposits.read.own");
+    const account = await findDepositAccount(ctx, user._id);
     if (!account) return { page: [], isDone: true, continueCursor: "" };
     const page = await ctx.db
       .query("depositTransactions")
@@ -161,12 +162,12 @@ export const listMine = query({
 });
 
 export const listForInvoice = query({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices"), paginationOpts: paginationOptsValidator },
+  args: { invoiceId: v.id("invoices"), paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "deposits.read.all");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
-    const account = await findDepositAccount(ctx, invoice.customerSessionId);
+    const account = await findDepositAccount(ctx, invoice.customerUserId);
     if (!account) return { page: [], isDone: true, continueCursor: "" };
     const page = await ctx.db
       .query("depositTransactions")

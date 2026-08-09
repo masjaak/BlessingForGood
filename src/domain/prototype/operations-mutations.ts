@@ -6,12 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { FulfillmentStage, InvoiceRequirementMode, ShipmentStage } from "@/domain/prototype/operations-context";
 
-function requireToken(sessionToken: string | null): string {
-  if (!sessionToken) throw new Error("Preview session is not ready");
-  return sessionToken;
-}
-
-export function useOperationsMutations(sessionToken: string | null) {
+export function useOperationsMutations() {
   const createBatchMutation = useMutation(api.batches.create);
   const linkCatalogMutation = useMutation(api.batches.linkCatalog);
   const unlinkCatalogMutation = useMutation(api.batches.unlinkCatalog);
@@ -29,126 +24,112 @@ export function useOperationsMutations(sessionToken: string | null) {
   const reverseTransactionMutation = useMutation(api.depositTransactions.reverse);
 
   const createBatch = useCallback(
-    (input: { name: string; referenceCode?: string; description?: string }) =>
-      createBatchMutation({ sessionToken: requireToken(sessionToken), ...input }),
-    [createBatchMutation, sessionToken],
+    (input: { name: string; referenceCode?: string; description?: string }) => createBatchMutation(input),
+    [createBatchMutation],
   );
   const linkCatalog = useCallback(
     (id: string, catalogId: string) =>
       linkCatalogMutation({
-        sessionToken: requireToken(sessionToken),
         batchId: id as Id<"batches">,
         catalogId: catalogId as Id<"secretCatalogs">,
       }),
-    [linkCatalogMutation, sessionToken],
+    [linkCatalogMutation],
   );
   const unlinkCatalog = useCallback(
     (id: string, catalogId: string) =>
       unlinkCatalogMutation({
-        sessionToken: requireToken(sessionToken),
         batchId: id as Id<"batches">,
         catalogId: catalogId as Id<"secretCatalogs">,
       }),
-    [sessionToken, unlinkCatalogMutation],
+    [unlinkCatalogMutation],
   );
   const archiveBatch = useCallback(
-    (id: string) => archiveBatchMutation({ sessionToken: requireToken(sessionToken), batchId: id as Id<"batches"> }),
-    [archiveBatchMutation, sessionToken],
+    (id: string) => archiveBatchMutation({ batchId: id as Id<"batches"> }),
+    [archiveBatchMutation],
   );
   const assignOrderItem = useCallback(
     (orderItemId: string, id: string, assignedQuantity: number) =>
       assignOrderItemMutation({
-        sessionToken: requireToken(sessionToken),
         orderItemId: orderItemId as Id<"orderItems">,
         batchId: id as Id<"batches">,
         assignedQuantity,
       }),
-    [assignOrderItemMutation, sessionToken],
+    [assignOrderItemMutation],
   );
   const updateShipmentStage = useCallback(
     (id: string, toStage: ShipmentStage, allowSkip = false, note?: string) =>
       updateShipmentStageMutation({
-        sessionToken: requireToken(sessionToken),
         batchId: id as Id<"batches">,
         toStage,
         allowSkip,
         note,
       }),
-    [sessionToken, updateShipmentStageMutation],
+    [updateShipmentStageMutation],
   );
   const updateFulfillmentStage = useCallback(
     (id: string, toStage: FulfillmentStage, note?: string) =>
       updateFulfillmentStageMutation({
-        sessionToken: requireToken(sessionToken),
         orderId: id as Id<"orders">,
         toStage,
         note,
       }),
-    [sessionToken, updateFulfillmentStageMutation],
+    [updateFulfillmentStageMutation],
   );
   const createInvoice = useCallback(
     (orderId: string, mode: InvoiceRequirementMode, value?: number) =>
       createInvoiceMutation({
-        sessionToken: requireToken(sessionToken),
         orderId: orderId as Id<"orders">,
         depositRequirementMode: mode,
         depositRequirementValue: mode === "none" ? undefined : value,
       }),
-    [createInvoiceMutation, sessionToken],
+    [createInvoiceMutation],
   );
   const issueInvoice = useCallback(
-    (invoiceId: string) =>
-      issueInvoiceMutation({ sessionToken: requireToken(sessionToken), invoiceId: invoiceId as Id<"invoices"> }),
-    [issueInvoiceMutation, sessionToken],
+    (invoiceId: string) => issueInvoiceMutation({ invoiceId: invoiceId as Id<"invoices"> }),
+    [issueInvoiceMutation],
   );
   const voidInvoice = useCallback(
-    (invoiceId: string) =>
-      voidInvoiceMutation({ sessionToken: requireToken(sessionToken), invoiceId: invoiceId as Id<"invoices"> }),
-    [sessionToken, voidInvoiceMutation],
+    (invoiceId: string) => voidInvoiceMutation({ invoiceId: invoiceId as Id<"invoices"> }),
+    [voidInvoiceMutation],
   );
   const recordCredit = useCallback(
     (invoiceId: string, amount: number, note?: string) =>
       recordCreditMutation({
-        sessionToken: requireToken(sessionToken),
         invoiceId: invoiceId as Id<"invoices">,
         amount,
         note,
       }),
-    [recordCreditMutation, sessionToken],
+    [recordCreditMutation],
   );
   const allocateDeposit = useCallback(
     (invoiceId: string, amount: number) =>
       allocateDepositMutation({
-        sessionToken: requireToken(sessionToken),
         invoiceId: invoiceId as Id<"invoices">,
         amount,
       }),
-    [allocateDepositMutation, sessionToken],
+    [allocateDepositMutation],
   );
   const releaseAllocation = useCallback(
     (allocationId: string) =>
       releaseAllocationMutation({
-        sessionToken: requireToken(sessionToken),
         allocationId: allocationId as Id<"invoiceDepositAllocations">,
       }),
-    [releaseAllocationMutation, sessionToken],
+    [releaseAllocationMutation],
   );
   const reverseAllocation = useCallback(
     (allocationId: string) =>
       reverseAllocationMutation({
-        sessionToken: requireToken(sessionToken),
         allocationId: allocationId as Id<"invoiceDepositAllocations">,
       }),
-    [reverseAllocationMutation, sessionToken],
+    [reverseAllocationMutation],
   );
   const reverseTransaction = useCallback(
     (transactionId: string, note?: string) =>
       reverseTransactionMutation({
-        sessionToken: requireToken(sessionToken),
         transactionId: transactionId as Id<"depositTransactions">,
         note,
       }),
-    [reverseTransactionMutation, sessionToken],
+    [reverseTransactionMutation],
   );
 
   return useMemo(

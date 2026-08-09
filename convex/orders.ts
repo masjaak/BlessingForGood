@@ -3,18 +3,20 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
+import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
-import { OPEN_ENDED_TIMESTAMP_MS, requireSession } from "./lib/sessions";
+import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { positiveQuantity, requiredText } from "./lib/validation";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
 
-async function activeGrant(ctx: DataCtx, sessionId: Id<"prototypeSessions">, catalogId: Id<"secretCatalogs">) {
+async function activeGrant(ctx: DataCtx, appUserId: Id<"appUsers">, catalogId: Id<"secretCatalogs">) {
   const grant = await ctx.db
     .query("catalogAccessGrants")
-    .withIndex("by_session_and_catalog", (query) => query.eq("sessionId", sessionId).eq("catalogId", catalogId))
+    .withIndex("by_app_user_id_and_catalog_id", (query) => query.eq("appUserId", appUserId).eq("catalogId", catalogId))
     .first();
   if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) fail("ACCESS_GRANT_REQUIRED");
   return grant;
@@ -90,24 +92,23 @@ async function resolveItems(
 
 export const submit = mutation({
   args: {
-    sessionToken: v.string(),
     catalogId: v.id("secretCatalogs"),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     items: v.array(orderItemInput),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "orders.read.own");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     if (!(await catalogIsOpen(ctx, args.catalogId))) fail("CATALOG_NOT_OPEN");
-    await activeGrant(ctx, session._id, args.catalogId);
+    await activeGrant(ctx, user._id, args.catalogId);
     const customerName = requiredText(args.customerName, "customer name");
     const resolved = await resolveItems(ctx, args.catalogId, args.items);
     const totalAmount = resolved.reduce((total, item) => total + item.subtotalAmount, 0);
     const now = Date.now();
     const orderId = await ctx.db.insert("orders", {
-      sessionId: session._id,
+      customerUserId: user._id,
       catalogId: args.catalogId,
       customerName,
       customerEmail: args.customerEmail?.trim() || undefined,
@@ -141,19 +142,19 @@ export const submit = mutation({
       orderId,
       toStatus: "submitted",
       changedAt: now,
-      changedBySessionId: session._id,
+      changedByUserId: user._id,
     });
     return orderView(ctx, orderId);
   },
 });
 
 export const listMine = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "orders.read.own");
     const page = await ctx.db
       .query("orders")
-      .withIndex("by_session_and_created_at", (query) => query.eq("sessionId", session._id))
+      .withIndex("by_customer_user_id_and_created_at", (query) => query.eq("customerUserId", user._id))
       .order("desc")
       .paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((order) => orderView(ctx, order._id))) };
@@ -161,28 +162,29 @@ export const listMine = query({
 });
 
 export const listForAdmin = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "orders.read.all");
     const page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((order) => orderView(ctx, order._id))) };
   },
 });
 
 export const getMine = query({
-  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    await requirePermission(ctx, "orders.read.own");
     const order = await ctx.db.get(args.orderId);
-    if (!order || order.sessionId !== session._id) fail("ORDER_ACCESS_DENIED");
+    if (!order) fail("ORDER_NOT_FOUND");
+    await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
     return orderView(ctx, args.orderId);
   },
 });
 
 export const getForAdmin = query({
-  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "orders.read.all");
     if (!(await ctx.db.get(args.orderId))) fail("ORDER_NOT_FOUND");
     return orderView(ctx, args.orderId);
   },
@@ -190,16 +192,16 @@ export const getForAdmin = query({
 
 export const edit = mutation({
   args: {
-    sessionToken: v.string(),
     orderId: v.id("orders"),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     items: v.array(orderItemInput),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "orders.read.own");
     const order = await ctx.db.get(args.orderId);
-    if (!order || order.sessionId !== session._id) fail("ORDER_ACCESS_DENIED");
+    if (!order) fail("ORDER_NOT_FOUND");
+    await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
     if (order.status !== "submitted" || order.editableUntil <= Date.now()) fail("ORDER_LOCKED");
     if (!(await catalogIsOpen(ctx, order.catalogId))) fail("ORDER_LOCKED");
     const resolved = await resolveItems(ctx, order.catalogId, args.items);
@@ -239,7 +241,7 @@ export const edit = mutation({
       fromStatus: "submitted",
       toStatus: "submitted",
       changedAt: now,
-      changedBySessionId: session._id,
+      changedByUserId: user._id,
       note: "Order edited before catalog close",
     });
     return orderView(ctx, order._id);
@@ -248,12 +250,11 @@ export const edit = mutation({
 
 export const updateStatus = mutation({
   args: {
-    sessionToken: v.string(),
     orderId: v.id("orders"),
     status: v.union(v.literal("cancelled"), v.literal("completed")),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "orders.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
     if (order.status !== "submitted") fail("VALIDATION_FAILED", "order transition is not allowed");
@@ -268,8 +269,9 @@ export const updateStatus = mutation({
       fromStatus: order.status,
       toStatus: args.status,
       changedAt: now,
-      changedBySessionId: session._id,
+      changedByUserId: user._id,
     });
+    await recordAudit(ctx, user._id, "order.status_changed", "order", order._id, { status: args.status });
     return orderView(ctx, order._id);
   },
 });

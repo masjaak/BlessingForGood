@@ -2,33 +2,33 @@ import { v } from "convex/values";
 import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { query } from "./_generated/server";
+import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { canApplyLedgerDeltas, type LedgerDeltas } from "./lib/depositLedger";
-import { requireSession } from "./lib/sessions";
 
 type DataCtx = QueryCtx | MutationCtx;
 
 export async function findDepositAccount(
   ctx: DataCtx,
-  customerSessionId: Id<"prototypeSessions">,
+  userId: Id<"appUsers">,
 ): Promise<Doc<"depositAccounts"> | null> {
   return ctx.db
     .query("depositAccounts")
-    .withIndex("by_customer_and_currency", (index) =>
-      index.eq("customerSessionId", customerSessionId).eq("currency", "IDR"),
+    .withIndex("by_user_id_and_currency", (index) =>
+      index.eq("userId", userId).eq("currency", "IDR"),
     )
     .unique();
 }
 
 export async function getOrCreateDepositAccount(
   ctx: MutationCtx,
-  customerSessionId: Id<"prototypeSessions">,
+  userId: Id<"appUsers">,
   now: number,
 ): Promise<Doc<"depositAccounts">> {
-  const existing = await findDepositAccount(ctx, customerSessionId);
+  const existing = await findDepositAccount(ctx, userId);
   if (existing) return existing;
   const accountId = await ctx.db.insert("depositAccounts", {
-    customerSessionId,
+    userId,
     currency: "IDR",
     availableAmount: 0,
     reservedAmount: 0,
@@ -76,21 +76,21 @@ export async function applyLedgerDeltas(
 }
 
 export const getMine = query({
-  args: { sessionToken: v.string() },
-  handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
-    const account = await findDepositAccount(ctx, session._id);
+  args: {},
+  handler: async (ctx) => {
+    const user = await requirePermission(ctx, "deposits.read.own");
+    const account = await findDepositAccount(ctx, user._id);
     return { account: account ? accountView(account) : null };
   },
 });
 
 export const getForInvoice = query({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "deposits.read.all");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
-    const account = await findDepositAccount(ctx, invoice.customerSessionId);
+    const account = await findDepositAccount(ctx, invoice.customerUserId);
     return { account: account ? accountView(account) : null };
   },
 });

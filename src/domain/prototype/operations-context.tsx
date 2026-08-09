@@ -79,12 +79,12 @@ export function ConvexOperationsProvider({
   children,
   enabled,
   role,
-  sessionToken,
+  active,
 }: {
   children: ReactNode;
   enabled: boolean;
-  role: "admin" | "customer" | null;
-  sessionToken: string | null;
+  role: "owner" | "admin" | "customer" | null;
+  active: boolean;
 }) {
   const pathname = usePathname();
   const batchId = routeId(pathname, "/admin/batches/");
@@ -92,64 +92,62 @@ export function ConvexOperationsProvider({
   const adminOrderId = routeId(pathname, "/admin/orders/");
   const customerInvoiceId = routeId(pathname, "/account/invoices/");
   const adminInvoiceId = routeId(pathname, "/admin/invoices/");
-  const isAdmin = enabled && role === "admin" && Boolean(sessionToken);
-  const isCustomer = enabled && role === "customer" && Boolean(sessionToken);
-  const token = sessionToken || "";
+  const isAdmin = enabled && active && (role === "admin" || role === "owner");
+  const isCustomer = enabled && active && role === "customer";
 
   const batchList = useQuery(
     api.batches.listForAdmin,
-    isAdmin ? { sessionToken: token, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const adminInvoiceList = useQuery(
     api.invoices.listForAdmin,
-    isAdmin ? { sessionToken: token, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const customerInvoiceList = useQuery(
     api.invoices.listMine,
-    isCustomer ? { sessionToken: token, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isCustomer ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const currentBatch = useQuery(
     api.batchTracking.getForAdmin,
-    isAdmin && batchId ? { sessionToken: token, batchId: batchId as Id<"batches"> } : "skip",
+    isAdmin && batchId ? { batchId: batchId as Id<"batches"> } : "skip",
   );
   const currentCustomerTracking = useQuery(
     api.batchTracking.getMine,
-    isCustomer && customerOrderId ? { sessionToken: token, orderId: customerOrderId as Id<"orders"> } : "skip",
+    isCustomer && customerOrderId ? { orderId: customerOrderId as Id<"orders"> } : "skip",
   );
   const currentAdminOrderTracking = useQuery(
     api.batchTracking.getForOrderAdmin,
-    isAdmin && adminOrderId ? { sessionToken: token, orderId: adminOrderId as Id<"orders"> } : "skip",
+    isAdmin && adminOrderId ? { orderId: adminOrderId as Id<"orders"> } : "skip",
   );
   const currentCustomerFulfillment = useQuery(
     api.orderFulfillment.getMine,
-    isCustomer && customerOrderId ? { sessionToken: token, orderId: customerOrderId as Id<"orders"> } : "skip",
+    isCustomer && customerOrderId ? { orderId: customerOrderId as Id<"orders"> } : "skip",
   );
   const currentAdminFulfillment = useQuery(
     api.orderFulfillment.getForAdmin,
-    isAdmin && adminOrderId ? { sessionToken: token, orderId: adminOrderId as Id<"orders"> } : "skip",
+    isAdmin && adminOrderId ? { orderId: adminOrderId as Id<"orders"> } : "skip",
   );
   const currentCustomerInvoice = useQuery(
     api.invoices.getMine,
-    isCustomer && customerInvoiceId ? { sessionToken: token, invoiceId: customerInvoiceId as Id<"invoices"> } : "skip",
+    isCustomer && customerInvoiceId ? { invoiceId: customerInvoiceId as Id<"invoices"> } : "skip",
   );
   const currentAdminInvoice = useQuery(
     api.invoices.getForAdmin,
-    isAdmin && adminInvoiceId ? { sessionToken: token, invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
+    isAdmin && adminInvoiceId ? { invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
   );
-  const customerAccount = useQuery(api.depositAccounts.getMine, isCustomer ? { sessionToken: token } : "skip");
+  const customerAccount = useQuery(api.depositAccounts.getMine, isCustomer ? {} : "skip");
   const adminAccount = useQuery(
     api.depositAccounts.getForInvoice,
-    isAdmin && adminInvoiceId ? { sessionToken: token, invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
+    isAdmin && adminInvoiceId ? { invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
   );
   const customerTransactions = useQuery(
     api.depositTransactions.listMine,
-    isCustomer ? { sessionToken: token, paginationOpts: { numItems: 100, cursor: null } } : "skip",
+    isCustomer ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
   );
   const adminTransactions = useQuery(
     api.depositTransactions.listForInvoice,
     isAdmin && adminInvoiceId
       ? {
-          sessionToken: token,
           invoiceId: adminInvoiceId as Id<"invoices">,
           paginationOpts: { numItems: 100, cursor: null },
         }
@@ -157,14 +155,14 @@ export function ConvexOperationsProvider({
   );
   const customerAllocations = useQuery(
     api.invoiceDepositAllocations.listMine,
-    isCustomer && customerInvoiceId ? { sessionToken: token, invoiceId: customerInvoiceId as Id<"invoices"> } : "skip",
+    isCustomer && customerInvoiceId ? { invoiceId: customerInvoiceId as Id<"invoices"> } : "skip",
   );
   const adminAllocations = useQuery(
     api.invoiceDepositAllocations.listForAdmin,
-    isAdmin && adminInvoiceId ? { sessionToken: token, invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
+    isAdmin && adminInvoiceId ? { invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
   );
 
-  const mutations = useOperationsMutations(sessionToken);
+  const mutations = useOperationsMutations();
 
   const value = useMemo<OperationsContextValue>(
     () => ({

@@ -1,14 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { fail } from "./lib/errors";
+import { requirePermission } from "./lib/auth";
 import { nonNegativeMoney, requiredText } from "./lib/validation";
-import { requireSession } from "./lib/sessions";
 import { bookFormatValidator } from "./validators";
 
 export const listForBook = query({
-  args: { sessionToken: v.string(), bookId: v.id("books") },
+  args: { bookId: v.id("books") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "books.read");
     return ctx.db
       .query("bookVariants")
       .withIndex("by_book", (query) => query.eq("bookId", args.bookId))
@@ -18,14 +18,13 @@ export const listForBook = query({
 
 export const create = mutation({
   args: {
-    sessionToken: v.string(),
     bookId: v.id("books"),
     format: bookFormatValidator,
     isbn: v.string(),
     priceAmount: v.number(),
   },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
     if (!book || !book.isActive) fail("VALIDATION_FAILED", "book is unavailable");
     const isbn = requiredText(args.isbn, "ISBN");

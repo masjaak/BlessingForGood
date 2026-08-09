@@ -4,10 +4,11 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { accountView, applyLedgerDeltas, findDepositAccount } from "./depositAccounts";
 import { appendDepositTransaction, transactionView } from "./depositTransactions";
+import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { outstandingAmount } from "./lib/invoiceCalculations";
 import { fail } from "./lib/errors";
 import { inverseLedgerDeltas, ledgerDeltas } from "./lib/depositLedger";
-import { requireSession } from "./lib/sessions";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -61,9 +62,9 @@ async function invoiceAndAccount(ctx: MutationCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
   if (invoice.status === "void") fail("INVOICE_VOID");
-  const account = await findDepositAccount(ctx, invoice.customerSessionId);
+  const account = await findDepositAccount(ctx, invoice.customerUserId);
   if (!account) fail("DEPOSIT_ACCOUNT_NOT_FOUND");
-  if (account.customerSessionId !== invoice.customerSessionId) fail("DEPOSIT_CUSTOMER_MISMATCH");
+  if (account.userId !== invoice.customerUserId) fail("DEPOSIT_CUSTOMER_MISMATCH");
   return { invoice, account };
 }
 
@@ -75,9 +76,9 @@ async function reservationForAllocation(ctx: MutationCtx, allocation: Doc<"invoi
 }
 
 export const allocate = mutation({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices"), amount: v.number() },
+  args: { invoiceId: v.id("invoices"), amount: v.number() },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "deposits.manage");
     const { invoice, account } = await invoiceAndAccount(ctx, args.invoiceId);
     if (!Number.isSafeInteger(args.amount) || args.amount <= 0) fail("DEPOSIT_AMOUNT_INVALID");
     if (args.amount > invoice.outstandingAmount) fail("DEPOSIT_ALLOCATION_EXCEEDS_OUTSTANDING");
@@ -92,7 +93,7 @@ export const allocate = mutation({
       invoiceId: invoice._id,
       note: "invoice deposit allocation",
       createdAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     const allocationId = await ctx.db.insert("invoiceDepositAllocations", {
       invoiceId: invoice._id,
@@ -101,7 +102,7 @@ export const allocate = mutation({
       amount: args.amount,
       status: "active",
       createdAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     await ctx.db.patch(invoice._id, {
       ...updatedInvoiceAmounts(invoice, args.amount),
@@ -110,6 +111,7 @@ export const allocate = mutation({
     const allocation = await ctx.db.get(allocationId);
     const updatedInvoice = await ctx.db.get(invoice._id);
     if (!allocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
+    await recordAudit(ctx, user._id, "deposit.allocated", "invoice", invoice._id, { amount: String(args.amount) });
     return {
       ...allocationView(allocation),
       account: accountView(updatedAccount),
@@ -119,9 +121,9 @@ export const allocate = mutation({
 });
 
 export const release = mutation({
-  args: { sessionToken: v.string(), allocationId: v.id("invoiceDepositAllocations") },
+  args: { allocationId: v.id("invoiceDepositAllocations") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "deposits.manage");
     const allocation = await ctx.db.get(args.allocationId);
     if (!allocation) fail("DEPOSIT_ALLOCATION_INVALID");
     if (allocation.status !== "active") fail("DEPOSIT_ALLOCATION_INVALID");
@@ -139,7 +141,7 @@ export const release = mutation({
       referenceTransactionId: reservation._id,
       note: "invoice deposit release",
       createdAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     await ctx.db.patch(allocation._id, {
       status: "released",
@@ -153,6 +155,7 @@ export const release = mutation({
     const updatedAllocation = await ctx.db.get(allocation._id);
     const updatedInvoice = await ctx.db.get(invoice._id);
     if (!updatedAllocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
+    await recordAudit(ctx, user._id, "deposit.released", "invoice", invoice._id);
     return {
       ...allocationView(updatedAllocation),
       account: accountView(updatedAccount),
@@ -162,9 +165,9 @@ export const release = mutation({
 });
 
 export const reverse = mutation({
-  args: { sessionToken: v.string(), allocationId: v.id("invoiceDepositAllocations") },
+  args: { allocationId: v.id("invoiceDepositAllocations") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "deposits.manage");
     const allocation = await ctx.db.get(args.allocationId);
     if (!allocation) fail("DEPOSIT_ALLOCATION_INVALID");
     if (allocation.status !== "active") fail("DEPOSIT_ALLOCATION_INVALID");
@@ -188,7 +191,7 @@ export const reverse = mutation({
       referenceTransactionId: reservation._id,
       note: "invoice deposit reversal",
       createdAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     await ctx.db.patch(reservation._id, { reversedByTransactionId: reversalTransactionId });
     await ctx.db.patch(allocation._id, { status: "reversed" });
@@ -199,6 +202,7 @@ export const reverse = mutation({
     const updatedAllocation = await ctx.db.get(allocation._id);
     const updatedInvoice = await ctx.db.get(invoice._id);
     if (!updatedAllocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
+    await recordAudit(ctx, user._id, "deposit.allocation_reversed", "invoice", invoice._id);
     return {
       ...allocationView(updatedAllocation),
       account: accountView(updatedAccount),
@@ -208,12 +212,12 @@ export const reverse = mutation({
 });
 
 export const listMine = query({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    await requirePermission(ctx, "deposits.read.own");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
-    if (invoice.customerSessionId !== session._id) fail("INVOICE_ACCESS_DENIED");
+    await requireOwnedResource(ctx, invoice.customerUserId, "INVOICE_ACCESS_DENIED");
     const allocations = await ctx.db
       .query("invoiceDepositAllocations")
       .withIndex("by_invoice", (index) => index.eq("invoiceId", invoice._id))
@@ -224,9 +228,9 @@ export const listMine = query({
 });
 
 export const listForAdmin = query({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "deposits.read.all");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     const allocations = await ctx.db

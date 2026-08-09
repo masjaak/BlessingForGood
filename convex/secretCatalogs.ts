@@ -2,9 +2,10 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { accessCodeDigests } from "./lib/accessCodes";
+import { requirePermission } from "./lib/auth";
 import { getCatalogView } from "./lib/catalogView";
+import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
-import { requireSession } from "./lib/sessions";
 import { nonNegativeMoney, requiredText, slugify } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 
@@ -15,9 +16,9 @@ const variantInput = v.object({
 });
 
 export const list = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "catalog.manage");
     const page = await ctx.db
       .query("secretCatalogs")
       .withIndex("by_created_at")
@@ -29,14 +30,13 @@ export const list = query({
 
 export const create = mutation({
   args: {
-    sessionToken: v.string(),
     name: v.string(),
     slug: v.optional(v.string()),
     description: v.optional(v.string()),
     closesAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "catalog.manage");
     const name = requiredText(args.name, "catalog name");
     const slug = slugify(args.slug || name, "catalog slug");
     const duplicate = await ctx.db
@@ -48,7 +48,7 @@ export const create = mutation({
       fail("VALIDATION_FAILED", "closing date is invalid");
     }
     const now = Date.now();
-    return ctx.db.insert("secretCatalogs", {
+    const catalogId = await ctx.db.insert("secretCatalogs", {
       name,
       slug,
       description: args.description?.trim() || undefined,
@@ -56,40 +56,43 @@ export const create = mutation({
       closesAt: args.closesAt,
       createdAt: now,
       updatedAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
+    await recordAudit(ctx, user._id, "catalog.created", "catalog", catalogId);
+    return catalogId;
   },
 });
 
 export const open = mutation({
-  args: { sessionToken: v.string(), catalogId: v.id("secretCatalogs") },
+  args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "catalog.manage");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     if (catalog.status === "closed" || catalog.status === "archived") fail("CATALOG_CLOSED");
     if (catalog.closesAt && catalog.closesAt <= Date.now()) fail("CATALOG_CLOSED");
     const now = Date.now();
     await ctx.db.patch(args.catalogId, { status: "open", opensAt: catalog.opensAt || now, updatedAt: now });
+    await recordAudit(ctx, user._id, "catalog.opened", "catalog", args.catalogId);
     return getCatalogView(ctx, args.catalogId);
   },
 });
 
 export const close = mutation({
-  args: { sessionToken: v.string(), catalogId: v.id("secretCatalogs") },
+  args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "catalog.manage");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     const now = Date.now();
     await ctx.db.patch(args.catalogId, { status: "closed", updatedAt: now });
+    await recordAudit(ctx, user._id, "catalog.closed", "catalog", args.catalogId);
     return getCatalogView(ctx, args.catalogId);
   },
 });
 
 export const createBundle = mutation({
   args: {
-    sessionToken: v.string(),
     name: v.string(),
     publisherName: v.string(),
     bookTitle: v.string(),
@@ -98,7 +101,7 @@ export const createBundle = mutation({
     variants: v.array(variantInput),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "catalog.manage");
     const name = requiredText(args.name, "catalog name");
     const catalogSlug = slugify(name, "catalog slug");
     const publisherName = requiredText(args.publisherName, "publisher name");
@@ -124,7 +127,7 @@ export const createBundle = mutation({
         isActive: true,
         createdAt: now,
         updatedAt: now,
-        createdBySessionId: session._id,
+        createdByUserId: user._id,
       });
       publisher = await ctx.db.get(publisherId);
     }
@@ -142,7 +145,7 @@ export const createBundle = mutation({
         isActive: true,
         createdAt: now,
         updatedAt: now,
-        createdBySessionId: session._id,
+        createdByUserId: user._id,
       });
       book = await ctx.db.get(bookId);
     }
@@ -179,7 +182,7 @@ export const createBundle = mutation({
       closesAt: args.closesAt,
       createdAt: now,
       updatedAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     const digests = await accessCodeDigests(catalogId, args.accessCode);
     await ctx.db.insert("catalogAccessCodes", {
@@ -199,6 +202,7 @@ export const createBundle = mutation({
         updatedAt: now,
       });
     }
+    await recordAudit(ctx, user._id, "catalog.created", "catalog", catalogId);
     return { catalogId, publisherId: publisher._id, bookId: book._id, variantIds };
   },
 });

@@ -2,9 +2,10 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
+import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { canTransitionFulfillment } from "./lib/fulfillmentTransitions";
 import { fail } from "./lib/errors";
-import { requireSession } from "./lib/sessions";
 import { fulfillmentStageValidator } from "./validators";
 
 async function historyView(ctx: QueryCtx, orderId: Id<"orders">, includeNote = false) {
@@ -34,13 +35,12 @@ async function timelineView(ctx: QueryCtx, orderId: Id<"orders">, includeNote = 
 
 export const updateStage = mutation({
   args: {
-    sessionToken: v.string(),
     orderId: v.id("orders"),
     toStage: fulfillmentStageValidator,
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "tracking.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
     if (!canTransitionFulfillment(order.currentFulfillmentStage, args.toStage)) {
@@ -57,27 +57,29 @@ export const updateStage = mutation({
       fromStage: order.currentFulfillmentStage,
       toStage: args.toStage,
       changedAt: now,
-      changedBySessionId: session._id,
+      changedByUserId: user._id,
       note: args.note?.trim() || undefined,
     });
+    await recordAudit(ctx, user._id, "tracking.fulfillment_stage_changed", "order", order._id, { stage: args.toStage });
     return timelineView(ctx, order._id, true);
   },
 });
 
 export const getMine = query({
-  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    await requirePermission(ctx, "tracking.read.own");
     const order = await ctx.db.get(args.orderId);
-    if (!order || order.sessionId !== session._id) fail("ORDER_ACCESS_DENIED");
+    if (!order) fail("ORDER_NOT_FOUND");
+    await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
     return timelineView(ctx, args.orderId);
   },
 });
 
 export const getForAdmin = query({
-  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "tracking.read.all");
     return timelineView(ctx, args.orderId, true);
   },
 });

@@ -3,9 +3,10 @@ import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { getBatchSummary } from "./batches";
+import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { canTransitionShipment } from "./lib/shipmentTransitions";
 import { fail } from "./lib/errors";
-import { requireSession } from "./lib/sessions";
 import { positiveQuantity } from "./lib/validation";
 
 type DataCtx = QueryCtx | MutationCtx;
@@ -33,13 +34,12 @@ async function historyView(ctx: QueryCtx, batchId: Id<"batches">, includeNote = 
 
 export const assignOrderItem = mutation({
   args: {
-    sessionToken: v.string(),
     orderItemId: v.id("orderItems"),
     batchId: v.id("batches"),
     assignedQuantity: v.number(),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "tracking.manage");
     const quantity = positiveQuantity(args.assignedQuantity);
     const orderItem = await ctx.db.get(args.orderItemId);
     const batch = await ctx.db.get(args.batchId);
@@ -60,24 +60,26 @@ export const assignOrderItem = mutation({
       await ctx.db.patch(existing._id, {
         assignedQuantity: quantity,
         updatedAt: now,
-        assignedBySessionId: session._id,
+        assignedByUserId: user._id,
       });
+      await recordAudit(ctx, user._id, "tracking.assignment_changed", "orderItem", args.orderItemId);
       return existing._id;
     }
-    return ctx.db.insert("orderItemBatchAssignments", {
+    const assignmentId = await ctx.db.insert("orderItemBatchAssignments", {
       orderItemId: args.orderItemId,
       batchId: args.batchId,
       assignedQuantity: quantity,
       createdAt: now,
       updatedAt: now,
-      assignedBySessionId: session._id,
+      assignedByUserId: user._id,
     });
+    await recordAudit(ctx, user._id, "tracking.assignment_created", "orderItem", args.orderItemId);
+    return assignmentId;
   },
 });
 
 export const updateShipmentStage = mutation({
   args: {
-    sessionToken: v.string(),
     batchId: v.id("batches"),
     toStage: v.union(
       v.literal("po_closed"),
@@ -91,7 +93,7 @@ export const updateShipmentStage = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "tracking.manage");
     const batch = await ctx.db.get(args.batchId);
     if (!batch) fail("BATCH_NOT_FOUND");
     if (batch.isArchived) fail("BATCH_ARCHIVED");
@@ -105,19 +107,21 @@ export const updateShipmentStage = mutation({
       fromStage: batch.currentShipmentStage,
       toStage: args.toStage,
       changedAt: now,
-      changedBySessionId: session._id,
+      changedByUserId: user._id,
       note: args.note?.trim() || undefined,
     });
+    await recordAudit(ctx, user._id, "tracking.shipment_stage_changed", "batch", args.batchId, { stage: args.toStage });
     return getBatchSummary(ctx, args.batchId);
   },
 });
 
 export const getMine = query({
-  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    await requirePermission(ctx, "tracking.read.own");
     const order = await ctx.db.get(args.orderId);
-    if (!order || order.sessionId !== session._id) fail("ORDER_ACCESS_DENIED");
+    if (!order) fail("ORDER_NOT_FOUND");
+    await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
     const items = await ctx.db
       .query("orderItems")
       .withIndex("by_order", (index) => index.eq("orderId", order._id))
@@ -170,9 +174,9 @@ export const getMine = query({
 });
 
 export const getForOrderAdmin = query({
-  args: { sessionToken: v.string(), orderId: v.id("orders") },
+  args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "tracking.read.all");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
     const items = await ctx.db
@@ -212,9 +216,9 @@ export const getForOrderAdmin = query({
 });
 
 export const getForAdmin = query({
-  args: { sessionToken: v.string(), batchId: v.id("batches") },
+  args: { batchId: v.id("batches") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "tracking.read.all");
     const summary = await getBatchSummary(ctx, args.batchId);
     const assignments = await ctx.db
       .query("orderItemBatchAssignments")

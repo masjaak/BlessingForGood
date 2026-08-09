@@ -1,6 +1,6 @@
 "use client";
 
-export type PrototypeRole = "customer" | "admin";
+export type PrototypeRole = "customer" | "admin" | "owner";
 
 const SESSION_TOKEN_KEY = "bfg-prototype-session-v0.1";
 const UNLOCKED_CATALOG_KEY = "bfg-prototype-unlocked-catalog-v0.1";
@@ -39,7 +39,7 @@ export function setStoredUnlockedCatalogId(catalogId: string): void {
 
 export function getStoredPrototypeRole(): PrototypeRole | null {
   const role = sessionStorageOrNull()?.getItem(ROLE_KEY);
-  return role === "customer" || role === "admin" ? role : null;
+  return role === "customer" || role === "admin" || role === "owner" ? role : null;
 }
 
 export function setStoredPrototypeRole(role: PrototypeRole): void {

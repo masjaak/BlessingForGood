@@ -3,10 +3,11 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
+import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { calculateDepositRequired } from "./lib/invoiceCalculations";
 import { invoiceNumberForId } from "./lib/invoiceNumbers";
 import { fail } from "./lib/errors";
-import { requireSession } from "./lib/sessions";
 import { depositRequirementModeValidator } from "./validators";
 
 type DataCtx = QueryCtx | MutationCtx;
@@ -87,13 +88,12 @@ async function invoiceItemsForOrder(ctx: MutationCtx, orderId: Id<"orders">) {
 
 export const create = mutation({
   args: {
-    sessionToken: v.string(),
     orderId: v.id("orders"),
     depositRequirementMode: depositRequirementModeValidator,
     depositRequirementValue: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "invoices.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
     const existing = await ctx.db
@@ -108,7 +108,7 @@ export const create = mutation({
     const now = Date.now();
     const invoiceId = await ctx.db.insert("invoices", {
       orderId: order._id,
-      customerSessionId: order.sessionId,
+      customerUserId: order.customerUserId,
       invoiceNumber: "pending",
       status: "draft",
       currency: "IDR",
@@ -121,7 +121,7 @@ export const create = mutation({
       outstandingAmount: snapshot.total,
       createdAt: now,
       updatedAt: now,
-      createdBySessionId: session._id,
+      createdByUserId: user._id,
     });
     await ctx.db.patch(invoiceId, { invoiceNumber: invoiceNumberForId(invoiceId, now) });
     for (const item of snapshot.items) {
@@ -139,45 +139,48 @@ export const create = mutation({
         createdAt: now,
       });
     }
+    await recordAudit(ctx, user._id, "invoice.created", "invoice", invoiceId);
     return invoiceView(ctx, invoiceId);
   },
 });
 
 export const issue = mutation({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "invoices.manage");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     if (invoice.status === "issued") fail("INVOICE_ALREADY_ISSUED");
     if (invoice.status === "void") fail("INVOICE_VOID");
     const now = Date.now();
     await ctx.db.patch(args.invoiceId, { status: "issued", issuedAt: now, updatedAt: now });
+    await recordAudit(ctx, user._id, "invoice.issued", "invoice", args.invoiceId);
     return invoiceView(ctx, args.invoiceId);
   },
 });
 
 export const voidInvoice = mutation({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "invoices.manage");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     if (invoice.status === "void") fail("INVOICE_VOID");
     if (invoice.allocatedDepositAmount > 0) fail("INVOICE_INVALID_STATE", "release allocations before voiding");
     const now = Date.now();
     await ctx.db.patch(args.invoiceId, { status: "void", voidedAt: now, updatedAt: now });
+    await recordAudit(ctx, user._id, "invoice.voided", "invoice", args.invoiceId);
     return invoiceView(ctx, args.invoiceId);
   },
 });
 
 export const listMine = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "invoices.read.own");
     const page = await ctx.db
       .query("invoices")
-      .withIndex("by_customer_and_created_at", (index) => index.eq("customerSessionId", session._id))
+      .withIndex("by_customer_user_id_and_created_at", (index) => index.eq("customerUserId", user._id))
       .order("desc")
       .paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((invoice) => invoiceView(ctx, invoice._id))) };
@@ -185,29 +188,29 @@ export const listMine = query({
 });
 
 export const listForAdmin = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "invoices.read.all");
     const page = await ctx.db.query("invoices").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((invoice) => invoiceView(ctx, invoice._id))) };
   },
 });
 
 export const getMine = query({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    await requirePermission(ctx, "invoices.read.own");
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
-    if (invoice.customerSessionId !== session._id) fail("INVOICE_ACCESS_DENIED");
+    await requireOwnedResource(ctx, invoice.customerUserId, "INVOICE_ACCESS_DENIED");
     return invoiceView(ctx, args.invoiceId);
   },
 });
 
 export const getForAdmin = query({
-  args: { sessionToken: v.string(), invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    await requirePermission(ctx, "invoices.read.all");
     return invoiceView(ctx, args.invoiceId);
   },
 });

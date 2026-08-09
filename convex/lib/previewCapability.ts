@@ -11,3 +11,9 @@ export function requirePreviewSecret(name: string): string {
   if (!value) fail("PREVIEW_MODE_DISABLED");
   return value;
 }
+
+export function requireConfiguredSecret(name: string): string {
+  const value = process.env[name];
+  if (!value) fail("AUTH_CONFIGURATION_MISSING");
+  return value;
+}

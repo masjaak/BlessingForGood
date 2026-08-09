@@ -2,22 +2,23 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { accessCodeDigests } from "./lib/accessCodes";
+import { requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
 import { constantTimeEqual, keyedDigest } from "./lib/crypto";
 import { fail } from "./lib/errors";
-import { requirePreviewSecret } from "./lib/previewCapability";
-import { OPEN_ENDED_TIMESTAMP_MS, requireSession } from "./lib/sessions";
+import { requireConfiguredSecret } from "./lib/previewCapability";
+import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { requiredText } from "./lib/validation";
 
 export const setCode = mutation({
   args: {
-    sessionToken: v.string(),
     catalogId: v.id("secretCatalogs"),
     accessCode: v.string(),
     expiresAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireSession(ctx, args.sessionToken, "admin");
+    const user = await requirePermission(ctx, "catalog.manage");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     const code = requiredText(args.accessCode, "access code");
@@ -34,7 +35,7 @@ export const setCode = mutation({
       fail("VALIDATION_FAILED", "access code is in use");
     for (const record of active) await ctx.db.patch(record._id, { isActive: false, updatedAt: Date.now() });
     const now = Date.now();
-    return ctx.db.insert("catalogAccessCodes", {
+    const codeId = await ctx.db.insert("catalogAccessCodes", {
       catalogId: args.catalogId,
       ...digests,
       isActive: true,
@@ -42,16 +43,18 @@ export const setCode = mutation({
       updatedAt: now,
       expiresAt: args.expiresAt,
     });
+    await recordAudit(ctx, user._id, "catalog.access_code_changed", "catalog", args.catalogId);
+    return codeId;
   },
 });
 
 export const unlock = mutation({
-  args: { sessionToken: v.string(), accessCode: v.string() },
+  args: { accessCode: v.string() },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "catalog.read");
     const code = requiredText(args.accessCode, "access code");
     const lookupDigest = await keyedDigest(
-      requirePreviewSecret("BFG_CATALOG_CODE_PEPPER"),
+      requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"),
       "catalog-access-lookup",
       code,
     );
@@ -62,7 +65,7 @@ export const unlock = mutation({
     if (!record || !record.isActive) fail("ACCESS_CODE_INVALID");
     if (record.expiresAt && record.expiresAt <= Date.now()) fail("ACCESS_CODE_EXPIRED");
     const expected = await keyedDigest(
-      requirePreviewSecret("BFG_CATALOG_CODE_PEPPER"),
+      requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"),
       "catalog-access",
       `${record.catalogId}:${code}`,
     );
@@ -71,8 +74,8 @@ export const unlock = mutation({
     if (!catalog || !(await catalogIsOpen(ctx, record.catalogId))) fail("CATALOG_NOT_OPEN");
     const existing = await ctx.db
       .query("catalogAccessGrants")
-      .withIndex("by_session_and_catalog", (query) =>
-        query.eq("sessionId", session._id).eq("catalogId", record.catalogId),
+      .withIndex("by_app_user_id_and_catalog_id", (query) =>
+        query.eq("appUserId", user._id).eq("catalogId", record.catalogId),
       )
       .first();
     const now = Date.now();
@@ -81,7 +84,7 @@ export const unlock = mutation({
       await ctx.db.patch(existing._id, { grantedAt: now, expiresAt, revokedAt: undefined });
     } else {
       await ctx.db.insert("catalogAccessGrants", {
-        sessionId: session._id,
+        appUserId: user._id,
         catalogId: record.catalogId,
         grantedAt: now,
         expiresAt,
@@ -92,13 +95,13 @@ export const unlock = mutation({
 });
 
 export const getUnlocked = query({
-  args: { sessionToken: v.string(), catalogId: v.id("secretCatalogs") },
+  args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "catalog.read");
     const grant = await ctx.db
       .query("catalogAccessGrants")
-      .withIndex("by_session_and_catalog", (query) =>
-        query.eq("sessionId", session._id).eq("catalogId", args.catalogId),
+      .withIndex("by_app_user_id_and_catalog_id", (query) =>
+        query.eq("appUserId", user._id).eq("catalogId", args.catalogId),
       )
       .first();
     if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) return null;
@@ -108,12 +111,12 @@ export const getUnlocked = query({
 });
 
 export const listAccessible = query({
-  args: { sessionToken: v.string(), paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    const session = await requireSession(ctx, args.sessionToken, "customer");
+    const user = await requirePermission(ctx, "catalog.read");
     const grants = await ctx.db
       .query("catalogAccessGrants")
-      .withIndex("by_session", (query) => query.eq("sessionId", session._id))
+      .withIndex("by_app_user_id", (query) => query.eq("appUserId", user._id))
       .order("desc")
       .paginate(args.paginationOpts);
     const page = await Promise.all(
