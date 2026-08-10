@@ -18,9 +18,9 @@ roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and disabled for active Preview. No business seed data is created.
 
-**Current priority:** restore the missing auth environment name in the isolated
-Convex Preview, then obtain real Clerk Development sign-in and authenticated
-Playwright QA.
+**Current priority:** repair application of the configured Preview auth
+environment to the actual branch-isolated Convex deployment, then obtain real
+Clerk Development sign-in and authenticated Playwright QA.
 
 ## Evidence
 
@@ -47,13 +47,20 @@ Playwright QA.
 - [BLOCKED] Real invitation acceptance, a signed-in Convex identity proof from
   the browser, and current branch Preview QA are not claimed until the
   isolated Preview deployment and non-secret QA identity setup are available.
-- [PREVIEW BUILD] The pushed commit `c5fbe7a` reached Vercel Preview
-  deployment `dpl_5up9f949qzn3m6qKKfarRyve6Y85` at
-  `blessing-for-good-ntc8mkb20-masjaaks-projects.vercel.app`. The build
-  selected isolated Convex Preview `robust-cheetah-853`, generated 18 static
-  pages, and failed because `CLERK_JWT_ISSUER_DOMAIN` was unset there.
-- [BLOCKED] The local Convex CLI account cannot inspect `robust-cheetah-853`;
-  no environment value was printed or changed.
+- [SUPERSEDED] Vercel Preview names-only inspection confirms the expected
+  Clerk keys and `CONVEX_DEPLOY_KEY` are configured for this feature branch.
+- [SUPERSEDED] Project-level Preview defaults names-only inspection confirms
+  `BFG_CATALOG_CODE_PEPPER`, `BFG_OWNER_CLERK_USER_ID`, and
+  `CLERK_JWT_ISSUER_DOMAIN`.
+- [PREVIEW BUILD] The retrigger commit `9a6eb84` reached Vercel Preview
+  deployment `dpl_3psKKup4dxPqK5kAjAiQMmuyRquQ` at
+  `blessing-for-good-1mp4mwwjh-masjaaks-projects.vercel.app`. The target was
+  `preview`, the build selected isolated Convex Preview `robust-cheetah-853`,
+  and Next.js generated 18 static pages.
+- [BLOCKED] The same remote build failed because
+  `CLERK_JWT_ISSUER_DOMAIN` was unset in the generated Preview deployment.
+  The local Convex CLI account cannot inspect that deployment; no environment
+  value was printed or changed.
 
 ## Identity and migration status
 
@@ -69,7 +76,7 @@ Playwright QA.
 | Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
 | Owner user management | [REPOSITORY] implemented; Preview runtime QA pending |
 | Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
-| Current branch Convex Preview | [BLOCKED] branch build target exists; auth environment missing |
+| Current branch Convex Preview | [BLOCKED] true Preview target exists; configured auth default is not applied/visible in the generated deployment |
 | Current branch Vercel Preview | [BLOCKED] latest deployment failed after the Next.js build |
 | Production | [CONFIRMED] untouched and not configured for this phase |
 | `main` | [CONFIRMED] untouched |

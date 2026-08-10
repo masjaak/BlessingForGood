@@ -39,9 +39,11 @@ Before reporting Preview ready, verify by names/counts only:
 - runtime logs contain no secrets or unexpected errors.
 
 [REPOSITORY] Local Next.js build and Preview-target build inputs are present.
-[PREVIEW BUILD] The feature-branch commit `c5fbe7a` reached Vercel Preview and
-selected isolated Convex Preview `robust-cheetah-853`; Next.js generated 18
-static pages before Convex rejected the deploy for missing
-`CLERK_JWT_ISSUER_DOMAIN`.
+[SUPERSEDED] Names-only inspection confirms the Vercel Preview Clerk keys and
+`CONVEX_DEPLOY_KEY`, plus the three project-level Convex Preview default names.
+[PREVIEW BUILD] The feature-branch retrigger commit `9a6eb84` reached Vercel
+Preview deployment `dpl_3psKKup4dxPqK5kAjAiQMmuyRquQ` and selected isolated
+Convex Preview `robust-cheetah-853`; Next.js generated 18 static pages before
+Convex rejected the deploy for missing `CLERK_JWT_ISSUER_DOMAIN`.
 [BLOCKED] Vercel Preview is not READY and authenticated runtime evidence is
 not claimed. No Production target was used.

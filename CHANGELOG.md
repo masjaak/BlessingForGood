@@ -2,11 +2,29 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-06
+last_updated: 2026-08-10
 source: conversation
 ---
 
 # Changelog
+
+## [phase-04.1-preview-verification] — 2026-08-10
+
+### Validated
+
+- [SUPERSEDED] Names-only inspection confirms the Vercel Preview Clerk keys
+  and `CONVEX_DEPLOY_KEY`, plus the three project-level Convex Preview default
+  names.
+- [PREVIEW BUILD] Git-connected Vercel Preview deployment
+  `dpl_3psKKup4dxPqK5kAjAiQMmuyRquQ` selected the real branch-isolated Convex
+  Preview `robust-cheetah-853` and generated 18 static pages.
+
+### Blocked
+
+- [BLOCKED] Convex rejected the Preview deployment because
+  `CLERK_JWT_ISSUER_DOMAIN` was unset in the generated Preview deployment.
+  Real Clerk, invitation, ownership, and authenticated browser QA remain
+  pending. Production and `main` were not changed.
 
 ## [phase-04.1-identity-authorization] — 2026-08-08
 
