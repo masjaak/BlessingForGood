@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import {
   allocationStatusValidator,
   bookFormatValidator,
+  bookPublicationStatusValidator,
   depositRequirementModeValidator,
   depositTransactionTypeValidator,
   fulfillmentStageValidator,
@@ -108,16 +109,18 @@ export default defineSchema({
     publisherId: v.id("publishers"),
     title: v.string(),
     slug: v.string(),
+    author: v.optional(v.string()),
     description: v.optional(v.string()),
+    categories: v.array(v.string()),
     coverImageUrl: v.optional(v.string()),
+    publicationStatus: bookPublicationStatusValidator,
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
     createdByUserId: v.id("appUsers"),
   })
-    .index("by_publisher", ["publisherId"])
-    .index("by_publisher_and_slug", ["publisherId", "slug"])
-    .index("by_active", ["isActive"])
+    .index("by_slug", ["slug"])
+    .index("by_publication_status", ["publicationStatus"])
     .index("by_created_at", ["createdAt"]),
 
   bookVariants: defineTable({
@@ -133,6 +136,14 @@ export default defineSchema({
     .index("by_book", ["bookId"])
     .index("by_isbn", ["isbn"])
     .index("by_book_and_format", ["bookId", "format"]),
+
+  readyStockInventory: defineTable({
+    bookVariantId: v.id("bookVariants"),
+    quantity: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    updatedByUserId: v.id("appUsers"),
+  }).index("by_book_variant_id", ["bookVariantId"]),
 
   secretCatalogs: defineTable({
     name: v.string(),
