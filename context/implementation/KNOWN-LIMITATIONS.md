@@ -24,6 +24,15 @@
 - Phase 06.2 preserves join-request history while `JOIN_REQUEST_RETENTION_POLICY`
   remains open. Infrastructure rate limiting, Clerk invitation execution and
   acceptance, and verified `joinRequest` → `appUser` linking are not implemented.
+- Phase 06.3 supports admin-assisted orders only for an existing active
+  customer `appUsers` record. `MANUAL_NON_ACCOUNT_CUSTOMER_POLICY` is open;
+  no fake Clerk identity or fake `appUsers` row is created.
+- Batch purchase summaries use assigned customer quantity and price snapshots;
+  supplier costs, supplier assignment, ordering cutoffs, procurement
+  automation, and Ready Stock order recording are not modeled.
+- The v0.1 unassigned batch queue scans at most 200 submitted orders/items.
+  Add a dedicated roster projection/index when BFG volume reaches this
+  documented ceiling. Post-lock correction/reopen workflow is also deferred.
 - Payment proof is a reference abstraction; durable file storage/upload is not
   implemented. Payment method taxonomy, cancellation, corrections, and final
   accounting policy remain open.

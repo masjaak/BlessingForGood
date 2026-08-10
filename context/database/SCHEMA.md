@@ -39,6 +39,11 @@ reference, globally unique slug, and publication state
 separate table keyed by `bookVariantId` with non-negative quantity and audited
 updater/timestamps.
 
+`orders.source` is optional for legacy documents and records the minimal
+channel distinction `customer_self_service` or `admin_assisted`. Assisted
+orders still use the canonical order and order-item records and require an
+existing active customer `appUsers` row.
+
 Catalog grants use `appUserId` and catalog ID. Orders use `customerUserId`;
 order items retain immutable product and price snapshots. Access codes remain
 keyed digests and are never stored as plaintext.
@@ -63,6 +68,10 @@ Operational actors use `createdByUserId`, `changedByUserId`, or
 `assignedByUserId`. Invoices use `customerUserId` and `createdByUserId`.
 Deposits use `userId` for the customer account and `createdByUserId` for the
 ledger actor.
+
+Batch roster data is derived from `orderItemBatchAssignments` and parent
+orders/items. The batch shipment stage remains separate from order fulfillment
+and financial state.
 
 Invoices also keep `verifiedPaymentAmount` and `paymentStatus` separate from
 the invoice lifecycle. `paymentConfirmations` stores manual payment attempts,

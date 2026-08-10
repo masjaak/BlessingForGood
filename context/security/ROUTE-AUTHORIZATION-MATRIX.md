@@ -26,10 +26,10 @@ while Convex auth/provisioning is unresolved.
 | `/admin` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | operational permission | redirect/permission denial | Convex tests |
 | `/admin/catalogs` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | catalog/books manage | redirect/permission denial | Convex tests |
 | `/admin/books`, `/admin/books/[bookId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | `books.manage` | redirect/permission denial | Convex suite; browser staging pending |
-| `/admin/orders` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | orders read/manage all | redirect/permission denial | Convex tests |
+| `/admin/orders` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | orders read/manage all; assisted orders require active customer target | redirect/permission denial | Convex tests |
 | `/admin/orders/[orderId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | order/tracking all | redirect/permission denial | Convex tests |
-| `/admin/batches` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | batches/tracking all | redirect/permission denial | Convex tests |
-| `/admin/batches/[batchId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | batches/tracking all | redirect/permission denial | Convex tests |
+| `/admin/batches` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | batches/tracking all; roster counts | redirect/permission denial | Convex tests |
+| `/admin/batches/[batchId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | admin-only roster, assignment, purchase summary, and lock operations | redirect/permission denial | Convex tests |
 | `/admin/invoices` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | invoices/deposits all | redirect/permission denial | Convex tests |
 | `/admin/invoices/[invoiceId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | invoice/deposit all | redirect/permission denial | Convex tests |
 | `/admin/payments` | Clerk + active BFG user | admin/owner | operational payment queue | admin layout + guard | invoice read/manage all | redirect/permission denial | Convex tests |

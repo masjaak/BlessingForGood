@@ -11,6 +11,7 @@ import {
   invoiceStatusValidator,
   joinRequestInvitationStatusValidator,
   joinRequestStatusValidator,
+  orderSourceValidator,
   paymentConfirmationStatusValidator,
   shipmentStageValidator,
 } from "./validators";
@@ -230,6 +231,8 @@ export default defineSchema({
   orders: defineTable({
     customerUserId: v.id("appUsers"),
     catalogId: v.id("secretCatalogs"),
+    source: v.optional(orderSourceValidator),
+    assistedSubmissionKey: v.optional(v.string()),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     status: orderStatus,
@@ -249,6 +252,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_catalog_and_status", ["catalogId", "status"])
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_assisted_submission_key", ["assistedSubmissionKey"])
     .index("by_created_at", ["createdAt"]),
 
   orderItems: defineTable({

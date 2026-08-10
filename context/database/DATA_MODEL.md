@@ -47,6 +47,27 @@ Creation and change fields reference `appUsers`:
 `actorUserId`. These are actor relationships, not client-supplied ownership
 claims.
 
+## Batch PO and roster graph
+
+```text
+appUser customer → order → orderItem → orderItemBatchAssignment → batch
+                                      ↘ catalogItem / bookVariant snapshots
+batch → catalogBatchLink → secretCatalog
+batch → batchStatusHistory → shipment stage
+order → orderFulfillmentHistory
+order → invoice → payment/deposit records
+```
+
+`Batch PO` is the purchasing/operational unit. The roster is derived from
+canonical order items and assignment rows; it does not duplicate customer,
+book, or order ownership data. Customer-facing tracking starts at the owned
+order, while admin roster queries may cross customers.
+
+Admin-assisted orders use the same `orders` and `orderItems` tables as
+self-service orders and carry the optional `orders.source` value
+`admin_assisted`. They require an existing active customer `appUsers` record;
+non-account manual customers are not represented in this model.
+
 ## Existing business model retained
 
 Publishers own books; books own variants; catalogs expose catalog items.

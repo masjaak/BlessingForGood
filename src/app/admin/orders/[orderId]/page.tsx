@@ -26,7 +26,7 @@ function AdminOrderDetail() {
   const [message, setMessage] = useState("");
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (dataSource !== "convex")
-    return <div className="state-panel">Persistent order operations are available in Convex Preview.</div>;
+    return <div className="state-panel">Persistent order operations require canonical Convex Development.</div>;
   if (!order)
     return (
       <EmptyState
@@ -38,7 +38,8 @@ function AdminOrderDetail() {
   if (!currentAdminOrderTracking || !currentAdminFulfillment || !batchList)
     return <div className="state-panel">Loading order operations…</div>;
   const eligibleBatches = batchList.page.filter(
-    (batch) => !batch.isArchived && batch.catalogLinks.some((link) => link.catalogId === order.catalogId),
+    (batch) =>
+      !batch.isArchived && !batch.rosterLocked && batch.catalogLinks.some((link) => link.catalogId === order.catalogId),
   );
   const invoice = adminInvoiceList?.page.find((candidate) => candidate.orderId === orderId);
   const currentIndex = currentAdminFulfillment.currentStage

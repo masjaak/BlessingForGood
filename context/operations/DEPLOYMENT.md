@@ -24,7 +24,7 @@ manually.
 ## Phase status
 
 ```text
-Phase 06.2 implementation: IMPLEMENTED LOCALLY
+Phase 06.3 implementation: IMPLEMENTED LOCALLY
 Local validation: GREEN
 Runtime integration QA: DEFERRED TO STAGING
 Production readiness: NOT READY
@@ -78,6 +78,15 @@ feature-complete. Approval sets a manual Clerk invitation handoff state only;
 it does not create an account, role, ownership relationship, or catalog grant.
 Invitation execution, acceptance, and verified account linking remain outside
 the local phase gate.
+
+## Phase 06.3 operations handoff
+
+Batch roster, purchase summary, assignment locking, and existing-customer
+admin-assisted orders are implemented locally. The feature branch may be
+validated and pushed, but no Convex Preview, Vercel Preview deployment, stable
+staging build, or Production operation is required or authorized for this
+phase. The Vercel Git-connected feature-branch record may be Preview-labeled
+and ignored/canceled by policy.
 
 ## Phase 05.1 payment handoff
 

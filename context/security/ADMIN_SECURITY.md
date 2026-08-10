@@ -11,6 +11,13 @@ review; it does not create Clerk accounts or grant catalog access.
 Navigation is convenience only. Convex permission checks remain mandatory for
 all reads and mutations.
 
+Phase 06.3 batch detail is an admin-only operational projection. It can show
+cross-customer roster data and purchase quantities because the actor has
+`tracking.read.all`; customers continue to receive only their own order-linked
+tracking. Assisted order creation requires `orders.manage` and an existing
+active customer `appUsers` record. Non-account manual customers are not
+created.
+
 Book, variant, publication, and Ready Stock mutations use `books.manage` after
 active-user/suspension checks. Slug, ISBN, format, integer price, stock, and
 reference validity are checked server-side. Privileged mutations write safe
@@ -54,6 +61,12 @@ metadata; proof contents, secrets, and credentials are not logged.
 Phase 06.2 join-request review writes `join_request.review_started`,
 `join_request.approved`, and `join_request.rejected` events. Join-request audit
 metadata contains no contact data, invitation URLs, or tokens.
+
+Phase 06.3 operations write `batch.item_assigned`,
+`batch.item_assignment_updated`, `batch.item_unassigned`, `batch.item_moved`,
+and `order.admin_assisted_created`. Metadata contains IDs, quantities, and
+status-safe references only; it does not include catalog access codes or
+unnecessary contact data.
 
 JWTs, Clerk secrets, session tokens, catalog access codes, invitation URLs,
 passwords, and raw identity claims are never audit metadata.
