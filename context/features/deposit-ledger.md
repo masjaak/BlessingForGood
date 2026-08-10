@@ -31,3 +31,11 @@ Phase 05.1 manual payment confirmations are not deposit credits and never
 create deposit ledger rows. Deposit allocation and approved external transfer
 amounts settle separate invoice components; the invoice outstanding projection
 subtracts each exactly once.
+
+## Phase 06.4 exception interaction
+
+`deposit_release` uses the existing allocation release path. It appends the
+compensating release transaction, restores available balance, reduces active
+reserved balance, updates the invoice projection, and leaves the reservation
+and release history visible. A released allocation cannot be released again.
+This is ledger release, not a cash withdrawal or deposit-refund execution.

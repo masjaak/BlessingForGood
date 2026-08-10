@@ -59,6 +59,33 @@ Phase 06.3 records the following approved operations decisions:
 - Non-account manual customers, fake identities, supplier costs, supplier
   procurement automation, and arbitrary price overrides are not implemented.
 
+Phase 06.4 records the following safe exception-domain decisions:
+
+- `orderExceptions` is the canonical item-level operational exception record.
+  Original order items, issued invoice items, approved payment confirmations,
+  and deposit ledger rows remain historical records and are never deleted or
+  rewritten to resolve an exception.
+- Customer cancellation is always a request. The server-side eligibility
+  boundary may allow a request or require admin review; it rejects fulfilled,
+  already-cancelled, or actively-conflicted items. Admin approval is required
+  before any resolution or financial effect.
+- v0.1 supports only `remove_item`, `deposit_release`, `refund_required`, and
+  `no_action` resolutions. Replacement execution, store-credit issuance, cash
+  payout, withdrawal, gateway reversal, and refund settlement are not
+  implemented because their business policies are not approved.
+- Partial quantities are supported. An exception blocks only its affected
+  quantity; the original `orderItems.quantity` remains unchanged and the
+  remaining quantity stays eligible for normal operations.
+- Invoice adjustments are append-only exception financial records. Issued
+  invoice snapshots retain the original total and expose a derived adjusted
+  total, outstanding amount, overpayment, and refund obligation. Refund
+  obligation is recorded only; no money movement is performed.
+- `deposit_release` reuses existing allocation release semantics and is
+  idempotent through active-allocation state. It releases the invoice's active
+  reservations as one explicit operational choice; it does not withdraw cash.
+- Ready Stock still does not create canonical orders. Exception records apply
+  only to canonical `orders` and `orderItems`.
+
 Phase 04.1 records the following approved implementation decisions:
 
 - Clerk Development is the identity provider; Convex owns BFG roles,

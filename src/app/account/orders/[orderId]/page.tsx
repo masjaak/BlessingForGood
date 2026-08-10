@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { CustomerOrderExceptions } from "@/components/customer-order-exceptions";
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
 import { fulfillmentStageLabels, shipmentStageLabels } from "@/domain/prototype/operations";
@@ -90,6 +91,17 @@ function CustomerOrderDetail() {
             <p className="subtle">No invoice has been issued yet.</p>
           )}
         </Card>
+
+        <CustomerOrderExceptions
+          orderId={orderId}
+          items={order.items.map((item) => ({
+            id: item.id,
+            title: item.bookTitle,
+            format: item.format,
+            quantity: item.quantity,
+            subtotal: item.subtotal,
+          }))}
+        />
 
         <Card>
           <div className="split-heading">

@@ -8,6 +8,7 @@ import { recordAudit } from "./lib/audit";
 import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
+import { hasUnresolvedException } from "./lib/orderExceptionState";
 import { positiveQuantity, requiredText } from "./lib/validation";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
@@ -361,12 +362,16 @@ export const updateStatus = mutation({
     const user = await requirePermission(ctx, "orders.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
+    if (args.status === "cancelled") fail("CANCELLATION_REQUIRES_EXCEPTION");
+    if (args.status === "completed" && (await hasUnresolvedException(ctx, order._id))) {
+      fail("EXCEPTION_REQUIRES_RESOLUTION");
+    }
     if (order.status !== "submitted") fail("VALIDATION_FAILED", "order transition is not allowed");
     const now = Date.now();
     await ctx.db.patch(order._id, {
       status: args.status,
       updatedAt: now,
-      cancelledAt: args.status === "cancelled" ? now : undefined,
+      cancelledAt: undefined,
     });
     await ctx.db.insert("orderStatusHistory", {
       orderId: order._id,

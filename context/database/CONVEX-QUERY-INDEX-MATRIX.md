@@ -33,6 +33,19 @@
 | Ready Stock detail | global slug → variants → stock | `books.by_slug`, `bookVariants.by_book`, `readyStockInventory.by_book_variant_id` | unique / bounded children |
 | admin Book Master | created books → variants → stock | `books.by_created_at`, `bookVariants.by_book`, `readyStockInventory.by_book_variant_id` | 200 |
 
-[CONVEX VERIFIED] Codegen and Convex tests pass against the configured
-Development deployment. No client-side full-table ownership filtering is
-used by active customer queries.
+[LOCAL VERIFIED] Convex tests pass in the repository test environment. The
+local CLI could not access the selected canonical project for codegen; no
+alternate project was selected. No client-side full-table ownership filtering
+is used by active customer queries.
+
+## Phase 06.4 exception queries
+
+| Query family | Ownership/filter | Index used | Bound |
+| --- | --- | --- | --- |
+| admin exception queue | optional status + newest | `orderExceptions.by_status_and_created_at` or `by_created_at` | 100 |
+| customer exception history | current customer | `orderExceptions.by_customer_user_id_and_created_at` | paginated |
+| customer order exceptions | owned order | `orderExceptions.by_order` after order ownership check | 200 |
+| admin order exceptions | any order | `orderExceptions.by_order` after admin permission | 200 |
+| item active-conflict/quantity check | order item | `orderExceptions.by_order_item` | 200 |
+| exception history | exception | `orderExceptionEvents.by_exception_and_created_at` | 100 |
+| financial consequence | exception/order/invoice/item | corresponding financial-adjustment index | 200 |

@@ -11,8 +11,13 @@ import {
   invoiceStatusValidator,
   joinRequestInvitationStatusValidator,
   joinRequestStatusValidator,
+  orderExceptionEventTypeValidator,
+  orderExceptionResolutionValidator,
+  orderExceptionStatusValidator,
+  orderExceptionTypeValidator,
   orderSourceValidator,
   paymentConfirmationStatusValidator,
+  refundObligationStatusValidator,
   shipmentStageValidator,
 } from "./validators";
 
@@ -285,6 +290,74 @@ export default defineSchema({
     .index("by_order", ["orderId"])
     .index("by_order_and_changed_at", ["orderId", "changedAt"]),
 
+  orderExceptions: defineTable({
+    orderId: v.id("orders"),
+    orderItemId: v.id("orderItems"),
+    customerUserId: v.id("appUsers"),
+    type: orderExceptionTypeValidator,
+    status: orderExceptionStatusValidator,
+    reasonCode: v.optional(v.string()),
+    reason: v.string(),
+    affectedQuantity: v.number(),
+    internalNote: v.optional(v.string()),
+    customerNote: v.optional(v.string()),
+    resolution: v.optional(orderExceptionResolutionValidator),
+    rejectionReason: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+    reviewedAt: v.optional(v.number()),
+    reviewedByUserId: v.optional(v.id("appUsers")),
+    resolutionSelectedAt: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),
+    rejectedAt: v.optional(v.number()),
+  })
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_order", ["orderId"])
+    .index("by_order_item", ["orderItemId"])
+    .index("by_type_and_created_at", ["type", "createdAt"])
+    .index("by_created_at", ["createdAt"]),
+
+  orderExceptionEvents: defineTable({
+    exceptionId: v.id("orderExceptions"),
+    orderId: v.id("orders"),
+    orderItemId: v.id("orderItems"),
+    eventType: orderExceptionEventTypeValidator,
+    fromStatus: v.optional(orderExceptionStatusValidator),
+    toStatus: v.optional(orderExceptionStatusValidator),
+    note: v.optional(v.string()),
+    actorUserId: v.id("appUsers"),
+    createdAt: v.number(),
+  })
+    .index("by_exception_and_created_at", ["exceptionId", "createdAt"])
+    .index("by_order", ["orderId"])
+    .index("by_order_item", ["orderItemId"]),
+
+  orderExceptionFinancialAdjustments: defineTable({
+    exceptionId: v.id("orderExceptions"),
+    orderId: v.id("orders"),
+    orderItemId: v.id("orderItems"),
+    customerUserId: v.id("appUsers"),
+    invoiceId: v.optional(v.id("invoices")),
+    affectedQuantity: v.number(),
+    originalItemValueAmount: v.number(),
+    invoiceAdjustmentAmount: v.number(),
+    depositAmountBefore: v.number(),
+    depositReleaseAmount: v.number(),
+    depositAmountAfter: v.number(),
+    externalPaymentAmount: v.number(),
+    adjustedInvoiceTotalAmount: v.optional(v.number()),
+    refundObligationAmount: v.number(),
+    refundObligationStatus: refundObligationStatusValidator,
+    createdAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_exception", ["exceptionId"])
+    .index("by_order", ["orderId"])
+    .index("by_invoice", ["invoiceId"])
+    .index("by_order_item", ["orderItemId"]),
+
   batches: defineTable({
     name: v.string(),
     referenceCode: v.optional(v.string()),
@@ -354,12 +427,17 @@ export default defineSchema({
     currency: v.literal("IDR"),
     subtotalAmount: v.number(),
     totalAmount: v.number(),
+    adjustedTotalAmount: v.number(),
+    financialAdjustmentAmount: v.number(),
     depositRequirementMode: depositRequirementModeValidator,
     depositRequirementValue: v.optional(v.number()),
     depositRequiredAmount: v.number(),
     allocatedDepositAmount: v.number(),
     verifiedPaymentAmount: v.number(),
     outstandingAmount: v.number(),
+    overpaymentAmount: v.number(),
+    refundObligationAmount: v.number(),
+    refundObligationStatus: refundObligationStatusValidator,
     paymentStatus: invoicePaymentStatusValidator,
     createdAt: v.number(),
     updatedAt: v.number(),

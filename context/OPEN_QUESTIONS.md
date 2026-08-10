@@ -1,5 +1,32 @@
 # Open Questions
 
+## Phase 06.4 decisions and blockers
+
+- [BLOCKED BY BUSINESS DECISION] `CANCELLATION_ELIGIBILITY_POLICY`: define the
+  final customer cancellation window and approval rules. v0.1 uses a safe
+  server boundary: pre-lock/unpaid items may be eligible; batch-locked or
+  financially settled items require admin review; fulfilled, cancelled, and
+  actively conflicted items are rejected.
+- [BLOCKED BY BUSINESS DECISION] `REFUND_DISBURSEMENT_POLICY`: define whether
+  and how a recorded `refund_due` obligation may be paid. v0.1 performs no
+  bank transfer, cash payout, gateway reversal, or automatic credit.
+- [BLOCKED BY BUSINESS DECISION] `DEPOSIT_REFUND_POLICY`: releasing an active
+  invoice reservation restores the existing deposit account balance; cash
+  withdrawal is not implemented.
+- [BLOCKED BY BUSINESS DECISION] `POST_PO_CANCELLATION_POLICY`: after batch
+  lock/PO close, the case is preserved and reviewed without rewriting batch
+  purchasing history.
+- [BLOCKED BY BUSINESS DECISION] `DEFECT_REPLACEMENT_POLICY`: replacement
+  execution, supplier return, proof upload, and replacement inventory remain
+  outside v0.1.
+- [DEFERRED TO STAGING] Clerk identity, browser privacy, concurrent admin
+  runtime behavior, realtime projections, and cleanup evidence remain part of
+  the stable staging gate.
+- [BLOCKED ENVIRONMENT ACCESS] Canonical Convex codegen could not access the
+  selected Development project. The local generated API typing was updated for
+  the source tree; do not switch projects or run `convex dev` to select another
+  deployment.
+
 ## Phase 06.3 decisions and blockers
 
 - [BLOCKED BY BUSINESS DECISION] `MANUAL_NON_ACCOUNT_CUSTOMER_POLICY`: decide

@@ -1,11 +1,12 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { calculateDepositRequired } from "./lib/invoiceCalculations";
+import { effectiveInvoiceTotal, invoiceProjection } from "./lib/invoiceProjection";
 import { invoiceNumberForId } from "./lib/invoiceNumbers";
 import { fail } from "./lib/errors";
 import { depositRequirementModeValidator } from "./validators";
@@ -29,12 +30,17 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     currency: invoice.currency,
     subtotalAmount: invoice.subtotalAmount,
     totalAmount: invoice.totalAmount,
+    adjustedTotalAmount: effectiveInvoiceTotal(invoice),
+    financialAdjustmentAmount: invoice.financialAdjustmentAmount,
     depositRequirementMode: invoice.depositRequirementMode,
     depositRequirementValue: invoice.depositRequirementValue ?? null,
     depositRequiredAmount: invoice.depositRequiredAmount,
     allocatedDepositAmount: invoice.allocatedDepositAmount,
     verifiedPaymentAmount: invoice.verifiedPaymentAmount,
     outstandingAmount: invoice.outstandingAmount,
+    overpaymentAmount: invoice.overpaymentAmount,
+    refundObligationAmount: invoice.refundObligationAmount,
+    refundObligationStatus: invoice.refundObligationStatus,
     paymentStatus: invoice.paymentStatus,
     createdAt: new Date(invoice.createdAt).toISOString(),
     updatedAt: new Date(invoice.updatedAt).toISOString(),
@@ -88,6 +94,32 @@ async function invoiceItemsForOrder(ctx: MutationCtx, orderId: Id<"orders">) {
   return { items, total };
 }
 
+async function applyExistingExceptionAdjustments(ctx: MutationCtx, invoice: Doc<"invoices">) {
+  const adjustments = await ctx.db
+    .query("orderExceptionFinancialAdjustments")
+    .withIndex("by_order", (index) => index.eq("orderId", invoice.orderId))
+    .take(200);
+  let financialAdjustmentAmount = 0;
+  for (const adjustment of adjustments) {
+    if (adjustment.invoiceId && adjustment.invoiceId !== invoice._id) {
+      const priorInvoice = await ctx.db.get(adjustment.invoiceId);
+      if (priorInvoice && priorInvoice.status !== "void") continue;
+    }
+    financialAdjustmentAmount += adjustment.invoiceAdjustmentAmount;
+  }
+  if (!adjustments.length) return;
+  const adjustedTotalAmount = invoice.totalAmount + financialAdjustmentAmount;
+  if (!Number.isSafeInteger(adjustedTotalAmount) || adjustedTotalAmount < 0) fail("EXCEPTION_FINANCIAL_INVALID");
+  const projection = await invoiceProjection(ctx, invoice, { adjustedTotalAmount });
+  await ctx.db.patch(invoice._id, {
+    financialAdjustmentAmount,
+    ...projection,
+    refundObligationAmount: projection.overpaymentAmount,
+    refundObligationStatus: projection.overpaymentAmount > 0 ? "refund_due" : "none",
+    updatedAt: Date.now(),
+  });
+}
+
 export const create = mutation({
   args: {
     orderId: v.id("orders"),
@@ -116,12 +148,17 @@ export const create = mutation({
       currency: "IDR",
       subtotalAmount: snapshot.total,
       totalAmount: snapshot.total,
+      adjustedTotalAmount: snapshot.total,
+      financialAdjustmentAmount: 0,
       depositRequirementMode: args.depositRequirementMode,
       depositRequirementValue: requirementValue,
       depositRequiredAmount,
       allocatedDepositAmount: 0,
       verifiedPaymentAmount: 0,
       outstandingAmount: snapshot.total,
+      overpaymentAmount: 0,
+      refundObligationAmount: 0,
+      refundObligationStatus: "none",
       paymentStatus: "unpaid",
       createdAt: now,
       updatedAt: now,
@@ -143,6 +180,9 @@ export const create = mutation({
         createdAt: now,
       });
     }
+    const createdInvoice = await ctx.db.get(invoiceId);
+    if (!createdInvoice) fail("INVOICE_NOT_FOUND");
+    await applyExistingExceptionAdjustments(ctx, createdInvoice);
     await recordAudit(ctx, user._id, "invoice.created", "invoice", invoiceId);
     return invoiceView(ctx, invoiceId);
   },

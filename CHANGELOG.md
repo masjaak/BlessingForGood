@@ -8,6 +8,38 @@ source: conversation
 
 # Changelog
 
+## [phase-06.4-order-exceptions] — 2026-08-11
+
+### Added
+
+- Added item-level `orderExceptions` for OOS, defects, customer cancellation
+  requests, and admin cancellation with forward-only review/resolution history.
+- Added `/admin/exceptions`, admin order-detail exception context, and
+  customer-safe order exception history with server-gated cancellation requests.
+- Added partial-quantity blocking, batch-lock/fulfillment guards, audit events,
+  ownership/privacy checks, and isolated regression coverage.
+
+### Financial safety
+
+- Added append-only exception financial adjustments and derived invoice
+  adjusted-total, overpayment, and refund-obligation projections.
+- Reused deposit allocation release semantics and preserved approved payment
+  confirmations and all ledger history.
+- No cash refund, withdrawal, gateway reversal, replacement, or store credit is
+  executed; `refund_due` is an obligation state only.
+
+### Validated
+
+- `npm run check`: format, lint with zero warnings, typecheck, 88 Vitest tests,
+  and Next.js build pass.
+- `npm run convex:test`: 61 Convex tests pass; `git diff --check` passes.
+
+### Deferred
+
+- Cancellation eligibility, refund disbursement, deposit refund, post-PO
+  cancellation, and defect replacement policies remain business decisions.
+- Clerk/browser/realtime/concurrency QA remains deferred to stable staging.
+
 ## [phase-06.3-batch-roster-operations] — 2026-08-10
 
 ### Added

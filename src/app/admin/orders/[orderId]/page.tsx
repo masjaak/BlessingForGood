@@ -1,7 +1,10 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { api } from "../../../../../convex/_generated/api";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
 import { Button, Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
@@ -15,6 +18,10 @@ function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
   const { dataSource, state } = usePrototype();
+  const adminExceptions = useQuery(
+    api.orderExceptions.listForOrderAdmin,
+    dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
+  );
   const {
     batchList,
     currentAdminOrderTracking,
@@ -101,6 +108,40 @@ function AdminOrderDetail() {
               </LinkButton>
             ) : (
               <p className="subtle">No invoice exists for this order.</p>
+            )}
+          </Card>
+
+          <Card>
+            <div className="split-heading">
+              <div>
+                <span className="card-kicker">Exceptions</span>
+                <h2>Operational history</h2>
+              </div>
+              <LinkButton href="/admin/exceptions" variant="secondary">
+                Open queue
+              </LinkButton>
+            </div>
+            {adminExceptions?.length ? (
+              adminExceptions.map((exception) => (
+                <div className="summary-line" key={exception.exceptionId}>
+                  <span>
+                    {exception.type} · {exception.affectedQuantity} affected
+                    <br />
+                    <span className="subtle">
+                      {exception.status} · {exception.resolution || "no resolution selected"}
+                    </span>
+                  </span>
+                  <span>
+                    {exception.financialImpact ? (
+                      <Money amount={Math.abs(exception.financialImpact.invoiceAdjustmentAmount)} />
+                    ) : (
+                      "No financial adjustment"
+                    )}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="subtle">No exception recorded for this order.</p>
             )}
           </Card>
 

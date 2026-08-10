@@ -84,3 +84,22 @@ stores binary proof content.
 business tables, so no unknown record was assigned, deleted, or rewritten.
 Current active code has no session ownership fields. A future non-empty
 Preview preflight must classify data before any migration.
+
+## Phase 06.4 exception tables
+
+`orderExceptions` is the canonical item-level case record. It stores the
+affected `orderId`, `orderItemId`, and `customerUserId`, exception type/status,
+reason, affected quantity, safe customer/internal notes, resolution, and actor
+timestamps. `orderExceptionEvents` preserves lifecycle/history events.
+
+`orderExceptionFinancialAdjustments` stores one immutable financial consequence
+per resolved case: original item value, invoice adjustment, deposit amounts
+before/after, release amount, approved external payment amount, adjusted
+invoice total, and refund-obligation state. These records do not replace
+invoice items, payment confirmations, or deposit transactions.
+
+Invoices retain `totalAmount` as the original snapshot and add
+`adjustedTotalAmount`, `financialAdjustmentAmount`, `overpaymentAmount`,
+`refundObligationAmount`, and `refundObligationStatus` as auditable current
+projection fields. All exception timestamps are epoch milliseconds and all
+amounts are safe integer IDR.

@@ -21,18 +21,30 @@ export function calculateDepositRequired(totalAmount: number, mode: DepositRequi
 }
 
 export function outstandingAmount(totalAmount: number, allocatedAmount: number, verifiedPaymentAmount = 0): number {
+  return settlementAmounts(totalAmount, allocatedAmount, verifiedPaymentAmount).outstandingAmount;
+}
+
+export function settlementAmounts(
+  totalAmount: number,
+  allocatedAmount: number,
+  verifiedPaymentAmount = 0,
+): { outstandingAmount: number; overpaymentAmount: number } {
   safeNonNegativeInteger(totalAmount, "invoice total");
-  if (!Number.isSafeInteger(allocatedAmount) || allocatedAmount < 0 || allocatedAmount > totalAmount) {
+  if (!Number.isSafeInteger(allocatedAmount) || allocatedAmount < 0) {
     throw new Error("allocated amount is invalid");
   }
   if (
     !Number.isSafeInteger(verifiedPaymentAmount) ||
     verifiedPaymentAmount < 0 ||
-    verifiedPaymentAmount > totalAmount - allocatedAmount
+    verifiedPaymentAmount > Number.MAX_SAFE_INTEGER - allocatedAmount
   ) {
     throw new Error("verified payment amount is invalid");
   }
-  return totalAmount - allocatedAmount - verifiedPaymentAmount;
+  const settled = allocatedAmount + verifiedPaymentAmount;
+  return {
+    outstandingAmount: Math.max(0, totalAmount - settled),
+    overpaymentAmount: Math.max(0, settled - totalAmount),
+  };
 }
 
 export function invoicePaymentStatus(
