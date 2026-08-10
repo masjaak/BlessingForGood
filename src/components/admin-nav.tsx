@@ -11,6 +11,7 @@ const links = [
   ["/admin/orders", "Orders"],
   ["/admin/batches", "Batches"],
   [null, "Customers"],
+  ["/admin/join-requests", "Join requests"],
   ["/admin/invoices", "Invoices"],
   ["/admin/payments", "Payments"],
   [null, "Content"],

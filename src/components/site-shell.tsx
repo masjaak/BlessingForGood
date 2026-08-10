@@ -16,6 +16,7 @@ const customerLinks = [
 
 const supportLinks = [
   { href: "/community", label: "Community" },
+  { href: "/join", label: "Join Blessfriends" },
   { href: "/how-to-order", label: "How to order" },
   { href: "/help", label: "Help" },
 ];
