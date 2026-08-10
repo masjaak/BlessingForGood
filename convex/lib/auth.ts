@@ -48,6 +48,7 @@ const adminPermissions = new Set<Permission>([
   "deposits.read.all",
   "deposits.manage",
   "customers.read",
+  "customers.manage",
 ]);
 
 const customerPermissions = new Set<Permission>([

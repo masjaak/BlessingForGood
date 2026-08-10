@@ -9,6 +9,8 @@ import {
   fulfillmentStageValidator,
   invoicePaymentStatusValidator,
   invoiceStatusValidator,
+  joinRequestInvitationStatusValidator,
+  joinRequestStatusValidator,
   paymentConfirmationStatusValidator,
   shipmentStageValidator,
 } from "./validators";
@@ -62,6 +64,31 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_user_id", ["userId"]),
+
+  joinRequests: defineTable({
+    name: v.string(),
+    email: v.string(),
+    normalizedEmail: v.string(),
+    contact: v.string(),
+    normalizedContact: v.string(),
+    city: v.optional(v.string()),
+    note: v.optional(v.string()),
+    source: v.string(),
+    acknowledged: v.boolean(),
+    status: joinRequestStatusValidator,
+    invitationStatus: joinRequestInvitationStatusValidator,
+    submittedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedByUserId: v.optional(v.id("appUsers")),
+    reviewNote: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status_and_submitted_at", ["status", "submittedAt"])
+    .index("by_submitted_at", ["submittedAt"])
+    .index("by_normalized_email", ["normalizedEmail"])
+    .index("by_normalized_contact", ["normalizedContact"]),
 
   customerAddresses: defineTable({
     userId: v.id("appUsers"),
