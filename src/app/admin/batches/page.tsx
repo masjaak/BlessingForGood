@@ -66,7 +66,7 @@ function AdminBatches() {
       <PageHeader
         eyebrow="Batch tracking"
         title="Move cargo with a clear record."
-        description="Batches start empty. Catalog links, item assignments, and shipment history are persisted in Convex Preview."
+        description="Batches start empty. Catalog links, assignments, and shipment history are persisted in canonical Convex Development."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -92,6 +92,17 @@ function AdminBatches() {
                 <div className="summary-line">
                   <span>Linked catalogs</span>
                   <strong>{batch.catalogLinks.length}</strong>
+                </div>
+                <div className="summary-line">
+                  <span>Roster</span>
+                  <strong>
+                    {batch.rosterLocked ? "Locked" : "Editable"} · {batch.assignmentCount} assignments ·{" "}
+                    {batch.customerCount} customers
+                  </strong>
+                </div>
+                <div className="summary-line">
+                  <span>Assigned quantity</span>
+                  <strong>{batch.assignedQuantity}</strong>
                 </div>
                 {batch.catalogLinks.map((link) => (
                   <div className="summary-line" key={link.catalogId}>

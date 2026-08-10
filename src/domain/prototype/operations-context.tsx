@@ -19,6 +19,7 @@ export type PaymentConfirmationStatus = "submitted" | "under_review" | "approved
 export type BatchPage = NonNullable<FunctionReturnType<typeof api.batches.listForAdmin>>;
 export type BatchSummary = BatchPage["page"][number];
 export type BatchDetail = NonNullable<FunctionReturnType<typeof api.batchTracking.getForAdmin>>;
+export type UnassignedBatchItem = Awaited<FunctionReturnType<typeof api.batchTracking.listUnassignedForAdmin>>[number];
 export type CustomerOrderTracking = NonNullable<FunctionReturnType<typeof api.batchTracking.getMine>>;
 export type AdminOrderTracking = NonNullable<FunctionReturnType<typeof api.batchTracking.getForOrderAdmin>>;
 export type FulfillmentTimeline = NonNullable<FunctionReturnType<typeof api.orderFulfillment.getMine>>;
@@ -48,6 +49,7 @@ export interface OperationsContextValue {
   adminInvoiceList: InvoicePage | undefined;
   customerInvoiceList: InvoicePage | undefined;
   currentBatch: BatchDetail | undefined;
+  currentBatchUnassigned: UnassignedBatchItem[] | undefined;
   currentCustomerTracking: CustomerOrderTracking | undefined;
   currentAdminOrderTracking: AdminOrderTracking | undefined;
   currentCustomerFulfillment: FulfillmentTimeline | undefined;
@@ -68,6 +70,8 @@ export interface OperationsContextValue {
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   archiveBatch: (batchId: string) => Promise<BatchSummary>;
   assignOrderItem: (orderItemId: string, batchId: string, assignedQuantity: number) => Promise<unknown>;
+  unassignOrderItem: (orderItemId: string, batchId: string) => Promise<unknown>;
+  moveOrderItem: (orderItemId: string, fromBatchId: string, toBatchId: string) => Promise<unknown>;
   updateShipmentStage: (
     batchId: string,
     toStage: ShipmentStage,
@@ -131,6 +135,10 @@ export function ConvexOperationsProvider({
   );
   const currentBatch = useQuery(
     api.batchTracking.getForAdmin,
+    isAdmin && batchId ? { batchId: batchId as Id<"batches"> } : "skip",
+  );
+  const currentBatchUnassigned = useQuery(
+    api.batchTracking.listUnassignedForAdmin,
     isAdmin && batchId ? { batchId: batchId as Id<"batches"> } : "skip",
   );
   const currentCustomerTracking = useQuery(
@@ -203,6 +211,7 @@ export function ConvexOperationsProvider({
       adminInvoiceList,
       customerInvoiceList,
       currentBatch,
+      currentBatchUnassigned,
       currentCustomerTracking,
       currentAdminOrderTracking,
       currentCustomerFulfillment,
@@ -235,6 +244,7 @@ export function ConvexOperationsProvider({
       currentAdminInvoice,
       currentAdminOrderTracking,
       currentBatch,
+      currentBatchUnassigned,
       currentCustomerFulfillment,
       currentCustomerInvoice,
       currentCustomerTracking,
@@ -268,6 +278,7 @@ export function LocalOperationsProvider({
       adminInvoiceList: undefined,
       customerInvoiceList: undefined,
       currentBatch: undefined,
+      currentBatchUnassigned: undefined,
       currentCustomerTracking: undefined,
       currentAdminOrderTracking: undefined,
       currentCustomerFulfillment: undefined,
@@ -288,6 +299,8 @@ export function LocalOperationsProvider({
       unlinkCatalog: unavailable,
       archiveBatch: unavailable,
       assignOrderItem: unavailable,
+      unassignOrderItem: unavailable,
+      moveOrderItem: unavailable,
       updateShipmentStage: unavailable,
       updateFulfillmentStage: unavailable,
       createInvoice: unavailable,

@@ -17,6 +17,8 @@ export function useOperationsMutations() {
   const unlinkCatalogMutation = useMutation(api.batches.unlinkCatalog);
   const archiveBatchMutation = useMutation(api.batches.archive);
   const assignOrderItemMutation = useMutation(api.batchTracking.assignOrderItem);
+  const unassignOrderItemMutation = useMutation(api.batchTracking.unassignOrderItem);
+  const moveOrderItemMutation = useMutation(api.batchTracking.moveOrderItem);
   const updateShipmentStageMutation = useMutation(api.batchTracking.updateShipmentStage);
   const updateFulfillmentStageMutation = useMutation(api.orderFulfillment.updateStage);
   const createInvoiceMutation = useMutation(api.invoices.create);
@@ -64,6 +66,23 @@ export function useOperationsMutations() {
         assignedQuantity,
       }),
     [assignOrderItemMutation],
+  );
+  const unassignOrderItem = useCallback(
+    (orderItemId: string, id: string) =>
+      unassignOrderItemMutation({
+        orderItemId: orderItemId as Id<"orderItems">,
+        batchId: id as Id<"batches">,
+      }),
+    [unassignOrderItemMutation],
+  );
+  const moveOrderItem = useCallback(
+    (orderItemId: string, fromBatchId: string, toBatchId: string) =>
+      moveOrderItemMutation({
+        orderItemId: orderItemId as Id<"orderItems">,
+        fromBatchId: fromBatchId as Id<"batches">,
+        toBatchId: toBatchId as Id<"batches">,
+      }),
+    [moveOrderItemMutation],
   );
   const updateShipmentStage = useCallback(
     (id: string, toStage: ShipmentStage, allowSkip = false, note?: string) =>
@@ -175,6 +194,8 @@ export function useOperationsMutations() {
       unlinkCatalog,
       archiveBatch,
       assignOrderItem,
+      unassignOrderItem,
+      moveOrderItem,
       updateShipmentStage,
       updateFulfillmentStage,
       createInvoice,
@@ -194,6 +215,8 @@ export function useOperationsMutations() {
       allocateDeposit,
       archiveBatch,
       assignOrderItem,
+      unassignOrderItem,
+      moveOrderItem,
       createBatch,
       createInvoice,
       issueInvoice,
