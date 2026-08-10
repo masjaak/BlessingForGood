@@ -70,13 +70,13 @@ describe("public UI foundation", () => {
     expect(screen.getAllByRole("link", { name: "Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
   });
 
-  it("marks unimplemented admin destinations without creating dead links", () => {
+  it("links implemented admin destinations and marks remaining gaps", () => {
     render(<AdminNav />);
 
     expect(screen.getByRole("link", { name: "Overview" }).getAttribute("href")).toBe("/admin");
     expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/admin/catalogs");
+    expect(screen.getByRole("link", { name: "Books" }).getAttribute("href")).toBe("/admin/books");
     expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
-    expect(screen.getByText("Books").getAttribute("aria-disabled")).toBe("true");
     expect(screen.getByText("Settings").getAttribute("aria-disabled")).toBe("true");
   });
 
