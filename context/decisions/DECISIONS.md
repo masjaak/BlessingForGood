@@ -34,6 +34,17 @@ Phase 06.1 records the following approved implementation decisions:
   and implements no checkout, reservation, or sale transition.
 - Cover metadata remains a reference; durable upload/storage is deferred.
 
+Phase 06.2 records the following approved admission decisions:
+
+- `/join` creates a durable Convex `joinRequests` record, not a Clerk account
+  or fake `appUsers` row. Approval only makes manual invitation handoff
+  eligible.
+- Active normalized email/contact duplicates are blocked generically while
+  rejected history remains preserved for a later resubmission.
+- Review is `submitted → under_review → approved/rejected`, forward-only, with
+  authenticated admin/owner actor and audit events. Invitation acceptance and
+  account linking remain outside this phase.
+
 Phase 04.1 records the following approved implementation decisions:
 
 - Clerk Development is the identity provider; Convex owns BFG roles,

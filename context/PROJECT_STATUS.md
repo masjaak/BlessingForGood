@@ -1,5 +1,26 @@
 # BFG Project Status
 
+## Phase 06.2 status
+
+**Phase 06.2:** IMPLEMENTATION COMPLETE
+
+**Local validation:** GREEN — 75 Vitest tests, 48 Convex tests, lint with zero
+warnings, typecheck, Next.js build, and `git diff --check` pass.
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
+Phase 06.2 adds the pre-account admission bridge: public request access at
+`/join`, durable Convex `joinRequests`, admin/owner review at
+`/admin/join-requests`, forward-only approval/rejection, duplicate protection,
+audit events, and a manual Clerk invitation handoff state. Approval does not
+create an account, role, or catalog access.
+
+Current implementation evidence is tracked in
+`context/implementation/PHASE-06-2-JOIN-ACCESS-APPROVAL.md` and
+`context/implementation/PRD-COVERAGE-MATRIX.md`.
+
 ## Phase 06.1 status
 
 **Phase 06.1:** IMPLEMENTATION COMPLETE
@@ -59,25 +80,27 @@ behavior, runtime logs, and guarded data cleanup.
 
 ## Anchored summary
 
-**Objective:** complete the reusable Book Master and public Ready Stock
-foundation without duplicating the existing Secret Catalog domain or touching
-`main`, staging, or Production.
+**Objective:** complete the pre-account Blessfriends admission bridge without
+enabling public signup, creating fake accounts, touching `main`, staging, or
+Production.
 
 **Source of truth:** the repository on
-`feat/catalog-ready-stock-v0.1`, the Phase 06.1 brief, surviving approved
+`feat/join-access-approval-v0.1`, the Phase 06.2 brief, surviving approved
 repository documents, and `context/implementation/PRD-COVERAGE-MATRIX.md`.
 
 **Final decisions:** Clerk supplies identity; Convex validates the Clerk JWT
 and enforces BFG roles, permissions, ownership, and suspension. Application
 roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
+Join requests remain separate from accounts, roles, ownership, and catalog
+grants; approval only makes manual invitation handoff eligible.
 
 **Prototype assumptions:** local development may use the explicit local
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
-legacy-only and disabled for active Preview. No business seed data is created.
+legacy-only and fail closed. No business seed data is created.
 
-**Current priority:** review and integrate Phase 06.1 through `develop`, then
-continue product completion with Phase 06.2 Request Access / Join Group and
-admin approval. Stable staging follows feature-complete beta.
+**Current priority:** review and integrate Phase 06.2 through `develop`, then
+continue Phase 06.3 Batch PO + Roster + Manual Customer Operations. Stable
+staging follows feature-complete beta.
 
 ## Canonical Convex backend
 
@@ -113,12 +136,19 @@ Convex team, project, and deployment.
 - [REPOSITORY] Active Convex functions resolve identity through
   `ctx.auth.getUserIdentity()`, then `appUsers`, never through a client role,
   Clerk subject, email, or prototype session token.
-- [CONVEX VERIFIED] Canonical Convex Development codegen succeeds; the
-  current `convex:test` suite passes 7 files / 32 tests. Development ownership
-  preflight found zero records in the affected business tables.
-- [LOCAL VERIFIED] `npm run format:check`, lint, typecheck, 59 Vitest tests,
-  and Next.js build pass locally. The local browser run is not authentication
-  evidence.
+- [REPOSITORY] `joinRequests` is the pre-account admission source of truth;
+  public submissions never create `appUsers`, Clerk accounts, or catalog
+  grants.
+- [CONVEX VERIFIED] The Phase 06.2 Convex suite passes 48 tests, including
+  anonymous submission, validation, duplicate normalization, privacy,
+  admin/owner review, rejection/resubmit, approval handoff state, suspension
+  denial, audit, and stale-state protection.
+- [LOCAL VERIFIED] Phase 06.2 local validation passes format, lint with zero
+  warnings, typecheck, 75 Vitest tests, and Next.js build. The local browser
+  run is not authentication evidence.
+- [DEFERRED] `npm run convex:codegen` was not completed because the local CLI
+  selected-project access is unavailable; no alternate project was selected
+  and no Convex environment operation was performed.
 - [REPOSITORY] Clerk Development configuration, Restricted Mode, and the
   fail-closed identity boundary are documented; runtime proof is deferred.
 - [SUPERSEDED] The former requirement that a transient branch Preview reach
@@ -134,13 +164,15 @@ Convex team, project, and deployment.
 | --- | --- |
 | Clerk middleware/provider/auth routes | [REPOSITORY] implemented |
 | Clerk ↔ Convex provider | [REPOSITORY] implemented; runtime proof pending |
-| Convex issuer config | [REPOSITORY] implemented; Dev codegen passes |
+| Convex issuer config | [REPOSITORY] implemented; codegen awaits canonical CLI access |
 | `appUsers` provisioning | [REPOSITORY] implemented; synthetic Convex tests pass |
 | Roles and centralized permissions | [REPOSITORY] implemented; synthetic tests pass |
 | Suspension and owner protections | [REPOSITORY] implemented; synthetic tests pass |
 | Ownership fields | [REPOSITORY] migrated to `appUsers` references; Dev is empty |
 | Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
 | Owner user management | [REPOSITORY] implemented; staging runtime QA pending |
+| Join request admission | [REPOSITORY] implemented; `/join` and `/admin/join-requests` |
+| Manual invitation handoff | [REPOSITORY] approved requests become invitation-ready; Clerk execution remains manual |
 | Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
 | Convex Preview-looking deployment | [PROHIBITED] not an active BFG target |
 | Current branch Vercel Preview | [PROHIBITED] not an active BFG target |
@@ -163,11 +195,14 @@ Convex team, project, and deployment.
 - Existing Phase 03 operational invariants remain in force.
 - Payment confirmation is manual metadata plus review state; no payment
   gateway, bank API, webhook, or automatic reconciliation is in scope.
+- Join request PII is preserved for v0.1 review history; `JOIN_REQUEST_RETENTION_POLICY`
+  and authenticated account-linking policy remain open.
 
 ## Validation plan
 
-1. Run format, lint, typecheck, Vitest, Convex tests/codegen, and build for
-   every implementation phase.
+1. Run format, lint, typecheck, Vitest, Convex tests, and build for every
+   implementation phase. Run codegen only after canonical CLI project access
+   is verified.
 2. Validate relevant negative authorization and financial invariant tests.
 3. Run full real integration QA only in the stable staging gate described by
    `context/implementation/STAGING-QA-PLAN.md`.
@@ -183,9 +218,9 @@ Production change is implied.
 
 ## Next action
 
-Review and merge `feat/catalog-ready-stock-v0.1` through the normal
-`feat/*` → `develop` path. Continue Phase 06.2 and Phase 06.3 product work
-before the stable staging gate; no Production or `main` change is implied.
+Review and merge `feat/join-access-approval-v0.1` through the normal
+`feat/*` → `develop` path. Continue Phase 06.3 product work before the stable
+staging gate; no Production or `main` change is implied.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1
 identity model and retained only for product history.

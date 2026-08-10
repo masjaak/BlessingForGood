@@ -53,6 +53,13 @@ customer's invoice ownership is checked before reading or submitting; only an
 active admin/owner can review, approve, or reject. Suspension is enforced by
 the shared active-user helper.
 
+Join requests are the public pre-account boundary. Anonymous visitors may only
+submit a server-validated request; they cannot read requests or review them.
+Active admins/owners use `customers.read` for the operational queue and
+`customers.manage` for forward-only review transitions. Customers and
+suspended admins are denied. Approval means invitation eligibility only: it
+does not create an `appUser`, role, ownership relationship, or catalog grant.
+
 Ready Stock public reads are the explicit exception to identity requirements.
 They expose only the server-derived published/positive-stock projection.
 Book Master, variants, publication state, and inventory mutations require

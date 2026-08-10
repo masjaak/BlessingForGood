@@ -21,11 +21,14 @@
 - Phase 05.1 implements manual payment confirmation and review only. Real
   Clerk-to-Convex payment runtime, browser, realtime, runtime-log, and
   zero-data cleanup evidence is deferred to stable staging.
+- Phase 06.2 preserves join-request history while `JOIN_REQUEST_RETENTION_POLICY`
+  remains open. Infrastructure rate limiting, Clerk invitation execution and
+  acceptance, and verified `joinRequest` → `appUser` linking are not implemented.
 - Payment proof is a reference abstraction; durable file storage/upload is not
   implemented. Payment method taxonomy, cancellation, corrections, and final
   accounting policy remain open.
 - The local adapter is allowed only as an explicit local-development fallback;
-  Preview without Convex configuration is unavailable rather than anonymous.
+  missing canonical Convex configuration is unavailable rather than anonymous.
 - Next.js may report the unrelated parent lockfile outside this repository;
   the canonical repository build still succeeds.
 - `READY_STOCK_ORDER_RECORDING` is unresolved. Public Ready Stock ends at a

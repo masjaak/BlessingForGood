@@ -67,8 +67,11 @@ ownership claims are ignored/rejected.
 
 ## Evidence
 
-- [CONVEX VERIFIED] Codegen succeeds and 32 Convex tests pass against the
-  configured Development deployment.
-- [CONVEX VERIFIED] Development preflight found zero affected business rows.
+- [CONVEX VERIFIED] The local Phase 06.2 Convex suite passes 48 tests against
+  the repository test environment, including admission authorization and
+  transitions.
+- [DEFERRED] Local CLI codegen currently lacks access to its selected project;
+  no alternate project was selected and no Convex environment operation was
+  performed.
 - [SUPERSEDED] Historical branch Preview diagnostics are not a canonical BFG
   backend and are not an active development or deployment target.

@@ -91,6 +91,11 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 | `customerProfiles.getMine` | query | active customer | I | current appUser only | none | active | auth tests |
 | `customerProfiles.upsertMine` | mutation | active customer | I | current appUser only | none | active | auth tests |
 | `customerProfiles.getForAdmin` | query | admin/owner | A(`customers.read`) | target appUser is operational input | none | active | auth tests |
+| `joinRequests.submit` | mutation | public | anonymous; server validation only | no appUser ownership | none | active | join-request tests |
+| `joinRequests.listForAdmin` | query | admin/owner | A(`customers.read`) | operational PII queue | none | active | join-request tests |
+| `joinRequests.startReview` | mutation | admin/owner | A(`customers.manage`) | submitted → under_review | none | active | join-request tests |
+| `joinRequests.approve` | mutation | admin/owner | A(`customers.manage`) | under_review → approved | none | active | join-request tests |
+| `joinRequests.reject` | mutation | admin/owner | A(`customers.manage`) | under_review → rejected | none | active | join-request tests |
 | `customerAddresses.listMine` | query | active customer | I | current appUser index | none | active | auth tests |
 | `customerAddresses.create` | mutation | active customer | I | derives current appUser; default atomicity | none | active | auth tests |
 | `customerAddresses.update` | mutation | active customer | I | explicit address owner match | none | active | auth tests |
@@ -104,4 +109,6 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 The only anonymous business reads are `readyStock.list` and
 `readyStock.getBySlug`; both return a deliberately restricted public projection
 and never query Secret Catalog tables. `users.current` may also return `null`
-without identity. No active mutation is anonymous or test-only.
+without identity. `joinRequests.submit` is the only anonymous business write;
+it returns only a safe request ID and status. No other active mutation is
+anonymous or test-only.

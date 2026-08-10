@@ -24,7 +24,7 @@ manually.
 ## Phase status
 
 ```text
-Phase 04.1 implementation: IMPLEMENTED
+Phase 06.2 implementation: IMPLEMENTED LOCALLY
 Local validation: GREEN
 Runtime integration QA: DEFERRED TO STAGING
 Production readiness: NOT READY
@@ -70,6 +70,14 @@ Every implementation phase requires:
 
 Full browser and integration QA belongs to the stable staging gate, not a
 Preview deployment.
+
+## Phase 06.2 admission handoff
+
+The public `/join` request and `/admin/join-requests` review workflow are local
+feature-complete. Approval sets a manual Clerk invitation handoff state only;
+it does not create an account, role, ownership relationship, or catalog grant.
+Invitation execution, acceptance, and verified account linking remain outside
+the local phase gate.
 
 ## Phase 05.1 payment handoff
 

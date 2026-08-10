@@ -13,6 +13,15 @@
   client Clerk subjects, emails, or client roles.
 - Customers can read/mutate only their own grants, orders, tracking, invoices,
   deposits, profile, and addresses.
+- Join requests never create fake `appUsers` or business ownership. Their
+  applicant contact fields are normalized server-side before duplicate checks.
+- For one normalized email or contact, at most one `submitted`, `under_review`,
+  or `approved` request may exist. Rejected history remains and may be followed
+  by a new request.
+- Join-request review is forward-only: `submitted → under_review → approved`
+  or `rejected`; stale or double review attempts are rejected.
+- Approval sets invitation eligibility only. It does not create a Clerk account,
+  assign a role, link an `appUser`, or grant Secret Catalog access.
 
 ## Catalog and orders
 

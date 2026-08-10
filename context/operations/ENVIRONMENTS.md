@@ -81,3 +81,8 @@ development or Production.
 Phase 05.1 follows the same boundary: local and Convex Development validation
 use the canonical Development deployment; real Clerk payment-review, browser,
 realtime, log, and cleanup evidence belongs to the one stable staging gate.
+
+Phase 06.2 follows the same boundary: local admission tests and build are
+complete; public join, authenticated admin review, Clerk invitation acceptance,
+and runtime evidence remain deferred to stable staging. No Preview-looking
+deployment is required or authorized.
