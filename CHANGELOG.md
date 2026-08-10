@@ -8,6 +8,36 @@ source: conversation
 
 # Changelog
 
+## [phase-06.3-batch-roster-operations] — 2026-08-10
+
+### Added
+
+- Added derived admin batch customer rosters, purchase summaries, bounded
+  unassigned work queues, and quantity-safe assignment unassign/move controls.
+- Added `orders.source` and admin-assisted order creation for existing active
+  customers, using the canonical order/item pipeline and server-derived price.
+- Added batch lock enforcement at `po_closed`/later shipment stages and audit
+  events for assignment and assisted-order operations.
+
+### Security
+
+- Full roster reads and assignment mutations remain admin/owner-only. Customers
+  see only owned-order tracking; fake app users and non-account manual customer
+  records are not created.
+- Secret Catalog access codes/grants, invoice/payment logic, fulfillment
+  ownership, `main`, Production, and Convex configuration were not changed.
+
+### Validated
+
+- `npm run check`: format, lint with zero warnings, typecheck, 75 Vitest tests,
+  and Next.js build pass.
+- `npm run convex:test`: 52 Convex tests pass; `git diff --check` passes.
+
+### Deferred
+
+- Stable-staging runtime/browser QA, supplier-specific procurement/cost policy,
+  post-lock correction, and `MANUAL_NON_ACCOUNT_CUSTOMER_POLICY` remain open.
+
 ## [phase-06.2-join-access-approval] — 2026-08-10
 
 ### Added

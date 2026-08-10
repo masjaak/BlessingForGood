@@ -38,6 +38,8 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 | `orders.listForAdmin` | query | admin/owner | A(`orders.read.all`) | operational all-record view | none | active | core/operations tests |
 | `orders.getMine` | query | customer | A(`orders.read.own`) | explicit `customerUserId` match | none | active | auth tests |
 | `orders.getForAdmin` | query | admin/owner | A(`orders.read.all`) | operational all-record view | none | active | operations tests |
+| `orders.listEligibleCustomers` | query | admin/owner | A(`orders.manage`) | active customer selector only | none | active | batch-roster tests |
+| `orders.createAssisted` | mutation | admin/owner | A(`orders.manage`) | existing active customer; actor derived server-side | none | active | batch-roster tests |
 | `orders.edit` | mutation | customer | A(`orders.read.own`) | explicit own-order check | none | active | core tests |
 | `orders.updateStatus` | mutation | admin/owner | A(`orders.manage`) | actor `changedByUserId` | none | active | operations tests |
 | `batches.create` | mutation | admin/owner | A(`batches.manage`) | `createdByUserId` actor | none | active | operations tests |
@@ -47,6 +49,9 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 | `batches.unlinkCatalog` | mutation | admin/owner | A(`batches.manage`) | operational | none | active | operations tests |
 | `batches.archive` | mutation | admin/owner | A(`batches.manage`) | actor audit | none | active | operations tests |
 | `batchTracking.assignOrderItem` | mutation | admin/owner | A(`tracking.manage`) | actor `assignedByUserId`; order relation checked | none | active | fulfillment tests |
+| `batchTracking.unassignOrderItem` | mutation | admin/owner | A(`tracking.manage`) | current batch/item assignment checked | none | active | batch-roster tests |
+| `batchTracking.moveOrderItem` | mutation | admin/owner | A(`tracking.manage`) | source/target batches and order relation checked | none | active | batch-roster tests |
+| `batchTracking.listUnassignedForAdmin` | query | admin/owner | A(`tracking.read.all`) | submitted orders/items scoped to linked batch catalogs | none | active | batch-roster tests |
 | `batchTracking.updateShipmentStage` | mutation | admin/owner | A(`tracking.manage`) | actor `changedByUserId` | none | active | fulfillment tests |
 | `batchTracking.getMine` | query | customer | A(`tracking.read.own`) | checks parent order owner | none | active | fulfillment/auth tests |
 | `batchTracking.getForOrderAdmin` | query | admin/owner | A(`tracking.read.all`) | operational all-record view | none | active | fulfillment tests |

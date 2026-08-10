@@ -12,6 +12,7 @@
 | customer orders | `customerUserId` | `orders.by_customer_user_id_and_created_at` | paginated |
 | order items/history | parent order | `orderItems.by_order`, `orderStatusHistory.by_order_and_changed_at` | bounded |
 | admin orders | created-at operations list | `orders.by_created_at` | paginated |
+| eligible assisted-order customers | active customer role/status | `appUsers.by_role_and_status` | 200 |
 | customer invoices | `customerUserId` | `invoices.by_customer_user_id_and_created_at` | paginated |
 | invoice items | parent invoice | `invoiceItems.by_invoice` | bounded |
 | customer payment confirmations | `customerUserId` or invoice owner | `paymentConfirmations.by_customer_user_id_and_created_at`, `by_invoice` | paginated/bounded |
@@ -23,6 +24,8 @@
 | batches | operational created/archived | `batches.by_created_at`, `by_archived` | paginated/bounded |
 | batch links | catalog + batch | `catalogBatchLinks.by_catalog_and_batch` | unique |
 | assignments | order item or batch | `orderItemBatchAssignments.by_order_item`, `by_batch` | bounded |
+| batch roster projection | batch assignments + parent order/items | `orderItemBatchAssignments.by_batch`, `by_order_item_and_batch`, linked catalog indexes | bounded |
+| unassigned batch queue | submitted orders/items minus batch assignments | `orders.by_status`, `orderItems.by_order`, `orderItemBatchAssignments.by_order_item` | 200 orders/items |
 | shipment history | parent batch + timestamp | `batchStatusHistory.by_batch_and_changed_at` | 100 |
 | fulfillment history | parent order + timestamp | `orderFulfillmentHistory.by_order_and_changed_at` | 100 |
 | audit events | actor, target, or time | `auditEvents.by_actor_user_id`, `by_target`, `by_created_at` | query-specific |

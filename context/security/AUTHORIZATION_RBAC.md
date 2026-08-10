@@ -60,6 +60,13 @@ Active admins/owners use `customers.read` for the operational queue and
 suspended admins are denied. Approval means invitation eligibility only: it
 does not create an `appUser`, role, ownership relationship, or catalog grant.
 
+Phase 06.3 operational rules use `tracking.read.all` and `tracking.manage` for
+admin/owner batch rosters, assignment changes, and purchase summaries. Full
+rosters never mount for customers; customer tracking remains owned-order
+scoped. `orders.createAssisted` and its customer selector use
+`orders.manage`; the target must be an existing active customer, and the
+result is still a normal customer-owned order.
+
 Ready Stock public reads are the explicit exception to identity requirements.
 They expose only the server-derived published/positive-stock projection.
 Book Master, variants, publication state, and inventory mutations require

@@ -25,6 +25,19 @@ updates validate active admin/owner permission, references, archive state,
 catalog eligibility, and transitions before writing. Actor fields are derived
 from the current app user.
 
+`batchTracking.unassignOrderItem` and `batchTracking.moveOrderItem` re-read
+current batch/item assignments, reject archived or `po_closed`/later batches,
+recheck submitted-order quantity and linked-catalog compatibility, and write
+the assignment change plus audit event atomically. A move cannot target an
+existing assignment.
+
+`orders.createAssisted` validates the active admin/owner actor, a bounded
+idempotency key, an existing active customer, open catalog, valid item/variant,
+and positive quantity. The key is checked through
+`orders.by_assisted_submission_key` before the write. It derives the customer
+snapshot and price, then inserts the same order, item, status-history, and
+audit pipeline used by operational order creation.
+
 `orderFulfillment.updateStage` writes the order projection plus history
 together and never changes preorder status.
 

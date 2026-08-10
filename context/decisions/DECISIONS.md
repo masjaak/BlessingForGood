@@ -45,6 +45,20 @@ Phase 06.2 records the following approved admission decisions:
   authenticated admin/owner actor and audit events. Invitation acceptance and
   account linking remain outside this phase.
 
+Phase 06.3 records the following approved operations decisions:
+
+- Existing `batches.currentShipmentStage` remains the only batch state
+  machine. An unset stage is editable; `po_closed` and later stages lock
+  catalog links and roster assignment changes.
+- The roster is a server-derived operational projection from orders, order
+  items, assignments, and linked catalogs. It does not duplicate ownership or
+  create a second order system.
+- Admin-assisted orders are allowed only for existing active customer
+  `appUsers`, use `orders.source=admin_assisted`, derive price and ownership
+  server-side, and enter the canonical order/item/invoice pipeline.
+- Non-account manual customers, fake identities, supplier costs, supplier
+  procurement automation, and arbitrary price overrides are not implemented.
+
 Phase 04.1 records the following approved implementation decisions:
 
 - Clerk Development is the identity provider; Convex owns BFG roles,

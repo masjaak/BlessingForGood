@@ -1,5 +1,21 @@
 # Open Questions
 
+## Phase 06.3 decisions and blockers
+
+- [BLOCKED BY BUSINESS DECISION] `MANUAL_NON_ACCOUNT_CUSTOMER_POLICY`: decide
+  whether BFG may preserve a non-account customer record for assisted orders.
+  Phase 06.3 supports only admin-assisted orders for an existing active
+  customer `appUsers` record and creates no fake Clerk identity or `appUsers`
+  row.
+- [DEFERRED] Supplier-specific PO cost, supplier assignment, ordering cutoff,
+  and automated procurement are not modeled. The v0.1 purchase summary uses
+  assigned customer quantity and price snapshots only.
+- [SCALE TRIGGER] The unassigned batch work queue scans at most 200 submitted
+  orders/items for v0.1. Add a dedicated roster projection/index when BFG
+  volume reaches that ceiling.
+- [DEFERRED TO STAGING] Clerk identity, browser, realtime, and concurrent
+  multi-admin runtime verification remain part of the stable staging gate.
+
 ## Phase 06.2 decisions and blockers
 
 - [OPEN BUSINESS/PRIVACY DECISION] `JOIN_REQUEST_RETENTION_POLICY`: define

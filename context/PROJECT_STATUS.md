@@ -1,5 +1,29 @@
 # BFG Project Status
 
+## Phase 06.3 status
+
+**Phase 06.3:** IMPLEMENTATION COMPLETE LOCALLY
+
+**Branch:** `feat/batch-roster-operations-v0.1`
+
+**Local validation:** GREEN — 75 Vitest tests, 52 Convex tests, lint with zero
+warnings, typecheck, Next.js build, and `git diff --check` pass.
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
+Phase 06.3 completes the admin operational bridge from customer order items to
+Batch PO roster, purchase summary, shipment tracking, and existing-customer
+assisted orders. The implementation reuses canonical orders, order items,
+catalog links, batch shipment stages, fulfillment, invoices, and payments.
+Full rosters remain admin-only; non-account manual customers are not created.
+
+Current implementation evidence is tracked in
+`context/implementation/PHASE-06-3-BATCH-ROSTER-OPERATIONS.md`,
+`context/features/batch-po-roster.md`, and
+`context/implementation/PRD-COVERAGE-MATRIX.md`.
+
 ## Phase 06.2 status
 
 **Phase 06.2:** IMPLEMENTATION COMPLETE
@@ -80,13 +104,14 @@ behavior, runtime logs, and guarded data cleanup.
 
 ## Anchored summary
 
-**Objective:** complete the pre-account Blessfriends admission bridge without
+**Objective:** complete BFG’s feature-complete beta operations without
 enabling public signup, creating fake accounts, touching `main`, staging, or
 Production.
 
 **Source of truth:** the repository on
-`feat/join-access-approval-v0.1`, the Phase 06.2 brief, surviving approved
-repository documents, and `context/implementation/PRD-COVERAGE-MATRIX.md`.
+`feat/batch-roster-operations-v0.1`, the current phase brief, surviving
+approved repository documents, and
+`context/implementation/PRD-COVERAGE-MATRIX.md`.
 
 **Final decisions:** Clerk supplies identity; Convex validates the Clerk JWT
 and enforces BFG roles, permissions, ownership, and suspension. Application
@@ -98,9 +123,8 @@ grants; approval only makes manual invitation handoff eligible.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and fail closed. No business seed data is created.
 
-**Current priority:** review and integrate Phase 06.2 through `develop`, then
-continue Phase 06.3 Batch PO + Roster + Manual Customer Operations. Stable
-staging follows feature-complete beta.
+**Current priority:** review Phase 06.3, continue the highest-impact PRD
+operations gap, then complete the beta backlog before the stable staging gate.
 
 ## Canonical Convex backend
 
@@ -139,6 +163,15 @@ Convex team, project, and deployment.
 - [REPOSITORY] `joinRequests` is the pre-account admission source of truth;
   public submissions never create `appUsers`, Clerk accounts, or catalog
   grants.
+- [REPOSITORY] Batch PO operations use canonical batch links and order-item
+  assignments. `batchTracking.getForAdmin` derives customer roster and
+  purchase summary views without duplicating customer or book records.
+- [REPOSITORY] Admin-assisted orders require an existing active customer
+  `appUsers` record, derive price and ownership server-side, and enter the same
+  order/item/batch/invoice pipeline as self-service orders.
+- [CONVEX VERIFIED] Phase 06.3 adds 4 Convex tests for batch roster,
+  assignment locking, unassigned work, and assisted-order authorization; the
+  full Convex suite passes 52 tests.
 - [CONVEX VERIFIED] The Phase 06.2 Convex suite passes 48 tests, including
   anonymous submission, validation, duplicate normalization, privacy,
   admin/owner review, rejection/resubmit, approval handoff state, suspension

@@ -32,6 +32,14 @@
 - Customer B cannot inherit customer A's grant.
 - Order creation derives `customerUserId` from the authenticated app user and
   calculates totals/snapshots inside one mutation.
+- `orders.source` is optional for legacy documents and normalizes to
+  `customer_self_service` at read time; new assisted orders use
+  `admin_assisted`.
+- Admin-assisted orders require an active existing customer `appUsers` record.
+  Customer ownership and item price are derived server-side; fake Clerk users,
+  fake `appUsers`, and client price overrides are forbidden.
+- Assisted order submission keys are required, bounded, and unique for the
+  assisted-order mutation; a repeated key cannot create a second order.
 - Order edits remain limited to submitted orders before the catalog close.
 - Existing price, order status, tracking, and fulfillment invariants remain
   unchanged from Phase 03.
@@ -57,6 +65,15 @@
 
 - Operational history is append-only where previously defined; actor fields
   are authenticated app users.
+- A batch roster is derived from submitted `orders`, `orderItems`, catalog
+  links, and `orderItemBatchAssignments`; it is not a second ownership model.
+- An order item has at most one assignment row per batch. Assignment quantity
+  is positive and the sum across batches cannot exceed the ordered quantity.
+- Assignment, unassignment, and moves require an active admin/owner, a valid
+  linked catalog, a submitted order, and an editable non-archived batch.
+  `po_closed` and later shipment stages reject roster changes.
+- A move validates both batches and writes the source removal and target
+  assignment in one mutation; an existing target assignment is rejected.
 - Invoice snapshots and status transitions remain server-validated.
 - Invoice lifecycle and payment state are separate. External verified payment
   and allocated deposit amounts are non-negative integer IDR components.
