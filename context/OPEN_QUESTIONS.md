@@ -7,6 +7,11 @@ but current-branch Preview still needs real Clerk Development invitation and
 authenticated browser evidence. This is a verification gate, not a reason to
 invent fallback configuration.
 
+[BLOCKED] The first Preview build for commit `c5fbe7a` selected the isolated
+Convex Preview deployment `robust-cheetah-853` but failed because
+`CLERK_JWT_ISSUER_DOMAIN` was unset there. The local Convex CLI account cannot
+inspect that deployment, so its value was not guessed or changed.
+
 [BLOCKED] The canonical GitHub repository does not include the product context pack referenced by `FILE_MANIFEST.md`.
 
 The following remain open and were not silently resolved:

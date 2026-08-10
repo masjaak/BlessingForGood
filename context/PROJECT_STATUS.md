@@ -18,8 +18,9 @@ roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and disabled for active Preview. No business seed data is created.
 
-**Current priority:** obtain real Clerk Development sign-in and isolated
-Convex/Vercel Preview evidence, then run authenticated Playwright QA.
+**Current priority:** restore the missing auth environment name in the isolated
+Convex Preview, then obtain real Clerk Development sign-in and authenticated
+Playwright QA.
 
 ## Evidence
 
@@ -46,6 +47,13 @@ Convex/Vercel Preview evidence, then run authenticated Playwright QA.
 - [BLOCKED] Real invitation acceptance, a signed-in Convex identity proof from
   the browser, and current branch Preview QA are not claimed until the
   isolated Preview deployment and non-secret QA identity setup are available.
+- [PREVIEW BUILD] The pushed commit `c5fbe7a` reached Vercel Preview
+  deployment `dpl_5up9f949qzn3m6qKKfarRyve6Y85` at
+  `blessing-for-good-ntc8mkb20-masjaaks-projects.vercel.app`. The build
+  selected isolated Convex Preview `robust-cheetah-853`, generated 18 static
+  pages, and failed because `CLERK_JWT_ISSUER_DOMAIN` was unset there.
+- [BLOCKED] The local Convex CLI account cannot inspect `robust-cheetah-853`;
+  no environment value was printed or changed.
 
 ## Identity and migration status
 
@@ -61,8 +69,8 @@ Convex/Vercel Preview evidence, then run authenticated Playwright QA.
 | Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
 | Owner user management | [REPOSITORY] implemented; Preview runtime QA pending |
 | Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
-| Current branch Convex Preview | [BLOCKED] not yet runtime-verified |
-| Current branch Vercel Preview | [BLOCKED] not yet runtime-verified |
+| Current branch Convex Preview | [BLOCKED] branch build target exists; auth environment missing |
+| Current branch Vercel Preview | [BLOCKED] latest deployment failed after the Next.js build |
 | Production | [CONFIRMED] untouched and not configured for this phase |
 | `main` | [CONFIRMED] untouched |
 
@@ -94,8 +102,9 @@ not a Production change.
 
 ## Next action
 
-Configure or identify the isolated current-branch Convex/Vercel Preview and
-run the real invited-user QA matrix. Do not start Phase 04.2 until that proof
+Set or inherit `CLERK_JWT_ISSUER_DOMAIN` in the isolated current-branch Convex
+Preview without touching Production, then rerun the Git-connected Preview and
+the real invited-user QA matrix. Do not start Phase 04.2 until that proof
 exists.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1

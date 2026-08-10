@@ -26,10 +26,13 @@ Production authentication is not configured.
 ## Evidence and gate
 
 [CONVEX VERIFIED] Development codegen, zero-data ownership preflight, and 32
-Convex tests pass. [REPOSITORY] Web checks, 57 Vitest tests, and Next.js build
-pass. [BLOCKED] Completion gate remains open until real Development invitation,
-authenticated Convex identity, current Preview, and Clerk Playwright QA are
-verified.
+Convex tests pass. [REPOSITORY] Web checks, 59 Vitest tests, and Next.js build
+pass locally. [PREVIEW BUILD] The pushed branch build selected isolated
+Convex Preview `robust-cheetah-853` and generated 18 static pages, but failed
+because `CLERK_JWT_ISSUER_DOMAIN` was unset there. [BLOCKED] Completion gate
+remains open until the Preview auth environment is available, then real
+Development invitation, authenticated Convex identity, and Clerk Playwright
+QA are verified.
 
 ## Next milestone
 

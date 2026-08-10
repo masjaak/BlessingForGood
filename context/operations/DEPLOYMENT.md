@@ -39,5 +39,9 @@ Before reporting Preview ready, verify by names/counts only:
 - runtime logs contain no secrets or unexpected errors.
 
 [REPOSITORY] Local Next.js build and Preview-target build inputs are present.
-[BLOCKED] Current branch Preview deployment and authenticated runtime evidence
-are not yet claimed.
+[PREVIEW BUILD] The feature-branch commit `c5fbe7a` reached Vercel Preview and
+selected isolated Convex Preview `robust-cheetah-853`; Next.js generated 18
+static pages before Convex rejected the deploy for missing
+`CLERK_JWT_ISSUER_DOMAIN`.
+[BLOCKED] Vercel Preview is not READY and authenticated runtime evidence is
+not claimed. No Production target was used.

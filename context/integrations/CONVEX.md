@@ -48,3 +48,6 @@ ownership claims are ignored/rejected.
 - [CONVEX VERIFIED] Development preflight found zero affected business rows.
 - [BLOCKED] Current branch Preview JWT identity proof and runtime logs remain
   pending isolated Preview deployment.
+- [PREVIEW BUILD] The Git-connected build selected isolated Preview
+  `robust-cheetah-853` and completed the Next.js build, but Convex rejected the
+  deploy because `CLERK_JWT_ISSUER_DOMAIN` was unset in that deployment.
