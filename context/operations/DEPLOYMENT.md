@@ -1,5 +1,26 @@
 # BFG Deployment
 
+## Canonical Convex backend
+
+The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and
+project is `blessingforgood`. The development reference is `dev/masjak`.
+
+```text
+BFG_CANONICAL_CONVEX_TEAM=palevvi
+BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+BFG_CANONICAL_DEV=content-snake-214
+BFG_CANONICAL_PRODUCTION=clean-eel-522
+```
+
+These are identifiers, not secrets. A separate similarly named BFG project
+under another Convex account/team is `NON-CANONICAL`: do not use, deploy, or
+configure it, and do not delete it automatically.
+
+Verify the Convex team, project, and deployment before any Convex environment
+operation. Never create a new BFG Convex project when configuration fails, use
+a similarly named BFG project, or create a Preview-looking deployment
+manually.
+
 ## Phase status
 
 ```text
@@ -11,17 +32,18 @@ Production readiness: NOT READY
 
 ## Allowed target
 
-During feature development, the current `feat/*` branch and local/Development
-validation are in scope:
+During feature development, only the current `feat/*` branch and canonical
+local/Development validation are in scope:
 
 ```text
-feat/payment-verification-v0.1
+feat/*
 Clerk Development
-Convex Development
+Convex Development: content-snake-214
+Development reference: dev/masjak
 ```
 
-Do not merge to `main`, use `--prod`, promote a deployment, force-push, or
-connect Production Clerk/Convex.
+Do not merge to `main`, use `--prod`, deploy Preview or Production, promote a
+deployment, force-push, or connect Production Clerk/Convex.
 
 ## Build
 
@@ -32,8 +54,8 @@ npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run b
 ```
 
 The command must never target Production and must not seed business records.
-Branch-specific Preview builds are optional diagnostics and are not a phase
-acceptance gate.
+Preview-looking builds are not an active BFG target; do not create or trigger
+them manually.
 
 ## Development policy
 
@@ -46,16 +68,17 @@ Every implementation phase requires:
 - build;
 - negative authorization and financial-invariant tests where relevant.
 
-Full browser and integration QA belongs to the stable staging gate, not every
-transient Preview deployment.
+Full browser and integration QA belongs to the stable staging gate, not a
+Preview deployment.
 
 ## Phase 05.1 payment handoff
 
 Phase 05.1 is implementation-complete when local format, lint, typecheck,
 unit, Convex, build, authorization, and financial-invariant checks pass. A
-transient Vercel/Convex Preview is not required. Real payment confirmation,
-Clerk identity, realtime, browser, runtime-log, and data-cleanup evidence must
-be collected later in the one stable staging environment.
+transient Vercel/Convex Preview is neither required nor an active BFG target.
+Real payment confirmation, Clerk identity, realtime, browser, runtime-log, and
+data-cleanup evidence must be collected later in the one stable staging
+environment.
 
 ## Branch model
 
@@ -76,14 +99,16 @@ state; Production only comes from an approved release.
 
 ## Stable staging target
 
-Staging will eventually use one stable Vercel deployment, one stable Convex
-backend, and Clerk configuration appropriate for staging. This task documents
-the target only; it does not configure staging infrastructure.
+Staging will eventually use one stable Vercel deployment and Clerk
+configuration appropriate for staging. No separate BFG Convex staging target
+is configured or authorized by this document; do not create a new project when
+staging configuration fails.
 
-## Preview handoff evidence
+## Staging handoff evidence
 
 Before the staging handoff, verify by names/counts only:
 
+- Convex account/team/project/deployment match the canonical backend above;
 - Clerk Development keys and issuer configuration are present in the correct
   environments;
 - Convex auth config accepts a signed-in Clerk JWT;
@@ -93,5 +118,5 @@ Before the staging handoff, verify by names/counts only:
 - runtime logs contain no secrets or unexpected errors.
 
 [LOCAL VERIFIED] Local Next.js build inputs and the Phase 04.1 validation
-commands pass. Previous branch-specific Preview attempts are retained as
-historical diagnostics only. No Production target was used.
+commands pass. Previous branch-specific Preview references are historical only;
+no Preview or Production target was used.

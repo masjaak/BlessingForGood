@@ -6,7 +6,7 @@ import { requirePermission } from "./lib/auth";
 import { getCatalogView } from "./lib/catalogView";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
-import { nonNegativeMoney, requiredText, slugify } from "./lib/validation";
+import { positiveMoney, requiredText, slugify } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 
 const variantInput = v.object({
@@ -135,18 +135,22 @@ export const createBundle = mutation({
     const bookSlug = slugify(bookTitle, "book slug");
     let book = await ctx.db
       .query("books")
-      .withIndex("by_publisher_and_slug", (query) => query.eq("publisherId", publisher!._id).eq("slug", bookSlug))
+      .withIndex("by_slug", (query) => query.eq("slug", bookSlug))
       .unique();
+    if (book && book.publisherId !== publisher._id) fail("DUPLICATE_SLUG");
     if (!book) {
       const bookId = await ctx.db.insert("books", {
         publisherId: publisher._id,
         title: bookTitle,
         slug: bookSlug,
+        categories: [],
+        publicationStatus: "special",
         isActive: true,
         createdAt: now,
         updatedAt: now,
         createdByUserId: user._id,
       });
+      await recordAudit(ctx, user._id, "book.created", "book", bookId);
       book = await ctx.db.get(bookId);
     }
     if (!book) throw new Error("book creation failed");
@@ -162,16 +166,22 @@ export const createBundle = mutation({
         .withIndex("by_isbn", (query) => query.eq("isbn", isbn))
         .unique();
       if (duplicateIsbn) fail("DUPLICATE_ISBN");
+      const duplicateFormat = await ctx.db
+        .query("bookVariants")
+        .withIndex("by_book_and_format", (query) => query.eq("bookId", book!._id).eq("format", input.format))
+        .unique();
+      if (duplicateFormat) fail("DUPLICATE_VARIANT");
       const variantId = await ctx.db.insert("bookVariants", {
         bookId: book._id,
         format: input.format,
         isbn,
-        priceAmount: nonNegativeMoney(input.priceAmount),
+        priceAmount: positiveMoney(input.priceAmount),
         currency: "IDR",
         isAvailable: true,
         createdAt: now,
         updatedAt: now,
       });
+      await recordAudit(ctx, user._id, "book_variant.created", "bookVariant", variantId);
       variantIds.push(variantId);
     }
 

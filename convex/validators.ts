@@ -1,6 +1,13 @@
 import { v } from "convex/values";
 
 export const bookFormatValidator = v.union(v.literal("BB"), v.literal("PB"), v.literal("HB"));
+export const bookPublicationStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("special"),
+  v.literal("archived"),
+);
+export const bookSortValidator = v.union(v.literal("newest"), v.literal("title"), v.literal("price"));
 export const shipmentStageValidator = v.union(
   v.literal("po_closed"),
   v.literal("ordered_to_supplier"),

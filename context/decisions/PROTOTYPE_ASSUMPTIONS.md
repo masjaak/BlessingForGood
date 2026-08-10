@@ -71,6 +71,10 @@ indicator and local fallback guard.
 
 ## PA-007 — Convex Preview prototype persistence
 
+Status: historical and superseded for active development. Do not create or use
+Convex Preview deployments; active development uses the canonical Convex
+Development deployment documented in `context/integrations/CONVEX.md`.
+
 - Area: Phase 03.1 persistence and identity boundary
 - Reason: the approved vertical slice needs shared Preview data before Clerk is available.
 - Temporary behavior: Convex Preview stores catalog and preorder records; anonymous browser sessions are represented by

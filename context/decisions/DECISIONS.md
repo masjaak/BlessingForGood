@@ -1,5 +1,39 @@
 # Decisions
 
+## Canonical Convex backend correction
+
+- The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and
+  project is `blessingforgood`. The development reference is `dev/masjak`.
+
+  ```text
+  BFG_CANONICAL_CONVEX_TEAM=palevvi
+  BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+  BFG_CANONICAL_DEV=content-snake-214
+  BFG_CANONICAL_PRODUCTION=clean-eel-522
+  ```
+
+- Only this project is authorized for active BFG development. A separate
+  similarly named project under another Convex account/team is a duplicate and
+  is `NON-CANONICAL`: do not use, deploy, or configure it, and do not delete it
+  automatically.
+- Configuration failure is a blocker. Never create a new BFG Convex project,
+  use a similarly named BFG project, or create a Preview-looking deployment
+  manually. Verify the Convex team, project, and deployment before every
+  environment operation.
+
+Phase 06.1 records the following approved implementation decisions:
+
+- Book Master is reusable metadata; Secret Catalog is private curation/access;
+  Ready Stock is public per-variant availability. These are not parallel book models.
+- Variants own format, globally unique ISBN, and positive integer IDR price.
+- Books use draft, published, special/private, and archived publication states.
+  Only published books with active positive-stock variants are publicly readable.
+- Ready Stock quantity is a separate non-negative per-variant record.
+- Global book slugs support `/ready-stock/[slug]`.
+- `READY_STOCK_ORDER_RECORDING` remains open; Phase 06.1 uses a contact/help CTA
+  and implements no checkout, reservation, or sale transition.
+- Cover metadata remains a reference; durable upload/storage is deferred.
+
 Phase 04.1 records the following approved implementation decisions:
 
 - Clerk Development is the identity provider; Convex owns BFG roles,

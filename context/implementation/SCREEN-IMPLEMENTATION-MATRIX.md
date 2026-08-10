@@ -6,7 +6,7 @@
 | Community guide | `/community` | public | none | implemented |
 | How to order | `/how-to-order` | public | none | implemented |
 | Help | `/help` | public | none | implemented |
-| Ready stock | `/ready-stock` | public | none | implemented |
+| Ready Stock browse/detail | `/ready-stock`, `/ready-stock/[slug]` | public | published positive-stock projection | implemented; runtime QA pending |
 | Sign in | `/sign-in/[[...sign-in]]` | signed out | Clerk Development | implemented |
 | Invitation acceptance | `/sign-up/[[...sign-up]]` | invited | Clerk Restricted Mode | implemented; real QA pending |
 | Secret catalog | `/catalog` | authenticated | Convex catalog permission + app-user grant | implemented; runtime QA pending |
@@ -19,6 +19,7 @@
 | Customer addresses | `/account/addresses` | customer | current app user | implemented; Convex tests pass |
 | Admin overview | `/admin` | admin/owner | admin permission | implemented; runtime QA pending |
 | Catalog management | `/admin/catalogs` | admin/owner | catalog/books permissions | implemented; runtime QA pending |
+| Book Master | `/admin/books`, `/admin/books/[bookId]` | admin/owner | `books.manage` | implemented; runtime QA pending |
 | Order management | `/admin/orders`, `/admin/orders/[orderId]` | admin/owner | order/tracking all permissions | implemented; runtime QA pending |
 | Batch management | `/admin/batches`, `/admin/batches/[batchId]` | admin/owner | batch/tracking permissions | implemented; runtime QA pending |
 | Invoice management | `/admin/invoices`, `/admin/invoices/[invoiceId]` | admin/owner | invoice/deposit permissions | implemented; runtime QA pending |

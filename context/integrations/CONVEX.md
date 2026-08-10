@@ -1,5 +1,27 @@
 # BFG Convex Integration
 
+## Canonical backend
+
+The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and
+project is `blessingforgood`. The development reference is `dev/masjak`.
+
+```text
+BFG_CANONICAL_CONVEX_TEAM=palevvi
+BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+BFG_CANONICAL_DEV=content-snake-214
+BFG_CANONICAL_PRODUCTION=clean-eel-522
+```
+
+These are identifiers, not secrets. Only this Convex project is authorized for
+active BFG development. A separate similarly named BFG project under another
+account/team is a duplicate and is `NON-CANONICAL`: do not use, deploy, or
+configure it, and do not delete it automatically.
+
+If configuration fails, fix the configuration instead of creating a new BFG
+Convex project. Never use a similarly named BFG project, create a
+Preview-looking deployment manually, or run any Convex environment operation
+before verifying the team, project, and deployment.
+
 ## Runtime
 
 The client hierarchy is:
@@ -29,10 +51,12 @@ The Vercel build wrapper is:
 npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"
 ```
 
-It is allowed only for the current branch's isolated Convex Preview. No
-Production Convex deploy key, deployment, or `--prod` operation is in scope.
-Preview without a valid Convex URL fails closed; it cannot select the local
-adapter or an anonymous session.
+This wrapper does not authorize a Preview or Production operation. Preview is
+not an active BFG environment; never create or target a Preview-looking
+deployment manually. Active development uses canonical Convex Development
+`content-snake-214`; Production `clean-eel-522` remains untouched during
+feature work. Missing or invalid canonical configuration is a blocker, not a
+reason to create another project.
 
 ## Ownership
 
@@ -46,9 +70,5 @@ ownership claims are ignored/rejected.
 - [CONVEX VERIFIED] Codegen succeeds and 32 Convex tests pass against the
   configured Development deployment.
 - [CONVEX VERIFIED] Development preflight found zero affected business rows.
-- [SUPERSEDED] Names-only inspection confirms the three project-level Preview
-  default names.
-- [BLOCKED] The retrigger Git-connected build selected isolated Preview
-  `robust-cheetah-853` and completed the Next.js build, but Convex rejected the
-  deploy because `CLERK_JWT_ISSUER_DOMAIN` was unset in that deployment.
-  Current branch Preview JWT identity proof and runtime logs remain pending.
+- [SUPERSEDED] Historical branch Preview diagnostics are not a canonical BFG
+  backend and are not an active development or deployment target.

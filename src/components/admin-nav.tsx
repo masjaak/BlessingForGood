@@ -7,7 +7,7 @@ import { PrototypeContext } from "@/domain/prototype/context";
 const links = [
   ["/admin", "Overview"],
   ["/admin/catalogs", "Catalog"],
-  [null, "Books"],
+  ["/admin/books", "Books"],
   ["/admin/orders", "Orders"],
   ["/admin/batches", "Batches"],
   [null, "Customers"],

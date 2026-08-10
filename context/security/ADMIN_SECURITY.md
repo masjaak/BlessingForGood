@@ -9,6 +9,11 @@ owner-only both in the UI guard and in every Convex user-management function.
 Navigation is convenience only. Convex permission checks remain mandatory for
 all reads and mutations.
 
+Book, variant, publication, and Ready Stock mutations use `books.manage` after
+active-user/suspension checks. Slug, ISBN, format, integer price, stock, and
+reference validity are checked server-side. Privileged mutations write safe
+audit events; public reads write no audit rows.
+
 ## Owner user management
 
 Implemented at `/admin/users`:

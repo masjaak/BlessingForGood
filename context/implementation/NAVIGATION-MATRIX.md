@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- |
 | Home | `/` | functional | [BROWSER VERIFIED] HTTP 200 and Playwright render | Primary entry point |
 | Catalog | `/catalog` | functional foundation | [BROWSER VERIFIED] HTTP 200, wrong-code state, unlock flow | Preview Demo Mode only; no shared catalog data |
-| Ready Stock | `/ready-stock` | functional foundation | [BROWSER VERIFIED] HTTP 200 and intentional empty state | No inventory data is seeded |
+| Ready Stock | `/ready-stock` | implemented | [REPOSITORY] browse/search/filter/detail and zero-data states | Runtime browser QA deferred to staging |
 | Orders | `/account/orders` | functional foundation | [BROWSER VERIFIED] HTTP 200 and order/tracking flow | Browser-local prototype records only |
 | Account | `/account/invoices` | functional foundation | [BROWSER VERIFIED] HTTP 200 and invoice empty/state flow | Account route remains invoice foundation |
 
@@ -27,7 +27,7 @@ workspace route and is not a customer navigation item.
 | --- | --- | --- | --- | --- |
 | Overview | `/admin` | functional foundation | [BROWSER VERIFIED] HTTP 200 and Preview-labelled zero-data dashboard | Production authorization deferred |
 | Catalog | `/admin/catalogs` | functional foundation | [BROWSER VERIFIED] HTTP 200 and catalog creation flow | One-title prototype form |
-| Books | — | foundation-only | [REPOSITORY] non-link | Clearly marked unavailable |
+| Books | `/admin/books` | implemented | [REPOSITORY] list/create/edit/variant/stock flow | Runtime browser QA deferred to staging |
 | Orders | `/admin/orders` | functional foundation | [BROWSER VERIFIED] HTTP 200 and status transition flow | Status transitions are local prototype only |
 | Customers | — | foundation-only | [REPOSITORY] non-link | Clearly marked unavailable |
 | Invoices | `/admin/invoices` | functional foundation | [REPOSITORY] invoice/ledger UI; runtime QA deferred | Invoice/deposit foundation |

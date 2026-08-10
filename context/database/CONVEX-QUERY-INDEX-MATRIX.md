@@ -26,6 +26,9 @@
 | shipment history | parent batch + timestamp | `batchStatusHistory.by_batch_and_changed_at` | 100 |
 | fulfillment history | parent order + timestamp | `orderFulfillmentHistory.by_order_and_changed_at` | 100 |
 | audit events | actor, target, or time | `auditEvents.by_actor_user_id`, `by_target`, `by_created_at` | query-specific |
+| public Ready Stock | published books → variants → stock | `books.by_publication_status`, `bookVariants.by_book`, `readyStockInventory.by_book_variant_id` | 200 source / 100 result |
+| Ready Stock detail | global slug → variants → stock | `books.by_slug`, `bookVariants.by_book`, `readyStockInventory.by_book_variant_id` | unique / bounded children |
+| admin Book Master | created books → variants → stock | `books.by_created_at`, `bookVariants.by_book`, `readyStockInventory.by_book_variant_id` | 200 |
 
 [CONVEX VERIFIED] Codegen and Convex tests pass against the configured
 Development deployment. No client-side full-table ownership filtering is

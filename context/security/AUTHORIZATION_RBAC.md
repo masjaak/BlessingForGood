@@ -53,6 +53,11 @@ customer's invoice ownership is checked before reading or submitting; only an
 active admin/owner can review, approve, or reject. Suspension is enforced by
 the shared active-user helper.
 
+Ready Stock public reads are the explicit exception to identity requirements.
+They expose only the server-derived published/positive-stock projection.
+Book Master, variants, publication state, and inventory mutations require
+`books.manage`; customers cannot use the former broad book/variant admin reads.
+
 ## Owner protections
 
 - The owner bootstrap subject is server-only and is never returned to the

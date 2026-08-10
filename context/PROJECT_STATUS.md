@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Phase 06.1 status
+
+**Phase 06.1:** IMPLEMENTATION COMPLETE
+
+**Local validation:** GREEN — 71 Vitest tests, 44 Convex tests, lint with zero
+warnings, typecheck, Next.js build, and `git diff --check` pass.
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
+Phase 06.1 completes the reusable Book Master, explicit publication states,
+per-variant Ready Stock inventory, public browse/search/filter/detail experience,
+and admin book/variant/stock operations. Public queries are anonymous but expose
+only published books with positive stock. Secret Catalog remains an authenticated
+curation/access layer and is not merged into Ready Stock.
+
+`READY_STOCK_ORDER_RECORDING` remains blocked by business decision. The public
+detail uses a contact/help CTA and does not create checkout, reservation, or sale
+records. No staging, Vercel Preview, Production, or `main` work is part of this phase.
+
+Current implementation evidence and backlog are tracked in
+`context/implementation/PHASE-06-1-CATALOG-READY-STOCK.md` and
+`context/implementation/PRD-COVERAGE-MATRIX.md`.
+
 ## Phase 05.1 status
 
 **Phase 05.1:** IMPLEMENTATION COMPLETE
@@ -34,14 +59,13 @@ behavior, runtime logs, and guarded data cleanup.
 
 ## Anchored summary
 
-**Objective:** deliver the Phase 05.1 manual payment verification workflow on
-top of the Phase 04.1 Clerk identity, Convex authentication,
-application RBAC, resource ownership, customer account data, and owner user
-management implementation without touching `main` or Production.
+**Objective:** complete the reusable Book Master and public Ready Stock
+foundation without duplicating the existing Secret Catalog domain or touching
+`main`, staging, or Production.
 
 **Source of truth:** the repository on
-`feat/payment-verification-v0.1`, plus the current files listed in
-`agent_rule.txt` and the context pack.
+`feat/catalog-ready-stock-v0.1`, the Phase 06.1 brief, surviving approved
+repository documents, and `context/implementation/PRD-COVERAGE-MATRIX.md`.
 
 **Final decisions:** Clerk supplies identity; Convex validates the Clerk JWT
 and enforces BFG roles, permissions, ownership, and suspension. Application
@@ -51,9 +75,31 @@ roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and disabled for active Preview. No business seed data is created.
 
-**Current priority:** finish local Phase 05.1 validation, commit and push the
-feature branch, then integrate through `develop` before the stable staging
-gate.
+**Current priority:** review and integrate Phase 06.1 through `develop`, then
+continue product completion with Phase 06.2 Request Access / Join Group and
+admin approval. Stable staging follows feature-complete beta.
+
+## Canonical Convex backend
+
+The canonical Convex account is `palevvi@gmail.com`. These identifiers are not
+secrets:
+
+```text
+BFG_CANONICAL_CONVEX_TEAM=palevvi
+BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+BFG_CANONICAL_DEV=content-snake-214
+BFG_CANONICAL_PRODUCTION=clean-eel-522
+```
+
+Only this Convex project is authorized for active BFG development. A separate
+similarly named BFG project under another Convex account/team is
+`NON-CANONICAL`: do not use, deploy, or configure it, and do not delete it
+automatically.
+
+If Convex configuration fails, fix the configuration instead of creating a new
+BFG project. Never use a similarly named BFG project, create a Preview-looking
+deployment manually, or run an environment operation before verifying the
+Convex team, project, and deployment.
 
 ## Evidence
 
@@ -67,8 +113,8 @@ gate.
 - [REPOSITORY] Active Convex functions resolve identity through
   `ctx.auth.getUserIdentity()`, then `appUsers`, never through a client role,
   Clerk subject, email, or prototype session token.
-- [CONVEX VERIFIED] Convex Development codegen succeeds; the current
-  `convex:test` suite passes 7 files / 32 tests. Development ownership
+- [CONVEX VERIFIED] Canonical Convex Development codegen succeeds; the
+  current `convex:test` suite passes 7 files / 32 tests. Development ownership
   preflight found zero records in the affected business tables.
 - [LOCAL VERIFIED] `npm run format:check`, lint, typecheck, 59 Vitest tests,
   and Next.js build pass locally. The local browser run is not authentication
@@ -96,8 +142,8 @@ gate.
 | Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
 | Owner user management | [REPOSITORY] implemented; staging runtime QA pending |
 | Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
-| Current branch Convex Preview | [SUPERSEDED] optional diagnostic; not a phase gate |
-| Current branch Vercel Preview | [SUPERSEDED] optional diagnostic; not a phase gate |
+| Convex Preview-looking deployment | [PROHIBITED] not an active BFG target |
+| Current branch Vercel Preview | [PROHIBITED] not an active BFG target |
 | Staging integration environment | [REPOSITORY] plan defined; infrastructure not configured |
 | Production | [CONFIRMED] untouched and not configured for this phase |
 | `main` | [CONFIRMED] untouched |
@@ -108,6 +154,11 @@ gate.
   invitation URLs, passwords, or auth storage.
 - Never merge to `main`, force-push, deploy Production, use `--prod`, promote
   a Preview, or connect Production Clerk/Convex.
+- Verify the canonical Convex team, project, and deployment before every
+  Convex environment operation.
+- Never create a new BFG Convex project when configuration fails, use a
+  similarly named BFG project from another account, or create a
+  Preview-looking deployment manually.
 - Unknown non-empty staging business data requires a stop before migration.
 - Existing Phase 03 operational invariants remain in force.
 - Payment confirmation is manual metadata plus review state; no payment
@@ -132,9 +183,9 @@ Production change is implied.
 
 ## Next action
 
-Commit and push the Phase 05.1 feature branch, then merge through the normal
-`feat/*` → `develop` review path. Establish the stable staging gate only after
-feature integration; no Production or `main` change is implied.
+Review and merge `feat/catalog-ready-stock-v0.1` through the normal
+`feat/*` → `develop` path. Continue Phase 06.2 and Phase 06.3 product work
+before the stable staging gate; no Production or `main` change is implied.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1
 identity model and retained only for product history.

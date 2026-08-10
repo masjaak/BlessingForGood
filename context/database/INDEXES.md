@@ -10,8 +10,9 @@ customerProfiles: by_user_id
 customerAddresses: by_user_id, by_user_id_and_default, by_user_id_and_created_at
 auditEvents: by_actor_user_id, by_target, by_created_at
 publishers: by_slug, by_active, by_created_at
-books: by_publisher, by_publisher_and_slug, by_active, by_created_at
+books: by_slug, by_publication_status, by_created_at
 bookVariants: by_book, by_isbn, by_book_and_format
+readyStockInventory: by_book_variant_id
 secretCatalogs: by_slug, by_status, by_closes_at, by_created_at
 catalogAccessCodes: by_catalog, by_catalog_and_active, by_lookup_digest, by_expiration
 catalogItems: by_catalog, by_variant, by_catalog_and_variant
