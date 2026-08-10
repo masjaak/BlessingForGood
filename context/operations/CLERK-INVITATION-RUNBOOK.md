@@ -16,6 +16,14 @@ invitation URL, password, token, or auth storage in repository artifacts.
 8. Delete or clean only explicitly created QA records after counts are saved;
    stop if unknown business data is found.
 
+## Approved join-request handoff
+
+For an approved `/admin/join-requests` record, use the existing Clerk
+Development invitation process manually. The Convex approval only sets
+`invitationStatus=ready`; do not store an invitation URL, token, or Clerk
+secret. Invitation acceptance and any future `joinRequest` → `appUser` link
+require verified Clerk identity evidence and are outside Phase 06.2.
+
 Evidence labels:
 
 - `[CLERK VERIFIED]` means a real Development Clerk action completed.

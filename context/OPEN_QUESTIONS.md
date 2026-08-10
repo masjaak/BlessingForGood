@@ -1,5 +1,17 @@
 # Open Questions
 
+## Phase 06.2 decisions and blockers
+
+- [OPEN BUSINESS/PRIVACY DECISION] `JOIN_REQUEST_RETENTION_POLICY`: define
+  retention, access, and disposal rules for admission records containing
+  contact details. Phase 06.2 preserves history and adds no public deletion.
+- [DEFERRED] Clerk invitation execution, invitation acceptance evidence, and
+  safe `joinRequest` → `appUser` linking remain manual identity-lifecycle work.
+  Approval only sets `invitationStatus=ready`.
+- [DEFERRED INFRASTRUCTURE] Rate limiting and bot controls need stable
+  infrastructure. Phase 06.2 uses server validation, normalization, bounded
+  duplicate checks, generic duplicate errors, and acknowledgement gating.
+
 ## Phase 06.1 decisions and blockers
 
 - [BLOCKED BY BUSINESS DECISION] `READY_STOCK_ORDER_RECORDING`: decide whether a

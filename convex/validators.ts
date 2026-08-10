@@ -36,6 +36,13 @@ export const paymentConfirmationStatusValidator = v.union(
   v.literal("approved"),
   v.literal("rejected"),
 );
+export const joinRequestStatusValidator = v.union(
+  v.literal("submitted"),
+  v.literal("under_review"),
+  v.literal("approved"),
+  v.literal("rejected"),
+);
+export const joinRequestInvitationStatusValidator = v.union(v.literal("not_ready"), v.literal("ready"));
 export const depositRequirementModeValidator = v.union(v.literal("none"), v.literal("fixed"), v.literal("percentage"));
 export const depositTransactionTypeValidator = v.union(
   v.literal("credit"),

@@ -10,6 +10,19 @@ appUsers._id
 catalogAccessGrants / orders / invoices / payments / deposits / profiles / addresses
 ```
 
+The pre-account admission path is separate from identity ownership:
+
+```text
+public visitor
+    ↓ validated anonymous submission
+joinRequests
+    ↓ approved + manual Clerk handoff
+Clerk invitation → appUsers
+```
+
+`joinRequests` has no `appUserId`. It preserves the admission/review record and
+does not establish account ownership, role, or Secret Catalog access.
+
 Email, display name, and image are safe snapshots only. They do not establish
 identity or ownership. One `appUsers` document exists per Clerk subject.
 

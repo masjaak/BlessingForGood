@@ -21,6 +21,9 @@ export default function HomePage() {
               </LinkButton>
             </div>
             <div className="hero-support-links">
+              <LinkButton href="/join" variant="quiet">
+                Join Blessfriends
+              </LinkButton>
               <LinkButton href="/how-to-order" variant="quiet">
                 How to order
               </LinkButton>

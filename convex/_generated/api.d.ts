@@ -20,6 +20,7 @@ import type * as depositAccounts from "../depositAccounts.js";
 import type * as depositTransactions from "../depositTransactions.js";
 import type * as invoiceDepositAllocations from "../invoiceDepositAllocations.js";
 import type * as invoices from "../invoices.js";
+import type * as joinRequests from "../joinRequests.js";
 import type * as lib_accessCodes from "../lib/accessCodes.js";
 import type * as lib_audit from "../lib/audit.js";
 import type * as lib_auth from "../lib/auth.js";
@@ -44,11 +45,7 @@ import type * as secretCatalogs from "../secretCatalogs.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from "convex/server";
+import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
   batchTracking: typeof batchTracking;
@@ -63,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   depositTransactions: typeof depositTransactions;
   invoiceDepositAllocations: typeof invoiceDepositAllocations;
   invoices: typeof invoices;
+  joinRequests: typeof joinRequests;
   "lib/accessCodes": typeof lib_accessCodes;
   "lib/audit": typeof lib_audit;
   "lib/auth": typeof lib_auth;
@@ -96,10 +94,7 @@ declare const fullApi: ApiFromModules<{
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
-export declare const api: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "public">
->;
+export declare const api: FilterApi<typeof fullApi, FunctionReference<any, "public">>;
 
 /**
  * A utility for referencing Convex functions in your app's internal API.
@@ -109,9 +104,6 @@ export declare const api: FilterApi<
  * const myFunctionReference = internal.myModule.myFunction;
  * ```
  */
-export declare const internal: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "internal">
->;
+export declare const internal: FilterApi<typeof fullApi, FunctionReference<any, "internal">>;
 
 export declare const components: {};

@@ -5,6 +5,8 @@
 `/admin/*` requires a Clerk session in the Next.js admin layout, an active
 Convex `appUsers` record, and an admin or owner permission. `/admin/users` is
 owner-only both in the UI guard and in every Convex user-management function.
+`/admin/join-requests` is available to active admins and owners for admission
+review; it does not create Clerk accounts or grant catalog access.
 
 Navigation is convenience only. Convex permission checks remain mandatory for
 all reads and mutations.
@@ -48,6 +50,10 @@ Phase 05.1 payment review writes `payment_confirmation.submitted`,
 `payment_confirmation.review_started`, `payment_confirmation.approved`, and
 `payment_confirmation.rejected` events. Amount and invoice references are safe
 metadata; proof contents, secrets, and credentials are not logged.
+
+Phase 06.2 join-request review writes `join_request.review_started`,
+`join_request.approved`, and `join_request.rejected` events. Join-request audit
+metadata contains no contact data, invitation URLs, or tokens.
 
 JWTs, Clerk secrets, session tokens, catalog access codes, invitation URLs,
 passwords, and raw identity claims are never audit metadata.

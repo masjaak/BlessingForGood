@@ -43,6 +43,7 @@ export default function CommunityPage() {
             </Card>
           </div>
           <div className="actions">
+            <LinkButton href="/join">Join Blessfriends</LinkButton>
             <LinkButton href="/how-to-order">How to order</LinkButton>
             <LinkButton href="/catalog" variant="secondary">
               Enter a catalog

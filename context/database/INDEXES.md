@@ -8,6 +8,8 @@ prototypeSessions: by_token_digest, by_expiration
 appUsers: by_clerk_user_id, by_role, by_status, by_role_and_status, by_created_at
 customerProfiles: by_user_id
 customerAddresses: by_user_id, by_user_id_and_default, by_user_id_and_created_at
+joinRequests: by_status_and_submitted_at, by_submitted_at, by_normalized_email,
+              by_normalized_contact
 auditEvents: by_actor_user_id, by_target, by_created_at
 publishers: by_slug, by_active, by_created_at
 books: by_slug, by_publication_status, by_created_at

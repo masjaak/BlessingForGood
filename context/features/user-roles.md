@@ -17,3 +17,10 @@ Clerk users, reset passwords, enforce MFA, or change owner roles.
 
 Suspension blocks protected Convex functions while preserving public browsing
 and sign-out. Owners cannot suspend themselves or another owner.
+
+## Admission review
+
+Active admins and owners can review `/admin/join-requests`. Approval makes a
+request eligible for the manual Clerk invitation handoff only; it does not
+create an account, assign a role, establish ownership, or grant Secret Catalog
+access. Customers and suspended admins cannot review admission requests.

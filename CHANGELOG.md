@@ -8,6 +8,39 @@ source: conversation
 
 # Changelog
 
+## [phase-06.2-join-access-approval] — 2026-08-10
+
+### Added
+
+- Added the public `/join` Blessfriends request flow and durable Convex
+  `joinRequests` admission records with server validation, normalization, and
+  active duplicate protection.
+- Added `/admin/join-requests` for admin/owner queue review, forward-only
+  start-review/approve/reject actions, audit events, and the `ready` manual
+  Clerk invitation handoff state.
+- Added admission authorization, privacy boundaries, race/state-transition
+  tests, public navigation, and Phase 06.2 context documentation.
+
+### Security
+
+- Join requests remain separate from Clerk accounts, `appUsers`, roles,
+  ownership, and Secret Catalog grants. Public responses never expose request
+  records or duplicate details.
+- No invitation URLs, tokens, contact data, or secrets are written to audit
+  metadata. Production, `main`, Preview, and staging were not touched.
+
+### Validated
+
+- `npm run check` components pass: format, lint with zero warnings, typecheck,
+  75 Vitest tests, and Next.js build.
+- `npm run convex:test`: 48 Convex tests pass; `git diff --check` passes.
+
+### Deferred
+
+- Stable-staging runtime/browser QA, Clerk invitation execution/acceptance,
+  verified account linking, infrastructure rate limiting, and the
+  `JOIN_REQUEST_RETENTION_POLICY` decision.
+
 ## [phase-06.1-catalog-ready-stock] — 2026-08-10
 
 ### Added

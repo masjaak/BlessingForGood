@@ -9,6 +9,12 @@ event. Any failure rolls back every write.
 catalog authority, patches the order, and records the edit event in one
 mutation. It rejects edits after catalog close or the editable deadline.
 
+`joinRequests.submit` validates and normalizes anonymous fields, checks indexed
+active duplicates, and inserts one request atomically. Review mutations validate
+the current status, patch reviewer/timestamp/state/invitation handoff, and
+record the audit event in the same transaction. Rejected history remains; no
+transition reopens a request or creates an `appUser`.
+
 Operational mutations keep related writes atomic: batch stage plus history,
 fulfillment stage plus history, invoice plus snapshot items, account ledger
 append plus account summary, and allocation/release plus invoice summary.

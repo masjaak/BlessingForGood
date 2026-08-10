@@ -11,6 +11,7 @@ while Convex auth/provisioning is unresolved.
 | `/community` | public | all | none | public | none | render public page | route smoke |
 | `/how-to-order` | public | all | none | public | none | render public page | route smoke |
 | `/help` | public | all | none | public | none | render public page | route smoke |
+| `/join` | public | signed-out visitors | none | public | `joinRequests.submit` validates input | authenticated users see already-member state | Convex tests; browser staging pending |
 | `/ready-stock` | public | all | none | public | published positive-stock projection | render public/zero-data page | Convex suite; browser staging pending |
 | `/ready-stock/[slug]` | public | all | none | public | published positive-stock projection | hidden/zero stock unavailable | Convex suite; browser staging pending |
 | `/sign-in/[[...sign-in]]` | Clerk auth page | signed out | none | signed-in redirect | Clerk | signed-in redirects to `/catalog` | component/build |
@@ -32,6 +33,7 @@ while Convex auth/provisioning is unresolved.
 | `/admin/invoices` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | invoices/deposits all | redirect/permission denial | Convex tests |
 | `/admin/invoices/[invoiceId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | invoice/deposit all | redirect/permission denial | Convex tests |
 | `/admin/payments` | Clerk + active BFG user | admin/owner | operational payment queue | admin layout + guard | invoice read/manage all | redirect/permission denial | Convex tests |
+| `/admin/join-requests` | Clerk + active BFG user | admin/owner | operational admission queue | admin layout + guard | `customers.read` + `customers.manage` | redirect/permission denial | Convex tests; browser staging pending |
 | `/admin/users` | Clerk + active BFG user | owner only | appUsers security target | admin layout + owner guard | `users.*` owner helper | redirect/permission denial | Convex tests |
 
 [DEFERRED TO STAGING] Real signed-out and role-specific browser route results,
