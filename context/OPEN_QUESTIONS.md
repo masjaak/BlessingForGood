@@ -1,19 +1,17 @@
 # Open Questions
 
-## Phase 04.1 runtime gate
+## Phase 04.1 status transition
 
-[BLOCKED] Repository implementation is complete for the identity/RBAC model,
-but current-branch Preview still needs real Clerk Development invitation and
-authenticated browser evidence. This is a verification gate, not a reason to
-invent fallback configuration.
+Phase 04.1 implementation is **IMPLEMENTED** and local validation is **GREEN**.
+Runtime integration QA is **DEFERRED TO STAGING**. Production readiness is
+**NOT READY**.
 
-[SUPERSEDED] Names-only inspection confirms the Vercel Preview Clerk keys,
-`CONVEX_DEPLOY_KEY`, and the three project-level Convex Preview default names.
+[SUPERSEDED] The previous rule that Phase 04.1 could not proceed until a
+transient branch-specific Preview reached `READY` is retired.
 
-[BLOCKED] The retrigger build for commit `9a6eb84` selected the real isolated
-Convex Preview deployment `robust-cheetah-853` but failed because
-`CLERK_JWT_ISSUER_DOMAIN` was unset there. The local Convex CLI account cannot
-inspect that generated deployment, so its value was not guessed or changed.
+The unresolved real Clerk, ownership, browser, operational, runtime-log, and
+cleanup checks are staging acceptance work, not blockers to feature
+development. See `context/implementation/STAGING-QA-PLAN.md`.
 
 [BLOCKED] The canonical GitHub repository does not include the product context pack referenced by `FILE_MANIFEST.md`.
 

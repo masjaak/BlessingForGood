@@ -1,10 +1,20 @@
 # BFG Project Status
 
+## Phase 04.1 status transition
+
+**Phase 04.1:** IMPLEMENTED
+
+**Local validation:** GREEN
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
 ## Anchored summary
 
-**Objective:** complete Phase 04.1 Clerk identity, Convex authentication,
+**Objective:** deliver the Phase 04.1 Clerk identity, Convex authentication,
 application RBAC, resource ownership, customer account data, and owner user
-management without touching `main` or Production.
+management implementation without touching `main` or Production.
 
 **Source of truth:** the repository on
 `feat/clerk-identity-authorization-v0.1`, plus the current files listed in
@@ -18,9 +28,9 @@ roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and disabled for active Preview. No business seed data is created.
 
-**Current priority:** repair application of the configured Preview auth
-environment to the actual branch-isolated Convex deployment, then obtain real
-Clerk Development sign-in and authenticated Playwright QA.
+**Current priority:** continue feature development using local and Convex
+Development validation, then run the deferred integration gate in one stable
+staging environment.
 
 ## Evidence
 
@@ -37,30 +47,17 @@ Clerk Development sign-in and authenticated Playwright QA.
 - [CONVEX VERIFIED] Convex Development codegen succeeds; the current
   `convex:test` suite passes 7 files / 32 tests. Development ownership
   preflight found zero records in the affected business tables.
-- [REPOSITORY] `npm run format:check`, lint, typecheck, 59 Vitest tests, and
-  Next.js build pass locally. The local Chromium run is not authentication
+- [LOCAL VERIFIED] `npm run format:check`, lint, typecheck, 59 Vitest tests,
+  and Next.js build pass locally. The local browser run is not authentication
   evidence.
-- [CLERK VERIFIED] Read-only Development configuration inspection confirmed
-  the configured Clerk environment is Development and the required local
-  key names exist. Restricted Mode is recorded from the manual setup supplied
-  for this phase; no Production Clerk configuration was changed.
-- [BLOCKED] Real invitation acceptance, a signed-in Convex identity proof from
-  the browser, and current branch Preview QA are not claimed until the
-  isolated Preview deployment and non-secret QA identity setup are available.
-- [SUPERSEDED] Vercel Preview names-only inspection confirms the expected
-  Clerk keys and `CONVEX_DEPLOY_KEY` are configured for this feature branch.
-- [SUPERSEDED] Project-level Preview defaults names-only inspection confirms
-  `BFG_CATALOG_CODE_PEPPER`, `BFG_OWNER_CLERK_USER_ID`, and
-  `CLERK_JWT_ISSUER_DOMAIN`.
-- [PREVIEW BUILD] The retrigger commit `9a6eb84` reached Vercel Preview
-  deployment `dpl_3psKKup4dxPqK5kAjAiQMmuyRquQ` at
-  `blessing-for-good-1mp4mwwjh-masjaaks-projects.vercel.app`. The target was
-  `preview`, the build selected isolated Convex Preview `robust-cheetah-853`,
-  and Next.js generated 18 static pages.
-- [BLOCKED] The same remote build failed because
-  `CLERK_JWT_ISSUER_DOMAIN` was unset in the generated Preview deployment.
-  The local Convex CLI account cannot inspect that deployment; no environment
-  value was printed or changed.
+- [REPOSITORY] Clerk Development configuration, Restricted Mode, and the
+  fail-closed identity boundary are documented; runtime proof is deferred.
+- [SUPERSEDED] The former requirement that a transient branch Preview reach
+  `READY` before Phase 04.1 could proceed is retired.
+- Runtime Clerk, ownership, browser, operational, and cleanup evidence is
+  tracked in `context/implementation/STAGING-QA-PLAN.md`.
+- [SUPERSEDED] The transient branch Preview attempts remain historical
+  diagnostics only and are not Phase 04.1 acceptance evidence.
 
 ## Identity and migration status
 
@@ -74,10 +71,11 @@ Clerk Development sign-in and authenticated Playwright QA.
 | Suspension and owner protections | [REPOSITORY] implemented; synthetic tests pass |
 | Ownership fields | [REPOSITORY] migrated to `appUsers` references; Dev is empty |
 | Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
-| Owner user management | [REPOSITORY] implemented; Preview runtime QA pending |
+| Owner user management | [REPOSITORY] implemented; staging runtime QA pending |
 | Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
-| Current branch Convex Preview | [BLOCKED] true Preview target exists; configured auth default is not applied/visible in the generated deployment |
-| Current branch Vercel Preview | [BLOCKED] latest deployment failed after the Next.js build |
+| Current branch Convex Preview | [SUPERSEDED] optional diagnostic; not a phase gate |
+| Current branch Vercel Preview | [SUPERSEDED] optional diagnostic; not a phase gate |
+| Staging integration environment | [REPOSITORY] plan defined; infrastructure not configured |
 | Production | [CONFIRMED] untouched and not configured for this phase |
 | `main` | [CONFIRMED] untouched |
 
@@ -87,32 +85,32 @@ Clerk Development sign-in and authenticated Playwright QA.
   invitation URLs, passwords, or auth storage.
 - Never merge to `main`, force-push, deploy Production, use `--prod`, promote
   a Preview, or connect Production Clerk/Convex.
-- Unknown non-empty Preview business data requires a stop before migration.
+- Unknown non-empty staging business data requires a stop before migration.
 - Existing Phase 03 operational invariants remain in force.
 
 ## Validation plan
 
-1. Run format, lint, typecheck, Vitest, Convex tests/codegen, build, and local
-   Vercel build.
-2. Inspect Development and branch-isolated Preview record counts by name and
-   count only.
-3. Verify real Clerk sign-in, JWT delivery to Convex, provisioning, role
-   behavior, suspension, invitation acceptance, and cross-customer isolation.
-4. Inspect Vercel/Convex runtime logs for safe errors only.
+1. Run format, lint, typecheck, Vitest, Convex tests/codegen, and build for
+   every implementation phase.
+2. Validate relevant negative authorization and financial invariant tests.
+3. Run full real integration QA only in the stable staging gate described by
+   `context/implementation/STAGING-QA-PLAN.md`.
+4. Inspect staging runtime logs and clean guarded staging data before release
+   handoff.
 
 ## Rollback plan
 
 The migration is source-controlled on the current feature branch. Convex
 Development is empty for affected tables, so no data rewrite is required.
-Preview rollout remains isolated; rollback is a branch deployment rollback,
-not a Production change.
+Staging rollout and rollback will use one stable staging deployment; no
+Production change is implied.
 
 ## Next action
 
-Set or inherit `CLERK_JWT_ISSUER_DOMAIN` in the isolated current-branch Convex
-Preview without touching Production, then rerun the Git-connected Preview and
-the real invited-user QA matrix. Do not start Phase 04.2 until that proof
-exists.
+Create the `develop` integration branch from the current Phase 04.1
+implementation in a later workflow step, then establish the stable staging
+gate. No branch creation or staging infrastructure change is made in this
+documentation task.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1
 identity model and retained only for product history.

@@ -8,6 +8,24 @@ source: conversation
 
 # Changelog
 
+## [phase-04.1-status-transition] — 2026-08-10
+
+### Changed
+
+- Marked Phase 04.1 implementation **IMPLEMENTED** with **GREEN** local
+  validation.
+- Retired transient branch-specific Preview `READY` as a Phase 04.1 gate;
+  real Clerk and integrated runtime QA is **DEFERRED TO STAGING**.
+- Documented the `feat/*` → `develop` → `main` branch model and stable staging
+  handoff policy.
+- Added `context/implementation/STAGING-QA-PLAN.md` for the deferred runtime
+  acceptance backlog.
+
+### Not changed
+
+- Production remains untouched and **NOT READY**.
+- No application implementation or staging infrastructure was changed.
+
 ## [phase-04.1-preview-verification] — 2026-08-10
 
 ### Validated
@@ -19,12 +37,12 @@ source: conversation
   `dpl_3psKKup4dxPqK5kAjAiQMmuyRquQ` selected the real branch-isolated Convex
   Preview `robust-cheetah-853` and generated 18 static pages.
 
-### Blocked
+### Historical gate (superseded)
 
-- [BLOCKED] Convex rejected the Preview deployment because
-  `CLERK_JWT_ISSUER_DOMAIN` was unset in the generated Preview deployment.
-  Real Clerk, invitation, ownership, and authenticated browser QA remain
-  pending. Production and `main` were not changed.
+- [SUPERSEDED] Convex rejected the transient Preview deployment because
+  `CLERK_JWT_ISSUER_DOMAIN` was unset. Real Clerk, invitation, ownership, and
+  authenticated browser QA are now intentionally deferred to staging.
+  Production and `main` were not changed.
 
 ## [phase-04.1-identity-authorization] — 2026-08-08
 

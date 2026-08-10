@@ -1,7 +1,10 @@
 # Known Limitations
 
-- Real Clerk invitation acceptance and current Vercel/Convex Preview browser
-  evidence are pending; local synthetic identity tests are not runtime proof.
+- Real Clerk invitation acceptance, Convex JWT verification, ownership,
+  operational, browser, runtime-log, and cleanup evidence are deferred to the
+  stable staging gate; local synthetic identity tests are not runtime proof.
+- Branch-specific Vercel/Convex Preview deployments are optional diagnostics,
+  not a Phase 04.1 acceptance gate.
 - The current Playwright Clerk suite requires non-secret QA identity
   configuration and Development-only test infrastructure. It never commits
   storage state or credentials.

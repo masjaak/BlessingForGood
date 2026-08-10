@@ -1,15 +1,23 @@
 # BFG Deployment
 
+## Phase status
+
+```text
+Phase 04.1 implementation: IMPLEMENTED
+Local validation: GREEN
+Runtime integration QA: DEFERRED TO STAGING
+Production readiness: NOT READY
+```
+
 ## Allowed target
 
-Only the current feature branch and isolated Preview infrastructure are in
-scope:
+During feature development, the current feature branch and local/Development
+validation are in scope:
 
 ```text
 feat/clerk-identity-authorization-v0.1
 Clerk Development
-Convex Development / branch Preview
-Vercel Preview
+Convex Development
 ```
 
 Do not merge to `main`, use `--prod`, promote a deployment, force-push, or
@@ -23,27 +31,59 @@ connect Production Clerk/Convex.
 npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"
 ```
 
-That command must be invoked only with Preview-scoped configuration. Stop if
-the output identifies Production. The build must not seed business records.
+The command must never target Production and must not seed business records.
+Branch-specific Preview builds are optional diagnostics and are not a phase
+acceptance gate.
+
+## Development policy
+
+Every implementation phase requires:
+
+- format and lint;
+- typecheck;
+- unit tests;
+- Convex tests/codegen where relevant;
+- build;
+- negative authorization and financial-invariant tests where relevant.
+
+Full browser and integration QA belongs to the stable staging gate, not every
+transient Preview deployment.
+
+## Branch model
+
+```text
+main
+= release / Production line
+
+develop
+= BFG integration line
+
+feat/*
+= implementation branches
+```
+
+Feature branches merge into `develop`. `main` remains untouched during
+product build. Staging is sourced from the approved `develop` integration
+state; Production only comes from an approved release.
+
+## Stable staging target
+
+Staging will eventually use one stable Vercel deployment, one stable Convex
+backend, and Clerk configuration appropriate for staging. This task documents
+the target only; it does not configure staging infrastructure.
 
 ## Preview handoff evidence
 
-Before reporting Preview ready, verify by names/counts only:
+Before the staging handoff, verify by names/counts only:
 
 - Clerk Development keys and issuer configuration are present in the correct
   environments;
 - Convex auth config accepts a signed-in Clerk JWT;
-- affected Preview tables are empty or contain only known QA records;
-- Vercel Preview is Ready;
+- affected staging tables are empty or contain only known QA records;
+- the stable Vercel staging deployment is Ready;
 - signed-out, owner, admin, customer A/B, suspended, and invitation flows pass;
 - runtime logs contain no secrets or unexpected errors.
 
-[REPOSITORY] Local Next.js build and Preview-target build inputs are present.
-[SUPERSEDED] Names-only inspection confirms the Vercel Preview Clerk keys and
-`CONVEX_DEPLOY_KEY`, plus the three project-level Convex Preview default names.
-[PREVIEW BUILD] The feature-branch retrigger commit `9a6eb84` reached Vercel
-Preview deployment `dpl_3psKKup4dxPqK5kAjAiQMmuyRquQ` and selected isolated
-Convex Preview `robust-cheetah-853`; Next.js generated 18 static pages before
-Convex rejected the deploy for missing `CLERK_JWT_ISSUER_DOMAIN`.
-[BLOCKED] Vercel Preview is not READY and authenticated runtime evidence is
-not claimed. No Production target was used.
+[LOCAL VERIFIED] Local Next.js build inputs and the Phase 04.1 validation
+commands pass. Previous branch-specific Preview attempts are retained as
+historical diagnostics only. No Production target was used.

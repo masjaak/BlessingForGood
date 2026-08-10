@@ -1,5 +1,14 @@
 # Phase 04.1 — Clerk Identity and Authorization
 
+## Status transition
+
+| Area | Status |
+| --- | --- |
+| Phase 04.1 implementation | IMPLEMENTED |
+| Local validation | GREEN |
+| Runtime integration QA | DEFERRED TO STAGING |
+| Production readiness | NOT READY |
+
 ## Decision
 
 Clerk Development provides BFG identity. Convex provides BFG business
@@ -23,19 +32,15 @@ Production authentication is not configured.
 - Added synthetic identity/authorization tests and Clerk-aware Playwright
   configuration with no committed auth storage.
 
-## Evidence and gate
+## Evidence and handoff
 
 [CONVEX VERIFIED] Development codegen, zero-data ownership preflight, and 32
 Convex tests pass. [REPOSITORY] Web checks, 59 Vitest tests, and Next.js build
-pass locally. [SUPERSEDED] Names-only inspection confirms the Vercel Preview
-credentials and project-level Convex Preview default names. [PREVIEW BUILD]
-The retrigger build selected isolated Convex Preview `robust-cheetah-853` and
-generated 18 static pages, but failed because `CLERK_JWT_ISSUER_DOMAIN` was
-unset in that generated deployment. [BLOCKED] Completion remains open until
-the configured Preview auth environment is applied there, then real
-Development invitation, authenticated Convex identity, and Clerk Playwright
-QA are verified.
+pass locally. [SUPERSEDED] The former branch-specific Preview `READY` gate is
+retired as a Phase 04.1 completion requirement. Real Development invitation,
+authenticated Convex identity, ownership, operational, browser, runtime-log,
+and cleanup QA are deferred to the stable staging gate.
 
 ## Next milestone
 
-Phase 04.2 — Invitation Management, MFA & Identity Hardening.
+Stable staging QA for Phase 04.1, followed by the approved next phase.

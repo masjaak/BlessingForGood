@@ -3,12 +3,30 @@
 | Environment | Identity | Data source | Active fallback | Status |
 | --- | --- | --- | --- | --- |
 | Local development | Clerk when explicitly configured; local adapter only when explicitly enabled | Convex Development or local adapter | explicit local fallback | allowed |
-| Vercel Preview | Clerk Development only | isolated branch Convex Preview | none; fail closed if URL/config is missing | required for Phase 04.1 |
+| Feature Preview | Clerk Development only | isolated branch Convex Preview | none; fail closed if URL/config is missing | optional diagnostic only |
+| BFG Staging | Clerk configuration appropriate for staging | one stable Convex staging backend | none | future integration gate; not configured |
 | Vercel Production | not configured | not configured | none | untouched |
+
+## Branch model
+
+```text
+main
+= release / Production line
+
+develop
+= BFG integration line
+
+feat/*
+= implementation branches
+```
+
+Feature branches merge into `develop`. `main` remains untouched during
+product build. The eventual staging environment is sourced from approved
+`develop` integration state. Production only comes from an approved release.
 
 ## Names only
 
-Local/Preview application names:
+Local/Preview/Staging application names:
 
 ```text
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
@@ -33,6 +51,7 @@ configuration and is never identity or authorization.
 
 ## State boundary
 
-Preview with a valid Convex URL uses Clerk plus Convex. Preview without that
-URL returns a configuration-missing state and never falls back to anonymous
-sessions or browser-local business data.
+Feature Preview with a valid Convex URL uses Clerk plus Convex. Preview without
+that URL returns a configuration-missing state and never falls back to
+anonymous sessions or browser-local business data. Feature Preview is not the
+Phase 04.1 runtime acceptance gate; stable staging is.
