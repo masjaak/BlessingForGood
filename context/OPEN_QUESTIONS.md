@@ -1,5 +1,21 @@
 # Open Questions
 
+## Phase 06.1 decisions and blockers
+
+- [BLOCKED BY BUSINESS DECISION] `READY_STOCK_ORDER_RECORDING`: decide whether a
+  Ready Stock purchase creates an existing order type, a dedicated order source,
+  or remains externally recorded. Reservation/sold transitions and checkout must
+  wait for this decision.
+- [DEFERRED] Durable cover upload/storage. Phase 06.1 keeps the existing optional
+  image-reference boundary and stores no binary/base64 content.
+- [SCALE TRIGGER] Public/admin Book Master queries are bounded to 200 source rows
+  and 100 public results. Add pagination/search indexes when real inventory reaches
+  that ceiling.
+- [BLOCKED DOCUMENTATION] The original `context/product/PRD.md`, `SCOPE.md`,
+  `BUSINESS_RULES.md`, `UX_FLOWS.md`, `ROUTES.md`, and
+  `context/SOURCE_OF_TRUTH.md` remain absent from `develop`. Phase 06.1 records
+  only decisions explicitly supplied by the phase brief.
+
 ## Phase 05.1 status
 
 Phase 05.1 is **IMPLEMENTATION COMPLETE** with **GREEN** local validation:

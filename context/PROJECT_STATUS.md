@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Phase 06.1 status
+
+**Phase 06.1:** IMPLEMENTATION COMPLETE
+
+**Local validation:** GREEN — 71 Vitest tests, 44 Convex tests, lint with zero
+warnings, typecheck, Next.js build, and `git diff --check` pass.
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
+Phase 06.1 completes the reusable Book Master, explicit publication states,
+per-variant Ready Stock inventory, public browse/search/filter/detail experience,
+and admin book/variant/stock operations. Public queries are anonymous but expose
+only published books with positive stock. Secret Catalog remains an authenticated
+curation/access layer and is not merged into Ready Stock.
+
+`READY_STOCK_ORDER_RECORDING` remains blocked by business decision. The public
+detail uses a contact/help CTA and does not create checkout, reservation, or sale
+records. No staging, Vercel Preview, Production, or `main` work is part of this phase.
+
+Current implementation evidence and backlog are tracked in
+`context/implementation/PHASE-06-1-CATALOG-READY-STOCK.md` and
+`context/implementation/PRD-COVERAGE-MATRIX.md`.
+
 ## Phase 05.1 status
 
 **Phase 05.1:** IMPLEMENTATION COMPLETE
@@ -34,14 +59,13 @@ behavior, runtime logs, and guarded data cleanup.
 
 ## Anchored summary
 
-**Objective:** deliver the Phase 05.1 manual payment verification workflow on
-top of the Phase 04.1 Clerk identity, Convex authentication,
-application RBAC, resource ownership, customer account data, and owner user
-management implementation without touching `main` or Production.
+**Objective:** complete the reusable Book Master and public Ready Stock
+foundation without duplicating the existing Secret Catalog domain or touching
+`main`, staging, or Production.
 
 **Source of truth:** the repository on
-`feat/payment-verification-v0.1`, plus the current files listed in
-`agent_rule.txt` and the context pack.
+`feat/catalog-ready-stock-v0.1`, the Phase 06.1 brief, surviving approved
+repository documents, and `context/implementation/PRD-COVERAGE-MATRIX.md`.
 
 **Final decisions:** Clerk supplies identity; Convex validates the Clerk JWT
 and enforces BFG roles, permissions, ownership, and suspension. Application
@@ -51,9 +75,9 @@ roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and disabled for active Preview. No business seed data is created.
 
-**Current priority:** finish local Phase 05.1 validation, commit and push the
-feature branch, then integrate through `develop` before the stable staging
-gate.
+**Current priority:** review and integrate Phase 06.1 through `develop`, then
+continue product completion with Phase 06.2 Request Access / Join Group and
+admin approval. Stable staging follows feature-complete beta.
 
 ## Evidence
 
@@ -132,9 +156,9 @@ Production change is implied.
 
 ## Next action
 
-Commit and push the Phase 05.1 feature branch, then merge through the normal
-`feat/*` → `develop` review path. Establish the stable staging gate only after
-feature integration; no Production or `main` change is implied.
+Review and merge `feat/catalog-ready-stock-v0.1` through the normal
+`feat/*` → `develop` path. Continue Phase 06.2 and Phase 06.3 product work
+before the stable staging gate; no Production or `main` change is implied.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1
 identity model and retained only for product history.

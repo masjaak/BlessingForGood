@@ -43,3 +43,11 @@ invoice payment projection. No confirmation writes the deposit ledger.
 
 Legacy cleanup is disabled from active Convex exports. Production remains
 unconfigured and fail-closed.
+
+`books.create`, `books.update`, `bookVariants.create`, and
+`bookVariants.update` validate admin/owner permission, references, uniqueness,
+and metadata/price invariants before writing their audit event in the same
+mutation. `readyStock.setQuantity` validates admin/owner permission, variant
+existence, and non-negative safe-integer quantity before atomically upserting
+one per-variant inventory record and its audit event. Reservation and sale
+transitions are not implemented without an approved Ready Stock order model.

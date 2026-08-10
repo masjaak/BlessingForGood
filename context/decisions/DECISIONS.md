@@ -1,5 +1,18 @@
 # Decisions
 
+Phase 06.1 records the following approved implementation decisions:
+
+- Book Master is reusable metadata; Secret Catalog is private curation/access;
+  Ready Stock is public per-variant availability. These are not parallel book models.
+- Variants own format, globally unique ISBN, and positive integer IDR price.
+- Books use draft, published, special/private, and archived publication states.
+  Only published books with active positive-stock variants are publicly readable.
+- Ready Stock quantity is a separate non-negative per-variant record.
+- Global book slugs support `/ready-stock/[slug]`.
+- `READY_STOCK_ORDER_RECORDING` remains open; Phase 06.1 uses a contact/help CTA
+  and implements no checkout, reservation, or sale transition.
+- Cover metadata remains a reference; durable upload/storage is deferred.
+
 Phase 04.1 records the following approved implementation decisions:
 
 - Clerk Development is the identity provider; Convex owns BFG roles,

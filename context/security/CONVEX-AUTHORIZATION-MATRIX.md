@@ -11,10 +11,17 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `publishers.list` | query | admin/owner/customer | A(`books.read`) | none | none | active | Convex suite |
 | `publishers.create` | mutation | admin/owner | A(`books.manage`) | `createdByUserId` actor | none | active | Convex suite |
-| `books.list` | query | admin/owner/customer | A(`books.read`) | none | none | active | Convex suite |
+| `books.list` | query | admin/owner | A(`books.manage`) | operational | none | active | Convex suite |
 | `books.create` | mutation | admin/owner | A(`books.manage`) | `createdByUserId` actor | none | active | Convex suite |
-| `bookVariants.listForBook` | query | admin/owner/customer | A(`books.read`) | parent book reference | none | active | Convex suite |
+| `books.listForAdmin` | query | admin/owner | A(`books.manage`) | operational | none | active | Ready Stock suite |
+| `books.getForAdmin` | query | admin/owner | A(`books.manage`) | operational | none | active | Ready Stock suite |
+| `books.update` | mutation | admin/owner | A(`books.manage`) | audit actor | none | active | Ready Stock suite |
+| `bookVariants.listForBook` | query | admin/owner | A(`books.manage`) | parent book reference | none | active | Convex suite |
 | `bookVariants.create` | mutation | admin/owner | A(`books.manage`) | parent book reference | none | active | Convex suite |
+| `bookVariants.update` | mutation | admin/owner | A(`books.manage`) | parent reference + audit actor | none | active | Ready Stock suite |
+| `readyStock.list` | query | public | anonymous | published positive-stock projection | none | active | Ready Stock suite |
+| `readyStock.getBySlug` | query | public | anonymous | published positive-stock projection | none | active | Ready Stock suite |
+| `readyStock.setQuantity` | mutation | admin/owner | A(`books.manage`) | variant reference + audit actor | none | active | Ready Stock suite |
 | `secretCatalogs.list` | query | admin/owner | A(`catalog.manage`) | operational | none | active | Convex suite |
 | `secretCatalogs.create` | mutation | admin/owner | A(`catalog.manage`) | `createdByUserId` actor | none | active | Convex suite |
 | `secretCatalogs.open` | mutation | admin/owner | A(`catalog.manage`) | operational | none | active | Convex suite |
@@ -94,6 +101,7 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 | `prototypeSessions.me` | query | none | none; always fails | no ownership | isolated legacy only | legacy-disabled | core/auth tests |
 | `prototypeSessions.cleanupTest` | mutation | none | none; always fails | no ownership | isolated legacy only | legacy-disabled | core/auth tests |
 
-No active function is anonymous business access, test-only, or Production
-authorization. The only intentionally non-authenticated response is
-`users.current`, which returns `null` and is not a business-data query.
+The only anonymous business reads are `readyStock.list` and
+`readyStock.getBySlug`; both return a deliberately restricted public projection
+and never query Secret Catalog tables. `users.current` may also return `null`
+without identity. No active mutation is anonymous or test-only.

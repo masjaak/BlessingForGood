@@ -8,6 +8,39 @@ source: conversation
 
 # Changelog
 
+## [phase-06.1-catalog-ready-stock] — 2026-08-10
+
+### Added
+
+- Added reusable Book Master author/category/publication metadata, global public
+  slugs, audited create/update operations, and practical admin list/detail flows.
+- Added audited variant editing with per-format unique ISBN and positive integer
+  IDR price validation.
+- Added per-variant `readyStockInventory` with non-negative quantity and a
+  deliberately scoped anonymous public projection.
+- Added `/ready-stock` server-backed search/filter/sort, zero/loading/error
+  states, and `/ready-stock/[slug]` detail with a contact/help purchase boundary.
+- Added the PRD coverage matrix and Phase 06.1 product/catalog/domain records.
+
+### Security
+
+- Draft, special/private, archived, inactive, and zero-stock records remain
+  hidden server-side. Ready Stock queries do not read Secret Catalog, access
+  code, grant, or catalog-item tables.
+- Customers cannot mutate Book Master, variants, publication state, or stock.
+  Privileged writes validate invariants and audit the authenticated actor.
+
+### Validated
+
+- `npm run check`: format, lint with zero warnings, typecheck, 71 Vitest tests,
+  and Next.js build pass.
+- `npm run convex:test`: 44 Convex tests pass; `git diff --check` passes.
+
+### Deferred
+
+- `READY_STOCK_ORDER_RECORDING`, reservation/sold transitions, checkout,
+  durable cover upload, stable-staging runtime QA, Production, and `main`.
+
 ## [phase-05.1-payment-verification] — 2026-08-10
 
 ### Added

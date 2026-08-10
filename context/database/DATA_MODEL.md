@@ -43,3 +43,15 @@ lifecycle plus a separate payment projection. `paymentConfirmations` preserves
 submitted, under-review, approved, and rejected manual attempts. Deposit
 accounts are balance projections over an append-only ledger, and allocations
 are reservation-backed.
+
+## Book Master and Ready Stock
+
+```text
+publisher → book → bookVariant → readyStockInventory
+                    ↘ catalogItem → secretCatalog
+```
+
+Book Master metadata is shared. Variants own format, unique ISBN, and integer
+IDR price. `readyStockInventory` owns current public availability quantity per
+variant; Secret Catalog items continue to own private curation/access context.
+Books are not duplicated per catalog.

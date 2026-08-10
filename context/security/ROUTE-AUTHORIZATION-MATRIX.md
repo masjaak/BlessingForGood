@@ -11,7 +11,8 @@ while Convex auth/provisioning is unresolved.
 | `/community` | public | all | none | public | none | render public page | route smoke |
 | `/how-to-order` | public | all | none | public | none | render public page | route smoke |
 | `/help` | public | all | none | public | none | render public page | route smoke |
-| `/ready-stock` | public | all | none | public | none | render public page | route smoke |
+| `/ready-stock` | public | all | none | public | published positive-stock projection | render public/zero-data page | Convex suite; browser staging pending |
+| `/ready-stock/[slug]` | public | all | none | public | published positive-stock projection | hidden/zero stock unavailable | Convex suite; browser staging pending |
 | `/sign-in/[[...sign-in]]` | Clerk auth page | signed out | none | signed-in redirect | Clerk | signed-in redirects to `/catalog` | component/build |
 | `/sign-up/[[...sign-up]]` | valid invitation | signed out/invite | none | signed-in redirect | Clerk Restricted Mode | invalid/expired Clerk invitation error | component/build |
 | `/catalog` | Clerk + active BFG user | customer; admin/owner preview link allowed | catalog grant belongs to app user | catalog layout | `catalog.read`, grant by `appUserId` | redirect to sign-in; role denial | Convex tests |
@@ -23,6 +24,7 @@ while Convex auth/provisioning is unresolved.
 | `/account/addresses` | Clerk + customer | customer | current app user | account layout + guard | active-user address helper | redirect/deny | Convex tests |
 | `/admin` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | operational permission | redirect/permission denial | Convex tests |
 | `/admin/catalogs` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | catalog/books manage | redirect/permission denial | Convex tests |
+| `/admin/books`, `/admin/books/[bookId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | `books.manage` | redirect/permission denial | Convex suite; browser staging pending |
 | `/admin/orders` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | orders read/manage all | redirect/permission denial | Convex tests |
 | `/admin/orders/[orderId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | order/tracking all | redirect/permission denial | Convex tests |
 | `/admin/batches` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | batches/tracking all | redirect/permission denial | Convex tests |

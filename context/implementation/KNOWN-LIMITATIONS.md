@@ -26,3 +26,10 @@
   Preview without Convex configuration is unavailable rather than anonymous.
 - Next.js may report the unrelated parent lockfile outside this repository;
   the canonical repository build still succeeds.
+- `READY_STOCK_ORDER_RECORDING` is unresolved. Public Ready Stock ends at a
+  contact/help CTA; no checkout, reservation, or sale transition exists.
+- Book Master/public search uses a documented 200-row server scan and 100-item
+  public result ceiling. Add pagination/search-specific indexes when real data
+  reaches that boundary.
+- Cover metadata is a reference only. Durable upload/storage and external image
+  host policy remain deferred.

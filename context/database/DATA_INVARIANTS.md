@@ -26,6 +26,14 @@
 - Order edits remain limited to submitted orders before the catalog close.
 - Existing price, order status, tracking, and fulfillment invariants remain
   unchanged from Phase 03.
+- A public Ready Stock item requires a `published` book, active publisher,
+  active variant, inventory record, and quantity greater than zero.
+- Draft, special/private, archived, inactive, and zero-stock data is never
+  returned by the anonymous Ready Stock query.
+- A book slug is globally unique; a variant ISBN is globally unique; one book
+  cannot repeat a format.
+- Variant price is a positive safe integer IDR value. Ready Stock quantity is a
+  safe non-negative integer and is updated atomically with its audit event.
 
 ## Customer account data
 

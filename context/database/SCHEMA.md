@@ -33,6 +33,12 @@ orderItems
 orderStatusHistory
 ```
 
+`books` additionally owns optional author, bounded categories, optional cover
+reference, globally unique slug, and publication state
+(`draft`, `published`, `special`, `archived`). `readyStockInventory` is a
+separate table keyed by `bookVariantId` with non-negative quantity and audited
+updater/timestamps.
+
 Catalog grants use `appUserId` and catalog ID. Orders use `customerUserId`;
 order items retain immutable product and price snapshots. Access codes remain
 keyed digests and are never stored as plaintext.
