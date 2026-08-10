@@ -13,9 +13,15 @@
   later.
 - Legacy `prototypeSessions` code remains isolated until all historical test
   dependencies are retired. Its active exports fail closed.
-- Catalog access-code rate limiting, payment settlement, uploads, email,
+- Catalog access-code rate limiting, automatic payment settlement, uploads, email,
   WhatsApp API, refunds, tax/customs/shipping policy, and final accounting
   numbering remain deferred.
+- Phase 05.1 implements manual payment confirmation and review only. Real
+  Clerk-to-Convex payment runtime, browser, realtime, runtime-log, and
+  zero-data cleanup evidence is deferred to stable staging.
+- Payment proof is a reference abstraction; durable file storage/upload is not
+  implemented. Payment method taxonomy, cancellation, corrections, and final
+  accounting policy remain open.
 - The local adapter is allowed only as an explicit local-development fallback;
   Preview without Convex configuration is unavailable rather than anonymous.
 - Next.js may report the unrelated parent lockfile outside this repository;

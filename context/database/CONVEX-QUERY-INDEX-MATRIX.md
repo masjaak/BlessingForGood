@@ -14,6 +14,9 @@
 | admin orders | created-at operations list | `orders.by_created_at` | paginated |
 | customer invoices | `customerUserId` | `invoices.by_customer_user_id_and_created_at` | paginated |
 | invoice items | parent invoice | `invoiceItems.by_invoice` | bounded |
+| customer payment confirmations | `customerUserId` or invoice owner | `paymentConfirmations.by_customer_user_id_and_created_at`, `by_invoice` | paginated/bounded |
+| admin payment queue | submitted/under-review status + time | `paymentConfirmations.by_status_and_created_at` | 100 combined (100 fetched per status) |
+| admin payment history | created time or status + time | `paymentConfirmations.by_created_at`, `by_status_and_created_at` | paginated |
 | customer deposit account | current app user + IDR | `depositAccounts.by_user_id_and_currency` | unique |
 | customer deposit history | current account | `depositTransactions.by_account_and_created_at` | paginated |
 | invoice allocations | parent invoice | `invoiceDepositAllocations.by_invoice` | 100 |

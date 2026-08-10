@@ -29,8 +29,9 @@ while Convex auth/provisioning is unresolved.
 | `/admin/batches/[batchId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | batches/tracking all | redirect/permission denial | Convex tests |
 | `/admin/invoices` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | invoices/deposits all | redirect/permission denial | Convex tests |
 | `/admin/invoices/[invoiceId]` | Clerk + active BFG user | admin/owner | operational | admin layout + guard | invoice/deposit all | redirect/permission denial | Convex tests |
+| `/admin/payments` | Clerk + active BFG user | admin/owner | operational payment queue | admin layout + guard | invoice read/manage all | redirect/permission denial | Convex tests |
 | `/admin/users` | Clerk + active BFG user | owner only | appUsers security target | admin layout + owner guard | `users.*` owner helper | redirect/permission denial | Convex tests |
 
-[BLOCKED] Real signed-out and role-specific browser route results against
-current Vercel Preview remain pending; local unit/Convex tests are not labeled
-as Preview authentication evidence.
+[DEFERRED TO STAGING] Real signed-out and role-specific browser route results,
+payment review UX, runtime logs, and authenticated Playwright remain pending;
+local unit/Convex tests are not labeled as runtime authentication evidence.

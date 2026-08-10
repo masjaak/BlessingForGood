@@ -8,6 +8,35 @@ source: conversation
 
 # Changelog
 
+## [phase-05.1-payment-verification] — 2026-08-10
+
+### Added
+
+- Added integer-IDR `paymentConfirmations` persistence with customer ownership,
+  pending-submission uniqueness, review state, reviewer history, and optional
+  proof-reference metadata.
+- Added atomic admin/owner review transitions and invoice payment projection
+  fields for verified manual payments.
+- Added customer invoice submission/status feedback and the `/admin/payments`
+  review queue/history surface.
+- Added authorization, audit, duplicate, stale-approval, rejection/resubmit,
+  suspension, and deposit-plus-transfer financial invariant coverage.
+
+### Validated
+
+- `npm run check`: format, lint, typecheck, 65 Vitest tests, and Next.js build
+  pass.
+- `npm run convex:test`: 38 Convex tests pass; no transient Preview or
+  Production deployment was used.
+
+### Deferred
+
+- Real Clerk/staging runtime and authenticated browser QA remain deferred to the
+  stable staging gate.
+- Payment gateways, bank APIs, webhooks, automatic reconciliation, proof
+  uploads, refunds, withdrawals, chargebacks, accounting, Production, and
+  `main` remain out of scope.
+
 ## [phase-04.1-status-transition] — 2026-08-10
 
 ### Changed

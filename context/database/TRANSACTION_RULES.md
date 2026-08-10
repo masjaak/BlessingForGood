@@ -25,11 +25,21 @@ together and never changes preorder status.
 `invoices.create` loads authoritative order-item snapshots, validates integer
 totals, calculates the deposit requirement, and inserts the invoice plus every
 invoice item in one mutation. `issue` and `voidInvoice` preserve lifecycle
-history; voiding with active allocations is rejected.
+history; voiding with active allocations, approved payment, or pending payment
+confirmation is rejected.
 
 Deposit mutations use one account summary and one append-only ledger write in
 the same mutation. Allocation/release/reversal update allocation, account, and
 invoice state atomically. Original ledger rows are never edited or deleted.
+
+`paymentConfirmations.submit` derives customer ownership from the invoice,
+validates integer amount against current outstanding, and inserts the attempt
+plus the `payment_submitted` projection in one mutation. `startReview` changes
+only a pending review state. `approve` patches the confirmation, verified
+invoice amount, outstanding amount, payment state, and audit row in one
+mutation after rechecking current settlement capacity. `reject` preserves the
+attempt, reviewer, timestamp, reason, and audit row while recalculating the
+invoice payment projection. No confirmation writes the deposit ledger.
 
 Legacy cleanup is disabled from active Convex exports. Production remains
 unconfigured and fail-closed.

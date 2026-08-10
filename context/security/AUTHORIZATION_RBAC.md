@@ -5,9 +5,10 @@
 Roles are stored in Convex `appUsers.role`:
 
 - `customer`: catalog access plus own orders, tracking, invoices, deposits,
-  profile, and addresses.
+  payment confirmations, profile, and addresses.
 - `admin`: operational catalog, book, order, batch, tracking, invoice, and
-  deposit management. Admin cannot manage roles or owner security.
+  deposit, and payment-confirmation management. Admin cannot manage roles or
+  owner security.
 - `owner`: all admin permissions plus user listing, role changes, suspension,
   reactivation, settings, and audit access.
 
@@ -46,6 +47,11 @@ Every active helper starts with `ctx.auth.getUserIdentity()` and resolves the
 subject through `appUsers`. Client Clerk IDs, app-user IDs used as identity
 claims, roles, permissions, email, localStorage state, and ownership claims
 are not trusted.
+
+Payment confirmation functions intentionally reuse invoice permissions. A
+customer's invoice ownership is checked before reading or submitting; only an
+active admin/owner can review, approve, or reject. Suspension is enforced by
+the shared active-user helper.
 
 ## Owner protections
 

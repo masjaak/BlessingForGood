@@ -39,6 +39,11 @@ Existing privileged catalog, tracking, invoice, and deposit mutations record
 authenticated actor IDs. Audit rows contain `actorUserId`, `action`,
 `targetType`, `targetId`, `createdAt`, and optional safe string metadata.
 
+Phase 05.1 payment review writes `payment_confirmation.submitted`,
+`payment_confirmation.review_started`, `payment_confirmation.approved`, and
+`payment_confirmation.rejected` events. Amount and invoice references are safe
+metadata; proof contents, secrets, and credentials are not logged.
+
 JWTs, Clerk secrets, session tokens, catalog access codes, invitation URLs,
 passwords, and raw identity claims are never audit metadata.
 
@@ -47,3 +52,6 @@ passwords, and raw identity claims are never audit metadata.
 A suspended user may still hold a Clerk session and use public pages and
 sign-out. `requireActiveUser` rejects protected Convex operations, and the
 client does not mount protected business queries while suspended.
+
+This includes payment confirmation reads/submission and all admin review
+mutations.

@@ -1,6 +1,7 @@
 # Deposit ledger
 
-Status: implemented on `feat/convex-operations-persistence-v0.1`.
+Status: [REPOSITORY] implemented; Phase 05.1 reuses it without rewriting
+ledger rows.
 
 Each Preview customer receives one IDR deposit account only after an explicit
 admin credit. Account summaries expose distinct available and reserved
@@ -25,3 +26,8 @@ This is an operational Preview ledger, not a payment gateway, bank
 reconciliation, refund, withdrawal, or final financial policy. Customer reads
 are server-side ownership protected; admin writes require the guarded Preview
 admin session.
+
+Phase 05.1 manual payment confirmations are not deposit credits and never
+create deposit ledger rows. Deposit allocation and approved external transfer
+amounts settle separate invoice components; the invoice outstanding projection
+subtracts each exactly once.

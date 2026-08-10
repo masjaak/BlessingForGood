@@ -30,7 +30,8 @@ workspace route and is not a customer navigation item.
 | Books | — | foundation-only | [REPOSITORY] non-link | Clearly marked unavailable |
 | Orders | `/admin/orders` | functional foundation | [BROWSER VERIFIED] HTTP 200 and status transition flow | Status transitions are local prototype only |
 | Customers | — | foundation-only | [REPOSITORY] non-link | Clearly marked unavailable |
-| Invoices | `/admin/invoices` | functional foundation | [BROWSER VERIFIED] HTTP 200 and invoice/ledger flow | Invoice/deposit foundation only |
+| Invoices | `/admin/invoices` | functional foundation | [REPOSITORY] invoice/ledger UI; runtime QA deferred | Invoice/deposit foundation |
+| Payments | `/admin/payments` | functional foundation | [REPOSITORY] manual confirmation queue/history; runtime QA deferred | Payment gateway out of scope |
 | Tracking | — | foundation-only | [REPOSITORY] non-link | Covered by order timeline foundation |
 | Content | — | foundation-only | [REPOSITORY] non-link | No dead link is exposed |
 | Settings | — | foundation-only | [REPOSITORY] non-link | No settings decision is invented |

@@ -14,6 +14,7 @@
 | Customer order detail | `/account/orders/[orderId]` | customer | own order | implemented; runtime QA pending |
 | Customer invoices | `/account/invoices` | customer | own `customerUserId` | implemented; runtime QA pending |
 | Customer invoice detail | `/account/invoices/[invoiceId]` | customer | own invoice | implemented; runtime QA pending |
+| Admin payment review | `/admin/payments` | admin/owner | invoice read/manage permissions | implemented; runtime QA pending |
 | Customer profile | `/account/profile` | customer | current app user | implemented; Convex tests pass |
 | Customer addresses | `/account/addresses` | customer | current app user | implemented; Convex tests pass |
 | Admin overview | `/admin` | admin/owner | admin permission | implemented; runtime QA pending |

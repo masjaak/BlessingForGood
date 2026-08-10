@@ -2,9 +2,10 @@
 
 ## Objective
 
-Provide the single integration gate for Phase 04.1 after implementation and
-local validation are complete. This plan is runtime evidence for staging; it
-does not configure staging infrastructure or approve Production.
+Provide the single integration gate for Phase 04.1 and Phase 05.1 after
+implementation and local validation are complete. This plan is runtime
+evidence for staging; it does not configure staging infrastructure or approve
+Production.
 
 ## Entry criteria
 
@@ -44,6 +45,8 @@ Branch-specific Preview deployments are optional diagnostics only.
 - Sign-out and subsequent sign-in work.
 - Real invitation acceptance is verified and the new user defaults to
   `customer`.
+- Customer can submit an eligible manual payment confirmation and see its
+  submitted, under-review, approved, or rejected state.
 
 ## Authorization QA
 
@@ -66,6 +69,8 @@ Using two authenticated customers:
 - Ownership is derived server-side from the authenticated `appUser`.
 - Catalog access codes are separate from Clerk authentication and raw codes are
   never stored.
+- Customer B cannot read, update, approve, reject, or resubmit Customer A's
+  payment confirmation.
 
 ## Operational QA
 
@@ -76,6 +81,8 @@ Verify approved admin/owner workflows for:
 - shipment and fulfillment tracking;
 - invoice creation, issue, and void;
 - deposit credit, allocation, release, and eligible reversal.
+- payment confirmation queue, review, approval, rejection, and history;
+- rejected-payment resubmission and suspended-user denial.
 
 Verify audit events for privileged actions.
 
@@ -86,6 +93,10 @@ Verify audit events for privileged actions.
 - Deposit ledger operations remain append-only.
 - Available and reserved balances remain consistent.
 - Invalid transitions and unauthorized mutations are rejected.
+- Approved external payment plus allocated deposit cannot exceed the invoice
+  total; stale approvals are rejected without partial writes.
+- Approval updates confirmation, invoice payment projection, and audit history
+  atomically; rejected evidence remains available.
 - No refund, withdrawal, or unapproved policy is invented during QA.
 
 ## Realtime QA
@@ -93,6 +104,8 @@ Verify audit events for privileged actions.
 - Admin/owner tracking changes appear for the authorized customer context.
 - Fulfillment changes preserve history and transition invariants.
 - Deposit/invoice updates propagate through Convex realtime behavior.
+- Payment submission/review and invoice payment-state updates propagate to the
+  authorized browser contexts.
 - Separate browser contexts do not receive another customer’s data.
 
 ## Responsive/browser QA
@@ -116,6 +129,21 @@ Playwright auth storage must remain uncommitted.
 - No secret, JWT, cookie, password, invitation URL, or provider ID enters logs,
   screenshots, artifacts, or Git.
 - Production remains outside the staging test path.
+
+## Phase 05.1 deferred backlog
+
+These checks are intentionally not required on transient branch Preview:
+
+- real Clerk Development/staging sign-in and Clerk JWT → Convex verification;
+- owner/customer provisioning, admin promotion, owner-only authorization, and
+  suspension during payment operations;
+- invitation acceptance followed by first payment confirmation request;
+- two-layer catalog access followed by Customer A/B payment and invoice
+  isolation;
+- payment submission, admin queue review, approval/rejection, audit history,
+  rejection/resubmission, stale approval, and deposit-plus-transfer totals;
+- browser/responsive and authenticated Playwright coverage;
+- runtime logs, guarded cleanup, and zero-data verification.
 
 ## Data cleanup
 

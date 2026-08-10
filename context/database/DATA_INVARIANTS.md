@@ -41,6 +41,24 @@
 - Operational history is append-only where previously defined; actor fields
   are authenticated app users.
 - Invoice snapshots and status transitions remain server-validated.
+- Invoice lifecycle and payment state are separate. External verified payment
+  and allocated deposit amounts are non-negative integer IDR components.
+- `invoices.outstandingAmount` equals
+  `totalAmount - allocatedDepositAmount - verifiedPaymentAmount` and cannot
+  become negative.
 - Deposit balances cannot become negative; ledger rows are immutable and
   reversal/allocation transitions remain atomic.
 - Invoice allocations must match the invoice customer and deposit account.
+
+## Payment verification
+
+- A payment confirmation belongs to exactly one invoice and the invoice's
+  server-derived `customerUserId`.
+- At most one `submitted` or `under_review` confirmation exists per invoice.
+- Reviewed confirmation evidence is preserved; approval/rejection is not an
+  in-place overwrite of a prior attempt.
+- Approval rechecks the current outstanding amount and cannot double-count an
+  already approved confirmation or deposit allocation.
+- Rejection requires a reason and permits a later new attempt according to the
+  current v0.1 policy.
+- Suspended customers cannot read or write payment confirmations.

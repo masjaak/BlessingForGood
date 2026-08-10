@@ -54,6 +54,16 @@ always returns `LEGACY_IDENTITY_DISABLED`.
 | `invoices.listForAdmin` | query | admin/owner | A(`invoices.read.all`) | operational all-record view | none | active | invoice tests |
 | `invoices.getMine` | query | customer | A(`invoices.read.own`) | explicit `customerUserId` match | none | active | invoice/auth tests |
 | `invoices.getForAdmin` | query | admin/owner | A(`invoices.read.all`) | operational all-record view | none | active | invoice tests |
+| `paymentConfirmations.submit` | mutation | customer | A(`invoices.read.own`) | invoice `customerUserId` must match current app user | none | active | payment tests |
+| `paymentConfirmations.listMine` | query | customer | A(`invoices.read.own`) | customer index | none | active | payment tests |
+| `paymentConfirmations.listMineForInvoice` | query | customer | A(`invoices.read.own`) | invoice owner check | none | active | payment tests |
+| `paymentConfirmations.getMine` | query | customer | A(`invoices.read.own`) | confirmation owner check | none | active | payment tests |
+| `paymentConfirmations.listPendingForAdmin` | query | admin/owner | A(`invoices.read.all`) | operational queue | none | active | payment tests |
+| `paymentConfirmations.listForAdmin` | query | admin/owner | A(`invoices.read.all`) | operational history | none | active | payment tests |
+| `paymentConfirmations.getForAdmin` | query | admin/owner | A(`invoices.read.all`) | operational detail | none | active | payment tests |
+| `paymentConfirmations.startReview` | mutation | admin/owner | A(`invoices.manage`) | confirmation state transition | none | active | payment tests |
+| `paymentConfirmations.approve` | mutation | admin/owner | A(`invoices.manage`) | invoice and current settlement rechecked | none | active | payment tests |
+| `paymentConfirmations.reject` | mutation | admin/owner | A(`invoices.manage`) | confirmation state transition | none | active | payment tests |
 | `depositAccounts.getMine` | query | customer | A(`deposits.read.own`) | account indexed by current `appUserId` | none | active | deposit/auth tests |
 | `depositAccounts.getForInvoice` | query | admin/owner | A(`deposits.read.all`) | invoice customer relation | none | active | deposit tests |
 | `depositTransactions.recordCredit` | mutation | admin/owner | A(`deposits.manage`) | derives invoice customer account; actor creator | none | active | deposit tests |

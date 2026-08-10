@@ -1,5 +1,27 @@
 # BFG Project Status
 
+## Phase 05.1 status
+
+**Phase 05.1:** IMPLEMENTATION COMPLETE
+
+**Local validation:** GREEN — `npm run check` passes with 65 Vitest tests,
+`npm run convex:test` passes with 38 Convex tests, and `git diff --check`
+passes.
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
+Phase 05.1 adds manual customer payment confirmation, admin/owner review,
+atomic invoice settlement projection, payment audit events, customer invoice
+feedback, and the `/admin/payments` operational queue. It does not add a
+payment gateway or alter Production.
+
+The stable staging gate must still verify real Clerk sign-in/JWT identity,
+customer and admin payment flows, rejection/resubmission, suspension,
+cross-customer isolation, deposit-plus-transfer settlement, realtime/browser
+behavior, runtime logs, and guarded data cleanup.
+
 ## Phase 04.1 status transition
 
 **Phase 04.1:** IMPLEMENTED
@@ -12,12 +34,13 @@
 
 ## Anchored summary
 
-**Objective:** deliver the Phase 04.1 Clerk identity, Convex authentication,
+**Objective:** deliver the Phase 05.1 manual payment verification workflow on
+top of the Phase 04.1 Clerk identity, Convex authentication,
 application RBAC, resource ownership, customer account data, and owner user
 management implementation without touching `main` or Production.
 
 **Source of truth:** the repository on
-`feat/clerk-identity-authorization-v0.1`, plus the current files listed in
+`feat/payment-verification-v0.1`, plus the current files listed in
 `agent_rule.txt` and the context pack.
 
 **Final decisions:** Clerk supplies identity; Convex validates the Clerk JWT
@@ -28,9 +51,9 @@ roles live only in `appUsers`. Restricted Mode keeps admission invite-only.
 adapter when enabled. `prototypeSessions` and Preview admin-code flows are
 legacy-only and disabled for active Preview. No business seed data is created.
 
-**Current priority:** continue feature development using local and Convex
-Development validation, then run the deferred integration gate in one stable
-staging environment.
+**Current priority:** finish local Phase 05.1 validation, commit and push the
+feature branch, then integrate through `develop` before the stable staging
+gate.
 
 ## Evidence
 
@@ -87,6 +110,8 @@ staging environment.
   a Preview, or connect Production Clerk/Convex.
 - Unknown non-empty staging business data requires a stop before migration.
 - Existing Phase 03 operational invariants remain in force.
+- Payment confirmation is manual metadata plus review state; no payment
+  gateway, bank API, webhook, or automatic reconciliation is in scope.
 
 ## Validation plan
 
@@ -107,10 +132,9 @@ Production change is implied.
 
 ## Next action
 
-Create the `develop` integration branch from the current Phase 04.1
-implementation in a later workflow step, then establish the stable staging
-gate. No branch creation or staging infrastructure change is made in this
-documentation task.
+Commit and push the Phase 05.1 feature branch, then merge through the normal
+`feat/*` → `develop` review path. Establish the stable staging gate only after
+feature integration; no Production or `main` change is implied.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1
 identity model and retained only for product history.
