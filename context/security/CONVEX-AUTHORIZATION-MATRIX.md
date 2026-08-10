@@ -117,3 +117,21 @@ and never query Secret Catalog tables. `users.current` may also return `null`
 without identity. `joinRequests.submit` is the only anonymous business write;
 it returns only a safe request ID and status. No other active mutation is
 anonymous or test-only.
+
+## Phase 06.4 exception operations
+
+| Function | Type | Caller | Permission | Ownership/privacy boundary | Test status |
+| --- | --- | --- | --- | --- | --- |
+| `orderExceptions.open` | mutation | admin/owner | `orders.manage` | canonical order item; actor and customer owner derived server-side | exception suite |
+| `orderExceptions.requestCancellation` | mutation | customer | `orders.read.own` | own order item only; server eligibility and quantity check | exception suite |
+| `orderExceptions.getCancellationEligibility` | query | customer | `orders.read.own` | own order item only | exception suite |
+| `orderExceptions.startReview` | mutation | admin/owner | `orders.manage` | case status re-read; actor derived server-side | exception suite |
+| `orderExceptions.selectResolution` | mutation | admin/owner | `orders.manage` | case status/reason/allowed resolution re-read | exception suite |
+| `orderExceptions.reject` | mutation | admin/owner | `orders.manage` | rejection reason and case state validated | exception suite |
+| `orderExceptions.resolve` | mutation | admin/owner | `orders.manage` | atomic item/invoice/deposit consequence; no payout | exception suite |
+| `orderExceptions.listMine` / `getMine` / `listMineForOrder` | query | customer | `orders.read.own` | current `appUserId`; safe projection excludes internal data | exception suite |
+| `orderExceptions.listForAdmin` / `getForAdmin` / `listForOrderAdmin` | query | admin/owner | `orders.read.all` | operational all-record view; internal context allowed | exception suite |
+
+Suspended customers and suspended admins fail the shared active-user
+permission boundary. Customer A cannot read or mutate Customer B's order item,
+exception, invoice, payment confirmation, or deposit data.

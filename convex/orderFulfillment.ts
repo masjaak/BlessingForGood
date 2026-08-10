@@ -7,6 +7,7 @@ import { recordAudit } from "./lib/audit";
 import { canTransitionFulfillment } from "./lib/fulfillmentTransitions";
 import { fail } from "./lib/errors";
 import { fulfillmentStageValidator } from "./validators";
+import { hasUnresolvedException } from "./lib/orderExceptionState";
 
 async function historyView(ctx: QueryCtx, orderId: Id<"orders">, includeNote = false) {
   const history = await ctx.db
@@ -43,6 +44,9 @@ export const updateStage = mutation({
     const user = await requirePermission(ctx, "tracking.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
+    if (args.toStage === "completed" && (await hasUnresolvedException(ctx, order._id))) {
+      fail("EXCEPTION_REQUIRES_RESOLUTION");
+    }
     if (!canTransitionFulfillment(order.currentFulfillmentStage, args.toStage)) {
       fail("INVALID_FULFILLMENT_TRANSITION");
     }

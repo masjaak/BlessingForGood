@@ -47,3 +47,19 @@ assignment/move checks. No source index was added because the assisted-order
 view remains an admin operations projection. The unassigned scan is bounded
 to 200 orders/items; add a dedicated roster projection/index at the documented
 scale trigger.
+
+Phase 06.4 exception access patterns use:
+
+```text
+orderExceptions: by_status_and_created_at, by_customer_user_id_and_created_at,
+                 by_order, by_order_item, by_type_and_created_at, by_created_at
+orderExceptionEvents: by_exception_and_created_at, by_order, by_order_item
+orderExceptionFinancialAdjustments: by_exception, by_order, by_invoice,
+                                    by_order_item
+```
+
+The admin queue uses status/time or created-time order. Customer history uses
+customer/time and order ownership checks. Order detail uses `by_order`; item
+quantity and active-conflict checks use `by_order_item`. Financial review uses
+the exception, order, invoice, or item indexes. No reporting projection or
+speculative index was added.

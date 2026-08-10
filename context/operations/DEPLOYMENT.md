@@ -88,6 +88,20 @@ staging build, or Production operation is required or authorized for this
 phase. The Vercel Git-connected feature-branch record may be Preview-labeled
 and ignored/canceled by policy.
 
+## Phase 06.4 exception handoff
+
+Order exceptions are implemented locally on
+`feat/order-exceptions-v0.1`. The feature branch may be pushed for the
+Git-connected Preview record, but Preview `READY` is not a gate and no Preview
+debugging is authorized. The expected newest record is Preview `Canceled` or
+`Skipped`.
+
+Local evidence is 88 Vitest tests, 61 Convex tests, zero lint warnings,
+TypeScript pass, Next.js build pass, and `git diff --check`. Canonical Convex
+codegen access was denied; no alternate project, staging environment, or
+Production operation was used. Full authenticated browser and concurrency QA
+remains deferred to one stable staging environment.
+
 ## Phase 05.1 payment handoff
 
 Phase 05.1 is implementation-complete when local format, lint, typecheck,

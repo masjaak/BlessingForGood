@@ -79,3 +79,16 @@ client does not mount protected business queries while suspended.
 
 This includes payment confirmation reads/submission and all admin review
 mutations.
+
+## Phase 06.4 exception operations
+
+The `/admin/exceptions` queue and admin order detail use Convex permission
+checks on every query/mutation. Admins and owners can open OOS/defect/admin
+cancellation cases, review them, choose an allowed resolution, reject, or
+resolve. Customer cancellation is a request only. Customer-facing projections
+omit internal notes, rejection reasons, and actor IDs.
+
+Resolution writes preserve immutable order/invoice/payment/deposit history and
+record exception events plus audit events. Refund obligations are status/amount
+records only; no admin UI action performs a cash payout, deposit withdrawal, or
+gateway reversal. Suspended admins are denied by the same active-user guard.

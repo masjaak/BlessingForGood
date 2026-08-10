@@ -86,3 +86,11 @@ Phase 06.2 follows the same boundary: local admission tests and build are
 complete; public join, authenticated admin review, Clerk invitation acceptance,
 and runtime evidence remain deferred to stable staging. No Preview-looking
 deployment is required or authorized.
+
+Phase 06.4 follows the same boundary: local exception and financial invariant
+tests use isolated fixtures and do not seed business data. Canonical Convex
+Development remains the only authorized backend. If codegen or environment
+access fails, stop that operation rather than selecting another project.
+Exception browser, realtime, multi-admin race, Clerk ownership, and payout
+policy evidence belong to stable staging; Production and `main` remain
+untouched.

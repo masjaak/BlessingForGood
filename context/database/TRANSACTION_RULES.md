@@ -70,3 +70,23 @@ mutation. `readyStock.setQuantity` validates admin/owner permission, variant
 existence, and non-negative safe-integer quantity before atomically upserting
 one per-variant inventory record and its audit event. Reservation and sale
 transitions are not implemented without an approved Ready Stock order model.
+
+## Phase 06.4 exception transactions
+
+`orderExceptions.open` and `requestCancellation` re-read the order/item,
+ownership, remaining quantity, and active exception set before inserting the
+case, opening event, and audit event atomically. Review, resolution selection,
+rejection, and resolution each validate the current status before writing the
+next status and history event.
+
+`orderExceptions.resolve` computes integer-IDR item value, optionally releases
+active invoice allocations through the existing release helper, recalculates
+the invoice projection, inserts one append-only financial adjustment, updates
+the exception, writes events/audit, and derives an order cancellation only when
+all item quantities are resolved. A failed validation rolls back all writes.
+
+Invoice creation reapplies existing exception adjustments after creating the
+new invoice snapshot, so voided invoice history is not reused as mutable state.
+Order status cancellation remains unavailable through the generic order-status
+mutation. Ready Stock still has no canonical order transaction to enter this
+workflow.

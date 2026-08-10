@@ -53,6 +53,41 @@ export const depositTransactionTypeValidator = v.union(
   v.literal("reversal"),
 );
 export const allocationStatusValidator = v.union(v.literal("active"), v.literal("released"), v.literal("reversed"));
+export const orderExceptionTypeValidator = v.union(
+  v.literal("out_of_stock"),
+  v.literal("defect"),
+  v.literal("customer_cancellation"),
+  v.literal("admin_cancellation"),
+);
+export const orderExceptionStatusValidator = v.union(
+  v.literal("opened"),
+  v.literal("under_review"),
+  v.literal("resolution_selected"),
+  v.literal("resolved"),
+  v.literal("rejected"),
+);
+export const orderExceptionResolutionValidator = v.union(
+  v.literal("remove_item"),
+  v.literal("deposit_release"),
+  v.literal("refund_required"),
+  v.literal("no_action"),
+);
+export const refundObligationStatusValidator = v.union(
+  v.literal("none"),
+  v.literal("credit_due"),
+  v.literal("refund_due"),
+  v.literal("settled"),
+);
+export const orderExceptionEventTypeValidator = v.union(
+  v.literal("opened"),
+  v.literal("review_started"),
+  v.literal("resolution_selected"),
+  v.literal("approved"),
+  v.literal("rejected"),
+  v.literal("resolved"),
+  v.literal("financial_adjustment_created"),
+  v.literal("deposit_allocation_released"),
+);
 export const roleValidator = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer"));
 export const userStatusValidator = v.union(v.literal("active"), v.literal("suspended"));
 export const paginationValidator = v.object({

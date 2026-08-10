@@ -9,6 +9,7 @@ const links = [
   ["/admin/catalogs", "Catalog"],
   ["/admin/books", "Books"],
   ["/admin/orders", "Orders"],
+  ["/admin/exceptions", "Exceptions"],
   ["/admin/batches", "Batches"],
   [null, "Customers"],
   ["/admin/join-requests", "Join requests"],

@@ -1,5 +1,35 @@
 # BFG Project Status
 
+## Phase 06.4 status
+
+**Phase 06.4:** IMPLEMENTATION COMPLETE LOCALLY
+
+**Branch:** `feat/order-exceptions-v0.1`
+
+**Local validation:** GREEN — 88 Vitest tests, 61 Convex tests, lint with zero
+warnings, format check, TypeScript, and Next.js build pass.
+
+**Runtime integration QA:** DEFERRED TO STAGING
+
+**Production readiness:** NOT READY
+
+Phase 06.4 adds the canonical item-level exception workflow for OOS, defects,
+customer cancellation requests, admin cancellation, review, resolution, and
+financial consequence tracking. Original order items, issued invoice snapshots,
+approved payment confirmations, and append-only deposit history remain intact.
+Refund obligations are recorded without executing a payout. Replacement,
+store-credit, deposit-refund, post-PO, and cancellation eligibility policies
+remain business decisions.
+
+Evidence is tracked in `context/features/order-exceptions.md`,
+`context/implementation/PHASE-06-4-ORDER-EXCEPTIONS.md`, and
+`context/implementation/PRD-COVERAGE-MATRIX.md`.
+
+Canonical Convex codegen was attempted against the authorized Development
+project and stopped because the selected project access was denied. No
+alternate project was selected and no environment deployment operation was
+performed. Runtime verification remains deferred.
+
 ## Phase 06.3 status
 
 **Phase 06.3:** IMPLEMENTATION COMPLETE LOCALLY
@@ -109,7 +139,7 @@ enabling public signup, creating fake accounts, touching `main`, staging, or
 Production.
 
 **Source of truth:** the repository on
-`feat/batch-roster-operations-v0.1`, the current phase brief, surviving
+`feat/order-exceptions-v0.1`, the current phase brief, surviving
 approved repository documents, and
 `context/implementation/PRD-COVERAGE-MATRIX.md`.
 
@@ -251,8 +281,9 @@ Production change is implied.
 
 ## Next action
 
-Review and merge `feat/join-access-approval-v0.1` through the normal
-`feat/*` → `develop` path. Continue Phase 06.3 product work before the stable
+Review the Phase 06.4 feature-branch report and push result. Do not merge
+automatically. The next implementation candidate is Phase 06.5 customer
+dashboard and unified customer history before the stable
 staging gate; no Production or `main` change is implied.
 
 Historical Phase 03 context below this line is superseded by the Phase 04.1

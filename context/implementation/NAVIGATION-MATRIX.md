@@ -32,6 +32,7 @@ workspace route and is not a customer navigation item.
 | Customers | — | foundation-only | [REPOSITORY] non-link | Clearly marked unavailable |
 | Invoices | `/admin/invoices` | functional foundation | [REPOSITORY] invoice/ledger UI; runtime QA deferred | Invoice/deposit foundation |
 | Payments | `/admin/payments` | functional foundation | [REPOSITORY] manual confirmation queue/history; runtime QA deferred | Payment gateway out of scope |
+| Exceptions | `/admin/exceptions` | implemented locally | [REPOSITORY] OOS/defect/cancellation queue; runtime QA deferred | Refund execution and replacement policy out of scope |
 | Tracking | — | foundation-only | [REPOSITORY] non-link | Covered by order timeline foundation |
 | Content | — | foundation-only | [REPOSITORY] non-link | No dead link is exposed |
 | Settings | — | foundation-only | [REPOSITORY] non-link | No settings decision is invented |

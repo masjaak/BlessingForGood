@@ -6,10 +6,9 @@ import { accountView, applyLedgerDeltas, findDepositAccount } from "./depositAcc
 import { appendDepositTransaction, transactionView } from "./depositTransactions";
 import { requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
-import { invoicePaymentStatus, outstandingAmount } from "./lib/invoiceCalculations";
+import { invoiceProjection } from "./lib/invoiceProjection";
 import { fail } from "./lib/errors";
 import { inverseLedgerDeltas, ledgerDeltas } from "./lib/depositLedger";
-import { hasPendingPaymentConfirmation } from "./paymentConfirmations";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -50,19 +49,10 @@ async function fullView(ctx: DataCtx, allocation: Doc<"invoiceDepositAllocations
 }
 
 async function updatedInvoiceAmounts(ctx: MutationCtx, invoice: Doc<"invoices">, allocatedDelta: number) {
-  const allocated = invoice.allocatedDepositAmount + allocatedDelta;
   try {
-    const paymentStatus = invoicePaymentStatus(
-      invoice.totalAmount,
-      allocated,
-      invoice.verifiedPaymentAmount,
-      await hasPendingPaymentConfirmation(ctx, invoice._id),
-    );
-    return {
-      allocatedDepositAmount: allocated,
-      outstandingAmount: outstandingAmount(invoice.totalAmount, allocated, invoice.verifiedPaymentAmount),
-      paymentStatus,
-    };
+    return await invoiceProjection(ctx, invoice, {
+      allocatedDepositAmount: invoice.allocatedDepositAmount + allocatedDelta,
+    });
   } catch {
     fail("DEPOSIT_ALLOCATION_INVALID");
   }
@@ -134,45 +124,53 @@ export const release = mutation({
   args: { allocationId: v.id("invoiceDepositAllocations") },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "deposits.manage");
-    const allocation = await ctx.db.get(args.allocationId);
-    if (!allocation) fail("DEPOSIT_ALLOCATION_INVALID");
-    if (allocation.status !== "active") fail("DEPOSIT_ALLOCATION_INVALID");
-    const { invoice, account } = await invoiceAndAccount(ctx, allocation.invoiceId);
-    const reservation = await reservationForAllocation(ctx, allocation);
-    const deltas = ledgerDeltas("release", allocation.amount);
-    const updatedAccount = await applyLedgerDeltas(ctx, account, deltas);
-    const now = Date.now();
-    const releaseTransactionId = await appendDepositTransaction(ctx, {
-      accountId: account._id,
-      type: "release",
-      amount: allocation.amount,
-      ...deltas,
-      invoiceId: invoice._id,
-      referenceTransactionId: reservation._id,
-      note: "invoice deposit release",
-      createdAt: now,
-      createdByUserId: user._id,
-    });
-    await ctx.db.patch(allocation._id, {
-      status: "released",
-      releasedAt: now,
-      releasedByTransactionId: releaseTransactionId,
-    });
-    await ctx.db.patch(invoice._id, {
-      ...(await updatedInvoiceAmounts(ctx, invoice, -allocation.amount)),
-      updatedAt: now,
-    });
-    const updatedAllocation = await ctx.db.get(allocation._id);
-    const updatedInvoice = await ctx.db.get(invoice._id);
-    if (!updatedAllocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
-    await recordAudit(ctx, user._id, "deposit.released", "invoice", invoice._id);
+    const result = await releaseAllocationInternal(ctx, args.allocationId, user._id);
     return {
-      ...allocationView(updatedAllocation),
-      account: accountView(updatedAccount),
-      invoice: invoiceView(updatedInvoice),
+      ...allocationView(result.allocation),
+      account: accountView(result.account),
+      invoice: invoiceView(result.invoice),
     };
   },
 });
+
+export async function releaseAllocationInternal(
+  ctx: MutationCtx,
+  allocationId: Id<"invoiceDepositAllocations">,
+  actorUserId: Id<"appUsers">,
+) {
+  const allocation = await ctx.db.get(allocationId);
+  if (!allocation || allocation.status !== "active") fail("DEPOSIT_ALLOCATION_INVALID");
+  const { invoice, account } = await invoiceAndAccount(ctx, allocation.invoiceId);
+  const reservation = await reservationForAllocation(ctx, allocation);
+  const deltas = ledgerDeltas("release", allocation.amount);
+  const updatedAccount = await applyLedgerDeltas(ctx, account, deltas);
+  const now = Date.now();
+  const releaseTransactionId = await appendDepositTransaction(ctx, {
+    accountId: account._id,
+    type: "release",
+    amount: allocation.amount,
+    ...deltas,
+    invoiceId: invoice._id,
+    referenceTransactionId: reservation._id,
+    note: "invoice deposit release",
+    createdAt: now,
+    createdByUserId: actorUserId,
+  });
+  await ctx.db.patch(allocation._id, {
+    status: "released",
+    releasedAt: now,
+    releasedByTransactionId: releaseTransactionId,
+  });
+  await ctx.db.patch(invoice._id, {
+    ...(await updatedInvoiceAmounts(ctx, invoice, -allocation.amount)),
+    updatedAt: now,
+  });
+  const updatedAllocation = await ctx.db.get(allocation._id);
+  const updatedInvoice = await ctx.db.get(invoice._id);
+  if (!updatedAllocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
+  await recordAudit(ctx, actorUserId, "deposit.released", "invoice", invoice._id);
+  return { allocation: updatedAllocation, account: updatedAccount, invoice: updatedInvoice };
+}
 
 export const reverse = mutation({
   args: { allocationId: v.id("invoiceDepositAllocations") },

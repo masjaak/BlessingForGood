@@ -123,7 +123,8 @@ export async function requireOwnedResource(
     | "ORDER_ACCESS_DENIED"
     | "INVOICE_ACCESS_DENIED"
     | "DEPOSIT_ACCESS_DENIED"
-    | "PAYMENT_CONFIRMATION_ACCESS_DENIED" = "ORDER_ACCESS_DENIED",
+    | "PAYMENT_CONFIRMATION_ACCESS_DENIED"
+    | "EXCEPTION_ACCESS_DENIED" = "ORDER_ACCESS_DENIED",
 ): Promise<Doc<"appUsers">> {
   const user = await requireActiveUser(ctx);
   if (user._id !== ownerUserId) fail(errorCode);

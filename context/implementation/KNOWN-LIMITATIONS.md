@@ -47,3 +47,11 @@
   reaches that boundary.
 - Cover metadata is a reference only. Durable upload/storage and external image
   host policy remain deferred.
+- Phase 06.4 records cancellation requests, OOS/defect/admin cases, append-only
+  financial adjustments, deposit releases, and refund obligations. It does
+  not execute cash refunds, withdrawals, gateway reversals, store credit,
+  replacements, proof uploads, or Ready Stock order exceptions.
+- Final cancellation eligibility, refund disbursement, deposit refund,
+  post-PO cancellation, and defect replacement policies remain blocked by
+  business decision. Authenticated browser, realtime, and concurrent-admin
+  runtime evidence remains deferred to stable staging.

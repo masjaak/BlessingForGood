@@ -7,6 +7,7 @@ import { requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { canTransitionShipment } from "./lib/shipmentTransitions";
 import { fail } from "./lib/errors";
+import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { positiveQuantity } from "./lib/validation";
 
 type DataCtx = QueryCtx | MutationCtx;
@@ -103,7 +104,9 @@ export const assignOrderItem = mutation({
       0,
     );
     const totalAfterUpdate = assignedTotal + quantity;
-    if (totalAfterUpdate > orderItem.quantity) fail("BATCH_ASSIGNMENT_EXCEEDS_QUANTITY");
+    if (totalAfterUpdate > (await fulfillableQuantityForOrderItem(ctx, orderItem))) {
+      fail("BATCH_ASSIGNMENT_EXCEEDS_QUANTITY");
+    }
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -473,7 +476,8 @@ export const listUnassignedForAdmin = query({
         const assignedQuantity = assignments.reduce((total, assignment) => total + assignment.assignedQuantity, 0);
         const assignedToBatchQuantity =
           assignments.find((assignment) => assignment.batchId === args.batchId)?.assignedQuantity || 0;
-        if (assignedQuantity < item.quantity) {
+        const fulfillableQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+        if (assignedQuantity < fulfillableQuantity) {
           result.push({
             orderId: order._id,
             customerUserId: order.customerUserId,
@@ -489,7 +493,7 @@ export const listUnassignedForAdmin = query({
             orderedQuantity: item.quantity,
             assignedQuantity,
             assignedToBatchQuantity,
-            remainingQuantity: item.quantity - assignedQuantity,
+            remainingQuantity: fulfillableQuantity - assignedQuantity,
           });
         }
         if (result.length >= 200) return result;

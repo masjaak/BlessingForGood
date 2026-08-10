@@ -45,7 +45,7 @@ function OrderTable() {
             const statuses: OrderStatus[] =
               dataSource === "convex"
                 ? order.status === "submitted"
-                  ? ["cancelled", "completed"]
+                  ? ["completed"]
                   : []
                 : nextOrderStatuses(order.status);
             return (

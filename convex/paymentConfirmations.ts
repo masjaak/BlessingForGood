@@ -6,7 +6,7 @@ import { mutation, query } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
-import { invoicePaymentStatus, outstandingAmount } from "./lib/invoiceCalculations";
+import { invoiceProjection } from "./lib/invoiceProjection";
 import { paymentConfirmationStatusValidator } from "./validators";
 
 type DataCtx = QueryCtx | MutationCtx;
@@ -82,21 +82,20 @@ async function confirmationView(ctx: DataCtx, confirmation: Doc<"paymentConfirma
           status: invoice.status,
           paymentStatus: invoice.paymentStatus,
           totalAmount: invoice.totalAmount,
+          adjustedTotalAmount: invoice.adjustedTotalAmount,
           allocatedDepositAmount: invoice.allocatedDepositAmount,
           verifiedPaymentAmount: invoice.verifiedPaymentAmount,
           outstandingAmount: invoice.outstandingAmount,
+          overpaymentAmount: invoice.overpaymentAmount,
+          refundObligationAmount: invoice.refundObligationAmount,
+          refundObligationStatus: invoice.refundObligationStatus,
         }
       : null,
   };
 }
 
 async function currentPaymentStatus(ctx: DataCtx, invoice: Doc<"invoices">) {
-  return invoicePaymentStatus(
-    invoice.totalAmount,
-    invoice.allocatedDepositAmount,
-    invoice.verifiedPaymentAmount,
-    await hasPendingPaymentConfirmation(ctx, invoice._id),
-  );
+  return (await invoiceProjection(ctx, invoice)).paymentStatus;
 }
 
 export const submit = mutation({
@@ -184,12 +183,6 @@ export const approve = mutation({
       fail("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
     }
     const verifiedPaymentAmount = invoice.verifiedPaymentAmount + confirmation.amount;
-    let outstanding: number;
-    try {
-      outstanding = outstandingAmount(invoice.totalAmount, invoice.allocatedDepositAmount, verifiedPaymentAmount);
-    } catch {
-      fail("PAYMENT_AMOUNT_INVALID");
-    }
     const reviewNote = optionalText(args.reviewNote, "review note", 500);
     const now = Date.now();
     await ctx.db.patch(confirmation._id, {
@@ -199,14 +192,14 @@ export const approve = mutation({
       reviewNote,
       updatedAt: now,
     });
+    let projection: Awaited<ReturnType<typeof invoiceProjection>>;
+    try {
+      projection = await invoiceProjection(ctx, invoice, { verifiedPaymentAmount });
+    } catch {
+      fail("PAYMENT_AMOUNT_INVALID");
+    }
     await ctx.db.patch(invoice._id, {
-      verifiedPaymentAmount,
-      outstandingAmount: outstanding,
-      paymentStatus: await currentPaymentStatus(ctx, {
-        ...invoice,
-        verifiedPaymentAmount,
-        outstandingAmount: outstanding,
-      }),
+      ...projection,
       updatedAt: now,
     });
     await recordAudit(ctx, user._id, "payment_confirmation.approved", "payment_confirmation", confirmation._id, {

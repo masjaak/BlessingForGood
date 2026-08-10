@@ -78,8 +78,8 @@
 - Invoice lifecycle and payment state are separate. External verified payment
   and allocated deposit amounts are non-negative integer IDR components.
 - `invoices.outstandingAmount` equals
-  `totalAmount - allocatedDepositAmount - verifiedPaymentAmount` and cannot
-  become negative.
+  `max(0, adjustedTotalAmount - allocatedDepositAmount - verifiedPaymentAmount)`
+  and cannot become negative. Overpayment is derived separately.
 - Deposit balances cannot become negative; ledger rows are immutable and
   reversal/allocation transitions remain atomic.
 - Invoice allocations must match the invoice customer and deposit account.
@@ -96,3 +96,35 @@
 - Rejection requires a reason and permits a later new attempt according to the
   current v0.1 policy.
 - Suspended customers cannot read or write payment confirmations.
+
+## Phase 06.4 exception invariants
+
+- Every exception references one canonical order item, parent order, and
+  customer `appUsers` owner; original item quantity and snapshots are never
+  deleted or rewritten.
+- Exception lifecycle is forward-only. One item cannot have two unresolved
+  active exceptions; a resolved partial exception may cover only the remaining
+  fulfillable quantity.
+- `fulfillable quantity = ordered quantity - affected quantity from blocking
+  exceptions`; quantity is never negative. Rejected and resolved `no_action`
+  cases do not block normal fulfillment.
+- Customer cancellation is a request. The server evaluator returns
+  `eligible`, `requires_admin_review`, or `not_eligible`; customer UI state is
+  advisory only. Direct order cancellation is rejected.
+- Batch assignment cannot exceed remaining fulfillable quantity. Existing
+  assignment/purchasing history remains after a locked-batch exception.
+- Fulfillment cannot advance to `completed` while an exception is unresolved.
+  Unrelated order items remain fulfillable.
+- Issued invoice `totalAmount` and invoice items are historical. The derived
+  adjusted total is the original total plus append-only exception adjustments.
+- `outstanding = max(0, adjusted total - allocated deposit - approved external
+  payment)` and `overpayment = max(0, allocated deposit + approved external
+  payment - adjusted total)`; all values are integer IDR and non-negative.
+- Approved payment confirmations and deposit ledger rows are never deleted or
+  edited. Deposit release adds the existing compensating release transaction;
+  an allocation can be released only once.
+- A refund obligation is recorded separately from execution. No exception
+  mutation transfers cash, withdraws a deposit, reverses a gateway payment, or
+  creates a store-credit balance.
+- Resolving the same exception twice, releasing the same allocation twice, or
+  opening an active conflicting case is rejected by current-state validation.
