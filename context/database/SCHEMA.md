@@ -47,6 +47,7 @@ batchStatusHistory
 orderFulfillmentHistory
 invoices
 invoiceItems
+paymentConfirmations
 depositAccounts
 depositTransactions
 invoiceDepositAllocations
@@ -56,6 +57,11 @@ Operational actors use `createdByUserId`, `changedByUserId`, or
 `assignedByUserId`. Invoices use `customerUserId` and `createdByUserId`.
 Deposits use `userId` for the customer account and `createdByUserId` for the
 ledger actor.
+
+Invoices also keep `verifiedPaymentAmount` and `paymentStatus` separate from
+the invoice lifecycle. `paymentConfirmations` stores manual payment attempts,
+review state, safe metadata references, and reviewer audit fields. It never
+stores binary proof content.
 
 ## Migration boundary
 

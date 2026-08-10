@@ -12,6 +12,7 @@ const links = [
   ["/admin/batches", "Batches"],
   [null, "Customers"],
   ["/admin/invoices", "Invoices"],
+  ["/admin/payments", "Payments"],
   [null, "Content"],
   [null, "Settings"],
   ["/catalog", "Customer preview"],

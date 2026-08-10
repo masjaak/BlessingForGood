@@ -1,6 +1,7 @@
 # Invoices
 
-Status: implemented on `feat/convex-operations-persistence-v0.1`.
+Status: [REPOSITORY] implemented on the Phase 05.1 feature branch; runtime
+integration QA is deferred to stable staging.
 
 An admin creates a draft invoice from the authoritative persistent order-item
 snapshots. Invoice items store title, publisher, format, ISBN, quantity, unit
@@ -24,5 +25,22 @@ rounds to the nearest whole Rupiah. Shipping, customs, tax, discount,
 exchange-rate, and arbitrary manual lines are not calculated.
 
 Customers can query only owned invoices and see line snapshots, requirement,
-allocated deposit, and outstanding amount. Payment gateway settlement,
-`paid`, `overdue`, refund, and final tax states are deferred.
+allocated deposit, verified manual payment, payment state, and outstanding
+amount. Invoice lifecycle and payment state remain separate:
+
+```text
+invoice.status: draft → issued → void
+invoice.paymentStatus: unpaid | payment_submitted | partially_paid | paid
+```
+
+Approved manual payment confirmations increment
+`verifiedPaymentAmount`; deposit allocation remains separate. The authoritative
+outstanding amount is:
+
+```text
+totalAmount - allocatedDepositAmount - verifiedPaymentAmount
+```
+
+Payment gateway settlement, overdue policy, refund, withdrawal, chargeback,
+and final tax states are deferred. See
+`context/features/payment-verification.md`.

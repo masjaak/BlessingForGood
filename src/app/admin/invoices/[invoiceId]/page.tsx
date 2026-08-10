@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
 import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { invoiceStatusLabel } from "@/domain/prototype/operations";
+import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
 import { usePrototype } from "@/domain/prototype/store";
@@ -30,7 +30,7 @@ function AdminInvoiceDetail() {
   } = useOperations();
   const [message, setMessage] = useState("");
   if (dataSource !== "convex")
-    return <div className="state-panel">Persistent invoices are available in Convex Preview.</div>;
+    return <div className="state-panel">Persistent invoices require a configured Convex data source.</div>;
   if (currentAdminInvoice === undefined) return <div className="state-panel">Loading invoice…</div>;
   if (!currentAdminInvoice)
     return (
@@ -100,6 +100,16 @@ function AdminInvoiceDetail() {
               <span>Outstanding</span>
               <strong>{formatIdr(currentAdminInvoice.outstandingAmount)}</strong>
             </div>
+            <div className="summary-line">
+              <span>Payment state · verified</span>
+              <strong>
+                {invoicePaymentStatusLabel(currentAdminInvoice.paymentStatus)} ·{" "}
+                {formatIdr(currentAdminInvoice.verifiedPaymentAmount)}
+              </strong>
+            </div>
+            <LinkButton href="/admin/payments" variant="secondary">
+              Review payment confirmations
+            </LinkButton>
             <div className="form-actions">
               {currentAdminInvoice.status === "draft" ? (
                 <Button type="button" onClick={() => void run(() => issueInvoice(invoiceId), "Invoice issued.")}>

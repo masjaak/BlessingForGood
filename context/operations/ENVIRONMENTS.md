@@ -55,3 +55,7 @@ Feature Preview with a valid Convex URL uses Clerk plus Convex. Preview without
 that URL returns a configuration-missing state and never falls back to
 anonymous sessions or browser-local business data. Feature Preview is not the
 Phase 04.1 runtime acceptance gate; stable staging is.
+
+Phase 05.1 follows the same boundary: local and Convex Development validation
+are required for the feature branch; real Clerk payment-review, browser,
+realtime, log, and cleanup evidence belongs to the one stable staging gate.

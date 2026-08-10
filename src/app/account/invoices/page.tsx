@@ -2,7 +2,7 @@
 
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { calculateDepositRequired, calculateLedgerBalance, formatIdr } from "@/domain/prototype/logic";
-import { invoiceStatusLabel } from "@/domain/prototype/operations";
+import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { usePrototype } from "@/domain/prototype/store";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
@@ -17,7 +17,7 @@ function PersistentCustomerInvoices() {
       <PageHeader
         eyebrow="Invoice status"
         title="Know what is due, without guessing."
-        description="Invoices use immutable order-item snapshots. Deposit allocations and outstanding amounts update from Convex Preview."
+        description="Invoices use immutable order-item snapshots. Deposit allocations and payment state update from Convex."
         actions={
           <LinkButton href="/account/orders" variant="secondary">
             View order status
@@ -59,6 +59,12 @@ function PersistentCustomerInvoices() {
                 <span>Allocated deposit · outstanding</span>
                 <strong>
                   {formatIdr(invoice.allocatedDepositAmount)} · {formatIdr(invoice.outstandingAmount)}
+                </strong>
+              </div>
+              <div className="summary-line">
+                <span>Payment state · verified</span>
+                <strong>
+                  {invoicePaymentStatusLabel(invoice.paymentStatus)} · {formatIdr(invoice.verifiedPaymentAmount)}
                 </strong>
               </div>
               <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">

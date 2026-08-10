@@ -75,6 +75,7 @@ describe("public UI foundation", () => {
 
     expect(screen.getByRole("link", { name: "Overview" }).getAttribute("href")).toBe("/admin");
     expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/admin/catalogs");
+    expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
     expect(screen.getByText("Books").getAttribute("aria-disabled")).toBe("true");
     expect(screen.getByText("Settings").getAttribute("aria-disabled")).toBe("true");
   });

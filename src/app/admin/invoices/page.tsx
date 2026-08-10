@@ -5,7 +5,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
 import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { calculateDepositRequired, calculateLedgerBalance, formatIdr } from "@/domain/prototype/logic";
-import { invoiceStatusLabel } from "@/domain/prototype/operations";
+import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/operations-context";
 import type { DepositRequirement } from "@/domain/prototype/types";
 import { usePrototype } from "@/domain/prototype/store";
@@ -321,6 +321,10 @@ function PersistentAdminInvoices() {
                     <span>Outstanding</span>
                     <strong>{formatIdr(invoice.outstandingAmount)}</strong>
                   </div>
+                  <div className="summary-line">
+                    <span>Payment state</span>
+                    <strong>{invoicePaymentStatusLabel(invoice.paymentStatus)}</strong>
+                  </div>
                   <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
                     Open invoice operations
                   </LinkButton>
@@ -330,7 +334,7 @@ function PersistentAdminInvoices() {
           ) : (
             <EmptyState
               title="No invoices yet"
-              description="Create one from an existing order. The Preview deployment does not seed financial records."
+              description="Create one from an existing order. The connected Convex data source does not seed financial records."
             />
           )}
         </div>

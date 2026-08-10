@@ -6,9 +6,10 @@ import { accountView, applyLedgerDeltas, findDepositAccount } from "./depositAcc
 import { appendDepositTransaction, transactionView } from "./depositTransactions";
 import { requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
-import { outstandingAmount } from "./lib/invoiceCalculations";
+import { invoicePaymentStatus, outstandingAmount } from "./lib/invoiceCalculations";
 import { fail } from "./lib/errors";
 import { inverseLedgerDeltas, ledgerDeltas } from "./lib/depositLedger";
+import { hasPendingPaymentConfirmation } from "./paymentConfirmations";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -19,7 +20,9 @@ function invoiceView(invoice: Doc<"invoices">) {
     status: invoice.status,
     totalAmount: invoice.totalAmount,
     allocatedDepositAmount: invoice.allocatedDepositAmount,
+    verifiedPaymentAmount: invoice.verifiedPaymentAmount,
     outstandingAmount: invoice.outstandingAmount,
+    paymentStatus: invoice.paymentStatus,
   };
 }
 
@@ -46,12 +49,19 @@ async function fullView(ctx: DataCtx, allocation: Doc<"invoiceDepositAllocations
   };
 }
 
-function updatedInvoiceAmounts(invoice: Doc<"invoices">, allocatedDelta: number) {
+async function updatedInvoiceAmounts(ctx: MutationCtx, invoice: Doc<"invoices">, allocatedDelta: number) {
   const allocated = invoice.allocatedDepositAmount + allocatedDelta;
   try {
+    const paymentStatus = invoicePaymentStatus(
+      invoice.totalAmount,
+      allocated,
+      invoice.verifiedPaymentAmount,
+      await hasPendingPaymentConfirmation(ctx, invoice._id),
+    );
     return {
       allocatedDepositAmount: allocated,
-      outstandingAmount: outstandingAmount(invoice.totalAmount, allocated),
+      outstandingAmount: outstandingAmount(invoice.totalAmount, allocated, invoice.verifiedPaymentAmount),
+      paymentStatus,
     };
   } catch {
     fail("DEPOSIT_ALLOCATION_INVALID");
@@ -105,7 +115,7 @@ export const allocate = mutation({
       createdByUserId: user._id,
     });
     await ctx.db.patch(invoice._id, {
-      ...updatedInvoiceAmounts(invoice, args.amount),
+      ...(await updatedInvoiceAmounts(ctx, invoice, args.amount)),
       updatedAt: now,
     });
     const allocation = await ctx.db.get(allocationId);
@@ -149,7 +159,7 @@ export const release = mutation({
       releasedByTransactionId: releaseTransactionId,
     });
     await ctx.db.patch(invoice._id, {
-      ...updatedInvoiceAmounts(invoice, -allocation.amount),
+      ...(await updatedInvoiceAmounts(ctx, invoice, -allocation.amount)),
       updatedAt: now,
     });
     const updatedAllocation = await ctx.db.get(allocation._id);
@@ -196,7 +206,7 @@ export const reverse = mutation({
     await ctx.db.patch(reservation._id, { reversedByTransactionId: reversalTransactionId });
     await ctx.db.patch(allocation._id, { status: "reversed" });
     await ctx.db.patch(invoice._id, {
-      ...updatedInvoiceAmounts(invoice, -allocation.amount),
+      ...(await updatedInvoiceAmounts(ctx, invoice, -allocation.amount)),
       updatedAt: now,
     });
     const updatedAllocation = await ctx.db.get(allocation._id);

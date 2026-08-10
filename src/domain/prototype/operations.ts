@@ -1,4 +1,9 @@
-import type { FulfillmentStage, ShipmentStage } from "@/domain/prototype/operations-context";
+import type {
+  FulfillmentStage,
+  InvoicePaymentStatus,
+  PaymentConfirmationStatus,
+  ShipmentStage,
+} from "@/domain/prototype/operations-context";
 
 export const shipmentStageLabels: Record<ShipmentStage, string> = {
   po_closed: "PO Ditutup",
@@ -22,4 +27,22 @@ export const fulfillmentStages = Object.keys(fulfillmentStageLabels) as Fulfillm
 
 export function invoiceStatusLabel(status: "draft" | "issued" | "void"): string {
   return { draft: "Draft", issued: "Issued", void: "Void" }[status];
+}
+
+export function invoicePaymentStatusLabel(status: InvoicePaymentStatus): string {
+  return {
+    unpaid: "Payment required",
+    payment_submitted: "Payment submitted",
+    partially_paid: "Partially paid",
+    paid: "Payment verified",
+  }[status];
+}
+
+export function paymentConfirmationStatusLabel(status: PaymentConfirmationStatus): string {
+  return {
+    submitted: "Submitted",
+    under_review: "Under review",
+    approved: "Approved",
+    rejected: "Rejected",
+  }[status];
 }

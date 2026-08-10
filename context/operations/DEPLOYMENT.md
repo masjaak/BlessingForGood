@@ -11,11 +11,11 @@ Production readiness: NOT READY
 
 ## Allowed target
 
-During feature development, the current feature branch and local/Development
+During feature development, the current `feat/*` branch and local/Development
 validation are in scope:
 
 ```text
-feat/clerk-identity-authorization-v0.1
+feat/payment-verification-v0.1
 Clerk Development
 Convex Development
 ```
@@ -48,6 +48,14 @@ Every implementation phase requires:
 
 Full browser and integration QA belongs to the stable staging gate, not every
 transient Preview deployment.
+
+## Phase 05.1 payment handoff
+
+Phase 05.1 is implementation-complete when local format, lint, typecheck,
+unit, Convex, build, authorization, and financial-invariant checks pass. A
+transient Vercel/Convex Preview is not required. Real payment confirmation,
+Clerk identity, realtime, browser, runtime-log, and data-cleanup evidence must
+be collected later in the one stable staging environment.
 
 ## Branch model
 

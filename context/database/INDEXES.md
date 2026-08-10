@@ -28,6 +28,8 @@ orderFulfillmentHistory: by_order, by_order_and_changed_at, by_stage
 invoices: by_order, by_customer_user_id, by_status, by_invoice_number,
           by_customer_user_id_and_created_at, by_created_at
 invoiceItems: by_invoice, by_order_item
+paymentConfirmations: by_invoice, by_customer_user_id_and_created_at,
+                      by_status_and_created_at, by_created_at
 depositAccounts: by_user_id, by_user_id_and_currency
 depositTransactions: by_account, by_account_and_created_at, by_invoice, by_reference_transaction
 invoiceDepositAllocations: by_invoice, by_account, by_reservation_transaction, by_invoice_and_status

@@ -17,6 +17,18 @@ export const fulfillmentStageValidator = v.union(
   v.literal("completed"),
 );
 export const invoiceStatusValidator = v.union(v.literal("draft"), v.literal("issued"), v.literal("void"));
+export const invoicePaymentStatusValidator = v.union(
+  v.literal("unpaid"),
+  v.literal("payment_submitted"),
+  v.literal("partially_paid"),
+  v.literal("paid"),
+);
+export const paymentConfirmationStatusValidator = v.union(
+  v.literal("submitted"),
+  v.literal("under_review"),
+  v.literal("approved"),
+  v.literal("rejected"),
+);
 export const depositRequirementModeValidator = v.union(v.literal("none"), v.literal("fixed"), v.literal("percentage"));
 export const depositTransactionTypeValidator = v.union(
   v.literal("credit"),

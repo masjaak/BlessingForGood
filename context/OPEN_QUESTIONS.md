@@ -1,5 +1,40 @@
 # Open Questions
 
+## Phase 05.1 status
+
+Phase 05.1 is **IMPLEMENTATION COMPLETE** with **GREEN** local validation:
+65 Vitest tests and 38 Convex tests pass.
+Runtime integration QA is **DEFERRED TO STAGING**. Production readiness is
+**NOT READY**.
+
+The payment domain is intentionally manual: customers submit confirmation
+metadata, active admin/owner users review it, and Convex records the decision.
+The existing append-only deposit ledger remains separate from approved external
+payment amounts.
+
+### Staging backlog
+
+The following have no real stable-staging runtime proof yet:
+
+- Clerk Development sign-in and Clerk JWT → Convex identity;
+- customer submission, duplicate prevention, rejection/resubmission;
+- admin/owner review, approval, rejection, and audit history;
+- suspension denial and Customer A/B payment isolation;
+- deposit-plus-transfer settlement, invoice projection, and stale approval;
+- proof-reference behavior, realtime updates, browser/responsive QA, and
+  authenticated Playwright;
+- runtime logs, guarded business-data cleanup, and final zero-data check.
+
+These are release/staging gates, not transient Preview blockers for feature
+development.
+
+### Payment policy questions
+
+- approved partial-payment and cancellation/correction policy beyond v0.1
+  rejection/resubmission;
+- final payment-method taxonomy and proof-upload/storage provider;
+- refund, withdrawal, chargeback, accounting, tax, and reconciliation policy.
+
 ## Phase 04.1 status transition
 
 Phase 04.1 implementation is **IMPLEMENTED** and local validation is **GREEN**.
@@ -24,6 +59,8 @@ The following remain open and were not silently resolved:
 - Production Convex deployment, Production Clerk identity, and Production
   authorization boundary;
 - catalog access-code rate limiting and expiry policy;
-- deposit, refund, cancellation, payment-verification, and legal rules;
+- [RESOLVED FOR PHASE 05.1 IMPLEMENTATION] manual payment confirmation and
+  review workflow; remaining deposit/refund/cancellation/legal policy is still
+  open;
 - final ready-stock inventory behavior;
 - final mockup-to-screen mapping.

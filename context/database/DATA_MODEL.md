@@ -7,7 +7,7 @@ Clerk subject
     ↓ verified by Convex JWT
 appUsers._id
     ↓ referenced by business records
-catalogAccessGrants / orders / invoices / deposits / profiles / addresses
+catalogAccessGrants / orders / invoices / payments / deposits / profiles / addresses
 ```
 
 Email, display name, and image are safe snapshots only. They do not establish
@@ -21,6 +21,8 @@ identity or ownership. One `appUsers` document exists per Clerk subject.
   resolve through the order/invoice/account customer relationship.
 - `customerProfiles.userId` and `customerAddresses.userId` are derived from
   the current authenticated app user for customer CRUD.
+- `paymentConfirmations.customerUserId` is derived from the owned invoice;
+  external payment attempts never use a client-supplied customer ID.
 
 Customer reads use indexed server queries; React does not fetch all rows and
 filter ownership locally.
@@ -37,5 +39,7 @@ claims.
 Publishers own books; books own variants; catalogs expose catalog items.
 Orders copy product and price snapshots. Batches and fulfillment histories
 remain separate. Invoices are immutable snapshots with draft/issued/void
-lifecycle. Deposit accounts are balance projections over an append-only
-ledger, and allocations are reservation-backed.
+lifecycle plus a separate payment projection. `paymentConfirmations` preserves
+submitted, under-review, approved, and rejected manual attempts. Deposit
+accounts are balance projections over an append-only ledger, and allocations
+are reservation-backed.

@@ -1,8 +1,13 @@
 "use client";
 
-import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import { useState } from "react";
+import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
-import { invoiceStatusLabel } from "@/domain/prototype/operations";
+import {
+  invoicePaymentStatusLabel,
+  invoiceStatusLabel,
+  paymentConfirmationStatusLabel,
+} from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
 import { usePrototype } from "@/domain/prototype/store";
@@ -10,9 +15,16 @@ import { SiteShell } from "@/components/site-shell";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = usePrototype();
-  const { currentCustomerInvoice, customerAccount, customerTransactions, customerAllocations } = useOperations();
+  const {
+    currentCustomerInvoice,
+    customerAccount,
+    customerTransactions,
+    customerAllocations,
+    customerPaymentConfirmations,
+    submitPaymentConfirmation,
+  } = useOperations();
   if (dataSource !== "convex")
-    return <div className="state-panel">Persistent invoices are available in Convex Preview.</div>;
+    return <div className="state-panel">Persistent invoices require a configured Convex data source.</div>;
   if (currentCustomerInvoice === undefined) return <div className="state-panel">Loading invoice…</div>;
   if (!currentCustomerInvoice) {
     return (
@@ -70,6 +82,56 @@ function CustomerInvoiceDetail() {
         <Card>
           <div className="split-heading">
             <div>
+              <span className="card-kicker">Payment verification</span>
+              <h2>{invoicePaymentStatusLabel(currentCustomerInvoice.paymentStatus)}</h2>
+            </div>
+            <StatusBadge tone={currentCustomerInvoice.paymentStatus === "paid" ? "positive" : "warning"}>
+              {invoicePaymentStatusLabel(currentCustomerInvoice.paymentStatus)}
+            </StatusBadge>
+          </div>
+          <div className="summary-line">
+            <span>Payment verified</span>
+            <strong>{formatIdr(currentCustomerInvoice.verifiedPaymentAmount)}</strong>
+          </div>
+          {customerPaymentConfirmations === undefined ? (
+            <p className="subtle">Loading confirmation history…</p>
+          ) : customerPaymentConfirmations.length ? (
+            <div className="content-stack">
+              <h3>Confirmation history</h3>
+              {customerPaymentConfirmations.map((confirmation) => (
+                <div className="summary-line" key={confirmation.confirmationId}>
+                  <span>
+                    {paymentConfirmationStatusLabel(confirmation.status)} · {confirmation.paymentMethod} ·{" "}
+                    {new Date(confirmation.submittedAt).toLocaleString("en-GB")}
+                  </span>
+                  <strong>{formatIdr(confirmation.amount)}</strong>
+                  {confirmation.rejectionReason ? <small>{confirmation.rejectionReason}</small> : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="subtle">No payment confirmation has been submitted.</p>
+          )}
+          {currentCustomerInvoice.status === "issued" &&
+          currentCustomerInvoice.outstandingAmount > 0 &&
+          customerPaymentConfirmations ? (
+            customerPaymentConfirmations.some(
+              (confirmation) => confirmation.status === "submitted" || confirmation.status === "under_review",
+            ) ? (
+              <p className="subtle">Your latest payment confirmation is awaiting review.</p>
+            ) : (
+              <PaymentConfirmationForm
+                invoiceId={currentCustomerInvoice.invoiceId}
+                maxAmount={currentCustomerInvoice.outstandingAmount}
+                submitPaymentConfirmation={submitPaymentConfirmation}
+              />
+            )
+          ) : null}
+        </Card>
+
+        <Card>
+          <div className="split-heading">
+            <div>
               <span className="card-kicker">Deposit account</span>
               <h2>Available and reserved</h2>
             </div>
@@ -119,6 +181,122 @@ function CustomerInvoiceDetail() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function PaymentConfirmationForm({
+  invoiceId,
+  maxAmount,
+  submitPaymentConfirmation,
+}: {
+  invoiceId: string;
+  maxAmount: number;
+  submitPaymentConfirmation: (
+    invoiceId: string,
+    input: {
+      amount: number;
+      paymentMethod: string;
+      transferReference?: string;
+      paidAt: number;
+      proofReference?: string;
+      customerNote?: string;
+    },
+  ) => Promise<unknown>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Bank transfer");
+  const [transferReference, setTransferReference] = useState("");
+  const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
+  const [proofReference, setProofReference] = useState("");
+  const [customerNote, setCustomerNote] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    const paidAtTimestamp = new Date(`${paidAt}T00:00:00`).getTime();
+    try {
+      await submitPaymentConfirmation(invoiceId, {
+        amount: Number(amount),
+        paymentMethod,
+        transferReference: transferReference || undefined,
+        paidAt: paidAtTimestamp,
+        proofReference: proofReference || undefined,
+        customerNote: customerNote || undefined,
+      });
+      setAmount("");
+      setTransferReference("");
+      setProofReference("");
+      setCustomerNote("");
+      setMessage("Payment confirmation submitted for review.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Payment confirmation failed");
+    }
+  }
+
+  return (
+    <form className="content-stack" onSubmit={submit}>
+      <h3>Submit payment</h3>
+      <div className="form-grid">
+        <Field label={`Amount paid (max ${formatIdr(maxAmount)})`}>
+          <input
+            className="input"
+            type="number"
+            min="1"
+            max={maxAmount}
+            step="1"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            required
+          />
+        </Field>
+        <Field label="Payment method">
+          <input
+            className="input"
+            value={paymentMethod}
+            onChange={(event) => setPaymentMethod(event.target.value)}
+            required
+          />
+        </Field>
+        <Field label="Paid date">
+          <input
+            className="input"
+            type="date"
+            value={paidAt}
+            onChange={(event) => setPaidAt(event.target.value)}
+            required
+          />
+        </Field>
+        <Field label="Transfer reference (optional)">
+          <input
+            className="input"
+            value={transferReference}
+            onChange={(event) => setTransferReference(event.target.value)}
+          />
+        </Field>
+      </div>
+      <Field label="Proof reference (optional)" hint="Use a future storage reference, not a file or image blob.">
+        <input className="input" value={proofReference} onChange={(event) => setProofReference(event.target.value)} />
+      </Field>
+      <Field label="Note (optional)">
+        <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
+      </Field>
+      <div className="form-actions">
+        <Button type="submit">Submit payment confirmation</Button>
+        {message ? (
+          <span className="subtle" role="status">
+            {message}
+          </span>
+        ) : null}
+        {error ? (
+          <span className="error-text" role="alert">
+            {error}
+          </span>
+        ) : null}
+      </div>
+    </form>
   );
 }
 

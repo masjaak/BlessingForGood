@@ -18,6 +18,7 @@ const routes = [
   "/admin/orders",
   "/admin/batches",
   "/admin/invoices",
+  "/admin/payments",
 ];
 
 const screenshotRoutes = new Set(["/", "/catalog", "/admin"]);
@@ -62,6 +63,7 @@ test.describe("BFG public route smoke", () => {
           "/admin/orders",
           "/admin/batches",
           "/admin/invoices",
+          "/admin/payments",
         ].includes(route)
       ) {
         await expect(page).toHaveURL(/\/sign-in/);
