@@ -13,6 +13,8 @@ export type ShipmentStage =
   "po_closed" | "ordered_to_supplier" | "shipped_internationally" | "customs" | "to_indonesia_warehouse" | "at_store";
 export type FulfillmentStage = "awaiting_payment" | "awaiting_address" | "packing" | "shipped" | "completed";
 export type InvoiceRequirementMode = "none" | "fixed" | "percentage";
+export type InvoicePaymentStatus = "unpaid" | "payment_submitted" | "partially_paid" | "paid";
+export type PaymentConfirmationStatus = "submitted" | "under_review" | "approved" | "rejected";
 
 export type BatchPage = NonNullable<FunctionReturnType<typeof api.batches.listForAdmin>>;
 export type BatchSummary = BatchPage["page"][number];
@@ -25,6 +27,19 @@ export type InvoiceView = InvoicePage["page"][number];
 export type AccountView = NonNullable<FunctionReturnType<typeof api.depositAccounts.getMine>>;
 export type TransactionPage = NonNullable<FunctionReturnType<typeof api.depositTransactions.listMine>>;
 export type AllocationView = Awaited<FunctionReturnType<typeof api.invoiceDepositAllocations.listMine>>[number];
+export type PaymentConfirmationView = Awaited<
+  FunctionReturnType<typeof api.paymentConfirmations.listMineForInvoice>
+>[number];
+export type AdminPaymentQueue = Awaited<FunctionReturnType<typeof api.paymentConfirmations.listPendingForAdmin>>;
+export type AdminPaymentHistory = NonNullable<FunctionReturnType<typeof api.paymentConfirmations.listForAdmin>>;
+export type PaymentConfirmationInput = {
+  amount: number;
+  paymentMethod: string;
+  transferReference?: string;
+  paidAt: number;
+  proofReference?: string;
+  customerNote?: string;
+};
 
 export interface OperationsContextValue {
   enabled: boolean;
@@ -45,6 +60,9 @@ export interface OperationsContextValue {
   adminTransactions: TransactionPage | undefined;
   customerAllocations: AllocationView[] | undefined;
   adminAllocations: Awaited<FunctionReturnType<typeof api.invoiceDepositAllocations.listForAdmin>> | undefined;
+  customerPaymentConfirmations: PaymentConfirmationView[] | undefined;
+  adminPaymentQueue: AdminPaymentQueue | undefined;
+  adminPaymentHistory: AdminPaymentHistory | undefined;
   createBatch: (input: { name: string; referenceCode?: string; description?: string }) => Promise<BatchSummary>;
   linkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
@@ -65,6 +83,10 @@ export interface OperationsContextValue {
   releaseAllocation: (allocationId: string) => Promise<unknown>;
   reverseAllocation: (allocationId: string) => Promise<unknown>;
   reverseTransaction: (transactionId: string, note?: string) => Promise<unknown>;
+  submitPaymentConfirmation: (invoiceId: string, input: PaymentConfirmationInput) => Promise<unknown>;
+  startPaymentReview: (confirmationId: string) => Promise<unknown>;
+  approvePaymentConfirmation: (confirmationId: string, reviewNote?: string) => Promise<unknown>;
+  rejectPaymentConfirmation: (confirmationId: string, rejectionReason: string, reviewNote?: string) => Promise<unknown>;
 }
 
 export const OperationsContext = createContext<OperationsContextValue | null>(null);
@@ -161,6 +183,15 @@ export function ConvexOperationsProvider({
     api.invoiceDepositAllocations.listForAdmin,
     isAdmin && adminInvoiceId ? { invoiceId: adminInvoiceId as Id<"invoices"> } : "skip",
   );
+  const customerPaymentConfirmations = useQuery(
+    api.paymentConfirmations.listMineForInvoice,
+    isCustomer && customerInvoiceId ? { invoiceId: customerInvoiceId as Id<"invoices"> } : "skip",
+  );
+  const adminPaymentQueue = useQuery(api.paymentConfirmations.listPendingForAdmin, isAdmin ? {} : "skip");
+  const adminPaymentHistory = useQuery(
+    api.paymentConfirmations.listForAdmin,
+    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+  );
 
   const mutations = useOperationsMutations();
 
@@ -184,6 +215,9 @@ export function ConvexOperationsProvider({
       adminTransactions,
       customerAllocations,
       adminAllocations,
+      customerPaymentConfirmations,
+      adminPaymentQueue,
+      adminPaymentHistory,
       ...mutations,
     }),
     [
@@ -194,6 +228,7 @@ export function ConvexOperationsProvider({
       batchList,
       customerAccount,
       customerAllocations,
+      customerPaymentConfirmations,
       customerInvoiceList,
       customerTransactions,
       currentAdminFulfillment,
@@ -204,6 +239,8 @@ export function ConvexOperationsProvider({
       currentCustomerInvoice,
       currentCustomerTracking,
       enabled,
+      adminPaymentQueue,
+      adminPaymentHistory,
       mutations,
     ],
   );
@@ -221,7 +258,7 @@ export function LocalOperationsProvider({
   dataSource: PrototypeDataSource;
 }) {
   const unavailable = useCallback(async () => {
-    throw new Error("Persistent operational data requires Convex Preview.");
+    throw new Error("Persistent operational data requires a configured Convex data source.");
   }, []);
   const value = useMemo<OperationsContextValue>(
     () => ({
@@ -243,6 +280,9 @@ export function LocalOperationsProvider({
       adminTransactions: undefined,
       customerAllocations: undefined,
       adminAllocations: undefined,
+      customerPaymentConfirmations: undefined,
+      adminPaymentQueue: undefined,
+      adminPaymentHistory: undefined,
       createBatch: unavailable,
       linkCatalog: unavailable,
       unlinkCatalog: unavailable,
@@ -258,6 +298,10 @@ export function LocalOperationsProvider({
       releaseAllocation: unavailable,
       reverseAllocation: unavailable,
       reverseTransaction: unavailable,
+      submitPaymentConfirmation: unavailable,
+      startPaymentReview: unavailable,
+      approvePaymentConfirmation: unavailable,
+      rejectPaymentConfirmation: unavailable,
     }),
     [dataSource, enabled, unavailable],
   );

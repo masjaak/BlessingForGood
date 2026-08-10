@@ -4,7 +4,12 @@ import { useMutation } from "convex/react";
 import { useCallback, useMemo } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import type { FulfillmentStage, InvoiceRequirementMode, ShipmentStage } from "@/domain/prototype/operations-context";
+import type {
+  FulfillmentStage,
+  InvoiceRequirementMode,
+  PaymentConfirmationInput,
+  ShipmentStage,
+} from "@/domain/prototype/operations-context";
 
 export function useOperationsMutations() {
   const createBatchMutation = useMutation(api.batches.create);
@@ -22,6 +27,10 @@ export function useOperationsMutations() {
   const releaseAllocationMutation = useMutation(api.invoiceDepositAllocations.release);
   const reverseAllocationMutation = useMutation(api.invoiceDepositAllocations.reverse);
   const reverseTransactionMutation = useMutation(api.depositTransactions.reverse);
+  const submitPaymentConfirmationMutation = useMutation(api.paymentConfirmations.submit);
+  const startPaymentReviewMutation = useMutation(api.paymentConfirmations.startReview);
+  const approvePaymentConfirmationMutation = useMutation(api.paymentConfirmations.approve);
+  const rejectPaymentConfirmationMutation = useMutation(api.paymentConfirmations.reject);
 
   const createBatch = useCallback(
     (input: { name: string; referenceCode?: string; description?: string }) => createBatchMutation(input),
@@ -131,6 +140,33 @@ export function useOperationsMutations() {
       }),
     [reverseTransactionMutation],
   );
+  const submitPaymentConfirmation = useCallback(
+    (invoiceId: string, input: PaymentConfirmationInput) =>
+      submitPaymentConfirmationMutation({ invoiceId: invoiceId as Id<"invoices">, ...input }),
+    [submitPaymentConfirmationMutation],
+  );
+  const startPaymentReview = useCallback(
+    (confirmationId: string) =>
+      startPaymentReviewMutation({ confirmationId: confirmationId as Id<"paymentConfirmations"> }),
+    [startPaymentReviewMutation],
+  );
+  const approvePaymentConfirmation = useCallback(
+    (confirmationId: string, reviewNote?: string) =>
+      approvePaymentConfirmationMutation({
+        confirmationId: confirmationId as Id<"paymentConfirmations">,
+        reviewNote,
+      }),
+    [approvePaymentConfirmationMutation],
+  );
+  const rejectPaymentConfirmation = useCallback(
+    (confirmationId: string, rejectionReason: string, reviewNote?: string) =>
+      rejectPaymentConfirmationMutation({
+        confirmationId: confirmationId as Id<"paymentConfirmations">,
+        rejectionReason,
+        reviewNote,
+      }),
+    [rejectPaymentConfirmationMutation],
+  );
 
   return useMemo(
     () => ({
@@ -149,6 +185,10 @@ export function useOperationsMutations() {
       releaseAllocation,
       reverseAllocation,
       reverseTransaction,
+      submitPaymentConfirmation,
+      startPaymentReview,
+      approvePaymentConfirmation,
+      rejectPaymentConfirmation,
     }),
     [
       allocateDeposit,
@@ -162,6 +202,10 @@ export function useOperationsMutations() {
       releaseAllocation,
       reverseAllocation,
       reverseTransaction,
+      submitPaymentConfirmation,
+      startPaymentReview,
+      approvePaymentConfirmation,
+      rejectPaymentConfirmation,
       unlinkCatalog,
       updateFulfillmentStage,
       updateShipmentStage,
