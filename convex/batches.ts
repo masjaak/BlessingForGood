@@ -18,6 +18,18 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     .withIndex("by_batch", (index) => index.eq("batchId", batch._id))
     .take(200);
   const catalogs = await Promise.all(links.map((link) => ctx.db.get(link.catalogId)));
+  const assignments = await ctx.db
+    .query("orderItemBatchAssignments")
+    .withIndex("by_batch", (index) => index.eq("batchId", batch._id))
+    .take(200);
+  const customerIds = new Set<string>();
+  let assignedQuantity = 0;
+  for (const assignment of assignments) {
+    assignedQuantity += assignment.assignedQuantity;
+    const orderItem = await ctx.db.get(assignment.orderItemId);
+    const order = orderItem && (await ctx.db.get(orderItem.orderId));
+    if (order) customerIds.add(String(order.customerUserId));
+  }
   return {
     batchId: batch._id,
     id: batch._id,
@@ -25,7 +37,11 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     referenceCode: batch.referenceCode || null,
     description: batch.description || null,
     currentShipmentStage: batch.currentShipmentStage || null,
+    rosterLocked: batch.currentShipmentStage !== undefined,
     isArchived: batch.isArchived,
+    assignmentCount: assignments.length,
+    assignedQuantity,
+    customerCount: customerIds.size,
     createdAt: new Date(batch.createdAt).toISOString(),
     updatedAt: new Date(batch.updatedAt).toISOString(),
     catalogLinks: links.map((link, index) => ({
@@ -93,6 +109,7 @@ export const linkCatalog = mutation({
     const catalog = await ctx.db.get(args.catalogId);
     if (!batch) fail("BATCH_NOT_FOUND");
     if (batch.isArchived) fail("BATCH_ARCHIVED");
+    if (batch.currentShipmentStage) fail("BATCH_LOCKED");
     if (!catalog) fail("CATALOG_NOT_FOUND");
     const duplicate = await ctx.db
       .query("catalogBatchLinks")
@@ -116,6 +133,7 @@ export const unlinkCatalog = mutation({
     const user = await requirePermission(ctx, "batches.manage");
     const batch = await ctx.db.get(args.batchId);
     if (!batch) fail("BATCH_NOT_FOUND");
+    if (batch.currentShipmentStage) fail("BATCH_LOCKED");
     const link = await ctx.db
       .query("catalogBatchLinks")
       .withIndex("by_catalog_and_batch", (index) => index.eq("catalogId", args.catalogId).eq("batchId", args.batchId))

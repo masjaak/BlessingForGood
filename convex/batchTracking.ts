@@ -18,6 +18,18 @@ async function linkedCatalog(ctx: DataCtx, catalogId: Id<"secretCatalogs">, batc
     .unique();
 }
 
+function requireEditableBatch(batch: Doc<"batches">): void {
+  if (batch.isArchived) fail("BATCH_ARCHIVED");
+  if (batch.currentShipmentStage) fail("BATCH_LOCKED");
+}
+
+async function assignmentForBatch(ctx: DataCtx, orderItemId: Id<"orderItems">, batchId: Id<"batches">) {
+  return ctx.db
+    .query("orderItemBatchAssignments")
+    .withIndex("by_order_item_and_batch", (index) => index.eq("orderItemId", orderItemId).eq("batchId", batchId))
+    .unique();
+}
+
 async function historyView(ctx: QueryCtx, batchId: Id<"batches">, includeNote = false) {
   const history = await ctx.db
     .query("batchStatusHistory")
@@ -32,6 +44,39 @@ async function historyView(ctx: QueryCtx, batchId: Id<"batches">, includeNote = 
   }));
 }
 
+type AdminAssignment = {
+  assignmentId: Id<"orderItemBatchAssignments">;
+  orderId: Id<"orders">;
+  customerUserId: Id<"appUsers">;
+  customerName: string;
+  catalogId: Id<"secretCatalogs">;
+  catalogName: string;
+  orderItemId: Id<"orderItems">;
+  bookVariantId: Id<"bookVariants">;
+  bookTitle: string;
+  format: Doc<"orderItems">["formatSnapshot"];
+  isbn: string;
+  unitPriceAmount: number;
+  assignedQuantity: number;
+  orderedQuantity: number;
+};
+
+type RosterItem = Pick<
+  AdminAssignment,
+  "assignmentId" | "orderId" | "orderItemId" | "bookVariantId" | "bookTitle" | "format" | "isbn" | "assignedQuantity"
+>;
+
+type CustomerRoster = {
+  customerUserId: Id<"appUsers">;
+  customerName: string;
+  items: RosterItem[];
+};
+
+type PurchaseSummary = Pick<AdminAssignment, "bookVariantId" | "bookTitle" | "format" | "isbn" | "unitPriceAmount"> & {
+  quantity: number;
+  customerCount: number;
+};
+
 export const assignOrderItem = mutation({
   args: {
     orderItemId: v.id("orderItems"),
@@ -45,15 +90,19 @@ export const assignOrderItem = mutation({
     const batch = await ctx.db.get(args.batchId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
     if (!orderItem || !order || !batch) fail("BATCH_ASSIGNMENT_INVALID");
-    if (batch.isArchived) fail("BATCH_ARCHIVED");
+    requireEditableBatch(batch);
+    if (order.status !== "submitted") fail("BATCH_ASSIGNMENT_INVALID", "only submitted orders can join a roster");
     if (!(await linkedCatalog(ctx, order.catalogId, args.batchId))) fail("BATCH_CATALOG_MISMATCH");
     const assignments = await ctx.db
       .query("orderItemBatchAssignments")
       .withIndex("by_order_item", (index) => index.eq("orderItemId", args.orderItemId))
       .take(200);
     const existing = assignments.find((assignment) => assignment.batchId === args.batchId);
-    const assignedTotal = assignments.reduce((total, assignment) => total + assignment.assignedQuantity, quantity);
-    const totalAfterUpdate = assignedTotal - (existing?.assignedQuantity || 0);
+    const assignedTotal = assignments.reduce(
+      (total, assignment) => total + (assignment._id === existing?._id ? 0 : assignment.assignedQuantity),
+      0,
+    );
+    const totalAfterUpdate = assignedTotal + quantity;
     if (totalAfterUpdate > orderItem.quantity) fail("BATCH_ASSIGNMENT_EXCEEDS_QUANTITY");
     const now = Date.now();
     if (existing) {
@@ -62,7 +111,7 @@ export const assignOrderItem = mutation({
         updatedAt: now,
         assignedByUserId: user._id,
       });
-      await recordAudit(ctx, user._id, "tracking.assignment_changed", "orderItem", args.orderItemId);
+      await recordAudit(ctx, user._id, "batch.item_assignment_updated", "orderItem", args.orderItemId);
       return existing._id;
     }
     const assignmentId = await ctx.db.insert("orderItemBatchAssignments", {
@@ -73,7 +122,82 @@ export const assignOrderItem = mutation({
       updatedAt: now,
       assignedByUserId: user._id,
     });
-    await recordAudit(ctx, user._id, "tracking.assignment_created", "orderItem", args.orderItemId);
+    await recordAudit(ctx, user._id, "batch.item_assigned", "orderItem", args.orderItemId);
+    return assignmentId;
+  },
+});
+
+export const unassignOrderItem = mutation({
+  args: {
+    orderItemId: v.id("orderItems"),
+    batchId: v.id("batches"),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "tracking.manage");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch) fail("BATCH_NOT_FOUND");
+    requireEditableBatch(batch);
+    const assignment = await assignmentForBatch(ctx, args.orderItemId, args.batchId);
+    if (!assignment) fail("BATCH_ASSIGNMENT_NOT_FOUND");
+    await ctx.db.delete(assignment._id);
+    await recordAudit(ctx, user._id, "batch.item_unassigned", "orderItem", args.orderItemId, {
+      batchId: String(args.batchId),
+    });
+    return { ok: true as const };
+  },
+});
+
+export const moveOrderItem = mutation({
+  args: {
+    orderItemId: v.id("orderItems"),
+    fromBatchId: v.id("batches"),
+    toBatchId: v.id("batches"),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "tracking.manage");
+    if (args.fromBatchId === args.toBatchId) fail("BATCH_ASSIGNMENT_INVALID", "source and target batch must differ");
+    const orderItem = await ctx.db.get(args.orderItemId);
+    const order = orderItem && (await ctx.db.get(orderItem.orderId));
+    const fromBatch = await ctx.db.get(args.fromBatchId);
+    const toBatch = await ctx.db.get(args.toBatchId);
+    if (!orderItem || !order || !fromBatch || !toBatch) fail("BATCH_ASSIGNMENT_INVALID");
+    requireEditableBatch(fromBatch);
+    requireEditableBatch(toBatch);
+    if (order.status !== "submitted") fail("BATCH_ASSIGNMENT_INVALID", "only submitted orders can join a roster");
+    if (
+      !(await linkedCatalog(ctx, order.catalogId, args.fromBatchId)) ||
+      !(await linkedCatalog(ctx, order.catalogId, args.toBatchId))
+    ) {
+      fail("BATCH_CATALOG_MISMATCH");
+    }
+    const source = await assignmentForBatch(ctx, args.orderItemId, args.fromBatchId);
+    if (!source) fail("BATCH_ASSIGNMENT_NOT_FOUND");
+    if (await assignmentForBatch(ctx, args.orderItemId, args.toBatchId)) {
+      fail("BATCH_ASSIGNMENT_DUPLICATE");
+    }
+    const assignments = await ctx.db
+      .query("orderItemBatchAssignments")
+      .withIndex("by_order_item", (index) => index.eq("orderItemId", args.orderItemId))
+      .take(200);
+    const assignedTotal = assignments.reduce(
+      (total, assignment) => total + (assignment._id === source._id ? 0 : assignment.assignedQuantity),
+      0,
+    );
+    if (assignedTotal + source.assignedQuantity > orderItem.quantity) fail("BATCH_ASSIGNMENT_EXCEEDS_QUANTITY");
+    const now = Date.now();
+    await ctx.db.delete(source._id);
+    const assignmentId = await ctx.db.insert("orderItemBatchAssignments", {
+      orderItemId: args.orderItemId,
+      batchId: args.toBatchId,
+      assignedQuantity: source.assignedQuantity,
+      createdAt: source.createdAt,
+      updatedAt: now,
+      assignedByUserId: user._id,
+    });
+    await recordAudit(ctx, user._id, "batch.item_moved", "orderItem", args.orderItemId, {
+      fromBatchId: String(args.fromBatchId),
+      toBatchId: String(args.toBatchId),
+    });
     return assignmentId;
   },
 });
@@ -224,27 +348,153 @@ export const getForAdmin = query({
       .query("orderItemBatchAssignments")
       .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
       .take(200);
-    const assignedItems = await Promise.all(
-      assignments.map(async (assignment) => {
-        const orderItem = await ctx.db.get(assignment.orderItemId);
-        const order = orderItem && (await ctx.db.get(orderItem.orderId));
-        if (!orderItem || !order) return null;
-        return {
-          assignmentId: assignment._id,
-          orderId: order._id,
-          customerName: order.customerName,
-          orderItemId: orderItem._id,
-          bookTitle: orderItem.bookTitleSnapshot,
-          format: orderItem.formatSnapshot,
-          assignedQuantity: assignment.assignedQuantity,
-          orderedQuantity: orderItem.quantity,
-        };
-      }),
+    const loaded = (
+      await Promise.all(
+        assignments.map(async (assignment) => {
+          const orderItem = await ctx.db.get(assignment.orderItemId);
+          const order = orderItem && (await ctx.db.get(orderItem.orderId));
+          if (!orderItem || !order) return null;
+          return { assignment, orderItem, order };
+        }),
+      )
+    ).filter((item): item is NonNullable<typeof item> => item !== null);
+    const catalogIds = [...new Set(loaded.map(({ order }) => order.catalogId))];
+    const catalogs = await Promise.all(catalogIds.map((catalogId) => ctx.db.get(catalogId)));
+    const catalogNames = new Map(
+      catalogIds.map((catalogId, index) => [catalogId, catalogs[index]?.name || "Unknown catalog"]),
     );
+    const assignedItems: AdminAssignment[] = loaded.map(({ assignment, orderItem, order }) => ({
+      assignmentId: assignment._id,
+      orderId: order._id,
+      customerUserId: order.customerUserId,
+      customerName: order.customerName,
+      catalogId: order.catalogId,
+      catalogName: catalogNames.get(order.catalogId) || "Unknown catalog",
+      orderItemId: orderItem._id,
+      bookVariantId: orderItem.bookVariantId,
+      bookTitle: orderItem.bookTitleSnapshot,
+      format: orderItem.formatSnapshot,
+      isbn: orderItem.isbnSnapshot,
+      unitPriceAmount: orderItem.unitPriceAmountSnapshot,
+      assignedQuantity: assignment.assignedQuantity,
+      orderedQuantity: orderItem.quantity,
+    }));
+    const customerGroups = new Map<string, CustomerRoster>();
+    const purchaseGroups = new Map<string, PurchaseSummary & { customers: Set<string> }>();
+    for (const item of assignedItems) {
+      const customerKey = String(item.customerUserId);
+      const customer = customerGroups.get(customerKey) || {
+        customerUserId: item.customerUserId,
+        customerName: item.customerName,
+        items: [],
+      };
+      customer.items.push({
+        assignmentId: item.assignmentId,
+        orderId: item.orderId,
+        orderItemId: item.orderItemId,
+        bookVariantId: item.bookVariantId,
+        bookTitle: item.bookTitle,
+        format: item.format,
+        isbn: item.isbn,
+        assignedQuantity: item.assignedQuantity,
+      });
+      customerGroups.set(customerKey, customer);
+      const purchaseKey = String(item.bookVariantId);
+      const purchase = purchaseGroups.get(purchaseKey) || {
+        bookVariantId: item.bookVariantId,
+        bookTitle: item.bookTitle,
+        format: item.format,
+        isbn: item.isbn,
+        unitPriceAmount: item.unitPriceAmount,
+        quantity: 0,
+        customerCount: 0,
+        customers: new Set<string>(),
+      };
+      purchase.quantity += item.assignedQuantity;
+      purchase.customers.add(customerKey);
+      purchase.customerCount = purchase.customers.size;
+      purchaseGroups.set(purchaseKey, purchase);
+    }
     return {
       ...summary,
-      assignments: assignedItems.filter((item) => item !== null),
+      assignments: assignedItems,
+      customerRoster: [...customerGroups.values()],
+      purchaseSummary: [...purchaseGroups.values()].map((purchase) => ({
+        bookVariantId: purchase.bookVariantId,
+        bookTitle: purchase.bookTitle,
+        format: purchase.format,
+        isbn: purchase.isbn,
+        unitPriceAmount: purchase.unitPriceAmount,
+        quantity: purchase.quantity,
+        customerCount: purchase.customers.size,
+      })),
       history: await historyView(ctx, args.batchId, true),
     };
+  },
+});
+
+export const listUnassignedForAdmin = query({
+  args: { batchId: v.id("batches") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "tracking.read.all");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch) fail("BATCH_NOT_FOUND");
+    const links = await ctx.db
+      .query("catalogBatchLinks")
+      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
+      .take(200);
+    const catalogIds = new Set(links.map((link) => String(link.catalogId)));
+    const catalogNames = new Map(
+      await Promise.all(
+        links.map(async (link) => {
+          const catalog = await ctx.db.get(link.catalogId);
+          return [String(link.catalogId), catalog?.name || "Unknown catalog"] as const;
+        }),
+      ),
+    );
+    // ponytail: bounded 200-order/item scan; add a roster index when BFG volume exceeds this ceiling.
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_status", (index) => index.eq("status", "submitted"))
+      .order("desc")
+      .take(200);
+    const result = [];
+    for (const order of orders) {
+      if (!catalogIds.has(String(order.catalogId))) continue;
+      const items = await ctx.db
+        .query("orderItems")
+        .withIndex("by_order", (index) => index.eq("orderId", order._id))
+        .take(200);
+      for (const item of items) {
+        const assignments = await ctx.db
+          .query("orderItemBatchAssignments")
+          .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+          .take(200);
+        const assignedQuantity = assignments.reduce((total, assignment) => total + assignment.assignedQuantity, 0);
+        const assignedToBatchQuantity =
+          assignments.find((assignment) => assignment.batchId === args.batchId)?.assignedQuantity || 0;
+        if (assignedQuantity < item.quantity) {
+          result.push({
+            orderId: order._id,
+            customerUserId: order.customerUserId,
+            customerName: order.customerName,
+            catalogId: order.catalogId,
+            catalogName: catalogNames.get(String(order.catalogId)) || "Unknown catalog",
+            orderItemId: item._id,
+            bookVariantId: item.bookVariantId,
+            bookTitle: item.bookTitleSnapshot,
+            format: item.formatSnapshot,
+            isbn: item.isbnSnapshot,
+            unitPriceAmount: item.unitPriceAmountSnapshot,
+            orderedQuantity: item.quantity,
+            assignedQuantity,
+            assignedToBatchQuantity,
+            remainingQuantity: item.quantity - assignedQuantity,
+          });
+        }
+        if (result.length >= 200) return result;
+      }
+    }
+    return result;
   },
 });
