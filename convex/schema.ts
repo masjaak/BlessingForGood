@@ -6,7 +6,9 @@ import {
   depositRequirementModeValidator,
   depositTransactionTypeValidator,
   fulfillmentStageValidator,
+  invoicePaymentStatusValidator,
   invoiceStatusValidator,
+  paymentConfirmationStatusValidator,
   shipmentStageValidator,
 } from "./validators";
 
@@ -314,7 +316,9 @@ export default defineSchema({
     depositRequirementValue: v.optional(v.number()),
     depositRequiredAmount: v.number(),
     allocatedDepositAmount: v.number(),
+    verifiedPaymentAmount: v.number(),
     outstandingAmount: v.number(),
+    paymentStatus: invoicePaymentStatusValidator,
     createdAt: v.number(),
     updatedAt: v.number(),
     issuedAt: v.optional(v.number()),
@@ -326,6 +330,29 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_invoice_number", ["invoiceNumber"])
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_created_at", ["createdAt"]),
+
+  paymentConfirmations: defineTable({
+    invoiceId: v.id("invoices"),
+    customerUserId: v.id("appUsers"),
+    amount: v.number(),
+    paymentMethod: v.string(),
+    transferReference: v.optional(v.string()),
+    paidAt: v.number(),
+    proofReference: v.optional(v.string()),
+    customerNote: v.optional(v.string()),
+    status: paymentConfirmationStatusValidator,
+    submittedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedByUserId: v.optional(v.id("appUsers")),
+    reviewNote: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_invoice", ["invoiceId"])
+    .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_status_and_created_at", ["status", "createdAt"])
     .index("by_created_at", ["createdAt"]),
 
   invoiceItems: defineTable({

@@ -1,4 +1,5 @@
 export type DepositRequirementMode = "none" | "fixed" | "percentage";
+export type InvoicePaymentStatus = "unpaid" | "payment_submitted" | "partially_paid" | "paid";
 
 function safeNonNegativeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) throw new Error(`${field} must be a non-negative integer`);
@@ -19,10 +20,30 @@ export function calculateDepositRequired(totalAmount: number, mode: DepositRequi
   return Number((BigInt(totalAmount) * BigInt(value) + BigInt(5000)) / BigInt(10000));
 }
 
-export function outstandingAmount(totalAmount: number, allocatedAmount: number): number {
+export function outstandingAmount(totalAmount: number, allocatedAmount: number, verifiedPaymentAmount = 0): number {
   safeNonNegativeInteger(totalAmount, "invoice total");
   if (!Number.isSafeInteger(allocatedAmount) || allocatedAmount < 0 || allocatedAmount > totalAmount) {
     throw new Error("allocated amount is invalid");
   }
-  return totalAmount - allocatedAmount;
+  if (
+    !Number.isSafeInteger(verifiedPaymentAmount) ||
+    verifiedPaymentAmount < 0 ||
+    verifiedPaymentAmount > totalAmount - allocatedAmount
+  ) {
+    throw new Error("verified payment amount is invalid");
+  }
+  return totalAmount - allocatedAmount - verifiedPaymentAmount;
+}
+
+export function invoicePaymentStatus(
+  totalAmount: number,
+  allocatedAmount: number,
+  verifiedPaymentAmount: number,
+  hasPendingConfirmation: boolean,
+): InvoicePaymentStatus {
+  const outstanding = outstandingAmount(totalAmount, allocatedAmount, verifiedPaymentAmount);
+  if (outstanding === 0) return "paid";
+  if (hasPendingConfirmation) return "payment_submitted";
+  if (allocatedAmount > 0 || verifiedPaymentAmount > 0) return "partially_paid";
+  return "unpaid";
 }

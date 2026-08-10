@@ -33,7 +33,9 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     depositRequirementValue: invoice.depositRequirementValue ?? null,
     depositRequiredAmount: invoice.depositRequiredAmount,
     allocatedDepositAmount: invoice.allocatedDepositAmount,
+    verifiedPaymentAmount: invoice.verifiedPaymentAmount,
     outstandingAmount: invoice.outstandingAmount,
+    paymentStatus: invoice.paymentStatus,
     createdAt: new Date(invoice.createdAt).toISOString(),
     updatedAt: new Date(invoice.updatedAt).toISOString(),
     issuedAt: invoice.issuedAt ? new Date(invoice.issuedAt).toISOString() : null,
@@ -118,7 +120,9 @@ export const create = mutation({
       depositRequirementValue: requirementValue,
       depositRequiredAmount,
       allocatedDepositAmount: 0,
+      verifiedPaymentAmount: 0,
       outstandingAmount: snapshot.total,
+      paymentStatus: "unpaid",
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,
@@ -166,7 +170,20 @@ export const voidInvoice = mutation({
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     if (invoice.status === "void") fail("INVOICE_VOID");
-    if (invoice.allocatedDepositAmount > 0) fail("INVOICE_INVALID_STATE", "release allocations before voiding");
+    if (invoice.allocatedDepositAmount > 0 || invoice.verifiedPaymentAmount > 0) {
+      fail("INVOICE_INVALID_STATE", "release or reverse payment settlement before voiding");
+    }
+    const confirmations = await ctx.db
+      .query("paymentConfirmations")
+      .withIndex("by_invoice", (index) => index.eq("invoiceId", args.invoiceId))
+      .take(200);
+    if (
+      confirmations.some(
+        (confirmation) => confirmation.status === "submitted" || confirmation.status === "under_review",
+      )
+    ) {
+      fail("INVOICE_INVALID_STATE", "resolve payment confirmations before voiding");
+    }
     const now = Date.now();
     await ctx.db.patch(args.invoiceId, { status: "void", voidedAt: now, updatedAt: now });
     await recordAudit(ctx, user._id, "invoice.voided", "invoice", args.invoiceId);
