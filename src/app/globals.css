@@ -694,6 +694,78 @@ p {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.ready-stock-page {
+  display: grid;
+  gap: 24px;
+}
+.ready-stock-page .page-header {
+  margin-bottom: 6px;
+}
+.ready-stock-controls,
+.admin-book-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.ready-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.ready-stock-card {
+  display: grid;
+  grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+  gap: 18px;
+  min-height: 280px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.ready-stock-card:hover {
+  border-color: var(--color-brand-primary);
+}
+.ready-stock-card .book-cover {
+  max-width: none;
+}
+.ready-stock-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+}
+.ready-stock-copy h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+}
+.ready-stock-copy p {
+  margin: 0;
+}
+.ready-stock-detail {
+  display: grid;
+  grid-template-columns: minmax(220px, 340px) minmax(0, 1fr);
+  gap: clamp(28px, 6vw, 72px);
+  align-items: start;
+}
+.ready-stock-detail > .book-cover {
+  max-width: 340px;
+}
+.ready-stock-variant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.ready-stock-variant > div {
+  display: grid;
+  gap: 4px;
+}
+.ready-stock-variant > div:last-child {
+  text-align: right;
+}
 .book-meta {
   display: flex;
   flex-wrap: wrap;
@@ -836,6 +908,42 @@ p {
   display: grid;
   min-width: 0;
   gap: 24px;
+}
+.admin-book-create {
+  display: grid;
+  gap: 18px;
+}
+.admin-book-create form + form {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.admin-book-filters {
+  grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(160px, 1fr));
+}
+.table-secondary {
+  display: block;
+  margin-top: 4px;
+}
+.admin-variant-row {
+  display: grid;
+  grid-template-columns: 48px minmax(150px, 1.4fr) minmax(120px, 1fr) minmax(100px, 0.7fr) auto auto;
+  gap: 10px;
+  align-items: end;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.admin-variant-row > strong {
+  align-self: center;
+}
+.admin-variant-row > .subtle {
+  grid-column: 2 / -1;
+}
+.admin-variant-create {
+  display: grid;
+  grid-template-columns: 100px minmax(180px, 1fr) minmax(150px, 0.7fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 22px;
 }
 .metric {
   min-height: 140px;
@@ -1081,6 +1189,17 @@ p {
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .ready-stock-controls,
+  .admin-book-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ready-stock-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-variant-row,
+  .admin-variant-create {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1184,6 +1303,26 @@ p {
   .invoice-issue-row {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+  .ready-stock-controls,
+  .admin-book-filters,
+  .ready-stock-grid,
+  .ready-stock-detail,
+  .admin-variant-row,
+  .admin-variant-create {
+    grid-template-columns: 1fr;
+  }
+  .ready-stock-card {
+    grid-template-columns: 110px minmax(0, 1fr);
+    min-height: 0;
+    padding: 14px;
+  }
+  .ready-stock-detail > .book-cover {
+    width: min(70vw, 280px);
+    margin: 0 auto;
+  }
+  .admin-variant-row > .subtle {
+    grid-column: auto;
   }
   .button {
     width: 100%;
