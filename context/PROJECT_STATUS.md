@@ -79,6 +79,28 @@ legacy-only and disabled for active Preview. No business seed data is created.
 continue product completion with Phase 06.2 Request Access / Join Group and
 admin approval. Stable staging follows feature-complete beta.
 
+## Canonical Convex backend
+
+The canonical Convex account is `palevvi@gmail.com`. These identifiers are not
+secrets:
+
+```text
+BFG_CANONICAL_CONVEX_TEAM=palevvi
+BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+BFG_CANONICAL_DEV=content-snake-214
+BFG_CANONICAL_PRODUCTION=clean-eel-522
+```
+
+Only this Convex project is authorized for active BFG development. A separate
+similarly named BFG project under another Convex account/team is
+`NON-CANONICAL`: do not use, deploy, or configure it, and do not delete it
+automatically.
+
+If Convex configuration fails, fix the configuration instead of creating a new
+BFG project. Never use a similarly named BFG project, create a Preview-looking
+deployment manually, or run an environment operation before verifying the
+Convex team, project, and deployment.
+
 ## Evidence
 
 - [REPOSITORY] The Clerk foundation is present: `clerkMiddleware()` in
@@ -91,8 +113,8 @@ admin approval. Stable staging follows feature-complete beta.
 - [REPOSITORY] Active Convex functions resolve identity through
   `ctx.auth.getUserIdentity()`, then `appUsers`, never through a client role,
   Clerk subject, email, or prototype session token.
-- [CONVEX VERIFIED] Convex Development codegen succeeds; the current
-  `convex:test` suite passes 7 files / 32 tests. Development ownership
+- [CONVEX VERIFIED] Canonical Convex Development codegen succeeds; the
+  current `convex:test` suite passes 7 files / 32 tests. Development ownership
   preflight found zero records in the affected business tables.
 - [LOCAL VERIFIED] `npm run format:check`, lint, typecheck, 59 Vitest tests,
   and Next.js build pass locally. The local browser run is not authentication
@@ -120,8 +142,8 @@ admin approval. Stable staging follows feature-complete beta.
 | Customer profiles and addresses | [REPOSITORY] implemented; ownership tests pass |
 | Owner user management | [REPOSITORY] implemented; staging runtime QA pending |
 | Active anonymous Preview identity | [REPOSITORY] disabled; legacy exports fail closed |
-| Current branch Convex Preview | [SUPERSEDED] optional diagnostic; not a phase gate |
-| Current branch Vercel Preview | [SUPERSEDED] optional diagnostic; not a phase gate |
+| Convex Preview-looking deployment | [PROHIBITED] not an active BFG target |
+| Current branch Vercel Preview | [PROHIBITED] not an active BFG target |
 | Staging integration environment | [REPOSITORY] plan defined; infrastructure not configured |
 | Production | [CONFIRMED] untouched and not configured for this phase |
 | `main` | [CONFIRMED] untouched |
@@ -132,6 +154,11 @@ admin approval. Stable staging follows feature-complete beta.
   invitation URLs, passwords, or auth storage.
 - Never merge to `main`, force-push, deploy Production, use `--prod`, promote
   a Preview, or connect Production Clerk/Convex.
+- Verify the canonical Convex team, project, and deployment before every
+  Convex environment operation.
+- Never create a new BFG Convex project when configuration fails, use a
+  similarly named BFG project from another account, or create a
+  Preview-looking deployment manually.
 - Unknown non-empty staging business data requires a stop before migration.
 - Existing Phase 03 operational invariants remain in force.
 - Payment confirmation is manual metadata plus review state; no payment

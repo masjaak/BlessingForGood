@@ -1,5 +1,26 @@
 # Decisions
 
+## Canonical Convex backend correction
+
+- The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and
+  project is `blessingforgood`. The development reference is `dev/masjak`.
+
+  ```text
+  BFG_CANONICAL_CONVEX_TEAM=palevvi
+  BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+  BFG_CANONICAL_DEV=content-snake-214
+  BFG_CANONICAL_PRODUCTION=clean-eel-522
+  ```
+
+- Only this project is authorized for active BFG development. A separate
+  similarly named project under another Convex account/team is a duplicate and
+  is `NON-CANONICAL`: do not use, deploy, or configure it, and do not delete it
+  automatically.
+- Configuration failure is a blocker. Never create a new BFG Convex project,
+  use a similarly named BFG project, or create a Preview-looking deployment
+  manually. Verify the Convex team, project, and deployment before every
+  environment operation.
+
 Phase 06.1 records the following approved implementation decisions:
 
 - Book Master is reusable metadata; Secret Catalog is private curation/access;
