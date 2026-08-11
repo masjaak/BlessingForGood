@@ -2,7 +2,7 @@
 
 `proxy.ts` and server layouts provide early navigation protection. Convex
 functions enforce the resource boundary after identity and BFG role
-resolution. `PrototypeModeGuard` prevents protected children from mounting
+resolution. `ProductAccessGuard` prevents protected children from mounting
 while Convex auth/provisioning is unresolved.
 
 | Route | Auth requirement | Allowed role | Ownership | Next.js protection | Convex protection | Signed-out / denied behavior | Test status |
@@ -17,6 +17,7 @@ while Convex auth/provisioning is unresolved.
 | `/sign-in/[[...sign-in]]` | Clerk auth page | signed out | none | signed-in redirect | Clerk | signed-in redirects to `/catalog` | component/build |
 | `/sign-up/[[...sign-up]]` | valid invitation | signed out/invite | none | signed-in redirect | Clerk Restricted Mode | invalid/expired Clerk invitation error | component/build |
 | `/catalog` | Clerk + active BFG user | customer; admin/owner preview link allowed | catalog grant belongs to app user | catalog layout | `catalog.read`, grant by `appUserId` | redirect to sign-in; role denial | Convex tests |
+| `/account` | Clerk + customer | customer | owned order/invoice/deposit/exception projections | product access guard | source queries enforce own-read permissions and ownership | redirect/deny | activity unit tests + Convex ownership tests |
 | `/account/orders` | Clerk + customer | customer | own orders | account layout + guard | `orders.read.own` | redirect/deny; no query before active | Convex tests |
 | `/account/orders/[orderId]` | Clerk + customer | customer | order customerUserId | account layout + guard | `orders.read.own` + ownership | redirect/deny | Convex tests |
 | `/account/invoices` | Clerk + customer | customer | own invoices | account layout + guard | `invoices.read.own` | redirect/deny | Convex tests |
@@ -35,6 +36,7 @@ while Convex auth/provisioning is unresolved.
 | `/admin/payments` | Clerk + active BFG user | admin/owner | operational payment queue | admin layout + guard | invoice read/manage all | redirect/permission denial | Convex tests |
 | `/admin/exceptions` | Clerk + active BFG user | admin/owner | operational exception queue | admin layout + guard | order exception read/manage all | redirect/permission denial | Convex tests |
 | `/admin/join-requests` | Clerk + active BFG user | admin/owner | operational admission queue | admin layout + guard | `customers.read` + `customers.manage` | redirect/permission denial | Convex tests; browser staging pending |
+| `/admin/customers`, `/admin/customers/[customerId]` | Clerk + active BFG user | admin/owner | operational customer target | product access guard | `customers.read` plus order/invoice/exception read-all | redirect/permission denial | existing Convex authorization tests |
 | `/admin/users` | Clerk + active BFG user | owner only | appUsers security target | admin layout + owner guard | `users.*` owner helper | redirect/permission denial | Convex tests |
 
 [DEFERRED TO STAGING] Real signed-out and role-specific browser route results,

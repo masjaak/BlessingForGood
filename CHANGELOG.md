@@ -2,11 +2,51 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-10
+last_updated: 2026-08-11
 source: conversation
 ---
 
 # Changelog
+
+## [production-v1-convergence] — 2026-08-11
+
+### Changed
+
+- Replaced the Preview/prototype runtime boundary with a Convex-first product
+  provider and fail-closed missing-configuration state.
+- Removed browser-local business persistence, prototype mode flags/banner/copy,
+  local role simulation, and the dead local invoice path.
+- Aligned public, customer, and admin shells to the official BFG logo, mascot,
+  warm cream/deep green palette, editorial customer typography, and denser admin
+  hierarchy from the supplied mockups.
+- Reworked public and customer copy to Indonesian-first product language.
+
+### Added
+
+- Added `/account` with needs-attention, active order, invoice/payment, deposit,
+  active exception, refund-obligation, and bounded customer-safe activity views.
+- Added `/admin/customers` and customer detail using existing server-authorized
+  customer/profile/address/order/invoice/exception sources.
+- Added an actionable admin operational home and shared dashboard/empty-state
+  patterns.
+- Added mockup coverage, Production V1 convergence decisions, updated PRD/route
+  matrices, and production presentation/runtime guards.
+
+### Preserved
+
+- All Phase 01–06.4 Clerk, RBAC, ownership, catalog, Ready Stock, order, batch,
+  tracking, invoice, deposit, payment, exception, profile, address, audit, and
+  financial-history invariants.
+- Refund obligations remain separate from payout execution. No approved payment,
+  invoice snapshot, allocation history, or deposit ledger entry is erased.
+
+### Release boundary
+
+- Deterministic QA passes: 92/92 Vitest, 61/61 Convex tests, zero lint warnings,
+  TypeScript/build PASS, and 93/93 responsive Playwright route checks.
+- `main` and Production remain untouched. Release is blocked because the linked
+  Vercel project has zero Production environment variables; Production Clerk,
+  domain, and canonical Convex Production configuration must be added first.
 
 ## [phase-06.4-order-exceptions] — 2026-08-11
 

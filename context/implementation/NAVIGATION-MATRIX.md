@@ -1,42 +1,44 @@
 # BFG Navigation Matrix
 
-## Customer navigation
+## Public
 
-| Label | Route | Status | Browser evidence | Notes |
-| --- | --- | --- | --- | --- |
-| Home | `/` | functional | [BROWSER VERIFIED] HTTP 200 and Playwright render | Primary entry point |
-| Catalog | `/catalog` | functional foundation | [BROWSER VERIFIED] HTTP 200, wrong-code state, unlock flow | Preview Demo Mode only; no shared catalog data |
-| Ready Stock | `/ready-stock` | implemented | [REPOSITORY] browse/search/filter/detail and zero-data states | Runtime browser QA deferred to staging |
-| Orders | `/account/orders` | functional foundation | [BROWSER VERIFIED] HTTP 200 and order/tracking flow | Browser-local prototype records only |
-| Account | `/account/invoices` | functional foundation | [BROWSER VERIFIED] HTTP 200 and invoice empty/state flow | Account route remains invoice foundation |
+| Route | Purpose | Status |
+| --- | --- | --- |
+| `/` | Brand, Ready Stock, Secret Catalog, community and join entry | implemented |
+| `/community` | Blessfriends community introduction | implemented |
+| `/how-to-order` | Actual current order flow | implemented |
+| `/help` | Customer help paths | implemented |
+| `/join` | Join request and success/status guidance | implemented |
+| `/ready-stock`, `/ready-stock/[slug]` | Public stock browse/detail | implemented |
+| `/sign-in`, `/sign-up` | Clerk sign-in/invitation acceptance | implemented |
 
-The shared customer primary navigation must contain only the five destinations above. Admin is reached by its own
-workspace route and is not a customer navigation item.
+## Customer
 
-## Public support navigation
+| Route | Purpose | Status |
+| --- | --- | --- |
+| `/catalog` | Secure Secret Catalog access and preorder | implemented |
+| `/account` | Needs-attention dashboard and unified activity | implemented in Production V1 convergence |
+| `/account/orders`, `/account/orders/[orderId]` | Owned orders, tracking, fulfillment, exceptions | implemented |
+| `/account/invoices`, `/account/invoices/[invoiceId]` | Invoice, payment, deposit and ledger | implemented |
+| `/account/profile` | Customer profile | implemented |
+| `/account/addresses` | Customer shipping addresses | implemented |
 
-| Label | Route | Status | Browser evidence | Notes |
-| --- | --- | --- | --- | --- |
-| Community | `/community` | functional | [BROWSER VERIFIED] HTTP 200 and Playwright render | Public guide |
-| How to order | `/how-to-order` | functional | [BROWSER VERIFIED] HTTP 200 and Playwright render | Public flow explanation |
-| Help | `/help` | functional | [BROWSER VERIFIED] HTTP 200 and Playwright render | Foundation copy only |
+## Admin
 
-## Admin navigation
+| Route | Purpose | Status |
+| --- | --- | --- |
+| `/admin` | Operational queue home | implemented |
+| `/admin/books`, `/admin/books/[bookId]` | Book Master and Ready Stock | implemented |
+| `/admin/catalogs` | Secret Catalog management | implemented |
+| `/admin/join-requests` | Blessfriends admission queue | implemented |
+| `/admin/orders`, `/admin/orders/[orderId]` | Order operations and assisted orders | implemented |
+| `/admin/batches`, `/admin/batches/[batchId]` | Batch PO, roster, purchasing summary and tracking | implemented |
+| `/admin/invoices`, `/admin/invoices/[invoiceId]` | Invoice and deposit operations | implemented |
+| `/admin/payments` | Manual payment review | implemented |
+| `/admin/exceptions` | OOS, defect and cancellation queue | implemented |
+| `/admin/customers`, `/admin/customers/[customerId]` | Customer operational context | implemented in Production V1 convergence |
+| `/admin/users` | Owner-only role and suspension management | implemented |
 
-| Label | Route | Status | Browser evidence | Notes |
-| --- | --- | --- | --- | --- |
-| Overview | `/admin` | functional foundation | [BROWSER VERIFIED] HTTP 200 and Preview-labelled zero-data dashboard | Production authorization deferred |
-| Catalog | `/admin/catalogs` | functional foundation | [BROWSER VERIFIED] HTTP 200 and catalog creation flow | One-title prototype form |
-| Books | `/admin/books` | implemented | [REPOSITORY] list/create/edit/variant/stock flow | Runtime browser QA deferred to staging |
-| Orders | `/admin/orders` | functional foundation | [BROWSER VERIFIED] HTTP 200 and status transition flow | Status transitions are local prototype only |
-| Customers | — | foundation-only | [REPOSITORY] non-link | Clearly marked unavailable |
-| Invoices | `/admin/invoices` | functional foundation | [REPOSITORY] invoice/ledger UI; runtime QA deferred | Invoice/deposit foundation |
-| Payments | `/admin/payments` | functional foundation | [REPOSITORY] manual confirmation queue/history; runtime QA deferred | Payment gateway out of scope |
-| Exceptions | `/admin/exceptions` | implemented locally | [REPOSITORY] OOS/defect/cancellation queue; runtime QA deferred | Refund execution and replacement policy out of scope |
-| Tracking | — | foundation-only | [REPOSITORY] non-link | Covered by order timeline foundation |
-| Content | — | foundation-only | [REPOSITORY] non-link | No dead link is exposed |
-| Settings | — | foundation-only | [REPOSITORY] non-link | No settings decision is invented |
-| Customer preview | `/catalog` | functional foundation | [BROWSER VERIFIED] HTTP 200 and unlock flow | QA shortcut inside admin nav |
-
-Unavailable admin items are non-link spans with an `Unavailable` label. They are not dead anchors and remain
-documented until their product scope is approved.
+Reporting, Content, Settings and Excel routes are not linked because their
+product scope is not implemented. Navigation is never the authorization
+boundary; every protected data call remains server-authorized.

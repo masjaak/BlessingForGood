@@ -11,6 +11,7 @@
 | Invitation acceptance | `/sign-up/[[...sign-up]]` | invited | Clerk Restricted Mode | implemented; real QA pending |
 | Secret catalog | `/catalog` | authenticated | Convex catalog permission + app-user grant | implemented; runtime QA pending |
 | Customer orders | `/account/orders` | customer | own `customerUserId` | implemented; runtime QA pending |
+| Customer dashboard/history | `/account` | customer | owned canonical domain projections | implemented; runtime QA pending |
 | Customer order detail | `/account/orders/[orderId]` | customer | own order | implemented; runtime QA pending |
 | Customer invoices | `/account/invoices` | customer | own `customerUserId` | implemented; runtime QA pending |
 | Customer invoice detail | `/account/invoices/[invoiceId]` | customer | own invoice | implemented; runtime QA pending |
@@ -19,6 +20,7 @@
 | Customer profile | `/account/profile` | customer | current app user | implemented; Convex tests pass |
 | Customer addresses | `/account/addresses` | customer | current app user | implemented; Convex tests pass |
 | Admin overview | `/admin` | admin/owner | admin permission | implemented; runtime QA pending |
+| Admin customer operations | `/admin/customers`, `/admin/customers/[customerId]` | admin/owner | customer read plus domain read-all permissions | implemented; runtime QA pending |
 | Catalog management | `/admin/catalogs` | admin/owner | catalog/books permissions | implemented; runtime QA pending |
 | Book Master | `/admin/books`, `/admin/books/[bookId]` | admin/owner | `books.manage` | implemented; runtime QA pending |
 | Order management | `/admin/orders`, `/admin/orders/[orderId]` | admin/owner | order/tracking all permissions | implemented; runtime QA pending |

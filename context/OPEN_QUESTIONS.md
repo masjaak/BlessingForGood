@@ -1,5 +1,27 @@
 # Open Questions
 
+## Production V1 release blockers
+
+- [PRODUCTION BLOCKER] The linked Vercel project has zero Production environment
+  variables. Complete one Production-environment setup with a Clerk Production
+  instance/domain/redirects and live keys plus a Production deploy key and
+  required environment names for canonical Convex `clean-eel-522`. The current
+  historical Production target is errored and no custom domain is assigned.
+  Do not merge `main` until names-only preflight passes.
+- [ENVIRONMENT ACCESS] Names-only Convex checks for `content-snake-214` and
+  `clean-eel-522` were denied. The operation stopped without switching account,
+  selecting another project, or creating a deployment.
+- [CONTENT APPROVAL] Final brand story, community promise, support details, and
+  customer rules remain client-owned copy. Current text is concise product copy,
+  not a new business promise.
+- [POST-V1 BACKLOG] Reporting, Excel export, Analytics, Content management,
+  Settings, and a dedicated audit-log UI are not implemented.
+
+The original PRD pack was located at
+`/Users/masjak/Documents/BLESSINGFORGOOD/BFG WEB/context/product/` and audited
+read-only for this convergence. It is intentionally not copied wholesale into
+the canonical repository.
+
 ## Phase 06.4 decisions and blockers
 
 - [BLOCKED BY BUSINESS DECISION] `CANCELLATION_ELIGIBILITY_POLICY`: define the
@@ -19,9 +41,9 @@
 - [BLOCKED BY BUSINESS DECISION] `DEFECT_REPLACEMENT_POLICY`: replacement
   execution, supplier return, proof upload, and replacement inventory remain
   outside v0.1.
-- [DEFERRED TO STAGING] Clerk identity, browser privacy, concurrent admin
-  runtime behavior, realtime projections, and cleanup evidence remain part of
-  the stable staging gate.
+- [DEFERRED TO PRODUCTION RUNTIME QA] Clerk identity, browser privacy,
+  concurrent admin runtime behavior, realtime projections, and cleanup evidence
+  remain part of the Production smoke gate.
 - [BLOCKED ENVIRONMENT ACCESS] Canonical Convex codegen could not access the
   selected Development project. The local generated API typing was updated for
   the source tree; do not switch projects or run `convex dev` to select another
@@ -40,8 +62,8 @@
 - [SCALE TRIGGER] The unassigned batch work queue scans at most 200 submitted
   orders/items for v0.1. Add a dedicated roster projection/index when BFG
   volume reaches that ceiling.
-- [DEFERRED TO STAGING] Clerk identity, browser, realtime, and concurrent
-  multi-admin runtime verification remain part of the stable staging gate.
+- [DEFERRED TO PRODUCTION RUNTIME QA] Clerk identity, browser, realtime, and concurrent
+  multi-admin runtime verification remain part of the Production smoke gate.
 
 ## Phase 06.2 decisions and blockers
 
@@ -66,16 +88,15 @@
 - [SCALE TRIGGER] Public/admin Book Master queries are bounded to 200 source rows
   and 100 public results. Add pagination/search indexes when real inventory reaches
   that ceiling.
-- [BLOCKED DOCUMENTATION] The original `context/product/PRD.md`, `SCOPE.md`,
-  `BUSINESS_RULES.md`, `UX_FLOWS.md`, `ROUTES.md`, and
-  `context/SOURCE_OF_TRUTH.md` remain absent from `develop`. Phase 06.1 records
-  only decisions explicitly supplied by the phase brief.
+- [RESOLVED FOR COVERAGE AUDIT] The original product pack remains outside the
+  canonical Git repository but was found in the supplied local BFG source and
+  audited read-only. The current PRD/mockup matrices record its applicable scope.
 
 ## Phase 05.1 status
 
 Phase 05.1 is **IMPLEMENTATION COMPLETE** with **GREEN** local validation:
 65 Vitest tests and 38 Convex tests pass.
-Runtime integration QA is **DEFERRED TO STAGING**. Production readiness is
+Runtime integration QA is **DEFERRED TO PRODUCTION RUNTIME QA**. Production readiness is
 **NOT READY**.
 
 The payment domain is intentionally manual: customers submit confirmation
@@ -85,7 +106,7 @@ payment amounts.
 
 ### Staging backlog
 
-The following have no real stable-staging runtime proof yet:
+The following have no real Production runtime proof yet:
 
 - Clerk Development sign-in and Clerk JWT → Convex identity;
 - customer submission, duplicate prevention, rejection/resubmission;
@@ -109,7 +130,7 @@ development.
 ## Phase 04.1 status transition
 
 Phase 04.1 implementation is **IMPLEMENTED** and local validation is **GREEN**.
-Runtime integration QA is **DEFERRED TO STAGING**. Production readiness is
+Runtime integration QA is **DEFERRED TO PRODUCTION RUNTIME QA**. Production readiness is
 **NOT READY**.
 
 [SUPERSEDED] The previous rule that Phase 04.1 could not proceed until a

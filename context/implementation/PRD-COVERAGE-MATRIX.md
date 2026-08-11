@@ -1,47 +1,48 @@
 # BFG PRD Coverage Matrix
 
-Status: Phase 06.4 source of truth
+Status: Production V1 release-convergence source of truth.
 
-The original product context pack is absent from the canonical repository. This matrix tracks the major requirements named in the Phase 06.2 assignment against repository evidence without inventing missing policy.
+The original product pack at
+`/Users/masjak/Documents/BLESSINGFORGOOD/BFG WEB/context/product/` was audited
+read-only against the canonical repository. Evidence below refers to current
+Phase 01–06.4 code plus this release worktree.
 
-| Requirement | Status | Implementation evidence | Remaining gap | Recommended phase |
-| --- | --- | --- | --- | --- |
-| Foundation | IMPLEMENTED | Next.js, Convex schema/functions, design tokens, validation scripts | Stable runtime proof | staging gate after feature-complete beta |
-| Authentication/access levels | IMPLEMENTED | Clerk provider/middleware, `appUsers`, centralized RBAC, suspension | Real Clerk invitation/JWT/runtime proof | identity lifecycle phase |
-| Authentication onboarding | IMPLEMENTED | `/join`, `joinRequests`, approved-to-invitation handoff state, invite-only Clerk route | Manual Clerk invitation and accepted-account linking | identity lifecycle phase |
-| Public landing/content | PARTIAL | `/`, `/community`, `/how-to-order`, `/help` | Final approved content/brand copy | later content phase |
-| Ready Stock | IMPLEMENTED | `readyStockInventory`, public query, `/ready-stock`, detail route | Order-recording policy; runtime QA | decision phase + staging |
-| Request Access / Join Group | IMPLEMENTED | `/join`, anonymous Convex submission, normalized duplicate guards, zero-data success state | Retention/privacy decision and runtime QA | identity lifecycle phase |
-| Admin Approval / Admission | IMPLEMENTED | `/admin/join-requests`, admin/owner transitions, rejection reason, audit events, invitation-ready handoff | Clerk invitation acceptance and verified account linking | identity lifecycle phase |
-| Book Master | IMPLEMENTED | books/variants/publishers, publication state, `/admin/books` | Durable cover upload; >200 pagination | later storage/scale phase |
-| Batch PO | IMPLEMENTED | `convex/batches.ts`, `/admin/batches`, existing shipment timeline, catalog links, roster lock at `po_closed` | Supplier-specific PO/cost/cutoff automation | post-beta operations |
-| Roster | IMPLEMENTED | `batchTracking.getForAdmin`, customer grouping, purchase summary, bounded unassigned queue, assign/unassign/move tests | Pagination/index upgrade after documented ceiling | scale phase |
-| Manual Customer Operations | PARTIAL | `orders.createAssisted`, active existing-customer selector, `source=admin_assisted`, canonical pipeline and audit | Non-account customer policy is not approved; no fake identities | business decision / later identity phase |
-| Admin Order Operations | IMPLEMENTED | `/admin/orders`, server-derived assisted order creation for existing active customers, admin source visibility | Broader assisted channels and Ready Stock order recording | later approved operations phase |
-| Deposit | IMPLEMENTED | account projection, append-only ledger, allocations | Runtime QA; final correction/refund policy | staging + later finance policy |
-| Invoice/payment exception handling | IMPLEMENTED | `orderExceptions`, append-only financial adjustments, derived invoice projection, preserved payment confirmations, and deposit allocation release | Cash refund execution and final financial policy | staging + business decision |
-| Defect | IMPLEMENTED | Admin defect cases tied to canonical order items with quantity, reason, notes, review, resolution, audit, and customer-safe history | Replacement/proof workflow policy | business decision |
-| Out of Stock | IMPLEMENTED | Admin OOS cases preserve original order items, block affected quantity, support partial quantity, and retain batch history | Supplier/procurement correction policy | staging + business decision |
-| Cancellation | IMPLEMENTED | Customer request → admin review → resolution; admin cancellation requires reason, actor, audit, and financial reconciliation | Final cancellation eligibility and post-PO policy | business decision |
-| Refund | PARTIAL | Integer-IDR refund/credit obligation is derived and recorded without payout or ledger deletion | Refund disbursement, deposit refund, settlement policy | business decision |
-| Tracking integration | IMPLEMENTED | Batch roster reuses `currentShipmentStage` and `batchStatusHistory`; customer fulfillment remains separate | Integrated runtime QA | deferred to staging |
-| Customer dashboard | PARTIAL | orders, invoices, profile, addresses, tracking, and order exception visibility | Unified dashboard/history polish | Phase 06.5 |
-| Secret member catalogs | IMPLEMENTED | hashed codes, grants, private views, catalog items/orders | Rate limiting and expiry policy; runtime QA | security hardening + staging |
-| Order operations | IMPLEMENTED | Item-level exception queue/detail integration, server-owned cancellation eligibility, batch/fulfillment guards | Runtime concurrency and final policy QA | staging + business decision |
-| Order/invoice reporting | PARTIAL | Operational exception queue and immutable financial adjustment records support future counts/impact | Formal report/export definitions | Phase 06.6 |
-| Customer history foundation | IMPLEMENTED | Customer-owned exception queries and safe order-detail history; internal notes/actors excluded | Unified cross-domain history screen | Phase 06.5 |
-| Multi-admin | IMPLEMENTED | Admin/owner batch/order operations, roster assignment controls, join-request queue, server-side permissions, audit-backed transitions | Invitation/admin lifecycle runtime proof and staging concurrency evidence | identity lifecycle phase |
-| Analytics | NOT STARTED | No analytics dashboard or invented metrics | Approved measures and privacy policy | post-beta |
+| Requirement | Status | Evidence | Remaining gap |
+| --- | --- | --- | --- |
+| Foundation | IMPLEMENTED | Next.js App Router, Clerk/Convex providers, shared BFG tokens/components, deterministic checks | Production runtime evidence |
+| Authentication and access levels | IMPLEMENTED | Clerk identity, `appUsers`, owner/admin/customer permissions, suspension, server guards | Production Clerk verification |
+| Community onboarding | IMPLEMENTED | `/community`, `/how-to-order`, `/join`, admission review and invitation-ready handoff | Final client-owned brand/rule copy; Clerk invitation execution remains manual |
+| Public Ready Stock | IMPLEMENTED | Published positive-stock queries, search/filter/sort, detail and empty states | `READY_STOCK_ORDER_RECORDING` policy |
+| Secret Catalog | IMPLEMENTED | Hashed access codes, grants, private catalog views, canonical order submission | Rate-limit/expiry policy and runtime proof |
+| Book Master | IMPLEMENTED | Publishers, books, variants, ISBN, prices, publication and Ready Stock state | Durable image upload; scale pagination |
+| Customer orders | IMPLEMENTED | Owned order list/detail, immutable item snapshots, edit boundary, source tracking | Runtime authenticated QA |
+| Batch PO and roster | IMPLEMENTED | Catalog links, item assignment, customer roster, purchase summary, lock and shipment history | Supplier costing/procurement automation |
+| Fulfillment tracking | IMPLEMENTED | Customer/admin shipment and forward-only fulfillment timelines | Runtime realtime QA |
+| Invoices and deposit | IMPLEMENTED | Issued invoice snapshots, append-only ledger, allocations, derived settlement | Final refund/deposit policy |
+| Manual payment confirmation | IMPLEMENTED | Customer submission, admin review, preserved evidence metadata and audit | Durable proof storage/payment gateway intentionally absent |
+| Defect and OOS | IMPLEMENTED | Item-level exception cases, partial quantity, review/resolution, history | Replacement/proof and supplier policy |
+| Cancellation | IMPLEMENTED | Customer request, deterministic eligibility, admin review/cancellation and race guards | Final cancellation/post-PO policy |
+| Refund obligation | PARTIAL | Auditable integer-IDR obligation derived without deleting payment/ledger history | Disbursement and settlement policy/implementation |
+| Customer dashboard | IMPLEMENTED | `/account` needs-attention, orders, invoices, deposit, exceptions, refund due | Authenticated Production QA |
+| Customer history | IMPLEMENTED | Bounded chronological projection from owned order, invoice, deposit and exception events | Additional event sources only when product need appears |
+| Customer profile and addresses | IMPLEMENTED | Owned CRUD with default-address invariant | Runtime QA |
+| Admin operational home | IMPLEMENTED | `/admin` actionable admission/order/batch/payment/exception/invoice queues | Global search and approved analytics |
+| Admin customer operations | IMPLEMENTED | `/admin/customers` and detail reuse active accounts and admin-authorized domain queries | Deposit-wide customer view after a safe direct query is justified |
+| Multi-admin | IMPLEMENTED | Admin/owner operational permissions and audited state transitions | Production concurrency evidence |
+| Audit foundation | IMPLEMENTED | Security, operational, payment and exception audit events | Dedicated audit-log UI remains backlog |
+| WhatsApp handoff | PARTIAL | Customer order/contact links and explicit communication boundary | Approved templates and semi-automatic per-customer sending |
+| Content management | NOT STARTED | Public content is repository-owned | Admin content editor and approval model |
+| Settings | NOT STARTED | Environment-owned configuration only | Approved settings scope and critical-setting permissions |
+| Reporting foundation | PARTIAL | Canonical orders, batches, invoices, payments and exceptions support future reporting | Report definitions/UI |
+| Excel export | NOT STARTED | No export endpoint or workbook generation | Post-V1 Reporting + Excel phase |
+| Analytics | NOT STARTED | No invented metrics or tracking | Approved measures, privacy policy and implementation |
 
-## Current priority
+## Production V1 decision boundary
 
-Continue product completion with Phase 06.5 customer dashboard and unified customer history. Stable staging remains the integrated gate after feature-complete beta.
+Reporting/Excel, Analytics, Content, and Settings do not block visual/product
+convergence unless the client marks them launch-critical. No row is promoted to
+implemented from mockup appearance alone.
 
-## Phase 06.4 policy boundary
-
-The exception workflow records operational facts, approvals, append-only
-financial adjustments, deposit releases, and refund obligations. It does not
-choose cancellation eligibility policy, execute cash/bank/gateway payouts,
-withdraw deposit cash, issue store credit, execute replacements, or create
-Ready Stock orders. Those rows remain `BLOCKED BY DECISION` or `PARTIAL` until
-the corresponding business policy is approved.
+The open policies in `context/OPEN_QUESTIONS.md` remain blocked by business
+decision. Production readiness additionally requires verified Production Clerk
+and canonical Convex/Vercel configuration.

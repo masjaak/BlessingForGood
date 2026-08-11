@@ -1,96 +1,41 @@
 # BFG Environment Matrix
 
-## Canonical Convex backend
-
-The canonical Convex account is `palevvi@gmail.com`. These identifiers are not
-secrets:
-
-```text
-BFG_CANONICAL_CONVEX_TEAM=palevvi
-BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
-BFG_CANONICAL_DEV=content-snake-214
-BFG_CANONICAL_PRODUCTION=clean-eel-522
-```
-
-A separate similarly named BFG project under another Convex account/team is a
-duplicate and is `NON-CANONICAL`: do not use, deploy, or configure it, and do
-not delete it automatically.
-
-Verify the Convex team, project, and deployment before every environment
-operation. If configuration fails, fix it; never create a new BFG project or a
-Preview-looking deployment manually.
-
-| Environment | Identity | Data source | Active fallback | Status |
+| Environment | Branch/use | Identity | Data source | Status |
 | --- | --- | --- | --- | --- |
-| Local development | Clerk when explicitly configured; local adapter only when explicitly enabled | canonical Convex Development `content-snake-214` or local adapter | explicit local fallback | allowed |
-| Feature Preview | Clerk Development only | none; do not create a Convex Preview deployment | none | prohibited active target |
-| BFG Staging | Clerk configuration appropriate for staging | not configured; no separate BFG Convex target is authorized | none | future integration gate; not configured |
-| Vercel Production | not configured | canonical Convex Production `clean-eel-522` | none | untouched |
+| Local development | deterministic implementation and QA | configured Clerk instance | canonical Convex Development `content-snake-214` | active development target |
+| Feature Preview | optional Git record only | not a release gate | no manually created Convex deployment | not required |
+| Staging | none for Production V1 | none | none | not required |
+| Vercel Production | `main` only | Clerk Production | canonical Convex Production `clean-eel-522` | pending release gate |
 
-## Branch model
+## Required names
 
-```text
-main
-= release / Production line
-
-develop
-= BFG integration line
-
-feat/*
-= implementation branches
-```
-
-Feature branches merge into `develop`. `main` remains untouched during
-product build. The eventual staging environment is sourced from approved
-`develop` integration state. Production only comes from an approved release.
-
-## Names only
-
-Local/Preview/Staging application names:
+Frontend/Vercel:
 
 ```text
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 CLERK_SECRET_KEY
 NEXT_PUBLIC_CONVEX_URL
-CONVEX_DEPLOYMENT
 CONVEX_DEPLOY_KEY
+```
+
+Convex Production:
+
+```text
 CLERK_JWT_ISSUER_DOMAIN
 BFG_OWNER_CLERK_USER_ID
 BFG_CATALOG_CODE_PEPPER
 ```
 
-`.env.example` contains names and placeholders only. `.env.local`, `.vercel/`,
-cookies, Playwright storage, deploy keys, and service secrets remain ignored.
+Values are secrets and must never be printed or committed. Production Clerk
+must use Production credentials and a verified Production domain. The Vercel
+Production deploy key must target `clean-eel-522`, not Development or Preview.
 
-## Legacy names
+## Runtime boundary
 
-`BFG_PREVIEW_ADMIN_ACCESS_CODE` is obsolete. `BFG_SESSION_TOKEN_PEPPER` and
-server `BFG_PREVIEW_DEMO_MODE` are legacy-only. The public
-`NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` flag is temporary presentation/feature
-configuration and is never identity or authorization.
+The application uses Convex whenever `NEXT_PUBLIC_CONVEX_URL` is a valid HTTP(S)
+URL. There is no browser-local product fallback and no prototype/Preview mode
+flag. Missing configuration fails closed with no business-data mutation.
 
-## State boundary
-
-Local development with a valid canonical Convex Development URL uses Clerk plus
-Convex. If the canonical team, project, or deployment cannot be verified,
-stop and fix configuration; do not select a similarly named project or create a
-new one. Feature Preview is not an active BFG environment: never create a
-Preview-looking deployment manually, and never use it as a fallback for local
-development or Production.
-
-Phase 05.1 follows the same boundary: local and Convex Development validation
-use the canonical Development deployment; real Clerk payment-review, browser,
-realtime, log, and cleanup evidence belongs to the one stable staging gate.
-
-Phase 06.2 follows the same boundary: local admission tests and build are
-complete; public join, authenticated admin review, Clerk invitation acceptance,
-and runtime evidence remain deferred to stable staging. No Preview-looking
-deployment is required or authorized.
-
-Phase 06.4 follows the same boundary: local exception and financial invariant
-tests use isolated fixtures and do not seed business data. Canonical Convex
-Development remains the only authorized backend. If codegen or environment
-access fails, stop that operation rather than selecting another project.
-Exception browser, realtime, multi-admin race, Clerk ownership, and payout
-policy evidence belong to stable staging; Production and `main` remain
-untouched.
+Before environment-sensitive operations, verify the selected Convex account,
+team, project, and both canonical deployments. Ambiguous access stops only that
+operation; never create or switch projects automatically.
