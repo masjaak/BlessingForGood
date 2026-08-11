@@ -1,3 +1,4 @@
+import { BrandMascot } from "@/components/brand";
 import { Card, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
@@ -8,10 +9,11 @@ export default function HelpPage() {
         <PageHeader
           eyebrow="Help foundation"
           title="Start with the detail you already have."
-          description="This prototype keeps help concise while production support content is still being shaped."
+          description="Temukan jalur cepat untuk katalog, pesanan, akun, dan bantuan dari admin BFG."
         />
         <div className="content-stack">
-          <Card>
+          <Card className="communication-card">
+            <BrandMascot variant="warm" className="guide-mascot" />
             <span className="card-kicker">Access</span>
             <h2>Catalog access is separate.</h2>
             <p>A catalog access code unlocks one private catalog. It is not a customer account password.</p>

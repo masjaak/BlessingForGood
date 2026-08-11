@@ -1,6 +1,104 @@
 # Decisions
 
-No new final product, business, security, database, or visual decisions were approved by this implementation run.
+## Canonical Convex backend correction
+
+- The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and
+  project is `blessingforgood`. The development reference is `dev/masjak`.
+
+  ```text
+  BFG_CANONICAL_CONVEX_TEAM=palevvi
+  BFG_CANONICAL_CONVEX_PROJECT=blessingforgood
+  BFG_CANONICAL_DEV=content-snake-214
+  BFG_CANONICAL_PRODUCTION=clean-eel-522
+  ```
+
+- Only this project is authorized for active BFG development. A separate
+  similarly named project under another Convex account/team is a duplicate and
+  is `NON-CANONICAL`: do not use, deploy, or configure it, and do not delete it
+  automatically.
+- Configuration failure is a blocker. Never create a new BFG Convex project,
+  use a similarly named BFG project, or create a Preview-looking deployment
+  manually. Verify the Convex team, project, and deployment before every
+  environment operation.
+
+Phase 06.1 records the following approved implementation decisions:
+
+- Book Master is reusable metadata; Secret Catalog is private curation/access;
+  Ready Stock is public per-variant availability. These are not parallel book models.
+- Variants own format, globally unique ISBN, and positive integer IDR price.
+- Books use draft, published, special/private, and archived publication states.
+  Only published books with active positive-stock variants are publicly readable.
+- Ready Stock quantity is a separate non-negative per-variant record.
+- Global book slugs support `/ready-stock/[slug]`.
+- `READY_STOCK_ORDER_RECORDING` remains open; Phase 06.1 uses a contact/help CTA
+  and implements no checkout, reservation, or sale transition.
+- Cover metadata remains a reference; durable upload/storage is deferred.
+
+Phase 06.2 records the following approved admission decisions:
+
+- `/join` creates a durable Convex `joinRequests` record, not a Clerk account
+  or fake `appUsers` row. Approval only makes manual invitation handoff
+  eligible.
+- Active normalized email/contact duplicates are blocked generically while
+  rejected history remains preserved for a later resubmission.
+- Review is `submitted → under_review → approved/rejected`, forward-only, with
+  authenticated admin/owner actor and audit events. Invitation acceptance and
+  account linking remain outside this phase.
+
+Phase 06.3 records the following approved operations decisions:
+
+- Existing `batches.currentShipmentStage` remains the only batch state
+  machine. An unset stage is editable; `po_closed` and later stages lock
+  catalog links and roster assignment changes.
+- The roster is a server-derived operational projection from orders, order
+  items, assignments, and linked catalogs. It does not duplicate ownership or
+  create a second order system.
+- Admin-assisted orders are allowed only for existing active customer
+  `appUsers`, use `orders.source=admin_assisted`, derive price and ownership
+  server-side, and enter the canonical order/item/invoice pipeline.
+- Non-account manual customers, fake identities, supplier costs, supplier
+  procurement automation, and arbitrary price overrides are not implemented.
+
+Phase 06.4 records the following safe exception-domain decisions:
+
+- `orderExceptions` is the canonical item-level operational exception record.
+  Original order items, issued invoice items, approved payment confirmations,
+  and deposit ledger rows remain historical records and are never deleted or
+  rewritten to resolve an exception.
+- Customer cancellation is always a request. The server-side eligibility
+  boundary may allow a request or require admin review; it rejects fulfilled,
+  already-cancelled, or actively-conflicted items. Admin approval is required
+  before any resolution or financial effect.
+- v0.1 supports only `remove_item`, `deposit_release`, `refund_required`, and
+  `no_action` resolutions. Replacement execution, store-credit issuance, cash
+  payout, withdrawal, gateway reversal, and refund settlement are not
+  implemented because their business policies are not approved.
+- Partial quantities are supported. An exception blocks only its affected
+  quantity; the original `orderItems.quantity` remains unchanged and the
+  remaining quantity stays eligible for normal operations.
+- Invoice adjustments are append-only exception financial records. Issued
+  invoice snapshots retain the original total and expose a derived adjusted
+  total, outstanding amount, overpayment, and refund obligation. Refund
+  obligation is recorded only; no money movement is performed.
+- `deposit_release` reuses existing allocation release semantics and is
+  idempotent through active-allocation state. It releases the invoice's active
+  reservations as one explicit operational choice; it does not withdraw cash.
+- Ready Stock still does not create canonical orders. Exception records apply
+  only to canonical `orders` and `orderItems`.
+
+Phase 04.1 records the following approved implementation decisions:
+
+- Clerk Development is the identity provider; Convex owns BFG roles,
+  permissions, ownership, and suspension.
+- Restricted Mode keeps account admission invite-only; public UX exposes only
+  `Masuk` as the account CTA.
+- `appUsers` is the server-side identity mapping keyed by verified Clerk
+  subject; the owner bootstrap subject is server-only.
+- Active Preview must use Clerk identity only. Legacy prototype sessions are
+  isolated and disabled.
+
+The remaining prototype decisions below are historical and do not override the
+Phase 04.1 identity boundary.
 
 The following implementation choices are prototype-only and are recorded in `PROTOTYPE_ASSUMPTIONS.md`:
 

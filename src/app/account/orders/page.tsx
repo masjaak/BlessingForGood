@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { isCatalogOpen, orderStatusLabels } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { useProduct } from "@/domain/prototype/store";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 
 function EditOrderForm({ orderId }: { orderId: string }) {
-  const { state, editOrder } = usePrototype();
+  const { state, editOrder } = useProduct();
   const order = state.orders.find((candidate) => candidate.id === orderId);
   const catalog = order && state.catalogs.find((candidate) => candidate.id === order.catalogId);
   const [name, setName] = useState(order?.customerName || "");
@@ -18,7 +18,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
   );
   const [message, setMessage] = useState("");
   if (!order || !catalog || order.status !== "submitted" || !isCatalogOpen(catalog))
-    return <p className="subtle">This preorder is locked after submission stage or catalog close.</p>;
+    return <p className="subtle">Preorder tidak dapat diubah setelah tahap pemrosesan dimulai atau katalog ditutup.</p>;
   const editableOrder = order;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -33,17 +33,17 @@ function EditOrderForm({ orderId }: { orderId: string }) {
           quantity: quantities[item.variantId] || 0,
         })),
       });
-      setMessage(`Updated ${updated.id}.`);
+      setMessage(`Pesanan ${updated.id} diperbarui.`);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Preorder could not be edited");
+      setMessage(reason instanceof Error ? reason.message : "Preorder belum dapat diperbarui");
     }
   }
 
   return (
     <details className="edit-order">
-      <summary>Edit before catalog close</summary>
+      <summary>Ubah sebelum katalog ditutup</summary>
       <form className="form-card" onSubmit={handleSubmit}>
-        <Field label="Name">
+        <Field label="Nama">
           <input className="input" value={name} onChange={(event) => setName(event.target.value)} required />
         </Field>
         <Field label="Email">
@@ -63,7 +63,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
             />
           </Field>
         ))}
-        <Button type="submit">Save preorder changes</Button>
+        <Button type="submit">Simpan perubahan</Button>
         {message ? (
           <span className="subtle" role="status">
             {message}
@@ -75,24 +75,24 @@ function EditOrderForm({ orderId }: { orderId: string }) {
 }
 
 function CustomerOrders() {
-  const { state } = usePrototype();
+  const { state } = useProduct();
   return (
     <div className="page narrow-page">
       <PageHeader
-        eyebrow="Order status"
-        title="Keep the next step close."
-        description="This account foundation shows orders recorded in the local prototype. Production account ownership is not enabled yet."
+        eyebrow="Pesanan saya"
+        title="Ikuti langkah berikutnya dengan mudah."
+        description="Setiap pesanan menyimpan pilihan buku, harga, status, dan perjalanan terbaru khusus untuk akunmu."
         actions={
           <LinkButton href="/catalog" variant="secondary">
-            Back to catalog
+            Kembali ke katalog
           </LinkButton>
         }
       />
       {state.orders.length === 0 ? (
         <EmptyState
-          title="No orders yet"
-          description="Once a preorder is recorded, its stage and price snapshot will stay visible here."
-          action={<LinkButton href="/catalog">Browse a catalog</LinkButton>}
+          title="Belum ada pesanan"
+          description="Pesananmu akan tampil di sini setelah berhasil dicatat."
+          action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
         />
       ) : (
         <div className="content-stack">
@@ -111,6 +111,9 @@ function CustomerOrders() {
                 </span>
                 <Money amount={order.total} />
               </div>
+              <LinkButton href={`/account/orders/${order.id}`} variant="secondary">
+                Lihat detail & tracking
+              </LinkButton>
               <EditOrderForm orderId={order.id} />
               <ul className="timeline">
                 {order.statusHistory.map((event) => (
@@ -123,7 +126,7 @@ function CustomerOrders() {
                   </li>
                 ))}
               </ul>
-              <p className="subtle">WhatsApp remains the communication handoff; the website is the order record.</p>
+              <p className="subtle">Detail dan status pesanan tersimpan di akun BFG-mu.</p>
             </Card>
           ))}
         </div>
@@ -135,9 +138,9 @@ function CustomerOrders() {
 export default function CustomerOrdersPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <ProductAccessGuard requiredRole="customer">
         <CustomerOrders />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

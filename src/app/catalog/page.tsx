@@ -1,14 +1,14 @@
 import { CustomerCatalog } from "@/components/customer-catalog";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 
 export default function CatalogPage() {
   return (
     <SiteShell>
       <div className="page">
-        <PrototypeModeGuard>
+        <ProductAccessGuard>
           <CustomerCatalog />
-        </PrototypeModeGuard>
+        </ProductAccessGuard>
       </div>
     </SiteShell>
   );

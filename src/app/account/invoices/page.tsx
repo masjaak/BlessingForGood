@@ -1,78 +1,92 @@
 "use client";
 
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { calculateDepositRequired, calculateLedgerBalance, formatIdr } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { formatIdr } from "@/domain/prototype/logic";
+import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
+import { useOperations } from "@/domain/prototype/operations-context";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 
-function CustomerInvoices() {
-  const { state } = usePrototype();
+function PersistentCustomerInvoices() {
+  const { customerInvoiceList } = useOperations();
+  const invoices = customerInvoiceList?.page || [];
+  if (!customerInvoiceList) return <div className="state-panel">Menyiapkan invoice…</div>;
   return (
     <div className="page narrow-page">
       <PageHeader
-        eyebrow="Invoice status"
-        title="Know what is due, without guessing."
-        description="Invoice totals come from recorded order snapshots. Deposit requirements remain unset until an admin intentionally defines them."
+        eyebrow="Invoice & deposit"
+        title="Lihat jumlah yang perlu diselesaikan."
+        description="Invoice, alokasi deposit, pembayaran terverifikasi, dan sisa tagihan selalu ditampilkan dari catatan BFG terbaru."
         actions={
           <LinkButton href="/account/orders" variant="secondary">
-            View order status
+            Lihat pesanan
           </LinkButton>
         }
       />
-      {state.invoices.length === 0 ? (
+      {invoices.length === 0 ? (
         <EmptyState
-          title="No invoices yet"
-          description="Your invoice will appear here after an admin issues it for a recorded order."
-          action={<LinkButton href="/catalog">Browse a catalog</LinkButton>}
+          title="Belum ada invoice"
+          description="Invoice akan tampil setelah admin menerbitkannya untuk pesananmu."
+          action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
         />
       ) : (
         <div className="content-stack">
-          {state.invoices.map((invoice) => {
-            const required = calculateDepositRequired(invoice.total, invoice.depositRequirement);
-            const balance = calculateLedgerBalance(invoice.transactions);
-            return (
-              <Card key={invoice.id}>
-                <div className="split-heading">
-                  <div>
-                    <span className="card-kicker">{invoice.id}</span>
-                    <h2>{formatIdr(invoice.total)}</h2>
-                  </div>
-                  <StatusBadge tone={balance >= required ? "positive" : "warning"}>
-                    {balance >= required ? "Deposit met" : required ? "Deposit open" : "Awaiting requirement"}
-                  </StatusBadge>
+          {invoices.map((invoice) => (
+            <Card key={invoice.invoiceId}>
+              <div className="split-heading">
+                <div>
+                  <span className="card-kicker">{invoice.invoiceNumber}</span>
+                  <h2>{formatIdr(invoice.totalAmount)}</h2>
                 </div>
-                {invoice.items.map((item) => (
-                  <div className="summary-line" key={item.id}>
-                    <span>
-                      {item.quantity} × {item.description}
-                    </span>
-                    <Money amount={item.subtotal} />
-                  </div>
-                ))}
-                <div className="summary-line">
-                  <span>Deposit requirement</span>
-                  <strong>{required ? formatIdr(required) : "Not set"}</strong>
+                <StatusBadge tone={invoice.status === "issued" ? "positive" : "warning"}>
+                  {invoiceStatusLabel(invoice.status)}
+                </StatusBadge>
+              </div>
+              {invoice.items.map((item) => (
+                <div className="summary-line" key={item.invoiceItemId}>
+                  <span>
+                    {item.quantity} × {item.description}
+                  </span>
+                  <Money amount={item.subtotalAmount} />
                 </div>
-                <div className="summary-line">
-                  <span>Recorded ledger balance</span>
-                  <strong>{formatIdr(balance)}</strong>
-                </div>
-              </Card>
-            );
-          })}
+              ))}
+              <div className="summary-line">
+                <span>Deposit yang diperlukan</span>
+                <strong>{formatIdr(invoice.depositRequiredAmount)}</strong>
+              </div>
+              <div className="summary-line">
+                <span>Deposit teralokasi · sisa tagihan</span>
+                <strong>
+                  {formatIdr(invoice.allocatedDepositAmount)} · {formatIdr(invoice.outstandingAmount)}
+                </strong>
+              </div>
+              <div className="summary-line">
+                <span>Status pembayaran · terverifikasi</span>
+                <strong>
+                  {invoicePaymentStatusLabel(invoice.paymentStatus)} · {formatIdr(invoice.verifiedPaymentAmount)}
+                </strong>
+              </div>
+              <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">
+                Buka invoice dan riwayat
+              </LinkButton>
+            </Card>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
+function CustomerInvoices() {
+  return <PersistentCustomerInvoices />;
+}
+
 export default function CustomerInvoicesPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard>
+      <ProductAccessGuard requiredRole="customer">
         <CustomerInvoices />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

@@ -8,3 +8,7 @@ coverage/
 .env
 .env.*
 !.env.example
+.vercel/
+test-results/
+playwright-report/
+artifacts/browser-qa/

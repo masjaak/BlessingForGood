@@ -3,7 +3,7 @@ export const BOOK_FORMATS = ["BB", "PB", "HB"] as const;
 export type BookFormat = (typeof BOOK_FORMATS)[number];
 export type CatalogStatus = "open" | "closed";
 export type Availability = "available" | "unavailable";
-export type OrderSource = "preorder" | "ready_stock";
+export type OrderSource = "preorder" | "ready_stock" | "admin_assisted";
 export type DepositRequirement =
   { kind: "fixed"; amount: number } | { kind: "percentage"; value: number } | { kind: "unset" };
 
@@ -73,6 +73,7 @@ export interface OrderStatusEvent {
 
 export interface Order {
   id: string;
+  customerUserId?: string;
   catalogId: string;
   customerName: string;
   customerEmail: string | null;

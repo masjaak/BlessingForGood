@@ -4,20 +4,25 @@ All entries below are `prototype-only`. They are reversible implementation choic
 
 ## PA-001 — Secret catalog access code
 
+Status: local-adapter assumption retained for fallback; the active Convex path is governed by PA-007.
+
 - Area: catalog access
 - Reason: the production context pack is absent from the canonical repository.
-- Temporary behavior: one access code unlocks one catalog; only a SHA-256 hash is stored in the prototype state.
+- Temporary behavior: one access code unlocks one catalog; the local adapter stores its existing hash, while Convex
+  uses a server-keyed catalog-specific digest and never returns plaintext.
 - Trade-off: the local adapter is not a production identity or rate-limit system.
 - Replacement trigger: Convex and approved access-code security rules are restored.
 - Affected files: `src/domain/prototype/*`, `src/app/catalog/page.tsx`
 
 ## PA-002 — Local development adapter
 
+Status: fallback retained; Convex is now primary whenever a valid development or Preview URL is configured.
+
 - Area: persistence
-- Reason: no Convex deployment credentials are present.
+- Reason: the local fallback remains useful for isolated UI work even though Convex development and Preview are configured.
 - Temporary behavior: browser local storage is used only when `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true`.
 - Trade-off: data is local to one browser and is not production-safe.
-- Replacement trigger: Convex development environment is configured.
+- Replacement status: satisfied for the active Convex development/Preview path; fallback remains explicit and local only.
 - Affected files: `src/domain/prototype/store.tsx`
 
 ## PA-003 — Admin prototype identity
@@ -46,3 +51,94 @@ All entries below are `prototype-only`. They are reversible implementation choic
 - Trade-off: payment verification remains a foundation only.
 - Replacement trigger: approved deposit and payment rules are restored.
 - Affected files: `src/domain/prototype/types.ts`, `src/domain/prototype/logic.ts`
+
+## PA-006 — Guarded Preview Demo Mode
+
+Status: superseded for active Vercel Preview persistence by PA-007; the public flag remains the Preview capability
+indicator and local fallback guard.
+
+- Area: Preview usability
+- Reason: browser QA needs the existing local adapter, but Vercel Preview builds use production `NODE_ENV`.
+- Temporary behavior: browser-local prototype persistence is enabled only when
+  `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE=true` and the server marks the deployment as `VERCEL_ENV=preview`.
+- Trade-off: this is a QA-only capability, not authentication or production access. With Convex configured, Preview
+  data is shared by the isolated Convex Preview deployment rather than browser-local.
+- Safety boundary: Production rejects the same public flag because the server Preview boundary is false there.
+- Validation: [SUPERSEDED] the browser-local flow passed before Convex migration; the active shared Preview flow is
+  validated under PA-007.
+- Replacement trigger: Convex and Clerk development/test environments are restored.
+- Affected files: `src/app/layout.tsx`, `src/domain/prototype/store.tsx`, `src/lib/environment.ts`.
+
+## PA-007 — Convex Preview prototype persistence
+
+Status: historical and superseded for active development. Do not create or use
+Convex Preview deployments; active development uses the canonical Convex
+Development deployment documented in `context/integrations/CONVEX.md`.
+
+- Area: Phase 03.1 persistence and identity boundary
+- Reason: the approved vertical slice needs shared Preview data before Clerk is available.
+- Temporary behavior: Convex Preview stores catalog and preorder records; anonymous browser sessions are represented by
+  expiring server-side token digests, and admin access requires a server-verified Preview code.
+- Safety boundary: this capability is enabled only by Convex Preview configuration. It is not authentication,
+  Production authorization, or a substitute for Clerk.
+- Migration behavior: existing browser-local records are never uploaded or merged automatically; Convex deployments
+  start empty.
+- Validation: [PREVIEW VERIFIED] `56/56` Playwright tests passed, including reload persistence, cross-browser admin
+  visibility, second-customer isolation, and zero-data cleanup.
+- Replacement trigger: Clerk and approved Production authorization are implemented.
+- Affected files: `convex/`, `src/domain/prototype/`, and the Convex/Vercel Preview configuration.
+
+## PA-008 — Shipment stage progression
+
+Status: prototype-only
+
+- Area: batch tracking
+- Temporary behavior: shipment stages are `po_closed`, `ordered_to_supplier`, `shipped_internationally`, `customs`, `to_indonesia_warehouse`, and `at_store`.
+- Guard: progression is forward-only; skipped forward movement requires explicit admin confirmation; backward correction is deferred.
+
+## PA-009 — Fulfillment stage progression
+
+Status: prototype-only
+
+- Area: order fulfillment
+- Temporary behavior: fulfillment stages are `awaiting_payment`, `awaiting_address`, `packing`, `shipped`, and `completed`.
+- Guard: progression is forward-only; correction workflow is deferred.
+
+## PA-010 — Invoice scope
+
+Status: prototype-only
+
+- Area: invoices
+- Temporary behavior: invoice items use authoritative order snapshots, currency is IDR, and no shipping, customs, exchange-rate, tax, discount, or arbitrary manual line is calculated.
+
+## PA-011 — Deposit requirement
+
+Status: prototype-only
+
+- Area: invoice requirements
+- Temporary behavior: admin explicitly selects `none`, `fixed`, or `percentage`; percentage values are integer basis points from 0 to 10000 and round to the nearest whole Rupiah.
+- Guard: no universal default percentage and no floating-point persistence.
+
+## PA-012 — Deposit allocation
+
+Status: prototype-only
+
+- Area: customer deposit
+- Temporary behavior: credit increases available balance, allocation reserves it against an invoice, release returns it, and invoice outstanding is derived from allocated amount.
+- Boundary: allocation is not payment-gateway settlement.
+
+## PA-013 — Financial corrections
+
+Status: prototype-only
+
+- Area: deposit ledger
+- Temporary behavior: transactions are append-only; correction inserts one inverse reversal referencing the original transaction.
+- Guard: an original transaction can be reversed once; a reversal cannot reverse another reversal.
+
+## PA-014 — Prototype invoice numbering
+
+Status: prototype-only
+
+- Area: invoice identity
+- Temporary behavior: the invoice number is `BFG-YYYYMM-<full Convex invoice id>`, generated after the unique invoice document id exists inside one mutation.
+- Trade-off: this is collision-safe for the prototype and is not final production accounting policy.

@@ -1,3 +1,9 @@
-export function isPrototypeMode(env: Record<string, string | undefined>): boolean {
-  return env.NODE_ENV === "development" && env.NEXT_PUBLIC_BFG_PROTOTYPE_MODE === "true";
+export function isValidBackendUrl(value: string | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
