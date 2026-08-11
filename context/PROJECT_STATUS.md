@@ -2,9 +2,11 @@
 
 ## Production UI alignment hotfix
 
-**Status:** PUBLIC VISUAL CORRECTION COMPLETE — AUTHENTICATED VISUAL QA BLOCKED
+**Status:** LOCAL RELEASE CANDIDATE READY — PRODUCTION BLOCKED BY EXTERNAL AUTH/ENVIRONMENT CONFIGURATION
 
 **Branch:** `hotfix/production-ui-alignment-v1`
+
+**Release candidate:** `27a9463` (`fix: stabilize production auth rendering`)
 
 **Functional source of truth:** current remote `main`, forward-integrated with
 the existing `release/production-v1` product history because remote `main`
@@ -54,11 +56,12 @@ guidance are reflected in the local coverage matrices.
 
 ### Production boundary
 
-`main` and Vercel Production remain untouched. Local authenticated QA reports a
-Clerk instance-key mismatch, and the current CLI identity cannot access canonical
-Convex Development `content-snake-214`; account/admin content therefore cannot
-receive rendered visual approval. No alternate project, dummy business data,
-Preview, or staging deployment is used.
+`main` and Vercel Production remain untouched by design. Vercel Production has
+zero environment variables; no matching Clerk Production pair, owned domain,
+or canonical Convex Production deploy key/configuration is available. Public
+rendered QA and local deterministic gates pass; authenticated customer/admin
+rendered acceptance and Production smoke remain blocked. No alternate project,
+dummy business data, Preview delivery, or staging deployment is used.
 
 ## Canonical Convex
 
@@ -86,7 +89,8 @@ environment-sensitive operation instead of switching or creating a project.
   before an explicit readiness report.
 - **Open questions:** final customer-owned brand copy, unresolved business
   policies, Reporting/Excel, Analytics, and Ready Stock order recording.
-- **Current priority:** restore matching Clerk credentials and canonical Convex
-  access for authenticated screenshot QA.
-- **Next action:** fix that single environment chain, rerun customer/admin
-  screenshots, then report merge readiness without changing `main` first.
+- **Current priority:** configure one matching Clerk Production → canonical
+  Convex Production → Vercel Production environment chain.
+- **Next action:** after that external configuration is complete, rerun
+  authenticated customer/admin screenshots and Production smoke; only then
+  merge the approved candidate into `main` and push `main`.

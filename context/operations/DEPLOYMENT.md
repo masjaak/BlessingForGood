@@ -5,11 +5,11 @@
 ```text
 feature implementation
 → deterministic local QA
-→ develop integration
-→ release/production-v1 convergence
-→ deterministic release QA
-→ readiness report
-→ approved merge to main
+→ authenticated Production-environment QA
+→ rendered/mockup acceptance
+→ functional release gates
+→ merge to main
+→ push main
 → Vercel Production
 ```
 
@@ -44,8 +44,8 @@ and all required server-only names. Never reveal values.
 - canonical Convex Production target and required names verified
 - prior main SHA and prior Vercel Production deployment recorded
 
-Only after reporting `PRODUCTION_READY` may the user approve the merge to
-`main`. The agent does not push `main` automatically.
+Only after every release gate is green may the approved candidate be merged
+into and pushed from `main`. A Preview or staging result is not completion.
 
 ## Rollback
 

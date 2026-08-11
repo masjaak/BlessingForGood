@@ -21,6 +21,22 @@
   manually. Verify the Convex team, project, and deployment before every
   environment operation.
 
+## Production V1 workflow decisions
+
+The following historical workflow decisions are **SUPERSEDED** for the
+Production V1 release:
+
+- Preview is a mandatory release gate.
+- Staging is required before every Production update.
+- A hotfix-branch Preview is acceptable final delivery.
+- Prototype runtime can represent customer progress.
+- Tests alone prove visual acceptance.
+
+The current decisions are: PRD/mockup plus rendered UI are acceptance
+criteria; `main` is the sole Production Git line; Production is the
+client-visible delivery; business dummy data remains zero; and functional and
+visual gates are both required.
+
 Phase 06.1 records the following approved implementation decisions:
 
 - Book Master is reusable metadata; Secret Catalog is private curation/access;

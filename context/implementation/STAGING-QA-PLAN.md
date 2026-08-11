@@ -1,5 +1,9 @@
 # BFG Stable Staging QA Plan
 
+> **SUPERSEDED for Production V1 (2026-08-11).** Retained as historical
+> planning context only. Production V1 uses rendered local/Production QA and
+> `main` → Vercel Production; staging is not a release gate.
+
 ## Objective
 
 Provide the single integration gate for Phase 04.1 and Phase 05.1 after

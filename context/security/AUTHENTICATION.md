@@ -61,6 +61,7 @@ re-login.
 - [CONVEX VERIFIED] Synthetic `withIdentity` tests cover missing identity,
   owner bootstrap, customer default, idempotency, suspension, and legacy
   rejection.
-- [BLOCKED] Real browser sign-in, invitation acceptance, and a runtime
-  `ctx.auth.getUserIdentity()` proof against current Preview are not claimed
-  until isolated Preview QA is run.
+- [BLOCKED] Real Production browser sign-in, invitation acceptance, and a
+  runtime `ctx.auth.getUserIdentity()` proof are not claimed until the
+  matching Production Clerk instance/domain and canonical Convex Production
+  configuration are supplied. Preview is not an acceptance gate.

@@ -2,12 +2,10 @@
 
 ## Production V1 release blockers
 
-- [PRODUCTION VISUAL BLOCKER] Local Clerk reports that publishable and secret
-  keys do not match the same instance; after owner sign-in, canonical Convex
-  provisioning remains at `Menyiapkan akun BFG…`. Restore one matching Clerk
-  configuration and this operator's access to canonical Development
-  `content-snake-214`, then rerun authenticated customer/admin screenshots. Do
-  not switch Convex project or add demo data.
+- [PRODUCTION VISUAL BLOCKER] Authenticated customer/admin rendered acceptance
+  is blocked until one matching Clerk Production instance/domain and canonical
+  Convex Production configuration are supplied. Do not use Development keys,
+  switch Convex projects, or add demo data.
 
 - [PRODUCTION BLOCKER] The linked Vercel project has zero Production environment
   variables. Complete one Production-environment setup with a Clerk Production
@@ -17,7 +15,8 @@
   Do not merge `main` until names-only preflight passes.
 - [ENVIRONMENT ACCESS] Names-only Convex checks for `content-snake-214` and
   `clean-eel-522` were denied. The operation stopped without switching account,
-  selecting another project, or creating a deployment.
+  selecting another project, or creating a deployment. Production still needs
+  a deploy key for canonical `clean-eel-522`.
 - [CONTENT APPROVAL] Final brand story, community promise, support details, and
   customer rules remain client-owned copy. Current text is concise product copy,
   not a new business promise.
