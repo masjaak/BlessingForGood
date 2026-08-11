@@ -45,7 +45,7 @@ guidance are reflected in the local coverage matrices.
 
 ### Current validation
 
-- Vitest: 92/92
+- Vitest: 93/93
 - Convex: 61/61
 - Playwright responsive route smoke: 108/108 PASS
 - Formatting: PASS
@@ -53,6 +53,22 @@ guidance are reflected in the local coverage matrices.
 - TypeScript: PASS
 - Next.js build: PASS (25 pages)
 - `git diff --check`: PASS
+
+### Customer experience finalization V1
+
+- Inspected all eight local customer/mobile mockups under
+  `public/mockups/mobile/` and documented their exact paths, visual rules,
+  route parents, and brand asset relationships.
+- Aligned the customer shell to the local mobile information architecture:
+  five-item signed-in bottom navigation, safe-area/content offset, customer
+  mobile menu links, and BFG-styled Clerk appearance.
+- Public customer screenshots pass at 375, 390, 430, 768, and 1440 widths;
+  the Ready Stock zero state remains intentionally empty and mascot-led.
+- Authenticated account screenshot acceptance remains blocked by the existing
+  matching Clerk/Convex environment requirement. No dummy business records or
+  test production fixtures were created.
+- Admin visual refinement is deferred; admin route regression remains covered
+  by the full Playwright suite.
 
 ### Production boundary
 

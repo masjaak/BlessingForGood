@@ -228,6 +228,9 @@ p {
   color: var(--ink-muted);
   font-size: 0.86rem;
 }
+.customer-bottom-nav {
+  display: none;
+}
 .site-nav a {
   padding: 8px 4px;
   border-bottom: 2px solid transparent;
@@ -1491,32 +1494,52 @@ p {
     justify-self: end;
   }
   .customer-nav {
+    display: none;
+  }
+  .customer-bottom-nav {
     position: fixed;
     z-index: var(--z-header);
     right: 0;
     bottom: 0;
     left: 0;
+    display: flex;
     justify-content: space-around;
-    gap: 4px;
-    padding: 7px max(10px, calc((100vw - var(--content)) / 2));
+    gap: 2px;
+    padding: 7px max(10px, calc((100vw - var(--content)) / 2)) env(safe-area-inset-bottom);
     border-top: 1px solid var(--line);
     background: rgb(251 247 238 / 97%);
     box-shadow: 0 -8px 24px rgb(31 50 41 / 8%);
-    font-size: 0.7rem;
     backdrop-filter: blur(10px);
   }
-  .customer-nav a {
+  .customer-bottom-nav a {
     display: inline-flex;
     flex: 1;
-    min-height: 48px;
+    min-width: 0;
+    min-height: 58px;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 7px 3px;
+    gap: 3px;
+    padding: 5px 2px;
+    color: #756b5c;
+    border-radius: var(--radius-sm);
+    font-size: 0.68rem;
+    font-weight: 700;
     text-align: center;
   }
-  .customer-nav-extra,
-  .customer-nav .admin-shell-link {
-    display: none;
+  .customer-bottom-nav a:hover {
+    color: var(--accent-dark);
+  }
+  .customer-bottom-nav a[aria-current="page"] {
+    color: var(--accent);
+    background: rgb(223 234 223 / 48%);
+  }
+  .customer-bottom-nav svg {
+    width: 23px;
+    height: 23px;
+  }
+  .customer-shell-signed-in > main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
 }
 
@@ -1525,6 +1548,11 @@ p {
   .site-footer,
   .page {
     width: min(calc(100% - 28px), var(--content));
+  }
+  .customer-shell .site-header,
+  .customer-shell .site-footer,
+  .customer-shell .page {
+    width: min(calc(100% - 32px), var(--content));
   }
   .site-header {
     padding: 4px 0;

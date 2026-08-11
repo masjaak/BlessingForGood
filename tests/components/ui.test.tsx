@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
@@ -7,13 +7,18 @@ import { BrandLogo, BrandMascot } from "@/components/brand";
 import { LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
+import { useAuth } from "@clerk/nextjs";
 
 vi.mock("@clerk/nextjs", () => ({
   SignInButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
   SignUpButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
   UserButton: () => <button aria-label="User profile" type="button" />,
-  useAuth: () => ({ isLoaded: true, isSignedIn: false }),
+  useAuth: vi.fn(() => ({ isLoaded: true, isSignedIn: false })),
 }));
+
+beforeEach(() => {
+  vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
+});
 
 describe("public UI foundation", () => {
   it("renders one accessible page heading and named navigation links", () => {
@@ -96,5 +101,18 @@ describe("public UI foundation", () => {
       </ProductContext.Provider>,
     );
     expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
+  });
+
+  it("renders the mockup-aligned customer bottom navigation for signed-in customers", () => {
+    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
+    render(<SiteShell>Customer content</SiteShell>);
+
+    const navigation = screen.getByRole("navigation", { name: "Navigasi customer" });
+    expect(
+      within(navigation)
+        .getAllByRole("link")
+        .map((link) => link.textContent?.trim()),
+    ).toEqual(["Beranda", "Katalog", "Buku Saya", "Tagihan", "Akun"]);
+    expect(within(navigation).getByRole("link", { name: "Katalog" }).getAttribute("href")).toBe("/catalog");
   });
 });

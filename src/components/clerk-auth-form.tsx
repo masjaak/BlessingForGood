@@ -6,6 +6,17 @@ import { useSyncExternalStore } from "react";
 const noSubscribe = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
+const bfgClerkAppearance = {
+  variables: {
+    colorPrimary: "#1c563f",
+    colorText: "#1a3027",
+    colorTextSecondary: "#627168",
+    colorBackground: "#fffdf9",
+    colorInputBackground: "#fffdf9",
+    borderRadius: "12px",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+};
 
 export function ClerkAuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const mounted = useSyncExternalStore(noSubscribe, clientSnapshot, serverSnapshot);
@@ -18,8 +29,8 @@ export function ClerkAuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     );
 
   return mode === "sign-in" ? (
-    <SignIn path="/sign-in" routing="path" fallbackRedirectUrl="/catalog" />
+    <SignIn path="/sign-in" routing="path" fallbackRedirectUrl="/catalog" appearance={bfgClerkAppearance} />
   ) : (
-    <SignUp path="/sign-up" routing="path" fallbackRedirectUrl="/catalog" />
+    <SignUp path="/sign-up" routing="path" fallbackRedirectUrl="/catalog" appearance={bfgClerkAppearance} />
   );
 }
