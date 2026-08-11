@@ -101,13 +101,13 @@ function CustomerOrders() {
               <div className="split-heading">
                 <div>
                   <span className="card-kicker">{order.id}</span>
-                  <h2>{order.items[0]?.bookTitle || "Order"}</h2>
+                  <h2>{order.items[0]?.bookTitle || "Pesanan BFG"}</h2>
                 </div>
                 <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
               </div>
               <div className="summary-line">
                 <span>
-                  {order.customerName} · {order.items.reduce((total, item) => total + item.quantity, 0)} items
+                  {order.customerName} · {order.items.reduce((total, item) => total + item.quantity, 0)} item
                 </span>
                 <Money amount={order.total} />
               </div>
@@ -121,7 +121,7 @@ function CustomerOrders() {
                     <span className="timeline-dot" aria-hidden="true" />
                     <div>
                       <strong>{orderStatusLabels[event.status]}</strong>
-                      <time dateTime={event.at}>{new Date(event.at).toLocaleString("en-GB")}</time>
+                      <time dateTime={event.at}>{new Date(event.at).toLocaleString("id-ID")}</time>
                     </div>
                   </li>
                 ))}

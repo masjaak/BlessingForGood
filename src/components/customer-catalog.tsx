@@ -176,7 +176,7 @@ export function CustomerCatalog() {
                       </div>
                       <span className="subtle">Pilih satu format</span>
                     </div>
-                    <div className="variant-list" role="radiogroup" aria-label={`Format for ${book.title}`}>
+                    <div className="variant-list" role="radiogroup" aria-label={`Format untuk ${book.title}`}>
                       {book.variants.map((variant) => (
                         <label className="variant-option" key={variant.id}>
                           <input
@@ -200,7 +200,7 @@ export function CustomerCatalog() {
                       <div className="quantity-control">
                         <button
                           type="button"
-                          aria-label={`Decrease quantity for ${book.title}`}
+                          aria-label={`Kurangi jumlah ${book.title}`}
                           onClick={() =>
                             selectedVariantId &&
                             setQuantities((current) => ({
@@ -211,10 +211,10 @@ export function CustomerCatalog() {
                         >
                           −
                         </button>
-                        <output aria-label={`Quantity for ${book.title}`}>{selectedQuantity}</output>
+                        <output aria-label={`Jumlah ${book.title}`}>{selectedQuantity}</output>
                         <button
                           type="button"
-                          aria-label={`Increase quantity for ${book.title}`}
+                          aria-label={`Tambah jumlah ${book.title}`}
                           onClick={() =>
                             selectedVariantId &&
                             setQuantities((current) => ({ ...current, [selectedVariantId]: selectedQuantity + 1 }))

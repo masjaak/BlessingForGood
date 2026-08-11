@@ -7,37 +7,31 @@ export default function HelpPage() {
     <SiteShell>
       <div className="page narrow-page">
         <PageHeader
-          eyebrow="Help foundation"
-          title="Start with the detail you already have."
+          eyebrow="Bantuan BFG"
+          title="Mulai dari informasi yang sudah kamu punya."
           description="Temukan jalur cepat untuk katalog, pesanan, akun, dan bantuan dari admin BFG."
         />
         <div className="content-stack">
           <Card className="communication-card">
             <BrandMascot variant="warm" className="guide-mascot" />
-            <span className="card-kicker">Access</span>
-            <h2>Catalog access is separate.</h2>
-            <p>A catalog access code unlocks one private catalog. It is not a customer account password.</p>
+            <span className="card-kicker">Akses katalog</span>
+            <h2>Kode Secret Catalog berbeda dari kata sandi akun.</h2>
+            <p>Gunakan kode yang dibagikan BFG untuk membuka katalog privat yang sesuai.</p>
           </Card>
           <Card>
-            <span className="card-kicker">Order record</span>
-            <h2>The website keeps the order.</h2>
-            <p>
-              WhatsApp is available for confirmation and follow-up, while the recorded order and its status stay in the
-              website flow.
-            </p>
+            <span className="card-kicker">Status pesanan</span>
+            <h2>Perjalanan bukumu tersimpan di akun.</h2>
+            <p>Lihat pesanan, batch, pengiriman, invoice, pembayaran, dan masalah pesanan dari halaman akunmu.</p>
           </Card>
           <Card>
-            <span className="card-kicker">Still in review</span>
-            <h2>Some rules are intentionally not guessed.</h2>
-            <p>
-              Refund behavior, final account policy, and production payment handling require approved product decisions
-              before they become customer promises.
-            </p>
+            <span className="card-kicker">Butuh bantuan lain?</span>
+            <h2>Hubungi admin BFG dengan detail pesananmu.</h2>
+            <p>Sertakan nomor pesanan atau invoice agar admin dapat membantu lebih cepat.</p>
           </Card>
           <div className="actions">
-            <LinkButton href="/how-to-order">Read how to order</LinkButton>
+            <LinkButton href="/how-to-order">Baca cara memesan</LinkButton>
             <LinkButton href="/" variant="secondary">
-              Back home
+              Kembali ke beranda
             </LinkButton>
           </div>
         </div>

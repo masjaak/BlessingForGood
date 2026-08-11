@@ -31,7 +31,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
       await action();
       setMessage(success);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Payment review failed");
+      setError(reason instanceof Error ? reason.message : "Tinjauan pembayaran gagal");
     }
   }
 
@@ -40,7 +40,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
       <div className="split-heading">
         <div>
           <span className="card-kicker">{invoice?.invoiceNumber || confirmation.invoiceId}</span>
-          <h2>{invoice ? invoice.customerName : "Invoice unavailable"}</h2>
+          <h2>{invoice ? invoice.customerName : "Invoice tidak tersedia"}</h2>
           {invoice?.customerEmail ? <p className="subtle">{invoice.customerEmail}</p> : null}
         </div>
         <StatusBadge tone={statusTone(confirmation.status)}>
@@ -48,45 +48,45 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
         </StatusBadge>
       </div>
       <div className="summary-line">
-        <span>Submitted amount</span>
+        <span>Jumlah yang dikirim</span>
         <strong>{formatIdr(confirmation.amount)}</strong>
       </div>
       <div className="summary-line">
-        <span>Invoice outstanding now</span>
+        <span>Sisa invoice saat ini</span>
         <strong>{formatIdr(invoice?.outstandingAmount || 0)}</strong>
       </div>
       <div className="summary-line">
-        <span>Method · paid date</span>
+        <span>Metode · tanggal bayar</span>
         <span>
-          {confirmation.paymentMethod} · {new Date(confirmation.paidAt).toLocaleDateString("en-GB")}
+          {confirmation.paymentMethod} · {new Date(confirmation.paidAt).toLocaleDateString("id-ID")}
         </span>
       </div>
       {confirmation.transferReference ? (
         <div className="summary-line">
-          <span>Transfer reference</span>
+          <span>Referensi transfer</span>
           <span>{confirmation.transferReference}</span>
         </div>
       ) : null}
       {confirmation.proofReference ? (
         <div className="summary-line">
-          <span>Proof reference</span>
+          <span>Referensi bukti</span>
           <span>{confirmation.proofReference}</span>
         </div>
       ) : null}
-      {confirmation.customerNote ? <p className="subtle">Customer note: {confirmation.customerNote}</p> : null}
-      <p className="subtle">Submitted {new Date(confirmation.submittedAt).toLocaleString("en-GB")}</p>
+      {confirmation.customerNote ? <p className="subtle">Catatan customer: {confirmation.customerNote}</p> : null}
+      <p className="subtle">Dikirim {new Date(confirmation.submittedAt).toLocaleString("id-ID")}</p>
       {confirmation.status === "submitted" ? (
         <Button
           type="button"
           variant="secondary"
-          onClick={() => void run(() => startPaymentReview(confirmation.confirmationId), "Marked under review.")}
+          onClick={() => void run(() => startPaymentReview(confirmation.confirmationId), "Masuk tahap tinjauan.")}
         >
-          Start review
+          Mulai tinjauan
         </Button>
       ) : null}
       {confirmation.status === "under_review" ? (
         <div className="content-stack">
-          <Field label="Review note (optional)">
+          <Field label="Catatan tinjauan (opsional)">
             <textarea className="textarea" value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} />
           </Field>
           <div className="form-actions">
@@ -95,11 +95,11 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
               onClick={() =>
                 void run(
                   () => approvePaymentConfirmation(confirmation.confirmationId, reviewNote || undefined),
-                  "Payment approved.",
+                  "Pembayaran disetujui.",
                 )
               }
             >
-              Approve payment
+              Setujui pembayaran
             </Button>
             <Button
               type="button"
@@ -108,14 +108,14 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
                 void run(
                   () =>
                     rejectPaymentConfirmation(confirmation.confirmationId, rejectionReason, reviewNote || undefined),
-                  "Payment rejected.",
+                  "Pembayaran ditolak.",
                 )
               }
             >
-              Reject payment
+              Tolak pembayaran
             </Button>
           </div>
-          <Field label="Rejection reason (required to reject)">
+          <Field label="Alasan penolakan (wajib untuk menolak)">
             <textarea
               className="textarea"
               value={rejectionReason}
@@ -142,7 +142,7 @@ function AdminPayments() {
   const { dataSource } = useProduct();
   const { adminPaymentQueue, adminPaymentHistory } = useOperations();
   if (dataSource !== "convex") return <div className="state-panel">Antrian pembayaran belum tersedia.</div>;
-  if (adminPaymentQueue === undefined) return <div className="state-panel">Loading payment confirmations…</div>;
+  if (adminPaymentQueue === undefined) return <div className="state-panel">Memuat konfirmasi pembayaran…</div>;
   const resolvedHistory =
     adminPaymentHistory?.page.filter(
       (confirmation) => confirmation.status === "approved" || confirmation.status === "rejected",
@@ -151,12 +151,12 @@ function AdminPayments() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Payment operations"
-        title="Review payment confirmations."
-        description="Approve only after the manual payment evidence matches the customer submission. Approved amounts settle the invoice once."
+        eyebrow="Operasi pembayaran"
+        title="Tinjau konfirmasi pembayaran."
+        description="Setujui hanya setelah bukti pembayaran cocok dengan kiriman customer. Jumlah yang disetujui dihitung satu kali terhadap invoice."
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
-            Invoice operations
+            Operasi invoice
           </LinkButton>
         }
       />
@@ -171,28 +171,28 @@ function AdminPayments() {
             </div>
           ) : (
             <EmptyState
-              title="No payment confirmations waiting"
-              description="Customer-submitted payment confirmations will appear here. The queue does not seed business data."
+              title="Tidak ada konfirmasi yang menunggu"
+              description="Konfirmasi pembayaran dari customer akan tampil di sini untuk ditinjau."
             />
           )}
           {resolvedHistory.length ? (
             <Card>
               <div className="split-heading">
                 <div>
-                  <span className="card-kicker">Review history</span>
-                  <h2>Recently resolved confirmations</h2>
+                  <span className="card-kicker">Riwayat tinjauan</span>
+                  <h2>Konfirmasi yang baru diselesaikan</h2>
                 </div>
               </div>
               {resolvedHistory.map((confirmation) => (
                 <div className="summary-line" key={confirmation.confirmationId}>
                   <span>
                     {confirmation.invoice?.invoiceNumber || confirmation.invoiceId} ·{" "}
-                    {confirmation.invoice?.customerName || "Unknown customer"}
+                    {confirmation.invoice?.customerName || "Customer tidak dikenal"}
                     <br />
                     {paymentConfirmationStatusLabel(confirmation.status)} ·{" "}
                     {confirmation.reviewedAt
-                      ? new Date(confirmation.reviewedAt).toLocaleString("en-GB")
-                      : "Not reviewed"}
+                      ? new Date(confirmation.reviewedAt).toLocaleString("id-ID")
+                      : "Belum ditinjau"}
                   </span>
                   <strong>{formatIdr(confirmation.amount)}</strong>
                 </div>

@@ -32,7 +32,7 @@ export default function HomePage() {
           <div className="hero-panel" aria-label="Cara memesan di Blessing For Goods">
             <div className="hero-panel-top">
               <div>
-                <BrandMascot className="hero-mascot" />
+                <BrandMascot className="hero-mascot" priority />
                 <span className="panel-label">Perjalanan bukumu</span>
               </div>
               <span className="status-badge status-positive">Untuk Blessfriends</span>

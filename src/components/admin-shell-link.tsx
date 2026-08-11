@@ -7,5 +7,9 @@ import { ProductContext } from "@/domain/prototype/context";
 export function AdminShellLink() {
   const role = useContext(ProductContext)?.sessionRole;
   if (role !== "admin" && role !== "owner") return null;
-  return <Link href="/admin">Admin</Link>;
+  return (
+    <Link className="admin-shell-link" href="/admin">
+      Admin
+    </Link>
+  );
 }

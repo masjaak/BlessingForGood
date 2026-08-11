@@ -15,25 +15,25 @@ type AdminOrder = AdminOrdersPage["page"][number];
 type Resolution = "remove_item" | "deposit_release" | "refund_required" | "no_action";
 
 const typeLabels = {
-  out_of_stock: "Out of stock",
+  out_of_stock: "Stok tidak tersedia",
   defect: "Defect",
-  customer_cancellation: "Customer cancellation",
-  admin_cancellation: "Admin cancellation",
+  customer_cancellation: "Pembatalan customer",
+  admin_cancellation: "Pembatalan admin",
 } as const;
 
 const statusLabels = {
-  opened: "Opened",
-  under_review: "Under review",
-  resolution_selected: "Resolution selected",
-  resolved: "Resolved",
-  rejected: "Rejected",
+  opened: "Dibuka",
+  under_review: "Sedang ditinjau",
+  resolution_selected: "Resolusi dipilih",
+  resolved: "Selesai",
+  rejected: "Ditolak",
 } as const;
 
 const resolutionLabels: Record<Resolution, string> = {
-  remove_item: "Remove affected quantity",
-  deposit_release: "Release deposit allocations",
-  refund_required: "Record refund obligation",
-  no_action: "No action",
+  remove_item: "Hapus jumlah terdampak",
+  deposit_release: "Lepaskan alokasi deposit",
+  refund_required: "Catat kewajiban refund",
+  no_action: "Tanpa tindakan",
 };
 
 function tone(status: AdminException["status"]): "neutral" | "positive" | "warning" {
@@ -72,27 +72,27 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
       setReason("");
       setCustomerNote("");
       setInternalNote("");
-      setMessage("Exception opened.");
+      setMessage("Masalah berhasil dibuka.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Exception could not be opened.");
+      setMessage(error instanceof Error ? error.message : "Masalah belum dapat dibuka.");
     }
   }
 
   return (
     <Card>
-      <span className="card-kicker">Admin operation</span>
-      <h2>Open an exception</h2>
-      <p className="subtle">The server validates quantity, ownership references, and active exception conflicts.</p>
+      <span className="card-kicker">Operasi admin</span>
+      <h2>Buka masalah pesanan</h2>
+      <p className="subtle">Server memvalidasi jumlah, kepemilikan, dan konflik masalah aktif.</p>
       <form className="form-card" onSubmit={submit}>
         <div className="form-grid">
-          <Field label="Type">
+          <Field label="Jenis">
             <select className="select" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
-              <option value="out_of_stock">Out of stock</option>
+              <option value="out_of_stock">Stok tidak tersedia</option>
               <option value="defect">Defect</option>
-              <option value="admin_cancellation">Admin cancellation</option>
+              <option value="admin_cancellation">Pembatalan admin</option>
             </select>
           </Field>
-          <Field label="Order">
+          <Field label="Pesanan">
             <select
               className="select"
               value={orderId}
@@ -102,7 +102,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
               }}
               required
             >
-              <option value="">Choose order…</option>
+              <option value="">Pilih pesanan…</option>
               {orders.map((order) => (
                 <option value={order.orderId} key={order.orderId}>
                   {order.customerName} · {order.orderId}
@@ -114,7 +114,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
         <div className="form-grid">
           <Field label="Item">
             <select className="select" value={itemId} onChange={(event) => setItemId(event.target.value)} required>
-              <option value="">Choose item…</option>
+              <option value="">Pilih item…</option>
               {selectedOrder?.items.map((item) => (
                 <option value={item._id} key={item._id}>
                   {item.quantity} × {item.bookTitleSnapshot} · {item.formatSnapshot}
@@ -122,10 +122,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
               ))}
             </select>
           </Field>
-          <Field
-            label="Affected quantity"
-            hint={selectedItem ? `Maximum in snapshot: ${selectedItem.quantity}` : undefined}
-          >
+          <Field label="Jumlah terdampak" hint={selectedItem ? `Maksimum: ${selectedItem.quantity}` : undefined}>
             <input
               className="input"
               type="number"
@@ -138,18 +135,18 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
             />
           </Field>
         </div>
-        <Field label="Reason">
+        <Field label="Alasan">
           <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} required />
         </Field>
         <div className="form-grid">
-          <Field label="Customer-facing note (optional)">
+          <Field label="Catatan untuk customer (opsional)">
             <textarea
               className="textarea"
               value={customerNote}
               onChange={(event) => setCustomerNote(event.target.value)}
             />
           </Field>
-          <Field label="Internal note (optional)">
+          <Field label="Catatan internal (opsional)">
             <textarea
               className="textarea"
               value={internalNote}
@@ -158,7 +155,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
           </Field>
         </div>
         <div className="form-actions">
-          <Button type="submit">Open exception</Button>
+          <Button type="submit">Buka masalah</Button>
           {message ? (
             <span className="subtle" role="status">
               {message}
@@ -185,7 +182,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
       await action();
       setMessage(success);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Exception operation failed.");
+      setMessage(error instanceof Error ? error.message : "Operasi masalah gagal.");
     }
   }
 
@@ -196,24 +193,24 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           <span className="card-kicker">
             {typeLabels[exception.type]} · {exception.exceptionId}
           </span>
-          <h2>{exception.item?.bookTitle || "Order item"}</h2>
+          <h2>{exception.item?.bookTitle || "Item pesanan"}</h2>
           <p className="subtle">
-            {exception.order?.customerName || "Unknown customer"} · {exception.orderId}
+            {exception.order?.customerName || "Customer tidak dikenal"} · {exception.orderId}
           </p>
         </div>
         <StatusBadge tone={tone(exception.status)}>{statusLabels[exception.status]}</StatusBadge>
       </div>
       <div className="summary-line">
-        <span>Affected quantity</span>
+        <span>Jumlah terdampak</span>
         <strong>{exception.affectedQuantity}</strong>
       </div>
       <div className="summary-line">
-        <span>Reason</span>
+        <span>Alasan</span>
         <span>{exception.reason}</span>
       </div>
       {exception.reasonCode ? (
         <div className="summary-line">
-          <span>Eligibility code</span>
+          <span>Kode kelayakan</span>
           <span>{exception.reasonCode}</span>
         </div>
       ) : null}
@@ -229,7 +226,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
       ) : null}
       {exception.invoice ? (
         <div className="summary-line">
-          <span>Invoice effect</span>
+          <span>Dampak invoice</span>
           <span>
             {exception.invoice.invoiceNumber} · {exception.invoice.adjustedTotalAmount.toLocaleString("id-ID")} IDR
             current
@@ -238,7 +235,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
       ) : null}
       {exception.financialImpact ? (
         <div className="summary-line">
-          <span>Financial consequence</span>
+          <span>Konsekuensi finansial</span>
           <span>
             <Money
               amount={
@@ -251,15 +248,15 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </span>
         </div>
       ) : null}
-      {exception.customerNote ? <p className="subtle">Customer note: {exception.customerNote}</p> : null}
-      {exception.internalNote ? <p className="subtle">Internal note: {exception.internalNote}</p> : null}
+      {exception.customerNote ? <p className="subtle">Catatan customer: {exception.customerNote}</p> : null}
+      {exception.internalNote ? <p className="subtle">Catatan internal: {exception.internalNote}</p> : null}
       {exception.status === "opened" ? (
         <div className="form-actions">
           <Button
             type="button"
-            onClick={() => void run(() => startReview({ exceptionId: exception.exceptionId }), "Review started.")}
+            onClick={() => void run(() => startReview({ exceptionId: exception.exceptionId }), "Tinjauan dimulai.")}
           >
-            Start review
+            Mulai tinjauan
           </Button>
         </div>
       ) : null}
@@ -279,26 +276,23 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           <Button
             type="button"
             onClick={() =>
-              void run(
-                () => selectResolution({ exceptionId: exception.exceptionId, resolution }),
-                "Resolution selected.",
-              )
+              void run(() => selectResolution({ exceptionId: exception.exceptionId, resolution }), "Resolusi dipilih.")
             }
           >
-            Select resolution
+            Pilih resolusi
           </Button>
         </div>
       ) : null}
       {exception.status === "resolution_selected" ? (
         <div className="form-actions">
           <span className="subtle">
-            Selected: {exception.resolution ? resolutionLabels[exception.resolution] : "Unknown"}
+            Dipilih: {exception.resolution ? resolutionLabels[exception.resolution] : "Tidak diketahui"}
           </span>
           <Button
             type="button"
-            onClick={() => void run(() => resolve({ exceptionId: exception.exceptionId }), "Exception resolved.")}
+            onClick={() => void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan.")}
           >
-            Resolve
+            Selesaikan
           </Button>
         </div>
       ) : null}
@@ -308,23 +302,23 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
             className="input"
             value={rejectionReason}
             onChange={(event) => setRejectionReason(event.target.value)}
-            placeholder="Rejection reason"
-            aria-label="Rejection reason"
+            placeholder="Alasan penolakan"
+            aria-label="Alasan penolakan"
           />
           <Button
             type="button"
             variant="danger"
             onClick={() =>
-              void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Exception rejected.")
+              void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak.")
             }
           >
-            Reject
+            Tolak
           </Button>
         </div>
       ) : null}
       <div className="form-actions">
         <LinkButton href={`/admin/orders/${exception.orderId}`} variant="secondary">
-          Open order
+          Buka pesanan
         </LinkButton>
         {message ? (
           <span className="subtle" role="status">
@@ -338,7 +332,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
             <span className="timeline-dot" aria-hidden="true" />
             <div>
               <strong>{event.eventType}</strong>
-              <time dateTime={event.at}>{new Date(event.at).toLocaleString("en-GB")}</time>
+              <time dateTime={event.at}>{new Date(event.at).toLocaleString("id-ID")}</time>
               {event.note ? <span className="subtle">{event.note}</span> : null}
             </div>
           </li>
@@ -356,13 +350,13 @@ export function AdminExceptions() {
   );
   const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
   if (dataSource !== "convex") return <div className="state-panel">Antrian masalah belum tersedia.</div>;
-  if (!orders || !exceptions) return <div className="state-panel">Loading exception operations…</div>;
+  if (!orders || !exceptions) return <div className="state-panel">Memuat operasi masalah…</div>;
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Exception operations"
-        title="Resolve the exception, preserve the record."
-        description="OOS, defects, cancellations, deposit releases, and refund obligations stay item-level and auditable."
+        eyebrow="Operasi masalah pesanan"
+        title="Selesaikan masalah tanpa menghapus riwayat."
+        description="OOS, defect, pembatalan, pelepasan deposit, dan kewajiban refund tetap tercatat per item."
       />
       <div className="admin-workspace">
         <AdminNav />

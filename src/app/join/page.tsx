@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
-import { Button, Card, Field, LinkButton, PageHeader } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -34,26 +34,24 @@ function ConnectedJoinForm() {
       });
       setSubmitted(true);
     } catch {
-      setError("We could not submit this request. Check your details and try again.");
+      setError("Permintaan belum dapat dikirim. Periksa kembali datamu lalu coba lagi.");
     }
   }
 
   if (submitted) {
     return (
-      <Card className="success-card content-stack">
-        <span className="card-kicker">Request received</span>
-        <h2>Thanks for reaching out.</h2>
-        <p>
-          An admin will review your request and follow up through an approved communication channel. This submission
-          does not create a Clerk account or grant catalog access.
-        </p>
-        <div className="actions">
-          <LinkButton href="/community">Read the community guide</LinkButton>
+      <EmptyState
+        eyebrow="Permintaan diterima"
+        mascotVariant="success"
+        title="Terima kasih sudah ingin bergabung."
+        description="Admin akan meninjau permintaanmu dan menghubungi melalui kontak yang kamu berikan. Permintaan ini belum otomatis membuat akun atau membuka Secret Catalog."
+        primaryAction={<LinkButton href="/community">Kenali komunitas BFG</LinkButton>}
+        secondaryAction={
           <LinkButton href="/" variant="secondary">
-            Back home
+            Kembali ke beranda
           </LinkButton>
-        </div>
-      </Card>
+        }
+      />
     );
   }
 
@@ -61,12 +59,12 @@ function ConnectedJoinForm() {
     <Card className="form-card">
       <div>
         <span className="card-kicker">Join Blessfriends</span>
-        <h2>Tell us how to reach you.</h2>
-        <p>We review each request before an invitation. Please share only the information needed for that handoff.</p>
+        <h2>Ceritakan cara terbaik untuk menghubungimu.</h2>
+        <p>Setiap permintaan ditinjau sebelum undangan dikirim. Bagikan hanya informasi yang diperlukan.</p>
       </div>
       <form onSubmit={handleSubmit} className="form-card">
         <div className="form-grid">
-          <Field label="Name">
+          <Field label="Nama">
             <input
               className="input"
               value={form.name}
@@ -76,7 +74,7 @@ function ConnectedJoinForm() {
               required
             />
           </Field>
-          <Field label="Email" hint="Used only for the invitation handoff if your request is approved.">
+          <Field label="Email" hint="Digunakan untuk proses undangan jika permintaanmu disetujui.">
             <input
               className="input"
               type="email"
@@ -87,7 +85,7 @@ function ConnectedJoinForm() {
               required
             />
           </Field>
-          <Field label="WhatsApp or phone">
+          <Field label="WhatsApp atau telepon">
             <input
               className="input"
               value={form.contact}
@@ -97,7 +95,7 @@ function ConnectedJoinForm() {
               required
             />
           </Field>
-          <Field label="City or location" hint="Optional. This helps with community follow-up.">
+          <Field label="Kota atau lokasi" hint="Opsional. Membantu admin saat menindaklanjuti permintaanmu.">
             <input
               className="input"
               value={form.city}
@@ -107,7 +105,7 @@ function ConnectedJoinForm() {
             />
           </Field>
         </div>
-        <Field label="Short note" hint="Optional. Keep it under 500 characters.">
+        <Field label="Catatan singkat" hint="Opsional. Maksimal 500 karakter.">
           <textarea
             className="textarea"
             value={form.note}
@@ -123,14 +121,14 @@ function ConnectedJoinForm() {
             onChange={(event) => update("acknowledged", event.target.checked)}
             required
           />
-          <span>I understand this request does not instantly create an account or provide private catalog access.</span>
+          <span>Saya memahami permintaan ini tidak langsung membuat akun atau membuka Secret Catalog.</span>
         </label>
         {error ? (
           <p className="error-text" role="alert">
             {error}
           </p>
         ) : null}
-        <Button type="submit">Send request</Button>
+        <Button type="submit">Kirim permintaan</Button>
       </form>
     </Card>
   );

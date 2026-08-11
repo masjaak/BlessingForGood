@@ -22,7 +22,7 @@ export function BrandLogo({
       width={asset.width}
       height={asset.height}
       className={`brand-logo brand-logo-${variant} ${className}`.trim()}
-      sizes={variant === "primary" ? "76px" : "48px"}
+      sizes={variant === "primary" ? "180px" : "64px"}
       priority={variant === "primary"}
     />
   );
@@ -39,10 +39,12 @@ export function BrandLogo({
 export function BrandMascot({
   variant = "default",
   decorative = false,
+  priority = false,
   className = "",
 }: {
   variant?: BrandMascotVariant;
   decorative?: boolean;
+  priority?: boolean;
   className?: string;
 }) {
   const asset = brandAssets.mascots[variant];
@@ -54,6 +56,7 @@ export function BrandMascot({
       height={asset.height}
       className={`brand-mascot brand-mascot-${variant} ${className}`.trim()}
       sizes="(max-width: 640px) 112px, 160px"
+      priority={priority}
     />
   );
 }

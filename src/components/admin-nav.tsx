@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useContext } from "react";
 import { ProductContext } from "@/domain/prototype/context";
 
@@ -19,12 +20,20 @@ const links = [
 ] as const;
 
 export function AdminNav() {
+  const pathname = usePathname() || "/admin";
   const sessionRole = useContext(ProductContext)?.sessionRole;
   const visibleLinks = sessionRole === "owner" ? [...links, ["/admin/users", "Pengguna"] as const] : links;
   return (
     <nav className="admin-nav" aria-label="Navigasi admin">
       {visibleLinks.map(([href, label]) => (
-        <Link key={label} href={href}>
+        <Link
+          className={pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`)) ? "is-current" : ""}
+          aria-current={
+            pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`)) ? "page" : undefined
+          }
+          key={label}
+          href={href}
+        >
           {label}
         </Link>
       ))}

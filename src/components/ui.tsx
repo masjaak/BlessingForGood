@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { BrandMascot } from "@/components/brand";
+import { BrandMascot, type BrandMascotVariant } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 
 type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
@@ -68,13 +68,35 @@ export function StatusBadge({
   return <span className={`status-badge status-${tone}`}>{children}</span>;
 }
 
-export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  description,
+  eyebrow,
+  mascotVariant = "default",
+  action,
+  primaryAction,
+  secondaryAction,
+}: {
+  title: string;
+  description: string;
+  eyebrow?: string;
+  mascotVariant?: BrandMascotVariant | false;
+  action?: ReactNode;
+  primaryAction?: ReactNode;
+  secondaryAction?: ReactNode;
+}) {
   return (
     <div className="empty-state">
-      <BrandMascot className="empty-mascot" decorative />
+      {mascotVariant ? <BrandMascot variant={mascotVariant} className="empty-mascot" decorative /> : null}
+      {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
       <h2>{title}</h2>
       <p>{description}</p>
-      {action}
+      {action || primaryAction || secondaryAction ? (
+        <div className="empty-actions">
+          {action || primaryAction}
+          {secondaryAction}
+        </div>
+      ) : null}
     </div>
   );
 }

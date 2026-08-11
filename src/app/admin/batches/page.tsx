@@ -23,29 +23,29 @@ function CreateBatchForm() {
       setName("");
       setReferenceCode("");
       setDescription("");
-      setMessage("Batch created.");
+      setMessage("Batch berhasil dibuat.");
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Batch could not be created");
+      setMessage(reason instanceof Error ? reason.message : "Batch belum dapat dibuat");
     }
   }
   return (
     <Card>
-      <span className="card-kicker">New cargo</span>
-      <h2>Create batch</h2>
+      <span className="card-kicker">Cargo baru</span>
+      <h2>Buat batch</h2>
       <form className="form-card" onSubmit={handleSubmit}>
         <div className="form-grid">
-          <Field label="Name">
+          <Field label="Nama">
             <input className="input" value={name} onChange={(event) => setName(event.target.value)} required />
           </Field>
-          <Field label="Reference code">
+          <Field label="Kode referensi">
             <input className="input" value={referenceCode} onChange={(event) => setReferenceCode(event.target.value)} />
           </Field>
         </div>
-        <Field label="Description">
+        <Field label="Deskripsi">
           <textarea className="textarea" value={description} onChange={(event) => setDescription(event.target.value)} />
         </Field>
         <div className="form-actions">
-          <Button type="submit">Create batch</Button>
+          <Button type="submit">Buat batch</Button>
           {message ? (
             <span className="subtle" role="status">
               {message}
@@ -60,12 +60,12 @@ function CreateBatchForm() {
 function AdminBatches() {
   const { batchList } = useOperations();
   const { state } = useProduct();
-  if (!batchList) return <div className="state-panel">Loading batches…</div>;
+  if (!batchList) return <div className="state-panel">Memuat batch…</div>;
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Batch tracking"
-        title="Move cargo with a clear record."
+        eyebrow="Operasi batch"
+        title="Jalankan cargo dengan catatan yang jelas."
         description="Hubungkan katalog, susun roster, kunci PO, dan catat perjalanan kiriman dalam satu alur."
       />
       <div className="admin-workspace">
@@ -82,26 +82,26 @@ function AdminBatches() {
                   </div>
                   <StatusBadge tone={batch.isArchived ? "neutral" : "positive"}>
                     {batch.isArchived
-                      ? "Archived"
+                      ? "Diarsipkan"
                       : batch.currentShipmentStage
                         ? shipmentStageLabels[batch.currentShipmentStage]
-                        : "No stage"}
+                        : "Tahap belum ditentukan"}
                   </StatusBadge>
                 </div>
-                <p className="subtle">{batch.description || "No description"}</p>
+                <p className="subtle">{batch.description || "Tanpa deskripsi"}</p>
                 <div className="summary-line">
-                  <span>Linked catalogs</span>
+                  <span>Katalog terhubung</span>
                   <strong>{batch.catalogLinks.length}</strong>
                 </div>
                 <div className="summary-line">
                   <span>Roster</span>
                   <strong>
-                    {batch.rosterLocked ? "Locked" : "Editable"} · {batch.assignmentCount} assignments ·{" "}
-                    {batch.customerCount} customers
+                    {batch.rosterLocked ? "Dikunci" : "Dapat diubah"} · {batch.assignmentCount} assignment ·{" "}
+                    {batch.customerCount} customer
                   </strong>
                 </div>
                 <div className="summary-line">
-                  <span>Assigned quantity</span>
+                  <span>Jumlah ter-assignment</span>
                   <strong>{batch.assignedQuantity}</strong>
                 </div>
                 {batch.catalogLinks.map((link) => (
@@ -111,24 +111,22 @@ function AdminBatches() {
                   </div>
                 ))}
                 <LinkButton href={`/admin/batches/${batch.batchId}`} variant="secondary">
-                  Open batch operations
+                  Buka operasi batch
                 </LinkButton>
               </Card>
             ))
           ) : (
             <EmptyState
-              title="No batches yet"
-              description="Create the first cargo record when an admin has an actual batch to operate."
+              title="Belum ada batch"
+              description="Buat catatan cargo pertama saat ada batch nyata yang siap dioperasikan."
               action={
                 <LinkButton href="/admin/orders" variant="secondary">
-                  Review orders
+                  Tinjau pesanan
                 </LinkButton>
               }
             />
           )}
-          <p className="subtle">
-            Catalogs available in this admin session: {state.catalogs.length}. No sample batch is created automatically.
-          </p>
+          <p className="subtle">Katalog yang tersedia untuk operasi batch: {state.catalogs.length}.</p>
         </div>
       </div>
     </div>

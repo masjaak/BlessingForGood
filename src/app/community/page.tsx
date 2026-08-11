@@ -17,7 +17,7 @@ export default function CommunityPage() {
           </div>
         </header>
         <div className="content-stack">
-          <Card className="accent-card">
+          <Card className="accent-card communication-card">
             <BrandMascot variant="warm" className="guide-mascot" />
             <span className="card-kicker">Selamat datang</span>
             <h2>Halo, Blessfriend.</h2>
