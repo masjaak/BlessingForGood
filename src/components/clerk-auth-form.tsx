@@ -2,23 +2,19 @@
 
 import { SignIn, SignUp } from "@clerk/nextjs";
 import { useSyncExternalStore } from "react";
+import { bfgClerkAppearance } from "@/config/clerk";
 
 const noSubscribe = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
-const bfgClerkAppearance = {
-  variables: {
-    colorPrimary: "#1c563f",
-    colorText: "#1a3027",
-    colorTextSecondary: "#627168",
-    colorBackground: "#fffdf9",
-    colorInputBackground: "#fffdf9",
-    borderRadius: "12px",
-    fontFamily: "Arial, Helvetica, sans-serif",
-  },
-};
 
-export function ClerkAuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+export function ClerkAuthForm({
+  mode,
+  redirectUrl = "/catalog",
+}: {
+  mode: "sign-in" | "sign-up";
+  redirectUrl?: string;
+}) {
   const mounted = useSyncExternalStore(noSubscribe, clientSnapshot, serverSnapshot);
 
   if (!mounted)
@@ -29,8 +25,8 @@ export function ClerkAuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     );
 
   return mode === "sign-in" ? (
-    <SignIn path="/sign-in" routing="path" fallbackRedirectUrl="/catalog" appearance={bfgClerkAppearance} />
+    <SignIn path="/sign-in" routing="path" fallbackRedirectUrl={redirectUrl} appearance={bfgClerkAppearance} />
   ) : (
-    <SignUp path="/sign-up" routing="path" fallbackRedirectUrl="/catalog" appearance={bfgClerkAppearance} />
+    <SignUp path="/sign-up" routing="path" fallbackRedirectUrl={redirectUrl} appearance={bfgClerkAppearance} />
   );
 }

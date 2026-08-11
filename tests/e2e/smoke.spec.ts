@@ -69,15 +69,19 @@ async function verifyRoute(route: string, page: Page, project: string) {
   if (publicShellRoutes.has(route)) {
     await expect(page.locator("h1")).toHaveCount(1);
     if ((page.viewportSize()?.width || 0) <= 800) {
-      await page.locator('summary[aria-label="Buka menu"]').click();
-      await expect(page.getByRole("navigation", { name: "Navigasi mobile" })).toBeVisible();
-      await page.locator('summary[aria-label="Buka menu"]').click();
+      await expect(page.getByRole("navigation", { name: "Navigasi customer" })).toBeVisible();
+      await expect(page.locator('summary[aria-label="Buka menu"]')).toHaveCount(0);
     } else {
       await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
     }
     await expect(page.getByRole("link", { name: "Blessing For Goods home" }).getByRole("img")).toBeVisible();
   } else {
-    if (protectedRoutes.has(route)) await expect(page).toHaveURL(/\/sign-in/);
+    if (protectedRoutes.has(route)) {
+      await expect(page).toHaveURL(/\/sign-in/);
+      if (route === "/account/invoices") {
+        expect(new URL(page.url()).searchParams.get("redirect_url")).toMatch(/\/account\/invoices$/);
+      }
+    }
     await expect(page.getByRole("img", { name: "Blessing For Goods" })).toBeVisible();
     await expect(page.locator("[data-clerk-component]")).toBeVisible();
   }
@@ -107,10 +111,9 @@ test.describe("@customer BFG customer route smoke", () => {
   test("signed-out navigation keeps protected destinations out of the public shell", async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/", { waitUntil: "networkidle" });
-    if ((page.viewportSize()?.width || 0) <= 800) await page.locator('summary[aria-label="Buka menu"]').click();
     const links = await page
       .getByRole("navigation", {
-        name: (page.viewportSize()?.width || 0) <= 800 ? "Navigasi mobile" : "Primary navigation",
+        name: (page.viewportSize()?.width || 0) <= 800 ? "Navigasi customer" : "Primary navigation",
       })
       .getByRole("link")
       .evaluateAll((items) =>
@@ -119,14 +122,19 @@ test.describe("@customer BFG customer route smoke", () => {
           label: item.textContent?.trim(),
         })),
       );
-    expect(links.map((link) => link.label)).toEqual([
-      "Beranda",
-      "Ready Stock",
-      "Komunitas",
-      "Cara memesan",
-      "Secret Catalog",
-      "Gabung",
-    ]);
+    if ((page.viewportSize()?.width || 0) <= 800) {
+      expect(links.map((link) => link.label)).toEqual(["Beranda", "Katalog", "Buku Saya", "Tagihan", "Akun"]);
+      await expect(page.locator('summary[aria-label="Buka menu"]')).toHaveCount(0);
+    } else {
+      expect(links.map((link) => link.label)).toEqual([
+        "Beranda",
+        "Ready Stock",
+        "Komunitas",
+        "Cara memesan",
+        "Secret Catalog",
+        "Gabung",
+      ]);
+    }
     await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible();
   });
 });

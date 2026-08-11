@@ -2,15 +2,21 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand";
 import { ClerkAuthForm } from "@/components/clerk-auth-form";
+import { safeAuthRedirect } from "@/lib/auth-redirect";
 
-export default async function SignUpPage() {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string | string[] }>;
+}) {
   const { userId } = await auth();
-  if (userId) redirect("/catalog");
+  const redirectUrl = safeAuthRedirect((await searchParams).redirect_url);
+  if (userId) redirect(redirectUrl);
   return (
     <main className="auth-page">
       <BrandLogo linkToHome={false} />
       <p className="auth-invite-note">Pembuatan akun hanya tersedia melalui undangan BFG yang masih berlaku.</p>
-      <ClerkAuthForm mode="sign-up" />
+      <ClerkAuthForm mode="sign-up" redirectUrl={redirectUrl} />
     </main>
   );
 }

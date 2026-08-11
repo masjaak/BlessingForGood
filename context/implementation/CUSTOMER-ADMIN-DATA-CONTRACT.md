@@ -1,0 +1,39 @@
+# Customer / Admin Data Contract
+
+Date: 2026-08-12
+
+Customer and admin use the same canonical Convex deployment and schema. The
+customer UI consumes owned or public projections; it never reads unrestricted
+operational records directly. Admin operations mutate the same canonical
+records, so Convex reactivity is the synchronization mechanism.
+
+| Domain | Canonical table/source | Customer query / projection | Admin query | Admin mutation(s) | Customer realtime consequence | Authorization / ownership | Readiness |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Identity | `appUsers`, `customerProfiles`, `customerAddresses` | `users.current`, `customerProfiles.getMine`, `customerAddresses.listMine` | `users.list`, `customerProfiles.getForAdmin`, `customerAddresses.listForAdmin` | `users.updateRole`, `users.suspend`, `users.reactivate`, `customerProfiles.upsertMine`, `customerAddresses.create/update/remove` | Account/profile/address views update from canonical queries | Clerk identity; active customer owns profile/addresses; admin/owner permission checks | READY_SHARED_BACKEND |
+| Join admission | `joinRequests` | `joinRequests.submit` writes an admission request; no unrestricted queue read | `joinRequests.listForAdmin` | `joinRequests.startReview`, `approve`, `reject` | Future account eligibility reflects the canonical admission result | Public submit; admin/owner review | READY_SHARED_BACKEND |
+| Book Master | `publishers`, `books`, `bookVariants` | `readyStock.list/getBySlug` exposes only published positive-stock projection | `publishers.list`, `books.listForAdmin/getForAdmin`, `bookVariants.listForBook` | `publishers.create`, `books.create/update`, `bookVariants.create/update` | Published title/variant availability changes the public Ready Stock projection | Public projection; admin/owner `books.manage` | READY_SHARED_BACKEND |
+| Ready Stock | `readyStockInventory` plus book/variant records | `readyStock.list`, `readyStock.getBySlug` | `books.getForAdmin`; inventory is managed through Book Master detail | `readyStock.setQuantity` | Stock quantity and availability appear reactively; no dummy records | Public safe projection; admin/owner inventory permission | READY_SHARED_BACKEND |
+| Secret Catalog | `secretCatalogs`, `catalogAccessCodes`, `catalogItems`, `catalogAccessGrants` | `catalogAccess.unlock/getUnlocked` returns only an active owned grant and safe catalog view | `secretCatalogs.list` and catalog item queries | `secretCatalogs.create/open/close/createBundle`, `catalogAccess.setCode`, `catalogItems.add` | Open/closed catalog and granted contents update on the next reactive query | Customer must have `catalog.read`; code digest and grant stay server-controlled; admin/owner manages catalog | READY_SHARED_BACKEND |
+| Orders | `orders`, `orderItems`, `orderStatusHistory` | `orders.listMine/getMine`; `orders.submit/edit` | `orders.listForAdmin/getForAdmin` | `orders.createAssisted/edit/updateStatus` | Owned order status/history and order detail update reactively | `orders.read.own` plus explicit customer ownership; admin/owner `orders.read.all`/manage | READY_SHARED_BACKEND |
+| Batch / tracking | `batches`, `catalogBatchLinks`, `orderItemBatchAssignments`, batch histories | `batchTracking.getMine`, `orderFulfillment.getMine` | `batches.listForAdmin/getForAdmin`, `batchTracking.getForOrderAdmin/getForAdmin` | `batches.create/linkCatalog/unlinkCatalog/archive`, `batchTracking.assignOrderItem/unassignOrderItem/moveOrderItem/updateShipmentStage`, `orderFulfillment.updateStage` | Customer tracking stage and fulfillment timeline change from canonical batch/order records | Customer query checks parent order ownership; admin/owner operational permissions | READY_SHARED_BACKEND |
+| Invoices | `invoices`, `invoiceItems` | `invoices.listMine/getMine` | `invoices.listForAdmin/getForAdmin` | `invoices.create/issue/voidInvoice` | Invoice status, totals, outstanding, and adjustment projections update reactively | `invoices.read.own` and invoice customer ownership; admin/owner finance permissions | READY_SHARED_BACKEND |
+| Payments | `paymentConfirmations` | `paymentConfirmations.listMine/listMineForInvoice/getMine` | `paymentConfirmations.listPendingForAdmin/listForAdmin/getForAdmin` | `paymentConfirmations.submit`, `startReview`, `approve`, `reject` | Customer payment status changes after authoritative review | Customer owns invoice/payment confirmation; admin/owner review permissions | READY_SHARED_BACKEND |
+| Deposit ledger | `depositAccounts`, `depositTransactions`, `invoiceDepositAllocations` | `depositAccounts.getMine`, `depositTransactions.listMine`, `invoiceDepositAllocations.listMine` | Invoice-scoped operational queries | `depositTransactions.recordCredit/reverse`, `invoiceDepositAllocations.allocate/release/reverse` | Deposit balance, allocations, outstanding, and refund-obligation projections update reactively | Customer own-read permission; admin/owner finance permissions; append-only ledger rules remain server-side | READY_SHARED_BACKEND |
+| Exceptions | `orderExceptions`, `orderExceptionEvents`, `orderExceptionFinancialAdjustments` | `orderExceptions.listMine/listMineForOrder/getMine/getCancellationEligibility` | `orderExceptions.listForAdmin/listForOrderAdmin/getForAdmin` | `orderExceptions.open/requestCancellation/startReview/selectResolution/reject/resolve` | Customer sees owned status/history/resolution projections without internal admin context | Customer owns order; admin/owner exception permissions; refund obligation remains authoritative | READY_SHARED_BACKEND |
+| Audit | `auditEvents` | No customer read | Internal/admin audit tooling and server-side records | Every authorized operational mutation records audit activity | No direct customer projection | Server-controlled, never a UI authorization boundary | READY_SHARED_BACKEND |
+
+## API gap audit
+
+| Classification | Result |
+| --- | --- |
+| `READY_SHARED_BACKEND` | All current Phase 01–06.4 customer/admin domains above |
+| `CUSTOMER_QUERY_MISSING` | None for current customer routes |
+| `ADMIN_QUERY_MISSING` | None for current admin routes |
+| `ADMIN_MUTATION_MISSING` | None for current defined operational mutations |
+| `CUSTOMER_PROJECTION_MISSING` | None; customer-owned/public boundaries already exist |
+| `AUTHORIZATION_GAP` | None found in the existing authorization matrix and Convex tests |
+
+No REST synchronization endpoints, polling layer, duplicate database, or
+manual sync process is introduced. Unresolved future policy such as customer
+Ready Stock checkout, refund disbursement, and replacement rules remains
+explicitly out of scope.

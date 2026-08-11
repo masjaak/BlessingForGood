@@ -103,7 +103,19 @@ describe("public UI foundation", () => {
     expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
   });
 
-  it("renders the mockup-aligned customer bottom navigation for signed-in customers", () => {
+  it("renders the mockup-aligned customer bottom navigation for signed-out customers", () => {
+    render(<SiteShell>Customer content</SiteShell>);
+
+    const navigation = screen.getByRole("navigation", { name: "Navigasi customer" });
+    expect(
+      within(navigation)
+        .getAllByRole("link")
+        .map((link) => link.textContent?.trim()),
+    ).toEqual(["Beranda", "Katalog", "Buku Saya", "Tagihan", "Akun"]);
+    expect(screen.queryByLabelText("Buka menu")).toBeNull();
+  });
+
+  it("keeps the same bottom navigation for signed-in customers", () => {
     vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
     render(<SiteShell>Customer content</SiteShell>);
 

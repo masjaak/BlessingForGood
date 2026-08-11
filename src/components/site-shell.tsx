@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
+import { bfgClerkAppearance } from "@/config/clerk";
 
 const customerLinks = [
   { href: "/", label: "Beranda" },
@@ -105,7 +106,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const signedIn = Boolean(isLoaded && isSignedIn);
   const isAdmin = pathname.startsWith("/admin");
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
-  const menuLinks = signedIn ? customerLinks : publicLinks;
 
   if (isAdmin) {
     return (
@@ -118,7 +118,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
           <div className="admin-account">
             <Link href="/">Lihat sisi customer</Link>
-            <UserButton />
+            <UserButton appearance={bfgClerkAppearance} />
           </div>
         </header>
         <main>{children}</main>
@@ -129,18 +129,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className={`site-shell customer-shell${signedIn ? " customer-shell-signed-in" : ""}`}>
       <header className="site-header">
-        <details className="mobile-menu">
-          <summary aria-label="Buka menu">
-            <span aria-hidden="true" />
-          </summary>
-          <nav aria-label="Navigasi mobile">
-            {menuLinks.map((link) => (
-              <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </details>
         <BrandLogo />
         {!signedIn ? (
           <nav className="site-nav public-nav" aria-label="Primary navigation">
@@ -166,7 +154,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
         )}
         <div className="site-auth" aria-label="Account access">
-          {!signedIn ? <SignInButton mode="redirect">Masuk</SignInButton> : <UserButton />}
+          {!signedIn ? (
+            <SignInButton mode="redirect">Masuk</SignInButton>
+          ) : (
+            <UserButton appearance={bfgClerkAppearance} />
+          )}
         </div>
       </header>
       <main>{children}</main>
@@ -183,7 +175,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       </footer>
-      {signedIn ? <CustomerBottomNav pathname={pathname} /> : null}
+      <CustomerBottomNav pathname={pathname} />
     </div>
   );
 }
