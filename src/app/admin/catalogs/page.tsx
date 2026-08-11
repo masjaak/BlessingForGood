@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
-import { prototypeErrorMessage } from "@/domain/prototype/errors";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 type VariantDraft = { enabled: boolean; isbn: string; price: string };
@@ -19,7 +19,7 @@ const initialVariants: VariantDrafts = {
 };
 
 function CatalogForm() {
-  const { createCatalog, dataSource } = usePrototype();
+  const { createCatalog, dataSource } = useProduct();
   const [name, setName] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [closingAt, setClosingAt] = useState("");
@@ -52,7 +52,7 @@ function CatalogForm() {
         title,
         variants: selected,
       });
-      setSaved(`${catalog.name} is open and ready for the customer preview.`);
+      setSaved(`${catalog.name} sudah terbuka untuk customer yang memiliki akses.`);
       setName("");
       setAccessCode("");
       setClosingAt("");
@@ -60,7 +60,7 @@ function CatalogForm() {
       setTitle("");
       setVariants(initialVariants);
     } catch (reason) {
-      setError(prototypeErrorMessage(reason, "Catalog could not be created"));
+      setError(productErrorMessage(reason, "Catalog could not be created"));
     }
   }
 
@@ -70,7 +70,7 @@ function CatalogForm() {
         <span className="card-kicker">Create secret catalog</span>
         <h2>Set up one useful starting point.</h2>
         <p>
-          Prototype behavior creates the catalog open. Access codes are hashed before they enter{" "}
+          Katalog baru langsung terbuka. Kode akses disimpan dalam bentuk hash sebelum masuk ke{" "}
           {dataSource === "convex" ? "Convex" : "local storage"}.
         </p>
       </div>
@@ -106,7 +106,7 @@ function CatalogForm() {
           <Field label="Book title">
             <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} required />
           </Field>
-          <Field label="Closing date" hint="Optional. Leave blank for an open-ended prototype catalog.">
+          <Field label="Closing date" hint="Opsional. Kosongkan bila katalog tidak memiliki tanggal tutup.">
             <input
               className="input"
               type="datetime-local"
@@ -169,12 +169,12 @@ function CatalogForm() {
 }
 
 function CatalogList() {
-  const { state, closeCatalog } = usePrototype();
+  const { state, closeCatalog } = useProduct();
   if (state.catalogs.length === 0)
     return (
       <EmptyState
         title="Catalog list is empty"
-        description="That is intentional: no business records are seeded into the prototype."
+        description="Buat katalog saat materi dan kode akses sudah siap dibagikan."
       />
     );
   return (
@@ -218,9 +218,9 @@ function AdminCatalogs() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Catalog operations"
-        title="Create the door before opening the room."
-        description="The prototype keeps secret catalog access separate from customer accounts and starts with no catalog records."
+        eyebrow="Operasional katalog"
+        title="Kelola Secret Catalog dengan akses yang aman."
+        description="Akses katalog tetap terpisah dari kata sandi akun dan hanya diberikan melalui kode serta grant yang sah."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -240,9 +240,9 @@ function AdminCatalogs() {
 export default function AdminCatalogsPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminCatalogs />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

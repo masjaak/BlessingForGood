@@ -6,16 +6,13 @@ import type { FunctionReturnType } from "convex/server";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { PrototypeContext, type PrototypeContextValue } from "@/domain/prototype/context";
+import { ProductContext, type ProductContextValue } from "@/domain/prototype/context";
 import { ConvexOperationsProvider } from "@/domain/prototype/operations-context";
-import { createInvoiceFromOrder, appendDepositTransaction } from "@/domain/prototype/logic";
 import { getStoredUnlockedCatalogId, setStoredUnlockedCatalogId } from "@/domain/prototype/session";
 import type {
   BookFormat,
   CreateCatalogInput,
   CreateOrderInput,
-  DepositTransactionType,
-  Invoice,
   Order,
   OrderStatus,
   PrototypeState,
@@ -49,6 +46,7 @@ type CatalogRecord = {
 
 type OrderRecord = {
   orderId: string;
+  customerUserId: string;
   catalogId: string;
   customerName: string;
   customerEmail?: string;
@@ -92,6 +90,7 @@ function asOrder(value: OrderView | null | undefined): Order | undefined {
   const record = value as unknown as OrderRecord;
   return {
     id: record.orderId,
+    customerUserId: record.customerUserId,
     catalogId: record.catalogId,
     customerName: record.customerName,
     customerEmail: record.customerEmail || null,
@@ -121,17 +120,8 @@ function pageOf<T>(value: { page: T[] } | undefined): T[] {
   return value?.page || [];
 }
 
-export function ConvexPrototypeProvider({
-  children,
-  enabled,
-  previewDemo,
-}: {
-  children: ReactNode;
-  enabled: boolean;
-  previewDemo: boolean;
-}) {
+export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [provisioning, setProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState(false);
 
@@ -147,7 +137,7 @@ export function ConvexPrototypeProvider({
   const edit = useMutation(api.orders.edit);
   const updateStatus = useMutation(api.orders.updateStatus);
 
-  const me = useQuery(api.users.current, enabled && isSignedIn && isAuthenticated ? {} : "skip");
+  const me = useQuery(api.users.current, isSignedIn && isAuthenticated ? {} : "skip");
   const activeUser = me?.status === "active" && isAuthenticated;
   const isAdmin = activeUser && (me?.role === "admin" || me?.role === "owner");
   const isCustomer = activeUser && me?.role === "customer";
@@ -169,15 +159,13 @@ export function ConvexPrototypeProvider({
   );
 
   useEffect(() => {
-    if (!enabled) return;
     queueMicrotask(() => {
       setUnlockedCatalogId(getStoredUnlockedCatalogId());
     });
-  }, [enabled]);
+  }, []);
 
   useEffect(() => {
-    if (!enabled || !isLoaded || !isSignedIn || convexAuthLoading || !isAuthenticated || me !== null || provisioning)
-      return;
+    if (!isLoaded || !isSignedIn || convexAuthLoading || !isAuthenticated || me !== null || provisioning) return;
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
@@ -194,7 +182,7 @@ export function ConvexPrototypeProvider({
     return () => {
       active = false;
     };
-  }, [convexAuthLoading, enabled, ensureCurrentUser, isAuthenticated, isLoaded, isSignedIn, me, provisioning]);
+  }, [convexAuthLoading, ensureCurrentUser, isAuthenticated, isLoaded, isSignedIn, me, provisioning]);
 
   const catalogs = useMemo(
     () =>
@@ -212,7 +200,7 @@ export function ConvexPrototypeProvider({
         .filter(Boolean),
     [adminOrders, customerOrders, isAdmin],
   ) as Order[];
-  const state = useMemo<PrototypeState>(() => ({ catalogs, orders, invoices }), [catalogs, invoices, orders]);
+  const state = useMemo<PrototypeState>(() => ({ catalogs, orders, invoices: [] }), [catalogs, orders]);
 
   const createCatalog = useCallback(
     async (input: CreateCatalogInput) => {
@@ -302,50 +290,23 @@ export function ConvexPrototypeProvider({
     [closeCatalogMutation],
   );
 
-  const createInvoice = useCallback(
-    (orderId: string, requirement: Parameters<typeof createInvoiceFromOrder>[1]) => {
-      const order = orders.find((candidate) => candidate.id === orderId);
-      if (!order) throw new Error("order not found");
-      if (invoices.some((invoice) => invoice.orderId === orderId)) throw new Error("invoice already exists");
-      const invoice = createInvoiceFromOrder(order, requirement);
-      setInvoices((current) => [invoice, ...current]);
-      return invoice;
-    },
-    [invoices, orders],
-  );
+  const authState = !isLoaded
+    ? "loading"
+    : !isSignedIn
+      ? "signed-out"
+      : convexAuthLoading || !isAuthenticated
+        ? "convex-loading"
+        : provisionError
+          ? "network-error"
+          : provisioning || me === null || me === undefined
+            ? "provisioning"
+            : me.status === "suspended"
+              ? "suspended"
+              : "authenticated";
 
-  const recordDeposit = useCallback(
-    (invoiceId: string, type: DepositTransactionType, amount: number, note: string) => {
-      const invoice = invoices.find((candidate) => candidate.id === invoiceId);
-      if (!invoice) throw new Error("invoice not found");
-      const updated = appendDepositTransaction(invoice, type, amount, note);
-      setInvoices((current) => current.map((candidate) => (candidate.id === invoiceId ? updated : candidate)));
-      return updated;
-    },
-    [invoices],
-  );
-
-  const authState = !enabled
-    ? "configuration-missing"
-    : !isLoaded
-      ? "loading"
-      : !isSignedIn
-        ? "signed-out"
-        : convexAuthLoading || !isAuthenticated
-          ? "convex-loading"
-          : provisionError
-            ? "network-error"
-            : provisioning || me === null || me === undefined
-              ? "provisioning"
-              : me.status === "suspended"
-                ? "suspended"
-                : "authenticated";
-
-  const value = useMemo<PrototypeContextValue>(
+  const value = useMemo<ProductContextValue>(
     () => ({
-      enabled,
-      previewDemo,
-      hydrated: enabled && isLoaded && (!isSignedIn || (me !== undefined && me !== null) || provisionError),
+      hydrated: isLoaded && (!isSignedIn || (me !== undefined && me !== null) || provisionError),
       dataSource: "convex",
       sessionRole: me?.role || null,
       userStatus: me?.status || null,
@@ -357,20 +318,14 @@ export function ConvexPrototypeProvider({
       submitOrder,
       updateOrderStatus,
       closeCatalog,
-      createInvoice,
-      recordDeposit,
       editOrder,
     }),
     [
       closeCatalog,
       createCatalog,
-      createInvoice,
       editOrder,
-      enabled,
       authState,
       me,
-      previewDemo,
-      recordDeposit,
       isLoaded,
       isSignedIn,
       provisionError,
@@ -383,16 +338,10 @@ export function ConvexPrototypeProvider({
   );
 
   return (
-    <PrototypeContext.Provider value={value}>
-      <ConvexOperationsProvider enabled={enabled} role={me?.role || null} active={authState === "authenticated"}>
-        {previewDemo ? (
-          <aside className="prototype-preview-banner" role="status">
-            <strong>Prototype Preview</strong>
-            <span>Data is stored in the BFG Preview environment.</span>
-          </aside>
-        ) : null}
+    <ProductContext.Provider value={value}>
+      <ConvexOperationsProvider enabled role={me?.role || null} active={authState === "authenticated"}>
         {children}
       </ConvexOperationsProvider>
-    </PrototypeContext.Provider>
+    </ProductContext.Provider>
   );
 }

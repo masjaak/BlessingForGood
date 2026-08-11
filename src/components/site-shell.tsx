@@ -5,20 +5,23 @@ import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 
 const customerLinks = [
-  { href: "/", label: "Home" },
-  { href: "/catalog", label: "Catalog" },
   { href: "/ready-stock", label: "Ready Stock" },
-  { href: "/account/orders", label: "Orders" },
-  { href: "/account/invoices", label: "Account" },
-  { href: "/account/profile", label: "Profile" },
-  { href: "/account/addresses", label: "Addresses" },
+  { href: "/catalog", label: "Secret Catalog" },
+  { href: "/account/orders", label: "Pesanan" },
+  { href: "/account", label: "Akun" },
+];
+
+const publicLinks = [
+  { href: "/ready-stock", label: "Ready Stock" },
+  { href: "/community", label: "Komunitas" },
+  { href: "/how-to-order", label: "Cara memesan" },
 ];
 
 const supportLinks = [
-  { href: "/community", label: "Community" },
-  { href: "/join", label: "Join Blessfriends" },
-  { href: "/how-to-order", label: "How to order" },
-  { href: "/help", label: "Help" },
+  { href: "/community", label: "Komunitas" },
+  { href: "/join", label: "Gabung Blessfriends" },
+  { href: "/how-to-order", label: "Cara memesan" },
+  { href: "/help", label: "Bantuan" },
 ];
 
 export function SiteShell({ children }: { children: ReactNode }) {
@@ -27,6 +30,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <header className="site-header">
         <BrandLogo />
         <nav className="site-nav" aria-label="Primary navigation">
+          <Show when="signed-out">
+            {publicLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            ))}
+          </Show>
           <Show when="signed-in">
             <AdminShellLink />
             {customerLinks.map((link) => (
@@ -48,8 +58,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <main>{children}</main>
       <footer className="site-footer">
         <div>
-          <span>Prototype v0.1 · zero business data</span>
-          <span>Built for Blessfriends</span>
+          <span>Blessing For Goods</span>
+          <span>Buku pilihan untuk Blessfriends</span>
         </div>
         <nav className="footer-nav" aria-label="Support navigation">
           {supportLinks.map((link) => (

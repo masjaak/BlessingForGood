@@ -50,7 +50,7 @@
   --motion-fast: 160ms ease;
   --z-header: 10;
 
-  /* Legacy aliases keep the existing prototype components small while they migrate. */
+  /* Short aliases shared by the existing BFG components. */
   --ink: var(--color-text-primary);
   --ink-muted: var(--color-text-secondary);
   --paper: var(--color-paper);
@@ -141,27 +141,6 @@ p {
 .site-shell {
   min-height: 100vh;
 }
-.prototype-preview-banner {
-  position: fixed;
-  z-index: 30;
-  top: 12px;
-  right: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 9px;
-  align-items: center;
-  max-width: min(420px, calc(100vw - 32px));
-  padding: 8px 11px;
-  color: var(--color-brand-primary-strong);
-  border: 1px solid #b6d7c9;
-  border-radius: var(--radius-sm);
-  background: #eef9f3;
-  box-shadow: var(--shadow);
-  font-size: var(--font-size-caption);
-}
-.prototype-preview-banner span {
-  color: var(--ink-muted);
-}
 .site-header,
 .site-footer {
   width: min(calc(100% - 40px), var(--content));
@@ -211,6 +190,9 @@ p {
   width: 76px;
   height: 76px;
   object-fit: contain;
+}
+.brand-logo-primary {
+  transform: scale(1.75);
 }
 .brand-logo-symbol {
   width: 48px;
@@ -416,6 +398,74 @@ p {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+.account-metrics,
+.admin-queue-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.admin-queue-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.account-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.account-dashboard-grid > .card {
+  min-width: 0;
+}
+.metric-money {
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+}
+.dashboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.dashboard-row:last-child {
+  border-bottom: 0;
+}
+.dashboard-row > span:first-child,
+.activity-list span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.dashboard-row small,
+.activity-list small {
+  color: var(--ink-muted);
+}
+.activity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.activity-list li + li {
+  border-top: 1px solid var(--line);
+}
+.activity-list a {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+.activity-list time {
+  flex: 0 0 auto;
+  color: var(--ink-muted);
+  font-size: var(--font-size-caption);
+}
+.admin-page .page-header h1 {
+  font-size: clamp(2rem, 3.2vw, 3.15rem);
+}
+.admin-quick-actions {
+  margin-top: 0;
 }
 .two-column {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1189,6 +1239,10 @@ p {
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .account-metrics,
+  .admin-queue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .ready-stock-controls,
   .admin-book-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1203,19 +1257,14 @@ p {
 }
 
 @media (max-width: 640px) {
-  .prototype-preview-banner {
-    top: 8px;
-    right: 8px;
-    left: 8px;
-    justify-content: center;
-    max-width: none;
-  }
   .site-header,
   .site-footer,
   .page {
     width: min(calc(100% - 28px), var(--content));
   }
   .site-header {
+    align-items: center;
+    flex-direction: row;
     padding: 18px 0;
   }
   .brand-logo-link,
@@ -1283,6 +1332,9 @@ p {
   .feature-grid,
   .two-column,
   .dashboard-grid,
+  .account-metrics,
+  .admin-queue-grid,
+  .account-dashboard-grid,
   .form-grid,
   .form-grid-wide {
     grid-template-columns: 1fr;

@@ -8,7 +8,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 type PublicationStatus = "draft" | "published" | "special" | "archived";
 type Availability = "in_stock" | "out_of_stock" | "not_listed";
@@ -199,7 +199,7 @@ function ConnectedAdminBooks() {
 }
 
 export function AdminBooks() {
-  return usePrototype().dataSource === "convex" ? (
+  return useProduct().dataSource === "convex" ? (
     <ConnectedAdminBooks />
   ) : (
     <div className="state-panel">Book Master memerlukan sumber data Convex.</div>

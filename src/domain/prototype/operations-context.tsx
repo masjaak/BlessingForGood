@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import type { PrototypeDataSource } from "@/domain/prototype/context";
+import type { ProductDataSource } from "@/domain/prototype/context";
 import { useOperationsMutations } from "@/domain/prototype/operations-mutations";
 
 export type ShipmentStage =
@@ -33,6 +33,7 @@ export type PaymentConfirmationView = Awaited<
 >[number];
 export type AdminPaymentQueue = Awaited<FunctionReturnType<typeof api.paymentConfirmations.listPendingForAdmin>>;
 export type AdminPaymentHistory = NonNullable<FunctionReturnType<typeof api.paymentConfirmations.listForAdmin>>;
+export type CustomerExceptionPage = NonNullable<FunctionReturnType<typeof api.orderExceptions.listMine>>;
 export type PaymentConfirmationInput = {
   amount: number;
   paymentMethod: string;
@@ -44,7 +45,7 @@ export type PaymentConfirmationInput = {
 
 export interface OperationsContextValue {
   enabled: boolean;
-  dataSource: PrototypeDataSource;
+  dataSource: ProductDataSource;
   batchList: BatchPage | undefined;
   adminInvoiceList: InvoicePage | undefined;
   customerInvoiceList: InvoicePage | undefined;
@@ -65,6 +66,7 @@ export interface OperationsContextValue {
   customerPaymentConfirmations: PaymentConfirmationView[] | undefined;
   adminPaymentQueue: AdminPaymentQueue | undefined;
   adminPaymentHistory: AdminPaymentHistory | undefined;
+  customerExceptionList: CustomerExceptionPage | undefined;
   createBatch: (input: { name: string; referenceCode?: string; description?: string }) => Promise<BatchSummary>;
   linkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
@@ -200,6 +202,10 @@ export function ConvexOperationsProvider({
     api.paymentConfirmations.listForAdmin,
     isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
+  const customerExceptionList = useQuery(
+    api.orderExceptions.listMine,
+    isCustomer ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+  );
 
   const mutations = useOperationsMutations();
 
@@ -227,6 +233,7 @@ export function ConvexOperationsProvider({
       customerPaymentConfirmations,
       adminPaymentQueue,
       adminPaymentHistory,
+      customerExceptionList,
       ...mutations,
     }),
     [
@@ -251,6 +258,7 @@ export function ConvexOperationsProvider({
       enabled,
       adminPaymentQueue,
       adminPaymentHistory,
+      customerExceptionList,
       mutations,
     ],
   );
@@ -258,22 +266,14 @@ export function ConvexOperationsProvider({
   return <OperationsContext.Provider value={value}>{children}</OperationsContext.Provider>;
 }
 
-export function LocalOperationsProvider({
-  children,
-  enabled,
-  dataSource,
-}: {
-  children: ReactNode;
-  enabled: boolean;
-  dataSource: PrototypeDataSource;
-}) {
+export function UnavailableOperationsProvider({ children }: { children: ReactNode }) {
   const unavailable = useCallback(async () => {
     throw new Error("Persistent operational data requires a configured Convex data source.");
   }, []);
   const value = useMemo<OperationsContextValue>(
     () => ({
-      enabled,
-      dataSource,
+      enabled: false,
+      dataSource: "unavailable",
       batchList: undefined,
       adminInvoiceList: undefined,
       customerInvoiceList: undefined,
@@ -294,6 +294,7 @@ export function LocalOperationsProvider({
       customerPaymentConfirmations: undefined,
       adminPaymentQueue: undefined,
       adminPaymentHistory: undefined,
+      customerExceptionList: undefined,
       createBatch: unavailable,
       linkCatalog: unavailable,
       unlinkCatalog: unavailable,
@@ -316,13 +317,13 @@ export function LocalOperationsProvider({
       approvePaymentConfirmation: unavailable,
       rejectPaymentConfirmation: unavailable,
     }),
-    [dataSource, enabled, unavailable],
+    [unavailable],
   );
   return <OperationsContext.Provider value={value}>{children}</OperationsContext.Provider>;
 }
 
 export function useOperations(): OperationsContextValue {
   const value = useContext(OperationsContext);
-  if (!value) throw new Error("useOperations must be used inside PrototypeProvider");
+  if (!value) throw new Error("useOperations must be used inside ProductProvider");
   return value;
 }

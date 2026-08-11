@@ -7,7 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { BookCover } from "@/components/book-cover";
 import { Card, EmptyState, Field, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 type BookFormat = "BB" | "PB" | "HB";
 type Sort = "newest" | "title" | "price";
@@ -123,7 +123,7 @@ function ReadyStockResults() {
 }
 
 export function ReadyStockCatalog() {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   return (
     <div className="page ready-stock-page">
       <PageHeader

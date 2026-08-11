@@ -7,7 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { Button, Card, Field, PageHeader, StatusBadge } from "@/components/ui";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
@@ -273,7 +273,7 @@ function ConnectedAdminBookDetail({ bookId }: { bookId: Id<"books"> }) {
 }
 
 export function AdminBookDetail({ bookId }: { bookId: string }) {
-  return usePrototype().dataSource === "convex" ? (
+  return useProduct().dataSource === "convex" ? (
     <ConnectedAdminBookDetail bookId={bookId as Id<"books">} />
   ) : (
     <div className="state-panel">Book Master memerlukan sumber data Convex.</div>

@@ -7,7 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 type AdminException = Awaited<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>[number];
 type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForAdmin>>;
@@ -349,14 +349,13 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
 }
 
 export function AdminExceptions() {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   const orders = useQuery(
     api.orders.listForAdmin,
     dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
   );
   const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
-  if (dataSource !== "convex")
-    return <div className="state-panel">Exception operations require the Convex data source.</div>;
+  if (dataSource !== "convex") return <div className="state-panel">Antrian masalah belum tersedia.</div>;
   if (!orders || !exceptions) return <div className="state-panel">Loading exception operations…</div>;
   return (
     <div className="page admin-page">
@@ -376,7 +375,10 @@ export function AdminExceptions() {
               ))}
             </div>
           ) : (
-            <EmptyState title="No exceptions" description="The queue is empty. No business data is seeded." />
+            <EmptyState
+              title="Tidak ada masalah aktif"
+              description="Antrian OOS, defect, dan pembatalan sedang kosong."
+            />
           )}
         </div>
       </div>

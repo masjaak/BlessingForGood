@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
   invoicePaymentStatusLabel,
   invoiceStatusLabel,
@@ -10,11 +10,11 @@ import {
 } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function CustomerInvoiceDetail() {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   const {
     currentCustomerInvoice,
     customerAccount,
@@ -23,15 +23,14 @@ function CustomerInvoiceDetail() {
     customerPaymentConfirmations,
     submitPaymentConfirmation,
   } = useOperations();
-  if (dataSource !== "convex")
-    return <div className="state-panel">Persistent invoices require a configured Convex data source.</div>;
-  if (currentCustomerInvoice === undefined) return <div className="state-panel">Loading invoice…</div>;
+  if (dataSource !== "convex") return <div className="state-panel">Invoice belum tersedia saat ini.</div>;
+  if (currentCustomerInvoice === undefined) return <div className="state-panel">Menyiapkan invoice…</div>;
   if (!currentCustomerInvoice) {
     return (
       <EmptyState
-        title="Invoice not found"
-        description="This customer session cannot access that invoice, or it has not been created in Preview."
-        action={<LinkButton href="/account/invoices">Back to invoices</LinkButton>}
+        title="Invoice tidak ditemukan"
+        description="Invoice ini tidak tersedia untuk akunmu."
+        action={<LinkButton href="/account/invoices">Kembali ke invoice</LinkButton>}
       />
     );
   }
@@ -39,12 +38,12 @@ function CustomerInvoiceDetail() {
   return (
     <div className="page narrow-page">
       <PageHeader
-        eyebrow="Invoice detail"
+        eyebrow="Detail invoice"
         title={currentCustomerInvoice.invoiceNumber}
         description={`Order ${currentCustomerInvoice.orderId}`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">
-            Back to invoices
+            Kembali ke invoice
           </LinkButton>
         }
       />
@@ -66,15 +65,15 @@ function CustomerInvoiceDetail() {
             </div>
           ))}
           <div className="summary-line">
-            <span>Deposit requirement</span>
+            <span>Deposit yang diperlukan</span>
             <strong>{formatIdr(currentCustomerInvoice.depositRequiredAmount)}</strong>
           </div>
           <div className="summary-line">
-            <span>Allocated to invoice</span>
+            <span>Deposit teralokasi</span>
             <strong>{formatIdr(currentCustomerInvoice.allocatedDepositAmount)}</strong>
           </div>
           <div className="summary-line">
-            <span>Outstanding</span>
+            <span>Sisa tagihan</span>
             <strong>{formatIdr(currentCustomerInvoice.outstandingAmount)}</strong>
           </div>
         </Card>
@@ -82,7 +81,7 @@ function CustomerInvoiceDetail() {
         <Card>
           <div className="split-heading">
             <div>
-              <span className="card-kicker">Payment verification</span>
+              <span className="card-kicker">Verifikasi pembayaran</span>
               <h2>{invoicePaymentStatusLabel(currentCustomerInvoice.paymentStatus)}</h2>
             </div>
             <StatusBadge tone={currentCustomerInvoice.paymentStatus === "paid" ? "positive" : "warning"}>
@@ -90,14 +89,14 @@ function CustomerInvoiceDetail() {
             </StatusBadge>
           </div>
           <div className="summary-line">
-            <span>Payment verified</span>
+            <span>Pembayaran terverifikasi</span>
             <strong>{formatIdr(currentCustomerInvoice.verifiedPaymentAmount)}</strong>
           </div>
           {customerPaymentConfirmations === undefined ? (
-            <p className="subtle">Loading confirmation history…</p>
+            <p className="subtle">Menyiapkan riwayat konfirmasi…</p>
           ) : customerPaymentConfirmations.length ? (
             <div className="content-stack">
-              <h3>Confirmation history</h3>
+              <h3>Riwayat konfirmasi</h3>
               {customerPaymentConfirmations.map((confirmation) => (
                 <div className="summary-line" key={confirmation.confirmationId}>
                   <span>
@@ -110,7 +109,7 @@ function CustomerInvoiceDetail() {
               ))}
             </div>
           ) : (
-            <p className="subtle">No payment confirmation has been submitted.</p>
+            <p className="subtle">Belum ada konfirmasi pembayaran.</p>
           )}
           {currentCustomerInvoice.status === "issued" &&
           currentCustomerInvoice.outstandingAmount > 0 &&
@@ -118,7 +117,7 @@ function CustomerInvoiceDetail() {
             customerPaymentConfirmations.some(
               (confirmation) => confirmation.status === "submitted" || confirmation.status === "under_review",
             ) ? (
-              <p className="subtle">Your latest payment confirmation is awaiting review.</p>
+              <p className="subtle">Konfirmasi pembayaran terbarumu sedang ditinjau.</p>
             ) : (
               <PaymentConfirmationForm
                 invoiceId={currentCustomerInvoice.invoiceId}
@@ -132,19 +131,19 @@ function CustomerInvoiceDetail() {
         <Card>
           <div className="split-heading">
             <div>
-              <span className="card-kicker">Deposit account</span>
-              <h2>Available and reserved</h2>
+              <span className="card-kicker">Akun deposit</span>
+              <h2>Tersedia dan dialokasikan</h2>
             </div>
           </div>
           <div className="summary-line">
-            <span>Available</span>
+            <span>Tersedia</span>
             <strong>{formatIdr(account?.availableAmount || 0)}</strong>
           </div>
           <div className="summary-line">
-            <span>Reserved</span>
+            <span>Dialokasikan</span>
             <strong>{formatIdr(account?.reservedAmount || 0)}</strong>
           </div>
-          <h3>Allocation history</h3>
+          <h3>Riwayat alokasi</h3>
           {customerAllocations?.length ? (
             customerAllocations.map((allocation) => (
               <div className="summary-line" key={allocation.allocationId}>
@@ -153,19 +152,19 @@ function CustomerInvoiceDetail() {
               </div>
             ))
           ) : (
-            <p className="subtle">No deposit allocation is recorded for this invoice.</p>
+            <p className="subtle">Belum ada alokasi deposit untuk invoice ini.</p>
           )}
         </Card>
 
         <Card>
           <div className="split-heading">
             <div>
-              <span className="card-kicker">Append-only ledger</span>
-              <h2>Deposit history</h2>
+              <span className="card-kicker">Riwayat deposit</span>
+              <h2>Mutasi saldo</h2>
             </div>
           </div>
           {!customerTransactions ? (
-            <p className="subtle">Loading ledger…</p>
+            <p className="subtle">Menyiapkan riwayat deposit…</p>
           ) : customerTransactions.page.length ? (
             customerTransactions.page.map((transaction) => (
               <div className="summary-line" key={transaction.transactionId}>
@@ -176,7 +175,7 @@ function CustomerInvoiceDetail() {
               </div>
             ))
           ) : (
-            <p className="subtle">No deposit transactions are recorded.</p>
+            <p className="subtle">Belum ada transaksi deposit.</p>
           )}
         </Card>
       </div>
@@ -204,7 +203,7 @@ function PaymentConfirmationForm({
   ) => Promise<unknown>;
 }) {
   const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Bank transfer");
+  const [paymentMethod, setPaymentMethod] = useState("Transfer bank");
   const [transferReference, setTransferReference] = useState("");
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [proofReference, setProofReference] = useState("");
@@ -230,17 +229,17 @@ function PaymentConfirmationForm({
       setTransferReference("");
       setProofReference("");
       setCustomerNote("");
-      setMessage("Payment confirmation submitted for review.");
+      setMessage("Konfirmasi pembayaran dikirim untuk ditinjau.");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Payment confirmation failed");
+      setError(reason instanceof Error ? reason.message : "Konfirmasi pembayaran belum dapat dikirim");
     }
   }
 
   return (
     <form className="content-stack" onSubmit={submit}>
-      <h3>Submit payment</h3>
+      <h3>Kirim konfirmasi pembayaran</h3>
       <div className="form-grid">
-        <Field label={`Amount paid (max ${formatIdr(maxAmount)})`}>
+        <Field label={`Jumlah dibayar (maks. ${formatIdr(maxAmount)})`}>
           <input
             className="input"
             type="number"
@@ -252,7 +251,7 @@ function PaymentConfirmationForm({
             required
           />
         </Field>
-        <Field label="Payment method">
+        <Field label="Metode pembayaran">
           <input
             className="input"
             value={paymentMethod}
@@ -260,7 +259,7 @@ function PaymentConfirmationForm({
             required
           />
         </Field>
-        <Field label="Paid date">
+        <Field label="Tanggal pembayaran">
           <input
             className="input"
             type="date"
@@ -269,7 +268,7 @@ function PaymentConfirmationForm({
             required
           />
         </Field>
-        <Field label="Transfer reference (optional)">
+        <Field label="Referensi transfer (opsional)">
           <input
             className="input"
             value={transferReference}
@@ -277,14 +276,14 @@ function PaymentConfirmationForm({
           />
         </Field>
       </div>
-      <Field label="Proof reference (optional)" hint="Use a future storage reference, not a file or image blob.">
+      <Field label="Referensi bukti (opsional)" hint="Isi referensi bukti yang diberikan admin bila tersedia.">
         <input className="input" value={proofReference} onChange={(event) => setProofReference(event.target.value)} />
       </Field>
-      <Field label="Note (optional)">
+      <Field label="Catatan (opsional)">
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>
       <div className="form-actions">
-        <Button type="submit">Submit payment confirmation</Button>
+        <Button type="submit">Kirim konfirmasi</Button>
         {message ? (
           <span className="subtle" role="status">
             {message}
@@ -303,9 +302,9 @@ function PaymentConfirmationForm({
 export default function CustomerInvoiceDetailPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer">
         <CustomerInvoiceDetail />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

@@ -6,10 +6,10 @@ import { useMemo, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 type JoinRequest = FunctionReturnType<typeof api.joinRequests.listForAdmin>[number];
@@ -124,7 +124,7 @@ function JoinRequestCard({
       ) : null}
       {request.status === "approved" ? (
         <p className="success-banner" role="status">
-          Invitation handoff ready. Create the Clerk Development invitation manually; no invitation URL is stored here.
+          Invitation handoff ready. Create the Clerk invitation manually; no invitation URL is stored here.
         </p>
       ) : null}
       {request.status === "rejected" ? <p className="subtle">Reason: {request.rejectionReason}</p> : null}
@@ -226,20 +226,20 @@ function ConnectedJoinRequests() {
 }
 
 function AdminJoinRequests() {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   return dataSource === "convex" ? (
     <ConnectedJoinRequests />
   ) : (
-    <div className="state-panel">Join request review requires the Convex data source.</div>
+    <div className="state-panel">Antrian penerimaan belum tersedia.</div>
   );
 }
 
 export default function AdminJoinRequestsPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminJoinRequests />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

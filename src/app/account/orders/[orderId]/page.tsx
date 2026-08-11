@@ -3,11 +3,11 @@
 import { useParams } from "next/navigation";
 import { CustomerOrderExceptions } from "@/components/customer-order-exceptions";
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { fulfillmentStageLabels, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr, orderStatusLabels } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function Timeline({
@@ -17,7 +17,7 @@ function Timeline({
   history: Array<{ toStage: string; at: string }>;
   labels: Record<string, string>;
 }) {
-  if (!history.length) return <p className="subtle">No stage has been recorded yet.</p>;
+  if (!history.length) return <p className="subtle">Belum ada tahap yang tercatat.</p>;
   return (
     <ul className="timeline">
       {history.map((event) => (
@@ -36,33 +36,33 @@ function Timeline({
 function CustomerOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
-  const { dataSource, state } = usePrototype();
+  const { dataSource, state } = useProduct();
   const { currentCustomerTracking, currentCustomerFulfillment, customerInvoiceList } = useOperations();
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (dataSource !== "convex") {
-    return <div className="state-panel">Persistent tracking is available in Convex Preview.</div>;
+    return <div className="state-panel">Tracking belum tersedia saat ini.</div>;
   }
   if (!order) {
     return (
       <EmptyState
-        title="Order not found"
-        description="This customer session cannot access that order, or it has not been created in Preview."
-        action={<LinkButton href="/account/orders">Back to orders</LinkButton>}
+        title="Pesanan tidak ditemukan"
+        description="Pesanan ini tidak tersedia untuk akunmu."
+        action={<LinkButton href="/account/orders">Kembali ke pesanan</LinkButton>}
       />
     );
   }
   if (!currentCustomerTracking || !currentCustomerFulfillment)
-    return <div className="state-panel">Loading tracking…</div>;
+    return <div className="state-panel">Menyiapkan tracking…</div>;
   const invoice = customerInvoiceList?.page.find((candidate) => candidate.orderId === orderId);
   return (
     <div className="page narrow-page">
       <PageHeader
-        eyebrow="Order tracking"
+        eyebrow="Tracking pesanan"
         title={order.items[0]?.bookTitle || "Order detail"}
         description={`${order.customerName} · ${order.id}`}
         actions={
           <LinkButton href="/account/orders" variant="secondary">
-            Back to orders
+            Kembali ke pesanan
           </LinkButton>
         }
       />
@@ -70,7 +70,7 @@ function CustomerOrderDetail() {
         <Card>
           <div className="split-heading">
             <div>
-              <span className="card-kicker">Order status</span>
+              <span className="card-kicker">Status pesanan</span>
               <h2>{formatIdr(order.total)}</h2>
             </div>
             <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
@@ -85,10 +85,10 @@ function CustomerOrderDetail() {
           ))}
           {invoice ? (
             <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">
-              View {invoice.invoiceNumber}
+              Lihat {invoice.invoiceNumber}
             </LinkButton>
           ) : (
-            <p className="subtle">No invoice has been issued yet.</p>
+            <p className="subtle">Invoice belum diterbitkan.</p>
           )}
         </Card>
 
@@ -106,8 +106,10 @@ function CustomerOrderDetail() {
         <Card>
           <div className="split-heading">
             <div>
-              <span className="card-kicker">Shipment</span>
-              <h2>{currentCustomerTracking.batches.length ? "Imported goods movement" : "No batch assigned"}</h2>
+              <span className="card-kicker">Perjalanan batch</span>
+              <h2>
+                {currentCustomerTracking.batches.length ? "Perjalanan buku dari luar negeri" : "Belum masuk batch"}
+              </h2>
             </div>
           </div>
           {currentCustomerTracking.batches.length ? (
@@ -122,29 +124,29 @@ function CustomerOrderDetail() {
                     <span>
                       {assignment.quantity} × {assignment.bookTitle} · {assignment.format}
                     </span>
-                    <StatusBadge>{assignment.quantity ? "Assigned" : "Unassigned"}</StatusBadge>
+                    <StatusBadge>{assignment.quantity ? "Masuk roster" : "Belum ditetapkan"}</StatusBadge>
                   </div>
                 ))}
                 <p className="subtle">
-                  Current stage:{" "}
-                  {batch.currentShipmentStage ? shipmentStageLabels[batch.currentShipmentStage] : "Not set"}
+                  Tahap saat ini:{" "}
+                  {batch.currentShipmentStage ? shipmentStageLabels[batch.currentShipmentStage] : "Belum dimulai"}
                 </p>
                 <Timeline history={batch.history} labels={shipmentStageLabels} />
               </div>
             ))
           ) : (
-            <p className="subtle">The admin has not assigned this order item to a batch.</p>
+            <p className="subtle">Item pesanan ini belum dimasukkan ke batch.</p>
           )}
         </Card>
 
         <Card>
           <div className="split-heading">
             <div>
-              <span className="card-kicker">Fulfillment</span>
+              <span className="card-kicker">Pemenuhan pesanan</span>
               <h2>
                 {currentCustomerFulfillment.currentStage
                   ? fulfillmentStageLabels[currentCustomerFulfillment.currentStage]
-                  : "Not started"}
+                  : "Belum dimulai"}
               </h2>
             </div>
           </div>
@@ -158,9 +160,9 @@ function CustomerOrderDetail() {
 export default function CustomerOrderDetailPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer">
         <CustomerOrderDetail />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

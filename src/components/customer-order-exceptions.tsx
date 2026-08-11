@@ -6,24 +6,24 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Button, Card, Field, Money, StatusBadge } from "@/components/ui";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 type CustomerException = Awaited<FunctionReturnType<typeof api.orderExceptions.listMineForOrder>>[number];
 type Item = { id: string; title: string; format: string; quantity: number; subtotal: number };
 
 const typeLabels: Record<CustomerException["type"], string> = {
-  out_of_stock: "Item unavailable",
-  defect: "Issue reported",
-  customer_cancellation: "Cancellation requested",
-  admin_cancellation: "Order issue",
+  out_of_stock: "Item tidak tersedia",
+  defect: "Masalah barang",
+  customer_cancellation: "Pembatalan diminta",
+  admin_cancellation: "Pembatalan oleh admin",
 };
 
 const statusLabels: Record<CustomerException["status"], string> = {
-  opened: "Issue reported",
-  under_review: "Under review",
-  resolution_selected: "Resolution planned",
-  resolved: "Resolved",
-  rejected: "Request rejected",
+  opened: "Masalah dilaporkan",
+  under_review: "Sedang ditinjau",
+  resolution_selected: "Penyelesaian dipilih",
+  resolved: "Selesai",
+  rejected: "Permintaan ditolak",
 };
 
 function statusTone(status: CustomerException["status"]): "neutral" | "positive" | "warning" {
@@ -46,7 +46,7 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
   if (!open) {
     return (
       <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-        {eligibility.decision === "eligible" ? "Request cancellation" : "Request admin review"}
+        {eligibility.decision === "eligible" ? "Ajukan pembatalan" : "Minta tinjauan admin"}
       </Button>
     );
   }
@@ -58,20 +58,20 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
         setMessage("");
         try {
           await request({ orderItemId: item.id as Id<"orderItems">, reason });
-          setMessage("Cancellation request sent for review.");
+          setMessage("Permintaan pembatalan sudah dikirim untuk ditinjau.");
           setReason("");
         } catch (error) {
-          setMessage(error instanceof Error ? error.message : "Cancellation request could not be sent.");
+          setMessage(error instanceof Error ? error.message : "Permintaan belum dapat dikirim.");
         }
       }}
     >
-      <Field label={`Reason for ${item.title}`}>
+      <Field label={`Alasan untuk ${item.title}`}>
         <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} required />
       </Field>
       <div className="form-actions">
-        <Button type="submit">Send request</Button>
+        <Button type="submit">Kirim permintaan</Button>
         <Button type="button" variant="quiet" onClick={() => setOpen(false)}>
-          Close
+          Tutup
         </Button>
         {message ? (
           <span className="subtle" role="status">
@@ -94,17 +94,17 @@ function ExceptionCard({ exception }: { exception: CustomerException }) {
         <StatusBadge tone={statusTone(exception.status)}>{statusLabels[exception.status]}</StatusBadge>
       </div>
       <div className="summary-line">
-        <span>Affected quantity</span>
+        <span>Jumlah terdampak</span>
         <strong>{exception.affectedQuantity}</strong>
       </div>
       {exception.customerNote ? <p className="subtle">{exception.customerNote}</p> : null}
       {exception.financialImpact ? (
         <div className="summary-line">
-          <span>Financial status</span>
+          <span>Status keuangan</span>
           <span>
             {exception.financialImpact.refundObligationStatus === "refund_due"
-              ? "Credit or refund pending review"
-              : "Recorded"}
+              ? "Kredit atau refund menunggu penyelesaian"
+              : "Tercatat"}
           </span>
         </div>
       ) : null}
@@ -124,7 +124,7 @@ function ExceptionCard({ exception }: { exception: CustomerException }) {
 }
 
 export function CustomerOrderExceptions({ orderId, items }: { orderId: string; items: Item[] }) {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   const exceptions = useQuery(
     api.orderExceptions.listMineForOrder,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
@@ -134,10 +134,10 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
     <Card>
       <div className="split-heading">
         <div>
-          <span className="card-kicker">Order exceptions</span>
-          <h2>Issues and requests</h2>
+          <span className="card-kicker">Masalah pesanan</span>
+          <h2>Penanganan dan permintaan</h2>
         </div>
-        <StatusBadge>{exceptions.length ? `${exceptions.length} recorded` : "No issues"}</StatusBadge>
+        <StatusBadge>{exceptions.length ? `${exceptions.length} tercatat` : "Tidak ada masalah"}</StatusBadge>
       </div>
       {exceptions.length ? (
         <div className="content-stack">
@@ -146,7 +146,7 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
           ))}
         </div>
       ) : (
-        <p className="subtle">No exception has been recorded for this order.</p>
+        <p className="subtle">Tidak ada masalah yang tercatat untuk pesanan ini.</p>
       )}
       <div className="content-stack">
         {items.map((item) => (
@@ -154,7 +154,7 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
             <span>
               {item.quantity} × {item.title} · {item.format}
               <br />
-              <span className="subtle">Original item value</span>
+              <span className="subtle">Nilai awal item</span>
             </span>
             <span>
               <Money amount={item.subtotal} />
@@ -165,7 +165,7 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
         ))}
       </div>
       <p className="subtle">
-        Cancellation requests are reviewed by BFG operations. No payout is performed automatically.
+        Permintaan pembatalan ditinjau oleh admin BFG. Pengembalian dana tidak dijalankan otomatis.
       </p>
     </Card>
   );

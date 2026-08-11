@@ -1,5 +1,5 @@
 import { BrandMascot } from "@/components/brand";
-import { LinkButton, Card } from "@/components/ui";
+import { Card, LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
 export default function CommunityPage() {
@@ -8,45 +8,40 @@ export default function CommunityPage() {
       <div className="page narrow-page">
         <header className="page-header">
           <div>
-            <span className="eyebrow">The Blessfriends guide</span>
-            <h1>Books are better when the journey is shared.</h1>
+            <span className="eyebrow">Komunitas Blessfriends</span>
+            <h1>Menemukan buku terasa lebih hangat saat dijalani bersama.</h1>
             <p className="lede">
-              Blessing For Goods is built around a community of readers who discover imported books together.
+              BFG mempertemukan pembaca dengan buku impor pilihan melalui komunitas, katalog privat, dan alur pemesanan
+              yang jelas.
             </p>
           </div>
         </header>
         <div className="content-stack">
           <Card className="accent-card">
             <BrandMascot variant="warm" className="guide-mascot" />
-            <span className="card-kicker">Community foundation</span>
-            <h2>Welcome, Blessfriend.</h2>
+            <span className="card-kicker">Selamat datang</span>
+            <h2>Halo, Blessfriend.</h2>
             <p>
-              This prototype keeps the public experience clear: understand the community, learn the order rhythm, then
-              enter a catalog when you have its access code.
+              Kamu bisa melihat Ready Stock kapan saja. Untuk preorder privat, gunakan kode Secret Catalog yang
+              dibagikan BFG.
             </p>
           </Card>
           <div className="two-column">
             <Card>
-              <span className="card-kicker">01 · Context</span>
-              <h2>Find your way in</h2>
-              <p>
-                Public information stays open and useful. Private catalog access is a separate step for invited buyers.
-              </p>
+              <span className="card-kicker">Temukan</span>
+              <h2>Pilihan yang terkurasi</h2>
+              <p>Lihat format, ISBN, harga, dan ketersediaan sebelum menentukan buku.</p>
             </Card>
             <Card>
-              <span className="card-kicker">02 · Clarity</span>
-              <h2>Keep the details together</h2>
-              <p>
-                Each book format can carry its own ISBN, price, availability, and quantity. The order keeps a snapshot
-                of what was selected.
-              </p>
+              <span className="card-kicker">Ikuti</span>
+              <h2>Perjalanan yang transparan</h2>
+              <p>Pantau pesanan, batch, pelunasan, dan pengiriman dari akunmu sendiri.</p>
             </Card>
           </div>
           <div className="actions">
-            <LinkButton href="/join">Join Blessfriends</LinkButton>
-            <LinkButton href="/how-to-order">How to order</LinkButton>
-            <LinkButton href="/catalog" variant="secondary">
-              Enter a catalog
+            <LinkButton href="/join">Gabung Blessfriends</LinkButton>
+            <LinkButton href="/how-to-order" variant="secondary">
+              Pelajari cara memesan
             </LinkButton>
           </div>
         </div>

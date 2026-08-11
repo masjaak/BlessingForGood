@@ -9,7 +9,7 @@ export default async function SignUpPage() {
   return (
     <main className="auth-page">
       <BrandLogo linkToHome={false} />
-      <p className="auth-invite-note">Account creation is available only through a valid BFG invitation.</p>
+      <p className="auth-invite-note">Pembuatan akun hanya tersedia melalui undangan BFG yang masih berlaku.</p>
       <SignUp path="/sign-up" routing="path" fallbackRedirectUrl="/catalog" />
     </main>
   );

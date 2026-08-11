@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 import { paymentConfirmationStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type AdminPaymentQueue } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function statusTone(status: AdminPaymentQueue[number]["status"]): "neutral" | "positive" | "warning" {
@@ -139,10 +139,9 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
 }
 
 function AdminPayments() {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   const { adminPaymentQueue, adminPaymentHistory } = useOperations();
-  if (dataSource !== "convex")
-    return <div className="state-panel">Payment review requires the Convex data source.</div>;
+  if (dataSource !== "convex") return <div className="state-panel">Antrian pembayaran belum tersedia.</div>;
   if (adminPaymentQueue === undefined) return <div className="state-panel">Loading payment confirmations…</div>;
   const resolvedHistory =
     adminPaymentHistory?.page.filter(
@@ -209,9 +208,9 @@ function AdminPayments() {
 export default function AdminPaymentsPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminPayments />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

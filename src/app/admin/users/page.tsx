@@ -5,7 +5,7 @@ import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, PageHeader } from "@/components/ui";
 
@@ -121,9 +121,9 @@ function UserManagement() {
 export default function AdminUsersPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="owner">
+      <ProductAccessGuard requiredRole="owner">
         <UserManagement />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

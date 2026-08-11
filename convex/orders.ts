@@ -39,6 +39,7 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
   return {
     orderId: order._id,
     id: order._id,
+    customerUserId: order.customerUserId,
     catalogId: order.catalogId,
     customerName: order.customerName,
     customerEmail: order.customerEmail,

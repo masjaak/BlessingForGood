@@ -24,6 +24,7 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   return {
     invoiceId: invoice._id,
     id: invoice._id,
+    customerUserId: invoice.customerUserId,
     orderId: invoice.orderId,
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,

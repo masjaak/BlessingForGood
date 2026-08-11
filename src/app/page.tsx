@@ -1,5 +1,5 @@
 import { BrandMascot } from "@/components/brand";
-import { LinkButton, Card } from "@/components/ui";
+import { Card, LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
 export default function HomePage() {
@@ -8,49 +8,45 @@ export default function HomePage() {
       <div className="page">
         <section className="hero">
           <div className="hero-copy">
-            <span className="eyebrow">Blessing For Goods · Prototype v0.1</span>
-            <h1 className="display">Books worth bringing home, together.</h1>
+            <span className="eyebrow">Komunitas pembaca buku impor</span>
+            <h1 className="display">Buku pilihan, dibawa pulang bersama.</h1>
             <p className="lede">
-              Blessing For Goods is a community-led imported bookstore for Blessfriends. Browse the public guide, unlock
-              a private catalog, and place a preorder with a clear next step.
+              Blessing For Goods membantu Blessfriends menemukan buku impor melalui Ready Stock dan Secret Catalog, lalu
+              mengikuti pesanan sampai tiba.
             </p>
             <div className="actions">
-              <LinkButton href="/catalog">Unlock a catalog</LinkButton>
-              <LinkButton href="/community" variant="secondary">
-                Community guide
+              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
+              <LinkButton href="/catalog" variant="secondary">
+                Buka Secret Catalog
               </LinkButton>
             </div>
             <div className="hero-support-links">
               <LinkButton href="/join" variant="quiet">
-                Join Blessfriends
+                Gabung Blessfriends
               </LinkButton>
               <LinkButton href="/how-to-order" variant="quiet">
-                How to order
-              </LinkButton>
-              <LinkButton href="/ready-stock" variant="quiet">
-                Ready Stock
+                Cara memesan
               </LinkButton>
             </div>
-            <p className="microcopy">Prototype boundary: this workspace starts empty and records no business data.</p>
           </div>
-          <div className="hero-panel" aria-label="Prototype focus">
+          <div className="hero-panel" aria-label="Cara memesan di Blessing For Goods">
             <div className="hero-panel-top">
               <div>
                 <BrandMascot className="hero-mascot" />
-                <span className="panel-label">The first slice</span>
+                <span className="panel-label">Perjalanan bukumu</span>
               </div>
-              <span className="status-badge status-positive">Ready to explore</span>
+              <span className="status-badge status-positive">Untuk Blessfriends</span>
             </div>
             <div className="hero-sequence">
               <span>01</span>
-              <strong>Unlock</strong>
-              <small>Use a catalog access code.</small>
+              <strong>Temukan</strong>
+              <small>Pilih Ready Stock atau katalog privat.</small>
               <span>02</span>
-              <strong>Choose</strong>
-              <small>Select a format and quantity.</small>
+              <strong>Pesan</strong>
+              <small>Pilih format, ISBN, dan jumlah dengan jelas.</small>
               <span>03</span>
-              <strong>Follow through</strong>
-              <small>Review the preorder and its status.</small>
+              <strong>Ikuti</strong>
+              <small>Pantau batch, invoice, pembayaran, dan pengiriman.</small>
             </div>
           </div>
         </section>
@@ -58,34 +54,34 @@ export default function HomePage() {
         <section className="section-block">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Start here</span>
-              <h2>A calmer path from curiosity to order.</h2>
+              <span className="eyebrow">Mulai dari sini</span>
+              <h2>Satu rumah untuk perjalanan buku pilihanmu.</h2>
             </div>
-            <p>Everything visible here is a foundation for the functional prototype, not a production promise.</p>
+            <p>Dari katalog sampai buku diterima, setiap langkah penting tetap mudah ditemukan.</p>
           </div>
           <div className="feature-grid">
             <Card>
-              <span className="card-kicker">Community</span>
-              <h3>Know the rhythm</h3>
-              <p>Read the community guide and ordering principles before entering a catalog.</p>
-              <LinkButton href="/community" variant="quiet">
-                Read the guide →
+              <span className="card-kicker">Ready Stock</span>
+              <h3>Buku yang sudah tersedia</h3>
+              <p>Cari judul, format, harga, dan ketersediaan stok yang siap dipesan.</p>
+              <LinkButton href="/ready-stock" variant="quiet">
+                Lihat koleksi →
               </LinkButton>
             </Card>
             <Card>
-              <span className="card-kicker">Catalog</span>
-              <h3>See the right details</h3>
-              <p>Format, ISBN, quantity, and price stay together when a preorder is reviewed.</p>
+              <span className="card-kicker">Secret Catalog</span>
+              <h3>Preorder khusus komunitas</h3>
+              <p>Gunakan kode akses untuk melihat katalog privat dan memilih format buku.</p>
               <LinkButton href="/catalog" variant="quiet">
-                Open access →
+                Masukkan kode →
               </LinkButton>
             </Card>
             <Card>
-              <span className="card-kicker">Operations</span>
-              <h3>Stay in the loop</h3>
-              <p>Once an order exists, its operational stage is visible in one timeline.</p>
-              <LinkButton href="/account/orders" variant="quiet">
-                View orders →
+              <span className="card-kicker">Akun Blessfriends</span>
+              <h3>Tidak perlu menebak status</h3>
+              <p>Pesanan, tracking, invoice, deposit, dan masalah pesanan tersusun dalam satu akun.</p>
+              <LinkButton href="/account" variant="quiet">
+                Buka akun →
               </LinkButton>
             </Card>
           </div>

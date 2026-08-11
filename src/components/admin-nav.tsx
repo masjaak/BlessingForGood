@@ -2,41 +2,32 @@
 
 import Link from "next/link";
 import { useContext } from "react";
-import { PrototypeContext } from "@/domain/prototype/context";
+import { ProductContext } from "@/domain/prototype/context";
 
 const links = [
-  ["/admin", "Overview"],
-  ["/admin/catalogs", "Catalog"],
-  ["/admin/books", "Books"],
-  ["/admin/orders", "Orders"],
-  ["/admin/exceptions", "Exceptions"],
-  ["/admin/batches", "Batches"],
-  [null, "Customers"],
-  ["/admin/join-requests", "Join requests"],
-  ["/admin/invoices", "Invoices"],
-  ["/admin/payments", "Payments"],
-  [null, "Content"],
-  [null, "Settings"],
-  ["/catalog", "Customer preview"],
+  ["/admin", "Ringkasan"],
+  ["/admin/catalogs", "Katalog"],
+  ["/admin/books", "Buku"],
+  ["/admin/orders", "Pesanan"],
+  ["/admin/exceptions", "Masalah"],
+  ["/admin/batches", "Batch PO"],
+  ["/admin/customers", "Customer"],
+  ["/admin/join-requests", "Penerimaan"],
+  ["/admin/invoices", "Invoice & Deposit"],
+  ["/admin/payments", "Pembayaran"],
+  ["/catalog", "Lihat sisi customer"],
 ] as const;
 
 export function AdminNav() {
-  const sessionRole = useContext(PrototypeContext)?.sessionRole;
-  const visibleLinks = sessionRole === "owner" ? [...links, ["/admin/users", "Users"] as const] : links;
+  const sessionRole = useContext(ProductContext)?.sessionRole;
+  const visibleLinks = sessionRole === "owner" ? [...links, ["/admin/users", "Pengguna"] as const] : links;
   return (
-    <nav className="admin-nav" aria-label="Admin prototype navigation">
-      {visibleLinks.map(([href, label]) =>
-        href ? (
-          <Link key={label} href={href}>
-            {label}
-          </Link>
-        ) : (
-          <span className="admin-nav-unavailable" aria-disabled="true" key={label} title="Not implemented in prototype">
-            {label}
-            <small>Unavailable</small>
-          </span>
-        ),
-      )}
+    <nav className="admin-nav" aria-label="Navigasi admin">
+      {visibleLinks.map(([href, label]) => (
+        <Link key={label} href={href}>
+          {label}
+        </Link>
+      ))}
     </nav>
   );
 }

@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { BookCover } from "@/components/book-cover";
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 function ConnectedDetail({ slug }: { slug: string }) {
   const book = useQuery(api.readyStock.getBySlug, { slug });
@@ -45,7 +45,7 @@ function ConnectedDetail({ slug }: { slug: string }) {
           </div>
           <Card className="notice-card">
             <h2>Pesan melalui BFG</h2>
-            <p>Pencatatan order Ready Stock belum ditetapkan. Hubungi BFG untuk konfirmasi pembelian.</p>
+            <p>Untuk saat ini, pemesanan Ready Stock dikonfirmasi langsung bersama admin BFG.</p>
             <LinkButton href="/help">Hubungi BFG</LinkButton>
           </Card>
         </div>
@@ -55,7 +55,7 @@ function ConnectedDetail({ slug }: { slug: string }) {
 }
 
 export function ReadyStockDetail({ slug }: { slug: string }) {
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   return (
     <div className="page ready-stock-page">
       {dataSource === "convex" ? (
@@ -63,7 +63,7 @@ export function ReadyStockDetail({ slug }: { slug: string }) {
       ) : (
         <EmptyState
           title="Buku tidak tersedia."
-          description="Ready Stock belum terhubung ke sumber data."
+          description="Detail Ready Stock belum dapat ditampilkan saat ini."
           action={<LinkButton href="/ready-stock">Kembali ke Ready Stock</LinkButton>}
         />
       )}

@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, PageHeader } from "@/components/ui";
 
@@ -68,12 +68,16 @@ function ProfileForm() {
 export default function ProfilePage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer">
         <div className="page narrow-page">
-          <PageHeader eyebrow="Account" title="Profil Blessfriend" description="Kelola metadata profil BFG Anda." />
+          <PageHeader
+            eyebrow="Akun"
+            title="Profil Blessfriend"
+            description="Perbarui nama dan kontak yang digunakan BFG."
+          />
           <ProfileForm />
         </div>
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

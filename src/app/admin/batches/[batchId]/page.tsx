@@ -3,17 +3,17 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 import { shipmentStageLabels, shipmentStages } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminBatchDetail() {
   const params = useParams<{ batchId: string }>();
   const batchId = String(params.batchId);
-  const { dataSource, state } = usePrototype();
+  const { dataSource, state } = useProduct();
   const {
     batchList,
     currentBatch,
@@ -28,8 +28,7 @@ function AdminBatchDetail() {
   } = useOperations();
   const [catalogId, setCatalogId] = useState("");
   const [message, setMessage] = useState("");
-  if (dataSource !== "convex")
-    return <div className="state-panel">Persistent batches require canonical Convex Development.</div>;
+  if (dataSource !== "convex") return <div className="state-panel">Data batch belum tersedia.</div>;
   if (!currentBatch || currentBatchUnassigned === undefined) {
     if (!currentBatch) {
       return (
@@ -406,9 +405,9 @@ function AdminBatchDetail() {
 export default function AdminBatchDetailPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminBatchDetail />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

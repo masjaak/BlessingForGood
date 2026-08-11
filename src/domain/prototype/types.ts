@@ -73,6 +73,7 @@ export interface OrderStatusEvent {
 
 export interface Order {
   id: string;
+  customerUserId?: string;
   catalogId: string;
   customerName: string;
   customerEmail: string | null;

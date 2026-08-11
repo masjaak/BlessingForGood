@@ -6,18 +6,18 @@ import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { fulfillmentStageLabels, fulfillmentStages, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabels } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
-  const { dataSource, state } = usePrototype();
+  const { dataSource, state } = useProduct();
   const adminExceptions = useQuery(
     api.orderExceptions.listForOrderAdmin,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
@@ -32,8 +32,7 @@ function AdminOrderDetail() {
   } = useOperations();
   const [message, setMessage] = useState("");
   const order = state.orders.find((candidate) => candidate.id === orderId);
-  if (dataSource !== "convex")
-    return <div className="state-panel">Persistent order operations require canonical Convex Development.</div>;
+  if (dataSource !== "convex") return <div className="state-panel">Data pesanan belum tersedia.</div>;
   if (!order)
     return (
       <EmptyState
@@ -292,9 +291,9 @@ function AssignForm({
 export default function AdminOrderDetailPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminOrderDetail />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 import { shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function CreateBatchForm() {
@@ -59,14 +59,14 @@ function CreateBatchForm() {
 
 function AdminBatches() {
   const { batchList } = useOperations();
-  const { state } = usePrototype();
+  const { state } = useProduct();
   if (!batchList) return <div className="state-panel">Loading batches…</div>;
   return (
     <div className="page admin-page">
       <PageHeader
         eyebrow="Batch tracking"
         title="Move cargo with a clear record."
-        description="Batches start empty. Catalog links, assignments, and shipment history are persisted in canonical Convex Development."
+        description="Hubungkan katalog, susun roster, kunci PO, dan catat perjalanan kiriman dalam satu alur."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -138,9 +138,9 @@ function AdminBatches() {
 export default function AdminBatchesPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminBatches />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

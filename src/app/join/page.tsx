@@ -6,7 +6,7 @@ import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Button, Card, Field, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 
 const initialForm = { name: "", email: "", contact: "", city: "", note: "", acknowledged: false };
 
@@ -137,22 +137,22 @@ function ConnectedJoinForm() {
 }
 
 function JoinPageContent() {
-  const { dataSource, authState } = usePrototype();
+  const { dataSource, authState } = useProduct();
   const { isLoaded, isSignedIn } = useAuth();
 
   if (!isLoaded || (isSignedIn && authState !== "authenticated" && authState !== "suspended")) {
-    return <div className="state-panel">Confirming your BFG access…</div>;
+    return <div className="state-panel">Memeriksa akses BFG…</div>;
   }
   if (isSignedIn) {
     return (
       <Card className="notice-card content-stack">
-        <span className="card-kicker">Already a Blessfriend</span>
-        <h2>Your BFG account is already active.</h2>
-        <p>Join requests are for visitors before account creation. Continue to your account or community catalog.</p>
+        <span className="card-kicker">Sudah menjadi Blessfriend</span>
+        <h2>Akun BFG-mu sudah aktif.</h2>
+        <p>Lanjutkan ke akun atau buka katalog komunitas.</p>
         <div className="actions">
-          <LinkButton href="/account/profile">Open profile</LinkButton>
+          <LinkButton href="/account">Buka akun</LinkButton>
           <LinkButton href="/catalog" variant="secondary">
-            Open catalog
+            Buka katalog
           </LinkButton>
         </div>
       </Card>
@@ -161,8 +161,8 @@ function JoinPageContent() {
   if (dataSource !== "convex") {
     return (
       <Card className="notice-card">
-        <h2>Request access is temporarily unavailable.</h2>
-        <p>The admission record requires the configured BFG Convex Development data source.</p>
+        <h2>Pendaftaran sedang tidak tersedia.</h2>
+        <p>Formulir pendaftaran belum tersedia saat ini. Silakan coba lagi nanti.</p>
       </Card>
     );
   }
@@ -174,9 +174,9 @@ export default function JoinPage() {
     <SiteShell>
       <div className="page narrow-page">
         <PageHeader
-          eyebrow="Join Blessfriends"
-          title="Request your way into the community."
-          description="Blessing For Goods is invite-only. Send a request, wait for review, and receive next steps if approved."
+          eyebrow="Gabung Blessfriends"
+          title="Mulai perjalananmu bersama komunitas BFG."
+          description="Kirim permintaan, tunggu tinjauan admin, lalu ikuti langkah undangan bila disetujui."
         />
         <JoinPageContent />
       </div>

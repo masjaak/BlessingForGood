@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useContext } from "react";
-import { PrototypeContext } from "@/domain/prototype/context";
+import { ProductContext } from "@/domain/prototype/context";
 
 export function AdminShellLink() {
-  const role = useContext(PrototypeContext)?.sessionRole;
+  const role = useContext(ProductContext)?.sessionRole;
   if (role !== "admin" && role !== "owner") return null;
   return <Link href="/admin">Admin</Link>;
 }

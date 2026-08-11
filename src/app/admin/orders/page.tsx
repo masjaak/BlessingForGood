@@ -5,23 +5,23 @@ import { useRef, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { nextOrderStatuses, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function OrderTable() {
-  const { state, updateOrderStatus, dataSource } = usePrototype();
+  const { state, updateOrderStatus, dataSource } = useProduct();
   if (state.orders.length === 0)
     return (
       <EmptyState
         title="No orders to review"
-        description="Submit a customer preorder from the catalog preview, then it will appear here with a price snapshot."
+        description="Pesanan customer akan tampil di sini bersama snapshot harga dan item saat dibuat."
         action={
           <LinkButton href="/catalog" variant="secondary">
-            Open customer preview
+            Lihat sisi customer
           </LinkButton>
         }
       />
@@ -29,7 +29,7 @@ function OrderTable() {
   return (
     <div className="table-wrap">
       <table className="data-table">
-        <caption className="sr-only">Prototype orders</caption>
+        <caption className="sr-only">Daftar pesanan</caption>
         <thead>
           <tr>
             <th>Customer</th>
@@ -109,7 +109,7 @@ function OrderTable() {
 }
 
 function ConvexAssistedOrderForm() {
-  const { state } = usePrototype();
+  const { state } = useProduct();
   const customers = useQuery(api.orders.listEligibleCustomers, {});
   const createAssisted = useMutation(api.orders.createAssisted);
   const [customerId, setCustomerId] = useState("");
@@ -253,7 +253,7 @@ function ConvexAssistedOrderForm() {
 }
 
 function OrderTimeline({ orderId }: { orderId: string }) {
-  const { state } = usePrototype();
+  const { state } = useProduct();
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (!order) return null;
   return (
@@ -291,7 +291,7 @@ function OrderTimeline({ orderId }: { orderId: string }) {
 }
 
 function AdminOrders() {
-  const { state, dataSource } = usePrototype();
+  const { state, dataSource } = useProduct();
   return (
     <div className="page admin-page">
       <PageHeader
@@ -315,9 +315,9 @@ function AdminOrders() {
 export default function AdminOrdersPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminOrders />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

@@ -9,7 +9,7 @@ export default function HelpPage() {
         <PageHeader
           eyebrow="Help foundation"
           title="Start with the detail you already have."
-          description="This prototype keeps help concise while production support content is still being shaped."
+          description="Temukan jalur cepat untuk katalog, pesanan, akun, dan bantuan dari admin BFG."
         />
         <div className="content-stack">
           <Card className="communication-card">

@@ -3,18 +3,18 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
-import { usePrototype } from "@/domain/prototype/store";
+import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminInvoiceDetail() {
   const params = useParams<{ invoiceId: string }>();
   const invoiceId = String(params.invoiceId);
-  const { dataSource } = usePrototype();
+  const { dataSource } = useProduct();
   const {
     currentAdminInvoice,
     adminAccount,
@@ -29,8 +29,7 @@ function AdminInvoiceDetail() {
     reverseTransaction,
   } = useOperations();
   const [message, setMessage] = useState("");
-  if (dataSource !== "convex")
-    return <div className="state-panel">Persistent invoices require a configured Convex data source.</div>;
+  if (dataSource !== "convex") return <div className="state-panel">Data invoice belum tersedia.</div>;
   if (currentAdminInvoice === undefined) return <div className="state-panel">Loading invoice…</div>;
   if (!currentAdminInvoice)
     return (
@@ -356,9 +355,9 @@ function AllocationForm({
 export default function AdminInvoiceDetailPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="admin">
+      <ProductAccessGuard requiredRole="admin">
         <AdminInvoiceDetail />
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

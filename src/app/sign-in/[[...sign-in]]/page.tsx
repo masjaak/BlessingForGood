@@ -9,7 +9,7 @@ export default async function SignInPage() {
   return (
     <main className="auth-page">
       <BrandLogo linkToHome={false} />
-      <p className="auth-invite-note">Blessing For Goods is invite-only. Use your Clerk Development invitation.</p>
+      <p className="auth-invite-note">Blessing For Goods khusus untuk anggota yang telah menerima undangan.</p>
       <SignIn path="/sign-in" routing="path" fallbackRedirectUrl="/catalog" />
     </main>
   );

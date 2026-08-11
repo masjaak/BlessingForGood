@@ -4,9 +4,9 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { PrototypeModeGuard } from "@/components/prototype-mode-guard";
+import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, Field, PageHeader } from "@/components/ui";
+import { Button, Card, EmptyState, Field, PageHeader } from "@/components/ui";
 
 const emptyForm = {
   label: "",
@@ -18,6 +18,17 @@ const emptyForm = {
   province: "",
   postalCode: "",
   isDefault: true,
+};
+
+const fieldLabels: Record<Exclude<keyof typeof emptyForm, "isDefault">, string> = {
+  label: "Label alamat",
+  recipientName: "Nama penerima",
+  phone: "Nomor telepon",
+  addressLine1: "Alamat",
+  addressLine2: "Detail tambahan",
+  city: "Kota",
+  province: "Provinsi",
+  postalCode: "Kode pos",
 };
 
 function AddressForm() {
@@ -57,7 +68,7 @@ function AddressForm() {
               "postalCode",
             ] as const
           ).map((key) => (
-            <Field key={key} label={key}>
+            <Field key={key} label={fieldLabels[key]}>
               <input
                 className="input"
                 value={form[key]}
@@ -83,6 +94,9 @@ function AddressForm() {
         </form>
       </Card>
       <div className="content-stack">
+        {addresses?.length === 0 ? (
+          <EmptyState title="Belum ada alamat" description="Tambahkan alamat penerima untuk pesanan berikutnya." />
+        ) : null}
         {addresses?.map((address) => (
           <Card key={address.addressId}>
             <div className="split-heading">
@@ -114,16 +128,16 @@ function AddressForm() {
 export default function AddressesPage() {
   return (
     <SiteShell>
-      <PrototypeModeGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer">
         <div className="page narrow-page">
           <PageHeader
-            eyebrow="Account"
+            eyebrow="Akun"
             title="Alamat pengiriman"
-            description="Simpan alamat untuk fulfillment tanpa data dummy."
+            description="Simpan alamat penerima untuk memudahkan pengiriman pesananmu."
           />
           <AddressForm />
         </div>
-      </PrototypeModeGuard>
+      </ProductAccessGuard>
     </SiteShell>
   );
 }

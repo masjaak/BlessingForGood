@@ -1,16 +1,9 @@
-type Environment = Record<string, string | undefined>;
-
-export function isPreviewDemoMode(env: Environment, isPreviewEnvironment: boolean): boolean {
-  return isPreviewEnvironment && env.NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE === "true";
-}
-
-export function isPrototypeMode(env: Environment, isPreviewEnvironment = false): boolean {
-  return (
-    (env.NODE_ENV === "development" && env.NEXT_PUBLIC_BFG_PROTOTYPE_MODE === "true") ||
-    isPreviewDemoMode(env, isPreviewEnvironment)
-  );
-}
-
-export function shouldUseConvex(env: Environment, isPreviewEnvironment: boolean, hasConvexUrl: boolean): boolean {
-  return hasConvexUrl && (isPreviewEnvironment || isPrototypeMode(env, isPreviewEnvironment));
+export function isValidBackendUrl(value: string | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
