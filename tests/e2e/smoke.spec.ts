@@ -45,7 +45,7 @@ const protectedRoutes = new Set([
 ]);
 const screenshotRoutes = new Set(["/", "/community", "/how-to-order", "/ready-stock", "/catalog", "/join", "/sign-in"]);
 const prohibitedCopy =
-  /Prototype Preview|Prototype v0\.1|Prototype mode|Prototype boundary|Admin prototype|Data is stored only in this browser|production ownership is not enabled yet/i;
+  /Prototype Preview|Prototype v0\.1|Prototype mode|Prototype boundary|Admin prototype|Data is stored only in this browser|production ownership is not enabled yet|local prototype|local storage|never seeds applicant records|dummy data/i;
 
 test.beforeAll(async () => {
   await clerkSetup();

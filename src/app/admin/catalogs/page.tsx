@@ -19,7 +19,7 @@ const initialVariants: VariantDrafts = {
 };
 
 function CatalogForm() {
-  const { createCatalog, dataSource } = useProduct();
+  const { createCatalog } = useProduct();
   const [name, setName] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [closingAt, setClosingAt] = useState("");
@@ -69,10 +69,7 @@ function CatalogForm() {
       <div>
         <span className="card-kicker">Create secret catalog</span>
         <h2>Set up one useful starting point.</h2>
-        <p>
-          Katalog baru langsung terbuka. Kode akses disimpan dalam bentuk hash sebelum masuk ke{" "}
-          {dataSource === "convex" ? "Convex" : "local storage"}.
-        </p>
+        <p>Katalog baru langsung terbuka. Kode akses disimpan secara aman sebelum dibagikan kepada customer.</p>
       </div>
       <form onSubmit={handleSubmit} className="form-card">
         <div className="form-grid">

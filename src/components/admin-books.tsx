@@ -190,7 +190,10 @@ function ConnectedAdminBooks() {
               </table>
             </div>
           ) : books ? (
-            <EmptyState title="Book Master kosong" description="Buat penerbit dan buku pertama tanpa data dummy." />
+            <EmptyState
+              title="Book Master kosong"
+              description="Buat penerbit dan buku pertama untuk mulai menata katalog."
+            />
           ) : null}
         </div>
       </div>

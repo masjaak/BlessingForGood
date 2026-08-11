@@ -1,7 +1,7 @@
-import { SignUp } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand";
+import { ClerkAuthForm } from "@/components/clerk-auth-form";
 
 export default async function SignUpPage() {
   const { userId } = await auth();
@@ -10,7 +10,7 @@ export default async function SignUpPage() {
     <main className="auth-page">
       <BrandLogo linkToHome={false} />
       <p className="auth-invite-note">Pembuatan akun hanya tersedia melalui undangan BFG yang masih berlaku.</p>
-      <SignUp path="/sign-up" routing="path" fallbackRedirectUrl="/catalog" />
+      <ClerkAuthForm mode="sign-up" />
     </main>
   );
 }

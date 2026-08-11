@@ -215,7 +215,7 @@ function ConnectedJoinRequests() {
               description={
                 search
                   ? "Try a different name, email, contact, or city."
-                  : "The queue starts empty and never seeds applicant records."
+                  : "Permintaan baru akan muncul setelah formulir Gabung dikirim."
               }
             />
           ) : null}
