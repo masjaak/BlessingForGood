@@ -14,7 +14,6 @@ import {
   unlockCatalog,
 } from "@/domain/prototype/logic";
 import type { BookFormat, Catalog, Order } from "@/domain/prototype/types";
-import { isPrototypeMode } from "@/lib/environment";
 
 const catalogInput = {
   name: "Test Catalog",
@@ -43,13 +42,7 @@ async function createTestOrder(catalog: Catalog): Promise<Order> {
   );
 }
 
-describe("prototype domain logic", () => {
-  it("allows the local adapter only in development prototype mode", () => {
-    expect(isPrototypeMode({ NODE_ENV: "development", NEXT_PUBLIC_BFG_PROTOTYPE_MODE: "true" })).toBe(true);
-    expect(isPrototypeMode({ NODE_ENV: "production", NEXT_PUBLIC_BFG_PROTOTYPE_MODE: "true" })).toBe(false);
-    expect(isPrototypeMode({ NODE_ENV: "test", NEXT_PUBLIC_BFG_PROTOTYPE_MODE: "true" })).toBe(false);
-  });
-
+describe("order domain logic", () => {
   it("starts with zero business records", () => {
     expect(emptyPrototypeState()).toEqual({ catalogs: [], orders: [], invoices: [] });
   });

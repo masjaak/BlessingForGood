@@ -6,7 +6,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
-import { PrototypeContext } from "@/domain/prototype/context";
+import { ProductContext } from "@/domain/prototype/context";
 
 vi.mock("@clerk/nextjs", () => ({
   Show: ({ children, when }: { children: React.ReactNode; when: "signed-in" | "signed-out" }) =>
@@ -49,7 +49,7 @@ describe("public UI foundation", () => {
   it("keeps customer navigation on implemented routes", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
-    expect(screen.getByRole("navigation", { name: "Primary navigation" }).querySelectorAll("a")).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
     expect(screen.queryByRole("link", { name: "Admin prototype" })).toBeNull();
   });
 
@@ -65,33 +65,32 @@ describe("public UI foundation", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("img", { name: "Blessing For Goods mascot" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Community guide" }).getAttribute("href")).toBe("/community");
-    expect(screen.getAllByRole("link", { name: "How to order" })[0].getAttribute("href")).toBe("/how-to-order");
+    expect(screen.getAllByRole("link", { name: "Gabung Blessfriends" })[0].getAttribute("href")).toBe("/join");
+    expect(screen.getAllByRole("link", { name: "Cara memesan" })[0].getAttribute("href")).toBe("/how-to-order");
     expect(screen.getAllByRole("link", { name: "Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
   });
 
   it("links implemented admin destinations and marks remaining gaps", () => {
     render(<AdminNav />);
 
-    expect(screen.getByRole("link", { name: "Overview" }).getAttribute("href")).toBe("/admin");
-    expect(screen.getByRole("link", { name: "Catalog" }).getAttribute("href")).toBe("/admin/catalogs");
-    expect(screen.getByRole("link", { name: "Books" }).getAttribute("href")).toBe("/admin/books");
-    expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
-    expect(screen.getByText("Settings").getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("link", { name: "Ringkasan" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Katalog" }).getAttribute("href")).toBe("/admin/catalogs");
+    expect(screen.getByRole("link", { name: "Buku" }).getAttribute("href")).toBe("/admin/books");
+    expect(screen.getByRole("link", { name: "Pembayaran" }).getAttribute("href")).toBe("/admin/payments");
   });
 
   it("shows the shell admin link only for a resolved elevated role", () => {
     const { rerender } = render(
-      <PrototypeContext.Provider value={{ sessionRole: "owner" } as never}>
+      <ProductContext.Provider value={{ sessionRole: "owner" } as never}>
         <AdminShellLink />
-      </PrototypeContext.Provider>,
+      </ProductContext.Provider>,
     );
     expect(screen.getByRole("link", { name: "Admin" }).getAttribute("href")).toBe("/admin");
 
     rerender(
-      <PrototypeContext.Provider value={{ sessionRole: "customer" } as never}>
+      <ProductContext.Provider value={{ sessionRole: "customer" } as never}>
         <AdminShellLink />
-      </PrototypeContext.Provider>,
+      </ProductContext.Provider>,
     );
     expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
   });

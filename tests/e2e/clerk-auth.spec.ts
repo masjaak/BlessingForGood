@@ -1,4 +1,4 @@
-import { clerk } from "@clerk/testing/playwright";
+import { clerk, clerkSetup } from "@clerk/testing/playwright";
 import { expect, test } from "@playwright/test";
 
 function required(name: string): string {
@@ -6,6 +6,10 @@ function required(name: string): string {
   if (!value) throw new Error(`${name} is required for authenticated Clerk QA.`);
   return value;
 }
+
+test.beforeAll(async () => {
+  await clerkSetup();
+});
 
 test.describe("BFG Clerk authenticated Preview", () => {
   test("invited customer signs in and receives protected Convex access", async ({ page }) => {
