@@ -43,7 +43,9 @@ const protectedRoutes = new Set([
   "/account/addresses",
   ...adminRoutes,
 ]);
-const screenshotRoutes = new Set(["/", "/ready-stock", "/join", "/sign-in"]);
+const screenshotRoutes = new Set(["/", "/community", "/how-to-order", "/ready-stock", "/catalog", "/join", "/sign-in"]);
+const prohibitedCopy =
+  /Prototype Preview|Prototype v0\.1|Prototype mode|Prototype boundary|Admin prototype|Data is stored only in this browser|production ownership is not enabled yet/i;
 
 test.beforeAll(async () => {
   await clerkSetup();
@@ -61,11 +63,18 @@ async function verifyRoute(route: string, page: Page, project: string) {
   const response = await page.goto(route, { waitUntil: "networkidle" });
   expect(response?.status(), `${route} response`).toBeLessThan(400);
   await expect(page.locator("body")).not.toHaveText("");
+  await expect(page.locator("body")).not.toContainText(prohibitedCopy);
   if (route === "/ready-stock") await expect(page.getByText("Memuat Ready Stock…")).toBeHidden({ timeout: 15_000 });
 
   if (publicShellRoutes.has(route)) {
     await expect(page.locator("h1")).toHaveCount(1);
-    await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+    if ((page.viewportSize()?.width || 0) <= 800) {
+      await page.locator('summary[aria-label="Buka menu"]').click();
+      await expect(page.getByRole("navigation", { name: "Navigasi mobile" })).toBeVisible();
+      await page.locator('summary[aria-label="Buka menu"]').click();
+    } else {
+      await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+    }
     await expect(page.getByRole("link", { name: "Blessing For Goods home" }).getByRole("img")).toBeVisible();
   } else {
     if (protectedRoutes.has(route)) await expect(page).toHaveURL(/\/sign-in/);
@@ -98,8 +107,11 @@ test.describe("@customer BFG customer route smoke", () => {
   test("signed-out navigation keeps protected destinations out of the public shell", async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/", { waitUntil: "networkidle" });
+    if ((page.viewportSize()?.width || 0) <= 800) await page.locator('summary[aria-label="Buka menu"]').click();
     const links = await page
-      .getByRole("navigation", { name: "Primary navigation" })
+      .getByRole("navigation", {
+        name: (page.viewportSize()?.width || 0) <= 800 ? "Navigasi mobile" : "Primary navigation",
+      })
       .getByRole("link")
       .evaluateAll((items) =>
         items.map((item) => ({
@@ -107,7 +119,14 @@ test.describe("@customer BFG customer route smoke", () => {
           label: item.textContent?.trim(),
         })),
       );
-    expect(links.map((link) => link.label)).toEqual(["Ready Stock", "Komunitas", "Cara memesan"]);
+    expect(links.map((link) => link.label)).toEqual([
+      "Beranda",
+      "Ready Stock",
+      "Komunitas",
+      "Cara memesan",
+      "Secret Catalog",
+      "Gabung",
+    ]);
     await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible();
   });
 });

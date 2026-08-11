@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
@@ -9,11 +9,10 @@ import { SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 
 vi.mock("@clerk/nextjs", () => ({
-  Show: ({ children, when }: { children: React.ReactNode; when: "signed-in" | "signed-out" }) =>
-    when === "signed-out" ? <>{children}</> : null,
   SignInButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
   SignUpButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
   UserButton: () => <button aria-label="User profile" type="button" />,
+  useAuth: () => ({ isLoaded: true, isSignedIn: false }),
 }));
 
 describe("public UI foundation", () => {
@@ -49,7 +48,11 @@ describe("public UI foundation", () => {
   it("keeps customer navigation on implemented routes", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
-    expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
+    expect(
+      within(screen.getByRole("navigation", { name: "Primary navigation" }))
+        .getByRole("link", { name: "Ready Stock" })
+        .getAttribute("href"),
+    ).toBe("/ready-stock");
     expect(screen.queryByRole("link", { name: "Admin prototype" })).toBeNull();
   });
 
