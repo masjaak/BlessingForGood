@@ -77,24 +77,27 @@ guidance are reflected in the local coverage matrices.
   variables, but they are named `CLERK_SECRET_PROD`, `CONVEX_DEPLOY_PROD`, and
   `NEXT_PUBLIC_CLERK_PUBLISHABLE_PROD`; the application-required names are not
   present. Values were not printed or copied blindly.
-- Vercel team domains contain only `rezapahlevi.my.id` and
-  `pakloginpak.web.id`; no BFG-owned Production domain is available. Existing
-  `vercel.app` aliases are not a substitute for the owned domain requirement.
+- `blessingforgood.com` and `www.blessingforgood.com` are attached to the
+  project, publicly resolve to Vercel, and serve HTTPS 200. The public Clerk
+  hostname `clerk.blessingforgood.com` also resolves through Clerk and serves
+  HTTPS 200.
 - Clerk CLI health check is not authenticated or linked to a Clerk
-  application. Local credentials remain Development `pk_test_`/`sk_test_`.
+  application. Local credentials remain Development `pk_test_`/`sk_test_`, so
+  the Production key pair, owner, issuer, and certificate state are not
+  independently verified through the CLI.
 - No environment, domain, Clerk, Convex, business-data, branch, or deployment
   mutation was attempted. The existing Production deployments predate
   `a0a3bce` and are not accepted as this release.
 
 ### Production boundary
 
-`main` and Vercel Production remain untouched by design. Vercel Production has
-only incorrectly named sensitive variables; the required names, matching Clerk
-Production pair, owned domain, and canonical Convex Production deploy
-key/configuration are not verified. Public rendered QA and local deterministic
-gates pass; authenticated customer/admin rendered acceptance and Production
-smoke remain blocked. No alternate project, dummy business data, Preview
-delivery, or staging deployment is used.
+`main` and Vercel Production remain untouched by design. The canonical BFG
+domain is publicly reachable, but Vercel Production has only incorrectly named
+sensitive variables; the required names, matching Clerk Production pair, and
+canonical Convex Production deploy key/configuration are not verified. Public
+rendered QA and local deterministic gates pass; authenticated customer/admin
+rendered acceptance and Production smoke remain blocked. No alternate project,
+dummy business data, Preview delivery, or staging deployment is used.
 
 ## Canonical Convex
 

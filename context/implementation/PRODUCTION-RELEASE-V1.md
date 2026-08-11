@@ -40,7 +40,7 @@ scope.
 | Production deployment | No deployment from `a0a3bce`; existing Ready Production deployments predate it |
 | Production environment | Three sensitive variables exist under incorrect names |
 | Production status | Existing deployments are not accepted as this release |
-| Production domain | No BFG-owned domain is available; only unrelated team domains were returned |
+| Production domain | `blessingforgood.com` and `www` attached; public DNS and HTTPS pass |
 
 No additional hotfix or Preview push was made.
 
@@ -49,18 +49,19 @@ No additional hotfix or Preview push was made.
 **BLOCKED.** The only local credentials are Development-form `pk_test_…` and
 `sk_test_…`; they are not used for Production. Vercel Production contains
 `CLERK_SECRET_PROD` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_PROD`, but the required
-application names are absent and the matching instance/domain cannot be
-verified. No `pk_live_…`/`sk_live_…` pair was printed or copied.
+application names are absent and the matching instance cannot be verified.
+The public `clerk.blessingforgood.com` hostname resolves through Clerk and
+serves HTTPS 200. No `pk_live_…`/`sk_live_…` pair was printed or copied.
 
 Required matching Production names, values never recorded here:
 
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
 
-The actual owned Production domain, DNS verification, Clerk authorized URLs,
-and issuer cannot be inferred safely and are not invented. The read-only Clerk
-CLI health check also reports the local CLI is not authenticated or linked to a
-Clerk application.
+The owned Production domain is publicly reachable, but Clerk authorized URLs,
+the actual issuer, and the Production instance/key pair cannot be inferred
+safely. The read-only Clerk CLI health check also reports the local CLI is not
+authenticated or linked to a Clerk application.
 
 ## Convex Production
 
@@ -81,8 +82,8 @@ Required Production names, values never recorded here:
 
 Local signed-out redirects and Clerk entry rendering pass. The complete
 Production chain is **NOT PROVEN** because the matching Clerk Production
-pair, verified domain, Vercel Production variables, and canonical Convex
-Production deploy key are absent. Consequently Production browser → Clerk →
+pair, Vercel Production variables, and canonical Convex Production deploy key
+are absent. Consequently Production browser → Clerk →
 Convex → `appUser` provisioning → role authorization cannot be accepted.
 
 ## Zero Dummy Data Verification
@@ -195,10 +196,9 @@ why those keys cannot be shipped to Production.
 
 ## Production Runtime and Smoke
 
-Not run. There is no new Production deployment from `a0a3bce` or configured
-BFG-owned Production domain to inspect. Vercel Production logs and live
-public/customer/admin smoke must be run only after the missing Production
-configuration is supplied and `main` is deployed.
+Not run. There is no new Production deployment from `a0a3bce`. Vercel
+Production logs and live public/customer/admin smoke must be run only after
+the missing Production configuration is supplied and `main` is deployed.
 
 ## Superseded Workflow Decisions
 
@@ -216,14 +216,15 @@ required.
 ## Required Manual Action
 
 Complete the real BFG Production environment chain without changing code or
-creating business data: acquire/verify the owned domain and same-instance
-Clerk Production `pk_live_…`/`sk_live_…` pair; configure canonical Convex
-`clean-eel-522` with its Production deploy key, issuer, real owner ID, and
-stable catalog pepper; then add only the application-required variable names
-to Vercel Production. Keep Preview and Development untouched.
+creating business data: verify the already-attached BFG domain in Clerk and
+Vercel, obtain the same-instance Clerk Production `pk_live_…`/`sk_live_…`
+pair; configure canonical Convex `clean-eel-522` with its Production deploy
+key, issuer, real owner ID, and stable catalog pepper; then add only the
+application-required variable names to Vercel Production. Keep Preview and
+Development untouched.
 
-The missing inputs are the exact owned Production domain, matching Production
-Clerk pair, canonical Convex Production deploy key/configuration, and the
+The missing inputs are the matching Production Clerk pair, canonical Convex
+Production deploy key/configuration, the real Production owner ID, and the
 correct Vercel Production variable names. Existing opaque values under custom
 names were not treated as valid replacements.
 Until that one configuration action is complete, merging or pushing `main`
@@ -235,7 +236,7 @@ would violate the release gate.
 CUSTOMER_PRODUCTION_BLOCKED
 
 Blocker:
-Production domain is not available and the Clerk → Convex → Vercel Production
+The public domain is available, but the Clerk → Convex → Vercel Production
 environment chain is not configured under the names required by the current
 application.
 
