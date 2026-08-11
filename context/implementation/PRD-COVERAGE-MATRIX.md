@@ -1,6 +1,7 @@
 # BFG PRD Coverage Matrix
 
-Status: Production V1 release-convergence source of truth.
+Status: Production V1 release-convergence source of truth, re-audited during
+the forward-only Production UI correction on 2026-08-11.
 
 The original product pack at
 `/Users/masjak/Documents/BLESSINGFORGOOD/BFG WEB/context/product/` was audited
@@ -46,3 +47,12 @@ implemented from mockup appearance alone.
 The open policies in `context/OPEN_QUESTIONS.md` remain blocked by business
 decision. Production readiness additionally requires verified Production Clerk
 and canonical Convex/Vercel configuration.
+
+## UI correction impact
+
+No requirement changed status merely because its presentation was corrected.
+Phase 01–06.4, dashboard/history, and admin customer operations remain
+implemented and regression-tested. Reporting, Excel Export, Analytics, Content
+Management, and Settings remain visible backlog. Authenticated screenshot QA is
+blocked by the Clerk/canonical-Convex environment chain and is not represented
+as completed product coverage.

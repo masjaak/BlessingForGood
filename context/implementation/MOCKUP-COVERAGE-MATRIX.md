@@ -1,40 +1,55 @@
 # BFG Mockup Coverage Matrix
 
-Sources were inspected directly from `public/mockups`. Mockup records are visual
-references only; their sample data is never seeded. `EXTENDED` means newer
-Phase 01–06.4 capability inherits the same visual language.
+Date: 2026-08-11
+Sources: the 8 customer and 10 admin images under `public/mockups`, current
+Production code, and selected visual patterns from
+`origin/qa/ux-refinement-v0.1`. Sample mockup data is never seeded.
+
+`EXTENDED` means current capability exceeds the original mockup while retaining
+its visual language. `PASS` requires rendered evidence; source inspection alone
+cannot earn it.
 
 ## Customer mockups
 
-| Mockup | Target route | Current implementation | Alignment | Missing visual elements | Newer functionality integrated | Final action |
+| Mockup | Route | Viewport | Current state | Implementation evidence | Visual verdict | Remaining gap |
 | --- | --- | --- | --- | --- | --- | --- |
-| `mobile/mockup 1.png` | `/catalog` access | Branded code-entry card, official logo shell, mascot guidance | ALIGNED | Exact decorative spacing differs | Clerk identity, hashed codes, grants, fail-closed access | Keep secure implementation |
-| `mobile/mockup 2.png` | `/catalog` browse | Unlocked catalog cards, formats, ISBN, price, quantity | PARTIAL | Mockup tabs/filter bar and compact thumbnail list | Secure catalog grant and canonical order submission | Preserve security; refine filters after catalog volume requires them |
-| `mobile/mockup 3.png` | catalog book selection | Book/variant selector within `/catalog` | PARTIAL | No separate catalog-book detail/gallery route | Snapshot order items and availability enforcement | Do not duplicate the current order form solely for visual parity |
-| `mobile/mockup 4.png` | `/ready-stock/[slug]` | Cover, metadata, variants, stock, price, contact action | EXTENDED | Gallery is limited to available image references | Server search/filter/sort and positive-stock privacy | Keep current canonical detail |
-| `mobile/mockup 5.png` | `/account/orders` | Customer-owned order cards, status, value, detail link | EXTENDED | Mockup tab treatment is simplified | Item exceptions and edit eligibility | Keep compact mobile card hierarchy |
-| `mobile/mockup 6.png` | `/account/orders/[orderId]` | Order items, batch shipment timeline, fulfillment, invoice, exceptions | EXTENDED | Exact timeline illustration differs | Financial adjustments and cancellation request boundary | Keep canonical integrated detail |
-| `mobile/mockup 7.png` | `/account/invoices` and detail | Invoice cards, deposit, verified payments, ledger | EXTENDED | Summary charts are not needed | Append-only ledger, allocations, refund obligations | Keep authoritative projections |
-| `mobile/mockup 8.png` | `/account` | New account home plus profile/address destinations | EXTENDED | Mockup menu iconography is simplified | Needs-attention, active orders, exceptions, refund due, activity | Complete |
+| `mobile/mockup 1.png` | `/catalog`, `/sign-in` | 390 × 844 | Secure code access and Clerk entry retained | `CustomerCatalog`, branded auth page, signed-out route screenshot | PARTIAL | Authenticated catalog access could not be rendered against canonical Convex |
+| `mobile/mockup 2.png` | `/catalog` browse | 390 × 844 | Catalog books, formats, ISBN, quantity and price retained | `CustomerCatalog` source + domain regression | PARTIAL | Authenticated browse state needs runtime screenshot; mockup tabs remain intentionally absent |
+| `mobile/mockup 3.png` | `/catalog` selection | 390 × 844 | Variant and quantity selection feeds canonical order submission | `CustomerCatalog` form/action audit | PARTIAL | Authenticated selected/submitted states need runtime screenshot |
+| `mobile/mockup 4.png` | `/ready-stock/[slug]` | 390 × 844 | Canonical variants, price and stock detail retained | `ReadyStockDetail`; shared logo/mascot/shell render | EXTENDED | Detail state requires a real published book; zero data is not seeded |
+| `mobile/mockup 5.png` | `/account/orders` | 390 × 844 | Owned order cards/statuses retained | `account/orders`; ownership tests | PARTIAL | Authenticated rendered list unavailable locally |
+| `mobile/mockup 6.png` | `/account/orders/[orderId]` | 390 × 844 | Batch, tracking, fulfillment, invoice and exceptions integrated | `account/orders/[orderId]`; Phase 06.4 tests | EXTENDED | Authenticated detail screenshot needs a canonical order fixture/user |
+| `mobile/mockup 7.png` | `/account/invoices` and detail | 390 × 844 | Invoice, deposit, payment, adjustment and refund projections retained | invoice routes; financial regression | EXTENDED | Authenticated list/detail screenshot unavailable locally |
+| `mobile/mockup 8.png` | `/account` | 390 × 844 | Dashboard adds attention, active work, finance and history | `account/page.tsx`; customer activity tests | EXTENDED | Authenticated rendered dashboard unavailable locally |
 
 ## Admin mockups
 
-| Mockup | Target route | Current implementation | Alignment | Missing visual elements | Newer functionality integrated | Final action |
+| Mockup | Route | Viewport | Current state | Implementation evidence | Visual verdict | Remaining gap |
 | --- | --- | --- | --- | --- | --- | --- |
-| `admin dashboard 1.png` | `/admin` | Desktop queue dashboard and shared admin navigation | EXTENDED | No invented sales metrics or global search | Admissions, orders, batches, payments, exceptions, invoices | Complete operational home |
-| `admin dashboard 2.png` | `/admin/catalogs`, `/admin/books` | Catalog and Book Master tables/forms | EXTENDED | Bulk import/export absent | Publisher, variants, publication, Ready Stock | Keep separate canonical domains |
-| `admin dashboard 3.png` | book/catalog creation | Existing catalog and Book Master forms | PARTIAL | Drag/drop gallery and bulk upload absent | ISBN/price per variant and visibility state | Add durable storage only after provider approval |
-| `admin dashboard 4.png` | `/admin/batches` and detail | Batch list, roster, purchase summary, assignment, lock, tracking | EXTENDED | Supplier costing automation absent | Partial assignments and exception guards | Complete for V1 operations |
-| `admin dashboard 5.png` | `/admin/orders` and detail | Queue, assisted orders, status, tracking, fulfillment, exceptions | EXTENDED | Exact split-pane table treatment differs | Ownership, source, invoice and exception context | Keep current route/detail pattern |
-| `admin dashboard 6.png` | `/admin/customers/[customerId]` | Customer profile, addresses, orders, invoices, exceptions | EXTENDED | Deposit tab and global notes are not duplicated | Canonical ownership-safe operations view | Complete bounded V1 view |
-| `admin dashboard 7.png` | `/admin/invoices` | Invoice queue/detail and deposit operations | EXTENDED | Blast/export controls absent | Allocations, immutable adjustments, refund obligations | Preserve financial safety |
-| `admin dashboard 8.png` | `/admin/payments` | Manual verification queue/history | EXTENDED | Payment-account settings and proof thumbnails absent | Server review transitions and audit | Keep proof reference boundary |
-| `admin dashboard 9.png` | reporting | No reporting route | MISSING | Reports, date ranges, charts, Excel export | Reporting-ready canonical records only | Post-V1 Reporting + Excel phase |
-| `admin dashboard 10.png` | settings | No settings route | MISSING | Store/payment/notification settings | Existing environment-owned configuration only | Implement only after settings policy approval |
+| `admin dashboard 1.png` | `/admin` | 1440 × 900 | Actionable operational queues retained | Corrected admin topbar render; `admin/page.tsx` | PARTIAL | Canonical Convex provisioning blocks queue render |
+| `admin dashboard 2.png` | `/admin/books`, `/admin/catalogs` | 1440 × 900 | Book Master/catalog operations retained | Compact admin table/form CSS; source regression | PARTIAL | Authenticated content render blocked |
+| `admin dashboard 3.png` | `/admin/books/[bookId]` | 1440 × 900 | Structured book/variant forms retained | `AdminBookDetail`; form audit | PARTIAL | Real book detail screenshot unavailable; durable upload remains backlog |
+| `admin dashboard 4.png` | `/admin/batches` and detail | 1440 × 900 | Batch, roster, purchase, lock and tracking retained | batch routes; 61/61 Convex baseline | PARTIAL | Authenticated detail render requires canonical batch access |
+| `admin dashboard 5.png` | `/admin/orders` and detail | 1440 × 900 | Self-service/assisted orders, source and exceptions retained | order routes; source/ownership tests | PARTIAL | Authenticated queue/detail render blocked |
+| `admin dashboard 6.png` | `/admin/customers` and detail | 1440 × 900 | Operational customer history retained separately from roles | customer routes; admin authorization tests | PARTIAL | Authenticated customer record render blocked |
+| `admin dashboard 7.png` | `/admin/invoices` and detail | 1440 × 900 | Invoice/deposit/adjustment/refund operations retained | invoice routes; financial tests | PARTIAL | Authenticated finance render blocked |
+| `admin dashboard 8.png` | `/admin/payments` | 1440 × 900 | Manual review and immutable payment history retained | payment route; payment regression | PARTIAL | Authenticated payment queue render blocked |
+| `admin dashboard 9.png` | Reporting | 1440 × 900 | Reporting-ready canonical records only | PRD coverage matrix | FAIL | Reporting and Excel export are post-V1 backlog |
+| `admin dashboard 10.png` | Settings / `/admin/users` | 1440 × 900 | Owner-only role and suspension controls retained | users route; owner authorization tests | EXTENDED | Store/settings product remains unapproved backlog |
+
+## Rendered reference evidence
+
+- Public home: 390 × 844 and 1440 × 900 — corrected logo, mascot, typography,
+  navigation, hierarchy, CTA, and overflow.
+- Community and How to Order: 390 × 844 — corrected shell and branded guidance.
+- Admin: 1440 × 900 — corrected topbar/logo/loading shell; route content remains
+  explicitly unapproved because canonical provisioning did not complete.
+- Final production-build screenshots are written by Playwright to
+  `artifacts/browser-qa/`; generated images are not committed.
 
 ## Decision
 
-The current application keeps the mockups' warm cream, deep green, editorial
-serif, restrained cards, dense admin tables, and mobile customer hierarchy.
-The QA UX donor contributed visual patterns only; current Convex logic and
-Phase 01–06.4 security/financial rules always win.
+The correction forward-ports visual primitives only. Current Convex logic,
+Clerk/RBAC, ownership, and financial history remain authoritative. Missing
+authenticated screenshots are an environment blocker, not permission to add
+demo data, local persistence, or a non-canonical backend.

@@ -1,13 +1,14 @@
 # BFG Project Status
 
-## Production V1 convergence
+## Production UI alignment hotfix
 
-**Status:** RELEASE CODE COMPLETE — PRODUCTION BLOCKED BY ENVIRONMENT SETUP
+**Status:** PUBLIC VISUAL CORRECTION COMPLETE — AUTHENTICATED VISUAL QA BLOCKED
 
-**Branch:** `release/production-v1`
+**Branch:** `hotfix/production-ui-alignment-v1`
 
-**Functional source of truth:** `develop` at the Phase 06.4 integration merge
-`6c46b3d`.
+**Functional source of truth:** current remote `main`, forward-integrated with
+the existing `release/production-v1` product history because remote `main`
+still pointed to the older prototype merge.
 
 **Visual sources of truth:** the customer/admin mockups in `public/mockups`,
 the official assets in `public/brand`, and selected visual patterns from
@@ -18,7 +19,7 @@ the official assets in `public/brand`, and selected visual patterns from
 read-only. Its approved MVP scope, UX flows, design system, tone, and mascot
 guidance are reflected in the local coverage matrices.
 
-### Completed in the release worktree
+### Completed in the hotfix worktree
 
 - Preserved the Phase 01–06.4 Clerk, RBAC, ownership, catalogs, Ready Stock,
   order, batch, tracking, invoice, deposit, payment, exception, profile,
@@ -35,12 +36,16 @@ guidance are reflected in the local coverage matrices.
   queries.
 - Rebuilt `/admin` around real operational queues without invented analytics.
 - Added production-copy/runtime regression coverage.
+- Restored official logo/mascot scale, mobile navigation, branded empty/loading
+  states, a connected customer account hierarchy, and one compact admin shell.
+- Rendered the optimized build at customer widths 375, 390, 430, 768, and 1440
+  and protected admin widths 1024, 1280, and 1440.
 
 ### Current validation
 
 - Vitest: 92/92
 - Convex: 61/61
-- Playwright responsive route smoke: 93/93
+- Playwright responsive route smoke: 108/108 PASS
 - Formatting: PASS
 - Lint: 0 errors / 0 warnings
 - TypeScript: PASS
@@ -49,12 +54,11 @@ guidance are reflected in the local coverage matrices.
 
 ### Production boundary
 
-`main` and Vercel Production remain untouched. The linked project correctly uses
-`main` as its Production branch, but Vercel reports zero Production environment
-variables, the historical Production target is errored, and no custom domain is
-assigned. Configure live Clerk credentials/domain/redirects and canonical
-Convex Production `clean-eel-522` before release. No Preview or staging
-deployment is required.
+`main` and Vercel Production remain untouched. Local authenticated QA reports a
+Clerk instance-key mismatch, and the current CLI identity cannot access canonical
+Convex Development `content-snake-214`; account/admin content therefore cannot
+receive rendered visual approval. No alternate project, dummy business data,
+Preview, or staging deployment is used.
 
 ## Canonical Convex
 
@@ -82,7 +86,7 @@ environment-sensitive operation instead of switching or creating a project.
   before an explicit readiness report.
 - **Open questions:** final customer-owned brand copy, unresolved business
   policies, Reporting/Excel, Analytics, and Ready Stock order recording.
-- **Current priority:** Production environment setup without changing product
-  code or switching Convex projects.
-- **Next action:** configure Vercel Production with Clerk Production and
-  canonical Convex Production, then rerun preflight before merging `main`.
+- **Current priority:** restore matching Clerk credentials and canonical Convex
+  access for authenticated screenshot QA.
+- **Next action:** fix that single environment chain, rerun customer/admin
+  screenshots, then report merge readiness without changing `main` first.

@@ -8,6 +8,29 @@ source: conversation
 
 # Changelog
 
+## [production-ui-alignment-v1] — 2026-08-11
+
+### Changed
+
+- Forward-merged the current integrated Production V1 product into a hotfix
+  branch created from remote `main`; no rollback or old UX-branch merge.
+- Restored the official logo/mascot scale, cream/botanical palette, editorial
+  customer hierarchy, compact admin shell, responsive navigation, branded
+  empty/loading states, and Indonesian product/operational copy.
+- Preserved all Phase 01–06.4, dashboard/history, admin customer, authorization,
+  ownership, and financial behavior.
+
+### QA
+
+- Added viewport-aware navigation, official-logo, prohibited-copy, overflow,
+  protected-route, console, and page-error checks at customer widths 375, 390,
+  430, 768, 1440 and admin widths 1024, 1280, 1440.
+- `npm run check`: 92/92 Vitest, formatting/lint/typecheck/build PASS.
+- `npm run convex:test`: 61/61 PASS.
+- Optimized-build responsive route smoke: 108/108 PASS.
+- Authenticated customer/admin screenshot acceptance remains blocked by the
+  local Clerk instance mismatch and unavailable canonical Convex provisioning.
+
 ## [production-v1-convergence] — 2026-08-11
 
 ### Changed
