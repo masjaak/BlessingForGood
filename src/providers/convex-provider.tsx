@@ -1,15 +1,54 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { ConvexReactClient } from "convex/react";
+import { ConvexReactClient, useConvexAuth } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+
+const noop = () => undefined;
+const ConvexRetryContext = createContext<() => void>(noop);
+
+function ConvexAuthRecovery({ onRetry, attemptRef }: { onRetry: () => void; attemptRef: { current: number } }) {
+  const { isLoaded, isSignedIn, sessionId } = useAuth();
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  const lastSessionId = useRef(sessionId);
+
+  useEffect(() => {
+    if (sessionId !== lastSessionId.current || !isSignedIn) {
+      lastSessionId.current = sessionId;
+      attemptRef.current = 0;
+    }
+  }, [attemptRef, isSignedIn, sessionId]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || isLoading || isAuthenticated || attemptRef.current > 0) return;
+    attemptRef.current = 1;
+    queueMicrotask(onRetry);
+  }, [attemptRef, isAuthenticated, isLoaded, isLoading, isSignedIn, onRetry]);
+
+  return null;
+}
 
 export function ConvexProviderBoundary({ url, children }: { url: string; children: ReactNode }) {
+  const [generation, setGeneration] = useState(0);
+  const autoRetryAttempt = useRef(0);
   const client = useMemo(() => new ConvexReactClient(url), [url]);
+  const retry = useCallback(() => {
+    autoRetryAttempt.current = 0;
+    setGeneration((value) => value + 1);
+  }, []);
+  const autoRetry = useCallback(() => setGeneration((value) => value + 1), []);
+
   return (
-    <ConvexProviderWithClerk client={client} useAuth={useAuth}>
-      {children}
-    </ConvexProviderWithClerk>
+    <ConvexRetryContext.Provider value={retry}>
+      <ConvexProviderWithClerk key={generation} client={client} useAuth={useAuth}>
+        <ConvexAuthRecovery onRetry={autoRetry} attemptRef={autoRetryAttempt} />
+        {children}
+      </ConvexProviderWithClerk>
+    </ConvexRetryContext.Provider>
   );
+}
+
+export function useConvexRetry() {
+  return useContext(ConvexRetryContext);
 }

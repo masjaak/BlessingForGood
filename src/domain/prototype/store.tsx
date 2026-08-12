@@ -12,6 +12,7 @@ function UnavailableProductProvider({ children }: { children: ReactNode }) {
   const unavailable = useCallback(async () => {
     throw new Error("BFG belum terhubung ke layanan data.");
   }, []);
+  const retryAuth = useCallback(() => undefined, []);
   const value = useMemo<ProductContextValue>(
     () => ({
       hydrated: true,
@@ -22,6 +23,7 @@ function UnavailableProductProvider({ children }: { children: ReactNode }) {
       catalogLoading: false,
       catalogsLoading: false,
       ordersLoading: false,
+      retryAuth,
       state: emptyPrototypeState(),
       unlockedCatalog: undefined,
       createCatalog: unavailable,
@@ -31,7 +33,7 @@ function UnavailableProductProvider({ children }: { children: ReactNode }) {
       closeCatalog: unavailable,
       editOrder: unavailable,
     }),
-    [unavailable],
+    [retryAuth, unavailable],
   );
 
   return (

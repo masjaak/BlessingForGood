@@ -6,7 +6,7 @@ import type { FunctionReturnType } from "convex/server";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { ProductContext, type ProductContextValue } from "@/domain/prototype/context";
+import { ProductContext, resolveProductAuthState, type ProductContextValue } from "@/domain/prototype/context";
 import { ConvexOperationsProvider } from "@/domain/prototype/operations-context";
 import {
   getCatalogAttemptKey,
@@ -26,6 +26,7 @@ import type {
   PrototypeState,
   SecretCatalog,
 } from "@/domain/prototype/types";
+import { useConvexRetry } from "@/providers/convex-provider";
 
 type CatalogView = NonNullable<FunctionReturnType<typeof api.catalogAccess.getUnlocked>>;
 type OrderView = Awaited<FunctionReturnType<typeof api.orders.submit>>;
@@ -140,6 +141,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
 
   const { isLoaded, isSignedIn } = useAuth();
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
+  const retryConvexAuth = useConvexRetry();
 
   const ensureCurrentUser = useMutation(api.users.ensureCurrentUser);
   const createBundle = useMutation(api.secretCatalogs.createBundle);
@@ -150,7 +152,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const edit = useMutation(api.orders.edit);
   const updateStatus = useMutation(api.orders.updateStatus);
 
-  const me = useQuery(api.users.current, isSignedIn && isAuthenticated ? {} : "skip");
+  const me = useQuery(api.users.current, isAuthenticated ? {} : "skip");
   const activeUser = me?.status === "active" && isAuthenticated;
   const isAdmin = activeUser && (me?.role === "admin" || me?.role === "owner");
   const isCustomer = activeUser && me?.role === "customer";
@@ -193,7 +195,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       !isAuthenticated ||
       me !== null ||
       provisioning ||
-      admissionDenied
+      admissionDenied ||
+      provisionError
     )
       return;
     let active = true;
@@ -214,7 +217,17 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [admissionDenied, convexAuthLoading, ensureCurrentUser, isAuthenticated, isLoaded, isSignedIn, me, provisioning]);
+  }, [
+    admissionDenied,
+    convexAuthLoading,
+    ensureCurrentUser,
+    isAuthenticated,
+    isLoaded,
+    isSignedIn,
+    me,
+    provisionError,
+    provisioning,
+  ]);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -346,21 +359,20 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     [closeCatalogMutation],
   );
 
-  const authState = !isLoaded
-    ? "loading"
-    : !isSignedIn
-      ? "signed-out"
-      : convexAuthLoading || !isAuthenticated
-        ? "convex-loading"
-        : provisionError
-          ? "network-error"
-          : admissionDenied
-            ? "admission-required"
-            : provisioning || me === null || me === undefined
-              ? "provisioning"
-              : me.status === "suspended"
-                ? "suspended"
-                : "authenticated";
+  const authState = resolveProductAuthState({
+    clerkLoaded: isLoaded,
+    clerkSignedIn: isSignedIn,
+    convexLoading: convexAuthLoading,
+    convexAuthenticated: isAuthenticated,
+    appUser: me,
+    provisioning,
+    admissionDenied,
+    provisionError,
+  });
+  const retryAuth = useCallback(() => {
+    setProvisionError(false);
+    retryConvexAuth();
+  }, [retryConvexAuth]);
   const catalogLoading = Boolean(
     unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null)),
   );
@@ -377,6 +389,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       catalogLoading,
       catalogsLoading,
       ordersLoading,
+      retryAuth,
       state,
       unlockedCatalog: asCatalog(unlocked as CatalogView | null | undefined),
       createCatalog,
@@ -398,6 +411,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       isSignedIn,
       ordersLoading,
       provisionError,
+      retryAuth,
       state,
       submitOrder,
       unlockCatalog,

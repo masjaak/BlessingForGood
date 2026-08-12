@@ -15,6 +15,15 @@ test.describe("BFG Clerk authenticated Preview", () => {
   test("invited customer signs in and receives protected Convex access", async ({ page }) => {
     await page.goto("/");
     await clerk.signIn({ emailAddress: required("BFG_E2E_CUSTOMER_EMAIL"), page });
+    await page.goto("/account", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Semua yang perlu kamu ikuti, dalam satu tempat." })).toBeVisible();
+    await expect(page.locator(".loading-region")).toHaveCount(0);
+    await page.goto("/account/orders", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Ikuti langkah berikutnya dengan mudah." })).toBeVisible();
+    await expect(page.locator(".loading-region")).toHaveCount(0);
+    await page.goto("/account/invoices", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Lihat jumlah yang perlu diselesaikan." })).toBeVisible();
+    await expect(page.locator(".loading-region")).toHaveCount(0);
     await page.goto("/catalog", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/catalog/);
     await expect(page.getByLabel("Catalog access code")).toBeVisible();
@@ -28,6 +37,9 @@ test.describe("BFG Clerk authenticated Preview", () => {
   test("owner reaches user management while customer access is denied", async ({ page, browser }) => {
     await page.goto("/");
     await clerk.signIn({ emailAddress: required("BFG_E2E_OWNER_EMAIL"), page });
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Pekerjaan penting hari ini." })).toBeVisible();
+    await expect(page.locator(".loading-region")).toHaveCount(0);
     await page.goto("/admin/users", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Manage BFG users" })).toBeVisible();
 

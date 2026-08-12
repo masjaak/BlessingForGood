@@ -2,7 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import type { ReactNode } from "react";
-import { LoadingRegion, SkeletonCard } from "@/components/ui";
+import { Button, ErrorState, LinkButton } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 export function ProductAccessGuard({
@@ -14,7 +14,7 @@ export function ProductAccessGuard({
   requiredRole?: "admin" | "customer" | "owner";
   signedOutContent?: ReactNode;
 }) {
-  const { hydrated, dataSource, sessionRole, userStatus, authState } = useProduct();
+  const { hydrated, dataSource, sessionRole, userStatus, authState, retryAuth } = useProduct();
 
   if (dataSource === "unavailable" || authState === "configuration-missing") {
     return (
@@ -42,10 +42,13 @@ export function ProductAccessGuard({
   if (authState === "admission-required") {
     return (
       <div className="guard-card">
-        <span className="eyebrow">Undangan diperlukan</span>
-        <h1>Akses BFG belum dikonfirmasi</h1>
-        <p>Akun hanya dapat digunakan setelah permintaan Blessfriends disetujui dan undangan diterima.</p>
-        <UserButton />
+        <span className="eyebrow">Akun belum aktif</span>
+        <h1>Akun ini belum menjadi Blessfriend.</h1>
+        <p>Masuk dengan akun yang menerima undangan BFG, atau kirim permintaan Join Blessfriends terlebih dahulu.</p>
+        <div className="actions">
+          <LinkButton href="/join">Join Blessfriends</LinkButton>
+          <UserButton />
+        </div>
       </div>
     );
   }
@@ -59,14 +62,20 @@ export function ProductAccessGuard({
       </div>
     );
   }
-  if (authState === "network-error") {
-    return <div className="state-panel">Akses BFG belum dapat dikonfirmasi. Silakan coba lagi.</div>;
+  if (authState === "convex-error" || authState === "network-error") {
+    return (
+      <ErrorState
+        title="Sesi BFG belum siap."
+        description="Kami belum dapat mengonfirmasi sesi akunmu. Coba lagi sebentar lagi."
+        action={<Button onClick={retryAuth}>Coba lagi</Button>}
+      />
+    );
   }
   if (!hydrated || authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
     return (
-      <LoadingRegion label="Menyiapkan akun BFG">
-        <SkeletonCard variant="account" />
-      </LoadingRegion>
+      <div className="guard-card" aria-live="polite">
+        Menyiapkan akun BFG…
+      </div>
     );
   }
   const allowed =

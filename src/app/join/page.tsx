@@ -5,7 +5,7 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { BrandMascot } from "@/components/brand";
-import { Button, Card, Field, LinkButton, PageHeader } from "@/components/ui";
+import { Button, Card, ErrorState, Field, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -178,9 +178,18 @@ function ConnectedJoinForm() {
 }
 
 function JoinPageContent() {
-  const { dataSource, authState } = useProduct();
+  const { dataSource, authState, retryAuth } = useProduct();
   const { isLoaded, isSignedIn } = useAuth();
 
+  if (isSignedIn && (authState === "convex-error" || authState === "network-error")) {
+    return (
+      <ErrorState
+        title="Sesi BFG belum siap."
+        description="Kami belum dapat mengonfirmasi sesi akunmu. Coba lagi sebentar lagi."
+        action={<Button onClick={retryAuth}>Coba lagi</Button>}
+      />
+    );
+  }
   if (
     !isLoaded ||
     (isSignedIn && authState !== "authenticated" && authState !== "suspended" && authState !== "admission-required")
