@@ -22,9 +22,9 @@ redesign remains deferred. No business fixtures or dummy records were added.
 
 **Starting commit:** `8e67bfc` (`docs: record V3 production deployment`)
 
-**Production commit:** `b70d94b` (`docs: record V3.1 production readiness`)
+**Production commit:** `aa294c5` (`docs: record final production deployment`)
 
-**Vercel deployment:** `dpl_6V2vo8hHCWNrLfUsm9mzcHUSghUY` — Ready; canonical
+**Vercel deployment:** `dpl_H6m6a6vtGf61fzNXbWwTRyQmmggY` — Ready; canonical
 aliases include `https://blessingforgood.com`. Vercel logs show the build,
 TypeScript check, static generation, Convex schema validation, and deployment
 to Production Convex `clean-eel-522` completed successfully.
