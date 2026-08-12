@@ -60,6 +60,24 @@ const compactOrderSteps: OrderStep[] = [
   },
 ];
 
+const previewOrderSteps: OrderStep[] = [
+  {
+    title: "Temukan bukunya",
+    description: "Pilih Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
+    icon: "discover",
+  },
+  {
+    title: "Pesan & tunggu proses BFG",
+    description: "Pilih varian, kirim pesanan, lalu cek invoice dan pembayaran.",
+    icon: "process",
+  },
+  {
+    title: "Pantau sampai buku datang",
+    description: "Ikuti batch, fulfillment, dan pengiriman dari Buku Saya.",
+    icon: "arrive",
+  },
+];
+
 function OrderStepIcon({ name }: { name: OrderStepIconName }) {
   const common = {
     fill: "none",
@@ -132,10 +150,10 @@ function OrderStepIcon({ name }: { name: OrderStepIconName }) {
   );
 }
 
-export function HowToOrderSteps({ compact = false }: { compact?: boolean }) {
-  const steps = compact ? compactOrderSteps : orderSteps;
+export function HowToOrderSteps({ compact = false, preview = false }: { compact?: boolean; preview?: boolean }) {
+  const steps = preview ? previewOrderSteps : compact ? compactOrderSteps : orderSteps;
   return (
-    <div className={`order-steps${compact ? " order-steps-compact" : ""}`}>
+    <div className={`order-steps${compact ? " order-steps-compact" : ""}${preview ? " order-steps-preview" : ""}`}>
       {steps.map((step, index) => (
         <div className="order-step" key={`${step.title}-${index}`}>
           <div className="order-step-topline">
@@ -148,7 +166,7 @@ export function HowToOrderSteps({ compact = false }: { compact?: boolean }) {
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </div>
-          {index < steps.length - 1 && (compact ? index % 3 !== 2 : index % 4 !== 3) ? (
+          {index < steps.length - 1 && (preview || (compact ? index % 3 !== 2 : index % 4 !== 3)) ? (
             <span className="order-step-arrow" aria-hidden="true">
               →
             </span>

@@ -69,13 +69,19 @@ describe("public UI foundation", () => {
     expect(screen.queryByRole("button", { name: "User profile" })).toBeNull();
   });
 
-  it("gives the welcome screen one branded entry point per supported path", () => {
+  it("keeps homepage jobs distinct while preserving supported routes", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("img", { name: "Blessing For Goods mascot" })).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: "Gabung Blessfriends" })[0].getAttribute("href")).toBe("/join");
+    expect(screen.getByRole("link", { name: "Lihat Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
+    expect(screen.getByRole("link", { name: "Buka Secret Catalog" }).getAttribute("href")).toBe("/catalog");
+    expect(screen.getByRole("link", { name: "Gabung sekarang" }).getAttribute("href")).toBe("/join");
+    expect(screen.getByRole("link", { name: /Lihat cara memesan/ }).getAttribute("href")).toBe("/how-to-order");
+    expect(screen.getByRole("heading", { name: "Ready Stock" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Secret Catalog" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Gabung Blessfriends" })).toBeTruthy();
+    expect(screen.queryByText("Kenalan dulu, lalu pilih langkahmu.")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Cara memesan" })[0].getAttribute("href")).toBe("/how-to-order");
-    expect(screen.getAllByRole("link", { name: "Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
   });
 
   it("links the grouped admin workspace destinations", () => {

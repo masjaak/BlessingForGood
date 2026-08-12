@@ -90,7 +90,7 @@ async function verifyRoute(route: string, page: Page, project: string) {
         .poll(() => storyLogo.evaluate((image) => (image as HTMLImageElement).naturalWidth), { timeout: 5_000 })
         .toBeGreaterThan(0);
     }
-    await expect(page.locator(".order-step-icon")).toHaveCount(route === "/" ? 6 : 8);
+    await expect(page.locator(".order-step-icon")).toHaveCount(route === "/" ? 3 : 8);
   }
 
   if (publicShellRoutes.has(route)) {

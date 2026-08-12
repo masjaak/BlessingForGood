@@ -1,15 +1,15 @@
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { HowToOrderSteps } from "@/components/how-to-order";
-import { Card, LinkButton } from "@/components/ui";
+import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
 export default function HomePage() {
   return (
     <SiteShell>
       <div className="page home-page">
-        <section className="hero" aria-labelledby="home-title">
+        <section className="hero home-hero" aria-labelledby="home-title">
           <div className="hero-copy">
-            <span className="eyebrow">Mengenal lebih dekat Blessing For Goods</span>
+            <span className="eyebrow">Rumah buku pilihan untuk Blessfriends</span>
             <h1 id="home-title" className="display">
               Semua bisa dimulai dari satu buku yang tepat.
             </h1>
@@ -17,22 +17,8 @@ export default function HomePage() {
               BFG membantu Blessfriends menemukan bacaan yang bisa menumbuhkan rasa ingin tahu, imajinasi, dan kebiasaan
               baik—sedikit demi sedikit.
             </p>
-            <div className="actions">
-              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
-              <LinkButton href="/catalog" variant="secondary">
-                Buka Secret Catalog
-              </LinkButton>
-            </div>
-            <div className="hero-support-links">
-              <LinkButton href="/join" variant="quiet">
-                Gabung Blessfriends
-              </LinkButton>
-              <LinkButton href="#cara-order" variant="quiet">
-                Cara memesan
-              </LinkButton>
-            </div>
           </div>
-          <div className="hero-panel" aria-label="Cara memesan di Blessing For Goods">
+          <div className="hero-panel" aria-label="Perjalanan buku di Blessing For Goods">
             <div className="hero-panel-top">
               <div>
                 <BrandMascot className="hero-mascot" priority />
@@ -40,53 +26,104 @@ export default function HomePage() {
               </div>
               <span className="status-badge status-positive">Untuk Blessfriends</span>
             </div>
-            <div className="hero-sequence">
-              <span>01</span>
-              <strong>Temukan</strong>
-              <small>Pilih Ready Stock atau katalog privat.</small>
-              <span>02</span>
-              <strong>Pesan</strong>
-              <small>Pilih format, ISBN, dan jumlah dengan jelas.</small>
-              <span>03</span>
-              <strong>Ikuti</strong>
-              <small>Pantau batch, invoice, pembayaran, dan pengiriman.</small>
+            <ol className="hero-sequence">
+              <li>
+                <span>01</span>
+                <div>
+                  <strong>Temukan</strong>
+                  <small>Pilih Ready Stock atau katalog privat.</small>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <strong>Pesan</strong>
+                  <small>Pilih format, ISBN, dan jumlah dengan jelas.</small>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <strong>Ikuti</strong>
+                  <small>Pantau batch, invoice, pembayaran, dan pengiriman.</small>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section className="section-block discovery-section" id="book-discovery" aria-labelledby="discovery-title">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Book discovery</span>
+              <h2 id="discovery-title">Mulai dari buku yang ingin kamu temukan.</h2>
+            </div>
+            <p>Ruang pertama untuk menjelajah: pilihan yang sudah tersedia atau katalog privat sesuai aksesmu.</p>
+          </div>
+          <div className="discovery-grid">
+            <article className="discovery-card discovery-card-ready">
+              <div>
+                <span className="eyebrow">Pilihan utama</span>
+                <h3>Ready Stock</h3>
+                <p>Buku yang sudah tersedia untuk langsung kamu lihat dan pesan dengan alur yang jelas.</p>
+              </div>
+              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
+            </article>
+            <article className="discovery-card discovery-card-secret">
+              <div className="discovery-card-heading">
+                <span className="discovery-lock" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="5" y="10" width="14" height="10" rx="2" />
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" />
+                  </svg>
+                </span>
+                <span className="eyebrow">Akses privat</span>
+              </div>
+              <div>
+                <h3>Secret Catalog</h3>
+                <p>Masukkan kode akses untuk membuka pilihan buku privat Blessfriends.</p>
+              </div>
+              <LinkButton href="/catalog" variant="secondary">
+                Buka Secret Catalog
+              </LinkButton>
+            </article>
+          </div>
+        </section>
+
+        <section className="section-block community-section" id="join-blessfriends" aria-labelledby="join-title">
+          <div className="community-banner">
+            <div className="community-copy">
+              <span className="eyebrow">Komunitas BFG</span>
+              <h2 id="join-title">Gabung Blessfriends</h2>
+              <p>
+                Cari rekomendasi buku bareng orang tua dan pembaca lain yang sama-sama penasaran menemukan bacaan bagus.
+              </p>
+              <LinkButton href="/join">Gabung sekarang</LinkButton>
+            </div>
+            <div className="community-art" aria-hidden="true">
+              <BrandMascot variant="warm" className="community-mascot" />
             </div>
           </div>
         </section>
 
-        <section className="section-block quick-path-section" aria-labelledby="quick-path-title">
+        <section
+          className="section-block order-section home-order-section"
+          id="cara-order"
+          aria-labelledby="order-title"
+        >
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Mulai dari sini</span>
-              <h2 id="quick-path-title">Kenalan dulu, lalu pilih langkahmu.</h2>
+              <span className="eyebrow">How to order</span>
+              <h2 id="order-title">Pesan dengan alur yang jelas.</h2>
+              <p>Kenali tiga momen utamanya sebelum masuk ke panduan lengkap.</p>
             </div>
-            <p>Tiga pintu kecil untuk memahami BFG dan mulai ikut dalam perjalanan buku pilihan.</p>
           </div>
-          <div className="quick-path-grid">
-            <a className="quick-path-card" href="#bfg-story">
-              <span className="quick-path-number">01</span>
-              <h3>Kenalan dengan BFG</h3>
-              <p>Cerita singkat tentang kami, logo, dan Blessy.</p>
-              <span className="quick-path-action">
-                Kenalan <span aria-hidden="true">→</span>
-              </span>
-            </a>
-            <a className="quick-path-card" href="#cara-order">
-              <span className="quick-path-number">02</span>
-              <h3>Cara order</h3>
-              <p>Dari pilih buku sampai pesanan tiba.</p>
-              <span className="quick-path-action">
-                Lihat caranya <span aria-hidden="true">→</span>
-              </span>
-            </a>
-            <a className="quick-path-card" href="#join-blessfriends">
-              <span className="quick-path-number">03</span>
-              <h3>Join Blessfriends</h3>
-              <p>Isi data singkat lalu lanjut ke komunitas.</p>
-              <span className="quick-path-action">
-                Gabung <span aria-hidden="true">→</span>
-              </span>
-            </a>
+          <HowToOrderSteps preview />
+          <div className="home-order-footer">
+            <span>Butuh detail dari akses sampai buku tiba?</span>
+            <LinkButton href="/how-to-order" variant="quiet">
+              Lihat cara memesan <span aria-hidden="true">→</span>
+            </LinkButton>
           </div>
         </section>
 
@@ -148,32 +185,6 @@ export default function HomePage() {
               <p>Selamat datang di rumah buku pilihan BFG.</p>
             </article>
           </div>
-        </section>
-
-        <section className="section-block order-section" id="cara-order" aria-labelledby="order-title">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Bagaimana cara order?</span>
-              <h2 id="order-title">Dari pilih buku sampai buku tiba.</h2>
-            </div>
-            <LinkButton href="/how-to-order" variant="quiet">
-              Lihat panduan lengkap →
-            </LinkButton>
-          </div>
-          <HowToOrderSteps compact />
-        </section>
-
-        <section className="section-block join-section" id="join-blessfriends" aria-labelledby="join-title">
-          <Card className="join-home-card">
-            <div>
-              <span className="eyebrow">Join Blessfriends</span>
-              <h2 id="join-title">Mau ikut menemukan buku bersama?</h2>
-              <p>
-                Isi data singkat, ceritakan minat bukumu, lalu lanjutkan ke komunitas setelah permintaanmu diterima.
-              </p>
-            </div>
-            <LinkButton href="/join">Gabung Blessfriends</LinkButton>
-          </Card>
         </section>
       </div>
     </SiteShell>
