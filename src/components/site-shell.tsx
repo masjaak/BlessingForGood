@@ -130,7 +130,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className={`site-shell customer-shell${signedIn ? " customer-shell-signed-in" : ""}`}>
       <header className="site-header">
-        <BrandLogo />
+        <BrandLogo className={pathname === "/" ? "homepage-header-logo" : ""} />
         {!signedIn ? (
           <nav className="site-nav public-nav" aria-label="Primary navigation">
             {publicLinks.map((link) => (

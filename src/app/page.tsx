@@ -17,35 +17,37 @@ export default function HomePage() {
               BFG membantu Blessfriends menemukan bacaan yang bisa menumbuhkan rasa ingin tahu, imajinasi, dan kebiasaan
               baik—sedikit demi sedikit.
             </p>
-          </div>
-          <div className="hero-panel" aria-label="Perjalanan buku di Blessing For Goods">
-            <div className="hero-panel-top">
-              <div>
-                <BrandMascot className="hero-mascot" priority />
-                <span className="panel-label">Perjalanan bukumu</span>
-              </div>
-              <span className="status-badge status-positive">Untuk Blessfriends</span>
+            <div className="home-hero-actions" aria-label="Akses buku">
+              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
+              <LinkButton href="/catalog" variant="secondary">
+                Buka Secret Catalog <span aria-hidden="true">→</span>
+              </LinkButton>
             </div>
+          </div>
+          <div className="home-journey" aria-labelledby="journey-title">
+            <h2 id="journey-title" className="eyebrow">
+              Perjalanan bukumu
+            </h2>
             <ol className="hero-sequence">
               <li>
-                <span>01</span>
+                <span className="hero-step-number">01</span>
                 <div>
                   <strong>Temukan</strong>
-                  <small>Pilih Ready Stock atau katalog privat.</small>
+                  <small>Pilih Ready Stock atau katalog pilihan.</small>
                 </div>
               </li>
               <li>
-                <span>02</span>
+                <span className="hero-step-number">02</span>
                 <div>
                   <strong>Pesan</strong>
-                  <small>Pilih format, ISBN, dan jumlah dengan jelas.</small>
+                  <small>Pilih buku, format, dan jumlah.</small>
                 </div>
               </li>
               <li>
-                <span>03</span>
+                <span className="hero-step-number">03</span>
                 <div>
                   <strong>Ikuti</strong>
-                  <small>Pantau batch, invoice, pembayaran, dan pengiriman.</small>
+                  <small>Pantau tagihan sampai pengiriman.</small>
                 </div>
               </li>
             </ol>

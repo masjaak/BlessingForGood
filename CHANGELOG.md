@@ -8,6 +8,24 @@ source: conversation
 
 # Changelog
 
+## [homepage-v4.1.3] — 2026-08-12
+
+### Changed
+
+- Rebalanced the homepage above the fold around the approved hero message,
+  early Ready Stock/Secret Catalog actions, and a compact responsive journey
+  stepper.
+- Optically centered the visible homepage `Logo-1` artwork while keeping the
+  complete official logo contained and unclipped.
+- Removed the large dark-green journey card without changing its three current
+  product moments or any route behavior.
+
+### Preserved
+
+- Customer routes, bottom navigation, Clerk/Convex contracts, Secret Catalog
+  security, Ready Stock ordering, financial logic, and Phase 07 Admin remain
+  unchanged.
+
 ## [phase-07] — 2026-08-12
 
 ### Added

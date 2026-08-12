@@ -1,5 +1,19 @@
 # BFG Project Status
 
+## Homepage Polish V4.1.3
+
+**Status:** BFG_HOMEPAGE_V4_1_3_PRODUCTION_READY
+
+This homepage-only hotfix keeps Phase 07 functionally locked while moving
+Ready Stock and Secret Catalog actions into the hero, replacing the large
+dark-green journey panel with a lightweight cream-canvas stepper, and
+optically centering the visible customer `Logo-1` artwork without cropping it.
+Customer routes, bottom navigation, Clerk/Convex contracts, Secret Catalog
+security, Ready Stock ordering, financial logic, and Admin remain unchanged.
+
+**Local gate:** Vitest `108/108`; customer Playwright `75/75`; signed-out
+Admin Playwright `39/39`; TypeScript, build, lint, format, and diff check pass.
+
 ## Phase 07 Admin Operational UI/UX + Customer Visual Patch V4.1.1
 
 **Status:** BFG_PHASE_07_ADMIN_OPERATIONAL_UI_READY — PRODUCTION DEPLOYED
