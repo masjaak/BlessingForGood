@@ -18,9 +18,9 @@ history, and customer consequences remain canonical.
 
 **Starting production commit:** `cf26922`
 
-**Final production commit:** `51587d6`
+**Final production code commit:** `51587d6`
 
-**Vercel deployment:** `dpl_2vbowbxxL1jj4dibgnhS8bxWHyy4` — Ready on the
+**Vercel deployment:** `dpl_6HRYZPXFxSg2dbLz1oKW3hq88F2w` — Ready on the
 canonical aliases, including `https://blessingforgood.com`.
 
 **Local gate:** Vitest `108/108`, Convex `72/72`, Playwright local customer
