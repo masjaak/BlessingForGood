@@ -2,7 +2,7 @@
 
 ## Customer Mobile UX Correction V3.1
 
-**Status:** RELEASE CANDIDATE — PRODUCTION DEPLOYMENT PENDING
+**Status:** PRODUCTION READY — LIVE QA PASSED
 
 V3.1 corrects the rendered customer mobile experience forward-only. The
 header logo is smaller, top-right `Masuk` opens the dedicated BFG sign-in
@@ -22,9 +22,9 @@ redesign remains deferred. No business fixtures or dummy records were added.
 
 **Starting commit:** `8e67bfc` (`docs: record V3 production deployment`)
 
-**Implementation commit:** pending
+**Production commit:** `998bfcb` (`fix: preserve sign-in return context`)
 
-**Vercel deployment:** `dpl_7r3yVo1N5TJKBefoBYJYPXM3ENxv` — Ready; canonical
+**Vercel deployment:** `dpl_FSp8vub5rWwA2FeLunDQte9Lo9Kx` — Ready; canonical
 aliases include `https://blessingforgood.com`. Vercel logs show the build,
 TypeScript check, static generation, Convex schema validation, and deployment
 to Production Convex `clean-eel-522` completed successfully.
@@ -35,8 +35,10 @@ never stored as plaintext authoritative values. The full admin visual
 redesign remains deferred.
 
 Local gates currently pass: TypeScript, ESLint, 100 Vitest tests, 64 Convex
-tests, and mobile signed-out Playwright smoke at 375, 390, and 430. No secret
-values, dummy records, or alternate deployments were used.
+tests, and 108/108 Playwright tests across customer/admin responsive projects.
+Live public mobile QA at 390px passed for homepage, token gateway, signed-out
+states, BFG sign-in, no-ticket sign-up, navigation, and detail Back controls.
+No secret values, dummy records, or alternate deployments were used.
 
 The join continuation is safe when `BFG_JOIN_WHATSAPP_GROUP_URL` is absent:
 the request persists and the customer sees the configured-link fallback. Its
