@@ -11,11 +11,13 @@ export default async function SignInPage({
   searchParams: Promise<{ redirect_url?: string | string[] }>;
 }) {
   const { userId } = await auth();
-  const redirectUrl = safeAuthRedirect((await searchParams).redirect_url);
+  const requestedRedirect = (await searchParams).redirect_url;
+  const redirectUrl = safeAuthRedirect(requestedRedirect);
+  const backFallback = requestedRedirect ? redirectUrl : "/";
   if (userId) redirect(redirectUrl);
   return (
     <main className="auth-page">
-      <BackButton fallback="/" />
+      <BackButton fallback={backFallback} />
       <BrandLogo linkToHome={false} />
       <p className="auth-invite-note">Blessing For Goods khusus untuk anggota yang telah menerima undangan.</p>
       <ClerkAuthForm mode="sign-in" redirectUrl={redirectUrl} />

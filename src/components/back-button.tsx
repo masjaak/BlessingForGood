@@ -15,17 +15,19 @@ export function BackButton({ fallback = "/", publicOnly = false }: { fallback?: 
       const isProtected = ["/catalog", "/account", "/admin", "/sign-in", "/sign-up"].some(
         (prefix) => path === prefix || path.startsWith(`${prefix}/`),
       );
+      const fallbackPath = fallback.split(/[?#]/, 1)[0] || "/";
       queueMicrotask(() =>
         setHasInternalHistory(
           new URL(referrer).origin === window.location.origin &&
             path !== window.location.pathname &&
+            !(fallbackPath !== "/" && path === "/") &&
             (!publicOnly || !isProtected),
         ),
       );
     } catch {
       queueMicrotask(() => setHasInternalHistory(false));
     }
-  }, [publicOnly]);
+  }, [fallback, publicOnly]);
 
   return (
     <button

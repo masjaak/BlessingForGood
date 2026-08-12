@@ -167,6 +167,10 @@ test.describe("@customer BFG customer route smoke", () => {
       "/sign-in?redirect_url=/account",
     );
     await expect(page.getByRole("link", { name: "Join Blessfriends" })).toHaveAttribute("href", "/join");
+    await page.getByRole("main").getByRole("link", { name: "Masuk" }).click();
+    await expect(page).toHaveURL(/\/sign-in\?redirect_url=%2Faccount|\/sign-in\?redirect_url=\/account/);
+    await page.getByRole("button", { name: "Kembali" }).click();
+    await expect(page).toHaveURL(/\/account$/);
   });
 
   test("blocks public sign-up while keeping the route available for invitations", async ({ page }) => {
