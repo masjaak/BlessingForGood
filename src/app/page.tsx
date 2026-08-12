@@ -1,15 +1,7 @@
 import { BrandLogo, BrandMascot } from "@/components/brand";
+import { HowToOrderSteps } from "@/components/how-to-order";
 import { Card, LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
-
-const orderSteps = [
-  ["Temukan bukunya", "Lihat Ready Stock atau katalog privat yang sudah kamu buka."],
-  ["Pilih yang tersedia", "Bandingkan format, ISBN, harga, dan pilihan yang masih bisa dipesan."],
-  ["Kirim pesanan", "Isi detail yang diperlukan, lalu kirim pesanan dari akunmu."],
-  ["BFG proses dalam batch", "Kami merapikan pesanan dan mengabarkan tahap berikutnya."],
-  ["Pantau perjalanannya", "Lihat pembaruan pesanan, tracking, invoice, dan pembayaran."],
-  ["Buku sampai", "Setelah proses selesai, buku pilihanmu melanjutkan perjalanan ke rumah."],
-];
 
 export default function HomePage() {
   return (
@@ -168,17 +160,7 @@ export default function HomePage() {
               Lihat panduan lengkap →
             </LinkButton>
           </div>
-          <div className="order-steps">
-            {orderSteps.map(([title, description], index) => (
-              <div className="order-step" key={title}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <HowToOrderSteps compact />
         </section>
 
         <section className="section-block join-section" id="join-blessfriends" aria-labelledby="join-title">

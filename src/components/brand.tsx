@@ -22,7 +22,7 @@ export function BrandLogo({
       width={asset.width}
       height={asset.height}
       className={`brand-logo brand-logo-${variant} ${className}`.trim()}
-      sizes={variant === "primary" ? "180px" : "64px"}
+      sizes={variant === "primary" || variant === "admin" ? "180px" : "64px"}
       priority={variant === "primary"}
     />
   );

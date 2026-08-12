@@ -121,6 +121,50 @@ export const list = query({
   },
 });
 
+export const listForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "books.manage");
+    // ponytail: bounded operational projection; add cursor pagination when the master exceeds 200 books.
+    const books = await ctx.db.query("books").withIndex("by_created_at").order("desc").take(200);
+    const rows = await Promise.all(
+      books.map(async (book) => {
+        const [publisher, variants] = await Promise.all([
+          ctx.db.get(book.publisherId),
+          ctx.db
+            .query("bookVariants")
+            .withIndex("by_book", (index) => index.eq("bookId", book._id))
+            .collect(),
+        ]);
+        return Promise.all(
+          variants.map(async (variant) => {
+            const inventory = await ctx.db
+              .query("readyStockInventory")
+              .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variant._id))
+              .unique();
+            const onHandQuantity = inventory?.quantity ?? 0;
+            const reservedQuantity = inventory?.reservedQuantity ?? 0;
+            return {
+              bookId: book._id,
+              title: book.title,
+              publisherName: publisher?.name || "—",
+              publicationStatus: book.publicationStatus,
+              variantId: variant._id,
+              format: variant.format,
+              isbn: variant.isbn,
+              isAvailable: variant.isAvailable,
+              onHandQuantity,
+              reservedQuantity,
+              availableQuantity: Math.max(0, onHandQuantity - reservedQuantity),
+            };
+          }),
+        );
+      }),
+    );
+    return rows.flat();
+  },
+});
+
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {

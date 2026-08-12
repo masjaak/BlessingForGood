@@ -109,6 +109,33 @@ describe("BFG Ready Stock and Book Master", () => {
     );
   });
 
+  it("projects on-hand, reserved, and available stock for authorized admins", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Stock Projection House" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Projected Stock" });
+    const variantId = await admin.mutation(api.bookVariants.create, {
+      bookId,
+      format: "PB",
+      isbn: "9780000041077",
+      priceAmount: 100000,
+    });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 4 });
+    await t.run(async (ctx) => {
+      const inventory = await ctx.db
+        .query("readyStockInventory")
+        .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variantId))
+        .unique();
+      if (!inventory) throw new Error("inventory fixture was not created");
+      await ctx.db.patch(inventory._id, { reservedQuantity: 1 });
+    });
+
+    expect(await admin.query(api.readyStock.listForAdmin, {})).toEqual([
+      expect.objectContaining({ onHandQuantity: 4, reservedQuantity: 1, availableQuantity: 3 }),
+    ]);
+    await expect(customer.query(api.readyStock.listForAdmin, {})).rejects.toThrow("PERMISSION_DENIED");
+  });
+
   it("rejects customer mutations, negative stock, invalid prices, duplicate ISBNs, and duplicate slugs", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

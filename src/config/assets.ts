@@ -9,8 +9,14 @@ export interface AssetReference {
 export const brandAssets = {
   logos: {
     primary: {
-      src: "/brand/logos/Logo-4.png",
+      src: "/brand/logos/Logo-1",
       alt: "Blessing For Goods",
+      width: 4000,
+      height: 4000,
+    },
+    admin: {
+      src: "/brand/logos/Logo-4.png",
+      alt: "Blessing For Goods operational mark",
       width: 4000,
       height: 4000,
     },
@@ -53,7 +59,7 @@ export const assetReferences = {
       "/brand/logos/Logo-4.png",
     ],
     notes:
-      "Four readable RGBA PNG logo candidates were copied exactly; Logo-4 is the runtime primary and Logo-2 is the symbol.",
+      "Logo-1 is the approved multicolor customer primary; Logo-4 remains the compact operational admin mark and Logo-2 is the symbol.",
   },
   mascot: {
     status: "confirmed",

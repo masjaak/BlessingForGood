@@ -43,7 +43,7 @@ describe("public UI foundation", () => {
       </div>,
     );
 
-    expect(screen.getByRole("img", { name: "Blessing For Goods" }).getAttribute("src")).toContain("Logo-4.png");
+    expect(screen.getByRole("img", { name: "Blessing For Goods" }).getAttribute("src")).toContain("Logo-1");
     expect(screen.getByRole("img", { name: "Blessing For Goods symbol" }).getAttribute("src")).toContain("Logo-2.png");
     expect(screen.getByRole("img", { name: "Blessing For Goods mascot celebrating" }).getAttribute("src")).toContain(
       "Mascott-3.png",
@@ -78,13 +78,14 @@ describe("public UI foundation", () => {
     expect(screen.getAllByRole("link", { name: "Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
   });
 
-  it("links implemented admin destinations and marks remaining gaps", () => {
+  it("links the grouped admin workspace destinations", () => {
     render(<AdminNav />);
 
-    expect(screen.getByRole("link", { name: "Ringkasan" }).getAttribute("href")).toBe("/admin");
-    expect(screen.getByRole("link", { name: "Katalog" }).getAttribute("href")).toBe("/admin/catalogs");
-    expect(screen.getByRole("link", { name: "Buku" }).getAttribute("href")).toBe("/admin/books");
-    expect(screen.getByRole("link", { name: "Pembayaran" }).getAttribute("href")).toBe("/admin/payments");
+    expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Catalogs" }).getAttribute("href")).toBe("/admin/catalogs");
+    expect(screen.getByRole("link", { name: "Books" }).getAttribute("href")).toBe("/admin/books");
+    expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/admin/ready-stock");
+    expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
   });
 
   it("shows the shell admin link only for a resolved elevated role", () => {

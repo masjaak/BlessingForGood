@@ -21,6 +21,7 @@ const adminRoutes = [
   "/admin",
   "/admin/books",
   "/admin/catalogs",
+  "/admin/ready-stock",
   "/admin/join-requests",
   "/admin/orders",
   "/admin/batches",
@@ -80,6 +81,17 @@ async function verifyRoute(route: string, page: Page, project: string) {
   await expect(page.locator("body")).not.toHaveText("");
   await expect(page.locator("body")).not.toContainText(prohibitedCopy);
   if (route === "/ready-stock") await expect(page.getByText("Memuat Ready Stock…")).toBeHidden({ timeout: 15_000 });
+  if (route === "/" || route === "/how-to-order") {
+    await expect(page.locator('.site-header img[src*="Logo-1"]')).toHaveCount(1);
+    if (route === "/") {
+      const storyLogo = page.locator('.story-card-logo img[src*="Logo-1"]');
+      await expect(storyLogo).toHaveCount(1);
+      await expect
+        .poll(() => storyLogo.evaluate((image) => (image as HTMLImageElement).naturalWidth), { timeout: 5_000 })
+        .toBeGreaterThan(0);
+    }
+    await expect(page.locator(".order-step-icon")).toHaveCount(route === "/" ? 6 : 8);
+  }
 
   if (publicShellRoutes.has(route)) {
     await expect(page.locator("h1, h2, h3").first()).toBeVisible({ timeout: 15_000 });
@@ -112,10 +124,15 @@ async function verifyRoute(route: string, page: Page, project: string) {
   );
 
   if (screenshotRoutes.has(route)) {
+    await expect(page.locator(".bfg-splash")).toBeHidden({ timeout: 2_500 });
     await page.screenshot({
       path: `artifacts/browser-qa/${project}-${route === "/" ? "home" : route.slice(1)}.png`,
       fullPage: true,
     });
+    if (route === "/") {
+      await page.locator(".story-card-logo").scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `artifacts/browser-qa/${project}-story-logo-patch.png` });
+    }
   }
 
   expect(consoleErrors, `${route} console errors`).toEqual([]);

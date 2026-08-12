@@ -111,12 +111,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
     return (
       <div className="site-shell admin-shell">
         <header className="admin-topbar">
-          <BrandLogo />
+          <BrandLogo variant="admin" />
           <div className="admin-brand-copy">
             <strong>Operasional BFG</strong>
             <span>Kelola toko buku dan komunitas</span>
           </div>
           <div className="admin-account">
+            <span className="admin-topbar-status">Workspace operasional</span>
             <Link href="/">Lihat sisi customer</Link>
             <UserButton appearance={bfgClerkAppearance} />
           </div>
