@@ -2,7 +2,7 @@
 
 ## Phase 06.7 Business Policy Closure
 
-**Status:** IMPLEMENTED LOCALLY — RELEASE GATE PASSED; DELIVERY PENDING
+**Status:** BFG_PHASE_06_7_POLICY_CLOSED — PRODUCTION DEPLOYED
 
 Phase 06.7 closes Ready Stock ordering/reservation, pre/post-PO cancellation,
 defect replacement, refund obligation/payout, deposit refund, non-account
@@ -14,6 +14,22 @@ Customer Visual V4.1, the global skeleton/loading system, and the Phase 06.6
 customer/admin flow remain locked. Admin visual redesign remains deferred to
 Phase 07. No production business data was seeded and no Preview delivery is
 used.
+
+**Starting production commit:** `938be66371d4e9b5084033f1b3985e207f65994`
+
+**Final production commit:** `1627ad306e44b152807a8a3f1b3985e207f65994`
+
+**Vercel deployment:** `dpl_9eP9VJuERdZS7EKZNRjR7eBL5f3u` — Ready; aliases include
+`https://blessingforgood.com`. The Production build used the configured Convex
+deploy command and completed successfully.
+
+**Live smoke:** customer `75/75` and signed-out admin `36/36` across the
+responsive production projects. The canonical domain redirects to `www` and
+returns `200`.
+
+The local Convex CLI check could not authenticate to the selected development
+project in this environment; no production mutation was attempted. Vercel's
+Production build completed the configured Convex deployment step.
 
 The repository's `AGENTS.md` references `context/SOURCE_OF_TRUTH.md`, but that
 file is absent from the current checkout; the current source-of-truth chain is
@@ -189,7 +205,8 @@ environment-sensitive operation instead of switching or creating a project.
   Admin visual redesign before Phase 07.
 - **Open backlog:** Reporting/Excel, Analytics, CMS, Settings, notification
   platform, payment gateway, and full Admin visual redesign.
-- **Current priority:** commit the green Phase 06.7 candidate to `main`, push
-  it, and verify the Vercel Production deployment and live public smoke.
-- **Next action:** deploy the tested commit through the linked Vercel
-  Production project, then record the final commit and live result.
+- **Current priority:** begin Phase 07 Admin operational UI/UX on the stable
+  Phase 06.7 policy surface.
+- **Next action:** keep reporting, Excel export, analytics, CMS, settings,
+  notification platform, payment gateway, and full Admin visual redesign out
+  of scope until their own phase is authorized.

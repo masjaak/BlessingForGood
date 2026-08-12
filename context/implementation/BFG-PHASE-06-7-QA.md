@@ -1,6 +1,6 @@
 # BFG Phase 06.7 Operational Policy QA
 
-Status: PASS — policy and regression gate complete locally
+Status: PASS — local regression and live production smoke gates complete
 
 Every scenario below is exercised against isolated Convex fixtures. No
 production business data is used.
@@ -42,4 +42,6 @@ production business data is used.
 
 The final local gate is green: Vitest 107/107, Convex 71/71, Playwright
 108/108 plus 3/3 `/admin/refunds` route checks, TypeScript, build, lint,
-format, and `git diff --check`. No production fixture was used.
+format, and `git diff --check`. Live production smoke is green: customer
+75/75 across 375/390/430/768/1440 widths and signed-out admin 36/36 across
+1024/1280/1440 widths. No production fixture was used.

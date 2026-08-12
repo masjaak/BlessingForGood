@@ -31,6 +31,13 @@ source: conversation
 - Customer Visual V4.1, Phase 06.6 loading, and the shared Convex architecture
   remain unchanged except for required policy states.
 
+### QA
+
+- Local policy gate: Vitest 107/107, Convex 71/71, Playwright 108/108 plus
+  `/admin/refunds` route checks, TypeScript/build/lint/format PASS.
+- Production smoke: customer 75/75 across five responsive widths and
+  signed-out admin 36/36 across three protected-route widths.
+
 ### Deferred
 
 - Full Admin visual redesign and reporting, Excel export, analytics, CMS,
