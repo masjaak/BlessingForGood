@@ -3,12 +3,13 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { hasUnresolvedException } from "./lib/orderExceptionState";
+import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { positiveQuantity, requiredText } from "./lib/validation";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
@@ -40,7 +41,7 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
     orderId: order._id,
     id: order._id,
     customerUserId: order.customerUserId,
-    catalogId: order.catalogId,
+    catalogId: order.catalogId ?? null,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
     source: order.source ?? "customer_self_service",
@@ -97,10 +98,10 @@ async function insertOrder(
   ctx: MutationCtx,
   input: {
     customerUserId: Id<"appUsers">;
-    catalogId: Id<"secretCatalogs">;
+    catalogId?: Id<"secretCatalogs">;
     customerName: string;
     customerEmail?: string;
-    source: "customer_self_service" | "admin_assisted";
+    source: "customer_self_service" | "admin_assisted" | "ready_stock";
     actorUserId: Id<"appUsers">;
     assistedSubmissionKey?: string;
     note?: string;
@@ -129,7 +130,7 @@ async function insertOrder(
   for (const item of resolved) {
     await ctx.db.insert("orderItems", {
       orderId,
-      catalogItemId: item.catalogItem._id,
+      catalogItemId: item.catalogItem?._id,
       bookId: item.book._id,
       bookVariantId: item.variant._id,
       bookTitleSnapshot: item.book.title,
@@ -181,6 +182,93 @@ export const submit = mutation({
       resolved,
       catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
     );
+  },
+});
+
+async function resolveReadyStockItem(ctx: MutationCtx, variantId: Id<"bookVariants">, quantityInput: number) {
+  const quantity = positiveQuantity(quantityInput);
+  const variant = await ctx.db.get(variantId);
+  const book = variant && (await ctx.db.get(variant.bookId));
+  const publisher = book && (await ctx.db.get(book.publisherId));
+  const inventory = await ctx.db
+    .query("readyStockInventory")
+    .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variantId))
+    .unique();
+  const available = inventory ? inventory.quantity - (inventory.reservedQuantity ?? 0) : 0;
+  if (
+    !variant ||
+    !variant.isAvailable ||
+    !book ||
+    !book.isActive ||
+    book.publicationStatus !== "published" ||
+    !publisher?.isActive ||
+    !inventory ||
+    available < quantity
+  ) {
+    fail("READY_STOCK_UNAVAILABLE");
+  }
+  const subtotalAmount = variant.priceAmount * quantity;
+  if (!Number.isSafeInteger(subtotalAmount)) fail("INVOICE_TOTAL_INVALID");
+  return { variant, book, publisher, quantity, subtotalAmount };
+}
+
+export const createReadyStock = mutation({
+  args: { variantId: v.id("bookVariants"), quantity: v.number() },
+  handler: async (ctx, args) => {
+    const user = await requireActiveUser(ctx);
+    if (user.role !== "customer") fail("CUSTOMER_REQUIRED");
+    const item = await resolveReadyStockItem(ctx, args.variantId, args.quantity);
+    const profile = await ctx.db
+      .query("customerProfiles")
+      .withIndex("by_user_id", (index) => index.eq("userId", user._id))
+      .unique();
+    const customerName = profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer";
+    const now = Date.now();
+    const orderId = await ctx.db.insert("orders", {
+      customerUserId: user._id,
+      source: "ready_stock",
+      customerName,
+      customerEmail: user.emailSnapshot,
+      status: "submitted",
+      currency: "IDR",
+      subtotalAmount: item.subtotalAmount,
+      totalAmount: item.subtotalAmount,
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: now,
+      editableUntil: now,
+    });
+    const orderItemId = await ctx.db.insert("orderItems", {
+      orderId,
+      bookId: item.book._id,
+      bookVariantId: item.variant._id,
+      bookTitleSnapshot: item.book.title,
+      publisherNameSnapshot: item.publisher.name,
+      formatSnapshot: item.variant.format,
+      isbnSnapshot: item.variant.isbn,
+      unitPriceAmountSnapshot: item.variant.priceAmount,
+      currencySnapshot: "IDR",
+      quantity: item.quantity,
+      subtotalAmount: item.subtotalAmount,
+      createdAt: now,
+    });
+    await reserveReadyStock(
+      ctx,
+      { orderId, orderItemId, bookVariantId: item.variant._id, quantity: item.quantity },
+      user._id,
+    );
+    await ctx.db.insert("orderStatusHistory", {
+      orderId,
+      toStatus: "submitted",
+      changedAt: now,
+      changedByUserId: user._id,
+      note: "Ready Stock order created",
+    });
+    await recordAudit(ctx, user._id, "order.ready_stock_created", "order", orderId, {
+      source: "ready_stock",
+      quantity: String(item.quantity),
+    });
+    return orderView(ctx, orderId);
   },
 });
 
@@ -308,6 +396,7 @@ export const edit = mutation({
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
     await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
+    if (order.source === "ready_stock" || !order.catalogId) fail("ORDER_LOCKED");
     if (order.status !== "submitted" || order.editableUntil <= Date.now()) fail("ORDER_LOCKED");
     if (!(await catalogIsOpen(ctx, order.catalogId))) fail("ORDER_LOCKED");
     const resolved = await resolveItems(ctx, order.catalogId, args.items);
@@ -368,6 +457,9 @@ export const updateStatus = mutation({
       fail("EXCEPTION_REQUIRES_RESOLUTION");
     }
     if (order.status !== "submitted") fail("VALIDATION_FAILED", "order transition is not allowed");
+    if (args.status === "completed" && order.source === "ready_stock") {
+      await fulfillReadyStockReservationsForOrder(ctx, order._id, user._id);
+    }
     const now = Date.now();
     await ctx.db.patch(order._id, {
       status: args.status,

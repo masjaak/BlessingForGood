@@ -16,6 +16,7 @@ const links = [
   ["/admin/join-requests", "Penerimaan"],
   ["/admin/invoices", "Invoice & Deposit"],
   ["/admin/payments", "Pembayaran"],
+  ["/admin/refunds", "Refund"],
   ["/catalog", "Lihat sisi customer"],
 ] as const;
 

@@ -27,6 +27,7 @@ const adminRoutes = [
   "/admin/invoices",
   "/admin/payments",
   "/admin/exceptions",
+  "/admin/refunds",
   "/admin/customers",
   "/admin/users",
 ];

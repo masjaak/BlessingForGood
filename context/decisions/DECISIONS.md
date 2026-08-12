@@ -46,8 +46,9 @@ Phase 06.1 records the following approved implementation decisions:
   Only published books with active positive-stock variants are publicly readable.
 - Ready Stock quantity is a separate non-negative per-variant record.
 - Global book slugs support `/ready-stock/[slug]`.
-- `READY_STOCK_ORDER_RECORDING` remains open; Phase 06.1 uses a contact/help CTA
-  and implements no checkout, reservation, or sale transition.
+- `READY_STOCK_ORDER_RECORDING` was open during Phase 06.1, which used a
+  contact/help CTA. It is superseded and closed by the Phase 06.7 canonical
+  order/reservation policy below.
 - Cover metadata remains a reference; durable upload/storage is deferred.
 
 Phase 06.2 records the following approved admission decisions:
@@ -85,22 +86,24 @@ Phase 06.4 records the following safe exception-domain decisions:
   boundary may allow a request or require admin review; it rejects fulfilled,
   already-cancelled, or actively-conflicted items. Admin approval is required
   before any resolution or financial effect.
-- v0.1 supports only `remove_item`, `deposit_release`, `refund_required`, and
-  `no_action` resolutions. Replacement execution, store-credit issuance, cash
-  payout, withdrawal, gateway reversal, and refund settlement are not
-  implemented because their business policies are not approved.
+- Phase 06.4's safe resolution set was `remove_item`, `deposit_release`,
+  `refund_required`, and `no_action`. Phase 06.7 supersedes that temporary set
+  by adding explicit defect replacement and auditable refund payout policy;
+  store credit, withdrawal, and gateway reversal remain deferred.
 - Partial quantities are supported. An exception blocks only its affected
   quantity; the original `orderItems.quantity` remains unchanged and the
   remaining quantity stays eligible for normal operations.
 - Invoice adjustments are append-only exception financial records. Issued
   invoice snapshots retain the original total and expose a derived adjusted
-  total, outstanding amount, overpayment, and refund obligation. Refund
-  obligation is recorded only; no money movement is performed.
+  total, outstanding amount, overpayment, and refund obligation. Phase 06.4
+  recorded obligations only; Phase 06.7 adds a separate payout record without
+  deleting payment history.
 - `deposit_release` reuses existing allocation release semantics and is
   idempotent through active-allocation state. It releases the invoice's active
   reservations as one explicit operational choice; it does not withdraw cash.
-- Ready Stock still does not create canonical orders. Exception records apply
-  only to canonical `orders` and `orderItems`.
+- Ready Stock did not create canonical orders in Phase 06.4. Phase 06.7 now
+  uses canonical `orders` and `orderItems`, so the same exception history can
+  apply without creating a parallel commerce system.
 
 Phase 04.1 records the following approved implementation decisions:
 
@@ -148,3 +151,29 @@ The following implementation choices are prototype-only and are recorded in `PRO
 - one-title catalog creation form for the first vertical slice;
 - fixed, percentage, or unset invoice deposit requirement;
 - append-only local deposit transactions.
+
+## Phase 06.7 business policy closure
+
+- Ready Stock uses the canonical `orders`/`orderItems`/`invoices` flow with
+  `orders.source=ready_stock`; anonymous owned orders are not supported.
+- Ready Stock inventory quantity is on-hand. Reserved quantity is tracked by
+  an explicit reservation row and derived available quantity; creation is an
+  atomic server reservation and no automated payment expiry is introduced.
+- Pre-PO customer cancellation remains a request plus admin review. After PO
+  commitment, admin must record recoverable value, including zero or partial
+  recovery; no automatic full refund is promised.
+- Ready Stock cancellation releases an active reservation before fulfillment;
+  fulfillment consumes the reservation. Fulfilled orders use defect/other
+  exception paths rather than normal cancellation.
+- Defect resolution prefers explicit replacement with a bounded reference;
+  refund fallback creates an obligation without deleting the original item.
+- Refund obligations and payouts are separate canonical records. Payouts are
+  pending/processing/paid/failed, support safe retries and partial settlement,
+  and never overwrite payment history.
+- Deposit refunds are limited to unallocated available deposit. Payout holds
+  and successful release/debit or failed release are append-only ledger
+  consequences; the balance projection is never manually edited.
+- Non-account manual customers remain unsupported. Admin-assisted orders still
+  require an existing active customer `appUsers` record.
+- Join requests are retained as admission/audit history. No automatic privacy
+  deletion or cron is introduced in Phase 06.7.

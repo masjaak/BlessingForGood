@@ -1,14 +1,18 @@
-# Ready Stock v0.1
+# Ready Stock
 
-Status: implemented in Phase 06.1; runtime QA deferred to staging
+Status: Phase 06.7 policy-closed; runtime QA is part of the release gate
 
 ## Data flow
 
 ```text
 Book Master
   → book variant (format + ISBN + integer IDR price)
-    → readyStockInventory (non-negative quantity)
+    → readyStockInventory (on-hand, reserved, available)
 ```
+
+Ready Stock orders use the canonical `orders` and `orderItems` domain with
+`orders.source = ready_stock`. They do not create a second checkout, payment,
+invoice, or purchase-order system.
 
 Public eligibility requires all of the following:
 
@@ -25,6 +29,8 @@ The anonymous public query reads only this projection. It does not read Secret C
 - `/ready-stock` provides server-backed title/publisher/ISBN search and filters only when matching data exists.
 - Supported filters are category, publisher, and format; sort is newest, title, or price.
 - `/ready-stock/[slug]` shows the public book and stocked variants only.
+- An owned Ready Stock order requires an authenticated, active BFG customer;
+  anonymous checkout is not supported.
 - Zero records render `Ready Stock belum tersedia.` without seeded business data.
 - Missing, draft, special, archived, inactive, and zero-stock records render unavailable.
 
@@ -32,7 +38,12 @@ The anonymous public query reads only this projection. It does not read Secret C
 
 `readyStock.setQuantity` requires `books.manage`, validates an existing variant and a safe non-negative integer, upserts one inventory row by variant, and writes an audit event in the same Convex transaction.
 
-The v0.1 model tracks current available quantity only. Reserved and sold transitions wait for an approved Ready Stock order-recording policy.
+Creating a Ready Stock order atomically reserves quantity. Available quantity
+is `on-hand - reserved`; fulfillment consumes both on-hand and reserved
+quantity, while cancellation/rejection releases reserved quantity once.
+Ready Stock never enters a supplier Batch PO. There is no automated payment
+reservation expiry in this phase; release requires fulfillment, explicit
+cancellation, rejection, or another terminating operational action.
 
 ## Query ceiling
 

@@ -24,14 +24,19 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">) {
           .query("readyStockInventory")
           .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
           .unique();
-        return variant.isAvailable && inventory && inventory.quantity > 0
+        const reservedQuantity = inventory?.reservedQuantity ?? 0;
+        const availableQuantity = inventory ? Math.max(0, inventory.quantity - reservedQuantity) : 0;
+        return variant.isAvailable && inventory && availableQuantity > 0
           ? {
               id: variant._id,
               format: variant.format,
               isbn: variant.isbn,
               priceAmount: variant.priceAmount,
               currency: variant.currency,
-              stockQuantity: inventory.quantity,
+              stockQuantity: availableQuantity,
+              onHandQuantity: inventory.quantity,
+              reservedQuantity,
+              availableQuantity,
             }
           : null;
       }),
@@ -140,14 +145,22 @@ export const setQuantity = mutation({
       .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", args.bookVariantId))
       .unique();
     const now = Date.now();
+    const reservedQuantity = existing?.reservedQuantity ?? 0;
+    if (quantity < reservedQuantity) fail("READY_STOCK_ON_HAND_BELOW_RESERVED");
     let inventoryId: Id<"readyStockInventory">;
     if (existing) {
-      await ctx.db.patch(existing._id, { quantity, updatedAt: now, updatedByUserId: user._id });
+      await ctx.db.patch(existing._id, {
+        quantity,
+        reservedQuantity,
+        updatedAt: now,
+        updatedByUserId: user._id,
+      });
       inventoryId = existing._id;
     } else {
       inventoryId = await ctx.db.insert("readyStockInventory", {
         bookVariantId: args.bookVariantId,
         quantity,
+        reservedQuantity: 0,
         createdAt: now,
         updatedAt: now,
         updatedByUserId: user._id,

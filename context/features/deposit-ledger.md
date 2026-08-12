@@ -22,10 +22,12 @@ delete operation. Reversal leaves the original row visible and adds a new
 inverse row; a transaction can be reversed only once and a reversal cannot be
 reversed.
 
-This is an operational Preview ledger, not a payment gateway, bank
-reconciliation, refund, withdrawal, or final financial policy. Customer reads
-are server-side ownership protected; admin writes require the guarded Preview
-admin session.
+This is an operational ledger, not a payment gateway, bank reconciliation,
+withdrawal, or final financial policy. Phase 06.7 deposit refunds are allowed
+only from unallocated available balance and settle through a separate refund
+obligation plus append-only reservation/release/debit rows. Customer reads are
+server-side ownership protected; admin writes require the active permission
+boundary.
 
 Phase 05.1 manual payment confirmations are not deposit credits and never
 create deposit ledger rows. Deposit allocation and approved external transfer
@@ -38,4 +40,6 @@ subtracts each exactly once.
 compensating release transaction, restores available balance, reduces active
 reserved balance, updates the invoice projection, and leaves the reservation
 and release history visible. A released allocation cannot be released again.
-This is ledger release, not a cash withdrawal or deposit-refund execution.
+This is ledger release, not a deposit refund by itself. A successful deposit
+refund payout appends the release and debit consequences only after the payout
+is recorded as paid; a failed payout releases its temporary hold.

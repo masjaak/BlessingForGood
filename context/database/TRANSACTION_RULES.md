@@ -82,11 +82,23 @@ next status and history event.
 `orderExceptions.resolve` computes integer-IDR item value, optionally releases
 active invoice allocations through the existing release helper, recalculates
 the invoice projection, inserts one append-only financial adjustment, updates
-the exception, writes events/audit, and derives an order cancellation only when
-all item quantities are resolved. A failed validation rolls back all writes.
+the exception, creates a separate refund obligation when recoverable value is
+owed, writes events/audit, and derives an order cancellation only when all item
+quantities are resolved. Ready Stock reservation release is part of the same
+mutation. A failed validation rolls back all writes.
 
 Invoice creation reapplies existing exception adjustments after creating the
 new invoice snapshot, so voided invoice history is not reused as mutable state.
 Order status cancellation remains unavailable through the generic order-status
-mutation. Ready Stock still has no canonical order transaction to enter this
-workflow.
+mutation. Ready Stock fulfillment consumes its reservation atomically and
+never enters the Batch PO workflow.
+
+## Phase 06.7 refund transactions
+
+Ready Stock order creation validates authoritative variant price and available
+inventory before inserting the canonical order, item snapshot, reservation,
+status event, and audit row in one mutation. Refund payout creation reserves
+only the remaining obligation; starting, paying, or failing a payout rechecks
+its current state and writes the payout, obligation, deposit hold/ledger
+consequence, and audit state atomically. A failed deposit payout releases its
+temporary hold; a successful one appends release and debit rows.

@@ -1,5 +1,25 @@
 # BFG Project Status
 
+## Phase 06.7 Business Policy Closure
+
+**Status:** IMPLEMENTED LOCALLY — RELEASE GATE PASSED; DELIVERY PENDING
+
+Phase 06.7 closes Ready Stock ordering/reservation, pre/post-PO cancellation,
+defect replacement, refund obligation/payout, deposit refund, non-account
+customer, and Join-request retention policy. The canonical policy documents
+are `context/policies/BFG-BUSINESS-POLICY-V1.md` and
+`context/policies/BFG-POLICY-DECISION-MATRIX.md`.
+
+Customer Visual V4.1, the global skeleton/loading system, and the Phase 06.6
+customer/admin flow remain locked. Admin visual redesign remains deferred to
+Phase 07. No production business data was seeded and no Preview delivery is
+used.
+
+The repository's `AGENTS.md` references `context/SOURCE_OF_TRUTH.md`, but that
+file is absent from the current checkout; the current source-of-truth chain is
+this status file, `context/decisions/DECISIONS.md`, the feature/database/security
+documents, and the Phase 06.7 policy documents above.
+
 ## Customer Mobile UX Correction V3.1
 
 **Status:** PRODUCTION READY — LIVE QA PASSED
@@ -159,18 +179,17 @@ environment-sensitive operation instead of switching or creating a project.
 
 ## Current context
 
-- **Objective:** converge Phase 01–06.4 logic and the approved visual direction
-  into one releasable Production V1.
+- **Objective:** close all Phase 06.7 business policies before Phase 07 Admin
+  operational UI/UX.
 - **Decisions:** current `develop` logic wins; QA UX is a component/style donor;
   the official logo and mascot are mandatory; customer history is derived from
   canonical records; no financial history is rewritten.
-- **Constraints:** no dummy business data, no invented refund/payout behavior,
-  no wholesale QA-branch merge, no Preview/staging gate, and no `main` mutation
-  before an explicit readiness report.
-- **Open questions:** final customer-owned brand copy, unresolved business
-  policies, Reporting/Excel, Analytics, and Ready Stock order recording.
-- **Current priority:** configure one matching Clerk Production → canonical
-  Convex Production → Vercel Production environment chain.
-- **Next action:** after that external configuration is complete, rerun
-  authenticated customer/admin screenshots and Production smoke; only then
-  merge the approved candidate into `main` and push `main`.
+- **Constraints:** no dummy business data, no invented wallet/store-credit
+  behavior, no Preview delivery, no reporting/analytics/CMS/settings, and no
+  Admin visual redesign before Phase 07.
+- **Open backlog:** Reporting/Excel, Analytics, CMS, Settings, notification
+  platform, payment gateway, and full Admin visual redesign.
+- **Current priority:** commit the green Phase 06.7 candidate to `main`, push
+  it, and verify the Vercel Production deployment and live public smoke.
+- **Next action:** deploy the tested commit through the linked Vercel
+  Production project, then record the final commit and live result.

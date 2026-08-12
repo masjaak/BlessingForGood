@@ -14,6 +14,7 @@ function AdminOverview() {
   const { batchList, adminInvoiceList, adminPaymentQueue } = useOperations();
   const joinRequests = useQuery(api.joinRequests.listForAdmin, dataSource === "convex" ? {} : "skip");
   const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
+  const refunds = useQuery(api.refunds.listForAdmin, dataSource === "convex" ? {} : "skip");
   if (
     ordersLoading ||
     catalogsLoading ||
@@ -21,7 +22,8 @@ function AdminOverview() {
     adminInvoiceList === undefined ||
     adminPaymentQueue === undefined ||
     joinRequests === undefined ||
-    exceptions === undefined
+    exceptions === undefined ||
+    refunds === undefined
   ) {
     return (
       <LoadingRegion label="Memuat ringkasan operasional">
@@ -41,6 +43,7 @@ function AdminOverview() {
     exceptions?.filter((item) => item.status !== "resolved" && item.status !== "rejected").length || 0;
   const pendingPayments = adminPaymentQueue?.length || 0;
   const newOrders = state.orders.filter((order) => order.status === "submitted").length;
+  const pendingRefunds = refunds.filter((item) => item.status !== "paid").length;
 
   const queues = [
     ["Penerimaan", pendingAdmissions, "/admin/join-requests", "Permintaan Blessfriends menunggu tinjauan"],
@@ -49,6 +52,7 @@ function AdminOverview() {
     ["Pembayaran", pendingPayments, "/admin/payments", "Konfirmasi pembayaran menunggu verifikasi"],
     ["Masalah", openExceptions, "/admin/exceptions", "OOS, defect, atau pembatalan aktif"],
     ["Invoice terbuka", openInvoices, "/admin/invoices", "Invoice dengan saldo yang belum selesai"],
+    ["Refund", pendingRefunds, "/admin/refunds", "Kewajiban refund menunggu payout"],
   ] as const;
 
   return (

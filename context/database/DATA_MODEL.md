@@ -89,3 +89,24 @@ Book Master metadata is shared. Variants own format, unique ISBN, and integer
 IDR price. `readyStockInventory` owns current public availability quantity per
 variant; Secret Catalog items continue to own private curation/access context.
 Books are not duplicated per catalog.
+
+Ready Stock order ownership is still account-bound. A signed-in active BFG
+customer creates a canonical order with `source = ready_stock`; its item keeps
+the variant and price snapshot but has no Secret Catalog item. A
+`readyStockReservations` row links that item to inventory. Its active quantity
+is included in `reservedQuantity`, so `available = onHand - reserved`.
+Ready Stock orders use the existing invoice, payment, deposit, fulfillment, and
+exception records and never join the supplier Batch PO graph.
+
+## Refund graph
+
+```text
+order/invoice/exception/deposit account
+  → refundObligation
+    → refundPayout(s)
+```
+
+Refund obligations record what BFG owes; payouts record attempted or completed
+disbursement. Deposit refunds reserve only unallocated available balance and
+settle it through append-only ledger consequences. Payment and invoice history
+remain unchanged.

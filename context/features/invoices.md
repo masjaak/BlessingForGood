@@ -41,8 +41,9 @@ outstanding amount is:
 max(0, adjustedTotalAmount - allocatedDepositAmount - verifiedPaymentAmount)
 ```
 
-Payment gateway settlement, overdue policy, refund, withdrawal, chargeback,
-and final tax states are deferred. See
+Payment gateway settlement, overdue policy, withdrawal, chargeback, and final
+tax states are deferred. Phase 06.7 adds explicit refund obligations and
+auditable admin payout records; a payout never deletes payment history. See
 `context/features/payment-verification.md`.
 
 ## Phase 06.4 exception adjustments
@@ -52,4 +53,5 @@ non-neutral order exception creates an append-only financial adjustment and
 projects `adjustedTotalAmount`, `overpaymentAmount`, and
 `refundObligationAmount`; it does not edit the issued snapshot. Settlement is
 derived from adjusted total, active deposit allocations, and approved external
-payments. A `refund_due` obligation does not execute a payout.
+payments. A `refund_due` obligation does not execute a payout; `/admin/refunds`
+records a separate pending/processing/paid/failed payout lifecycle.

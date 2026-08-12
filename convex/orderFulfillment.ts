@@ -8,6 +8,7 @@ import { canTransitionFulfillment } from "./lib/fulfillmentTransitions";
 import { fail } from "./lib/errors";
 import { fulfillmentStageValidator } from "./validators";
 import { hasUnresolvedException } from "./lib/orderExceptionState";
+import { fulfillReadyStockReservationsForOrder } from "./lib/readyStockReservations";
 
 async function historyView(ctx: QueryCtx, orderId: Id<"orders">, includeNote = false) {
   const history = await ctx.db
@@ -49,6 +50,9 @@ export const updateStage = mutation({
     }
     if (!canTransitionFulfillment(order.currentFulfillmentStage, args.toStage)) {
       fail("INVALID_FULFILLMENT_TRANSITION");
+    }
+    if (args.toStage === "completed" && order.source === "ready_stock") {
+      await fulfillReadyStockReservationsForOrder(ctx, order._id, user._id);
     }
     const now = Date.now();
     await ctx.db.patch(order._id, {

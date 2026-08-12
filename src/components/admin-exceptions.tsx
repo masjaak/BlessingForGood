@@ -23,7 +23,7 @@ import { useProduct } from "@/domain/prototype/store";
 type AdminException = Awaited<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>[number];
 type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForAdmin>>;
 type AdminOrder = AdminOrdersPage["page"][number];
-type Resolution = "remove_item" | "deposit_release" | "refund_required" | "no_action";
+type Resolution = "remove_item" | "deposit_release" | "refund_required" | "replacement" | "no_action";
 
 const typeLabels = {
   out_of_stock: "Stok tidak tersedia",
@@ -44,6 +44,7 @@ const resolutionLabels: Record<Resolution, string> = {
   remove_item: "Hapus jumlah terdampak",
   deposit_release: "Lepaskan alokasi deposit",
   refund_required: "Catat kewajiban refund",
+  replacement: "Atur penggantian",
   no_action: "Tanpa tindakan",
 };
 
@@ -190,6 +191,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
   const resolve = useMutation(api.orderExceptions.resolve);
   const reject = useMutation(api.orderExceptions.reject);
   const [resolution, setResolution] = useState<Resolution>("remove_item");
+  const [recoverableRefundAmount, setRecoverableRefundAmount] = useState("");
+  const [replacementReference, setReplacementReference] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -284,24 +287,60 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
         </div>
       ) : null}
       {exception.status === "under_review" ? (
-        <div className="form-actions">
-          <select
-            className="select"
-            value={resolution}
-            onChange={(event) => setResolution(event.target.value as Resolution)}
-          >
-            {Object.entries(resolutionLabels).map(([value, label]) => (
-              <option value={value} key={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+        <div className="content-stack">
+          <div className="form-actions">
+            <select
+              className="select"
+              value={resolution}
+              onChange={(event) => setResolution(event.target.value as Resolution)}
+            >
+              {Object.entries(resolutionLabels).map(([value, label]) => (
+                <option value={value} key={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {exception.type === "customer_cancellation" ? (
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="1"
+                value={recoverableRefundAmount}
+                onChange={(event) => setRecoverableRefundAmount(event.target.value)}
+                placeholder="Nilai dapat dikembalikan (IDR)"
+                aria-label="Nilai dapat dikembalikan"
+              />
+            ) : null}
+            {exception.type === "defect" && resolution === "replacement" ? (
+              <input
+                className="input"
+                value={replacementReference}
+                onChange={(event) => setReplacementReference(event.target.value)}
+                placeholder="Referensi penggantian"
+                aria-label="Referensi penggantian"
+              />
+            ) : null}
+          </div>
           <Button
             type="button"
             pending={pendingAction === "Resolusi dipilih."}
             pendingLabel="Menyimpan…"
             onClick={() =>
-              void run(() => selectResolution({ exceptionId: exception.exceptionId, resolution }), "Resolusi dipilih.")
+              void run(
+                () =>
+                  selectResolution({
+                    exceptionId: exception.exceptionId,
+                    resolution,
+                    recoverableRefundAmount:
+                      exception.type === "customer_cancellation" && recoverableRefundAmount !== ""
+                        ? Number(recoverableRefundAmount)
+                        : undefined,
+                    replacementReference:
+                      exception.type === "defect" && resolution === "replacement" ? replacementReference : undefined,
+                  }),
+                "Resolusi dipilih.",
+              )
             }
           >
             Pilih resolusi
@@ -317,7 +356,10 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
             type="button"
             pending={pendingAction === "Masalah diselesaikan."}
             pendingLabel="Menyelesaikan…"
-            onClick={() => void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan.")}
+            onClick={() => {
+              if (!window.confirm("Selesaikan masalah ini dan terapkan konsekuensi finansialnya?")) return;
+              void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan.");
+            }}
           >
             Selesaikan
           </Button>
@@ -338,7 +380,9 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
             pending={pendingAction === "Masalah ditolak."}
             pendingLabel="Menolak…"
             onClick={() =>
-              void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak.")
+              window.confirm("Tolak masalah ini?")
+                ? void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak.")
+                : undefined
             }
           >
             Tolak

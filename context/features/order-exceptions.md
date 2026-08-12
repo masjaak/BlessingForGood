@@ -1,7 +1,7 @@
 # Order Exceptions
 
-Status: Phase 06.4 implemented locally; runtime integration QA is deferred to
-the stable staging gate.
+Status: Phase 06.7 policy-closed; runtime integration QA is part of the
+release gate.
 
 ## Purpose
 
@@ -37,14 +37,15 @@ The v0.1 safe set is:
 remove_item
 deposit_release
 refund_required
+replacement
 no_action
 ```
 
-`remove_item`, `deposit_release`, and `refund_required` block the affected
-quantity from normal fulfillment. `no_action` leaves normal fulfillment
-available. Replacement execution, store credit, cash payout, withdrawal, and
-gateway reversal are not implemented because the related business policies are
-not approved.
+`remove_item`, `deposit_release`, `refund_required`, and `replacement` block
+the affected quantity from normal fulfillment. `replacement` requires an
+explicit replacement reference. `no_action` leaves normal fulfillment
+available. Replacement preserves the original order item; it does not rewrite
+history or create store credit.
 
 ## Cancellation boundary
 
@@ -53,7 +54,10 @@ boundary. It returns `eligible`, `requires_admin_review`, or `not_eligible`
 with machine-readable reason codes. Fulfilled/cancelled items and active
 conflicts are rejected. A fully resolved item returns
 `NO_REMAINING_QUANTITY`. Batch-lock and payment/deposit states require admin
-review. The customer UI only reflects this result; it is never the authority.
+review. Before supplier commitment, cancellation is normally eligible subject
+to review. After commitment, the admin records the recoverable amount; no full
+refund is promised automatically. The customer UI only reflects this result;
+it is never the authority.
 
 ## Quantity and operational interaction
 
@@ -79,7 +83,9 @@ overpayment = max(0, settled amount - adjusted total)
 
 Issued invoice snapshots retain `totalAmount`. `adjustedTotalAmount`,
 `overpaymentAmount`, and `refundObligationAmount` are derived/projection fields.
-An obligation can be `refund_due` without any payout being executed. Existing
+An obligation can be `refund_due` without any payout being executed. Refund
+obligations and payouts are separate records with pending/processing/paid/
+failed payout states; successful payouts cannot exceed the obligation. Existing
 approved payment confirmations are never deleted or changed. Deposit releases
 reuse `invoiceDepositAllocations.releaseAllocationInternal`, append a release
 ledger row, restore available balance, and reject a second release.
@@ -87,6 +93,7 @@ ledger row, restore available balance, and reject a second release.
 ## Access and UI
 
 - Admin queue: `/admin/exceptions`.
+- Refund queue: `/admin/refunds`.
 - Admin order detail shows exception history and financial consequence.
 - Customer order detail shows safe exception history and eligible cancellation
   request actions.
@@ -100,10 +107,7 @@ Important actions create exception events and audit records, including
 
 ## Deliberate boundaries
 
-Ready Stock still has no canonical order record, so this feature does not
-create Ready Stock exceptions. Admin-assisted orders still require a real
-active customer `appUsers` row. No proof upload/storage or analytics projection
-was added.
-
-Open policy decisions remain cancellation eligibility, refund disbursement,
-deposit refund, post-PO cancellation, and defect replacement policy.
+Ready Stock uses the canonical order domain and can use the same exception
+history. It does not enter supplier Batch PO. Admin-assisted orders still
+require a real active customer `appUsers` row. No proof upload/storage or
+analytics projection was added.

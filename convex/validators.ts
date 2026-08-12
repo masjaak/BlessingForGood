@@ -48,7 +48,11 @@ export const joinRequestBookInterestValidator = v.union(
   v.literal("Collector Books"),
   v.literal("Novel"),
 );
-export const orderSourceValidator = v.union(v.literal("customer_self_service"), v.literal("admin_assisted"));
+export const orderSourceValidator = v.union(
+  v.literal("customer_self_service"),
+  v.literal("admin_assisted"),
+  v.literal("ready_stock"),
+);
 export const depositRequirementModeValidator = v.union(v.literal("none"), v.literal("fixed"), v.literal("percentage"));
 export const depositTransactionTypeValidator = v.union(
   v.literal("credit"),
@@ -75,6 +79,7 @@ export const orderExceptionResolutionValidator = v.union(
   v.literal("remove_item"),
   v.literal("deposit_release"),
   v.literal("refund_required"),
+  v.literal("replacement"),
   v.literal("no_action"),
 );
 export const refundObligationStatusValidator = v.union(
@@ -92,6 +97,22 @@ export const orderExceptionEventTypeValidator = v.union(
   v.literal("resolved"),
   v.literal("financial_adjustment_created"),
   v.literal("deposit_allocation_released"),
+);
+export const readyStockReservationStatusValidator = v.union(
+  v.literal("active"),
+  v.literal("released"),
+  v.literal("fulfilled"),
+);
+export const refundObligationLifecycleValidator = v.union(
+  v.literal("pending"),
+  v.literal("partially_paid"),
+  v.literal("paid"),
+);
+export const refundPayoutStatusValidator = v.union(
+  v.literal("pending"),
+  v.literal("processing"),
+  v.literal("paid"),
+  v.literal("failed"),
 );
 export const roleValidator = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer"));
 export const userStatusValidator = v.union(v.literal("active"), v.literal("suspended"));

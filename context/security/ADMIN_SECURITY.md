@@ -88,7 +88,21 @@ cancellation cases, review them, choose an allowed resolution, reject, or
 resolve. Customer cancellation is a request only. Customer-facing projections
 omit internal notes, rejection reasons, and actor IDs.
 
+## Phase 06.7 policy operations
+
+Ready Stock order creation is customer-owned and requires an active customer;
+inventory reservation and release are server-side only. Ready Stock cannot be
+assigned to a supplier Batch PO. `/admin/refunds` is available to admins and
+owners with `refunds.manage`; payout creation, processing, success, and failure
+are state-checked mutations. Customers can request a deposit refund only for
+their own unallocated available balance and can read only safe refund status.
+
+Refund payout methods, references, and failure notes are withheld from
+customer projections. Non-account assisted orders remain rejected, and Join
+requests remain retained audit history without automatic deletion.
+
 Resolution writes preserve immutable order/invoice/payment/deposit history and
-record exception events plus audit events. Refund obligations are status/amount
-records only; no admin UI action performs a cash payout, deposit withdrawal, or
-gateway reversal. Suspended admins are denied by the same active-user guard.
+record exception events plus audit events. Refund obligations and payout
+records remain separate; the admin payout action records an authorized transfer
+without rewriting payment history or performing a gateway reversal. Suspended
+admins are denied by the same active-user guard.

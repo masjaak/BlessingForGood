@@ -53,10 +53,10 @@ type CatalogRecord = {
 type OrderRecord = {
   orderId: string;
   customerUserId: string;
-  catalogId: string;
+  catalogId: string | null;
   customerName: string;
   customerEmail?: string;
-  source?: "customer_self_service" | "admin_assisted";
+  source?: "customer_self_service" | "admin_assisted" | "ready_stock";
   status: OrderStatus;
   subtotalAmount: number;
   totalAmount: number;
@@ -100,7 +100,12 @@ function asOrder(value: OrderView | null | undefined): Order | undefined {
     catalogId: record.catalogId,
     customerName: record.customerName,
     customerEmail: record.customerEmail || null,
-    source: record.source === "admin_assisted" ? "admin_assisted" : "preorder",
+    source:
+      record.source === "admin_assisted"
+        ? "admin_assisted"
+        : record.source === "ready_stock"
+          ? "ready_stock"
+          : "preorder",
     items: record.items.map((item) => ({
       id: item._id,
       bookId: item.bookId,

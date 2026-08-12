@@ -135,3 +135,16 @@ anonymous or test-only.
 Suspended customers and suspended admins fail the shared active-user
 permission boundary. Customer A cannot read or mutate Customer B's order item,
 exception, invoice, payment confirmation, or deposit data.
+
+## Phase 06.7 policy operations
+
+| Function | Type | Caller | Permission | Boundary |
+| --- | --- | --- | --- | --- |
+| `orders.createReadyStock` | mutation | customer | `orders.read.own` | active customer; authoritative variant/inventory; canonical order only |
+| `refunds.listMine` / `getMine` | query | customer | `refunds.read.own` | current customer; payout sensitive fields hidden |
+| `refunds.requestDepositRefund` | mutation | customer | `deposits.read.own` | own account; amount no greater than available unallocated deposit |
+| `refunds.listForAdmin` / `getForAdmin` | query | admin/owner | `refunds.read.all` | operational refund queue |
+| `refunds.requestDepositRefundForAdmin` | mutation | admin/owner | `deposits.manage` | active target customer; account relation checked |
+| `refunds.createPayout` / `startPayout` / `recordPayout` | mutation | admin/owner | `refunds.manage` | current payout state; no overpayment; actor derived server-side |
+
+All policy mutations use the shared active-user and suspension boundary.

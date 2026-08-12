@@ -91,6 +91,7 @@ export const assignOrderItem = mutation({
     const batch = await ctx.db.get(args.batchId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
     if (!orderItem || !order || !batch) fail("BATCH_ASSIGNMENT_INVALID");
+    if (order.source === "ready_stock" || !order.catalogId) fail("READY_STOCK_NOT_BATCHED");
     requireEditableBatch(batch);
     if (order.status !== "submitted") fail("BATCH_ASSIGNMENT_INVALID", "only submitted orders can join a roster");
     if (!(await linkedCatalog(ctx, order.catalogId, args.batchId))) fail("BATCH_CATALOG_MISMATCH");
@@ -140,6 +141,10 @@ export const unassignOrderItem = mutation({
     const batch = await ctx.db.get(args.batchId);
     if (!batch) fail("BATCH_NOT_FOUND");
     requireEditableBatch(batch);
+    const orderItem = await ctx.db.get(args.orderItemId);
+    const order = orderItem && (await ctx.db.get(orderItem.orderId));
+    if (!orderItem || !order) fail("BATCH_ASSIGNMENT_INVALID");
+    if (order.source === "ready_stock" || !order.catalogId) fail("READY_STOCK_NOT_BATCHED");
     const assignment = await assignmentForBatch(ctx, args.orderItemId, args.batchId);
     if (!assignment) fail("BATCH_ASSIGNMENT_NOT_FOUND");
     await ctx.db.delete(assignment._id);
@@ -164,6 +169,7 @@ export const moveOrderItem = mutation({
     const fromBatch = await ctx.db.get(args.fromBatchId);
     const toBatch = await ctx.db.get(args.toBatchId);
     if (!orderItem || !order || !fromBatch || !toBatch) fail("BATCH_ASSIGNMENT_INVALID");
+    if (order.source === "ready_stock" || !order.catalogId) fail("READY_STOCK_NOT_BATCHED");
     requireEditableBatch(fromBatch);
     requireEditableBatch(toBatch);
     if (order.status !== "submitted") fail("BATCH_ASSIGNMENT_INVALID", "only submitted orders can join a roster");
@@ -249,6 +255,7 @@ export const getMine = query({
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
     await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
+    if (order.source === "ready_stock" || !order.catalogId) return { orderId: order._id, batches: [] };
     const items = await ctx.db
       .query("orderItems")
       .withIndex("by_order", (index) => index.eq("orderId", order._id))
@@ -306,6 +313,7 @@ export const getForOrderAdmin = query({
     await requirePermission(ctx, "tracking.read.all");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
+    if (order.source === "ready_stock" || !order.catalogId) return { orderId: order._id, items: [] };
     const items = await ctx.db
       .query("orderItems")
       .withIndex("by_order", (index) => index.eq("orderId", order._id))
@@ -361,27 +369,34 @@ export const getForAdmin = query({
         }),
       )
     ).filter((item): item is NonNullable<typeof item> => item !== null);
-    const catalogIds = [...new Set(loaded.map(({ order }) => order.catalogId))];
+    const catalogIds = [
+      ...new Set(loaded.map(({ order }) => order.catalogId).filter((id): id is Id<"secretCatalogs"> => Boolean(id))),
+    ];
     const catalogs = await Promise.all(catalogIds.map((catalogId) => ctx.db.get(catalogId)));
     const catalogNames = new Map(
       catalogIds.map((catalogId, index) => [catalogId, catalogs[index]?.name || "Unknown catalog"]),
     );
-    const assignedItems: AdminAssignment[] = loaded.map(({ assignment, orderItem, order }) => ({
-      assignmentId: assignment._id,
-      orderId: order._id,
-      customerUserId: order.customerUserId,
-      customerName: order.customerName,
-      catalogId: order.catalogId,
-      catalogName: catalogNames.get(order.catalogId) || "Unknown catalog",
-      orderItemId: orderItem._id,
-      bookVariantId: orderItem.bookVariantId,
-      bookTitle: orderItem.bookTitleSnapshot,
-      format: orderItem.formatSnapshot,
-      isbn: orderItem.isbnSnapshot,
-      unitPriceAmount: orderItem.unitPriceAmountSnapshot,
-      assignedQuantity: assignment.assignedQuantity,
-      orderedQuantity: orderItem.quantity,
-    }));
+    const assignedItems: AdminAssignment[] = loaded.flatMap(({ assignment, orderItem, order }) => {
+      if (!order.catalogId || order.source === "ready_stock") return [];
+      return [
+        {
+          assignmentId: assignment._id,
+          orderId: order._id,
+          customerUserId: order.customerUserId,
+          customerName: order.customerName,
+          catalogId: order.catalogId,
+          catalogName: catalogNames.get(order.catalogId) || "Unknown catalog",
+          orderItemId: orderItem._id,
+          bookVariantId: orderItem.bookVariantId,
+          bookTitle: orderItem.bookTitleSnapshot,
+          format: orderItem.formatSnapshot,
+          isbn: orderItem.isbnSnapshot,
+          unitPriceAmount: orderItem.unitPriceAmountSnapshot,
+          assignedQuantity: assignment.assignedQuantity,
+          orderedQuantity: orderItem.quantity,
+        },
+      ];
+    });
     const customerGroups = new Map<string, CustomerRoster>();
     const purchaseGroups = new Map<string, PurchaseSummary & { customers: Set<string> }>();
     for (const item of assignedItems) {
@@ -463,7 +478,7 @@ export const listUnassignedForAdmin = query({
       .take(200);
     const result = [];
     for (const order of orders) {
-      if (!catalogIds.has(String(order.catalogId))) continue;
+      if (order.source === "ready_stock" || !order.catalogId || !catalogIds.has(String(order.catalogId))) continue;
       const items = await ctx.db
         .query("orderItems")
         .withIndex("by_order", (index) => index.eq("orderId", order._id))

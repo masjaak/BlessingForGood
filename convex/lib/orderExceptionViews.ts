@@ -52,6 +52,9 @@ export async function orderExceptionView(ctx: DataCtx, exception: Doc<"orderExce
     customerNote: exception.customerNote || null,
     internalNote: includeInternal ? exception.internalNote || null : null,
     resolution: exception.resolution || null,
+    recoverableRefundAmount: exception.recoverableRefundAmount ?? null,
+    replacementReference: includeInternal ? exception.replacementReference || null : null,
+    refundObligationId: exception.refundObligationId || null,
     rejectionReason: includeInternal ? exception.rejectionReason || null : null,
     createdAt: new Date(exception.createdAt).toISOString(),
     updatedAt: new Date(exception.updatedAt).toISOString(),
@@ -106,6 +109,7 @@ export async function orderExceptionView(ctx: DataCtx, exception: Doc<"orderExce
           adjustedInvoiceTotalAmount: financial.adjustedInvoiceTotalAmount ?? null,
           refundObligationAmount: financial.refundObligationAmount,
           refundObligationStatus: financial.refundObligationStatus,
+          refundObligationId: financial.refundObligationId || null,
         }
       : null,
     history: events.map((event) => ({

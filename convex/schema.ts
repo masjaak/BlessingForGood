@@ -18,7 +18,10 @@ import {
   orderExceptionTypeValidator,
   orderSourceValidator,
   paymentConfirmationStatusValidator,
+  readyStockReservationStatusValidator,
   refundObligationStatusValidator,
+  refundObligationLifecycleValidator,
+  refundPayoutStatusValidator,
   shipmentStageValidator,
 } from "./validators";
 
@@ -175,10 +178,28 @@ export default defineSchema({
   readyStockInventory: defineTable({
     bookVariantId: v.id("bookVariants"),
     quantity: v.number(),
+    reservedQuantity: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     updatedByUserId: v.id("appUsers"),
   }).index("by_book_variant_id", ["bookVariantId"]),
+
+  readyStockReservations: defineTable({
+    orderId: v.id("orders"),
+    orderItemId: v.id("orderItems"),
+    bookVariantId: v.id("bookVariants"),
+    quantity: v.number(),
+    status: readyStockReservationStatusValidator,
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    releasedAt: v.optional(v.number()),
+    fulfilledAt: v.optional(v.number()),
+    changedByUserId: v.id("appUsers"),
+  })
+    .index("by_order", ["orderId"])
+    .index("by_order_item", ["orderItemId"])
+    .index("by_variant", ["bookVariantId"])
+    .index("by_status", ["status"]),
 
   secretCatalogs: defineTable({
     name: v.string(),
@@ -265,7 +286,7 @@ export default defineSchema({
 
   orders: defineTable({
     customerUserId: v.id("appUsers"),
-    catalogId: v.id("secretCatalogs"),
+    catalogId: v.optional(v.id("secretCatalogs")),
     source: v.optional(orderSourceValidator),
     assistedSubmissionKey: v.optional(v.string()),
     customerName: v.string(),
@@ -292,7 +313,7 @@ export default defineSchema({
 
   orderItems: defineTable({
     orderId: v.id("orders"),
-    catalogItemId: v.id("catalogItems"),
+    catalogItemId: v.optional(v.id("catalogItems")),
     bookId: v.id("books"),
     bookVariantId: v.id("bookVariants"),
     bookTitleSnapshot: v.string(),
@@ -332,6 +353,9 @@ export default defineSchema({
     internalNote: v.optional(v.string()),
     customerNote: v.optional(v.string()),
     resolution: v.optional(orderExceptionResolutionValidator),
+    recoverableRefundAmount: v.optional(v.number()),
+    replacementReference: v.optional(v.string()),
+    refundObligationId: v.optional(v.id("refundObligations")),
     rejectionReason: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -380,6 +404,7 @@ export default defineSchema({
     adjustedInvoiceTotalAmount: v.optional(v.number()),
     refundObligationAmount: v.number(),
     refundObligationStatus: refundObligationStatusValidator,
+    refundObligationId: v.optional(v.id("refundObligations")),
     createdAt: v.number(),
     createdByUserId: v.id("appUsers"),
   })
@@ -521,6 +546,49 @@ export default defineSchema({
     .index("by_invoice", ["invoiceId"])
     .index("by_order_item", ["orderItemId"]),
 
+  refundObligations: defineTable({
+    customerUserId: v.id("appUsers"),
+    orderId: v.optional(v.id("orders")),
+    invoiceId: v.optional(v.id("invoices")),
+    exceptionId: v.optional(v.id("orderExceptions")),
+    sourceAdjustmentId: v.optional(v.id("orderExceptionFinancialAdjustments")),
+    depositAccountId: v.optional(v.id("depositAccounts")),
+    reason: v.union(v.literal("cancellation"), v.literal("defect"), v.literal("deposit_refund")),
+    amount: v.number(),
+    paidAmount: v.number(),
+    reservedAmount: v.number(),
+    status: refundObligationLifecycleValidator,
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_invoice", ["invoiceId"])
+    .index("by_exception", ["exceptionId"])
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_deposit_account", ["depositAccountId"]),
+
+  refundPayouts: defineTable({
+    refundObligationId: v.id("refundObligations"),
+    customerUserId: v.id("appUsers"),
+    reservationTransactionId: v.optional(v.id("depositTransactions")),
+    amount: v.number(),
+    paymentMethod: v.optional(v.string()),
+    referenceNote: v.optional(v.string()),
+    status: refundPayoutStatusValidator,
+    failureReason: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    startedAt: v.optional(v.number()),
+    processedAt: v.optional(v.number()),
+    processedByUserId: v.optional(v.id("appUsers")),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_obligation", ["refundObligationId"])
+    .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_status_and_created_at", ["status", "createdAt"]),
+
   depositAccounts: defineTable({
     userId: v.id("appUsers"),
     currency: v.literal("IDR"),
@@ -541,6 +609,7 @@ export default defineSchema({
     invoiceId: v.optional(v.id("invoices")),
     referenceTransactionId: v.optional(v.id("depositTransactions")),
     reversedByTransactionId: v.optional(v.id("depositTransactions")),
+    refundObligationId: v.optional(v.id("refundObligations")),
     note: v.optional(v.string()),
     createdAt: v.number(),
     createdByUserId: v.id("appUsers"),

@@ -24,6 +24,9 @@ export type Permission =
   | "deposits.read.own"
   | "deposits.read.all"
   | "deposits.manage"
+  | "refunds.read.own"
+  | "refunds.read.all"
+  | "refunds.manage"
   | "customers.read"
   | "customers.manage"
   | "users.read"
@@ -47,6 +50,8 @@ const adminPermissions = new Set<Permission>([
   "invoices.manage",
   "deposits.read.all",
   "deposits.manage",
+  "refunds.read.all",
+  "refunds.manage",
   "customers.read",
   "customers.manage",
 ]);
@@ -58,6 +63,7 @@ const customerPermissions = new Set<Permission>([
   "tracking.read.own",
   "invoices.read.own",
   "deposits.read.own",
+  "refunds.read.own",
 ]);
 
 const allPermissions = new Set<Permission>([

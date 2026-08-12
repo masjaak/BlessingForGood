@@ -19,6 +19,7 @@ type TransactionInput = {
   reservedDelta: number;
   invoiceId?: Id<"invoices">;
   referenceTransactionId?: Id<"depositTransactions">;
+  refundObligationId?: Id<"refundObligations">;
   note?: string;
   createdAt: number;
   createdByUserId: Id<"appUsers">;
@@ -50,6 +51,7 @@ export function transactionView(transaction: Doc<"depositTransactions">, include
     reservedDelta: transaction.reservedDelta,
     invoiceId: transaction.invoiceId ?? null,
     referenceTransactionId: transaction.referenceTransactionId ?? null,
+    refundObligationId: transaction.refundObligationId ?? null,
     reversedByTransactionId: transaction.reversedByTransactionId ?? null,
     note: includeNote ? (transaction.note ?? null) : null,
     createdAt: new Date(transaction.createdAt).toISOString(),
@@ -134,6 +136,7 @@ export const reverse = mutation({
       ...deltas,
       invoiceId: original.invoiceId,
       referenceTransactionId: original._id,
+      refundObligationId: original.refundObligationId,
       note: noteValue(args.note),
       createdAt: now,
       createdByUserId: user._id,

@@ -79,7 +79,13 @@ function OrderTable() {
                     Operations detail
                   </LinkButton>
                 </td>
-                <td>{order.source === "admin_assisted" ? "Admin-assisted" : "Customer self-service"}</td>
+                <td>
+                  {order.source === "admin_assisted"
+                    ? "Admin-assisted"
+                    : order.source === "ready_stock"
+                      ? "Ready Stock"
+                      : "Customer self-service"}
+                </td>
                 <td>
                   {order.items.map((item) => (
                     <div key={item.id}>

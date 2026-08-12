@@ -10,7 +10,9 @@ import { fail } from "./lib/errors";
 import { invoiceProjection, effectiveInvoiceTotal } from "./lib/invoiceProjection";
 import { fulfillableQuantityForOrderItem, needsResolution, exceptionsForOrderItem } from "./lib/orderExceptionState";
 import { orderExceptionView } from "./lib/orderExceptionViews";
+import { releaseReadyStockReservationsForOrder } from "./lib/readyStockReservations";
 import { releaseAllocationInternal } from "./invoiceDepositAllocations";
+import { createRefundObligationInternal } from "./refunds";
 import { orderExceptionResolutionValidator, orderExceptionStatusValidator } from "./validators";
 
 type DataCtx = QueryCtx | MutationCtx;
@@ -236,16 +238,37 @@ export const selectResolution = mutation({
   args: {
     exceptionId: v.id("orderExceptions"),
     resolution: orderExceptionResolutionValidator,
+    recoverableRefundAmount: v.optional(v.number()),
+    replacementReference: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "orders.manage");
     const exception = await ctx.db.get(args.exceptionId);
     if (!exception) fail("EXCEPTION_NOT_FOUND");
     if (exception.status !== "under_review") fail("EXCEPTION_INVALID_STATE");
+    const { orderItem } = await orderItemContext(ctx, exception.orderItemId);
+    if (args.resolution === "replacement" && exception.type !== "defect") {
+      fail("VALIDATION_FAILED", "replacement is only valid for defects");
+    }
+    if (args.resolution === "replacement" && !text(args.replacementReference, "replacement reference", 200)) {
+      fail("VALIDATION_FAILED", "replacement reference is required");
+    }
+    if (args.recoverableRefundAmount !== undefined) {
+      if (
+        !Number.isSafeInteger(args.recoverableRefundAmount) ||
+        args.recoverableRefundAmount < 0 ||
+        args.recoverableRefundAmount > exception.affectedQuantity * orderItem.unitPriceAmountSnapshot
+      ) {
+        fail("EXCEPTION_FINANCIAL_INVALID");
+      }
+    }
     const now = Date.now();
     await ctx.db.patch(exception._id, {
       status: "resolution_selected",
       resolution: args.resolution,
+      recoverableRefundAmount: args.recoverableRefundAmount,
+      replacementReference:
+        args.resolution === "replacement" ? text(args.replacementReference, "replacement reference", 200) : undefined,
       resolutionSelectedAt: now,
       updatedAt: now,
     });
@@ -308,6 +331,7 @@ async function maybeCancelOrder(ctx: MutationCtx, order: Doc<"orders">, actorUse
   if (!items.length || remaining.some((quantity) => quantity > 0)) return;
   const now = Date.now();
   await ctx.db.patch(order._id, { status: "cancelled", cancelledAt: now, updatedAt: now });
+  if (order.source === "ready_stock") await releaseReadyStockReservationsForOrder(ctx, order._id, actorUserId);
   await ctx.db.insert("orderStatusHistory", {
     orderId: order._id,
     fromStatus: order.status,
@@ -332,18 +356,36 @@ export const resolve = mutation({
     const originalItemValueAmount = exception.affectedQuantity * orderItem.unitPriceAmountSnapshot;
     if (!Number.isSafeInteger(originalItemValueAmount)) fail("EXCEPTION_FINANCIAL_INVALID");
     const invoiceBefore = await currentInvoice(ctx, order._id);
+    const existingRefundObligations = invoiceBefore
+      ? await ctx.db
+          .query("refundObligations")
+          .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceBefore._id))
+          .take(100)
+      : [];
+    const historicalRefundAmount = existingRefundObligations.reduce((total, row) => total + row.amount, 0);
+    const paidRefundAmount = existingRefundObligations.reduce((total, row) => total + row.paidAmount, 0);
     const depositAmountBefore = invoiceBefore?.allocatedDepositAmount || 0;
     const depositReleaseAmount =
       exception.resolution === "deposit_release" && invoiceBefore
         ? await releaseInvoiceAllocations(ctx, invoiceBefore, user._id)
         : 0;
     const invoice = invoiceBefore ? await ctx.db.get(invoiceBefore._id) : null;
-    const invoiceAdjustmentAmount = exception.resolution === "no_action" ? 0 : -originalItemValueAmount;
+    const recoveryAmount =
+      exception.recoverableRefundAmount ??
+      (exception.type === "customer_cancellation" && exception.reasonCode === "BATCH_LOCKED"
+        ? 0
+        : originalItemValueAmount);
+    if (!Number.isSafeInteger(recoveryAmount) || recoveryAmount < 0 || recoveryAmount > originalItemValueAmount) {
+      fail("EXCEPTION_FINANCIAL_INVALID");
+    }
+    const invoiceAdjustmentAmount =
+      exception.resolution === "no_action" || exception.resolution === "replacement" ? 0 : -recoveryAmount;
     let adjustedInvoiceTotalAmount: number | undefined;
     let depositAmountAfter = 0;
     let externalPaymentAmount = 0;
     let refundObligationAmount = 0;
     let refundObligationStatus: "none" | "credit_due" | "refund_due" | "settled" = "none";
+    let currentOverpaymentAmount = 0;
     if (invoice) {
       adjustedInvoiceTotalAmount = effectiveInvoiceTotal(invoice) + invoiceAdjustmentAmount;
       if (!Number.isSafeInteger(adjustedInvoiceTotalAmount) || adjustedInvoiceTotalAmount < 0) {
@@ -352,7 +394,8 @@ export const resolve = mutation({
       const projection = await invoiceProjection(ctx, invoice, { adjustedTotalAmount: adjustedInvoiceTotalAmount });
       depositAmountAfter = projection.allocatedDepositAmount;
       externalPaymentAmount = projection.verifiedPaymentAmount;
-      refundObligationAmount = projection.overpaymentAmount;
+      currentOverpaymentAmount = projection.overpaymentAmount;
+      refundObligationAmount = Math.max(0, currentOverpaymentAmount - paidRefundAmount);
       refundObligationStatus = refundObligationAmount > 0 ? "refund_due" : "none";
       await ctx.db.patch(invoice._id, {
         financialAdjustmentAmount: invoice.financialAdjustmentAmount + invoiceAdjustmentAmount,
@@ -382,6 +425,24 @@ export const resolve = mutation({
       createdAt: now,
       createdByUserId: user._id,
     });
+    const newRefundObligationAmount =
+      exception.resolution === "no_action"
+        ? 0
+        : Math.max(0, currentOverpaymentAmount - historicalRefundAmount);
+    if (newRefundObligationAmount > 0) {
+      const refundObligationId = await createRefundObligationInternal(ctx, {
+        customerUserId: order.customerUserId,
+        orderId: order._id,
+        invoiceId: invoice?._id,
+        exceptionId: exception._id,
+        sourceAdjustmentId: financialAdjustmentId,
+        reason: exception.type === "defect" ? "defect" : "cancellation",
+        amount: newRefundObligationAmount,
+        createdByUserId: user._id,
+      });
+      await ctx.db.patch(financialAdjustmentId, { refundObligationId });
+      await ctx.db.patch(exception._id, { refundObligationId });
+    }
     await ctx.db.patch(exception._id, { status: "resolved", resolvedAt: now, updatedAt: now });
     await appendEvent(ctx, exception, "approved", user._id, "resolution_selected", "resolved");
     await appendEvent(
@@ -408,7 +469,20 @@ export const resolve = mutation({
     if (exception.type === "customer_cancellation" || exception.type === "admin_cancellation") {
       await recordAudit(ctx, user._id, "cancellation.approved", "orderException", exception._id);
     }
-    if (exception.resolution !== "no_action") await maybeCancelOrder(ctx, order, user._id);
+    const releasesReadyStock =
+      order.source === "ready_stock" &&
+      ((exception.type !== "defect" && exception.resolution !== "no_action") ||
+        (exception.type === "defect" && exception.resolution === "refund_required"));
+    if (releasesReadyStock) await releaseReadyStockReservationsForOrder(ctx, order._id, user._id);
+    if (
+      exception.resolution !== "no_action" &&
+      exception.type !== "defect" &&
+      (exception.type === "customer_cancellation" ||
+        exception.type === "admin_cancellation" ||
+        exception.type === "out_of_stock")
+    ) {
+      await maybeCancelOrder(ctx, order, user._id);
+    }
     const updated = await ctx.db.get(exception._id);
     if (!updated) fail("EXCEPTION_NOT_FOUND");
     return orderExceptionView(ctx, updated, true);

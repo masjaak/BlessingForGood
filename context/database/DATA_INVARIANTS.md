@@ -130,3 +130,27 @@ payment - adjusted total)`; all values are integer IDR and non-negative.
   creates a store-credit balance.
 - Resolving the same exception twice, releasing the same allocation twice, or
   opening an active conflicting case is rejected by current-state validation.
+
+## Phase 06.7 policy invariants
+
+- Ready Stock creates canonical `orders.source = ready_stock` records only for
+  active authenticated BFG customers; anonymous and non-account orders are
+  rejected.
+- Ready Stock reservation creation is atomic with order creation. Inventory
+  satisfies `available = onHand - reserved`, never has negative available
+  quantity, and an active reservation is released or consumed at most once.
+- Ready Stock orders cannot enter supplier Batch PO. Fulfillment consumes the
+  reserved on-hand quantity; cancellation/rejection releases the reservation.
+- Pre-commitment cancellation remains a reviewed request. Post-commitment
+  recovery is explicit and only the recorded recoverable amount can create a
+  refund obligation.
+- Defect replacement preserves the original item and requires a replacement
+  reference. Refund is the fallback obligation, not store credit.
+- Refund obligation and payout are separate. `paid + reserved <= obligation`,
+  payouts are authorized admin/owner actions, and paid historical amounts are
+  not edited.
+- Deposit refund requests satisfy `requested <= unallocated available`; payout
+  failure restores any temporary hold and successful settlement appends ledger
+  consequences without editing prior entries.
+- Join requests are retained after approval/rejection; no automatic deletion
+  job runs in this phase.

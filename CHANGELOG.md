@@ -8,6 +8,35 @@ source: conversation
 
 # Changelog
 
+## [phase-06.7] — 2026-08-12
+
+### Added
+
+- Closed the canonical BFG business policy in
+  `context/policies/BFG-BUSINESS-POLICY-V1.md` and its final decision matrix.
+- Added Ready Stock canonical order creation with atomic inventory reservation,
+  idempotent release, and fulfillment consumption.
+- Added explicit post-PO recoverable cancellation value and defect replacement
+  resolution records.
+- Added separate refund obligations and auditable payout attempts with partial
+  settlement, failure, retry, and authorization boundaries.
+- Added deposit refund requests using unallocated available deposit and
+  append-only ledger consequences.
+- Added Phase 06.7 isolated operational QA coverage.
+
+### Preserved
+
+- Original order, invoice, payment, exception, and deposit history remains
+  immutable; Join requests remain retained; no dummy production data was added.
+- Customer Visual V4.1, Phase 06.6 loading, and the shared Convex architecture
+  remain unchanged except for required policy states.
+
+### Deferred
+
+- Full Admin visual redesign and reporting, Excel export, analytics, CMS,
+  settings, notification platform, and payment gateway remain outside Phase
+  06.7.
+
 ## [homepage-join-v3] — 2026-08-12
 
 ### Changed

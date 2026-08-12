@@ -42,9 +42,10 @@ separate table keyed by `bookVariantId` with non-negative quantity and audited
 updater/timestamps.
 
 `orders.source` is optional for legacy documents and records the minimal
-channel distinction `customer_self_service` or `admin_assisted`. Assisted
-orders still use the canonical order and order-item records and require an
-existing active customer `appUsers` row.
+channel distinction `customer_self_service`, `admin_assisted`, or `ready_stock`.
+Ready Stock orders use the canonical order and order-item records without a
+catalog item and require an existing active customer `appUsers` row. Assisted
+orders still require an existing active customer `appUsers` row.
 
 Catalog grants use `appUserId` and catalog ID. Token-only sessions use a
 catalog-scoped session digest and source-code reference. Orders use
@@ -66,6 +67,9 @@ paymentConfirmations
 depositAccounts
 depositTransactions
 invoiceDepositAllocations
+readyStockReservations
+refundObligations
+refundPayouts
 ```
 
 Operational actors use `createdByUserId`, `changedByUserId`, or
@@ -107,3 +111,8 @@ Invoices retain `totalAmount` as the original snapshot and add
 `refundObligationAmount`, and `refundObligationStatus` as auditable current
 projection fields. All exception timestamps are epoch milliseconds and all
 amounts are safe integer IDR.
+
+`readyStockReservations` links a canonical Ready Stock order item to a variant
+and tracks active/released/fulfilled inventory claims. `refundObligations`
+record money owed by BFG; `refundPayouts` record each authorized disbursement
+attempt and preserve payout history separately from the obligation.

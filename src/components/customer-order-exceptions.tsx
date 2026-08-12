@@ -9,6 +9,7 @@ import { Button, Card, Field, LoadingRegion, Money, SkeletonText, StatusBadge } 
 import { useProduct } from "@/domain/prototype/store";
 
 type CustomerException = Awaited<FunctionReturnType<typeof api.orderExceptions.listMineForOrder>>[number];
+type CustomerRefund = Awaited<FunctionReturnType<typeof api.refunds.listMine>>[number];
 type Item = { id: string; title: string; format: string; quantity: number; subtotal: number };
 
 const typeLabels: Record<CustomerException["type"], string> = {
@@ -129,12 +130,19 @@ function ExceptionCard({ exception }: { exception: CustomerException }) {
   );
 }
 
+function refundLabel(refund: CustomerRefund): string {
+  if (refund.status === "paid") return "Refund telah dikirim";
+  if (refund.payouts.some((payout) => payout.status === "processing")) return "Refund sedang diproses";
+  return "Refund perlu diproses";
+}
+
 export function CustomerOrderExceptions({ orderId, items }: { orderId: string; items: Item[] }) {
   const { dataSource } = useProduct();
   const exceptions = useQuery(
     api.orderExceptions.listMineForOrder,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
   );
+  const refunds = useQuery(api.refunds.listMine, dataSource === "convex" ? {} : "skip");
   if (dataSource !== "convex") return null;
   if (exceptions === undefined) {
     return (
@@ -165,6 +173,16 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
       ) : (
         <p className="subtle">Tidak ada masalah yang tercatat untuk pesanan ini.</p>
       )}
+      {refunds
+        ?.filter((refund) => refund.orderId === orderId)
+        .map((refund) => (
+          <div className="summary-line" key={refund.obligationId}>
+            <span>Refund</span>
+            <span>
+              <StatusBadge tone={refund.status === "paid" ? "positive" : "neutral"}>{refundLabel(refund)}</StatusBadge>
+            </span>
+          </div>
+        ))}
       <div className="content-stack">
         {items.map((item) => (
           <div className="summary-line" key={item.id}>
