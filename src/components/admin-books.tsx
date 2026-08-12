@@ -7,7 +7,16 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LoadingRegion,
+  PageHeader,
+  SkeletonTable,
+  StatusBadge,
+} from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 type PublicationStatus = "draft" | "published" | "special" | "archived";
@@ -23,6 +32,7 @@ function ConnectedAdminBooks() {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<"publisher" | "book" | null>(null);
   const publishers = useQuery(api.publishers.list, { paginationOpts: { numItems: 100, cursor: null } });
   const books = useQuery(api.books.listForAdmin, {
     search: search || undefined,
@@ -35,6 +45,7 @@ function ConnectedAdminBooks() {
   async function addPublisher(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setPendingAction("publisher");
     try {
       const id = await createPublisher({ name: publisherName });
       setPublisherName("");
@@ -42,12 +53,15 @@ function ConnectedAdminBooks() {
       setMessage("Penerbit dibuat.");
     } catch {
       setMessage("Penerbit tidak dapat dibuat.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function addBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setPendingAction("book");
     try {
       const bookId = await createBook({
         publisherId: publisherId as Id<"publishers">,
@@ -57,6 +71,8 @@ function ConnectedAdminBooks() {
       router.push(`/admin/books/${bookId}`);
     } catch {
       setMessage("Buku tidak dapat dibuat. Periksa judul dan slug uniknya.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -80,7 +96,7 @@ function ConnectedAdminBooks() {
                   required
                 />
               </Field>
-              <Button type="submit" variant="secondary">
+              <Button type="submit" variant="secondary" pending={pendingAction === "publisher"} pendingLabel="Membuat…">
                 Tambah penerbit
               </Button>
             </form>
@@ -106,7 +122,9 @@ function ConnectedAdminBooks() {
               <Field label="Penulis">
                 <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
               </Field>
-              <Button type="submit">Buat draft buku</Button>
+              <Button type="submit" pending={pendingAction === "book"} pendingLabel="Membuat…">
+                Buat draft buku
+              </Button>
             </form>
             {message ? (
               <p className="subtle" role="status">
@@ -150,7 +168,11 @@ function ConnectedAdminBooks() {
               </select>
             </Field>
           </Card>
-          {books === undefined ? <div className="state-panel">Memuat Book Master…</div> : null}
+          {books === undefined ? (
+            <LoadingRegion label="Memuat Book Master">
+              <SkeletonTable rows={5} />
+            </LoadingRegion>
+          ) : null}
           {books?.length ? (
             <div className="table-wrap">
               <table className="data-table admin-books-table">

@@ -7,7 +7,17 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { fulfillmentStageLabels, fulfillmentStages, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabels } from "@/domain/prototype/logic";
@@ -17,7 +27,7 @@ import { SiteShell } from "@/components/site-shell";
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
-  const { dataSource, state } = useProduct();
+  const { dataSource, ordersLoading, state } = useProduct();
   const adminExceptions = useQuery(
     api.orderExceptions.listForOrderAdmin,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
@@ -31,8 +41,24 @@ function AdminOrderDetail() {
     updateFulfillmentStage,
   } = useOperations();
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (dataSource !== "convex") return <div className="state-panel">Data pesanan belum tersedia.</div>;
+  if (
+    ordersLoading ||
+    adminExceptions === undefined ||
+    currentAdminOrderTracking === undefined ||
+    currentAdminFulfillment === undefined ||
+    batchList === undefined
+  ) {
+    return (
+      <LoadingRegion label="Memuat operasi pesanan">
+        <SkeletonCard variant="order" />
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   if (!order)
     return (
       <EmptyState
@@ -41,8 +67,6 @@ function AdminOrderDetail() {
         action={<LinkButton href="/admin/orders">Back to orders</LinkButton>}
       />
     );
-  if (!currentAdminOrderTracking || !currentAdminFulfillment || !batchList)
-    return <div className="state-panel">Loading order operations…</div>;
   const eligibleBatches = batchList.page.filter(
     (batch) =>
       !batch.isArchived && !batch.rosterLocked && batch.catalogLinks.some((link) => link.catalogId === order.catalogId),
@@ -53,13 +77,16 @@ function AdminOrderDetail() {
     : -1;
   const nextStage = fulfillmentStages[currentIndex + 1];
 
-  async function run(action: () => Promise<unknown>, success: string) {
+  async function run(action: () => Promise<unknown>, success: string, actionId: string) {
     setMessage("");
+    setPendingAction(actionId);
     try {
       await action();
       setMessage(success);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Operation failed");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -198,10 +225,17 @@ function AdminOrderDetail() {
             <div className="form-actions">
               <Button
                 type="button"
+                pending={pendingAction === "fulfillment"}
+                pendingLabel="Updating…"
                 onClick={() =>
-                  nextStage && void run(() => updateFulfillmentStage(orderId, nextStage), "Fulfillment stage updated.")
+                  nextStage &&
+                  void run(
+                    () => updateFulfillmentStage(orderId, nextStage),
+                    "Fulfillment stage updated.",
+                    "fulfillment",
+                  )
                 }
-                disabled={!nextStage}
+                disabled={!nextStage || pendingAction !== null}
               >
                 Advance to {nextStage ? fulfillmentStageLabels[nextStage] : "complete"}
               </Button>
@@ -242,14 +276,18 @@ function AssignForm({
   const [batchId, setBatchId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
     try {
       await assignOrderItem(orderItemId, batchId, Number(quantity));
       onDone();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Assignment failed");
+    } finally {
+      setIsSubmitting(false);
     }
   }
   return (
@@ -278,7 +316,9 @@ function AssignForm({
         onChange={(event) => setQuantity(event.target.value)}
         required
       />
-      <Button type="submit">Assign</Button>
+      <Button type="submit" pending={isSubmitting} pendingLabel="Assigning…">
+        Assign
+      </Button>
       {error ? (
         <span className="error-text" role="alert">
           {error}

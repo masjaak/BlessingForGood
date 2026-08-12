@@ -6,7 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, EmptyState, Field, PageHeader } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 import { BackButton } from "@/components/back-button";
 
 const emptyForm = {
@@ -38,19 +38,33 @@ function AddressForm() {
   const remove = useMutation(api.customerAddresses.remove);
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
   const update = (key: keyof typeof emptyForm, value: string | boolean) =>
     setForm((current) => ({ ...current, [key]: value }));
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSaving(true);
     try {
       await create({ ...form, addressLine2: form.addressLine2 || undefined });
       setForm(emptyForm);
       setMessage("Alamat tersimpan.");
     } catch {
       setMessage("Alamat belum dapat disimpan.");
+    } finally {
+      setIsSaving(false);
     }
+  }
+
+  if (addresses === undefined) {
+    return (
+      <LoadingRegion label="Memuat alamat">
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
   }
 
   return (
@@ -86,7 +100,9 @@ function AddressForm() {
               onChange={(event) => update("isDefault", event.target.checked)}
             />
           </label>
-          <Button type="submit">Tambah alamat</Button>
+          <Button type="submit" pending={isSaving} pendingLabel="Menyimpan…">
+            Tambah alamat
+          </Button>
           {message ? (
             <span className="subtle" role="status">
               {message}
@@ -115,7 +131,19 @@ function AddressForm() {
             <p className="subtle">{address.phone}</p>
             <Button
               variant="danger"
-              onClick={() => void remove({ addressId: address.addressId as Id<"customerAddresses"> })}
+              pending={deletingAddressId === address.addressId}
+              pendingLabel="Menghapus…"
+              onClick={async () => {
+                setDeletingAddressId(address.addressId);
+                try {
+                  await remove({ addressId: address.addressId as Id<"customerAddresses"> });
+                  setMessage("Alamat dihapus.");
+                } catch {
+                  setMessage("Alamat belum dapat dihapus.");
+                } finally {
+                  setDeletingAddressId(null);
+                }
+              }}
             >
               Hapus
             </Button>

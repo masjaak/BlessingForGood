@@ -4,7 +4,19 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  SkeletonText,
+  StatusBadge,
+} from "@/components/ui";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
@@ -29,8 +41,21 @@ function AdminInvoiceDetail() {
     reverseTransaction,
   } = useOperations();
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   if (dataSource !== "convex") return <div className="state-panel">Data invoice belum tersedia.</div>;
-  if (currentAdminInvoice === undefined) return <div className="state-panel">Loading invoice…</div>;
+  if (
+    currentAdminInvoice === undefined ||
+    adminAccount === undefined ||
+    adminTransactions === undefined ||
+    adminAllocations === undefined
+  ) {
+    return (
+      <LoadingRegion label="Memuat invoice">
+        <SkeletonCard variant="invoice" />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   if (!currentAdminInvoice)
     return (
       <EmptyState
@@ -41,13 +66,16 @@ function AdminInvoiceDetail() {
     );
   const account = adminAccount?.account;
 
-  async function run(action: () => Promise<unknown>, success: string) {
+  async function run(action: () => Promise<unknown>, success: string, actionId: string) {
     setMessage("");
+    setPendingAction(actionId);
     try {
       await action();
       setMessage(success);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Operation failed");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -111,7 +139,12 @@ function AdminInvoiceDetail() {
             </LinkButton>
             <div className="form-actions">
               {currentAdminInvoice.status === "draft" ? (
-                <Button type="button" onClick={() => void run(() => issueInvoice(invoiceId), "Invoice issued.")}>
+                <Button
+                  type="button"
+                  pending={pendingAction === "issue"}
+                  pendingLabel="Issuing…"
+                  onClick={() => void run(() => issueInvoice(invoiceId), "Invoice issued.", "issue")}
+                >
                   Issue invoice
                 </Button>
               ) : null}
@@ -119,7 +152,9 @@ function AdminInvoiceDetail() {
                 <Button
                   type="button"
                   variant="danger"
-                  onClick={() => void run(() => voidInvoice(invoiceId), "Invoice voided.")}
+                  pending={pendingAction === "void"}
+                  pendingLabel="Voiding…"
+                  onClick={() => void run(() => voidInvoice(invoiceId), "Invoice voided.", "void")}
                 >
                   Void invoice
                 </Button>
@@ -163,8 +198,10 @@ function AdminInvoiceDetail() {
                 <h2>Invoice reservations</h2>
               </div>
             </div>
-            {!adminAllocations ? (
-              <p className="subtle">Loading allocations…</p>
+            {adminAllocations === undefined ? (
+              <LoadingRegion label="Memuat alokasi">
+                <SkeletonText width="48%" />
+              </LoadingRegion>
             ) : adminAllocations.length ? (
               adminAllocations.map((allocation) => (
                 <div className="summary-line" key={allocation.allocationId}>
@@ -177,8 +214,14 @@ function AdminInvoiceDetail() {
                         <Button
                           type="button"
                           variant="quiet"
+                          pending={pendingAction === `release-${allocation.allocationId}`}
+                          pendingLabel="Releasing…"
                           onClick={() =>
-                            void run(() => releaseAllocation(allocation.allocationId), "Allocation released.")
+                            void run(
+                              () => releaseAllocation(allocation.allocationId),
+                              "Allocation released.",
+                              `release-${allocation.allocationId}`,
+                            )
                           }
                         >
                           Release
@@ -186,8 +229,14 @@ function AdminInvoiceDetail() {
                         <Button
                           type="button"
                           variant="quiet"
+                          pending={pendingAction === `reverse-${allocation.allocationId}`}
+                          pendingLabel="Reversing…"
                           onClick={() =>
-                            void run(() => reverseAllocation(allocation.allocationId), "Allocation reversed.")
+                            void run(
+                              () => reverseAllocation(allocation.allocationId),
+                              "Allocation reversed.",
+                              `reverse-${allocation.allocationId}`,
+                            )
                           }
                         >
                           Reverse
@@ -209,8 +258,10 @@ function AdminInvoiceDetail() {
                 <h2>Transactions</h2>
               </div>
             </div>
-            {!adminTransactions ? (
-              <p className="subtle">Loading ledger…</p>
+            {adminTransactions === undefined ? (
+              <LoadingRegion label="Memuat ledger">
+                <SkeletonText width="56%" />
+              </LoadingRegion>
             ) : adminTransactions.page.length ? (
               adminTransactions.page.map((transaction) => (
                 <div className="summary-line" key={transaction.transactionId}>
@@ -223,11 +274,14 @@ function AdminInvoiceDetail() {
                       <Button
                         type="button"
                         variant="quiet"
+                        pending={pendingAction === `transaction-${transaction.transactionId}`}
+                        pendingLabel="Reversing…"
                         onClick={() => {
                           if (window.confirm("Append a reversal transaction for this row?"))
                             void run(
                               () => reverseTransaction(transaction.transactionId, "admin correction"),
                               "Transaction reversed.",
+                              `transaction-${transaction.transactionId}`,
                             );
                         }}
                       >
@@ -261,9 +315,11 @@ function CreditForm({
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
     try {
       await recordCredit(invoiceId, Number(amount), note || undefined);
       setAmount("");
@@ -271,6 +327,8 @@ function CreditForm({
       onDone();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Credit failed");
+    } finally {
+      setIsSubmitting(false);
     }
   }
   return (
@@ -289,7 +347,9 @@ function CreditForm({
       <Field label="Note (optional)">
         <input className="input" value={note} onChange={(event) => setNote(event.target.value)} />
       </Field>
-      <Button type="submit">Append credit</Button>
+      <Button type="submit" pending={isSubmitting} pendingLabel="Appending…">
+        Append credit
+      </Button>
       {error ? (
         <span className="error-text" role="alert">
           {error}
@@ -314,15 +374,19 @@ function AllocationForm({
 }) {
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
     try {
       await allocateDeposit(invoiceId, Number(amount));
       setAmount("");
       onDone();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Allocation failed");
+    } finally {
+      setIsSubmitting(false);
     }
   }
   return (
@@ -340,7 +404,7 @@ function AllocationForm({
           disabled={disabled || outstanding < 1}
         />
       </Field>
-      <Button type="submit" disabled={disabled || outstanding < 1}>
+      <Button type="submit" pending={isSubmitting} pendingLabel="Allocating…" disabled={disabled || outstanding < 1}>
         Allocate deposit
       </Button>
       {error ? (

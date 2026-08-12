@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { isCatalogOpen, orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { ProductAccessGuard } from "@/components/product-access-guard";
@@ -17,6 +28,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
     Object.fromEntries(order?.items.map((item) => [item.variantId, item.quantity]) || []),
   );
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   if (!order || !catalog || order.status !== "submitted" || !isCatalogOpen(catalog))
     return <p className="subtle">Preorder tidak dapat diubah setelah tahap pemrosesan dimulai atau katalog ditutup.</p>;
   const editableOrder = order;
@@ -24,6 +36,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSaving(true);
     try {
       const updated = await editOrder(editableOrder.id, {
         customerName: name,
@@ -36,6 +49,8 @@ function EditOrderForm({ orderId }: { orderId: string }) {
       setMessage(`Pesanan ${updated.id} diperbarui.`);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Preorder belum dapat diperbarui");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -63,7 +78,9 @@ function EditOrderForm({ orderId }: { orderId: string }) {
             />
           </Field>
         ))}
-        <Button type="submit">Simpan perubahan</Button>
+        <Button type="submit" pending={isSaving} pendingLabel="Menyimpan…">
+          Simpan perubahan
+        </Button>
         {message ? (
           <span className="subtle" role="status">
             {message}
@@ -75,7 +92,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
 }
 
 function CustomerOrders() {
-  const { state } = useProduct();
+  const { state, ordersLoading } = useProduct();
   return (
     <div className="page narrow-page">
       <PageHeader
@@ -88,7 +105,12 @@ function CustomerOrders() {
           </LinkButton>
         }
       />
-      {state.orders.length === 0 ? (
+      {ordersLoading ? (
+        <LoadingRegion label="Memuat pesanan">
+          <SkeletonCard variant="order" />
+          <SkeletonCard variant="order" />
+        </LoadingRegion>
+      ) : state.orders.length === 0 ? (
         <EmptyState
           title="Belum ada pesanan"
           description="Pesananmu akan tampil di sini setelah berhasil dicatat."

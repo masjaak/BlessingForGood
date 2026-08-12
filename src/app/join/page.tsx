@@ -25,6 +25,7 @@ function ConnectedJoinForm() {
   const [submitted, setSubmitted] = useState(false);
   const [whatsappGroupUrl, setWhatsappGroupUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function update(field: keyof typeof initialForm, value: string | boolean) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -33,6 +34,7 @@ function ConnectedJoinForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
     try {
       const result = await submit({
         name: form.name,
@@ -47,6 +49,8 @@ function ConnectedJoinForm() {
       setSubmitted(true);
     } catch {
       setError("Permintaan belum dapat dikirim. Periksa kembali datamu lalu coba lagi.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -165,7 +169,9 @@ function ConnectedJoinForm() {
             {error}
           </p>
         ) : null}
-        <Button type="submit">Kirim permintaan</Button>
+        <Button type="submit" pending={isSubmitting} pendingLabel="Mengirim…">
+          Kirim permintaan
+        </Button>
       </form>
     </Card>
   );

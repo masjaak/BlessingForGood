@@ -91,6 +91,12 @@ describe("BFG payment confirmation workflow", () => {
       outstandingAmount: 150000,
       paymentStatus: "partially_paid",
     });
+    expect(await customer.query(api.invoices.getMine, { invoiceId: invoice.invoiceId })).toMatchObject({
+      invoiceId: invoice.invoiceId,
+      verifiedPaymentAmount: 100000,
+      outstandingAmount: 150000,
+      paymentStatus: "partially_paid",
+    });
     await expect(
       admin.mutation(api.paymentConfirmations.approve, { confirmationId: confirmation.confirmationId }),
     ).rejects.toThrow("PAYMENT_CONFIRMATION_INVALID_STATE");

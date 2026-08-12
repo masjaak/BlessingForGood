@@ -4,16 +4,33 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
+import { Card, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminOverview() {
-  const { state, dataSource, sessionRole } = useProduct();
+  const { state, dataSource, sessionRole, ordersLoading, catalogsLoading } = useProduct();
   const { batchList, adminInvoiceList, adminPaymentQueue } = useOperations();
   const joinRequests = useQuery(api.joinRequests.listForAdmin, dataSource === "convex" ? {} : "skip");
   const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
+  if (
+    ordersLoading ||
+    catalogsLoading ||
+    batchList === undefined ||
+    adminInvoiceList === undefined ||
+    adminPaymentQueue === undefined ||
+    joinRequests === undefined ||
+    exceptions === undefined
+  ) {
+    return (
+      <LoadingRegion label="Memuat ringkasan operasional">
+        <SkeletonCard variant="account" />
+        <SkeletonCard variant="account" />
+        <SkeletonCard variant="account" />
+      </LoadingRegion>
+    );
+  }
   const pendingAdmissions =
     joinRequests?.filter((item) => item.status === "submitted" || item.status === "under_review").length || 0;
   const activeBatches = batchList?.page.filter((batch) => !batch.isArchived).length || 0;

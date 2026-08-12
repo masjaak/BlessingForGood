@@ -3093,3 +3093,118 @@ p {
   border-radius: 50%;
   background: var(--bfg-surface);
 }
+
+/* Shared operational loading states. The shape follows the final content; it does not replace it with a spinner. */
+.loading-region {
+  display: grid;
+  gap: 16px;
+}
+
+.bfg-skeleton {
+  display: block;
+  background: #eee5d7;
+  border-radius: 8px;
+  animation: bfg-skeleton-pulse 1.8s ease-in-out infinite;
+}
+
+.bfg-skeleton-text {
+  height: 14px;
+  max-width: 100%;
+  border-radius: 999px;
+}
+
+.skeleton-card {
+  display: grid;
+  gap: 14px;
+  min-height: 168px;
+}
+
+.skeleton-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.skeleton-lines {
+  display: grid;
+  align-content: center;
+  gap: 13px;
+  width: 100%;
+}
+
+.book-card-skeleton {
+  min-height: 184px;
+}
+
+.book-card-skeleton .book-card-layout {
+  align-items: stretch;
+}
+
+.skeleton-cover {
+  width: 104px;
+  min-height: 140px;
+}
+
+.skeleton-control {
+  width: 100%;
+  height: 46px;
+  border-radius: 11px;
+}
+
+.skeleton-table {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.skeleton-table-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 1fr 0.6fr;
+  gap: 18px;
+  align-items: center;
+  min-height: 68px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.skeleton-table-row:last-child {
+  border-bottom: 0;
+}
+
+.button[aria-busy="true"] {
+  cursor: wait;
+}
+
+@keyframes bfg-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bfg-skeleton {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .skeleton-table-row {
+    grid-template-columns: 1.4fr 0.8fr;
+  }
+
+  .skeleton-table-row .bfg-skeleton-text:nth-child(n + 3) {
+    display: none;
+  }
+
+  .skeleton-cover {
+    width: 88px;
+    min-height: 120px;
+  }
+}

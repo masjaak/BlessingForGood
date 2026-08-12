@@ -6,7 +6,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { Button, Card, Field, PageHeader, StatusBadge } from "@/components/ui";
+import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
@@ -22,10 +22,12 @@ function VariantRow({ variant }: { variant: Variant }) {
   const [quantity, setStock] = useState(String(variant.stockQuantity));
   const [enabled, setEnabled] = useState(variant.isAvailable);
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSaving(true);
     try {
       await updateVariant({
         bookVariantId: variant._id,
@@ -37,6 +39,8 @@ function VariantRow({ variant }: { variant: Variant }) {
       setMessage("Tersimpan.");
     } catch {
       setMessage("Perubahan format atau stok ditolak.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -72,7 +76,7 @@ function VariantRow({ variant }: { variant: Variant }) {
         <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
         Aktif
       </label>
-      <Button type="submit" variant="secondary">
+      <Button type="submit" variant="secondary" pending={isSaving} pendingLabel="Menyimpan…">
         Simpan
       </Button>
       {message ? (
@@ -100,10 +104,12 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [isbn, setIsbn] = useState("");
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<"book" | "variant" | null>(null);
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setPendingAction("book");
     try {
       await updateBook({
         bookId: book._id,
@@ -119,12 +125,15 @@ function BookEditor({ book }: { book: AdminBook }) {
       setMessage("Book Master tersimpan.");
     } catch {
       setMessage("Book Master tidak dapat disimpan.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function addVariant(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setPendingAction("variant");
     try {
       await createVariant({ bookId: book._id, format, isbn, priceAmount: Number(price) });
       setIsbn("");
@@ -132,6 +141,8 @@ function BookEditor({ book }: { book: AdminBook }) {
       setMessage("Format ditambahkan.");
     } catch {
       setMessage("Format ditolak. Periksa ISBN, harga, dan format unik.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -207,7 +218,9 @@ function BookEditor({ book }: { book: AdminBook }) {
                   onChange={(event) => setDescription(event.target.value)}
                 />
               </Field>
-              <Button type="submit">Simpan Book Master</Button>
+              <Button type="submit" pending={pendingAction === "book"} pendingLabel="Menyimpan…">
+                Simpan Book Master
+              </Button>
             </form>
           </Card>
           <Card>
@@ -249,7 +262,12 @@ function BookEditor({ book }: { book: AdminBook }) {
                   required
                 />
               </Field>
-              <Button type="submit" variant="secondary">
+              <Button
+                type="submit"
+                variant="secondary"
+                pending={pendingAction === "variant"}
+                pendingLabel="Menambahkan…"
+              >
                 Tambah format
               </Button>
             </form>
@@ -267,7 +285,14 @@ function BookEditor({ book }: { book: AdminBook }) {
 
 function ConnectedAdminBookDetail({ bookId }: { bookId: Id<"books"> }) {
   const book = useQuery(api.books.getForAdmin, { bookId });
-  if (book === undefined) return <div className="state-panel">Memuat buku…</div>;
+  if (book === undefined) {
+    return (
+      <LoadingRegion label="Memuat buku">
+        <SkeletonCard />
+        <SkeletonCard variant="book" />
+      </LoadingRegion>
+    );
+  }
   if (!book) return <div className="state-panel">Buku tidak ditemukan.</div>;
   return <BookEditor book={book} key={book.updatedAt} />;
 }

@@ -2,6 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import type { ReactNode } from "react";
+import { LoadingRegion, SkeletonCard } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 export function ProductAccessGuard({
@@ -62,7 +63,11 @@ export function ProductAccessGuard({
     return <div className="state-panel">Akses BFG belum dapat dikonfirmasi. Silakan coba lagi.</div>;
   }
   if (!hydrated || authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
-    return <div className="state-panel">Menyiapkan akun BFG…</div>;
+    return (
+      <LoadingRegion label="Menyiapkan akun BFG">
+        <SkeletonCard variant="account" />
+      </LoadingRegion>
+    );
   }
   const allowed =
     !requiredRole ||

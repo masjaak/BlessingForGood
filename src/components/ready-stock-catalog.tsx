@@ -6,7 +6,17 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { BookCover } from "@/components/book-cover";
-import { Card, EmptyState, Field, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  Field,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  Skeleton,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 type BookFormat = "BB" | "PB" | "HB";
@@ -26,7 +36,19 @@ function ReadyStockResults() {
     sort,
   });
 
-  if (result === undefined) return <div className="state-panel">Memuat Ready Stock…</div>;
+  if (result === undefined) {
+    return (
+      <LoadingRegion label="Memuat Ready Stock">
+        <Card className="skeleton-card">
+          <Skeleton className="skeleton-control" />
+          <Skeleton className="skeleton-control" />
+          <Skeleton className="skeleton-control" />
+        </Card>
+        <SkeletonCard variant="book" />
+        <SkeletonCard variant="book" />
+      </LoadingRegion>
+    );
+  }
 
   return (
     <>

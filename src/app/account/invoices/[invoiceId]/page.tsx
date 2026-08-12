@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  SkeletonText,
+  StatusBadge,
+} from "@/components/ui";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
   invoicePaymentStatusLabel,
@@ -25,7 +37,15 @@ function CustomerInvoiceDetail() {
     submitPaymentConfirmation,
   } = useOperations();
   if (dataSource !== "convex") return <div className="state-panel">Invoice belum tersedia saat ini.</div>;
-  if (currentCustomerInvoice === undefined) return <div className="state-panel">Menyiapkan invoice…</div>;
+  if (currentCustomerInvoice === undefined) {
+    return (
+      <LoadingRegion label="Memuat detail invoice">
+        <SkeletonCard variant="invoice" />
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   if (!currentCustomerInvoice) {
     return (
       <EmptyState
@@ -94,7 +114,10 @@ function CustomerInvoiceDetail() {
             <strong>{formatIdr(currentCustomerInvoice.verifiedPaymentAmount)}</strong>
           </div>
           {customerPaymentConfirmations === undefined ? (
-            <p className="subtle">Menyiapkan riwayat konfirmasi…</p>
+            <LoadingRegion label="Memuat riwayat pembayaran">
+              <SkeletonText width="52%" />
+              <SkeletonText width="78%" />
+            </LoadingRegion>
           ) : customerPaymentConfirmations.length ? (
             <div className="content-stack">
               <h3>Riwayat konfirmasi</h3>
@@ -136,24 +159,34 @@ function CustomerInvoiceDetail() {
               <h2>Tersedia dan dialokasikan</h2>
             </div>
           </div>
-          <div className="summary-line">
-            <span>Tersedia</span>
-            <strong>{formatIdr(account?.availableAmount || 0)}</strong>
-          </div>
-          <div className="summary-line">
-            <span>Dialokasikan</span>
-            <strong>{formatIdr(account?.reservedAmount || 0)}</strong>
-          </div>
-          <h3>Riwayat alokasi</h3>
-          {customerAllocations?.length ? (
-            customerAllocations.map((allocation) => (
-              <div className="summary-line" key={allocation.allocationId}>
-                <span>{allocation.status}</span>
-                <strong>{formatIdr(allocation.amount)}</strong>
-              </div>
-            ))
+          {customerAccount === undefined || customerAllocations === undefined ? (
+            <LoadingRegion label="Memuat data deposit">
+              <SkeletonText width="48%" />
+              <SkeletonText width="68%" />
+              <SkeletonText width="58%" />
+            </LoadingRegion>
           ) : (
-            <p className="subtle">Belum ada alokasi deposit untuk invoice ini.</p>
+            <>
+              <div className="summary-line">
+                <span>Tersedia</span>
+                <strong>{formatIdr(account?.availableAmount || 0)}</strong>
+              </div>
+              <div className="summary-line">
+                <span>Dialokasikan</span>
+                <strong>{formatIdr(account?.reservedAmount || 0)}</strong>
+              </div>
+              <h3>Riwayat alokasi</h3>
+              {customerAllocations.length ? (
+                customerAllocations.map((allocation) => (
+                  <div className="summary-line" key={allocation.allocationId}>
+                    <span>{allocation.status}</span>
+                    <strong>{formatIdr(allocation.amount)}</strong>
+                  </div>
+                ))
+              ) : (
+                <p className="subtle">Belum ada alokasi deposit untuk invoice ini.</p>
+              )}
+            </>
           )}
         </Card>
 
@@ -165,7 +198,11 @@ function CustomerInvoiceDetail() {
             </div>
           </div>
           {!customerTransactions ? (
-            <p className="subtle">Menyiapkan riwayat deposit…</p>
+            <LoadingRegion label="Memuat riwayat deposit">
+              <SkeletonText width="58%" />
+              <SkeletonText width="78%" />
+              <SkeletonText width="42%" />
+            </LoadingRegion>
           ) : customerTransactions.page.length ? (
             customerTransactions.page.map((transaction) => (
               <div className="summary-line" key={transaction.transactionId}>
@@ -211,12 +248,14 @@ function PaymentConfirmationForm({
   const [customerNote, setCustomerNote] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setMessage("");
     const paidAtTimestamp = new Date(`${paidAt}T00:00:00`).getTime();
+    setIsSubmitting(true);
     try {
       await submitPaymentConfirmation(invoiceId, {
         amount: Number(amount),
@@ -233,6 +272,8 @@ function PaymentConfirmationForm({
       setMessage("Konfirmasi pembayaran dikirim untuk ditinjau.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Konfirmasi pembayaran belum dapat dikirim");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -284,7 +325,9 @@ function PaymentConfirmationForm({
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>
       <div className="form-actions">
-        <Button type="submit">Kirim konfirmasi</Button>
+        <Button type="submit" pending={isSubmitting} pendingLabel="Mengirim…">
+          Kirim konfirmasi
+        </Button>
         {message ? (
           <span className="subtle" role="status">
             {message}

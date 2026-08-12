@@ -7,7 +7,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, PageHeader } from "@/components/ui";
+import { Button, Card, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 
 function UserManagement() {
   const [role, setRole] = useState<"owner" | "admin" | "customer" | undefined>();
@@ -17,14 +17,18 @@ function UserManagement() {
   const suspend = useMutation(api.users.suspend);
   const reactivate = useMutation(api.users.reactivate);
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-  async function run(action: Promise<unknown>) {
+  async function run(action: Promise<unknown>, actionId: string) {
     setMessage("");
+    setPendingAction(actionId);
     try {
       await action;
       setMessage("User updated.");
     } catch {
       setMessage("User update denied.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -90,20 +94,36 @@ function UserManagement() {
                           userId: user.appUserId as Id<"appUsers">,
                           role: user.role === "admin" ? "customer" : "admin",
                         }),
+                        `role:${user.appUserId}`,
                       )
                     }
+                    pending={pendingAction === `role:${user.appUserId}`}
+                    pendingLabel="Updating…"
                   >
                     {user.role === "admin" ? "Demote to customer" : "Promote to admin"}
                   </Button>
                   {user.status === "active" ? (
                     <Button
                       variant="danger"
-                      onClick={() => void run(suspend({ userId: user.appUserId as Id<"appUsers"> }))}
+                      pending={pendingAction === `suspend:${user.appUserId}`}
+                      pendingLabel="Suspending…"
+                      onClick={() =>
+                        void run(suspend({ userId: user.appUserId as Id<"appUsers"> }), `suspend:${user.appUserId}`)
+                      }
                     >
                       Suspend
                     </Button>
                   ) : (
-                    <Button onClick={() => void run(reactivate({ userId: user.appUserId as Id<"appUsers"> }))}>
+                    <Button
+                      pending={pendingAction === `reactivate:${user.appUserId}`}
+                      pendingLabel="Reactivating…"
+                      onClick={() =>
+                        void run(
+                          reactivate({ userId: user.appUserId as Id<"appUsers"> }),
+                          `reactivate:${user.appUserId}`,
+                        )
+                      }
+                    >
                       Reactivate
                     </Button>
                   )}
@@ -111,7 +131,12 @@ function UserManagement() {
               ) : null}
             </Card>
           ))}
-          {users === undefined ? <div className="state-panel">Loading users…</div> : null}
+          {users === undefined ? (
+            <LoadingRegion label="Memuat pengguna">
+              <SkeletonCard />
+              <SkeletonCard />
+            </LoadingRegion>
+          ) : null}
         </div>
       </div>
     </div>

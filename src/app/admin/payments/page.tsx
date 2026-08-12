@@ -3,7 +3,17 @@
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { paymentConfirmationStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type AdminPaymentQueue } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
@@ -22,16 +32,20 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
   const [reviewNote, setReviewNote] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const invoice = confirmation.invoice;
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage("");
     setError("");
+    setPendingAction(success);
     try {
       await action();
       setMessage(success);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Tinjauan pembayaran gagal");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -79,6 +93,8 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
         <Button
           type="button"
           variant="secondary"
+          pending={pendingAction === "Masuk tahap tinjauan."}
+          pendingLabel="Memulai…"
           onClick={() => void run(() => startPaymentReview(confirmation.confirmationId), "Masuk tahap tinjauan.")}
         >
           Mulai tinjauan
@@ -92,6 +108,8 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
           <div className="form-actions">
             <Button
               type="button"
+              pending={pendingAction === "Pembayaran disetujui."}
+              pendingLabel="Menyetujui…"
               onClick={() =>
                 void run(
                   () => approvePaymentConfirmation(confirmation.confirmationId, reviewNote || undefined),
@@ -104,6 +122,8 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
             <Button
               type="button"
               variant="danger"
+              pending={pendingAction === "Pembayaran ditolak."}
+              pendingLabel="Menolak…"
               onClick={() =>
                 void run(
                   () =>
@@ -142,7 +162,14 @@ function AdminPayments() {
   const { dataSource } = useProduct();
   const { adminPaymentQueue, adminPaymentHistory } = useOperations();
   if (dataSource !== "convex") return <div className="state-panel">Antrian pembayaran belum tersedia.</div>;
-  if (adminPaymentQueue === undefined) return <div className="state-panel">Memuat konfirmasi pembayaran…</div>;
+  if (adminPaymentQueue === undefined) {
+    return (
+      <LoadingRegion label="Memuat konfirmasi pembayaran">
+        <SkeletonCard variant="invoice" />
+        <SkeletonCard variant="invoice" />
+      </LoadingRegion>
+    );
+  }
   const resolvedHistory =
     adminPaymentHistory?.page.filter(
       (confirmation) => confirmation.status === "approved" || confirmation.status === "rejected",

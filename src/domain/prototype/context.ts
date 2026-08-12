@@ -30,6 +30,9 @@ export interface ProductContextValue {
   sessionRole: ProductRole | null;
   userStatus: "active" | "suspended" | null;
   authState: ProductAuthState;
+  catalogLoading: boolean;
+  catalogsLoading: boolean;
+  ordersLoading: boolean;
   state: PrototypeState;
   unlockedCatalog: SecretCatalog | undefined;
   createCatalog: (input: CreateCatalogInput) => Promise<CreateCatalogResult>;

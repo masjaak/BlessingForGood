@@ -3,7 +3,18 @@
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/operations-context";
@@ -15,16 +26,20 @@ function PersistentRequirementForm({ orderId }: { orderId: string }) {
   const [mode, setMode] = useState<InvoiceRequirementMode>("none");
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSaving(true);
     try {
       await createInvoice(orderId, mode, mode === "none" ? undefined : Number(value));
       setValue("");
       setMessage("Draft saved.");
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Invoice could not be created");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -56,7 +71,9 @@ function PersistentRequirementForm({ orderId }: { orderId: string }) {
           />
         </Field>
       ) : null}
-      <Button type="submit">Save draft</Button>
+      <Button type="submit" pending={isSaving} pendingLabel="Saving…">
+        Save draft
+      </Button>
       {message ? (
         <span className="subtle" role="status">
           {message}
@@ -70,7 +87,14 @@ function PersistentAdminInvoices() {
   const { state } = useProduct();
   const { adminInvoiceList } = useOperations();
   const invoices = adminInvoiceList?.page || [];
-  if (!adminInvoiceList) return <div className="state-panel">Menyiapkan invoice…</div>;
+  if (!adminInvoiceList) {
+    return (
+      <LoadingRegion label="Memuat invoice">
+        <SkeletonCard variant="invoice" />
+        <SkeletonCard variant="invoice" />
+      </LoadingRegion>
+    );
+  }
   const ordersWithoutInvoices = state.orders.filter(
     (order) => !invoices.some((invoice) => invoice.orderId === order.id && invoice.status !== "void"),
   );

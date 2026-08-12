@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
+import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonTable } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -22,7 +22,9 @@ function CustomerList() {
         <AdminNav />
         <div className="admin-content">
           {!customers ? (
-            <div className="state-panel">Menyiapkan customer…</div>
+            <LoadingRegion label="Memuat customer">
+              <SkeletonTable rows={5} />
+            </LoadingRegion>
           ) : customers.length ? (
             <div className="table-wrap">
               <table className="data-table">

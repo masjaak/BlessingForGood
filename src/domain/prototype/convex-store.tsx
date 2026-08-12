@@ -356,6 +356,11 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
               : me.status === "suspended"
                 ? "suspended"
                 : "authenticated";
+  const catalogLoading = Boolean(
+    unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null)),
+  );
+  const catalogsLoading = Boolean(isAdmin && adminCatalogs === undefined);
+  const ordersLoading = Boolean((isCustomer && customerOrders === undefined) || (isAdmin && adminOrders === undefined));
 
   const value = useMemo<ProductContextValue>(
     () => ({
@@ -364,6 +369,9 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       sessionRole: me?.role || null,
       userStatus: me?.status || null,
       authState,
+      catalogLoading,
+      catalogsLoading,
+      ordersLoading,
       state,
       unlockedCatalog: asCatalog(unlocked as CatalogView | null | undefined),
       createCatalog,
@@ -378,9 +386,12 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       createCatalog,
       editOrder,
       authState,
+      catalogLoading,
+      catalogsLoading,
       me,
       isLoaded,
       isSignedIn,
+      ordersLoading,
       provisionError,
       state,
       submitOrder,

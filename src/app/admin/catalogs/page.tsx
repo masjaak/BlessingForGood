@@ -5,7 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
 import { useProduct } from "@/domain/prototype/store";
@@ -30,6 +30,7 @@ function CatalogForm() {
   const [variants, setVariants] = useState<VariantDrafts>(initialVariants);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateVariant(format: BookFormat, patch: Partial<VariantDraft>) {
     setVariants((current) => ({ ...current, [format]: { ...current[format], ...patch } }));
@@ -39,6 +40,7 @@ function CatalogForm() {
     event.preventDefault();
     setError("");
     setSaved("");
+    setIsSubmitting(true);
     try {
       const selected = BOOK_FORMATS.filter((format) => variants[format].enabled).map((format) => ({
         format,
@@ -64,6 +66,8 @@ function CatalogForm() {
       setVariants(initialVariants);
     } catch (reason) {
       setError(productErrorMessage(reason, "Catalog could not be created"));
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -176,19 +180,48 @@ function CatalogForm() {
             </Button>
           </div>
         ) : null}
-        <Button type="submit">Create open catalog</Button>
+        <Button type="submit" pending={isSubmitting} pendingLabel="Creating…">
+          Create open catalog
+        </Button>
       </form>
     </Card>
   );
 }
 
 function CatalogList() {
-  const { state, closeCatalog } = useProduct();
+  const { state, closeCatalog, catalogsLoading } = useProduct();
   const generateCode = useMutation(api.catalogAccess.generateCode);
   const revokeCode = useMutation(api.catalogAccess.revokeCode);
   const [generatedCodes, setGeneratedCodes] = useState<Record<string, string>>({});
   const [codeExpiresAt, setCodeExpiresAt] = useState<Record<string, string>>({});
   const [codeError, setCodeError] = useState("");
+  const [pendingAction, setPendingAction] = useState("");
+
+  async function runAction(
+    key: string,
+    action: () => void | Promise<unknown>,
+    fallback: string,
+    onSuccess?: (result: unknown) => void,
+  ) {
+    setCodeError("");
+    setPendingAction(key);
+    try {
+      const result = await action();
+      onSuccess?.(result);
+    } catch (reason) {
+      setCodeError(productErrorMessage(reason, fallback));
+    } finally {
+      setPendingAction("");
+    }
+  }
+  if (catalogsLoading) {
+    return (
+      <LoadingRegion label="Memuat katalog">
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   if (state.catalogs.length === 0)
     return (
       <EmptyState
@@ -246,16 +279,23 @@ function CatalogList() {
             <Button
               type="button"
               variant="secondary"
-              onClick={async () => {
-                setCodeError("");
-                try {
-                  const expiresAt = codeExpiresAt[catalog.id] ? Date.parse(codeExpiresAt[catalog.id]) : undefined;
-                  if (expiresAt !== undefined && Number.isNaN(expiresAt)) throw new Error("expiry is invalid");
-                  const result = await generateCode({ catalogId: catalog.id as never, expiresAt });
-                  setGeneratedCodes((current) => ({ ...current, [catalog.id]: result.code }));
-                } catch (reason) {
-                  setCodeError(productErrorMessage(reason, "Kode belum dapat dibuat."));
+              pending={pendingAction === `generate-${catalog.id}`}
+              pendingLabel="Generating…"
+              onClick={() => {
+                const expiresAt = codeExpiresAt[catalog.id] ? Date.parse(codeExpiresAt[catalog.id]) : undefined;
+                if (expiresAt !== undefined && Number.isNaN(expiresAt)) {
+                  setCodeError("Tanggal berakhir kode tidak valid.");
+                  return;
                 }
+                void runAction(
+                  `generate-${catalog.id}`,
+                  () => generateCode({ catalogId: catalog.id as never, expiresAt }),
+                  "Kode belum dapat dibuat.",
+                  (result) => {
+                    const code = result as { code: string };
+                    setGeneratedCodes((current) => ({ ...current, [catalog.id]: code.code }));
+                  },
+                );
               }}
             >
               Generate access code
@@ -263,25 +303,34 @@ function CatalogList() {
             <Button
               type="button"
               variant="danger"
-              onClick={async () => {
-                setCodeError("");
-                try {
-                  await revokeCode({ catalogId: catalog.id as never });
-                  setGeneratedCodes((current) => {
-                    const next = { ...current };
-                    delete next[catalog.id];
-                    return next;
-                  });
-                } catch (reason) {
-                  setCodeError(productErrorMessage(reason, "Kode belum dapat dicabut."));
-                }
-              }}
+              pending={pendingAction === `revoke-${catalog.id}`}
+              pendingLabel="Revoking…"
+              onClick={() =>
+                void runAction(
+                  `revoke-${catalog.id}`,
+                  () => revokeCode({ catalogId: catalog.id as never }),
+                  "Kode belum dapat dicabut.",
+                  () =>
+                    setGeneratedCodes((current) => {
+                      const next = { ...current };
+                      delete next[catalog.id];
+                      return next;
+                    }),
+                )
+              }
             >
               Revoke access code
             </Button>
           </div>
           {catalog.status === "open" ? (
-            <Button variant="danger" onClick={() => closeCatalog(catalog.id)}>
+            <Button
+              variant="danger"
+              pending={pendingAction === `close-${catalog.id}`}
+              pendingLabel="Closing…"
+              onClick={() =>
+                void runAction(`close-${catalog.id}`, () => closeCatalog(catalog.id), "Katalog belum dapat ditutup.")
+              }
+            >
               Close catalog
             </Button>
           ) : (

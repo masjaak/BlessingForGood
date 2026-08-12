@@ -4,7 +4,16 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { shipmentStageLabels, shipmentStages } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
@@ -28,18 +37,25 @@ function AdminBatchDetail() {
   } = useOperations();
   const [catalogId, setCatalogId] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   if (dataSource !== "convex") return <div className="state-panel">Data batch belum tersedia.</div>;
-  if (!currentBatch || currentBatchUnassigned === undefined) {
-    if (!currentBatch) {
-      return (
-        <EmptyState
-          title="Batch not found"
-          description="The admin session cannot access that batch."
-          action={<LinkButton href="/admin/batches">Back to batches</LinkButton>}
-        />
-      );
-    }
-    return <div className="state-panel">Loading batch roster…</div>;
+  if (currentBatch === undefined || currentBatchUnassigned === undefined) {
+    return (
+      <LoadingRegion label="Memuat operasi batch">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
+  if (!currentBatch) {
+    return (
+      <EmptyState
+        title="Batch not found"
+        description="The admin session cannot access that batch."
+        action={<LinkButton href="/admin/batches">Back to batches</LinkButton>}
+      />
+    );
   }
   const currentIndex = currentBatch.currentShipmentStage
     ? shipmentStages.indexOf(currentBatch.currentShipmentStage)
@@ -59,19 +75,22 @@ function AdminBatchDetail() {
     );
   }
 
-  async function run(action: () => Promise<unknown>, success: string) {
+  async function run(action: () => Promise<unknown>, success: string, actionId: string) {
     setMessage("");
+    setPendingAction(actionId);
     try {
       await action();
       setMessage(success);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Operation failed");
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function advance() {
     if (!nextStage) return;
-    await run(() => updateShipmentStage(batchId, nextStage), "Shipment stage updated.");
+    await run(() => updateShipmentStage(batchId, nextStage), "Shipment stage updated.", "shipment");
   }
 
   async function chooseStage(value: string) {
@@ -80,7 +99,7 @@ function AdminBatchDetail() {
     const targetIndex = shipmentStages.indexOf(target);
     const allowSkip = targetIndex > currentIndex + 1;
     if (allowSkip && !window.confirm("Confirm skipping forward in the shipment timeline?")) return;
-    await run(() => updateShipmentStage(batchId, target, allowSkip), "Shipment stage updated.");
+    await run(() => updateShipmentStage(batchId, target, allowSkip), "Shipment stage updated.", "shipment");
   }
 
   return (
@@ -116,7 +135,13 @@ function AdminBatchDetail() {
               <StatusBadge>{currentBatch.isArchived ? "Archived" : "Active"}</StatusBadge>
             </div>
             <div className="form-actions">
-              <Button type="button" onClick={() => void advance()} disabled={currentBatch.isArchived || !nextStage}>
+              <Button
+                type="button"
+                pending={pendingAction === "shipment"}
+                pendingLabel="Updating…"
+                onClick={() => void advance()}
+                disabled={currentBatch.isArchived || !nextStage}
+              >
                 Advance to {nextStage ? shipmentStageLabels[nextStage] : "complete"}
               </Button>
               <label className="field">
@@ -125,7 +150,7 @@ function AdminBatchDetail() {
                   aria-label="Shipment stage choice"
                   className="select"
                   value=""
-                  disabled={currentBatch.isArchived}
+                  disabled={currentBatch.isArchived || pendingAction !== null}
                   onChange={(event) => void chooseStage(event.target.value)}
                 >
                   <option value="">Choose a later stage…</option>
@@ -139,7 +164,9 @@ function AdminBatchDetail() {
               <Button
                 type="button"
                 variant="danger"
-                onClick={() => void run(() => archiveBatch(batchId), "Batch archived.")}
+                pending={pendingAction === "archive"}
+                pendingLabel="Archiving…"
+                onClick={() => void run(() => archiveBatch(batchId), "Batch archived.", "archive")}
                 disabled={currentBatch.isArchived}
               >
                 Archive batch
@@ -165,7 +192,15 @@ function AdminBatchDetail() {
                 <Button
                   type="button"
                   variant="quiet"
-                  onClick={() => void run(() => unlinkCatalog(batchId, link.catalogId), "Catalog unlinked.")}
+                  pending={pendingAction === `unlink-${link.catalogId}`}
+                  pendingLabel="Unlinking…"
+                  onClick={() =>
+                    void run(
+                      () => unlinkCatalog(batchId, link.catalogId),
+                      "Catalog unlinked.",
+                      `unlink-${link.catalogId}`,
+                    )
+                  }
                   disabled={rosterLocked}
                 >
                   Unlink
@@ -189,10 +224,12 @@ function AdminBatchDetail() {
                 </select>
                 <Button
                   type="button"
+                  pending={pendingAction === "link"}
+                  pendingLabel="Linking…"
                   onClick={() => {
-                    if (catalogId) void run(() => linkCatalog(batchId, catalogId), "Catalog linked.");
+                    if (catalogId) void run(() => linkCatalog(batchId, catalogId), "Catalog linked.", "link");
                   }}
-                  disabled={rosterLocked}
+                  disabled={rosterLocked || pendingAction !== null}
                 >
                   Link catalog
                 </Button>
@@ -228,8 +265,14 @@ function AdminBatchDetail() {
                       <Button
                         type="button"
                         variant="quiet"
+                        pending={pendingAction === `unassign-${assignment.assignmentId}`}
+                        pendingLabel="Removing…"
                         onClick={() =>
-                          void run(() => unassignOrderItem(assignment.orderItemId, batchId), "Assignment removed.")
+                          void run(
+                            () => unassignOrderItem(assignment.orderItemId, batchId),
+                            "Assignment removed.",
+                            `unassign-${assignment.assignmentId}`,
+                          )
                         }
                       >
                         Unassign
@@ -245,6 +288,7 @@ function AdminBatchDetail() {
                                 void run(
                                   () => moveOrderItem(assignment.orderItemId, batchId, event.target.value),
                                   "Assignment moved.",
+                                  `move-${assignment.assignmentId}`,
                                 );
                               }
                             }}
@@ -353,7 +397,9 @@ function AdminBatchDetail() {
                   <Button
                     type="button"
                     variant="secondary"
-                    disabled={rosterLocked}
+                    pending={pendingAction === `assign-${item.orderItemId}`}
+                    pendingLabel="Assigning…"
+                    disabled={rosterLocked || pendingAction !== null}
                     onClick={() =>
                       void run(
                         () =>
@@ -363,6 +409,7 @@ function AdminBatchDetail() {
                             item.assignedToBatchQuantity + item.remainingQuantity,
                           ),
                         "Remaining quantity assigned.",
+                        `assign-${item.orderItemId}`,
                       )
                     }
                   >

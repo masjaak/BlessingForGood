@@ -6,14 +6,32 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonTable,
+  StatusBadge,
+} from "@/components/ui";
 import { nextOrderStatuses, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function OrderTable() {
-  const { state, updateOrderStatus, dataSource } = useProduct();
+  const { state, updateOrderStatus, dataSource, ordersLoading } = useProduct();
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  if (ordersLoading) {
+    return (
+      <LoadingRegion label="Memuat pesanan">
+        <SkeletonTable rows={6} />
+      </LoadingRegion>
+    );
+  }
   if (state.orders.length === 0)
     return (
       <EmptyState
@@ -83,9 +101,16 @@ function OrderTable() {
                       className="select"
                       aria-label={`Update status for ${order.id}`}
                       defaultValue=""
-                      onChange={(event) => {
+                      disabled={pendingOrderId !== null}
+                      onChange={async (event) => {
                         const next = event.target.value as OrderStatus;
-                        if (next) void updateOrderStatus(order.id, next);
+                        if (!next) return;
+                        setPendingOrderId(order.id);
+                        try {
+                          await updateOrderStatus(order.id, next);
+                        } finally {
+                          setPendingOrderId(null);
+                        }
                       }}
                     >
                       <option value="">Choose stage…</option>
@@ -235,8 +260,8 @@ function ConvexAssistedOrderForm() {
               Server price:{" "}
               {selectedVariant ? `IDR ${selectedVariant.price.toLocaleString("id-ID")}` : "choose a variant"}
             </span>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Recording…" : "Record assisted order"}
+            <Button type="submit" pending={submitting} pendingLabel="Recording…">
+              Record assisted order
             </Button>
           </div>
           {message ? (

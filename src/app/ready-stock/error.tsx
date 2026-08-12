@@ -1,12 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui";
+import { Button, ErrorState } from "@/components/ui";
 
 export default function ReadyStockError({ reset }: { reset: () => void }) {
   return (
-    <div className="state-panel" role="alert">
-      <p>Ready Stock tidak dapat dimuat.</p>
-      <Button onClick={reset}>Coba lagi</Button>
-    </div>
+    <ErrorState
+      title="Ready Stock tidak dapat dimuat."
+      description="Coba lagi atau kembali ke beranda."
+      action={<Button onClick={reset}>Coba lagi</Button>}
+    />
   );
 }

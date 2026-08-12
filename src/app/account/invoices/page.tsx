@@ -1,6 +1,15 @@
 "use client";
 
-import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -10,7 +19,14 @@ import { SiteShell } from "@/components/site-shell";
 function PersistentCustomerInvoices() {
   const { customerInvoiceList } = useOperations();
   const invoices = customerInvoiceList?.page || [];
-  if (!customerInvoiceList) return <div className="state-panel">Menyiapkan invoice…</div>;
+  if (!customerInvoiceList) {
+    return (
+      <LoadingRegion label="Memuat invoice">
+        <SkeletonCard variant="invoice" />
+        <SkeletonCard variant="invoice" />
+      </LoadingRegion>
+    );
+  }
   return (
     <div className="page narrow-page">
       <PageHeader

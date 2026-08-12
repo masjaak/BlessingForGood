@@ -5,7 +5,7 @@ import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Button, Card, Field, Money, StatusBadge } from "@/components/ui";
+import { Button, Card, Field, LoadingRegion, Money, SkeletonText, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 type CustomerException = Awaited<FunctionReturnType<typeof api.orderExceptions.listMineForOrder>>[number];
@@ -41,6 +41,7 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!eligibility || eligibility.decision === "not_eligible") return null;
   if (!open) {
@@ -56,12 +57,15 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
       onSubmit={async (event) => {
         event.preventDefault();
         setMessage("");
+        setIsSubmitting(true);
         try {
           await request({ orderItemId: item.id as Id<"orderItems">, reason });
           setMessage("Permintaan pembatalan sudah dikirim untuk ditinjau.");
           setReason("");
         } catch (error) {
           setMessage(error instanceof Error ? error.message : "Permintaan belum dapat dikirim.");
+        } finally {
+          setIsSubmitting(false);
         }
       }}
     >
@@ -69,7 +73,9 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
         <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} required />
       </Field>
       <div className="form-actions">
-        <Button type="submit">Kirim permintaan</Button>
+        <Button type="submit" pending={isSubmitting} pendingLabel="Mengirim…">
+          Kirim permintaan
+        </Button>
         <Button type="button" variant="quiet" onClick={() => setOpen(false)}>
           Tutup
         </Button>
@@ -129,7 +135,18 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
     api.orderExceptions.listMineForOrder,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
   );
-  if (dataSource !== "convex" || exceptions === undefined) return null;
+  if (dataSource !== "convex") return null;
+  if (exceptions === undefined) {
+    return (
+      <Card>
+        <LoadingRegion label="Memuat masalah pesanan">
+          <SkeletonText width="42%" />
+          <SkeletonText width="82%" />
+          <SkeletonText width="64%" />
+        </LoadingRegion>
+      </Card>
+    );
+  }
   return (
     <Card>
       <div className="split-heading">

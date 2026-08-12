@@ -2,7 +2,16 @@
 
 import { useParams } from "next/navigation";
 import { CustomerOrderExceptions } from "@/components/customer-order-exceptions";
-import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { fulfillmentStageLabels, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -37,11 +46,20 @@ function Timeline({
 function CustomerOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
-  const { dataSource, state } = useProduct();
+  const { dataSource, ordersLoading, state } = useProduct();
   const { currentCustomerTracking, currentCustomerFulfillment, customerInvoiceList } = useOperations();
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (dataSource !== "convex") {
     return <div className="state-panel">Tracking belum tersedia saat ini.</div>;
+  }
+  if (ordersLoading || currentCustomerTracking === undefined || currentCustomerFulfillment === undefined) {
+    return (
+      <LoadingRegion label="Memuat tracking pesanan">
+        <SkeletonCard variant="order" />
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
   }
   if (!order) {
     return (
@@ -52,8 +70,6 @@ function CustomerOrderDetail() {
       />
     );
   }
-  if (!currentCustomerTracking || !currentCustomerFulfillment)
-    return <div className="state-panel">Menyiapkan tracking…</div>;
   const invoice = customerInvoiceList?.page.find((candidate) => candidate.orderId === orderId);
   return (
     <div className="page narrow-page">

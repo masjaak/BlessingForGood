@@ -6,7 +6,16 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -30,8 +39,15 @@ function CustomerDetail() {
   const invoices = (adminInvoiceList?.page || []).filter((invoice) => String(invoice.customerUserId) === customerId);
   const customerExceptions = exceptions?.filter((exception) => String(exception.customerUserId) === customerId) || [];
 
-  if (profile === undefined || addresses === undefined || !adminInvoiceList || exceptions === undefined)
-    return <div className="state-panel">Menyiapkan detail customer…</div>;
+  if (profile === undefined || addresses === undefined || !adminInvoiceList || exceptions === undefined) {
+    return (
+      <LoadingRegion label="Memuat detail customer">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   const name = profile?.displayName || orders[0]?.customerName || "Customer BFG";
   return (
     <div className="page admin-page">

@@ -7,7 +7,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -46,16 +46,20 @@ function JoinRequestCard({
   const [rejectionReason, setRejectionReason] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const requestId = request.joinRequestId as Id<"joinRequests">;
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage("");
     setError("");
+    setPendingAction(success);
     try {
       await action();
       setMessage(success);
     } catch {
       setError("That review action is no longer available. Refresh the queue and try again.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -86,6 +90,8 @@ function JoinRequestCard({
         <Button
           type="button"
           variant="secondary"
+          pending={pendingAction === "Review started."}
+          pendingLabel="Starting…"
           onClick={() => void run(() => startReview(requestId), "Review started.")}
         >
           Start review
@@ -107,6 +113,8 @@ function JoinRequestCard({
           <div className="form-actions">
             <Button
               type="button"
+              pending={pendingAction === "Approved; ready for manual invitation."}
+              pendingLabel="Approving…"
               onClick={() =>
                 void run(() => approve(requestId, reviewNote || undefined), "Approved; ready for manual invitation.")
               }
@@ -117,6 +125,8 @@ function JoinRequestCard({
               type="button"
               variant="danger"
               disabled={!rejectionReason.trim()}
+              pending={pendingAction === "Request rejected."}
+              pendingLabel="Rejecting…"
               onClick={() =>
                 void run(() => reject(requestId, rejectionReason, reviewNote || undefined), "Request rejected.")
               }
@@ -200,7 +210,12 @@ function ConnectedJoinRequests() {
               />
             </Field>
           </Card>
-          {filteredRequests === undefined ? <div className="state-panel">Loading join requests…</div> : null}
+          {filteredRequests === undefined ? (
+            <LoadingRegion label="Memuat permintaan join">
+              <SkeletonCard />
+              <SkeletonCard />
+            </LoadingRegion>
+          ) : null}
           {filteredRequests?.length ? (
             filteredRequests.map((request) => (
               <JoinRequestCard

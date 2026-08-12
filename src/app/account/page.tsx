@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { customerActivity, outstandingRefundObligation } from "@/domain/customer-activity";
@@ -11,10 +20,23 @@ import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
 
 function AccountDashboard() {
-  const { state } = useProduct();
+  const { state, ordersLoading } = useProduct();
   const { customerInvoiceList, customerAccount, customerTransactions, customerExceptionList } = useOperations();
-  if (!customerInvoiceList || !customerAccount || !customerTransactions || !customerExceptionList) {
-    return <div className="state-panel">Menyiapkan ringkasan akun…</div>;
+  if (ordersLoading || !customerInvoiceList || !customerAccount || !customerTransactions || !customerExceptionList) {
+    return (
+      <div className="page account-dashboard">
+        <PageHeader
+          eyebrow="Akun Blessfriends"
+          title="Semua yang perlu kamu ikuti, dalam satu tempat."
+          description="Menyiapkan ringkasan pesanan, invoice, deposit, dan aktivitasmu."
+        />
+        <LoadingRegion label="Memuat ringkasan akun">
+          <SkeletonCard variant="account" />
+          <SkeletonCard variant="account" />
+          <SkeletonCard variant="account" />
+        </LoadingRegion>
+      </div>
+    );
   }
 
   const invoices = customerInvoiceList.page;

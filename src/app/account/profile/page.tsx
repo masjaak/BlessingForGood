@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, Field, PageHeader } from "@/components/ui";
+import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 import { BackButton } from "@/components/back-button";
 
 function ProfileForm() {
@@ -15,6 +15,7 @@ function ProfileForm() {
   const [phone, setPhone] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -28,12 +29,23 @@ function ProfileForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSaving(true);
     try {
       await save({ displayName, phone: phone || undefined, whatsappNumber: whatsappNumber || undefined });
       setMessage("Profil tersimpan.");
     } catch {
       setMessage("Profil belum dapat disimpan.");
+    } finally {
+      setIsSaving(false);
     }
+  }
+
+  if (profile === undefined) {
+    return (
+      <LoadingRegion label="Memuat profil">
+        <SkeletonCard />
+      </LoadingRegion>
+    );
   }
 
   return (
@@ -53,7 +65,7 @@ function ProfileForm() {
         <Field label="WhatsApp">
           <input className="input" value={whatsappNumber} onChange={(event) => setWhatsappNumber(event.target.value)} />
         </Field>
-        <Button type="submit" disabled={profile === undefined}>
+        <Button type="submit" pending={isSaving} pendingLabel="Menyimpan…">
           Simpan profil
         </Button>
         {message ? (

@@ -3,7 +3,17 @@
 import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
@@ -15,9 +25,11 @@ function CreateBatchForm() {
   const [referenceCode, setReferenceCode] = useState("");
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSubmitting(true);
     try {
       await createBatch({ name, referenceCode: referenceCode || undefined, description: description || undefined });
       setName("");
@@ -26,6 +38,8 @@ function CreateBatchForm() {
       setMessage("Batch berhasil dibuat.");
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Batch belum dapat dibuat");
+    } finally {
+      setIsSubmitting(false);
     }
   }
   return (
@@ -45,7 +59,9 @@ function CreateBatchForm() {
           <textarea className="textarea" value={description} onChange={(event) => setDescription(event.target.value)} />
         </Field>
         <div className="form-actions">
-          <Button type="submit">Buat batch</Button>
+          <Button type="submit" pending={isSubmitting} pendingLabel="Membuat…">
+            Buat batch
+          </Button>
           {message ? (
             <span className="subtle" role="status">
               {message}
@@ -60,7 +76,14 @@ function CreateBatchForm() {
 function AdminBatches() {
   const { batchList } = useOperations();
   const { state } = useProduct();
-  if (!batchList) return <div className="state-panel">Memuat batch…</div>;
+  if (!batchList) {
+    return (
+      <LoadingRegion label="Memuat batch">
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   return (
     <div className="page admin-page">
       <PageHeader

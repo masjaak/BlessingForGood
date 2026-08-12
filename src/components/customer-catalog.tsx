@@ -7,10 +7,20 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
-import { Button, Card, Field, LinkButton, Money, PageHeader } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+} from "@/components/ui";
 
 export function CustomerCatalog() {
-  const { unlockedCatalog: catalog, unlockCatalog, submitOrder, sessionRole } = useProduct();
+  const { unlockedCatalog: catalog, catalogLoading, unlockCatalog, submitOrder, sessionRole } = useProduct();
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
@@ -105,6 +115,15 @@ export function CustomerCatalog() {
     );
   }
 
+  if (!catalog && catalogLoading) {
+    return (
+      <LoadingRegion label="Memuat katalog">
+        <SkeletonCard variant="book" />
+        <SkeletonCard variant="book" />
+      </LoadingRegion>
+    );
+  }
+
   if (!catalog) {
     return (
       <div className="catalog-access">
@@ -129,8 +148,8 @@ export function CustomerCatalog() {
                 {accessError}
               </p>
             ) : null}
-            <Button type="submit" disabled={isUnlocking}>
-              {isUnlocking ? "Memeriksa akses…" : "Buka katalog"}
+            <Button type="submit" pending={isUnlocking} pendingLabel="Memeriksa…">
+              Buka katalog
             </Button>
           </form>
         </Card>
@@ -143,6 +162,27 @@ export function CustomerCatalog() {
             Buka bantuan →
           </LinkButton>
         </Card>
+      </div>
+    );
+  }
+
+  if (catalog.books.length === 0) {
+    return (
+      <div className="content-stack">
+        <PageHeader
+          eyebrow="Katalog terbuka"
+          title={catalog.name}
+          description="Katalog ini sudah terbuka, tetapi belum memiliki buku yang dapat dipilih."
+        />
+        <EmptyState
+          title="Belum ada buku di katalog"
+          description="Admin BFG perlu menambahkan judul dan varian nyata sebelum preorder dapat dicatat."
+          action={
+            <LinkButton href="/help" variant="secondary">
+              Buka bantuan
+            </LinkButton>
+          }
+        />
       </div>
     );
   }
@@ -266,8 +306,13 @@ export function CustomerCatalog() {
                   {submitError}
                 </p>
               ) : null}
-              <Button type="submit" disabled={isSubmitting || selectedItems.length === 0}>
-                {isSubmitting ? "Mencatat…" : "Catat preorder"}
+              <Button
+                type="submit"
+                pending={isSubmitting}
+                pendingLabel="Mencatat…"
+                disabled={selectedItems.length === 0}
+              >
+                Catat preorder
               </Button>
             </form>
           ) : (

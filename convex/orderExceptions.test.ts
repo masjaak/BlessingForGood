@@ -245,6 +245,21 @@ describe("BFG order exception workflow", () => {
       refundObligationAmount: 125000,
       refundObligationStatus: "refund_due",
     });
+    expect(await customer.query(api.invoices.getMine, { invoiceId: invoice.invoiceId })).toMatchObject({
+      invoiceId: invoice.invoiceId,
+      adjustedTotalAmount: 0,
+      refundObligationAmount: 125000,
+      refundObligationStatus: "refund_due",
+    });
+    expect(await customer.query(api.orderExceptions.listMineForOrder, { orderId: order.orderId })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "customer_cancellation",
+          status: "resolved",
+          financialImpact: expect.objectContaining({ refundObligationStatus: "refund_due" }),
+        }),
+      ]),
+    );
   });
 
   it("releases active deposit allocations once, restores availability, and does not execute a payout", async () => {

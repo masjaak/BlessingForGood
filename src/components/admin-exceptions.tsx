@@ -6,7 +6,18 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { Button, Card, EmptyState, Field, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 type AdminException = Awaited<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>[number];
@@ -52,12 +63,14 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
   const [customerNote, setCustomerNote] = useState("");
   const [internalNote, setInternalNote] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedOrder = orders.find((order) => order.orderId === orderId);
   const selectedItem = selectedOrder?.items.find((item) => item._id === itemId);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSubmitting(true);
     try {
       await open({
         orderItemId: itemId as Id<"orderItems">,
@@ -75,6 +88,8 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
       setMessage("Masalah berhasil dibuka.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Masalah belum dapat dibuka.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -155,7 +170,9 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
           </Field>
         </div>
         <div className="form-actions">
-          <Button type="submit">Buka masalah</Button>
+          <Button type="submit" pending={isSubmitting} pendingLabel="Membuka…">
+            Buka masalah
+          </Button>
           {message ? (
             <span className="subtle" role="status">
               {message}
@@ -175,14 +192,18 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
   const [resolution, setResolution] = useState<Resolution>("remove_item");
   const [rejectionReason, setRejectionReason] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage("");
+    setPendingAction(success);
     try {
       await action();
       setMessage(success);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Operasi masalah gagal.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -254,6 +275,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
         <div className="form-actions">
           <Button
             type="button"
+            pending={pendingAction === "Tinjauan dimulai."}
+            pendingLabel="Memulai…"
             onClick={() => void run(() => startReview({ exceptionId: exception.exceptionId }), "Tinjauan dimulai.")}
           >
             Mulai tinjauan
@@ -275,6 +298,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </select>
           <Button
             type="button"
+            pending={pendingAction === "Resolusi dipilih."}
+            pendingLabel="Menyimpan…"
             onClick={() =>
               void run(() => selectResolution({ exceptionId: exception.exceptionId, resolution }), "Resolusi dipilih.")
             }
@@ -290,6 +315,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </span>
           <Button
             type="button"
+            pending={pendingAction === "Masalah diselesaikan."}
+            pendingLabel="Menyelesaikan…"
             onClick={() => void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan.")}
           >
             Selesaikan
@@ -308,6 +335,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           <Button
             type="button"
             variant="danger"
+            pending={pendingAction === "Masalah ditolak."}
+            pendingLabel="Menolak…"
             onClick={() =>
               void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak.")
             }
@@ -350,7 +379,14 @@ export function AdminExceptions() {
   );
   const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
   if (dataSource !== "convex") return <div className="state-panel">Antrian masalah belum tersedia.</div>;
-  if (!orders || !exceptions) return <div className="state-panel">Memuat operasi masalah…</div>;
+  if (!orders || !exceptions) {
+    return (
+      <LoadingRegion label="Memuat operasi masalah">
+        <SkeletonCard />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   return (
     <div className="page admin-page">
       <PageHeader

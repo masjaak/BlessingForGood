@@ -3,12 +3,28 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { BookCover } from "@/components/book-cover";
-import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 function ConnectedDetail({ slug }: { slug: string }) {
   const book = useQuery(api.readyStock.getBySlug, { slug });
-  if (book === undefined) return <div className="state-panel">Memuat detail buku…</div>;
+  if (book === undefined) {
+    return (
+      <LoadingRegion label="Memuat detail buku">
+        <SkeletonCard variant="book" />
+        <SkeletonCard />
+      </LoadingRegion>
+    );
+  }
   if (!book)
     return (
       <EmptyState
