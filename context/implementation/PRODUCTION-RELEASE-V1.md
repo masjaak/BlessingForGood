@@ -1,4 +1,4 @@
-# BFG Production Release V1
+# BFG Production Release V1 (historical baseline; V3 supersedes this record)
 
 Date: 2026-08-11
 Status: **CUSTOMER_PRODUCTION_BLOCKED**

@@ -7,6 +7,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, PageHeader } from "@/components/ui";
+import { BackButton } from "@/components/back-button";
 
 const emptyForm = {
   label: "",
@@ -130,6 +131,7 @@ export default function AddressesPage() {
     <SiteShell>
       <ProductAccessGuard requiredRole="customer">
         <div className="page narrow-page">
+          <BackButton fallback="/account" />
           <PageHeader
             eyebrow="Akun"
             title="Alamat pengiriman"

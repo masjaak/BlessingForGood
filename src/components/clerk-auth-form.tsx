@@ -25,7 +25,13 @@ export function ClerkAuthForm({
     );
 
   return mode === "sign-in" ? (
-    <SignIn path="/sign-in" routing="path" fallbackRedirectUrl={redirectUrl} appearance={bfgClerkAppearance} />
+    <SignIn
+      path="/sign-in"
+      routing="path"
+      fallbackRedirectUrl={redirectUrl}
+      withSignUp={false}
+      appearance={bfgClerkAppearance}
+    />
   ) : (
     <SignUp path="/sign-up" routing="path" fallbackRedirectUrl={redirectUrl} appearance={bfgClerkAppearance} />
   );

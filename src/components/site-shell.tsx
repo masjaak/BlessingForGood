@@ -155,7 +155,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
         )}
         <div className="site-auth" aria-label="Account access">
           {!signedIn ? (
-            <SignInButton mode="redirect">Masuk</SignInButton>
+            <SignInButton mode="redirect" withSignUp={false}>
+              Masuk
+            </SignInButton>
           ) : (
             <UserButton appearance={bfgClerkAppearance} />
           )}

@@ -124,7 +124,8 @@ export interface PrototypeState {
 
 export interface CreateCatalogInput {
   name: string;
-  accessCode: string;
+  accessCode?: string;
+  accessCodeExpiresAt?: string | null;
   closingAt: string | null;
   publisher: string;
   title: string;
@@ -133,6 +134,11 @@ export interface CreateCatalogInput {
     isbn: string;
     price: number;
   }>;
+}
+
+export interface CreateCatalogResult {
+  catalog: SecretCatalog;
+  accessCode: string;
 }
 
 export interface CreateOrderInput {

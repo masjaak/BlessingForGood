@@ -3,6 +3,7 @@
 import { createContext } from "react";
 import type {
   CreateCatalogInput,
+  CreateCatalogResult,
   CreateOrderInput,
   Order,
   OrderStatus,
@@ -18,6 +19,7 @@ export type ProductAuthState =
   | "convex-loading"
   | "provisioning"
   | "authenticated"
+  | "admission-required"
   | "suspended"
   | "network-error"
   | "configuration-missing";
@@ -30,7 +32,7 @@ export interface ProductContextValue {
   authState: ProductAuthState;
   state: PrototypeState;
   unlockedCatalog: SecretCatalog | undefined;
-  createCatalog: (input: CreateCatalogInput) => Promise<SecretCatalog>;
+  createCatalog: (input: CreateCatalogInput) => Promise<CreateCatalogResult>;
   unlockCatalog: (accessCode: string) => Promise<SecretCatalog | undefined>;
   submitOrder: (catalogId: string, input: CreateOrderInput) => Promise<Order>;
   updateOrderStatus: (orderId: string, nextStatus: OrderStatus) => void | Promise<void>;

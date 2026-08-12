@@ -6,6 +6,7 @@ import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { joinRequestStatusValidator } from "./validators";
+import { joinRequestBookInterestValidator } from "./validators";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 
@@ -31,10 +32,12 @@ function normalizeEmail(value: string): string {
 }
 
 function normalizeContact(value: string): string {
-  const contact = requiredText(value, "contact", 80)
-    .toLowerCase()
-    .replace(/[\s().-]+/g, "");
-  if (contact.length < 5) fail("VALIDATION_FAILED", "contact is invalid");
+  const contact = requiredText(value, "contact", 80).toLowerCase().replace(/[\s().-]+/g, "");
+  const digits = contact.replace(/\D/g, "");
+  if (digits.length < 5) fail("VALIDATION_FAILED", "contact is invalid");
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  if (digits.startsWith("62")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+62${digits.slice(1)}`;
   return contact;
 }
 
@@ -61,6 +64,7 @@ function requestView(request: Doc<"joinRequests">) {
     email: request.email,
     contact: request.contact,
     city: request.city ?? null,
+    bookInterest: request.bookInterest ?? null,
     note: request.note ?? null,
     source: request.source,
     acknowledged: request.acknowledged,
@@ -91,7 +95,8 @@ export const submit = mutation({
     name: v.string(),
     email: v.string(),
     contact: v.string(),
-    city: v.optional(v.string()),
+    city: v.string(),
+    bookInterest: joinRequestBookInterestValidator,
     note: v.optional(v.string()),
     acknowledged: v.boolean(),
   },
@@ -101,6 +106,7 @@ export const submit = mutation({
     const email = normalizeEmail(args.email);
     const contact = requiredText(args.contact, "contact", 80);
     const normalizedContact = normalizeContact(contact);
+    const city = requiredText(args.city, "area", 120);
     if ((await hasActiveEmailDuplicate(ctx, email)) || (await hasActiveContactDuplicate(ctx, normalizedContact))) {
       fail("JOIN_REQUEST_DUPLICATE");
     }
@@ -111,7 +117,8 @@ export const submit = mutation({
       normalizedEmail: email,
       contact,
       normalizedContact,
-      city: optionalText(args.city, "city", 120),
+      city,
+      bookInterest: args.bookInterest,
       note: optionalText(args.note, "note", 500),
       source: "website",
       acknowledged: true,
@@ -121,7 +128,17 @@ export const submit = mutation({
       createdAt: now,
       updatedAt: now,
     });
-    return { joinRequestId, status: "submitted" as const };
+    const configuredGroupUrl = process.env.BFG_JOIN_WHATSAPP_GROUP_URL;
+    let whatsappGroupUrl: string | null = null;
+    if (configuredGroupUrl) {
+      try {
+        const url = new URL(configuredGroupUrl);
+        if (url.protocol === "https:" || url.protocol === "http:") whatsappGroupUrl = url.toString();
+      } catch {
+        whatsappGroupUrl = null;
+      }
+    }
+    return { joinRequestId, status: "submitted" as const, whatsappGroupUrl };
   },
 });
 

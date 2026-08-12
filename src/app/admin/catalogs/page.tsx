@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, PageHeader, StatusBadge } from "@/components/ui";
@@ -21,7 +23,7 @@ const initialVariants: VariantDrafts = {
 function CatalogForm() {
   const { createCatalog } = useProduct();
   const [name, setName] = useState("");
-  const [accessCode, setAccessCode] = useState("");
+  const [accessCodeExpiresAt, setAccessCodeExpiresAt] = useState("");
   const [closingAt, setClosingAt] = useState("");
   const [publisher, setPublisher] = useState("");
   const [title, setTitle] = useState("");
@@ -44,17 +46,18 @@ function CatalogForm() {
         price: Number(variants[format].price),
       }));
       if (closingAt && Number.isNaN(new Date(closingAt).getTime())) throw new Error("closing date is invalid");
-      const catalog = await createCatalog({
+      const result = await createCatalog({
         name,
-        accessCode,
+        accessCodeExpiresAt: accessCodeExpiresAt || null,
         closingAt: closingAt ? new Date(closingAt).toISOString() : null,
         publisher,
         title,
         variants: selected,
       });
-      setSaved(`${catalog.name} sudah terbuka untuk customer yang memiliki akses.`);
+      setSaved(`${result.catalog.name} sudah terbuka untuk customer yang memiliki akses.`);
+      setGeneratedCode(result.accessCode);
       setName("");
-      setAccessCode("");
+      setAccessCodeExpiresAt("");
       setClosingAt("");
       setPublisher("");
       setTitle("");
@@ -63,6 +66,8 @@ function CatalogForm() {
       setError(productErrorMessage(reason, "Catalog could not be created"));
     }
   }
+
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
 
   return (
     <Card className="form-card">
@@ -79,16 +84,6 @@ function CatalogForm() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="e.g. Autumn reading list"
-              required
-            />
-          </Field>
-          <Field label="Access code">
-            <input
-              className="input"
-              type="password"
-              value={accessCode}
-              onChange={(event) => setAccessCode(event.target.value)}
-              autoComplete="new-password"
               required
             />
           </Field>
@@ -109,6 +104,14 @@ function CatalogForm() {
               type="datetime-local"
               value={closingAt}
               onChange={(event) => setClosingAt(event.target.value)}
+            />
+          </Field>
+          <Field label="Kode berakhir" hint="Opsional. Kode baru hanya ditampilkan sekali setelah dibuat.">
+            <input
+              className="input"
+              type="datetime-local"
+              value={accessCodeExpiresAt}
+              onChange={(event) => setAccessCodeExpiresAt(event.target.value)}
             />
           </Field>
         </div>
@@ -159,6 +162,20 @@ function CatalogForm() {
             {saved}
           </p>
         ) : null}
+        {generatedCode ? (
+          <div className="catalog-code-result" role="status">
+            <strong>Kode akses baru</strong>
+            <code>{generatedCode}</code>
+            <p>Simpan atau bagikan sekarang. Kode mentah tidak dapat dilihat lagi setelah panel ini ditutup.</p>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void navigator.clipboard?.writeText(generatedCode)}
+            >
+              Salin kode
+            </Button>
+          </div>
+        ) : null}
         <Button type="submit">Create open catalog</Button>
       </form>
     </Card>
@@ -167,6 +184,11 @@ function CatalogForm() {
 
 function CatalogList() {
   const { state, closeCatalog } = useProduct();
+  const generateCode = useMutation(api.catalogAccess.generateCode);
+  const revokeCode = useMutation(api.catalogAccess.revokeCode);
+  const [generatedCodes, setGeneratedCodes] = useState<Record<string, string>>({});
+  const [codeExpiresAt, setCodeExpiresAt] = useState<Record<string, string>>({});
+  const [codeError, setCodeError] = useState("");
   if (state.catalogs.length === 0)
     return (
       <EmptyState
@@ -197,6 +219,66 @@ function CatalogList() {
           <div className="summary-line">
             <span>{catalog.books[0]?.title}</span>
             <span>{catalog.books[0]?.variants.length} format variants</span>
+          </div>
+          {generatedCodes[catalog.id] ? (
+            <div className="catalog-code-result">
+              <strong>Kode akses baru</strong>
+              <code>{generatedCodes[catalog.id]}</code>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void navigator.clipboard?.writeText(generatedCodes[catalog.id])}
+              >
+                Salin kode
+              </Button>
+            </div>
+          ) : null}
+          {codeError ? <p className="error-text">{codeError}</p> : null}
+          <div className="actions">
+            <Field label="New code expiry" hint="Opsional">
+              <input
+                className="input"
+                type="datetime-local"
+                value={codeExpiresAt[catalog.id] || ""}
+                onChange={(event) => setCodeExpiresAt((current) => ({ ...current, [catalog.id]: event.target.value }))}
+              />
+            </Field>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={async () => {
+                setCodeError("");
+                try {
+                  const expiresAt = codeExpiresAt[catalog.id] ? Date.parse(codeExpiresAt[catalog.id]) : undefined;
+                  if (expiresAt !== undefined && Number.isNaN(expiresAt)) throw new Error("expiry is invalid");
+                  const result = await generateCode({ catalogId: catalog.id as never, expiresAt });
+                  setGeneratedCodes((current) => ({ ...current, [catalog.id]: result.code }));
+                } catch (reason) {
+                  setCodeError(productErrorMessage(reason, "Kode belum dapat dibuat."));
+                }
+              }}
+            >
+              Generate access code
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={async () => {
+                setCodeError("");
+                try {
+                  await revokeCode({ catalogId: catalog.id as never });
+                  setGeneratedCodes((current) => {
+                    const next = { ...current };
+                    delete next[catalog.id];
+                    return next;
+                  });
+                } catch (reason) {
+                  setCodeError(productErrorMessage(reason, "Kode belum dapat dicabut."));
+                }
+              }}
+            >
+              Revoke access code
+            </Button>
           </div>
           {catalog.status === "open" ? (
             <Button variant="danger" onClick={() => closeCatalog(catalog.id)}>

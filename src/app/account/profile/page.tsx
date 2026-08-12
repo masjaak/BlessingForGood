@@ -6,6 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, PageHeader } from "@/components/ui";
+import { BackButton } from "@/components/back-button";
 
 function ProfileForm() {
   const profile = useQuery(api.customerProfiles.getMine, {});
@@ -70,6 +71,7 @@ export default function ProfilePage() {
     <SiteShell>
       <ProductAccessGuard requiredRole="customer">
         <div className="page narrow-page">
+          <BackButton fallback="/account" />
           <PageHeader
             eyebrow="Akun"
             title="Profil Blessfriend"

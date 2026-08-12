@@ -113,6 +113,26 @@ Phase 04.1 records the following approved implementation decisions:
 - Active Preview must use Clerk identity only. Legacy prototype sessions are
   isolated and disabled.
 
+## Homepage / Join / Secret Catalog V3 decisions
+
+- Homepage discovery is a short mobile-first story: three anchored quick
+  paths, native horizontal story cards, current order explanation, and a Join
+  CTA. Official logo and Blessy assets remain the only brand visuals.
+- Public signup is disabled at both surfaces: Clerk sign-in renders with
+  `withSignUp=false`, and `/sign-up` requires Clerk's `__clerk_ticket` invitation
+  parameter. A valid invitation completion remains allowed.
+- A non-owner Clerk identity may provision an `appUsers` customer only when its
+  normalized email matches an approved, invitation-ready `joinRequests` row.
+  Authentication alone never grants BFG membership or catalog access.
+- New Secret Catalog codes are generated with Web Crypto, returned only in the
+  immediate admin mutation result, and stored only as peppered HMAC digests.
+  `catalogAccess.revokeCode` prevents new grants; existing grants retain the
+  current expiry/closed-catalog behavior until their authoritative checks fail.
+- Join captures name, email, normalized phone, area/city, one primary book
+  interest, and optional note. `BFG_JOIN_WHATSAPP_GROUP_URL` is returned only
+  after the request mutation commits; missing configuration produces a safe
+  continuation message rather than a dummy link.
+
 The remaining prototype decisions below are historical and do not override the
 Phase 04.1 identity boundary.
 

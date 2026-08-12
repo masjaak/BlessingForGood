@@ -8,7 +8,8 @@ type RequestInput = {
   name: string;
   email: string;
   contact: string;
-  city?: string;
+  city: string;
+  bookInterest: "Children Books" | "Collector Books" | "Novel";
   note?: string;
   acknowledged: boolean;
 };
@@ -18,7 +19,8 @@ function requestInput(overrides: Partial<RequestInput> = {}): RequestInput {
     name: "Ada Reader",
     email: "Ada.Reader@example.com",
     contact: "+62 812-3456-7890",
-    city: "Jakarta",
+    city: "Jakarta Selatan",
+    bookInterest: "Children Books",
     note: "I would like to join the reading community.",
     acknowledged: true,
     ...overrides,
@@ -44,6 +46,7 @@ describe("BFG join request workflow", () => {
       invitationStatus: "not_ready",
       email: "ada.reader@example.com",
       normalizedContact: "+6281234567890",
+      bookInterest: "Children Books",
       source: "website",
     });
   });
@@ -56,6 +59,9 @@ describe("BFG join request workflow", () => {
     );
     await expect(
       t.mutation(api.joinRequests.submit, requestInput({ contact: "+62 812 3456 7890", email: "other@example.com" })),
+    ).rejects.toThrow("JOIN_REQUEST_DUPLICATE");
+    await expect(
+      t.mutation(api.joinRequests.submit, requestInput({ contact: "081234567890", email: "another@example.com" })),
     ).rejects.toThrow("JOIN_REQUEST_DUPLICATE");
     await expect(t.query(api.joinRequests.listForAdmin, {})).rejects.toThrow("IDENTITY_REQUIRED");
     expect(submitted.joinRequestId).toBeDefined();

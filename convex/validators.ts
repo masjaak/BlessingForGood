@@ -43,6 +43,11 @@ export const joinRequestStatusValidator = v.union(
   v.literal("rejected"),
 );
 export const joinRequestInvitationStatusValidator = v.union(v.literal("not_ready"), v.literal("ready"));
+export const joinRequestBookInterestValidator = v.union(
+  v.literal("Children Books"),
+  v.literal("Collector Books"),
+  v.literal("Novel"),
+);
 export const orderSourceValidator = v.union(v.literal("customer_self_service"), v.literal("admin_assisted"));
 export const depositRequirementModeValidator = v.union(v.literal("none"), v.literal("fixed"), v.literal("percentage"));
 export const depositTransactionTypeValidator = v.union(

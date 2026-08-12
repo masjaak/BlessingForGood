@@ -56,6 +56,17 @@ export const ensureCurrentUser = mutation({
       if (!updated) fail("USER_NOT_FOUND");
       return appUserView(updated);
     }
+    if (identity.subject !== ownerClerkUserId) {
+      const normalizedEmail = identity.email?.trim().toLowerCase();
+      if (!normalizedEmail) fail("ADMISSION_REQUIRED");
+      const approvedRequest = await ctx.db
+        .query("joinRequests")
+        .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
+        .filter((query) => query.eq(query.field("status"), "approved"))
+        .filter((query) => query.eq(query.field("invitationStatus"), "ready"))
+        .first();
+      if (!approvedRequest) fail("ADMISSION_REQUIRED");
+    }
     const userId = await ctx.db.insert("appUsers", {
       clerkUserId: identity.subject,
       role: identity.subject === ownerClerkUserId ? "owner" : "customer",

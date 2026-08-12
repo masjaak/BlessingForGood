@@ -95,6 +95,7 @@ export async function createCatalogFromInput(input: CreateCatalogInput, now = ne
     };
   });
 
+  if (!input.accessCode) throw new Error("access code is required for local catalog logic");
   return {
     id: createId("catalog"),
     name,

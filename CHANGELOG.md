@@ -2,11 +2,33 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-11
+last_updated: 2026-08-12
 source: conversation
 ---
 
 # Changelog
+
+## [homepage-join-v3] — 2026-08-12
+
+### Changed
+
+- Added the mobile-first BFG homepage story, numbered Quick Paths, concise
+  How to Order journey, and Join Blessfriends CTA using the existing shell,
+  official logo, and Blessy mascot.
+- Extended canonical `joinRequests` with required area and primary book
+  interest, Indonesian phone normalization, and post-persistence WhatsApp
+  continuation configuration.
+- Enforced invite-only admission across Clerk presentation, the public
+  `/sign-up` route, and Convex `appUsers` provisioning.
+- Added safe BFG Back controls, generated/hashed/revocable Secret Catalog
+  codes, and server-side failed-attempt tracking without changing financial
+  or order domains.
+
+### QA
+
+- Vitest: 98/98 PASS; Convex: 63/63 PASS; lint and TypeScript PASS.
+- Production live QA remains blocked until the canonical Clerk/Convex/Vercel
+  environment chain is verified without using dummy business data.
 
 ## [production-ui-alignment-v1] — 2026-08-11
 

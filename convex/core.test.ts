@@ -38,15 +38,45 @@ describe("BFG Convex core persistence", () => {
     expect(storedCode).not.toHaveProperty("accessCode");
     expect(storedCode?.codeDigest).not.toContain("catalog-secret");
 
-    await expect(customer.mutation(api.catalogAccess.unlock, { accessCode: "wrong" })).rejects.toThrow(
-      "ACCESS_CODE_INVALID",
-    );
+    await expect(customer.mutation(api.catalogAccess.unlock, { accessCode: "wrong" })).resolves.toMatchObject({
+      errorCode: "ACCESS_CODE_INVALID",
+    });
     const grant = await customer.mutation(api.catalogAccess.unlock, { accessCode: "catalog-secret" });
+    if ("errorCode" in grant) throw new Error(grant.errorCode);
     expect(grant.catalogId).toBe(bundle.catalogId);
     expect(grant.catalog).toMatchObject({ name: "Test Catalog", status: "open" });
     const catalog = await customer.query(api.catalogAccess.getUnlocked, { catalogId: bundle.catalogId });
     expect(catalog).toMatchObject({ name: "Test Catalog", status: "open" });
     expect(catalog?.books[0].variants).toHaveLength(1);
+  });
+
+  it("generates one-time codes, rate-limits failures, and keeps existing grants readable after revocation", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const bundle = await createOpenCatalog(admin, "Generated Catalog", "0002", "legacy-code");
+    await expect(customer.mutation(api.catalogAccess.generateCode, { catalogId: bundle.catalogId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    const generated = await admin.mutation(api.catalogAccess.generateCode, { catalogId: bundle.catalogId });
+    expect(generated.code).toMatch(/^BFG-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    const stored = await t.run(async (ctx) => ctx.db.query("catalogAccessCodes").collect());
+    expect(stored.every((record) => !("accessCode" in record))).toBe(true);
+
+    const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: generated.code });
+    if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
+    await admin.mutation(api.catalogAccess.revokeCode, { catalogId: bundle.catalogId });
+    const revoked = await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: generated.code });
+    expect(revoked).toMatchObject({ errorCode: "ACCESS_CODE_INVALID" });
+    expect(await customer.query(api.catalogAccess.getUnlocked, { catalogId: bundle.catalogId })).toMatchObject({
+      id: bundle.catalogId,
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await customer.mutation(api.catalogAccess.unlock, { accessCode: `wrong-${attempt}` });
+    }
+    expect(await customer.mutation(api.catalogAccess.unlock, { accessCode: "wrong-after-lock" })).toMatchObject({
+      errorCode: "ACCESS_CODE_RATE_LIMITED",
+    });
   });
 
   it("submits price snapshots and isolates customer ownership", async () => {

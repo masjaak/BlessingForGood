@@ -74,6 +74,10 @@ function JoinRequestCard({
         <span>{request.contact}</span>
       </div>
       <div className="summary-line">
+        <span>Book interest</span>
+        <span>{request.bookInterest || "Not provided"}</span>
+      </div>
+      <div className="summary-line">
         <span>Submitted</span>
         <span>{new Date(request.submittedAt).toLocaleString("en-GB")}</span>
       </div>

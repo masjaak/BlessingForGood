@@ -10,6 +10,7 @@ import {
   invoicePaymentStatusValidator,
   invoiceStatusValidator,
   joinRequestInvitationStatusValidator,
+  joinRequestBookInterestValidator,
   joinRequestStatusValidator,
   orderExceptionEventTypeValidator,
   orderExceptionResolutionValidator,
@@ -78,6 +79,7 @@ export default defineSchema({
     contact: v.string(),
     normalizedContact: v.string(),
     city: v.optional(v.string()),
+    bookInterest: v.optional(joinRequestBookInterestValidator),
     note: v.optional(v.string()),
     source: v.string(),
     acknowledged: v.boolean(),
@@ -232,6 +234,14 @@ export default defineSchema({
     .index("by_app_user_id_and_catalog_id", ["appUserId", "catalogId"])
     .index("by_catalog", ["catalogId"])
     .index("by_expiration", ["expiresAt"]),
+
+  catalogAccessAttempts: defineTable({
+    appUserId: v.id("appUsers"),
+    windowStartedAt: v.number(),
+    failedCount: v.number(),
+    lockedUntil: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_app_user_id", ["appUserId"]),
 
   orders: defineTable({
     customerUserId: v.id("appUsers"),

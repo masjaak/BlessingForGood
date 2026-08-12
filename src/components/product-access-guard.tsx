@@ -28,7 +28,19 @@ export function ProductAccessGuard({
         <span className="eyebrow">Perlu masuk</span>
         <h1>Masuk untuk melanjutkan</h1>
         <p>Gunakan akun Blessfriends yang sudah diundang.</p>
-        <SignInButton mode="redirect">Masuk</SignInButton>
+        <SignInButton mode="redirect" withSignUp={false}>
+          Masuk
+        </SignInButton>
+      </div>
+    );
+  }
+  if (authState === "admission-required") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Undangan diperlukan</span>
+        <h1>Akses BFG belum dikonfirmasi</h1>
+        <p>Akun hanya dapat digunakan setelah permintaan Blessfriends disetujui dan undangan diterima.</p>
+        <UserButton />
       </div>
     );
   }

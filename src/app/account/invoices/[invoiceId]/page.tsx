@@ -12,6 +12,7 @@ import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { BackButton } from "@/components/back-button";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = useProduct();
@@ -302,9 +303,12 @@ function PaymentConfirmationForm({
 export default function CustomerInvoiceDetailPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
-        <CustomerInvoiceDetail />
-      </ProductAccessGuard>
+      <div className="route-with-back">
+        <BackButton fallback="/account/invoices" />
+        <ProductAccessGuard requiredRole="customer">
+          <CustomerInvoiceDetail />
+        </ProductAccessGuard>
+      </div>
     </SiteShell>
   );
 }

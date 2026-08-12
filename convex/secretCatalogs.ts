@@ -1,7 +1,7 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { accessCodeDigests } from "./lib/accessCodes";
+import { accessCodeDigests, randomAccessCode } from "./lib/accessCodes";
 import { requirePermission } from "./lib/auth";
 import { getCatalogView } from "./lib/catalogView";
 import { recordAudit } from "./lib/audit";
@@ -96,7 +96,8 @@ export const createBundle = mutation({
     name: v.string(),
     publisherName: v.string(),
     bookTitle: v.string(),
-    accessCode: v.string(),
+    accessCode: v.optional(v.string()),
+    accessCodeExpiresAt: v.optional(v.number()),
     closesAt: v.optional(v.number()),
     variants: v.array(variantInput),
   },
@@ -110,6 +111,8 @@ export const createBundle = mutation({
     if (!args.variants.length) fail("VALIDATION_FAILED", "at least one format is required");
     if (args.closesAt !== undefined && args.closesAt <= Date.now())
       fail("VALIDATION_FAILED", "closing date is invalid");
+    if (args.accessCodeExpiresAt !== undefined && args.accessCodeExpiresAt <= Date.now())
+      fail("VALIDATION_FAILED", "access code expiry is invalid");
     const duplicateCatalog = await ctx.db
       .query("secretCatalogs")
       .withIndex("by_slug", (query) => query.eq("slug", catalogSlug))
@@ -194,13 +197,15 @@ export const createBundle = mutation({
       updatedAt: now,
       createdByUserId: user._id,
     });
-    const digests = await accessCodeDigests(catalogId, args.accessCode);
+    const accessCode = args.accessCode?.trim() || randomAccessCode();
+    const digests = await accessCodeDigests(catalogId, accessCode);
     await ctx.db.insert("catalogAccessCodes", {
       catalogId,
       ...digests,
       isActive: true,
       createdAt: now,
       updatedAt: now,
+      expiresAt: args.accessCodeExpiresAt,
     });
     for (const [index, variantId] of variantIds.entries()) {
       await ctx.db.insert("catalogItems", {
@@ -213,6 +218,6 @@ export const createBundle = mutation({
       });
     }
     await recordAudit(ctx, user._id, "catalog.created", "catalog", catalogId);
-    return { catalogId, publisherId: publisher._id, bookId: book._id, variantIds };
+    return { catalogId, publisherId: publisher._id, bookId: book._id, variantIds, accessCode };
   },
 });

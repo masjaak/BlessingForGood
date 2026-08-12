@@ -4,11 +4,16 @@ import { convexTest } from "convex-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
+import { seedApprovedJoinRequest } from "../tests/convex-helpers";
 
 const modules = import.meta.glob("./**/*.ts");
 const ownerIdentity = { subject: "owner-test", tokenIdentifier: "clerk|owner-test" };
-const customerIdentity = { subject: "customer-test", tokenIdentifier: "clerk|customer-test" };
-const secondCustomerIdentity = { subject: "customer-two-test", tokenIdentifier: "clerk|customer-two-test" };
+const customerIdentity = { subject: "customer-test", tokenIdentifier: "clerk|customer-test", email: "customer-test@example.com" };
+const secondCustomerIdentity = {
+  subject: "customer-two-test",
+  tokenIdentifier: "clerk|customer-two-test",
+  email: "customer-two-test@example.com",
+};
 
 function testConvex() {
   return convexTest(schema, modules);
@@ -32,6 +37,7 @@ describe("Clerk identity and BFG authorization", () => {
     expect(secondOwner.appUserId).toBe(firstOwner.appUserId);
 
     const customer = t.withIdentity(customerIdentity);
+    await seedApprovedJoinRequest(t, customerIdentity.email);
     await expect(customer.mutation(api.users.ensureCurrentUser, { role: "owner" } as never)).rejects.toThrow();
     await expect(customer.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
       role: "customer",
@@ -39,10 +45,22 @@ describe("Clerk identity and BFG authorization", () => {
     });
   });
 
+  it("does not provision an uninvited identity", async () => {
+    const t = testConvex();
+    const visitor = t.withIdentity({
+      subject: "uninvited-test",
+      tokenIdentifier: "clerk|uninvited-test",
+      email: "uninvited@example.com",
+    });
+    await expect(visitor.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    expect(await t.run(async (ctx) => ctx.db.query("appUsers").collect())).toHaveLength(0);
+  });
+
   it("enforces operational RBAC and owner-only role management", async () => {
     const t = testConvex();
     const owner = t.withIdentity(ownerIdentity);
     const customer = t.withIdentity(customerIdentity);
+    await seedApprovedJoinRequest(t, customerIdentity.email);
     const customerUser = await customer.mutation(api.users.ensureCurrentUser, {});
     await owner.mutation(api.users.ensureCurrentUser, {});
 
@@ -66,6 +84,8 @@ describe("Clerk identity and BFG authorization", () => {
     const owner = t.withIdentity(ownerIdentity);
     const customer = t.withIdentity(customerIdentity);
     const secondCustomer = t.withIdentity(secondCustomerIdentity);
+    await seedApprovedJoinRequest(t, customerIdentity.email);
+    await seedApprovedJoinRequest(t, secondCustomerIdentity.email);
     const ownerUser = await owner.mutation(api.users.ensureCurrentUser, {});
     const customerUser = await customer.mutation(api.users.ensureCurrentUser, {});
     await secondCustomer.mutation(api.users.ensureCurrentUser, {});
@@ -84,6 +104,8 @@ describe("Clerk identity and BFG authorization", () => {
     const owner = t.withIdentity(ownerIdentity);
     const customer = t.withIdentity(customerIdentity);
     const secondCustomer = t.withIdentity(secondCustomerIdentity);
+    await seedApprovedJoinRequest(t, customerIdentity.email);
+    await seedApprovedJoinRequest(t, secondCustomerIdentity.email);
     await owner.mutation(api.users.ensureCurrentUser, {});
     await customer.mutation(api.users.ensureCurrentUser, {});
     await secondCustomer.mutation(api.users.ensureCurrentUser, {});
@@ -124,6 +146,8 @@ describe("Clerk identity and BFG authorization", () => {
     const owner = t.withIdentity(ownerIdentity);
     const customer = t.withIdentity(customerIdentity);
     const secondCustomer = t.withIdentity(secondCustomerIdentity);
+    await seedApprovedJoinRequest(t, customerIdentity.email);
+    await seedApprovedJoinRequest(t, secondCustomerIdentity.email);
     const customerUser = await customer.mutation(api.users.ensureCurrentUser, {});
     await owner.mutation(api.users.ensureCurrentUser, {});
     await secondCustomer.mutation(api.users.ensureCurrentUser, {});

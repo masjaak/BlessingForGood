@@ -9,6 +9,7 @@ import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr, orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { BackButton } from "@/components/back-button";
 
 function Timeline({
   history,
@@ -160,9 +161,12 @@ function CustomerOrderDetail() {
 export default function CustomerOrderDetailPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
-        <CustomerOrderDetail />
-      </ProductAccessGuard>
+      <div className="route-with-back">
+        <BackButton fallback="/account/orders" />
+        <ProductAccessGuard requiredRole="customer">
+          <CustomerOrderDetail />
+        </ProductAccessGuard>
+      </div>
     </SiteShell>
   );
 }

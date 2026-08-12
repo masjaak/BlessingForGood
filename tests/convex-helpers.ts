@@ -14,11 +14,35 @@ export function testConvex() {
 }
 
 export function asUser(t: TestConvex, subject: string) {
-  return t.withIdentity({ subject, tokenIdentifier: `clerk|${subject}` });
+  return t.withIdentity({ subject, tokenIdentifier: `clerk|${subject}`, email: `${subject}@example.com` });
 }
 
 export async function provision(t: TestConvex, subject: string) {
+  if (subject !== OWNER_SUBJECT) await seedApprovedJoinRequest(t, `${subject}@example.com`);
   return asUser(t, subject).mutation(api.users.ensureCurrentUser, {});
+}
+
+export async function seedApprovedJoinRequest(t: TestConvex, email: string) {
+  await t.run(async (ctx) => {
+    const now = Date.now();
+    await ctx.db.insert("joinRequests", {
+      name: "Test Blessfriend",
+      email: email.toLowerCase(),
+      normalizedEmail: email.toLowerCase(),
+      contact: "081200000000",
+      normalizedContact: "+628120000000",
+      city: "Jakarta",
+      bookInterest: "Children Books",
+      source: "test",
+      acknowledged: true,
+      status: "approved",
+      invitationStatus: "ready",
+      submittedAt: now,
+      reviewedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
 }
 
 export async function setupUsers(t: TestConvex) {
@@ -28,10 +52,19 @@ export async function setupUsers(t: TestConvex) {
   const customer = asUser(t, CUSTOMER_SUBJECT);
   const secondCustomer = asUser(t, SECOND_CUSTOMER_SUBJECT);
   await owner.mutation(api.users.ensureCurrentUser, {});
+  await seedApprovedJoinRequest(t, `${ADMIN_SUBJECT}@example.com`);
+  await seedApprovedJoinRequest(t, `${CUSTOMER_SUBJECT}@example.com`);
+  await seedApprovedJoinRequest(t, `${SECOND_CUSTOMER_SUBJECT}@example.com`);
   const adminUser = await admin.mutation(api.users.ensureCurrentUser, {});
   await customer.mutation(api.users.ensureCurrentUser, {});
   await secondCustomer.mutation(api.users.ensureCurrentUser, {});
   await owner.mutation(api.users.updateRole, { userId: adminUser.appUserId, role: "admin" });
+  await t.run(async (ctx) => {
+    const requests = await ctx.db.query("joinRequests").collect();
+    for (const request of requests) {
+      if (request.source === "test") await ctx.db.delete(request._id);
+    }
+  });
   return { owner, admin, customer, secondCustomer };
 }
 

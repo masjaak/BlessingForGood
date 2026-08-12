@@ -12,6 +12,7 @@ import { getStoredUnlockedCatalogId, setStoredUnlockedCatalogId } from "@/domain
 import type {
   BookFormat,
   CreateCatalogInput,
+  CreateCatalogResult,
   CreateOrderInput,
   Order,
   OrderStatus,
@@ -21,8 +22,6 @@ import type {
 
 type CatalogView = NonNullable<FunctionReturnType<typeof api.catalogAccess.getUnlocked>>;
 type OrderView = Awaited<FunctionReturnType<typeof api.orders.submit>>;
-type UnlockView = Awaited<FunctionReturnType<typeof api.catalogAccess.unlock>>;
-
 type CatalogRecord = {
   id: string;
   name: string;
@@ -124,6 +123,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState(false);
+  const [admissionDenied, setAdmissionDenied] = useState(false);
 
   const { isLoaded, isSignedIn } = useAuth();
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
@@ -165,15 +165,26 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || convexAuthLoading || !isAuthenticated || me !== null || provisioning) return;
+    if (
+      !isLoaded ||
+      !isSignedIn ||
+      convexAuthLoading ||
+      !isAuthenticated ||
+      me !== null ||
+      provisioning ||
+      admissionDenied
+    )
+      return;
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
       setProvisioning(true);
       setProvisionError(false);
       void ensureCurrentUser({})
-        .catch(() => {
-          if (active) setProvisionError(true);
+        .catch((reason) => {
+          if (!active) return;
+          if (String(reason).includes("ADMISSION_REQUIRED")) setAdmissionDenied(true);
+          else setProvisionError(true);
         })
         .finally(() => {
           if (active) setProvisioning(false);
@@ -182,7 +193,16 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [convexAuthLoading, ensureCurrentUser, isAuthenticated, isLoaded, isSignedIn, me, provisioning]);
+  }, [admissionDenied, convexAuthLoading, ensureCurrentUser, isAuthenticated, isLoaded, isSignedIn, me, provisioning]);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      queueMicrotask(() => {
+        setAdmissionDenied(false);
+        setProvisionError(false);
+      });
+    }
+  }, [isSignedIn]);
 
   const catalogs = useMemo(
     () =>
@@ -209,6 +229,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
         publisherName: input.publisher,
         bookTitle: input.title,
         accessCode: input.accessCode,
+        accessCodeExpiresAt: input.accessCodeExpiresAt ? Date.parse(input.accessCodeExpiresAt) : undefined,
         closesAt: input.closingAt ? Date.parse(input.closingAt) : undefined,
         variants: input.variants.map((variant) => ({
           format: variant.format,
@@ -219,7 +240,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       const opened = await openCatalog({ catalogId: bundle.catalogId });
       const catalog = asCatalog(opened as CatalogView);
       if (!catalog) throw new Error("catalog creation failed");
-      return catalog;
+      return { catalog, accessCode: bundle.accessCode } satisfies CreateCatalogResult;
     },
     [createBundle, openCatalog],
   );
@@ -227,7 +248,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const unlockCatalog = useCallback(
     async (accessCode: string) => {
       const result = await unlock({ accessCode });
-      const catalog = asCatalog((result as UnlockView).catalog as CatalogView);
+      if ("errorCode" in result) throw new Error(result.errorCode);
+      const catalog = asCatalog(result.catalog as CatalogView);
       if (catalog) {
         setUnlockedCatalogId(catalog.id);
         setStoredUnlockedCatalogId(catalog.id);
@@ -298,11 +320,13 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
         ? "convex-loading"
         : provisionError
           ? "network-error"
-          : provisioning || me === null || me === undefined
-            ? "provisioning"
-            : me.status === "suspended"
-              ? "suspended"
-              : "authenticated";
+          : admissionDenied
+            ? "admission-required"
+            : provisioning || me === null || me === undefined
+              ? "provisioning"
+              : me.status === "suspended"
+                ? "suspended"
+                : "authenticated";
 
   const value = useMemo<ProductContextValue>(
     () => ({

@@ -1,6 +1,26 @@
 # BFG Project Status
 
-## Production UI alignment hotfix
+## Homepage / Join / Secret Catalog V3
+
+**Status:** LOCAL V3 CANDIDATE — LIVE PRODUCTION QA BLOCKED BY EXTERNAL ENVIRONMENT VERIFICATION
+
+**Branch:** `main`
+
+**Starting commit:** `bd95b5e` (`feat: finalize customer mobile experience`)
+
+The V3 customer surfaces are implemented forward-only in the integrated
+Phase 01–06.4 application: homepage story, anchored Quick Paths, Join fields
+and canonical `joinRequests` persistence, post-submit WhatsApp continuation,
+invite-only Clerk presentation and admission enforcement, safe Back controls,
+and two-layer Secret Catalog access. Generated catalog codes are never stored
+as plaintext. The full admin visual redesign remains deferred.
+
+Local gates currently pass: TypeScript, ESLint, 98 Vitest tests, and 63 Convex
+tests. Production push/live QA is intentionally not claimed until the required
+Clerk Production, Convex Production, Vercel, catalog pepper, owner, and Join
+WhatsApp configuration names are verified without exposing secret values.
+
+## Historical Production UI alignment hotfix (superseded by V3)
 
 **Status:** LOCAL RELEASE CANDIDATE READY — PRODUCTION BLOCKED BY EXTERNAL AUTH/ENVIRONMENT CONFIGURATION
 

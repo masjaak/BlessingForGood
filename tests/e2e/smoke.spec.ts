@@ -10,7 +10,6 @@ const customerRoutes = [
   "/ready-stock",
   "/join",
   "/sign-in",
-  "/sign-up",
   "/catalog",
   "/account",
   "/account/orders",
@@ -136,6 +135,13 @@ test.describe("@customer BFG customer route smoke", () => {
       ]);
     }
     await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible();
+  });
+
+  test("blocks public sign-up while keeping the route available for invitations", async ({ page }) => {
+    await setupClerkTestingToken({ page });
+    await page.goto("/sign-up", { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText(/create account|buat akun|sign up/i)).toHaveCount(0);
   });
 });
 
