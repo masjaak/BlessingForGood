@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { requireClerkIssuer } from "../../convex/lib/auth-config";
+import { requireClerkIssuer } from "../../convex/lib/auth_config";
 
 describe("Convex Clerk auth configuration", () => {
   it("rejects an absent issuer instead of silently deploying unauthenticated Convex", () => {
