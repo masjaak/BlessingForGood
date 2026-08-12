@@ -2,11 +2,18 @@
 
 ## Homepage / Join / Secret Catalog V3
 
-**Status:** LOCAL V3 CANDIDATE — LIVE PRODUCTION QA BLOCKED BY EXTERNAL ENVIRONMENT VERIFICATION
+**Status:** PRODUCTION DEPLOYED — AUTHENTICATED LIVE QA BLOCKED BY CURRENT TEST ENVIRONMENT ACCESS
 
 **Branch:** `main`
 
 **Starting commit:** `bd95b5e` (`feat: finalize customer mobile experience`)
+
+**Production commit:** `52d3ec4` (`feat: ship homepage join and invite-only catalog access`)
+
+**Vercel deployment:** `dpl_7r3yVo1N5TJKBefoBYJYPXM3ENxv` — Ready; canonical
+aliases include `https://blessingforgood.com`. Vercel logs show the build,
+TypeScript check, static generation, Convex schema validation, and deployment
+to Production Convex `clean-eel-522` completed successfully.
 
 The V3 customer surfaces are implemented forward-only in the integrated
 Phase 01–06.4 application: homepage story, anchored Quick Paths, Join fields
@@ -16,9 +23,15 @@ and two-layer Secret Catalog access. Generated catalog codes are never stored
 as plaintext. The full admin visual redesign remains deferred.
 
 Local gates currently pass: TypeScript, ESLint, 98 Vitest tests, and 63 Convex
-tests. Production push/live QA is intentionally not claimed until the required
-Clerk Production, Convex Production, Vercel, catalog pepper, owner, and Join
-WhatsApp configuration names are verified without exposing secret values.
+tests. Public Production route HTML and the no-ticket `/sign-up` gate were
+checked through the Ready deployment. Authenticated mobile smoke remains
+blocked because Clerk's testing-token fetch fails in this workspace and the
+local Convex CLI cannot inspect the selected Production project. No secret
+values, dummy records, or alternate deployments were used.
+
+The join continuation is safe when `BFG_JOIN_WHATSAPP_GROUP_URL` is absent:
+the request persists and the customer sees the configured-link fallback. Its
+Production value was not exposed or independently read during this pass.
 
 ## Historical Production UI alignment hotfix (superseded by V3)
 

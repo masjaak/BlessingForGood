@@ -27,10 +27,12 @@ Date: 2026-08-12
 | Revocation / brute force | Convex server | `revokeCode`, `catalogAccessAttempts` | Generic customer error | Revoke, grant, and rate-limit tests | PASS |
 | Unauthorized catalog leakage | `catalogAccess.getUnlocked/listAccessible` | Canonical grants and active user checks | No public product list | Isolation tests return no unauthorized products | PASS |
 | Shared customer/admin backend | All above | Canonical Convex deployment/schema | No duplicate UI data source | Existing Convex test suite 63 passing | PASS |
-| Production live QA | `https://blessingforgood.com` | Production Clerk/Convex/Vercel chain | Not captured in this local pass | Environment names/credentials not verified | BLOCKED |
+| Production deployment | `https://blessingforgood.com` | Vercel Production → canonical Convex `clean-eel-522` | Deployment `dpl_7r3yVo1N5TJKBefoBYJYPXM3ENxv` is Ready from `main` commit `52d3ec4` | Vercel build, typecheck, static generation, Convex schema validation, and function deployment passed | PASS |
+| Authenticated live QA | Production Clerk/Convex customer session | Same canonical Production chain | Public HTML and route gates verified; no dummy member or business data created | Clerk testing-token fetch and direct Convex Production environment inspection remain unavailable in this workspace | BLOCKED |
 
 ## Status rule
 
-`PASS` means implemented and covered locally. `BLOCKED` is limited to the
-current external Production environment chain; no dummy records or fallback
-deployment was used to turn it into a false pass.
+`PASS` means implemented and covered locally or verified in the named
+Production deployment. `BLOCKED` is limited to the current authenticated
+Production smoke path; no dummy records or fallback deployment was used to
+turn it into a false pass.
