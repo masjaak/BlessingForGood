@@ -1,5 +1,15 @@
 # BFG Project Status
 
+## Auth Session Recovery V3
+
+**Status:** `BFG_AUTH_SESSION_V3_CODE_READY_PRODUCTION_AUTH_PENDING`
+
+The P0 follow-up traces the remaining failure to the Clerk → Convex boundary.
+The live client uses the canonical Clerk Production issuer and Convex Production
+deployment. Convex issuer configuration is now validated and synchronized by
+the Production build, while real authenticated Chrome acceptance remains a
+required gate before claiming full closure. Phase 08 has not started.
+
 ## Homepage Polish V4.1.3
 
 **Status:** BFG_HOMEPAGE_V4_1_3_PRODUCTION_READY

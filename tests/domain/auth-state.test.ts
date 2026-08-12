@@ -38,4 +38,9 @@ describe("authenticated product session state", () => {
     expect(resolve({ appUser: { role: "customer", status: "suspended" } })).toBe("suspended");
     expect(resolve({ provisionError: true })).toBe("network-error");
   });
+
+  it("rejects invalid transitions into private data", () => {
+    expect(resolve({ convexAuthenticated: false, appUser: activeCustomer })).toBe("convex-error");
+    expect(resolve({ appUser: undefined })).toBe("provisioning");
+  });
 });
