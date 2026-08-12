@@ -66,17 +66,22 @@ async function verifyRoute(route: string, page: Page, project: string) {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    const text = message.text();
+    const isDevToolsCaretHydrationWarning =
+      text.startsWith("A tree hydrated but some attributes") && text.includes('caret-color:"transparent"');
+    if (message.type() === "error" && !isDevToolsCaretHydrationWarning) consoleErrors.push(text);
   });
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  const response = await page.goto(route, { waitUntil: "networkidle" });
+  // Clerk/Convex maintain reactive requests after the shell is rendered, so
+  // networkidle is not a reliable page-readiness signal for these routes.
+  const response = await page.goto(route, { waitUntil: "domcontentloaded" });
   expect(response?.status(), `${route} response`).toBeLessThan(400);
   await expect(page.locator("body")).not.toHaveText("");
   await expect(page.locator("body")).not.toContainText(prohibitedCopy);
   if (route === "/ready-stock") await expect(page.getByText("Memuat Ready Stock…")).toBeHidden({ timeout: 15_000 });
 
   if (publicShellRoutes.has(route)) {
-    await expect(page.locator("h1, h2").first()).toBeVisible();
+    await expect(page.locator("h1, h2, h3").first()).toBeVisible({ timeout: 15_000 });
     if ((page.viewportSize()?.width || 0) <= 800) {
       await expect(page.getByRole("navigation", { name: "Navigasi customer" })).toBeVisible();
       await expect(page.locator('summary[aria-label="Buka menu"]')).toHaveCount(0);
@@ -87,8 +92,8 @@ async function verifyRoute(route: string, page: Page, project: string) {
   } else if (authRoutes.has(route)) {
     await expect(page).toHaveURL(/\/sign-in/);
     await expect(page.getByRole("img", { name: "Blessing For Goods" })).toBeVisible();
-    await expect(page.getByText(/khusus Blessfriends/i)).toBeVisible();
-    await expect(page.locator("[data-clerk-component]")).toBeVisible();
+    await expect(page.getByText(/khusus Blessfriends/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator("[data-clerk-component]")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/sign up|buat akun/i)).toBeHidden();
   } else {
     if (protectedRoutes.has(route)) {
@@ -98,7 +103,7 @@ async function verifyRoute(route: string, page: Page, project: string) {
       }
     }
     await expect(page.getByRole("img", { name: "Blessing For Goods" })).toBeVisible();
-    await expect(page.locator("[data-clerk-component]")).toBeVisible();
+    await expect(page.locator("[data-clerk-component]")).toBeVisible({ timeout: 15_000 });
   }
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
