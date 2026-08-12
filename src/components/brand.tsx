@@ -24,6 +24,7 @@ export function BrandLogo({
       className={`brand-logo brand-logo-${variant} ${className}`.trim()}
       sizes={variant === "primary" || variant === "admin" ? "180px" : "64px"}
       priority={variant === "primary"}
+      unoptimized={asset.src === "/brand/logos/Logo-1"}
     />
   );
 
