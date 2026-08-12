@@ -17,9 +17,11 @@ used.
 
 **Starting production commit:** `938be66371d4e9b5084033f1b3985e207f65994`
 
-**Final production commit:** `1627ad306e44b152807a8a3f1b3985e207f65994`
+**Final production code commit:** `1627ad306e44b152807a8a3f1b3985e207f65994`
 
-**Vercel deployment:** `dpl_9eP9VJuERdZS7EKZNRjR7eBL5f3u` — Ready; aliases include
+**Release verification commit:** `32d6526`
+
+**Vercel deployment:** Ready on the canonical aliases, including
 `https://blessingforgood.com`. The Production build used the configured Convex
 deploy command and completed successfully.
 
