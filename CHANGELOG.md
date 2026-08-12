@@ -8,6 +8,35 @@ source: conversation
 
 # Changelog
 
+## [phase-07] — 2026-08-12
+
+### Added
+
+- Applied the targeted Customer Visual V4.1.1 patch with the approved local
+  multicolor `Logo-1`, contained production-safe rendering, framed mobile
+  `Masuk`, and a shared illustrated How To Order system for the homepage and
+  `/how-to-order`.
+- Added the desktop-first Admin operations workspace with grouped navigation,
+  attention-led dashboard styling, shared status/table density, and the
+  permission-checked `/admin/ready-stock` inventory projection.
+- Added Admin action coverage, visual source mapping, design-system, and Phase
+  07 QA documentation.
+
+### Preserved
+
+- Phase 06.7 business policies, canonical Convex data contracts, RBAC,
+  ownership, Secret Catalog security, reservation atomicity, financial history,
+  append-only deposit ledger, and customer consequences.
+- No production business data, Preview delivery, analytics, reporting, CMS,
+  settings platform, notification platform, or payment gateway was added.
+
+### QA
+
+- Local: Vitest 108/108; Convex 72/72; customer Playwright 75/75; signed-out
+  Admin Playwright 39/39; TypeScript/build/lint/format/diff check PASS.
+- Production: safe customer and signed-out Admin smoke 114/114 on the final
+  `www.blessingforgood.com` alias. Production deployment is Ready.
+
 ## [phase-06.7] — 2026-08-12
 
 ### Added

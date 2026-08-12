@@ -1,6 +1,7 @@
 # BFG Phase 07 QA Record
 
-Status: implementation gate — customer patch and Admin operational UI
+Status: PASS — customer patch, Admin operational UI, local regression, and
+safe live smoke complete
 
 ## Stage A — Customer Visual Patch V4.1.1
 
@@ -31,8 +32,9 @@ Status: implementation gate — customer patch and Admin operational UI
 
 ## Automated gate
 
-The Phase 07 implementation must retain or exceed the existing Vitest,
-Convex, Playwright, TypeScript, build, lint, format, and `git diff --check`
-baseline. Live smoke is limited to safe route protection and read-only public
-checks; authenticated financial mutations are exercised only in isolated test
-fixtures.
+Final local gate: Vitest 108/108, Convex 72/72, customer Playwright 75/75,
+signed-out Admin Playwright 39/39, TypeScript, build, lint, format, and
+`git diff --check` PASS. Final safe live smoke: 114/114 against the `www`
+canonical alias across customer 375/390/430/768/1440px and Admin
+1024/1280/1440px. Live checks remain read-only; authenticated financial
+mutations are exercised only in isolated test fixtures.

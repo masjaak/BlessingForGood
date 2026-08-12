@@ -1,5 +1,42 @@
 # BFG Project Status
 
+## Phase 07 Admin Operational UI/UX + Customer Visual Patch V4.1.1
+
+**Status:** BFG_PHASE_07_ADMIN_OPERATIONAL_UI_READY — PRODUCTION DEPLOYED
+
+Stage A applies the targeted client patch: the approved local multicolor
+`Logo-1` is the customer primary, logo rendering is contained and
+production-safe, the BFG story mark is prominent, mobile `Masuk` is framed,
+and the homepage plus `/how-to-order` use one illustrated current-product
+journey.
+
+Stage B adds the desktop-first operational workspace around the locked Phase
+06.7 policies: grouped navigation, actionable dashboard queues, operational
+tables/status grammar, and a Ready Stock projection for on hand/reserved/
+available stock. Existing Admin routes, Convex mutations, RBAC, financial
+history, and customer consequences remain canonical.
+
+**Starting production commit:** `cf26922`
+
+**Final production commit:** `51587d6`
+
+**Vercel deployment:** `dpl_2vbowbxxL1jj4dibgnhS8bxWHyy4` — Ready on the
+canonical aliases, including `https://blessingforgood.com`.
+
+**Local gate:** Vitest `108/108`, Convex `72/72`, Playwright local customer
+`75/75`, signed-out Admin `39/39`, TypeScript, build, lint, format, and
+`git diff --check` all pass.
+
+**Live smoke:** `114/114` safe customer and signed-out Admin route checks pass
+against `https://www.blessingforgood.com` at customer 375/390/430/768/1440px
+and Admin 1024/1280/1440px. The non-`www` canonical alias redirects to `www`
+with the established 308 response. No authenticated production mutation or
+dummy business data was used.
+
+Authenticated Admin visual/action acceptance remains an operator-session
+responsibility; route protection, isolated policy tests, and the implemented
+operational controls are green without mutating production records.
+
 ## Phase 06.7 Business Policy Closure
 
 **Status:** BFG_PHASE_06_7_POLICY_CLOSED — PRODUCTION DEPLOYED
@@ -197,18 +234,20 @@ environment-sensitive operation instead of switching or creating a project.
 
 ## Current context
 
-- **Objective:** close all Phase 06.7 business policies before Phase 07 Admin
-  operational UI/UX.
+- **Objective:** keep the Phase 07 Admin operational workspace and targeted
+  customer visual patch production-ready while preserving the locked policy
+  surface.
 - **Decisions:** current `develop` logic wins; QA UX is a component/style donor;
   the official logo and mascot are mandatory; customer history is derived from
   canonical records; no financial history is rewritten.
 - **Constraints:** no dummy business data, no invented wallet/store-credit
-  behavior, no Preview delivery, no reporting/analytics/CMS/settings, and no
-  Admin visual redesign before Phase 07.
+  behavior, no Preview delivery, no reporting/analytics/CMS/settings, no
+  payment gateway, and no reopening of Phase 06.7 policy decisions.
 - **Open backlog:** Reporting/Excel, Analytics, CMS, Settings, notification
   platform, payment gateway, and full Admin visual redesign.
-- **Current priority:** begin Phase 07 Admin operational UI/UX on the stable
-  Phase 06.7 policy surface.
+- **Current priority:** operator acceptance of the stable Phase 07 workspace;
+  keep later reporting, analytics, CMS, settings, notification, and gateway
+  work deferred.
 - **Next action:** keep reporting, Excel export, analytics, CMS, settings,
   notification platform, payment gateway, and full Admin visual redesign out
   of scope until their own phase is authorized.
