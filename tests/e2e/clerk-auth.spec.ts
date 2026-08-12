@@ -11,7 +11,7 @@ test.beforeAll(async () => {
   await clerkSetup();
 });
 
-test.describe("BFG Clerk authenticated Preview", () => {
+test.describe("BFG Clerk authenticated Production", () => {
   test("invited customer signs in and receives protected Convex access", async ({ page }) => {
     await page.goto("/");
     await clerk.signIn({ emailAddress: required("BFG_E2E_CUSTOMER_EMAIL"), page });
@@ -29,6 +29,8 @@ test.describe("BFG Clerk authenticated Preview", () => {
     await expect(page.getByLabel("Catalog access code")).toBeVisible();
     await page.goto("/account/profile", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Profil Blessfriend" })).toBeVisible();
+    await page.goto("/account/addresses", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "Alamat pengiriman" })).toBeVisible();
     await clerk.signOut({ page });
     await page.goto("/account/orders", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/sign-in/);
