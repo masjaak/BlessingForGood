@@ -157,11 +157,13 @@ test.describe("@customer BFG customer route smoke", () => {
       ["/account/invoices", "Tagihanmu akan muncul di sini."],
       ["/account", "Akun Blessfriend"],
     ] as const) {
-      await page.goto(route, { waitUntil: "networkidle" });
+      // Reactive Clerk/Convex traffic can keep a signed-out shell from reaching
+      // networkidle even after the route is fully rendered.
+      await page.goto(route, { waitUntil: "domcontentloaded" });
       await expect(page).not.toHaveURL(/\/sign-in/);
       await expect(page.getByText(copy)).toBeVisible();
     }
-    await page.goto("/account", { waitUntil: "networkidle" });
+    await page.goto("/account", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("main").getByRole("link", { name: "Masuk" })).toHaveAttribute(
       "href",
       "/sign-in?redirect_url=/account",
