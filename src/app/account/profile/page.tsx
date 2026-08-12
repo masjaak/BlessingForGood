@@ -66,10 +66,26 @@ function ProfileForm() {
   );
 }
 
+function SignedOutProfile() {
+  return (
+    <div className="route-with-back">
+      <BackButton fallback="/account" />
+      <div className="guard-card">
+        <span className="eyebrow">Akun Blessfriend</span>
+        <h1>Masuk lewat Akun untuk mengubah profil.</h1>
+        <p>Masuk untuk melihat dan memperbarui informasi profilmu.</p>
+        <a className="button button-primary" href="/account">
+          Ke Akun
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutProfile />}>
         <div className="page narrow-page">
           <BackButton fallback="/account" />
           <PageHeader

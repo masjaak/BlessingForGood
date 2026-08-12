@@ -235,6 +235,26 @@ export default defineSchema({
     .index("by_catalog", ["catalogId"])
     .index("by_expiration", ["expiresAt"]),
 
+  catalogAccessSessions: defineTable({
+    catalogId: v.id("secretCatalogs"),
+    accessCodeId: v.id("catalogAccessCodes"),
+    sessionDigest: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_session_digest", ["sessionDigest"])
+    .index("by_catalog", ["catalogId"])
+    .index("by_expiration", ["expiresAt"]),
+
+  catalogAccessAnonymousAttempts: defineTable({
+    subjectDigest: v.string(),
+    windowStartedAt: v.number(),
+    failedCount: v.number(),
+    lockedUntil: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_subject_digest", ["subjectDigest"]),
+
   catalogAccessAttempts: defineTable({
     appUserId: v.id("appUsers"),
     windowStartedAt: v.number(),

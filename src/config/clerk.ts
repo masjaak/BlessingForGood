@@ -23,10 +23,25 @@ export const bfgClerkAppearance = {
     formButtonPrimary: "bfg-clerk-primary",
     dividerLine: "bfg-clerk-divider-line",
     dividerText: "bfg-clerk-divider-text",
+    footerAction: "bfg-clerk-footer-action",
     footerActionLink: "bfg-clerk-link",
     alert: "bfg-clerk-alert",
     userButtonTrigger: "bfg-user-trigger",
     userButtonPopoverCard: "bfg-user-popover",
     userButtonPopoverActionButton: "bfg-user-action",
   },
+} as const;
+
+export const bfgClerkLocalization = {
+  locale: "id-ID",
+  signIn: {
+    start: {
+      title: "Masuk ke Blessing For Goods",
+      subtitle: "Khusus Blessfriends yang telah menerima undangan.",
+    },
+  },
+  formFieldLabel__emailAddress: "Email",
+  formButtonPrimary: "Lanjutkan",
+  socialButtonsBlockButton: "Masuk dengan {{provider}}",
+  dividerText: "atau",
 } as const;

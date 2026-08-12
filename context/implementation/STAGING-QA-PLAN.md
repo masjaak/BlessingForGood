@@ -142,8 +142,8 @@ These checks are intentionally not required on transient branch Preview:
 - owner/customer provisioning, admin promotion, owner-only authorization, and
   suspension during payment operations;
 - invitation acceptance followed by first payment confirmation request;
-- two-layer catalog access followed by Customer A/B payment and invoice
-  isolation;
+- token-only catalog session followed by Customer A/B payment and invoice
+  isolation; token-only browse still does not create customer ownership;
 - payment submission, admin queue review, approval/rejection, audit history,
   rejection/resubmission, stale approval, and deposit-plus-transfer totals;
 - browser/responsive and authenticated Playwright coverage;

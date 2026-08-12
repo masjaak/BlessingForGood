@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { bfgClerkAppearance } from "@/config/clerk";
@@ -155,9 +155,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
         )}
         <div className="site-auth" aria-label="Account access">
           {!signedIn ? (
-            <SignInButton mode="redirect" withSignUp={false}>
+            <Link className="site-auth-link" href="/sign-in">
               Masuk
-            </SignInButton>
+            </Link>
           ) : (
             <UserButton appearance={bfgClerkAppearance} />
           )}

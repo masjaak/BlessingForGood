@@ -262,6 +262,33 @@ p {
     border-color var(--motion-fast),
     transform var(--motion-fast);
 }
+.site-auth-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  color: var(--accent-dark);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 0.82rem;
+  font-weight: var(--font-weight-bold);
+}
+.site-auth-link:hover {
+  color: var(--accent-dark);
+  border-color: var(--color-brand-peach);
+  background: var(--color-brand-secondary);
+}
+.catalog-member-note {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.catalog-member-note p {
+  margin: 0;
+}
 .site-auth button:hover {
   color: var(--accent-dark);
   border-color: var(--color-brand-peach);
@@ -667,6 +694,9 @@ p {
   color: var(--accent) !important;
   font-weight: var(--font-weight-bold) !important;
 }
+.bfg-clerk-footer-action {
+  display: none !important;
+}
 .bfg-clerk-alert {
   border-radius: var(--radius-sm) !important;
   background: #fff6f4 !important;
@@ -823,11 +853,13 @@ p {
   left: 24px;
   width: 104px;
   height: 104px;
+  transform: none;
 }
 .catalog-access-mascot {
   width: 120px;
   height: 120px;
   margin-bottom: 4px;
+  transform: none;
 }
 .communication-card {
   position: relative;
@@ -1096,6 +1128,7 @@ p {
   width: 132px;
   height: 132px;
   margin: 12px auto 22px;
+  transform: none;
 }
 .empty-mark {
   display: block;
@@ -1525,14 +1558,15 @@ p {
     gap: 8px;
   }
   .site-header > .brand-logo-link {
-    width: 132px;
-    height: 72px;
+    width: 108px;
+    height: 58px;
     justify-self: start;
     flex-basis: auto;
   }
   .site-header > .brand-logo-link .brand-logo {
-    width: 86px;
-    height: 86px;
+    width: 82px;
+    height: 82px;
+    transform: scale(1.85);
   }
   .public-nav {
     display: none;
@@ -1791,6 +1825,7 @@ p {
   background: var(--color-brand-secondary);
 }
 .story-card-logo {
+  position: relative;
   color: var(--surface);
   background: var(--color-brand-primary-strong);
 }
@@ -1799,24 +1834,43 @@ p {
   color: #d4e0d7;
 }
 .story-logo-image {
-  width: 170px;
-  height: 78px;
-  margin: 8px 0 2px;
+  width: min(68%, 250px);
+  height: 170px;
+  margin: 0 0 2px;
   object-fit: contain;
-  transform: none;
+  transform: scale(1.25);
+  transform-origin: left center;
 }
-.story-card-visual {
+.story-card-blessy {
+  gap: 18px;
+}
+.story-card-blessy-top {
   display: grid;
   width: 100%;
-  min-height: 112px;
-  place-items: center;
-  margin-bottom: 2px;
-  border-radius: var(--radius-md);
-  background: var(--color-brand-secondary);
+  grid-template-columns: minmax(0, 1fr) 38%;
+  gap: 12px;
+  align-items: start;
+}
+.story-card-blessy-copy {
+  min-width: 0;
+}
+.story-card-blessy-copy h3 {
+  margin-top: 13px;
+}
+.story-card-blessy-mascot {
+  display: grid;
+  min-height: 126px;
+  place-items: start end;
 }
 .story-mascot {
-  width: 118px;
-  height: 118px;
+  width: 100%;
+  height: 128px;
+  object-fit: contain;
+  transform: scale(1.5);
+  transform-origin: top right;
+}
+.story-card-blessy > p {
+  width: 100%;
 }
 .story-card-closing {
   justify-content: center;
@@ -1980,6 +2034,19 @@ p {
   .story-card {
     min-height: 350px;
     padding: 22px;
+  }
+  .story-logo-image {
+    width: 70%;
+    height: 160px;
+  }
+  .story-card-blessy-top {
+    grid-template-columns: minmax(0, 1fr) 38%;
+  }
+  .story-card-blessy-mascot {
+    min-height: 116px;
+  }
+  .story-mascot {
+    height: 116px;
   }
   .join-home-card {
     padding: 24px;

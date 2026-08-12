@@ -61,10 +61,10 @@ describe("public UI foundation", () => {
     expect(screen.queryByRole("link", { name: "Admin prototype" })).toBeNull();
   });
 
-  it("exposes Clerk authentication controls without adding public admin links", () => {
+  it("exposes the dedicated BFG sign-in route without adding public admin links", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
-    expect(screen.getByRole("button", { name: "Masuk" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Masuk" }).getAttribute("href")).toBe("/sign-in");
     expect(screen.queryByRole("button", { name: "Accept invitation" })).toBeNull();
     expect(screen.queryByRole("button", { name: "User profile" })).toBeNull();
   });

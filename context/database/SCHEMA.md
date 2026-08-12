@@ -6,13 +6,13 @@ document IDs.
 
 ## Identity and security tables
 
-| Table | Purpose | Required identity fields |
-| --- | --- | --- |
-| `appUsers` | one BFG authorization record per Clerk subject | `clerkUserId`, `role`, `status`, safe snapshots, lifecycle timestamps |
-| `customerProfiles` | customer-owned profile | `userId`, display name, optional phone/WhatsApp, timestamps |
-| `customerAddresses` | customer-owned fulfillment addresses | `userId`, recipient/contact/address fields, default flag, timestamps |
-| `auditEvents` | privileged actor history | actor, action, target, timestamp, safe metadata |
-| `prototypeSessions` | retained legacy test/local table | token digest and expiry only; active Preview never reads/writes |
+| Table               | Purpose                                        | Required identity fields                                              |
+| ------------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
+| `appUsers`          | one BFG authorization record per Clerk subject | `clerkUserId`, `role`, `status`, safe snapshots, lifecycle timestamps |
+| `customerProfiles`  | customer-owned profile                         | `userId`, display name, optional phone/WhatsApp, timestamps           |
+| `customerAddresses` | customer-owned fulfillment addresses           | `userId`, recipient/contact/address fields, default flag, timestamps  |
+| `auditEvents`       | privileged actor history                       | actor, action, target, timestamp, safe metadata                       |
+| `prototypeSessions` | retained legacy test/local table               | token digest and expiry only; active Preview never reads/writes       |
 
 `appUsers` roles are `owner`, `admin`, `customer`; statuses are `active` and
 `suspended`. Its indexes are `by_clerk_user_id`, `by_role`, `by_status`,
@@ -28,6 +28,8 @@ secretCatalogs
 catalogAccessCodes
 catalogItems
 catalogAccessGrants
+catalogAccessSessions
+catalogAccessAnonymousAttempts
 orders
 orderItems
 orderStatusHistory
@@ -44,9 +46,11 @@ channel distinction `customer_self_service` or `admin_assisted`. Assisted
 orders still use the canonical order and order-item records and require an
 existing active customer `appUsers` row.
 
-Catalog grants use `appUserId` and catalog ID. Orders use `customerUserId`;
-order items retain immutable product and price snapshots. Access codes remain
-keyed digests and are never stored as plaintext.
+Catalog grants use `appUserId` and catalog ID. Token-only sessions use a
+catalog-scoped session digest and source-code reference. Orders use
+`customerUserId`; order items retain immutable product and price snapshots.
+Access codes and session credentials remain keyed digests and are never stored
+as plaintext.
 
 ## Operations and finance tables
 

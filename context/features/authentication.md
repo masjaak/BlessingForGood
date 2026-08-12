@@ -6,10 +6,12 @@ invite-only. Convex verifies the Clerk JWT, then BFG provisions/resolves
 
 Public users can browse `/`, `/community`, `/how-to-order`, `/help`, and
 `/ready-stock`. `/join` accepts a pre-account Blessfriends request without
-creating a Clerk account. Protected customer/admin resources redirect
-signed-out users to `/sign-in`. `/sign-up` only renders when Clerk supplies a
-valid invitation ticket; a public visit redirects home and cannot create an
-arbitrary `appUsers` row.
+creating a Clerk account. Customer account pages render signed-out BFG states
+before offering `/sign-in`; private data queries and admin resources remain
+server-authorized. `/catalog` is a public token gateway whose private query
+requires a valid scoped catalog session. `/sign-up` only renders when Clerk
+supplies a valid invitation ticket; a public visit redirects home and cannot
+create an arbitrary `appUsers` row.
 
 After authentication, a non-owner identity must match an approved,
 `invitationStatus=ready` Join request by normalized email before

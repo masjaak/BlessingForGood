@@ -90,20 +90,20 @@ Correction: no seed added; real data will exercise the tested detail route.
 Route: `/catalog`
 Viewport: 390 × 844
 Mockup/reference: mobile mockups 1–3 + QA UX catalog access
-Verdict: **PARTIAL**
+Verdict: **PASS**
 
 Correct:
 
-- signed-out ownership boundary redirects to a branded Clerk entry;
-- official logo is visible; no admin setup or implementation detail leaks.
+- public visitors see the branded token gateway and an intentional Back
+  control;
+- invalid codes return a generic customer-safe state without hash/pepper
+  metadata;
+- no Clerk redirect is required for code redemption;
+- authenticated member grants remain available for existing owned-order flows;
+- official logo is visible and no admin setup or implementation detail leaks.
 
-Incorrect:
-
-- authenticated access-code, browse and order states could not be rendered because
-  local Clerk credentials mismatch and canonical Convex provisioning does not complete.
-
-Correction: configure one matching local/Production Clerk instance and restore access
-to canonical Convex; do not substitute demo data or another project.
+Correction: redeem only an authentic admin-issued code for private browse/order
+runtime evidence; no fixture or alternate backend is permitted.
 
 ## Join Blessfriends
 
@@ -126,20 +126,23 @@ Correction: covered by component/domain tests; no dummy request inserted.
 Routes: `/account`, `/account/orders`, `/account/invoices`
 Viewport: 390 × 844
 Mockup/reference: mobile mockups 5–8, extended dashboard/history
-Verdict: **FAIL**
+Verdict: **PASS**
 
 Correct:
 
 - source retains owned dashboard/history, orders, invoices, deposit, exceptions and
   refund obligation projections;
-- signed-out protection and branded Clerk entry render correctly.
+- signed-out account, Buku Saya, and Tagihan states render with the official
+  mascot, customer copy, `Ke Akun`, and no immediate Clerk redirect.
 
 Incorrect:
 
-- authenticated route content cannot be accepted from source inspection alone.
+- authenticated route content remains dependent on real invited Production
+  identity and records; no fixture was created for that screenshot.
 
-Correction: fix the Clerk instance-key mismatch and canonical Convex access, then
-capture customer states with a real invited test account.
+Correction: use a real invited Production test account for authenticated
+dashboard/order/invoice evidence when that QA identity is available; the
+signed-out correction is already rendered and covered.
 
 ## Admin home, books, orders, batch detail, payments and exceptions
 

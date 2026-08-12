@@ -126,10 +126,26 @@ function AddressForm() {
   );
 }
 
+function SignedOutAddresses() {
+  return (
+    <div className="route-with-back">
+      <BackButton fallback="/account" />
+      <div className="guard-card">
+        <span className="eyebrow">Akun Blessfriend</span>
+        <h1>Masuk lewat Akun untuk mengatur alamat.</h1>
+        <p>Masuk untuk melihat dan memperbarui alamat pengirimanmu.</p>
+        <a className="button button-primary" href="/account">
+          Ke Akun
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function AddressesPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutAddresses />}>
         <div className="page narrow-page">
           <BackButton fallback="/account" />
           <PageHeader

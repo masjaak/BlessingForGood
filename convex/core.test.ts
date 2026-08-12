@@ -2,12 +2,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
-import {
-  configureTestEnvironment,
-  createOpenCatalog,
-  setupUsers,
-  testConvex,
-} from "../tests/convex-helpers";
+import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
 describe("BFG Convex core persistence", () => {
   beforeEach(configureTestEnvironment);
@@ -48,6 +43,95 @@ describe("BFG Convex core persistence", () => {
     const catalog = await customer.query(api.catalogAccess.getUnlocked, { catalogId: bundle.catalogId });
     expect(catalog).toMatchObject({ name: "Test Catalog", status: "open" });
     expect(catalog?.books[0].variants).toHaveLength(1);
+  });
+
+  it("allows anonymous token redemption only through a scoped expiring session", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const bundle = await createOpenCatalog(admin, "Anonymous Catalog", "0003", "anonymous-code");
+
+    const unlocked = await t.mutation(api.catalogAccess.unlock, {
+      accessCode: "anonymous-code",
+      attemptKey: "browser-session-a",
+    });
+    if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
+    expect(unlocked.sessionToken).toMatch(/^[a-f0-9]{64}$/);
+    const storedSession = await t.run(async (ctx) => ctx.db.query("catalogAccessSessions").first());
+    expect(storedSession).not.toHaveProperty("sessionToken");
+    expect(storedSession?.sessionDigest).not.toBe(unlocked.sessionToken);
+
+    await expect(
+      t.query(api.catalogAccess.getUnlocked, {
+        catalogId: bundle.catalogId,
+        sessionToken: unlocked.sessionToken,
+      }),
+    ).resolves.toMatchObject({ id: bundle.catalogId });
+
+    const otherCatalog = await createOpenCatalog(admin, "Other Catalog", "0004", "other-code");
+    await expect(
+      t.query(api.catalogAccess.getUnlocked, {
+        catalogId: otherCatalog.catalogId,
+        sessionToken: unlocked.sessionToken,
+      }),
+    ).resolves.toBeNull();
+
+    await t.run(async (ctx) => {
+      if (!storedSession) throw new Error("session missing");
+      await ctx.db.patch(storedSession._id, { expiresAt: 0 });
+    });
+    await expect(
+      t.query(api.catalogAccess.getUnlocked, {
+        catalogId: bundle.catalogId,
+        sessionToken: unlocked.sessionToken,
+      }),
+    ).resolves.toBeNull();
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await t.mutation(api.catalogAccess.unlock, {
+        accessCode: `wrong-anonymous-${attempt}`,
+        attemptKey: "browser-session-b",
+      });
+    }
+    await expect(
+      t.mutation(api.catalogAccess.unlock, {
+        accessCode: "wrong-anonymous-after-lock",
+        attemptKey: "browser-session-b",
+      }),
+    ).resolves.toMatchObject({ errorCode: "ACCESS_CODE_RATE_LIMITED" });
+
+    const replacement = await t.mutation(api.catalogAccess.unlock, {
+      accessCode: "anonymous-code",
+      attemptKey: "browser-session-c",
+    });
+    if ("errorCode" in replacement) throw new Error(replacement.errorCode);
+    await admin.mutation(api.catalogAccess.revokeCode, { catalogId: bundle.catalogId });
+    await expect(
+      t.query(api.catalogAccess.getUnlocked, {
+        catalogId: bundle.catalogId,
+        sessionToken: replacement.sessionToken,
+      }),
+    ).resolves.toBeNull();
+    await expect(
+      t.mutation(api.catalogAccess.unlock, {
+        accessCode: "anonymous-code",
+        attemptKey: "browser-session-d",
+      }),
+    ).resolves.toMatchObject({ errorCode: "ACCESS_CODE_INVALID" });
+    await t.run(async (ctx) => {
+      const code = await ctx.db
+        .query("catalogAccessCodes")
+        .withIndex("by_lookup_digest")
+        .collect()
+        .then((records) => records.find((record) => record.catalogId === otherCatalog.catalogId));
+      if (!code) throw new Error("other catalog code missing");
+      await ctx.db.patch(code._id, { expiresAt: -1 });
+    });
+    await expect(
+      t.mutation(api.catalogAccess.unlock, {
+        accessCode: "other-code",
+        attemptKey: "browser-session-e",
+      }),
+    ).resolves.toMatchObject({ errorCode: "ACCESS_CODE_EXPIRED" });
   });
 
   it("generates one-time codes, rate-limits failures, and keeps existing grants readable after revocation", async () => {
@@ -92,11 +176,15 @@ describe("BFG Convex core persistence", () => {
     });
     expect(order).toMatchObject({ totalAmount: 250000, status: "submitted" });
     expect(order.items[0]).toMatchObject({ unitPriceAmountSnapshot: 125000, quantity: 2, formatSnapshot: "PB" });
-    expect((await customer.query(api.orders.listMine, { paginationOpts: { numItems: 10, cursor: null } })).page).toHaveLength(1);
+    expect(
+      (await customer.query(api.orders.listMine, { paginationOpts: { numItems: 10, cursor: null } })).page,
+    ).toHaveLength(1);
     await expect(secondCustomer.query(api.orders.getMine, { orderId: order.orderId })).rejects.toThrow(
       "ORDER_ACCESS_DENIED",
     );
-    expect((await admin.query(api.orders.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } })).page).toHaveLength(1);
+    expect(
+      (await admin.query(api.orders.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } })).page,
+    ).toHaveLength(1);
   });
 
   it("edits only before catalog close", async () => {

@@ -16,7 +16,11 @@ export function BackButton({ fallback = "/", publicOnly = false }: { fallback?: 
         (prefix) => path === prefix || path.startsWith(`${prefix}/`),
       );
       queueMicrotask(() =>
-        setHasInternalHistory(new URL(referrer).origin === window.location.origin && (!publicOnly || !isProtected)),
+        setHasInternalHistory(
+          new URL(referrer).origin === window.location.origin &&
+            path !== window.location.pathname &&
+            (!publicOnly || !isProtected),
+        ),
       );
     } catch {
       queueMicrotask(() => setHasInternalHistory(false));

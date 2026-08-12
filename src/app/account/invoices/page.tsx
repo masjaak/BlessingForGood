@@ -81,10 +81,24 @@ function CustomerInvoices() {
   return <PersistentCustomerInvoices />;
 }
 
+function SignedOutInvoices() {
+  return (
+    <div className="page narrow-page account-gate-page">
+      <EmptyState
+        eyebrow="Tagihan"
+        title="Tagihanmu akan muncul di sini."
+        description="Masuk lewat Akun untuk melihat invoice, pembayaran, dan status tagihan."
+        mascotVariant="default"
+        action={<LinkButton href="/account">Ke Akun</LinkButton>}
+      />
+    </div>
+  );
+}
+
 export default function CustomerInvoicesPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutInvoices />}>
         <CustomerInvoices />
       </ProductAccessGuard>
     </SiteShell>

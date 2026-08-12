@@ -10,7 +10,7 @@ import type { Order } from "@/domain/prototype/types";
 import { Button, Card, Field, LinkButton, Money, PageHeader } from "@/components/ui";
 
 export function CustomerCatalog() {
-  const { unlockedCatalog: catalog, unlockCatalog, submitOrder } = useProduct();
+  const { unlockedCatalog: catalog, unlockCatalog, submitOrder, sessionRole } = useProduct();
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
@@ -111,8 +111,8 @@ export function CustomerCatalog() {
         <Card className="form-card">
           <PageHeader
             eyebrow="Secret Catalog"
-            title="Masukkan kode aksesmu."
-            description="Kode katalog berbeda dari kata sandi akun dan hanya membuka katalog yang dibagikan kepadamu."
+            title="Buka katalog privatmu."
+            description="Masukkan kode akses yang dibagikan admin BFG. Kode ini langsung membuka katalog yang sesuai."
           />
           <form onSubmit={handleUnlock} className="form-card">
             <Field label="Kode akses katalog" hint="Gunakan kode yang dibagikan oleh BFG.">
@@ -243,32 +243,40 @@ export function CustomerCatalog() {
             <span>Total</span>
             <Money amount={total} />
           </div>
-          <form onSubmit={handleSubmit} className="form-card">
-            <Field label="Nama">
-              <input
-                className="input"
-                value={customerName}
-                onChange={(event) => setCustomerName(event.target.value)}
-                required
-              />
-            </Field>
-            <Field label="Email (opsional)">
-              <input
-                className="input"
-                type="email"
-                value={customerEmail}
-                onChange={(event) => setCustomerEmail(event.target.value)}
-              />
-            </Field>
-            {submitError ? (
-              <p className="error-text" role="alert">
-                {submitError}
-              </p>
-            ) : null}
-            <Button type="submit" disabled={isSubmitting || selectedItems.length === 0}>
-              {isSubmitting ? "Mencatat…" : "Catat preorder"}
-            </Button>
-          </form>
+          {sessionRole === "customer" ? (
+            <form onSubmit={handleSubmit} className="form-card">
+              <Field label="Nama">
+                <input
+                  className="input"
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  required
+                />
+              </Field>
+              <Field label="Email (opsional)">
+                <input
+                  className="input"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(event) => setCustomerEmail(event.target.value)}
+                />
+              </Field>
+              {submitError ? (
+                <p className="error-text" role="alert">
+                  {submitError}
+                </p>
+              ) : null}
+              <Button type="submit" disabled={isSubmitting || selectedItems.length === 0}>
+                {isSubmitting ? "Mencatat…" : "Catat preorder"}
+              </Button>
+            </form>
+          ) : (
+            <div className="catalog-member-note">
+              <span className="card-kicker">Sudah menemukan bukunya?</span>
+              <p>Masuk lewat Akun untuk mencatat preorder dan melihat perjalanannya.</p>
+              <LinkButton href="/account">Ke Akun</LinkButton>
+            </div>
+          )}
         </Card>
       </div>
     </div>

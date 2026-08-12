@@ -2,8 +2,13 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { accessCodeDigests, randomAccessCode } from "./lib/accessCodes";
-import { requirePermission } from "./lib/auth";
+import {
+  accessCodeDigests,
+  catalogSessionDigest,
+  randomAccessCode,
+  randomCatalogSessionToken,
+} from "./lib/accessCodes";
+import { findCurrentUser, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
 import { constantTimeEqual, keyedDigest } from "./lib/crypto";
@@ -15,6 +20,64 @@ import { requiredText } from "./lib/validation";
 const FAILED_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
+const CATALOG_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+type UnlockErrorCode =
+  | "ACCESS_CODE_INVALID"
+  | "ACCESS_CODE_EXPIRED"
+  | "CATALOG_NOT_OPEN"
+  | "ACCESS_CODE_RATE_LIMITED";
+
+function anonymousAttemptKey(args: { attemptKey?: string }): string {
+  return requiredText(args.attemptKey || "", "attempt key");
+}
+
+async function anonymousAttemptDigest(attemptKey: string): Promise<string> {
+  return keyedDigest(requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"), "catalog-attempt", attemptKey);
+}
+
+async function anonymousAttempt(ctx: MutationCtx, attemptKey: string) {
+  const subjectDigest = await anonymousAttemptDigest(attemptKey);
+  const attempt = await ctx.db
+    .query("catalogAccessAnonymousAttempts")
+    .withIndex("by_subject_digest", (query) => query.eq("subjectDigest", subjectDigest))
+    .first();
+  return { subjectDigest, attempt };
+}
+
+async function rejectAnonymousUnlock(ctx: MutationCtx, attemptKey: string, code: UnlockErrorCode) {
+  const now = Date.now();
+  const { subjectDigest, attempt } = await anonymousAttempt(ctx, attemptKey);
+  if (attempt?.lockedUntil && attempt.lockedUntil > now) return { errorCode: "ACCESS_CODE_RATE_LIMITED" as const };
+  const inWindow = attempt && now - attempt.windowStartedAt < FAILED_ATTEMPT_WINDOW_MS;
+  const failedCount = inWindow ? attempt.failedCount + 1 : 1;
+  const values = {
+    windowStartedAt: inWindow ? attempt.windowStartedAt : now,
+    failedCount,
+    lockedUntil: failedCount >= MAX_FAILED_ATTEMPTS ? now + LOCKOUT_MS : undefined,
+    updatedAt: now,
+  };
+  if (attempt) await ctx.db.patch(attempt._id, values);
+  else await ctx.db.insert("catalogAccessAnonymousAttempts", { subjectDigest, ...values });
+  return { errorCode: code };
+}
+
+async function anonymousAccessIsLocked(ctx: MutationCtx, attemptKey: string): Promise<boolean> {
+  const { attempt } = await anonymousAttempt(ctx, attemptKey);
+  return Boolean(attempt?.lockedUntil && attempt.lockedUntil > Date.now());
+}
+
+async function clearAnonymousAttempts(ctx: MutationCtx, attemptKey: string): Promise<void> {
+  const { attempt } = await anonymousAttempt(ctx, attemptKey);
+  if (attempt) {
+    await ctx.db.patch(attempt._id, {
+      failedCount: 0,
+      windowStartedAt: Date.now(),
+      lockedUntil: undefined,
+      updatedAt: Date.now(),
+    });
+  }
+}
 
 async function rejectUnlock(
   ctx: MutationCtx,
@@ -142,9 +205,15 @@ export const revokeCode = mutation({
 });
 
 export const unlock = mutation({
-  args: { accessCode: v.string() },
+  args: { accessCode: v.string(), attemptKey: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const user = await requirePermission(ctx, "catalog.read");
+    const identity = await ctx.auth.getUserIdentity();
+    const member = identity ? await findCurrentUser(ctx, identity) : null;
+    const memberCanReceiveGrant = Boolean(member && member.status === "active");
+    const attemptKey = memberCanReceiveGrant ? undefined : anonymousAttemptKey(args);
+    if (attemptKey && (await anonymousAccessIsLocked(ctx, attemptKey))) {
+      return { errorCode: "ACCESS_CODE_RATE_LIMITED" as const };
+    }
     const code = requiredText(args.accessCode, "access code");
     const lookupDigest = await keyedDigest(
       requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"),
@@ -155,42 +224,89 @@ export const unlock = mutation({
       .query("catalogAccessCodes")
       .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", lookupDigest))
       .first();
-    if (!record || !record.isActive) return rejectUnlock(ctx, user, "ACCESS_CODE_INVALID");
-    if (record.expiresAt && record.expiresAt <= Date.now()) return rejectUnlock(ctx, user, "ACCESS_CODE_EXPIRED");
+    if (!record || !record.isActive)
+      return attemptKey
+        ? rejectAnonymousUnlock(ctx, attemptKey, "ACCESS_CODE_INVALID")
+        : rejectUnlock(ctx, member!, "ACCESS_CODE_INVALID");
+    if (record.expiresAt && record.expiresAt <= Date.now())
+      return attemptKey
+        ? rejectAnonymousUnlock(ctx, attemptKey, "ACCESS_CODE_EXPIRED")
+        : rejectUnlock(ctx, member!, "ACCESS_CODE_EXPIRED");
     const expected = await keyedDigest(
       requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"),
       "catalog-access",
       `${record.catalogId}:${code}`,
     );
-    if (!constantTimeEqual(expected, record.codeDigest)) return rejectUnlock(ctx, user, "ACCESS_CODE_INVALID");
+    if (!constantTimeEqual(expected, record.codeDigest))
+      return attemptKey
+        ? rejectAnonymousUnlock(ctx, attemptKey, "ACCESS_CODE_INVALID")
+        : rejectUnlock(ctx, member!, "ACCESS_CODE_INVALID");
     const catalog = await ctx.db.get(record.catalogId);
-    if (!catalog || !(await catalogIsOpen(ctx, record.catalogId))) return rejectUnlock(ctx, user, "CATALOG_NOT_OPEN");
-    await clearUnlockAttempts(ctx, user);
-    const existing = await ctx.db
-      .query("catalogAccessGrants")
-      .withIndex("by_app_user_id_and_catalog_id", (query) =>
-        query.eq("appUserId", user._id).eq("catalogId", record.catalogId),
-      )
-      .first();
+    if (!catalog || !(await catalogIsOpen(ctx, record.catalogId)))
+      return attemptKey
+        ? rejectAnonymousUnlock(ctx, attemptKey, "CATALOG_NOT_OPEN")
+        : rejectUnlock(ctx, member!, "CATALOG_NOT_OPEN");
     const now = Date.now();
-    const expiresAt = Math.min(catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS, now + 24 * 60 * 60 * 1000);
-    if (existing) {
-      await ctx.db.patch(existing._id, { grantedAt: now, expiresAt, revokedAt: undefined });
+    const expiresAt = Math.min(
+      catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
+      record.expiresAt || OPEN_ENDED_TIMESTAMP_MS,
+      now + CATALOG_SESSION_TTL_MS,
+    );
+    const sessionToken = randomCatalogSessionToken();
+    await ctx.db.insert("catalogAccessSessions", {
+      catalogId: record.catalogId,
+      accessCodeId: record._id,
+      sessionDigest: await catalogSessionDigest(sessionToken),
+      createdAt: now,
+      expiresAt,
+    });
+    if (memberCanReceiveGrant) {
+      await clearUnlockAttempts(ctx, member!);
+      const existing = await ctx.db
+        .query("catalogAccessGrants")
+        .withIndex("by_app_user_id_and_catalog_id", (query) =>
+          query.eq("appUserId", member!._id).eq("catalogId", record.catalogId),
+        )
+        .first();
+      if (existing) {
+        await ctx.db.patch(existing._id, { grantedAt: now, expiresAt, revokedAt: undefined });
+      } else {
+        await ctx.db.insert("catalogAccessGrants", {
+          appUserId: member!._id,
+          catalogId: record.catalogId,
+          grantedAt: now,
+          expiresAt,
+        });
+      }
     } else {
-      await ctx.db.insert("catalogAccessGrants", {
-        appUserId: user._id,
-        catalogId: record.catalogId,
-        grantedAt: now,
-        expiresAt,
-      });
+      await clearAnonymousAttempts(ctx, attemptKey!);
     }
-    return { catalogId: record.catalogId, expiresAt, catalog: await getCatalogView(ctx, record.catalogId) };
+    return {
+      catalogId: record.catalogId,
+      expiresAt,
+      sessionToken,
+      catalog: await getCatalogView(ctx, record.catalogId),
+    };
   },
 });
 
 export const getUnlocked = query({
-  args: { catalogId: v.id("secretCatalogs") },
+  args: { catalogId: v.id("secretCatalogs"), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    if (args.sessionToken) {
+      const sessionDigest = await catalogSessionDigest(args.sessionToken);
+      const session = await ctx.db
+        .query("catalogAccessSessions")
+        .withIndex("by_session_digest", (query) => query.eq("sessionDigest", sessionDigest))
+        .first();
+      if (!session || session.catalogId !== args.catalogId || session.revokedAt || session.expiresAt <= Date.now()) {
+        return null;
+      }
+      const code = await ctx.db.get(session.accessCodeId);
+      if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return null;
+      if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
+      return getCatalogView(ctx, args.catalogId);
+    }
     const user = await requirePermission(ctx, "catalog.read");
     const grant = await ctx.db
       .query("catalogAccessGrants")

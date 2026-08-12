@@ -1,15 +1,17 @@
 "use client";
 
-import { SignInButton, UserButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import type { ReactNode } from "react";
 import { useProduct } from "@/domain/prototype/store";
 
 export function ProductAccessGuard({
   children,
   requiredRole,
+  signedOutContent,
 }: {
   children: ReactNode;
   requiredRole?: "admin" | "customer" | "owner";
+  signedOutContent?: ReactNode;
 }) {
   const { hydrated, dataSource, sessionRole, userStatus, authState } = useProduct();
 
@@ -24,14 +26,16 @@ export function ProductAccessGuard({
   }
   if (authState === "signed-out") {
     return (
-      <div className="guard-card">
-        <span className="eyebrow">Perlu masuk</span>
-        <h1>Masuk untuk melanjutkan</h1>
-        <p>Gunakan akun Blessfriends yang sudah diundang.</p>
-        <SignInButton mode="redirect" withSignUp={false}>
-          Masuk
-        </SignInButton>
-      </div>
+      signedOutContent || (
+        <div className="guard-card">
+          <span className="eyebrow">Akun Blessfriend</span>
+          <h1>Masuk lewat Akun untuk melihat bagian ini.</h1>
+          <p>Pesanan, invoice, dan aktivitasmu hanya tampil setelah kamu masuk.</p>
+          <a className="button button-primary" href="/account">
+            Ke Akun
+          </a>
+        </div>
+      )
     );
   }
   if (authState === "admission-required") {

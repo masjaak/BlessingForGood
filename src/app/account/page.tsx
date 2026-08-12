@@ -200,10 +200,29 @@ function AccountDashboard() {
   );
 }
 
+function SignedOutAccount() {
+  return (
+    <div className="page narrow-page account-gate-page">
+      <EmptyState
+        eyebrow="Akun Blessfriend"
+        title="Masuk untuk melihat perjalananmu."
+        description="Lihat pesanan, tagihan, alamat, dan aktivitasmu dari satu tempat."
+        mascotVariant="default"
+        primaryAction={<LinkButton href="/sign-in?redirect_url=/account">Masuk</LinkButton>}
+        secondaryAction={
+          <LinkButton href="/join" variant="secondary">
+            Join Blessfriends
+          </LinkButton>
+        }
+      />
+    </div>
+  );
+}
+
 export default function AccountPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutAccount />}>
         <AccountDashboard />
       </ProductAccessGuard>
     </SiteShell>

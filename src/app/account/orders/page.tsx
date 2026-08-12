@@ -135,10 +135,24 @@ function CustomerOrders() {
   );
 }
 
+function SignedOutOrders() {
+  return (
+    <div className="page narrow-page account-gate-page">
+      <EmptyState
+        eyebrow="Buku Saya"
+        title="Belum ada buku yang bisa ditampilkan."
+        description="Masuk lewat Akun untuk melihat pesanan, perjalanan batch, dan buku milikmu."
+        mascotVariant="default"
+        action={<LinkButton href="/account">Ke Akun</LinkButton>}
+      />
+    </div>
+  );
+}
+
 export default function CustomerOrdersPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer">
+      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutOrders />}>
         <CustomerOrders />
       </ProductAccessGuard>
     </SiteShell>

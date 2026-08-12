@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { BfgSplash } from "@/components/bfg-splash";
-import { bfgClerkAppearance } from "@/config/clerk";
+import { bfgClerkAppearance, bfgClerkLocalization } from "@/config/clerk";
 import { ProductProvider } from "@/domain/prototype/store";
 import "./globals.css";
 
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="id">
       <body>
-        <ClerkProvider appearance={bfgClerkAppearance}>
+        <ClerkProvider appearance={bfgClerkAppearance} localization={bfgClerkLocalization}>
           <ProductProvider>
             <BfgSplash />
             {children}

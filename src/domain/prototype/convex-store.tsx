@@ -8,7 +8,14 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { ProductContext, type ProductContextValue } from "@/domain/prototype/context";
 import { ConvexOperationsProvider } from "@/domain/prototype/operations-context";
-import { getStoredUnlockedCatalogId, setStoredUnlockedCatalogId } from "@/domain/prototype/session";
+import {
+  getCatalogAttemptKey,
+  getStoredCatalogSession,
+  getStoredUnlockedCatalogId,
+  setStoredCatalogSession,
+  setStoredUnlockedCatalogId,
+  type StoredCatalogSession,
+} from "@/domain/prototype/session";
 import type {
   BookFormat,
   CreateCatalogInput,
@@ -121,6 +128,7 @@ function pageOf<T>(value: { page: T[] } | undefined): T[] {
 
 export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
+  const [catalogSession, setCatalogSession] = useState<StoredCatalogSession | null>(null);
   const [provisioning, setProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState(false);
   const [admissionDenied, setAdmissionDenied] = useState(false);
@@ -151,7 +159,14 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   );
   const unlocked = useQuery(
     api.catalogAccess.getUnlocked,
-    isCustomer && unlockedCatalogId ? { catalogId: unlockedCatalogId as Id<"secretCatalogs"> } : "skip",
+    catalogSession
+      ? {
+          catalogId: catalogSession.catalogId as Id<"secretCatalogs">,
+          sessionToken: catalogSession.sessionToken,
+        }
+      : isCustomer && unlockedCatalogId
+        ? { catalogId: unlockedCatalogId as Id<"secretCatalogs"> }
+        : "skip",
   );
   const customerOrders = useQuery(
     api.orders.listMine,
@@ -160,6 +175,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     queueMicrotask(() => {
+      setCatalogSession(getStoredCatalogSession());
       setUnlockedCatalogId(getStoredUnlockedCatalogId());
     });
   }, []);
@@ -247,12 +263,25 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
 
   const unlockCatalog = useCallback(
     async (accessCode: string) => {
-      const result = await unlock({ accessCode });
+      const result = await unlock({
+        accessCode,
+        attemptKey: getCatalogAttemptKey(),
+      });
       if ("errorCode" in result) throw new Error(result.errorCode);
       const catalog = asCatalog(result.catalog as CatalogView);
       if (catalog) {
         setUnlockedCatalogId(catalog.id);
-        setStoredUnlockedCatalogId(catalog.id);
+        if (result.sessionToken) {
+          const session = {
+            catalogId: result.catalogId,
+            sessionToken: result.sessionToken,
+            expiresAt: result.expiresAt,
+          } satisfies StoredCatalogSession;
+          setCatalogSession(session);
+          setStoredCatalogSession(session);
+        } else {
+          setStoredUnlockedCatalogId(catalog.id);
+        }
       }
       return catalog;
     },

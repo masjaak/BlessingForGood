@@ -15,7 +15,7 @@ export default async function SignInPage({
   if (userId) redirect(redirectUrl);
   return (
     <main className="auth-page">
-      <BackButton fallback="/" publicOnly />
+      <BackButton fallback="/" />
       <BrandLogo linkToHome={false} />
       <p className="auth-invite-note">Blessing For Goods khusus untuk anggota yang telah menerima undangan.</p>
       <ClerkAuthForm mode="sign-in" redirectUrl={redirectUrl} />

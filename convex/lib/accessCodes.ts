@@ -21,3 +21,13 @@ export function randomAccessCode(): string {
   );
   return `BFG-${parts.join("-")}`;
 }
+
+export function randomCatalogSessionToken(): string {
+  const bytes = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function catalogSessionDigest(sessionToken: string): Promise<string> {
+  return keyedDigest(requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"), "catalog-session", sessionToken);
+}

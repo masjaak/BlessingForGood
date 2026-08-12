@@ -27,8 +27,10 @@
 
 - Access codes are keyed digests; plaintext codes never enter documents or
   audit metadata.
-- A grant requires authenticated app-user identity, valid code, open catalog,
-  and unexpired/revocable grant state.
+- A member grant requires authenticated app-user identity, valid code, open
+  catalog, and unexpired/revocable grant state. Token-only browse uses a
+  separate scoped, expiring catalog session and does not create identity or
+  ownership.
 - Customer B cannot inherit customer A's grant.
 - Order creation derives `customerUserId` from the authenticated app user and
   calculates totals/snapshots inside one mutation.
@@ -106,7 +108,7 @@
   active exceptions; a resolved partial exception may cover only the remaining
   fulfillable quantity.
 - `fulfillable quantity = ordered quantity - affected quantity from blocking
-  exceptions`; quantity is never negative. Rejected and resolved `no_action`
+exceptions`; quantity is never negative. Rejected and resolved `no_action`
   cases do not block normal fulfillment.
 - Customer cancellation is a request. The server evaluator returns
   `eligible`, `requires_admin_review`, or `not_eligible`; customer UI state is
@@ -118,8 +120,8 @@
 - Issued invoice `totalAmount` and invoice items are historical. The derived
   adjusted total is the original total plus append-only exception adjustments.
 - `outstanding = max(0, adjusted total - allocated deposit - approved external
-  payment)` and `overpayment = max(0, allocated deposit + approved external
-  payment - adjusted total)`; all values are integer IDR and non-negative.
+payment)` and `overpayment = max(0, allocated deposit + approved external
+payment - adjusted total)`; all values are integer IDR and non-negative.
 - Approved payment confirmations and deposit ledger rows are never deleted or
   edited. Deposit release adds the existing compensating release transaction;
   an allocation can be released only once.

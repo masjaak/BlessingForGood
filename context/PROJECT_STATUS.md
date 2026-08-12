@@ -1,32 +1,41 @@
 # BFG Project Status
 
-## Homepage / Join / Secret Catalog V3
+## Customer Mobile UX Correction V3.1
 
-**Status:** PRODUCTION DEPLOYED — AUTHENTICATED LIVE QA BLOCKED BY CURRENT TEST ENVIRONMENT ACCESS
+**Status:** RELEASE CANDIDATE — PRODUCTION DEPLOYMENT PENDING
+
+V3.1 corrects the rendered customer mobile experience forward-only. The
+header logo is smaller, top-right `Masuk` opens the dedicated BFG sign-in
+page, signed-out bottom-navigation destinations render customer states before
+authentication, and `/catalog` is a public token gateway. Secret Catalog
+access uses a server-validated opaque expiring session; the previous
+authenticated-member-plus-code prerequisite is superseded for this customer
+entry flow. Existing active-member grants remain backward compatible, and
+token-only browsing does not create customer identity or owned orders.
+
+The homepage story cards now use a larger official logo and a non-overlapping
+top-right Blessy composition. Join remains canonical `joinRequests`, and all
+customer/admin data continues through the shared Convex backend. Admin visual
+redesign remains deferred. No business fixtures or dummy records were added.
 
 **Branch:** `main`
 
-**Starting commit:** `bd95b5e` (`feat: finalize customer mobile experience`)
+**Starting commit:** `8e67bfc` (`docs: record V3 production deployment`)
 
-**Production commit:** `52d3ec4` (`feat: ship homepage join and invite-only catalog access`)
+**Implementation commit:** pending
 
 **Vercel deployment:** `dpl_7r3yVo1N5TJKBefoBYJYPXM3ENxv` — Ready; canonical
 aliases include `https://blessingforgood.com`. Vercel logs show the build,
 TypeScript check, static generation, Convex schema validation, and deployment
 to Production Convex `clean-eel-522` completed successfully.
 
-The V3 customer surfaces are implemented forward-only in the integrated
-Phase 01–06.4 application: homepage story, anchored Quick Paths, Join fields
-and canonical `joinRequests` persistence, post-submit WhatsApp continuation,
-invite-only Clerk presentation and admission enforcement, safe Back controls,
-and two-layer Secret Catalog access. Generated catalog codes are never stored
-as plaintext. The full admin visual redesign remains deferred.
+The V3.1 customer surfaces are implemented forward-only in the integrated
+Phase 01–06.4 application. Generated catalog codes and session credentials are
+never stored as plaintext authoritative values. The full admin visual
+redesign remains deferred.
 
-Local gates currently pass: TypeScript, ESLint, 98 Vitest tests, and 63 Convex
-tests. Public Production route HTML and the no-ticket `/sign-up` gate were
-checked through the Ready deployment. Authenticated mobile smoke remains
-blocked because Clerk's testing-token fetch fails in this workspace and the
-local Convex CLI cannot inspect the selected Production project. No secret
+Local gates currently pass: TypeScript, ESLint, 100 Vitest tests, 64 Convex
+tests, and mobile signed-out Playwright smoke at 375, 390, and 430. No secret
 values, dummy records, or alternate deployments were used.
 
 The join continuation is safe when `BFG_JOIN_WHATSAPP_GROUP_URL` is absent:

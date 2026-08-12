@@ -24,12 +24,15 @@ source, or Production fallback.
 
 ## Environment classification
 
-| Name | Classification |
-| --- | --- |
-| `BFG_PREVIEW_ADMIN_ACCESS_CODE` | obsolete for active Preview |
-| `BFG_SESSION_TOKEN_PEPPER` | legacy test-only; not used by active functions |
-| `BFG_PREVIEW_DEMO_MODE` | legacy server capability only; not an active identity gate |
-| `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` | temporary Preview presentation/feature flag; never auth |
+| Name                                | Classification                                             |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `BFG_PREVIEW_ADMIN_ACCESS_CODE`     | obsolete for active Preview                                |
+| `BFG_SESSION_TOKEN_PEPPER`          | legacy test-only; not used by active functions             |
+| `BFG_PREVIEW_DEMO_MODE`             | legacy server capability only; not an active identity gate |
+| `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` | temporary Preview presentation/feature flag; never auth    |
 
-The active catalog code path uses configured server-side secret material and
-Clerk authorization; it no longer requires the legacy Preview flag.
+The active catalog code path uses configured server-side secret material. A
+public code redemption creates an opaque, catalog-scoped expiring session;
+active members may also receive the backward-compatible app-user grant. The
+customer gateway no longer requires Clerk authentication, and the path no
+longer requires the legacy Preview flag.

@@ -136,11 +136,15 @@ export default function HomePage() {
               </p>
             </article>
             <article className="story-card story-card-blessy">
-              <div className="story-card-visual">
-                <BrandMascot variant="warm" className="story-mascot" />
+              <div className="story-card-blessy-top">
+                <div className="story-card-blessy-copy">
+                  <span className="eyebrow">Kenalan sama Blessy</span>
+                  <h3>Teman kecil yang ikut tumbuh.</h3>
+                </div>
+                <div className="story-card-blessy-mascot">
+                  <BrandMascot variant="warm" className="story-mascot" />
+                </div>
               </div>
-              <span className="eyebrow">Kenalan sama Blessy</span>
-              <h3>Teman kecil yang ikut tumbuh.</h3>
               <p>
                 Setiap cerita yang dibuka membuat Blessy ikut tumbuh bersama Blessfriends—lewat buku, imajinasi, dan
                 pengalaman baru.

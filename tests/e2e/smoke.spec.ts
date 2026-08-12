@@ -1,4 +1,3 @@
-import { clerkSetup, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
@@ -32,23 +31,36 @@ const adminRoutes = [
   "/admin/users",
 ];
 
-const publicShellRoutes = new Set(["/", "/community", "/how-to-order", "/help", "/ready-stock", "/join"]);
-const protectedRoutes = new Set([
+const publicShellRoutes = new Set([
+  "/",
+  "/community",
+  "/how-to-order",
+  "/help",
+  "/ready-stock",
+  "/join",
   "/catalog",
   "/account",
   "/account/orders",
   "/account/invoices",
   "/account/profile",
   "/account/addresses",
-  ...adminRoutes,
 ]);
-const screenshotRoutes = new Set(["/", "/community", "/how-to-order", "/ready-stock", "/catalog", "/join", "/sign-in"]);
+const authRoutes = new Set(["/sign-in"]);
+const protectedRoutes = new Set(adminRoutes);
+const screenshotRoutes = new Set([
+  "/",
+  "/community",
+  "/how-to-order",
+  "/ready-stock",
+  "/catalog",
+  "/join",
+  "/sign-in",
+  "/account",
+  "/account/orders",
+  "/account/invoices",
+]);
 const prohibitedCopy =
   /Prototype Preview|Prototype v0\.1|Prototype mode|Prototype boundary|Admin prototype|Data is stored only in this browser|production ownership is not enabled yet|local prototype|local storage|never seeds applicant records|dummy data/i;
-
-test.beforeAll(async () => {
-  await clerkSetup();
-});
 
 async function verifyRoute(route: string, page: Page, project: string) {
   const consoleErrors: string[] = [];
@@ -57,8 +69,6 @@ async function verifyRoute(route: string, page: Page, project: string) {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await setupClerkTestingToken({ page });
-
   const response = await page.goto(route, { waitUntil: "networkidle" });
   expect(response?.status(), `${route} response`).toBeLessThan(400);
   await expect(page.locator("body")).not.toHaveText("");
@@ -66,7 +76,7 @@ async function verifyRoute(route: string, page: Page, project: string) {
   if (route === "/ready-stock") await expect(page.getByText("Memuat Ready Stock…")).toBeHidden({ timeout: 15_000 });
 
   if (publicShellRoutes.has(route)) {
-    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("h1, h2").first()).toBeVisible();
     if ((page.viewportSize()?.width || 0) <= 800) {
       await expect(page.getByRole("navigation", { name: "Navigasi customer" })).toBeVisible();
       await expect(page.locator('summary[aria-label="Buka menu"]')).toHaveCount(0);
@@ -74,6 +84,12 @@ async function verifyRoute(route: string, page: Page, project: string) {
       await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
     }
     await expect(page.getByRole("link", { name: "Blessing For Goods home" }).getByRole("img")).toBeVisible();
+  } else if (authRoutes.has(route)) {
+    await expect(page).toHaveURL(/\/sign-in/);
+    await expect(page.getByRole("img", { name: "Blessing For Goods" })).toBeVisible();
+    await expect(page.getByText(/khusus Blessfriends/i)).toBeVisible();
+    await expect(page.locator("[data-clerk-component]")).toBeVisible();
+    await expect(page.getByText(/sign up|buat akun/i)).toBeHidden();
   } else {
     if (protectedRoutes.has(route)) {
       await expect(page).toHaveURL(/\/sign-in/);
@@ -107,8 +123,7 @@ test.describe("@customer BFG customer route smoke", () => {
     });
   }
 
-  test("signed-out navigation keeps protected destinations out of the public shell", async ({ page }) => {
-    await setupClerkTestingToken({ page });
+  test("signed-out navigation shows customer states before authentication", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     const links = await page
       .getByRole("navigation", {
@@ -134,11 +149,27 @@ test.describe("@customer BFG customer route smoke", () => {
         "Gabung",
       ]);
     }
-    await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Masuk" })).toHaveAttribute("href", "/sign-in");
+
+    for (const [route, copy] of [
+      ["/catalog", "Kode akses katalog"],
+      ["/account/orders", "Belum ada buku yang bisa ditampilkan."],
+      ["/account/invoices", "Tagihanmu akan muncul di sini."],
+      ["/account", "Akun Blessfriend"],
+    ] as const) {
+      await page.goto(route, { waitUntil: "networkidle" });
+      await expect(page).not.toHaveURL(/\/sign-in/);
+      await expect(page.getByText(copy)).toBeVisible();
+    }
+    await page.goto("/account", { waitUntil: "networkidle" });
+    await expect(page.getByRole("main").getByRole("link", { name: "Masuk" })).toHaveAttribute(
+      "href",
+      "/sign-in?redirect_url=/account",
+    );
+    await expect(page.getByRole("link", { name: "Join Blessfriends" })).toHaveAttribute("href", "/join");
   });
 
   test("blocks public sign-up while keeping the route available for invitations", async ({ page }) => {
-    await setupClerkTestingToken({ page });
     await page.goto("/sign-up", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByText(/create account|buat akun|sign up/i)).toHaveCount(0);

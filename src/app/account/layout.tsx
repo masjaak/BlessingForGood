@@ -1,7 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
-
-export default async function AccountLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { userId, redirectToSignIn } = await auth();
-  if (!userId) redirectToSignIn();
+export default function AccountLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return children;
 }

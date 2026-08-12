@@ -128,6 +128,11 @@ Phase 04.1 records the following approved implementation decisions:
   immediate admin mutation result, and stored only as peppered HMAC digests.
   `catalogAccess.revokeCode` prevents new grants; existing grants retain the
   current expiry/closed-catalog behavior until their authoritative checks fail.
+- V3.1 supersedes the customer prerequisite of `authenticated member + code`:
+  `/catalog` is a public gateway, valid codes create catalog-scoped opaque
+  sessions without Clerk, and `getUnlocked` validates that session on every
+  private query. Existing member grants remain for backward-compatible owned
+  preorder authorization; token-only browse does not create customer identity.
 - Join captures name, email, normalized phone, area/city, one primary book
   interest, and optional note. `BFG_JOIN_WHATSAPP_GROUP_URL` is returned only
   after the request mutation commits; missing configuration produces a safe
