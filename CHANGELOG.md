@@ -8,6 +8,35 @@ source: conversation
 
 # Changelog
 
+## [phase-07.1-admin-security] — 2026-08-13
+
+### Security
+
+- Added an explicit Admin route/query/mutation authorization inventory and
+  direct backend bypass tests for signed-out, missing, suspended, customer,
+  Admin, and Owner identities.
+- Reused one client role policy across route guards and route-aware data
+  providers so Admin/Owner can use customer surfaces without mounting Admin
+  operational payloads outside `/admin`.
+- Composed Admin permissions from the existing customer permission set while
+  preserving Owner-only user/access operations and all Admin server guards.
+
+### Preserved
+
+- Clerk remains the only identity provider. Clerk Organizations, alternate
+  Admin login, email whitelists, schema changes, dummy Production data, Secret
+  Catalog coupling, and business/financial policy changes were not added.
+- Production authentication acceptance remains blocked at the Clerk
+  Production → Convex-compatible token boundary.
+
+### QA
+
+- Full Vitest projects: 133/133; frontend project: 60/60; standalone Convex:
+  77/77; Playwright public/customer and signed-out Admin: 114/114.
+- Format, ESLint, TypeScript, production build, and diff check pass.
+- Authenticated Production role and same-session acceptance remains blocked by
+  the external Clerk Production → Convex token configuration.
+
 ## [homepage-v4.1.3] — 2026-08-12
 
 ### Changed

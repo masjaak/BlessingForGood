@@ -1,6 +1,6 @@
 # BFG Workspace Access Matrix
 
-Status: Phase 07.1 audit baseline
+Status: `BFG_ADMIN_SECURITY_HARDENED_LOCAL_AUTH_ACCEPTANCE_PENDING`
 
 Customer and Admin use one Clerk/Convex application but remain separate
 presentation contexts. The client guard controls which workspace mounts; every
@@ -22,6 +22,11 @@ Invalid transitions are rejected by `ProductAccessGuard`; Convex authorization
 is the authoritative second boundary. No workspace switch mutates role,
 ownership, business records, or financial state.
 
+`roleCanAccess` is the shared client role policy. The Convex product and
+operations providers also use the current route: staff receive Admin queries
+only under `/admin`; on customer routes, active customer/Admin/Owner identities
+receive only their owned customer projections.
+
 ## Matrix
 
 | Surface | Route | Signed Out | Customer | Admin | Owner | Suspended | Missing appUser | Navigation Entry | Direct URL | Expected State | Authorization Source | Status |
@@ -29,9 +34,9 @@ ownership, business records, or financial state.
 | Homepage | `/` | public | customer shell | customer shell; switch available only when role resolves | customer shell; switch available | public shell until auth resolves | public shell until auth resolves | public nav / bottom nav | allowed | customer workspace | public route; no private query | PASS |
 | Ready Stock | `/ready-stock`, `/ready-stock/[slug]` | public list/detail or empty | public list/detail; customer order action | public list/detail; no admin nav | same | public read; order action denied | public read; order action unavailable | homepage/discovery and signed-out public nav | allowed | customer/public workspace | `readyStock` public projection; `orders.createReadyStock` requires active customer | PASS / data-blocked populated detail |
 | Secret Catalog | `/catalog` | public scoped-code gateway | valid scoped catalog session or customer grant | admin catalog session / operational access where query permits | same | private catalog query denied | gateway remains public; private query denied | homepage, public nav, bottom nav | allowed | gateway, then scoped catalog state | `catalogAccess` code/session or `catalog.read` | PASS |
-| Buku Saya | `/account/orders` | branded locked state | own orders | customer-facing route allowed where current behavior permits | same | denied/suspended state | account-not-active state | bottom nav; account links | allowed | customer workspace | ProductAccessGuard + `orders.read.own` | PASS / auth acceptance pending |
+| Buku Saya | `/account/orders` | branded locked state | own orders | own customer-side orders | own customer-side orders | denied/suspended state | account-not-active state | bottom nav; account links | allowed | customer workspace | ProductAccessGuard + `orders.read.own` | PASS locally / Production auth pending |
 | Orders | `/account/orders/[orderId]` | auth gate | owned order detail/tracking | customer-facing route allowed where current behavior permits | same | denied/suspended state | account-not-active state | order list and account activity | allowed | customer workspace | ProductAccessGuard + owned order query | PASS / populated data-blocked |
-| Tagihan | `/account/invoices` | branded locked state | own invoices/deposit | customer-facing route allowed where current behavior permits | same | denied/suspended state | account-not-active state | bottom nav; account links | allowed | customer workspace | ProductAccessGuard + `invoices.read.own`/deposit own queries | PASS / auth acceptance pending |
+| Tagihan | `/account/invoices` | branded locked state | own invoices/deposit | own customer-side invoice/deposit projections | same | denied/suspended state | account-not-active state | bottom nav; account links | allowed | customer workspace | ProductAccessGuard + owned invoice/deposit permissions | PASS locally / Production auth pending |
 | Invoice detail | `/account/invoices/[invoiceId]` | auth gate | owned invoice/payment/deposit detail | customer-facing route allowed where current behavior permits | same | denied/suspended state | account-not-active state | Tagihan list, order detail | allowed | customer workspace | ProductAccessGuard + invoice ownership | PASS / populated data-blocked |
 | Account | `/account` | branded account gate | own dashboard | customer workspace with Admin switch | customer workspace with Admin switch | suspended state | account-not-active state | bottom nav; account activity | allowed | customer workspace | ProductAccessGuard + own projections | PASS / auth acceptance pending |
 | Profile | `/account/profile` | back-to-account auth gate | own profile form | customer-facing route allowed where current behavior permits | same | denied/suspended state | account-not-active state | Account → Profil | allowed | customer workspace | ProductAccessGuard + `customerProfiles` own helper | PASS after reachability fix |
@@ -56,10 +61,15 @@ ownership, business records, or financial state.
   `ProductAccessGuard`, `ProductProvider`, `ConvexProductProvider`, and the
   Convex auth helpers. `AdminShellLink` was called by every `SiteShell` route
   because it was mounted inside the signed-in customer primary nav.
-- `AdminLayout` currently performs the Clerk signed-in gate. The client guard
-  resolves the BFG appUser role/status before Admin children mount; Convex
-  queries/mutations enforce permissions and ownership server-side.
+- `AdminLayout` performs the Clerk signed-in gate. `ProductAccessGuard` resolves
+  BFG role/status before Admin children mount; every Admin query/mutation then
+  enforces permission or Owner role independently in Convex.
+- Deterministic tests cover signed out, missing `appUser`, suspended, customer,
+  Admin, and Owner route policy; direct sensitive query/mutation denial; and
+  Owner-only role management. The protected-data test rejects before returning
+  profile fields.
 - Current Production truth remains
-  `BFG_AUTH_SESSION_V3_CODE_READY_PRODUCTION_AUTH_PENDING`. Real Clerk →
-  Convex customer/Admin sessions, no-refresh workspace switching, and live
-  `/admin` denial remain required before full Phase 07.1 closure.
+  `BFG_AUTH_SESSION_V3_CODE_READY_PRODUCTION_AUTH_PENDING`: a Clerk Production
+  session still cannot provide a Convex-compatible token. Real customer/Admin/
+  Owner sessions, no-refresh workspace switching, and live `/admin` denial
+  remain required before full Phase 07.1 closure.

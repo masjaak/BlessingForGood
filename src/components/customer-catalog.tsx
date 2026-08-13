@@ -5,6 +5,7 @@ import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { formatIdr } from "@/domain/prototype/logic";
+import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
 import {
@@ -283,7 +284,7 @@ export function CustomerCatalog() {
             <span>Total</span>
             <Money amount={total} />
           </div>
-          {sessionRole === "customer" ? (
+          {roleCanAccess(sessionRole, "customer") ? (
             <form onSubmit={handleSubmit} className="form-card">
               <Field label="Nama">
                 <input

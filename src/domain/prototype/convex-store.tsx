@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -12,6 +13,7 @@ import {
   getCatalogAttemptKey,
   getStoredCatalogSession,
   getStoredUnlockedCatalogId,
+  roleCanAccess,
   setStoredCatalogSession,
   setStoredUnlockedCatalogId,
   type StoredCatalogSession,
@@ -133,6 +135,7 @@ function pageOf<T>(value: { page: T[] } | undefined): T[] {
 }
 
 export function ConvexProductProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname() || "/";
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
   const [catalogSession, setCatalogSession] = useState<StoredCatalogSession | null>(null);
   const [provisioning, setProvisioning] = useState(false);
@@ -154,8 +157,9 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
 
   const me = useQuery(api.users.current, isAuthenticated ? {} : "skip");
   const activeUser = me?.status === "active" && isAuthenticated;
-  const isAdmin = activeUser && (me?.role === "admin" || me?.role === "owner");
-  const isCustomer = activeUser && me?.role === "customer";
+  const adminWorkspace = pathname.startsWith("/admin");
+  const isAdmin = activeUser && adminWorkspace && roleCanAccess(me?.role || null, "admin");
+  const isCustomer = activeUser && !adminWorkspace && roleCanAccess(me?.role || null, "customer");
   const adminCatalogs = useQuery(
     api.secretCatalogs.list,
     isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",

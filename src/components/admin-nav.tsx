@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext } from "react";
 import { ProductContext } from "@/domain/prototype/context";
+import { roleCanAccess } from "@/domain/prototype/session";
 
 type AdminIconName =
   | "dashboard"
@@ -161,10 +162,9 @@ function isCurrent(pathname: string, href: string) {
 export function AdminNav() {
   const pathname = usePathname() || "/admin";
   const sessionRole = useContext(ProductContext)?.sessionRole;
-  const visibleGroups: AdminNavGroup[] =
-    sessionRole === "owner"
-      ? [...groups, { label: "System", links: [{ href: "/admin/users", label: "Users", icon: "users" }] }]
-      : groups;
+  const visibleGroups: AdminNavGroup[] = roleCanAccess(sessionRole || null, "owner")
+    ? [...groups, { label: "System", links: [{ href: "/admin/users", label: "Users", icon: "users" }] }]
+    : groups;
 
   return (
     <nav className="admin-nav" aria-label="Navigasi admin">

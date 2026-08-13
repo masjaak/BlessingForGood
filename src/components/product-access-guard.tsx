@@ -3,6 +3,7 @@
 import { UserButton } from "@clerk/nextjs";
 import type { ReactNode } from "react";
 import { Button, ErrorState, LinkButton } from "@/components/ui";
+import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 
 export function ProductAccessGuard({
@@ -78,11 +79,7 @@ export function ProductAccessGuard({
       </div>
     );
   }
-  const allowed =
-    !requiredRole ||
-    (requiredRole === "admin" && (sessionRole === "admin" || sessionRole === "owner")) ||
-    (requiredRole === "owner" && sessionRole === "owner") ||
-    (requiredRole === "customer" && sessionRole === "customer");
+  const allowed = !requiredRole || roleCanAccess(sessionRole, requiredRole);
   if (!allowed) {
     return (
       <div className="guard-card">

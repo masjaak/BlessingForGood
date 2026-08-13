@@ -2,6 +2,12 @@
 
 export type ProductRole = "customer" | "admin" | "owner";
 
+export function roleCanAccess(role: ProductRole | null, requiredRole: ProductRole): boolean {
+  if (requiredRole === "customer") return role !== null;
+  if (requiredRole === "admin") return role === "admin" || role === "owner";
+  return role === "owner";
+}
+
 const UNLOCKED_CATALOG_KEY = "bfg-unlocked-catalog";
 const CATALOG_SESSION_KEY = "bfg-catalog-session";
 const CATALOG_ATTEMPT_KEY = "bfg-catalog-attempt-key";

@@ -4,11 +4,15 @@ import { convexTest } from "convex-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
-import { seedApprovedJoinRequest } from "../tests/convex-helpers";
+import { asUser, seedApprovedJoinRequest, setupUsers } from "../tests/convex-helpers";
 
 const modules = import.meta.glob("./**/*.ts");
 const ownerIdentity = { subject: "owner-test", tokenIdentifier: "clerk|owner-test" };
-const customerIdentity = { subject: "customer-test", tokenIdentifier: "clerk|customer-test", email: "customer-test@example.com" };
+const customerIdentity = {
+  subject: "customer-test",
+  tokenIdentifier: "clerk|customer-test",
+  email: "customer-test@example.com",
+};
 const secondCustomerIdentity = {
   subject: "customer-two-test",
   tokenIdentifier: "clerk|customer-two-test",
@@ -77,6 +81,70 @@ describe("Clerk identity and BFG authorization", () => {
       status: "suspended",
     });
     await expect(admin.query(api.users.current, {})).resolves.toMatchObject({ status: "suspended" });
+  });
+
+  it("fails closed for Admin data and writes across every identity state", async () => {
+    const t = testConvex();
+    const { owner, admin, customer } = await setupUsers(t);
+    const missingAppUser = asUser(t, "missing-app-user");
+    const customerUser = await customer.query(api.users.current, {});
+    const adminUser = await admin.query(api.users.current, {});
+    if (!customerUser || !adminUser) throw new Error("test users were not provisioned");
+
+    await customer.mutation(api.customerProfiles.upsertMine, {
+      displayName: "Protected Customer",
+      phone: "081234567890",
+    });
+    const sensitiveQueryArgs = { userId: customerUser.appUserId };
+
+    await expect(t.query(api.customerProfiles.getForAdmin, sensitiveQueryArgs)).rejects.toThrow("IDENTITY_REQUIRED");
+    await expect(missingAppUser.query(api.customerProfiles.getForAdmin, sensitiveQueryArgs)).rejects.toThrow(
+      "APP_USER_REQUIRED",
+    );
+    await expect(customer.query(api.customerProfiles.getForAdmin, sensitiveQueryArgs)).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    await expect(admin.query(api.customerProfiles.getForAdmin, sensitiveQueryArgs)).resolves.toMatchObject({
+      displayName: "Protected Customer",
+      phone: "081234567890",
+    });
+    await expect(owner.query(api.customerProfiles.getForAdmin, sensitiveQueryArgs)).resolves.toMatchObject({
+      displayName: "Protected Customer",
+      phone: "081234567890",
+    });
+
+    await expect(t.mutation(api.publishers.create, { name: "Signed Out Publisher" })).rejects.toThrow(
+      "IDENTITY_REQUIRED",
+    );
+    await expect(missingAppUser.mutation(api.publishers.create, { name: "Missing User Publisher" })).rejects.toThrow(
+      "APP_USER_REQUIRED",
+    );
+    await expect(customer.mutation(api.publishers.create, { name: "Customer Publisher" })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    await expect(admin.mutation(api.publishers.create, { name: "Admin Publisher" })).resolves.toBeDefined();
+    await expect(owner.mutation(api.publishers.create, { name: "Owner Publisher" })).resolves.toBeDefined();
+
+    const ownOrdersArgs = { paginationOpts: { numItems: 10, cursor: null } };
+    await expect(customer.query(api.orders.listMine, ownOrdersArgs)).resolves.toMatchObject({ page: [] });
+    await expect(admin.query(api.orders.listMine, ownOrdersArgs)).resolves.toMatchObject({ page: [] });
+    await expect(owner.query(api.orders.listMine, ownOrdersArgs)).resolves.toMatchObject({ page: [] });
+
+    await expect(
+      customer.mutation(api.users.updateRole, { userId: adminUser.appUserId, role: "customer" }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      admin.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "admin" }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      owner.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "customer" }),
+    ).resolves.toMatchObject({ role: "customer" });
+
+    await owner.mutation(api.users.suspend, { userId: adminUser.appUserId });
+    await expect(admin.query(api.customerProfiles.getForAdmin, sensitiveQueryArgs)).rejects.toThrow("USER_SUSPENDED");
+    await expect(admin.mutation(api.publishers.create, { name: "Suspended Publisher" })).rejects.toThrow(
+      "USER_SUSPENDED",
+    );
   });
 
   it("protects the owner and denies suspended ownership access", async () => {

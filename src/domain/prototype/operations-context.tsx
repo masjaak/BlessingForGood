@@ -8,6 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { ProductDataSource } from "@/domain/prototype/context";
 import { useOperationsMutations } from "@/domain/prototype/operations-mutations";
+import { roleCanAccess } from "@/domain/prototype/session";
 
 export type ShipmentStage =
   "po_closed" | "ordered_to_supplier" | "shipped_internationally" | "customs" | "to_indonesia_warehouse" | "at_store";
@@ -120,8 +121,9 @@ export function ConvexOperationsProvider({
   const adminOrderId = routeId(pathname, "/admin/orders/");
   const customerInvoiceId = routeId(pathname, "/account/invoices/");
   const adminInvoiceId = routeId(pathname, "/admin/invoices/");
-  const isAdmin = enabled && active && (role === "admin" || role === "owner");
-  const isCustomer = enabled && active && role === "customer";
+  const adminWorkspace = pathname?.startsWith("/admin") ?? false;
+  const isAdmin = enabled && active && adminWorkspace && roleCanAccess(role, "admin");
+  const isCustomer = enabled && active && !adminWorkspace && roleCanAccess(role, "customer");
 
   const batchList = useQuery(
     api.batches.listForAdmin,

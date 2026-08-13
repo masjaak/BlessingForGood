@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useContext } from "react";
 import { ProductContext } from "@/domain/prototype/context";
+import { roleCanAccess } from "@/domain/prototype/session";
 
 export function AdminShellLink() {
   const role = useContext(ProductContext)?.sessionRole;
-  if (role !== "admin" && role !== "owner") return null;
+  if (!roleCanAccess(role || null, "admin")) return null;
   return (
     <Link className="workspace-switch-link" href="/admin">
       Buka Workspace Admin

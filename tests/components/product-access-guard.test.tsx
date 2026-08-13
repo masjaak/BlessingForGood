@@ -50,6 +50,17 @@ describe("ProductAccessGuard session boundary", () => {
     expect(screen.queryByText("Private content")).toBeNull();
   });
 
+  it("denies signed-out users from the Admin workspace", () => {
+    render(
+      <ProductContext.Provider value={contextValue({ authState: "signed-out" })}>
+        <ProductAccessGuard requiredRole="admin">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Masuk lewat Akun untuk melihat bagian ini." })).toBeTruthy();
+    expect(screen.queryByText("Private content")).toBeNull();
+  });
+
   it.each([
     ["customer", "Halaman ini tidak tersedia untuk akunmu", false],
     ["admin", "Private content", true],
@@ -74,5 +85,15 @@ describe("ProductAccessGuard session boundary", () => {
 
     expect(screen.getByRole("heading", { name: "Akses akun tidak tersedia" })).toBeTruthy();
     expect(screen.queryByText("Private content")).toBeNull();
+  });
+
+  it.each(["customer", "admin", "owner"] as const)("allows active %s accounts into the customer workspace", (role) => {
+    render(
+      <ProductContext.Provider value={contextValue({ sessionRole: role })}>
+        <ProductAccessGuard requiredRole="customer">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByText("Private content")).toBeTruthy();
   });
 });

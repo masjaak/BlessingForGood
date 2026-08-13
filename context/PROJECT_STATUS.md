@@ -2,7 +2,7 @@
 
 ## Phase 07.1 Product Surface Stabilization
 
-**Status:** `BFG_PHASE_07_1_PARTIAL`
+**Status:** `BFG_PHASE_07_1_BLOCKED_BY_AUTH_CONFIGURATION`
 
 Starting commit: `8442367` (`test: cover authenticated production routes`).
 
@@ -24,6 +24,23 @@ Remaining gates are explicit: real Clerk → Convex Production authenticated
 acceptance is still pending, and authenticated Admin screenshots must still be
 compared against all ten local Admin mockups. Do not start Phase 08 or report
 Production-ready status until those gates pass.
+
+### Admin access security hardening
+
+**Local status:** `BFG_ADMIN_SECURITY_HARDENED_LOCAL_AUTH_ACCEPTANCE_PENDING`
+
+Deterministic security tests now cover the Admin route role/status matrix,
+direct sensitive Admin query and mutation bypass attempts, Owner-only role
+management, and Admin/Owner access to customer routes. One shared client role
+policy drives the route guard and route-aware query providers; shared Convex
+permissions let Admin use owned customer projections while every Admin-only
+query/mutation remains independently server-authorized.
+
+The Production blocker is unchanged: the Clerk Production session cannot
+provide a Convex-compatible token, so Convex authentication fails before
+`appUser` resolution. No Production auth acceptance, deployment, environment
+change, Clerk Organization, alternate login, schema change, or dummy data is
+claimed.
 
 ## Auth Session Recovery V3
 

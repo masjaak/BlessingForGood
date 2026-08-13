@@ -6,6 +6,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Card, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { useOperations } from "@/domain/prototype/operations-context";
+import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
@@ -121,7 +122,7 @@ function AdminOverview() {
               <LinkButton href="/admin/invoices" variant="secondary">
                 Invoice & deposit
               </LinkButton>
-              {sessionRole === "owner" ? (
+              {roleCanAccess(sessionRole, "owner") ? (
                 <LinkButton href="/admin/users" variant="secondary">
                   Pengguna
                 </LinkButton>

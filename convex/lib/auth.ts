@@ -35,10 +35,19 @@ export type Permission =
   | "settings.manage"
   | "audit.read";
 
-const adminPermissions = new Set<Permission>([
+const customerPermissions = new Set<Permission>([
   "catalog.read",
-  "catalog.manage",
   "books.read",
+  "orders.read.own",
+  "tracking.read.own",
+  "invoices.read.own",
+  "deposits.read.own",
+  "refunds.read.own",
+]);
+
+const adminPermissions = new Set<Permission>([
+  ...customerPermissions,
+  "catalog.manage",
   "books.manage",
   "orders.read.all",
   "orders.manage",
@@ -56,19 +65,8 @@ const adminPermissions = new Set<Permission>([
   "customers.manage",
 ]);
 
-const customerPermissions = new Set<Permission>([
-  "catalog.read",
-  "books.read",
-  "orders.read.own",
-  "tracking.read.own",
-  "invoices.read.own",
-  "deposits.read.own",
-  "refunds.read.own",
-]);
-
 const allPermissions = new Set<Permission>([
   ...adminPermissions,
-  ...customerPermissions,
   "users.read",
   "users.manage_roles",
   "users.suspend",

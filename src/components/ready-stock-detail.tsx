@@ -17,6 +17,7 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
+import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 
 type ReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
@@ -86,7 +87,7 @@ function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   const [pending, setPending] = useState(false);
   const selected = book.variants.find((variant) => variant.id === variantId);
 
-  if (authState !== "authenticated" || sessionRole !== "customer") {
+  if (authState !== "authenticated" || !roleCanAccess(sessionRole, "customer")) {
     return (
       <div className="form-actions">
         <LinkButton href="/account" variant="secondary">

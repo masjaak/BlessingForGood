@@ -2,9 +2,23 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   getStoredCatalogSession,
   getStoredUnlockedCatalogId,
+  roleCanAccess,
   setStoredCatalogSession,
   setStoredUnlockedCatalogId,
 } from "@/domain/prototype/session";
+
+describe("workspace role access", () => {
+  it.each([
+    [null, false, false, false],
+    ["customer", true, false, false],
+    ["admin", true, true, false],
+    ["owner", true, true, true],
+  ] as const)("maps %s to customer/admin/owner access", (role, customer, admin, owner) => {
+    expect(roleCanAccess(role, "customer")).toBe(customer);
+    expect(roleCanAccess(role, "admin")).toBe(admin);
+    expect(roleCanAccess(role, "owner")).toBe(owner);
+  });
+});
 
 describe("catalog session storage", () => {
   beforeEach(() => {
