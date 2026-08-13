@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import {
@@ -146,6 +146,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [provisioning, setProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState(false);
   const [admissionDenied, setAdmissionDenied] = useState(false);
+  const provisioningRef = useRef(false);
 
   const { isLoaded, isSignedIn } = useAuth();
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
@@ -203,7 +204,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       convexAuthLoading ||
       !isAuthenticated ||
       me !== null ||
-      provisioning ||
+      provisioningRef.current ||
       admissionDenied ||
       provisionError
     )
@@ -211,6 +212,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
+      provisioningRef.current = true;
       setProvisioning(true);
       setProvisionError(false);
       void ensureCurrentUser({})
@@ -221,6 +223,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
           } else setProvisionError(true);
         })
         .finally(() => {
+          provisioningRef.current = false;
           if (active) setProvisioning(false);
         });
     });
@@ -236,7 +239,6 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     isSignedIn,
     me,
     provisionError,
-    provisioning,
   ]);
 
   useEffect(() => {
