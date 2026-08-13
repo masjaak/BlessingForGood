@@ -265,7 +265,8 @@ p {
     border-color var(--motion-fast),
     transform var(--motion-fast);
 }
-.site-auth-link {
+.site-auth-link,
+.workspace-switch-link {
   display: inline-flex;
   min-height: 40px;
   align-items: center;
@@ -278,7 +279,8 @@ p {
   font-size: 0.82rem;
   font-weight: var(--font-weight-bold);
 }
-.site-auth-link:hover {
+.site-auth-link:hover,
+.workspace-switch-link:hover {
   color: var(--accent-dark);
   border-color: var(--color-brand-peach);
   background: var(--color-brand-secondary);
@@ -2039,6 +2041,7 @@ p {
 }
 
 .customer-shell .site-auth-link,
+.customer-shell .workspace-switch-link,
 .customer-shell .site-auth button {
   min-height: 40px;
   padding: 8px 14px;
@@ -2050,6 +2053,7 @@ p {
 }
 
 .customer-shell .site-auth-link:hover,
+.customer-shell .workspace-switch-link:hover,
 .customer-shell .site-auth button:hover {
   color: var(--accent-dark);
   border-color: var(--accent);
@@ -2650,6 +2654,7 @@ p {
   }
 
   .customer-shell .site-auth-link,
+  .customer-shell .workspace-switch-link,
   .customer-shell .site-auth button {
     border-color: var(--line);
     padding-inline: 12px;
@@ -3224,6 +3229,31 @@ p {
   gap: 18px;
 }
 
+.admin-dashboard-section + .admin-dashboard-section {
+  margin-top: 4px;
+}
+
+.admin-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+
+.admin-section-heading h2 {
+  margin: 3px 0 0;
+  font-size: 1.2rem;
+}
+
+.admin-section-heading p {
+  max-width: 380px;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
 .admin-page .card {
   padding: 18px;
   border-radius: 12px;
@@ -3313,6 +3343,26 @@ p {
   line-height: 1.4;
 }
 
+.admin-queue-grid-primary .metric {
+  min-height: 164px;
+  border-color: #c9dacb;
+}
+
+.admin-queue-grid-secondary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-queue-grid-secondary .metric {
+  min-height: 118px;
+  background: #faf8f2;
+  box-shadow: none;
+}
+
+.admin-queue-grid-secondary .metric-value {
+  margin-top: 8px;
+  font-size: 1.8rem;
+}
+
 .admin-inventory-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3380,6 +3430,10 @@ p {
   }
 
   .admin-queue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-queue-grid-secondary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -3466,6 +3520,16 @@ p {
   .admin-queue-grid,
   .admin-inventory-summary {
     grid-template-columns: 1fr;
+  }
+
+  .admin-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .admin-section-heading p {
+    text-align: left;
   }
 
   .admin-inventory-summary > div {

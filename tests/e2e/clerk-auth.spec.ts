@@ -31,6 +31,10 @@ test.describe("BFG Clerk authenticated Production", () => {
     await expect(page.getByRole("heading", { name: "Profil Blessfriend" })).toBeVisible();
     await page.goto("/account/addresses", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Alamat pengiriman" })).toBeVisible();
+    await page.goto("/admin", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "Halaman ini tidak tersedia untuk akunmu" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary navigation" })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Buka Workspace Admin" })).toHaveCount(0);
     await clerk.signOut({ page });
     await page.goto("/account/orders", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/sign-in/);
@@ -44,14 +48,35 @@ test.describe("BFG Clerk authenticated Production", () => {
     await expect(page.locator(".loading-region")).toHaveCount(0);
     await page.goto("/admin/users", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Manage BFG users" })).toBeVisible();
+    await page.goto("/account", { waitUntil: "networkidle" });
+    await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link")).toHaveText([
+      "Beranda",
+      "Katalog",
+      "Buku Saya",
+      "Tagihan",
+      "Akun",
+    ]);
+    await page.getByRole("link", { name: "Buka Workspace Admin" }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await page
+      .getByRole("link", { name: /Lihat sisi customer/ })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/$/);
 
     const customerContext = await browser.newContext({ viewport: { width: 375, height: 812 } });
     const customerPage = await customerContext.newPage();
     try {
       await customerPage.goto("/");
       await clerk.signIn({ emailAddress: required("BFG_E2E_CUSTOMER_EMAIL"), page: customerPage });
+      await customerPage.goto("/admin", { waitUntil: "networkidle" });
+      await expect(
+        customerPage.getByRole("heading", { name: "Halaman ini tidak tersedia untuk akunmu" }),
+      ).toBeVisible();
       await customerPage.goto("/admin/users", { waitUntil: "networkidle" });
-      await expect(customerPage.getByRole("heading", { name: "This workspace is not available" })).toBeVisible();
+      await expect(
+        customerPage.getByRole("heading", { name: "Halaman ini tidak tersedia untuk akunmu" }),
+      ).toBeVisible();
     } finally {
       await customerContext.close();
     }

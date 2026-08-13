@@ -49,4 +49,30 @@ describe("ProductAccessGuard session boundary", () => {
     expect(screen.getByRole("link", { name: "Join Blessfriends" }).getAttribute("href")).toBe("/join");
     expect(screen.queryByText("Private content")).toBeNull();
   });
+
+  it.each([
+    ["customer", "Halaman ini tidak tersedia untuk akunmu", false],
+    ["admin", "Private content", true],
+    ["owner", "Private content", true],
+  ] as const)("enforces Admin workspace access for %s", (role, expectedText, allowed) => {
+    render(
+      <ProductContext.Provider value={contextValue({ sessionRole: role })}>
+        <ProductAccessGuard requiredRole="admin">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.queryByText("Private content") !== null).toBe(allowed);
+    expect(screen.getByText(expectedText)).toBeTruthy();
+  });
+
+  it("denies the Admin workspace to suspended accounts", () => {
+    render(
+      <ProductContext.Provider value={contextValue({ authState: "suspended", userStatus: "suspended" })}>
+        <ProductAccessGuard requiredRole="admin">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Akses akun tidak tersedia" })).toBeTruthy();
+    expect(screen.queryByText("Private content")).toBeNull();
+  });
 });

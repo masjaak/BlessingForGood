@@ -50,14 +50,10 @@ describe("public UI foundation", () => {
     );
   });
 
-  it("keeps customer navigation on implemented routes", () => {
+  it("keeps customer discovery links on public surfaces", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
-    expect(
-      within(screen.getByRole("navigation", { name: "Primary navigation" }))
-        .getByRole("link", { name: "Ready Stock" })
-        .getAttribute("href"),
-    ).toBe("/ready-stock");
+    expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/ready-stock");
     expect(screen.queryByRole("link", { name: "Admin prototype" })).toBeNull();
   });
 
@@ -102,14 +98,32 @@ describe("public UI foundation", () => {
         <AdminShellLink />
       </ProductContext.Provider>,
     );
-    expect(screen.getByRole("link", { name: "Admin" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Buka Workspace Admin" }).getAttribute("href")).toBe("/admin");
 
     rerender(
       <ProductContext.Provider value={{ sessionRole: "customer" } as never}>
         <AdminShellLink />
       </ProductContext.Provider>,
     );
-    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Buka Workspace Admin" })).toBeNull();
+  });
+
+  it("keeps the Admin workspace switch out of customer primary navigation", () => {
+    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
+    render(
+      <ProductContext.Provider value={{ sessionRole: "owner" } as never}>
+        <SiteShell>Customer content</SiteShell>
+      </ProductContext.Provider>,
+    );
+
+    const navigation = screen.getByRole("navigation", { name: "Primary navigation" });
+    expect(
+      within(navigation)
+        .getAllByRole("link")
+        .map((link) => link.textContent?.trim()),
+    ).toEqual(["Beranda", "Katalog", "Buku Saya", "Tagihan", "Akun"]);
+    expect(within(navigation).queryByRole("link", { name: "Buka Workspace Admin" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Buka Workspace Admin" }).getAttribute("href")).toBe("/admin");
   });
 
   it("renders the mockup-aligned customer bottom navigation for signed-out customers", () => {

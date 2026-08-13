@@ -217,6 +217,31 @@ function AccountDashboard() {
             />
           )}
         </Card>
+
+        <Card>
+          <div className="split-heading">
+            <div>
+              <span className="card-kicker">Pengaturan akun</span>
+              <h2>Profil & alamat</h2>
+            </div>
+          </div>
+          <div className="content-stack">
+            <Link className="dashboard-row" href="/account/profile">
+              <span>
+                <strong>Profil</strong>
+                <small>Nama dan informasi kontak</small>
+              </span>
+              <span aria-hidden="true">→</span>
+            </Link>
+            <Link className="dashboard-row" href="/account/addresses">
+              <span>
+                <strong>Alamat pengiriman</strong>
+                <small>Kelola alamat untuk pesananmu</small>
+              </span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </Card>
       </div>
     </div>
   );

@@ -10,7 +10,6 @@ import { bfgClerkAppearance } from "@/config/clerk";
 
 const customerLinks = [
   { href: "/", label: "Beranda" },
-  { href: "/ready-stock", label: "Ready Stock" },
   { href: "/catalog", label: "Katalog" },
   { href: "/account/orders", label: "Buku Saya" },
   { href: "/account/invoices", label: "Tagihan" },
@@ -141,14 +140,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
         ) : (
           <nav className="site-nav customer-nav" aria-label="Primary navigation">
-            <AdminShellLink />
             {customerLinks.map((link) => (
-              <Link
-                className={link.href === "/ready-stock" ? "customer-nav-extra" : undefined}
-                key={link.href}
-                href={link.href}
-                aria-current={current(link.href) ? "page" : undefined}
-              >
+              <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
                 {link.label}
               </Link>
             ))}
@@ -160,7 +153,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
               Masuk
             </Link>
           ) : (
-            <UserButton appearance={bfgClerkAppearance} />
+            <>
+              <AdminShellLink />
+              <UserButton appearance={bfgClerkAppearance} />
+            </>
           )}
         </div>
       </header>

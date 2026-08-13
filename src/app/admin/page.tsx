@@ -48,12 +48,26 @@ function AdminOverview() {
   const queues = [
     ["Penerimaan", pendingAdmissions, "/admin/join-requests", "Permintaan Blessfriends menunggu tinjauan"],
     ["Pesanan baru", newOrders, "/admin/orders", "Pesanan yang belum masuk proses PO"],
-    ["Batch aktif", activeBatches, "/admin/batches", "Batch yang sedang dioperasikan"],
     ["Pembayaran", pendingPayments, "/admin/payments", "Konfirmasi pembayaran menunggu verifikasi"],
     ["Masalah", openExceptions, "/admin/exceptions", "OOS, defect, atau pembatalan aktif"],
+    ["Batch aktif", activeBatches, "/admin/batches", "Batch yang sedang dioperasikan"],
     ["Invoice terbuka", openInvoices, "/admin/invoices", "Invoice dengan saldo yang belum selesai"],
     ["Refund", pendingRefunds, "/admin/refunds", "Kewajiban refund menunggu payout"],
   ] as const;
+  const queueCards = (items: ReadonlyArray<(typeof queues)[number]>) =>
+    items.map(([label, count, href, description]) => (
+      <Card className="metric" key={label}>
+        <div className="split-heading">
+          <span className="card-kicker">{label}</span>
+          <StatusBadge tone={count ? "warning" : "positive"}>{count ? "Perlu tindakan" : "Bersih"}</StatusBadge>
+        </div>
+        <strong className="metric-value">{count}</strong>
+        <p>{description}</p>
+        <LinkButton href={href} variant="quiet">
+          Buka {label.toLowerCase()} →
+        </LinkButton>
+      </Card>
+    ));
 
   return (
     <div className="page admin-page">
@@ -66,21 +80,27 @@ function AdminOverview() {
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
-          <div className="admin-queue-grid">
-            {queues.map(([label, count, href, description]) => (
-              <Card className="metric" key={label}>
-                <div className="split-heading">
-                  <span className="card-kicker">{label}</span>
-                  <StatusBadge tone={count ? "warning" : "positive"}>{count ? "Perlu tindakan" : "Bersih"}</StatusBadge>
-                </div>
-                <strong className="metric-value">{count}</strong>
-                <p>{description}</p>
-                <LinkButton href={href} variant="quiet">
-                  Buka {label.toLowerCase()} →
-                </LinkButton>
-              </Card>
-            ))}
-          </div>
+          <section className="admin-dashboard-section" aria-labelledby="admin-attention-heading">
+            <div className="admin-section-heading">
+              <div>
+                <span className="card-kicker">Prioritas operasi</span>
+                <h2 id="admin-attention-heading">Perlu tindakan</h2>
+              </div>
+              <p>Mulai dari antrian yang mengubah langkah berikutnya.</p>
+            </div>
+            <div className="admin-queue-grid admin-queue-grid-primary">{queueCards(queues.slice(0, 4))}</div>
+          </section>
+
+          <section className="admin-dashboard-section" aria-labelledby="admin-context-heading">
+            <div className="admin-section-heading">
+              <div>
+                <span className="card-kicker">Konteks operasi</span>
+                <h2 id="admin-context-heading">Ringkasan kerja</h2>
+              </div>
+              <p>Status yang membantu membaca antrian utama.</p>
+            </div>
+            <div className="admin-queue-grid admin-queue-grid-secondary">{queueCards(queues.slice(4))}</div>
+          </section>
           <Card>
             <div className="split-heading">
               <div>

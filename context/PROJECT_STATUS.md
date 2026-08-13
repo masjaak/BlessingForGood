@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Phase 07.1 Product Surface Stabilization
+
+**Status:** `BFG_PHASE_07_1_PARTIAL`
+
+Starting commit: `8442367` (`test: cover authenticated production routes`).
+
+This pass separates the signed-in customer workspace from Admin: the canonical
+customer primary navigation is now `Beranda`, `Katalog`, `Buku Saya`,
+`Tagihan`, and `Akun`; Admin/Owner access appears only as the secondary
+`Buka Workspace Admin` control; the Admin shell keeps `Lihat sisi customer`.
+Customer Account now naturally reaches Profile and Addresses. The Admin
+dashboard now gives urgent operational queues visual priority over secondary
+context counts without changing queries, schema, permissions, or business
+logic.
+
+Required access, mockup translation, customer surface, and QA matrices are in
+`context/implementation/`. Local deterministic tests pass, and the local
+browser suite passes `114/114` across customer 375/390/430/768/1440px and
+signed-out Admin 1024/1280/1440px. No dummy Production data was created.
+
+Remaining gates are explicit: real Clerk → Convex Production authenticated
+acceptance is still pending, and authenticated Admin screenshots must still be
+compared against all ten local Admin mockups. Do not start Phase 08 or report
+Production-ready status until those gates pass.
+
 ## Auth Session Recovery V3
 
 **Status:** `BFG_AUTH_SESSION_V3_CODE_READY_PRODUCTION_AUTH_PENDING`

@@ -8,8 +8,8 @@ export function AdminShellLink() {
   const role = useContext(ProductContext)?.sessionRole;
   if (role !== "admin" && role !== "owner") return null;
   return (
-    <Link className="admin-shell-link" href="/admin">
-      Admin
+    <Link className="workspace-switch-link" href="/admin">
+      Buka Workspace Admin
     </Link>
   );
 }
