@@ -1,0 +1,25 @@
+# BFG Visual Contract Matrix
+
+Status: `PHASE_07_1_RENDERED_VISUAL_CONTRACT_VERIFIED_PRODUCTION_PILOT_BLOCKED`
+
+Approved sources are the local customer mockups, the Admin mockup set, the
+current V4.1/V4.1.3 visual grammar, and the official local `Logo-1`/Blessy
+assets. Mockup data is illustrative only and never authorizes business data.
+
+| Surface | Route | Mockup / Source | Required Hierarchy | Required Composition | Required Brand Asset | Responsive Intent | Current Implementation | Gap | Decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| How To Order | `/how-to-order` | `public/mockups/mobile/mockup 6.png`; progression language from mockups 2, 5, 7; `BFG-MOBILE-VISUAL-GRAMMAR.md` | Editorial title → short explanation → seven numbered moments → help guidance → discovery CTAs | One parent journey, one thin connected path, seven lightweight steps; no seven independent card shells | Customer `SiteShell` with canonical `Logo-1`; `Mascott-4` only in the help card | 375/390/430: single vertical path with compact rhythm; 1440: same data model in a restrained connected grid/flow | Seven-item semantic `ol` with shared path, compact mobile rhythm, and no step card surfaces | Previous eight-card treatment removed; deterministic and rendered QA pass | `PASS` with one ordered journey and one shared component/content model |
+| How To Order preview | `/` `#cara-order` | `HOMEPAGE-VISUAL-DERIVATION.md`; mockups 2, 5, 6, 7 | Product-first hero → concise three-moment preview → detailed guide link | Keep three preview moments; reuse the same semantic source without seven-card expansion | `Logo-1` and existing contained Blessy story roles | Mobile stacks compactly; desktop keeps one row | Existing three-step preview and canonical link retained | Regression suite confirms homepage preview remains three steps | `PASS; REGRESSION PRESERVED` |
+| Ready Stock list | `/ready-stock` | Customer mockup 4 plus customer visual grammar | Title/search/filter → compact book rows/cards → explicit empty state | Cover-first product treatment; real filters and status/price remain subordinate | `Logo-1`; real cover reference only | 390/1440 use the same safe projection and card family | Connected public projection with zero-data state; deterministic product fixture rendered | Production product content cannot be proven without client data | `PASS LOCALLY; PILOT REQUIRED` |
+| Ready Stock detail | `/ready-stock/[slug]` | Customer mockup 4; detail rules in visual spec | Cover → title/publisher → variants/price/availability → action | Detail image first, variant rows, clear unavailable state | `Logo-1`; real cover reference only | Mobile detail stacks; desktop widens without new content | Connected public detail and account gate; deterministic product fixture rendered | Production product content cannot be proven without client data | `PASS LOCALLY; PILOT REQUIRED` |
+| Secret Catalog browse | `/catalog` | Customer mockups 1–3 | Access task → safe catalog browse → detail/order action | Scoped browse only after valid session; compact cover/metadata rows | `Logo-1`; no private/internal asset leakage | Mobile-first access and browse; desktop remains restrained | Token gateway and scoped Convex projection with publication guard | Draft private-book leak fixed at shared projection boundary | `PASS LOCALLY; PILOT REQUIRED` |
+| Admin Book Master | `/admin/books`, `/admin/books/[bookId]` | `public/mockups/admin/admin dashboard 2.png`, `3.png`; Admin design system | Book identity → publisher → publication → variants/ISBN/price → Ready Stock quantity | Desktop table/detail form; existing operational frame and loading grammar | Admin uses canonical `Logo-1` and existing outlined SVG icons | 1024/1280/1440 usability; no customer CSS leakage | Existing real forms and server mutations; deterministic entry render pass | Full real-client product journey remains unproven | `PASS LOCALLY; PILOT REQUIRED` |
+| Admin Secret Catalog | `/admin/catalogs` | Admin dashboard 2–3; security matrix | Catalog status/access → item curation → code lifecycle | Secure curation and code actions remain distinct from Book Master | Canonical Admin `Logo-1`; existing icon grammar | Desktop-first operational layout | Existing catalog create/open/code/item workflow | No parallel product pipeline allowed | `PASS LOCALLY; PILOT REQUIRED` |
+| Admin operational loading | `/admin/ready-stock`, `/admin/exceptions`, `/admin/refunds` | `BFG-ADMIN-DESIGN-SYSTEM.md`; prior Phase 07.1 regression | Header/workspace/sidebar stable → shaped loading content | Shared `admin-operational-page` frame; domain-shaped skeletons | Canonical Admin `Logo-1` | 1024/1280/1440 stable | Shared grammar preserved; 9/9 rendered comparison pass | No regression | `PASS; PRESERVED` |
+
+## Visual decision
+
+The old eight-card How To Order implementation is superseded by the latest
+explicit decision: seven semantic steps in one continuous journey. This is a
+composition change only; product, order, invoice, inventory, and payment logic
+remain untouched.

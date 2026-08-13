@@ -1800,42 +1800,6 @@ p {
   max-width: 270px;
   font-size: 1.8rem;
 }
-.order-steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-.order-step {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 12px;
-  min-height: 150px;
-  padding: 22px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.order-step:nth-child(3n) {
-  border-right: 0;
-}
-.order-step:nth-last-child(-n + 3) {
-  border-bottom: 0;
-}
-.order-step > span {
-  color: var(--accent);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-bold);
-}
-.order-step h3,
-.order-step p {
-  margin-bottom: 0;
-}
-.order-step h3 {
-  font-size: 1.12rem;
-}
 .back-button {
   display: inline-grid;
   width: 44px;
@@ -1906,22 +1870,6 @@ p {
 .catalog-code-result p {
   margin-bottom: 0;
   font-size: 0.8rem;
-}
-
-@media (max-width: 800px) {
-  .order-steps {
-    grid-template-columns: 1fr;
-  }
-  .order-step,
-  .order-step:nth-child(3n),
-  .order-step:nth-last-child(-n + 3) {
-    min-height: 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .order-step:last-child {
-    border-bottom: 0;
-  }
 }
 
 @media (max-width: 640px) {
@@ -3053,17 +3001,32 @@ p {
 }
 
 .customer-shell .order-steps {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0;
   overflow: visible;
+  margin: 0;
+  padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
+  list-style: none;
 }
 
 .customer-shell .order-steps-compact {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.customer-shell .order-steps::before {
+  position: absolute;
+  top: 42px;
+  right: calc(100% / 14);
+  left: calc(100% / 14);
+  height: 1px;
+  background: var(--line);
+  content: "";
 }
 
 .customer-shell .order-step,
@@ -3071,27 +3034,29 @@ p {
 .customer-shell .order-step:nth-child(3n),
 .customer-shell .order-step:nth-last-child(-n + 3) {
   position: relative;
-  display: flex;
-  min-height: 222px;
-  flex-direction: column;
+  z-index: 1;
+  display: grid;
+  min-height: 178px;
+  grid-template-rows: auto 1fr;
   gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .customer-shell .order-step:hover {
-  border-color: var(--color-brand-peach);
-  box-shadow: var(--shadow-raised);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .customer-shell .order-step-topline {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .customer-shell .order-step-number {
@@ -3103,8 +3068,8 @@ p {
 
 .customer-shell .order-step-icon-wrap {
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   place-items: center;
   color: var(--accent-dark);
   border: 1px solid var(--line);
@@ -3113,8 +3078,12 @@ p {
 }
 
 .customer-shell .order-step-icon {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
+}
+
+.customer-shell .order-step-content {
+  text-align: center;
 }
 
 .customer-shell .order-step h3,
@@ -3132,24 +3101,18 @@ p {
 }
 
 .customer-shell .order-step-arrow {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  right: -15px;
-  color: var(--accent);
-  font-size: 1.15rem;
-  font-weight: 800;
-  transform: translateY(-50%);
+  display: none;
 }
 
 @media (max-width: 1024px) {
   .customer-shell .order-steps,
   .customer-shell .order-steps-compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .customer-shell .order-step-arrow {
-    display: none;
+  .customer-shell .order-steps::before {
+    right: 12.5%;
+    left: 12.5%;
   }
 }
 
@@ -3159,20 +3122,44 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .customer-shell .order-step {
-    min-height: 0;
+  .customer-shell .order-steps::before {
+    top: 24px;
+    right: auto;
+    bottom: 24px;
+    left: 26px;
+    width: 1px;
+    height: auto;
   }
 
-  .customer-shell .order-step:not(:last-child)::after {
-    position: absolute;
-    right: 50%;
-    bottom: -24px;
-    display: block;
-    color: var(--accent);
-    content: "↓";
-    font-size: 1.05rem;
-    font-weight: 800;
-    transform: translateX(50%);
+  .customer-shell .order-step,
+  .customer-shell .order-step:nth-child(n) {
+    min-height: 0;
+    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 14px;
+    padding: 0 0 24px;
+    text-align: left;
+  }
+
+  .customer-shell .order-step:last-child {
+    padding-bottom: 0;
+  }
+
+  .customer-shell .order-step-topline {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 8px;
+  }
+
+  .customer-shell .order-step-content {
+    padding-top: 4px;
+    text-align: left;
+  }
+
+  .customer-shell .order-step-icon-wrap {
+    width: 48px;
+    height: 48px;
   }
 }
 
@@ -3892,8 +3879,16 @@ p {
   box-shadow: none;
 }
 
+.customer-shell .home-page .order-steps-preview::before {
+  display: none;
+}
+
 .customer-shell .home-page .order-steps-preview .order-step {
+  display: flex;
+  flex-direction: column;
   min-height: 214px;
+  grid-template-columns: none;
+  grid-template-rows: none;
   padding: 24px 28px 24px 0;
   border: 0;
   border-right: 1px solid var(--line);
@@ -3914,6 +3909,14 @@ p {
 .customer-shell .home-page .order-steps-preview .order-step:hover {
   border-color: var(--line);
   box-shadow: none;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-topline {
+  flex-direction: row;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-content {
+  text-align: left;
 }
 
 .customer-shell .home-page .order-steps-preview .order-step-icon-wrap {
@@ -3941,6 +3944,7 @@ p {
 }
 
 .customer-shell .home-page .order-steps-preview .order-step-arrow {
+  display: block;
   right: -9px;
   color: var(--accent);
   font-size: 1rem;

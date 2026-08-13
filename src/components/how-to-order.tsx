@@ -29,8 +29,11 @@ export const orderSteps: OrderStep[] = [
     description: "Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.",
     icon: "process",
   },
-  { title: "Cek tagihan", description: "Invoice muncul di akun ketika sudah diterbitkan oleh BFG.", icon: "invoice" },
-  { title: "Konfirmasi pembayaran", description: "Kirim konfirmasi pembayaran dari halaman Tagihan.", icon: "payment" },
+  {
+    title: "Cek tagihan & konfirmasi pembayaran",
+    description: "Invoice muncul saat diterbitkan; kirim konfirmasi pembayaran dari halaman Tagihan.",
+    icon: "invoice",
+  },
   {
     title: "Pantau perjalanannya",
     description: "Lihat batch, shipment, fulfillment, dan pembaruan pesanan dari Buku Saya.",
@@ -153,16 +156,21 @@ function OrderStepIcon({ name }: { name: OrderStepIconName }) {
 export function HowToOrderSteps({ compact = false, preview = false }: { compact?: boolean; preview?: boolean }) {
   const steps = preview ? previewOrderSteps : compact ? compactOrderSteps : orderSteps;
   return (
-    <div className={`order-steps${compact ? " order-steps-compact" : ""}${preview ? " order-steps-preview" : ""}`}>
+    <ol
+      className={`order-steps${compact ? " order-steps-compact" : ""}${preview ? " order-steps-preview" : ""}`}
+      aria-label={
+        preview ? "Ringkasan cara memesan" : compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"
+      }
+    >
       {steps.map((step, index) => (
-        <div className="order-step" key={`${step.title}-${index}`}>
+        <li className="order-step" key={`${step.title}-${index}`}>
           <div className="order-step-topline">
             <span className="order-step-number">{String(index + 1).padStart(2, "0")}</span>
             <span className="order-step-icon-wrap">
               <OrderStepIcon name={step.icon} />
             </span>
           </div>
-          <div>
+          <div className="order-step-content">
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </div>
@@ -171,8 +179,8 @@ export function HowToOrderSteps({ compact = false, preview = false }: { compact?
               →
             </span>
           ) : null}
-        </div>
+        </li>
       ))}
-    </div>
+    </ol>
   );
 }

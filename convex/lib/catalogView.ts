@@ -26,6 +26,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
     const book = books[index];
     const publisher = publishers[index];
     if (!variant || !book || !publisher || !item.isAvailable || !variant.isAvailable || !book.isActive) return;
+    if (book.publicationStatus !== "published" && book.publicationStatus !== "special") return;
     const current = bookMap.get(book._id) || {
       id: book._id,
       title: book.title,

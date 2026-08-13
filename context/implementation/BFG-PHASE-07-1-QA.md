@@ -1,10 +1,46 @@
 # BFG Phase 07.1 QA
 
-Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_LOCAL_CLOSURE_PRODUCTION_PILOT_BLOCKED`
 
-Phase 07.1 remains open only for final deployment and real authenticated
-acceptance of the admission journey and visual convergence.
+The loading regression, product projection guards, customer-safe fields, and
+continuous How To Order journey are locally closed. Final Production
+acceptance remains blocked by missing client-provided product information and
+an authorized authenticated customer/Admin/Owner operator session.
 Phase 08 remains `NOT STARTED`.
+
+## Product publishing and How To Order closure
+
+- The canonical chain remains `Publisher → Book Master → Variant → ISBN/price
+  → publication status → inventory/catalog assignment → customer projection`.
+- `/admin/books` and `/admin/books/[bookId]` already provide the real publisher,
+  Book Master, variant, ISBN, price, publication, and Ready Stock entry points;
+  `/admin/catalogs` remains the separate Secret Catalog assignment path. No
+  second product wizard or frontend-only publication state was added.
+- Public Ready Stock continues to require `published`, active publisher and
+  variant, an inventory record, and positive `onHand - reserved` availability.
+- Secret Catalog projection now excludes `draft` and `archived` books at the
+  shared `getCatalogView` boundary while retaining valid scoped token access for
+  `special` products. Clerk is not introduced into that token gateway.
+- Customer Ready Stock projection no longer exposes Admin operational fields
+  (`onHandQuantity`, `reservedQuantity`, or duplicate `availableQuantity`);
+  customer availability remains the canonical `stockQuantity` projection.
+- TDD coverage proves the full deterministic local chain, unpublished leakage
+  absence, scoped Secret Catalog access, invalid-session denial, and the
+  customer-safe projection.
+- How To Order now renders seven semantic steps in one accessible ordered
+  journey (`ol`/`li`) with one connected path. The old eight independent card
+  panels are superseded and removed; the homepage keeps its three-step preview.
+- Rendered QA passes How To Order at 375, 390, 430, and 1440px with no
+  horizontal overflow, no console errors, no card surface, and the canonical
+  Logo-1/Blessy assets.
+
+## Production pilot boundary
+
+No Production publisher, book, variant, ISBN, price, inventory, order, invoice,
+payment, refund, or other business record was created. The local render pilot
+uses deterministic fixtures only. One real client product plus authorized
+operator sessions are still required before claiming Admin → Convex → customer
+projection acceptance or bulk-entry safety.
 
 ## Admin security closure
 
@@ -46,18 +82,50 @@ The repository Playwright suite ran against the local Next application:
 
 - Customer: `75/75` at 375, 390, 430, 768, and 1440px.
 - Signed-out Admin gates: `39/39` at 1024, 1280, and 1440px.
+- Admin operational loading regression harness: `9/9` affected-page/viewport
+  renders at 1024, 1280, and 1440px. Ready Stock, Exceptions, and Refunds
+  kept the Admin header, workspace, sidebar, content frame, and loading region
+  mounted with no horizontal overflow or console errors.
+- How To Order rendered QA: `4/4` at 375, 390, 430, and 1440px; seven ordered
+  steps, one connector, no card surfaces, no overflow, and no console errors.
+- Deterministic product projection render QA: Ready Stock listing/detail at
+  390 and 1440px plus Admin Book Master entry at 390 and 1440px; title,
+  publisher, price, ISBN, and availability projected without overflow. This is
+  local fixture evidence, not Production product acceptance.
 - Combined local browser result: `114/114`.
+- Admin side-by-side loading captures were rendered at 1440, 1280, and 1024px:
+  `/private/tmp/bfg-admin-qa/screenshots/admin-side-by-side-1440.png`,
+  `/private/tmp/bfg-admin-qa/screenshots/admin-side-by-side-1280.png`, and
+  `/private/tmp/bfg-admin-qa/screenshots/admin-side-by-side-1024.png`.
 - Captured customer artifacts include `artifacts/browser-qa/customer-390-*` and
   `artifacts/browser-qa/customer-1440-*`.
 - Admin screenshots are gate screenshots only. Authenticated Admin mockup
   comparison remains a required real Owner-session gate; no bypass or business
   fixture was added.
 
+The first full Playwright run on the exact change set completed `114/114` with
+transient retries. A repeat serial run showed local Clerk/browser resource and
+signed-out navigation flakiness; it did not produce a product, How To Order, or
+Admin loading assertion failure. The focused rendered harness remained green.
+
+## Phase 07.1 visual-system regression
+
+Before closure, Ready Stock, Exceptions, and Refunds returned their loading
+branches before the shared Admin page frame. Their unresolved queries therefore
+removed the PageHeader, workspace, AdminNav, and content geometry, unlike the
+other Admin operational pages whose loading regions render inside that frame.
+
+The fix adds one shared `AdminOperationalPage` grammar and moves only the
+loading presentation inside it. Existing query arguments, data-source gates,
+domain error/empty states, and refund/exception/inventory mutations are
+unchanged. The regression test asserts that all three frames remain mounted
+while their queries are unresolved.
+
 ## Security hardening verification
 
-- Full Vitest projects: `138/138`.
-- Frontend Vitest project: `60/60`.
-- Standalone Convex command: `77/77`.
+- Full Vitest projects: `147/147` across 30 files.
+- Frontend component tests are included in the `147/147` result.
+- Standalone Convex command: `82/82` across 15 files.
 - Playwright public/customer and signed-out Admin matrix: `114/114`.
 - TypeScript, ESLint, format check, production build, and diff check: PASS.
 - Authenticated Production customer/Admin/Owner and same-session tests:
@@ -132,8 +200,11 @@ mount. Convex remains the authoritative second boundary.
 
 ## Current closure gate
 
-The current code is awaiting Production deployment and intentional real
-customer/Admin/Owner sessions. After deployment, rerun:
+The visual-system regression is deployed to Production in Vercel deployment
+`dpl_3vfdSRji8mXJtvZAWpa7YxWfxfYW` (`READY`) with Convex Production
+`clean-eel-522`. A signed-out request to `/admin/ready-stock` redirects to
+Clerk, and the deployment error-log scan returned no errors. The current code
+still awaits intentional real customer/Admin/Owner sessions. Rerun:
 
 1. real customer sign-in, `/account` → Profile → Addresses → direct `/admin`
    denial;

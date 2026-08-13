@@ -5,7 +5,7 @@ import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { AdminNav } from "@/components/admin-nav";
+import { AdminOperationalPage } from "@/components/admin-operational-page";
 import {
   Button,
   Card,
@@ -14,7 +14,6 @@ import {
   LinkButton,
   LoadingRegion,
   Money,
-  PageHeader,
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
@@ -431,24 +430,19 @@ export function AdminExceptions() {
   );
   const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
   if (dataSource !== "convex") return <div className="state-panel">Antrian masalah belum tersedia.</div>;
-  if (!orders || !exceptions) {
-    return (
-      <LoadingRegion label="Memuat operasi masalah">
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
-    );
-  }
   return (
-    <div className="page admin-page admin-operational-page">
-      <PageHeader
-        eyebrow="Operasi masalah pesanan"
-        title="Selesaikan masalah tanpa menghapus riwayat."
-        description="OOS, defect, pembatalan, pelepasan deposit, dan kewajiban refund tetap tercatat per item."
-      />
-      <div className="admin-workspace">
-        <AdminNav />
-        <div className="admin-content admin-operational-content">
+    <AdminOperationalPage
+      eyebrow="Operasi masalah pesanan"
+      title="Selesaikan masalah tanpa menghapus riwayat."
+      description="OOS, defect, pembatalan, pelepasan deposit, dan kewajiban refund tetap tercatat per item."
+    >
+      {!orders || !exceptions ? (
+        <LoadingRegion label="Memuat operasi masalah">
+          <SkeletonCard />
+          <SkeletonCard />
+        </LoadingRegion>
+      ) : (
+        <>
           {exceptions.length ? (
             <div className="content-stack">
               {exceptions.map((exception) => (
@@ -462,8 +456,8 @@ export function AdminExceptions() {
             />
           )}
           <OpenExceptionForm orders={orders.page} />
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </AdminOperationalPage>
   );
 }

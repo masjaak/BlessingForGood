@@ -2,7 +2,7 @@
 
 ## Phase 07.1 Product Surface Stabilization
 
-**Status:** `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
+**Status:** `BFG_PHASE_07_1_LOCAL_CLOSURE_PRODUCTION_PILOT_BLOCKED`
 
 Starting commit: `8442367` (`test: cover authenticated production routes`).
 
@@ -20,16 +20,52 @@ matrices are in `context/implementation/`. The current implementation adds the
 missing public/signed-in Join flow, Admin review/approval handoff, pending
 attention indicators, canonical customer/Admin branding, and shared Admin
 operational page grammar. Local deterministic tests and browser smoke pass;
-no dummy Production data was created.
+no dummy Production data was created. The visual-system regression is deployed
+in Vercel deployment `dpl_3vfdSRji8mXJtvZAWpa7YxWfxfYW` (`READY`) with Convex
+Production `clean-eel-522`.
 
-Remaining gates are explicit: deploy this diff, complete the intentional real
-non-member → Admin approval → active Blessfriend journey, and compare
-authenticated Admin/customer renders against the local mockups. Do not start
-Phase 08 or report closure until those gates pass.
+Remaining gates are explicit: complete the intentional real
+non-member → Admin approval → active Blessfriend journey, run one real client
+product through Admin → Convex → customer projection, and compare authenticated
+Admin/customer renders against the local mockups. Do not start Phase 08 or
+report closure until those gates pass.
+
+### Latest Phase 07.1 product publishing and journey delta — 2026-08-14
+
+**Status:** `BFG_PHASE_07_1_PRODUCTION_DEPLOYED_PRODUCTION_PILOT_BLOCKED`
+
+Starting commit for this delta: `94780ff0ba32337654bda728df534099a4b37047`.
+
+The current implementation now proves the canonical local chain
+`Publisher → Book Master → Variant → ISBN/price → publication → inventory or
+catalog assignment → customer projection`. Ready Stock keeps the canonical
+`onHand - reserved` availability calculation and now returns only customer-safe
+variant fields. Secret Catalog uses the shared projection guard to exclude
+draft/archived books while preserving scoped token access for valid `special`
+products. No order, inventory reservation, invoice snapshot, payment, deposit,
+refund, exception, or schema state logic was changed.
+
+How To Order is now one accessible seven-step ordered journey with a single
+connected path; the previous independent card treatment is superseded. The
+shared Admin operational loading grammar remains stable across Ready Stock,
+Exceptions, and Refunds.
+
+Local gates: Vitest `147/147`, Convex `82/82`, Playwright `114/114` on the
+first full run, TypeScript, ESLint, format, build, and diff check pass. Rendered
+QA passes How To Order at 375/390/430/1440px, deterministic product
+listing/detail at 390/1440px, Admin Book Master entry at 390/1440px, and the
+three Admin operational loading surfaces side-by-side at 1024/1280/1440px. A
+repeat serial browser run was locally flaky around Clerk/resource loading and
+signed-out navigation; no changed-surface assertion failed.
+
+No real client product information or authorized authenticated operator session
+was provided. No Production business data was created. Therefore the real
+product pilot, authenticated Production acceptance, and bulk-entry safety
+remain blocked; Phase 08 remains `NOT STARTED`.
 
 ### Admin access security hardening
 
-**Local status:** `BFG_ADMIN_SECURITY_HARDENED_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
+**Status:** `BFG_ADMIN_SECURITY_HARDENED_PRODUCTION_AUTHENTICATED_ACCEPTANCE_PENDING`
 
 Deterministic security tests now cover the Admin route role/status matrix,
 direct sensitive Admin query and mutation bypass attempts, Owner-only role
@@ -39,10 +75,9 @@ permissions let Admin use owned customer projections while every Admin-only
 query/mutation remains independently server-authorized.
 
 The current Production runtime is known to pass Clerk → Convex token, issuer,
-audience, Convex identity, non-member detection, and Admin denial. This final
-closure pass must deploy the admission/UI diff and prove the real signed-in
-customer/Admin/Owner journey. No Clerk Organization, alternate login, or
-dummy data is claimed.
+audience, Convex identity, non-member detection, and Admin denial. The deployed
+closure pass still must prove the real signed-in customer/Admin/Owner journey.
+No Clerk Organization, alternate login, or dummy data is claimed.
 
 ## Auth Session Recovery V3
 

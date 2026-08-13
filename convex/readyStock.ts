@@ -34,9 +34,6 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">) {
               priceAmount: variant.priceAmount,
               currency: variant.currency,
               stockQuantity: availableQuantity,
-              onHandQuantity: inventory.quantity,
-              reservedQuantity,
-              availableQuantity,
             }
           : null;
       }),

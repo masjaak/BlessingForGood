@@ -5,18 +5,8 @@ import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { AdminNav } from "@/components/admin-nav";
-import {
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  LoadingRegion,
-  Money,
-  PageHeader,
-  SkeletonCard,
-  StatusBadge,
-} from "@/components/ui";
+import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonCard, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 
 type Refund = Awaited<FunctionReturnType<typeof api.refunds.listForAdmin>>[number];
@@ -204,47 +194,48 @@ function RefundCard({ refund }: { refund: Refund }) {
   );
 }
 
-export function AdminRefunds() {
-  const { dataSource } = useProduct();
-  const refunds = useQuery(api.refunds.listForAdmin, dataSource === "convex" ? {} : "skip");
-  if (dataSource !== "convex") return <div className="state-panel">Antrian refund belum tersedia.</div>;
-  if (refunds === undefined) {
-    return (
-      <LoadingRegion label="Memuat antrian refund">
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
-    );
-  }
+function RefundQueueContent({ refunds }: { refunds: Refund[] }) {
   const statusSummary = (Object.keys(statusLabels) as Array<keyof typeof statusLabels>).map((status) => ({
     status,
     count: refunds.filter((refund) => refund.status === status).length,
   }));
   return (
-    <div className="page admin-page admin-operational-page">
-      <PageHeader
-        eyebrow="Refund queue"
-        title="Kewajiban refund dan payout."
-        description="Catat transfer tanpa menghapus invoice atau pembayaran historis."
-      />
-      <div className="admin-workspace">
-        <AdminNav />
-        <div className="admin-content admin-operational-content">
-          <Card className="admin-status-summary">
-            {statusSummary.map(({ status, count }) => (
-              <div key={status}>
-                <span className="card-kicker">{statusLabels[status]}</span>
-                <strong>{count}</strong>
-              </div>
-            ))}
-          </Card>
-          {refunds.length ? (
-            refunds.map((refund) => <RefundCard key={refund.obligationId} refund={refund} />)
-          ) : (
-            <EmptyState title="Tidak ada kewajiban refund" description="Refund yang disetujui akan muncul di sini." />
-          )}
-        </div>
-      </div>
-    </div>
+    <>
+      <Card className="admin-status-summary">
+        {statusSummary.map(({ status, count }) => (
+          <div key={status}>
+            <span className="card-kicker">{statusLabels[status]}</span>
+            <strong>{count}</strong>
+          </div>
+        ))}
+      </Card>
+      {refunds.length ? (
+        refunds.map((refund) => <RefundCard key={refund.obligationId} refund={refund} />)
+      ) : (
+        <EmptyState title="Tidak ada kewajiban refund" description="Refund yang disetujui akan muncul di sini." />
+      )}
+    </>
+  );
+}
+
+export function AdminRefunds() {
+  const { dataSource } = useProduct();
+  const refunds = useQuery(api.refunds.listForAdmin, dataSource === "convex" ? {} : "skip");
+  if (dataSource !== "convex") return <div className="state-panel">Antrian refund belum tersedia.</div>;
+  return (
+    <AdminOperationalPage
+      eyebrow="Refund queue"
+      title="Kewajiban refund dan payout."
+      description="Catat transfer tanpa menghapus invoice atau pembayaran historis."
+    >
+      {refunds === undefined ? (
+        <LoadingRegion label="Memuat antrian refund">
+          <SkeletonCard />
+          <SkeletonCard />
+        </LoadingRegion>
+      ) : (
+        <RefundQueueContent refunds={refunds} />
+      )}
+    </AdminOperationalPage>
   );
 }
