@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { BrandMascot } from "@/components/brand";
@@ -180,6 +180,7 @@ function ConnectedJoinForm() {
 function JoinPageContent() {
   const { dataSource, authState, retryAuth } = useProduct();
   const { isLoaded, isSignedIn } = useAuth();
+  const joinRequests = useQuery(api.joinRequests.mine, isSignedIn && dataSource === "convex" ? {} : "skip");
 
   if (isSignedIn && (authState === "convex-error" || authState === "network-error")) {
     return (
@@ -197,12 +198,47 @@ function JoinPageContent() {
     return <div className="state-panel">Memeriksa akses BFG…</div>;
   }
   if (isSignedIn && authState === "admission-required") {
+    if (joinRequests === undefined) return <div className="state-panel">Memeriksa permintaan bergabung…</div>;
+    const latestRequest = joinRequests[0];
+    if (!latestRequest) return <ConnectedJoinForm />;
+    if (latestRequest.status === "rejected") {
+      return (
+        <Card className="notice-card content-stack">
+          <span className="card-kicker">Permintaan ditolak</span>
+          <h2>Permintaan bergabung belum dapat disetujui.</h2>
+          <p>{latestRequest.rejectionReason || "Tim BFG belum dapat melanjutkan permintaan ini."}</p>
+        </Card>
+      );
+    }
+    if (latestRequest.status === "approved" && latestRequest.admissionStatus === "active") {
+      return (
+        <Card className="notice-card content-stack">
+          <span className="card-kicker">Blessfriend aktif</span>
+          <h2>Akun BFG-mu sudah aktif.</h2>
+          <p>Private workspace-mu sudah terbuka. Lanjutkan ke akun atau katalog komunitas.</p>
+          <div className="actions">
+            <LinkButton href="/account">Buka akun</LinkButton>
+            <LinkButton href="/catalog" variant="secondary">
+              Buka katalog
+            </LinkButton>
+          </div>
+        </Card>
+      );
+    }
+    if (latestRequest.status === "approved" && latestRequest.admissionStatus === "invitation_pending") {
+      return (
+        <Card className="notice-card content-stack">
+          <span className="card-kicker">Disetujui</span>
+          <h2>Undangan Clerk diperlukan.</h2>
+          <p>Admin BFG sudah menyetujui permintaanmu. Ikuti undangan Clerk untuk mengaktifkan akses BFG.</p>
+        </Card>
+      );
+    }
     return (
-      <Card className="notice-card">
-        <span className="card-kicker">Undangan diperlukan</span>
-        <h2>Akun ini belum menjadi Blessfriend.</h2>
-        <p>Permintaan join tetap perlu ditinjau dan diikuti undangan Clerk sebelum akses BFG aktif.</p>
-        <LinkButton href="/">Kembali ke beranda</LinkButton>
+      <Card className="notice-card content-stack">
+        <span className="card-kicker">Dalam peninjauan</span>
+        <h2>Permintaanmu sedang ditinjau.</h2>
+        <p>Tim BFG akan mengabari setelah proses review selesai.</p>
       </Card>
     );
   }

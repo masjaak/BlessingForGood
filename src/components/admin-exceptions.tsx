@@ -95,93 +95,101 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
   }
 
   return (
-    <Card>
-      <span className="card-kicker">Operasi admin</span>
-      <h2>Buka masalah pesanan</h2>
-      <p className="subtle">Server memvalidasi jumlah, kepemilikan, dan konflik masalah aktif.</p>
-      <form className="form-card" onSubmit={submit}>
-        <div className="form-grid">
-          <Field label="Jenis">
-            <select className="select" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
-              <option value="out_of_stock">Stok tidak tersedia</option>
-              <option value="defect">Defect</option>
-              <option value="admin_cancellation">Pembatalan admin</option>
-            </select>
-          </Field>
-          <Field label="Pesanan">
-            <select
-              className="select"
-              value={orderId}
-              onChange={(event) => {
-                setOrderId(event.target.value);
-                setItemId("");
-              }}
-              required
-            >
-              <option value="">Pilih pesanan…</option>
-              {orders.map((order) => (
-                <option value={order.orderId} key={order.orderId}>
-                  {order.customerName} · {order.orderId}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <div className="form-grid">
-          <Field label="Item">
-            <select className="select" value={itemId} onChange={(event) => setItemId(event.target.value)} required>
-              <option value="">Pilih item…</option>
-              {selectedOrder?.items.map((item) => (
-                <option value={item._id} key={item._id}>
-                  {item.quantity} × {item.bookTitleSnapshot} · {item.formatSnapshot}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Jumlah terdampak" hint={selectedItem ? `Maksimum: ${selectedItem.quantity}` : undefined}>
-            <input
-              className="input"
-              type="number"
-              min="1"
-              max={selectedItem?.quantity}
-              step="1"
-              value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
-              required
-            />
-          </Field>
-        </div>
-        <Field label="Alasan">
-          <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} required />
-        </Field>
-        <div className="form-grid">
-          <Field label="Catatan untuk customer (opsional)">
+    <details className="admin-operations-disclosure">
+      <summary className="button button-primary">Catat exception</summary>
+      <Card>
+        <span className="card-kicker">Operasi admin</span>
+        <h2>Buka masalah pesanan</h2>
+        <p className="subtle">Server memvalidasi jumlah, kepemilikan, dan konflik masalah aktif.</p>
+        <form className="form-card" onSubmit={submit}>
+          <div className="form-grid">
+            <Field label="Jenis">
+              <select className="select" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
+                <option value="out_of_stock">Stok tidak tersedia</option>
+                <option value="defect">Defect</option>
+                <option value="admin_cancellation">Pembatalan admin</option>
+              </select>
+            </Field>
+            <Field label="Pesanan">
+              <select
+                className="select"
+                value={orderId}
+                onChange={(event) => {
+                  setOrderId(event.target.value);
+                  setItemId("");
+                }}
+                required
+              >
+                <option value="">Pilih pesanan…</option>
+                {orders.map((order) => (
+                  <option value={order.orderId} key={order.orderId}>
+                    {order.customerName} · {order.orderId}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="form-grid">
+            <Field label="Item">
+              <select className="select" value={itemId} onChange={(event) => setItemId(event.target.value)} required>
+                <option value="">Pilih item…</option>
+                {selectedOrder?.items.map((item) => (
+                  <option value={item._id} key={item._id}>
+                    {item.quantity} × {item.bookTitleSnapshot} · {item.formatSnapshot}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Jumlah terdampak" hint={selectedItem ? `Maksimum: ${selectedItem.quantity}` : undefined}>
+              <input
+                className="input"
+                type="number"
+                min="1"
+                max={selectedItem?.quantity}
+                step="1"
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
+                required
+              />
+            </Field>
+          </div>
+          <Field label="Alasan">
             <textarea
               className="textarea"
-              value={customerNote}
-              onChange={(event) => setCustomerNote(event.target.value)}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              required
             />
           </Field>
-          <Field label="Catatan internal (opsional)">
-            <textarea
-              className="textarea"
-              value={internalNote}
-              onChange={(event) => setInternalNote(event.target.value)}
-            />
-          </Field>
-        </div>
-        <div className="form-actions">
-          <Button type="submit" pending={isSubmitting} pendingLabel="Membuka…">
-            Buka masalah
-          </Button>
-          {message ? (
-            <span className="subtle" role="status">
-              {message}
-            </span>
-          ) : null}
-        </div>
-      </form>
-    </Card>
+          <div className="form-grid">
+            <Field label="Catatan untuk customer (opsional)">
+              <textarea
+                className="textarea"
+                value={customerNote}
+                onChange={(event) => setCustomerNote(event.target.value)}
+              />
+            </Field>
+            <Field label="Catatan internal (opsional)">
+              <textarea
+                className="textarea"
+                value={internalNote}
+                onChange={(event) => setInternalNote(event.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="form-actions">
+            <Button type="submit" pending={isSubmitting} pendingLabel="Membuka…">
+              Buka masalah
+            </Button>
+            {message ? (
+              <span className="subtle" role="status">
+                {message}
+              </span>
+            ) : null}
+          </div>
+        </form>
+      </Card>
+    </details>
   );
 }
 
@@ -432,7 +440,7 @@ export function AdminExceptions() {
     );
   }
   return (
-    <div className="page admin-page">
+    <div className="page admin-page admin-operational-page">
       <PageHeader
         eyebrow="Operasi masalah pesanan"
         title="Selesaikan masalah tanpa menghapus riwayat."
@@ -440,8 +448,7 @@ export function AdminExceptions() {
       />
       <div className="admin-workspace">
         <AdminNav />
-        <div className="admin-content">
-          <OpenExceptionForm orders={orders.page} />
+        <div className="admin-content admin-operational-content">
           {exceptions.length ? (
             <div className="content-stack">
               {exceptions.map((exception) => (
@@ -454,6 +461,7 @@ export function AdminExceptions() {
               description="Antrian OOS, defect, dan pembatalan sedang kosong."
             />
           )}
+          <OpenExceptionForm orders={orders.page} />
         </div>
       </div>
     </div>

@@ -46,7 +46,10 @@ describe("ProductAccessGuard session boundary", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Akun ini belum menjadi Blessfriend." })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Join Blessfriends" }).getAttribute("href")).toBe("/join");
+    expect(
+      screen.getByText("Untuk membuka Buku Saya, Tagihan, dan Akun, kirim permintaan bergabung terlebih dahulu."),
+    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Gabung Blessfriends" }).getAttribute("href")).toBe("/join");
     expect(screen.queryByText("Private content")).toBeNull();
   });
 

@@ -45,9 +45,9 @@ export function ProductAccessGuard({
       <div className="guard-card">
         <span className="eyebrow">Akun belum aktif</span>
         <h1>Akun ini belum menjadi Blessfriend.</h1>
-        <p>Masuk dengan akun yang menerima undangan BFG, atau kirim permintaan Join Blessfriends terlebih dahulu.</p>
+        <p>Untuk membuka Buku Saya, Tagihan, dan Akun, kirim permintaan bergabung terlebih dahulu.</p>
         <div className="actions">
-          <LinkButton href="/join">Join Blessfriends</LinkButton>
+          <LinkButton href="/join">Gabung Blessfriends</LinkButton>
           <UserButton />
         </div>
       </div>

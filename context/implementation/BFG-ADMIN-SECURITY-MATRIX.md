@@ -1,10 +1,11 @@
 # BFG Admin Security Matrix
 
-Status: `BFG_ADMIN_SECURITY_HARDENED_LOCAL_AUTH_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
-Production authentication acceptance remains blocked by the external Clerk
-Production to Convex token/configuration boundary. This document records local,
-deterministic authorization evidence only.
+The current Production runtime already passes the Clerk → Convex token,
+issuer, audience, Convex identity, non-member, and Admin-denial checks. This
+document records the unchanged authorization boundary plus the new admission
+guards; final real customer/Admin/Owner acceptance remains deployment-gated.
 
 ## Authority chain
 
@@ -125,7 +126,8 @@ count, name, email, phone, address, or financial metadata.
 ## Schema and domain impact
 
 ```text
-Schema diff: ZERO
+Schema diff: additive Join-only optional fields and one applicant-subject index;
+no financial/business tables or transitions changed.
 Business/financial transitions: UNCHANGED
 Secret Catalog architecture: UNCHANGED
 Clerk Organizations: NOT ENABLED
@@ -147,7 +149,27 @@ Email whitelist: NOT USED
   outside `/admin`.
 - Admin route impact: Admin query selection remains limited to `/admin`; all
   existing Admin query/mutation server guards are unchanged.
-- Business, financial, Secret Catalog, and schema impact: none.
+- Business, financial, and Secret Catalog impact: none. Schema impact is
+  limited to the additive Join-only fields and applicant-subject index above.
 - Fresh coverage reports no recorded Convex gap. The only Admin parser caveat
   is `src/app/admin/page.tsx:123`; direct source inspection confirms it is the
   tested Owner-only Users link condition.
+
+## Phase 07.1 admission security delta
+
+- `/join` is available to signed-out visitors and signed-in Clerk identities
+  without an `appUser`; private customer and Admin surfaces remain guarded.
+- `joinRequests.submit` validates canonical fields, exact interests, duplicate
+  contact/email/subject constraints, and captures the verified Clerk subject on
+  the server when present.
+- `joinRequests.pendingCount`, `listForAdmin`, review, approval, rejection, and
+  retry require the existing `customers.read` / `customers.manage` permissions.
+- Approval requires an approved request and uses the exact server-captured
+  subject. Existing `appUsers` are reused; a new active `appUser` is inserted
+  only once. Login alone never admits a user.
+- If an approved admission handoff fails, the approved request remains
+  recoverable with `admissionError` and an explicit retry action. Join history
+  is retained.
+- Direct Admin query/mutation authorization, ownership isolation, audit
+  behavior, Secret Catalog independence, and Clerk secret handling are
+  unchanged.

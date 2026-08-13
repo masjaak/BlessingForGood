@@ -67,6 +67,67 @@ describe("BFG join request workflow", () => {
     expect(submitted.joinRequestId).toBeDefined();
   });
 
+  it("connects an existing Clerk identity to one approved Blessfriend admission", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const applicant = t.withIdentity({
+      subject: "join-applicant-test",
+      tokenIdentifier: "clerk|join-applicant-test",
+      email: "join-applicant@example.com",
+    });
+
+    const submitted = await applicant.mutation(
+      api.joinRequests.submit,
+      requestInput({ email: "join-applicant@example.com", contact: "+62 811-2222-3334" }),
+    );
+    expect(await applicant.query(api.joinRequests.mine, {})).toMatchObject([
+      { status: "submitted", admissionStatus: "pending" },
+    ]);
+    expect(await admin.query(api.joinRequests.pendingCount, {})).toBe(1);
+
+    await admin.mutation(api.joinRequests.startReview, { joinRequestId: submitted.joinRequestId });
+    const approved = await admin.mutation(api.joinRequests.approve, { joinRequestId: submitted.joinRequestId });
+    expect(approved).toMatchObject({ status: "approved", admissionStatus: "active" });
+    expect(await admin.query(api.joinRequests.pendingCount, {})).toBe(0);
+    expect(await applicant.query(api.users.current, {})).toMatchObject({ role: "customer", status: "active" });
+    await expect(applicant.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "active",
+    });
+
+    const applicantUsers = await t.run(async (ctx) =>
+      (await ctx.db.query("appUsers").collect()).filter((user) => user.clerkUserId === "join-applicant-test"),
+    );
+    expect(applicantUsers).toHaveLength(1);
+    await expect(applicant.query(api.joinRequests.mine, {})).resolves.toMatchObject([
+      { status: "approved", admissionStatus: "active" },
+    ]);
+  });
+
+  it("keeps pending attention scoped to reviewable requests", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const first = await t.mutation(api.joinRequests.submit, requestInput());
+    await t.mutation(
+      api.joinRequests.submit,
+      requestInput({ email: "second@example.com", contact: "+62 811-2222-3335" }),
+    );
+    const third = await t.mutation(
+      api.joinRequests.submit,
+      requestInput({ email: "third@example.com", contact: "+62 811-2222-3336" }),
+    );
+    expect(await admin.query(api.joinRequests.pendingCount, {})).toBe(3);
+    await admin.mutation(api.joinRequests.startReview, { joinRequestId: first.joinRequestId });
+    await admin.mutation(api.joinRequests.reject, {
+      joinRequestId: first.joinRequestId,
+      rejectionReason: "Not enough context for this request.",
+    });
+    await admin.mutation(api.joinRequests.startReview, { joinRequestId: third.joinRequestId });
+    await admin.mutation(api.joinRequests.approve, { joinRequestId: third.joinRequestId });
+    expect(await admin.query(api.joinRequests.pendingCount, {})).toBe(1);
+    await expect(customer.query(api.joinRequests.pendingCount, {})).rejects.toThrow("PERMISSION_DENIED");
+  });
+
   it("enforces admin review transitions, preserves rejected history, and records audit", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useQuery } from "convex/react";
 import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
@@ -16,8 +17,13 @@ vi.mock("@clerk/nextjs", () => ({
   useAuth: vi.fn(() => ({ isLoaded: true, isSignedIn: false })),
 }));
 
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => 0),
+}));
+
 beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
+  vi.mocked(useQuery).mockReturnValue(0 as never);
 });
 
 describe("public UI foundation", () => {
@@ -38,12 +44,16 @@ describe("public UI foundation", () => {
     render(
       <div>
         <BrandLogo />
+        <BrandLogo variant="admin" linkToHome={false} />
         <BrandLogo variant="symbol" linkToHome={false} />
         <BrandMascot variant="success" />
       </div>,
     );
 
     expect(screen.getByRole("img", { name: "Blessing For Goods" }).getAttribute("src")).toContain("Logo-1");
+    expect(screen.getByRole("img", { name: "Blessing For Goods operational mark" }).getAttribute("src")).toContain(
+      "Logo-1",
+    );
     expect(screen.getByRole("img", { name: "Blessing For Goods symbol" }).getAttribute("src")).toContain("Logo-2.png");
     expect(screen.getByRole("img", { name: "Blessing For Goods mascot celebrating" }).getAttribute("src")).toContain(
       "Mascott-3.png",
@@ -90,6 +100,26 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Books" }).getAttribute("href")).toBe("/admin/books");
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/admin/ready-stock");
     expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
+  });
+
+  it("shows only the live pending Join Requests count in the Admin sidebar", () => {
+    vi.mocked(useQuery).mockReturnValue(3 as never);
+    render(
+      <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
+        <AdminNav />
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByText("3")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Join Requests.*3/ })).toBeTruthy();
+
+    vi.mocked(useQuery).mockReturnValue(0 as never);
+    render(
+      <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
+        <AdminNav />
+      </ProductContext.Provider>,
+    );
+    expect(screen.queryByText("0")).toBeNull();
   });
 
   it("shows the shell admin link only for a resolved elevated role", () => {

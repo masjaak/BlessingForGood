@@ -1,6 +1,6 @@
 # Admin Mockup Translation Matrix
 
-Status: Phase 07.1 audit baseline
+Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
 Visual sources inspected directly:
 
@@ -10,6 +10,10 @@ Visual sources inspected directly:
 
 The mockups are visual references only. Existing BFG business policies,
 Convex queries, permissions, and zero-production-data rules remain authoritative.
+
+The table above is the initial audit snapshot. The current Phase 07.1 delta is
+recorded below; authenticated Production comparison remains the final evidence
+gate.
 
 | Admin Surface | Route | Local Mockup | Mockup Intent | Current Production Pattern | Difference | Layout Change | Icon Change | Hierarchy Change | Data/Logic Change Required? | Decision | Priority | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -39,3 +43,25 @@ Convex queries, permissions, and zero-production-data rules remain authoritative
   decoration and never replaces the state label.
 - Admin/customer switching is a workspace action, not a new Admin item in
   customer primary navigation.
+
+## Phase 07.1 visual-system delta
+
+- `BrandLogo` now uses canonical colorful `Logo-1` for both customer and Admin.
+- Customer routes share the same `SiteShell` header container, logo geometry,
+  and navigation rhythm; route-specific homepage logo offsets were removed.
+- `AdminNav` keeps one existing outlined SVG family with a shared icon box,
+  stroke, baseline, label gap, active state, and live Join Requests badge.
+- Dashboard Join Requests attention uses the same pending-review source as the
+  sidebar badge. Zero pending requests hides the badge.
+- Ready Stock, Exceptions, and Refunds now share
+  `admin-operational-page` / `admin-operational-content`, common
+  page-header/content-width/spacing grammar, and compact operational states.
+  Ready Stock remains inventory-first, Exceptions queue-first with a native
+  disclosure for creation, and Refunds status-first with pending/processing/
+  paid/failed context.
+
+Local signed-out smoke and source-level mockup checks pass. The authenticated
+Admin rubric (Dashboard, Join Requests, Customers, Books, Catalogs, Ready
+Stock, Orders, Batch PO, Exceptions, Invoices, Payments, Refunds, Users) is
+`PENDING REAL OWNER SESSION` until the final Production browser pass; no
+bypass or dummy business data is acceptable.

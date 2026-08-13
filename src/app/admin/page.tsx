@@ -47,7 +47,14 @@ function AdminOverview() {
   const pendingRefunds = refunds.filter((item) => item.status !== "paid").length;
 
   const queues = [
-    ["Penerimaan", pendingAdmissions, "/admin/join-requests", "Permintaan Blessfriends menunggu tinjauan"],
+    [
+      "Join Requests",
+      pendingAdmissions,
+      "/admin/join-requests",
+      pendingAdmissions
+        ? `${pendingAdmissions} permintaan Blessfriends baru`
+        : "Tidak ada permintaan Blessfriends baru",
+    ],
     ["Pesanan baru", newOrders, "/admin/orders", "Pesanan yang belum masuk proses PO"],
     ["Pembayaran", pendingPayments, "/admin/payments", "Konfirmasi pembayaran menunggu verifikasi"],
     ["Masalah", openExceptions, "/admin/exceptions", "OOS, defect, atau pembatalan aktif"],
@@ -65,7 +72,7 @@ function AdminOverview() {
         <strong className="metric-value">{count}</strong>
         <p>{description}</p>
         <LinkButton href={href} variant="quiet">
-          Buka {label.toLowerCase()} →
+          {href === "/admin/join-requests" ? "Review" : `Buka ${label.toLowerCase()} →`}
         </LinkButton>
       </Card>
     ));

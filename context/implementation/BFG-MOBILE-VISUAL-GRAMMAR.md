@@ -88,7 +88,7 @@ across catalog, orders, tracking, invoices, and account.
 
 ## Logo Usage
 
-- Production artwork is `public/brand/logos/Logo-4.png` for the primary mark and repository symbol assets where a compact mark is needed.
+- Production artwork is the canonical `public/brand/logos/Logo-1` for the primary mark and `Logo-2.png` where a compact symbol is needed.
 - Mobile header logo is centered and compact. Desktop logo stays compact and left anchored.
 - Splash may use a larger logo, but customer page headers do not.
 

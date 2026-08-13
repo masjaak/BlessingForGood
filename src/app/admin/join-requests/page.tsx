@@ -36,11 +36,13 @@ function JoinRequestCard({
   startReview,
   approve,
   reject,
+  retryAdmission,
 }: {
   request: JoinRequest;
   startReview: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
   approve: (joinRequestId: Id<"joinRequests">, reviewNote?: string) => Promise<unknown>;
   reject: (joinRequestId: Id<"joinRequests">, rejectionReason: string, reviewNote?: string) => Promise<unknown>;
+  retryAdmission: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
 }) {
   const [reviewNote, setReviewNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -94,7 +96,7 @@ function JoinRequestCard({
           pendingLabel="Starting…"
           onClick={() => void run(() => startReview(requestId), "Review started.")}
         >
-          Start review
+          Review
         </Button>
       ) : null}
       {request.status === "under_review" ? (
@@ -113,10 +115,10 @@ function JoinRequestCard({
           <div className="form-actions">
             <Button
               type="button"
-              pending={pendingAction === "Approved; ready for manual invitation."}
+              pending={pendingAction === "Approved; admission handoff started."}
               pendingLabel="Approving…"
               onClick={() =>
-                void run(() => approve(requestId, reviewNote || undefined), "Approved; ready for manual invitation.")
+                void run(() => approve(requestId, reviewNote || undefined), "Approved; admission handoff started.")
               }
             >
               Approve
@@ -137,9 +139,29 @@ function JoinRequestCard({
         </div>
       ) : null}
       {request.status === "approved" ? (
-        <p className="success-banner" role="status">
-          Invitation handoff ready. Create the Clerk invitation manually; no invitation URL is stored here.
-        </p>
+        <div className="content-stack">
+          <p className="success-banner" role="status">
+            {request.admissionStatus === "active"
+              ? "Blessfriend aktif. Akses customer sudah terbuka."
+              : request.admissionStatus === "invitation_pending"
+                ? "Disetujui. Buat undangan Clerk secara manual untuk identitas baru."
+                : "Disetujui, tetapi admission masih perlu diselesaikan."}
+          </p>
+          {request.admissionError ? (
+            <div className="form-actions">
+              <span className="error-text">Admission handoff perlu dicoba lagi.</span>
+              <Button
+                type="button"
+                variant="secondary"
+                pending={pendingAction === "Admission handoff retried."}
+                pendingLabel="Retrying…"
+                onClick={() => void run(() => retryAdmission(requestId), "Admission handoff retried.")}
+              >
+                Retry admission
+              </Button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
       {request.status === "rejected" ? <p className="subtle">Reason: {request.rejectionReason}</p> : null}
       {request.reviewedAt ? (
@@ -166,6 +188,7 @@ function ConnectedJoinRequests() {
   const startReviewMutation = useMutation(api.joinRequests.startReview);
   const approveMutation = useMutation(api.joinRequests.approve);
   const rejectMutation = useMutation(api.joinRequests.reject);
+  const retryAdmissionMutation = useMutation(api.joinRequests.retryAdmission);
   const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!requests || !query) return requests;
@@ -181,7 +204,7 @@ function ConnectedJoinRequests() {
       <PageHeader
         eyebrow="Admission operations"
         title="Review Blessfriends requests."
-        description="Approval makes an applicant eligible for a manual Clerk invitation. It does not create an account or grant catalog access."
+        description="Approval is the BFG admission event. Existing linked Clerk identities are activated without duplication; new identities continue through the manual invitation handoff."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -226,6 +249,7 @@ function ConnectedJoinRequests() {
                 reject={(joinRequestId, rejectionReason, reviewNote) =>
                   rejectMutation({ joinRequestId, rejectionReason, reviewNote })
                 }
+                retryAdmission={(joinRequestId) => retryAdmissionMutation({ joinRequestId })}
               />
             ))
           ) : filteredRequests ? (

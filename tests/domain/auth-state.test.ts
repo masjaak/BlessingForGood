@@ -48,6 +48,10 @@ describe("authenticated product session state", () => {
     expect(resolve({ provisionError: true })).toBe("network-error");
   });
 
+  it("lets a newly admitted appUser clear the prior terminal admission error", () => {
+    expect(resolve({ admissionDenied: true, appUser: activeCustomer })).toBe("authenticated");
+  });
+
   it("rejects invalid transitions into private data", () => {
     expect(resolve({ convexAuthenticated: false, appUser: activeCustomer })).toBe("convex-error");
     expect(resolve({ appUser: undefined })).toBe("provisioning");

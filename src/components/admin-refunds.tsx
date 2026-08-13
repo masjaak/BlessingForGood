@@ -216,8 +216,12 @@ export function AdminRefunds() {
       </LoadingRegion>
     );
   }
+  const statusSummary = (Object.keys(statusLabels) as Array<keyof typeof statusLabels>).map((status) => ({
+    status,
+    count: refunds.filter((refund) => refund.status === status).length,
+  }));
   return (
-    <div className="page admin-page">
+    <div className="page admin-page admin-operational-page">
       <PageHeader
         eyebrow="Refund queue"
         title="Kewajiban refund dan payout."
@@ -225,7 +229,15 @@ export function AdminRefunds() {
       />
       <div className="admin-workspace">
         <AdminNav />
-        <div className="admin-content">
+        <div className="admin-content admin-operational-content">
+          <Card className="admin-status-summary">
+            {statusSummary.map(({ status, count }) => (
+              <div key={status}>
+                <span className="card-kicker">{statusLabels[status]}</span>
+                <strong>{count}</strong>
+              </div>
+            ))}
+          </Card>
           {refunds.length ? (
             refunds.map((refund) => <RefundCard key={refund.obligationId} refund={refund} />)
           ) : (

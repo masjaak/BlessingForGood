@@ -1,10 +1,16 @@
 # BFG Workspace Access Matrix
 
-Status: `BFG_ADMIN_SECURITY_HARDENED_LOCAL_AUTH_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
 Customer and Admin use one Clerk/Convex application but remain separate
 presentation contexts. The client guard controls which workspace mounts; every
 private Convex query and mutation remains server-authorized.
+
+The Clerk → Convex authentication boundary is now verified in the current
+Production runtime. A Clerk account still does not grant BFG membership:
+`appUsers` admission, status, role, and server authorization remain the source
+of truth. The remaining closure gate is deployment of this admission/UI diff
+and real customer/Admin/Owner acceptance.
 
 ## State machine
 
@@ -68,8 +74,25 @@ receive only their owned customer projections.
   Admin, and Owner route policy; direct sensitive query/mutation denial; and
   Owner-only role management. The protected-data test rejects before returning
   profile fields.
-- Current Production truth remains
-  `BFG_AUTH_SESSION_V3_CODE_READY_PRODUCTION_AUTH_PENDING`: a Clerk Production
-  session still cannot provide a Convex-compatible token. Real customer/Admin/
-  Owner sessions, no-refresh workspace switching, and live `/admin` denial
-  remain required before full Phase 07.1 closure.
+- Current pre-diff Production deployment already passes Clerk → Convex token,
+  issuer, audience, Convex identity, non-member detection, and Admin denial.
+  The final closure deployment must add the admission path and visual changes,
+  then repeat real customer/Admin/Owner acceptance.
+
+## Phase 07.1 admission delta
+
+The admission state machine and customer/Admin review contract are recorded in
+`BFG-BLESSFRIEND-ADMISSION-FLOW.md`. `/join` is intentionally public and also
+renders for a signed-in Clerk identity with no `appUser`; private customer
+routes remain guarded until an active `appUser` exists. Admin approval is the
+only authorization event that can admit an existing Clerk identity.
+
+The Admin sidebar uses the live pending-review count and the dashboard uses the
+same pending queue as an attention item. Both are operational indicators, not
+a notification platform. Join history is retained; duplicate unresolved
+requests are rejected idempotently.
+
+The customer shell uses one `SiteShell` header and the canonical `BrandLogo`
+with `Logo-1`. Admin uses the same asset with contextual sizing. Ready Stock,
+Exceptions, and Refunds share the existing Admin page primitives and a common
+operational grammar without changing domain logic.

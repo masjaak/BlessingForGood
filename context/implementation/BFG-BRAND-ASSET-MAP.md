@@ -25,8 +25,8 @@ replacement or generated brand asset is used.
 
 ## Runtime Mapping
 
-The customer runtime uses `Logo-1` as the approved multicolor primary,
-`Logo-2.png` as symbol, and Mascott-1/3/4 for default, success, and warm
-states. Admin uses the compact `Logo-4.png` treatment. The full Logo-1
-transparent canvas is rendered with containment; visible artwork is never
-cropped.
+The customer and Admin runtimes both use `Logo-1` as the approved multicolor
+primary, `Logo-2.png` as symbol, and Mascott-1/3/4 for default, success, and
+warm states. Admin may use contextual sizing, but not a different asset. The
+full Logo-1 transparent canvas is rendered with containment; visible artwork is
+never cropped.

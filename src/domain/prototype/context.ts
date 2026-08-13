@@ -65,9 +65,10 @@ export function resolveProductAuthState({
   if (convexLoading) return "convex-loading";
   if (!convexAuthenticated) return "convex-error";
   if (provisionError) return "network-error";
+  if (appUser?.status === "suspended") return "suspended";
+  if (appUser?.status === "active") return "authenticated";
   if (admissionDenied) return "admission-required";
   if (provisioning || appUser === undefined || appUser === null) return "provisioning";
-  if (appUser.status === "suspended") return "suspended";
   return "authenticated";
 }
 

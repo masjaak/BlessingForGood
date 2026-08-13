@@ -2,7 +2,7 @@
 
 ## Phase 07.1 Product Surface Stabilization
 
-**Status:** `BFG_PHASE_07_1_BLOCKED_BY_AUTH_CONFIGURATION`
+**Status:** `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
 Starting commit: `8442367` (`test: cover authenticated production routes`).
 
@@ -15,19 +15,21 @@ dashboard now gives urgent operational queues visual priority over secondary
 context counts without changing queries, schema, permissions, or business
 logic.
 
-Required access, mockup translation, customer surface, and QA matrices are in
-`context/implementation/`. Local deterministic tests pass, and the local
-browser suite passes `114/114` across customer 375/390/430/768/1440px and
-signed-out Admin 1024/1280/1440px. No dummy Production data was created.
+Required access, admission, mockup translation, customer surface, and QA
+matrices are in `context/implementation/`. The current implementation adds the
+missing public/signed-in Join flow, Admin review/approval handoff, pending
+attention indicators, canonical customer/Admin branding, and shared Admin
+operational page grammar. Local deterministic tests and browser smoke pass;
+no dummy Production data was created.
 
-Remaining gates are explicit: real Clerk → Convex Production authenticated
-acceptance is still pending, and authenticated Admin screenshots must still be
-compared against all ten local Admin mockups. Do not start Phase 08 or report
-Production-ready status until those gates pass.
+Remaining gates are explicit: deploy this diff, complete the intentional real
+non-member → Admin approval → active Blessfriend journey, and compare
+authenticated Admin/customer renders against the local mockups. Do not start
+Phase 08 or report closure until those gates pass.
 
 ### Admin access security hardening
 
-**Local status:** `BFG_ADMIN_SECURITY_HARDENED_LOCAL_AUTH_ACCEPTANCE_PENDING`
+**Local status:** `BFG_ADMIN_SECURITY_HARDENED_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
 Deterministic security tests now cover the Admin route role/status matrix,
 direct sensitive Admin query and mutation bypass attempts, Owner-only role
@@ -36,11 +38,11 @@ policy drives the route guard and route-aware query providers; shared Convex
 permissions let Admin use owned customer projections while every Admin-only
 query/mutation remains independently server-authorized.
 
-The Production blocker is unchanged: the Clerk Production session cannot
-provide a Convex-compatible token, so Convex authentication fails before
-`appUser` resolution. No Production auth acceptance, deployment, environment
-change, Clerk Organization, alternate login, schema change, or dummy data is
-claimed.
+The current Production runtime is known to pass Clerk → Convex token, issuer,
+audience, Convex identity, non-member detection, and Admin denial. This final
+closure pass must deploy the admission/UI diff and prove the real signed-in
+customer/Admin/Owner journey. No Clerk Organization, alternate login, or
+dummy data is claimed.
 
 ## Auth Session Recovery V3
 
@@ -274,7 +276,7 @@ guidance are reflected in the local coverage matrices.
   mutation was attempted. The existing Production deployments predate
   `a0a3bce` and are not accepted as this release.
 
-### Production boundary
+### Historical production boundary (2026-08-11)
 
 `main` and Vercel Production remain untouched by design. The canonical BFG
 domain is publicly reachable, but Vercel Production has only incorrectly named

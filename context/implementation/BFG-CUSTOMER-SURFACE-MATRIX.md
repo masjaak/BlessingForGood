@@ -1,11 +1,11 @@
 # BFG Customer Surface Completeness Matrix
 
-Status: Phase 07.1 audit baseline
+Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
 `COMPLETE` means the route has a natural entry, usable current UI, canonical
 data/action wiring, and explicit state handling. Authenticated populated visual
-acceptance remains separately gated by the unresolved Production Clerk → Convex
-handshake and the zero-production-data rule.
+acceptance remains separately gated by the intentional real-user acceptance;
+the zero-production-data rule remains in force.
 
 | Surface | Route | Mockup Source | Navigation Entry | Route Exists | UI Exists | Real Data Connected | Loading | Empty | Error | Auth | Mobile 390 | Desktop 1440 | Primary Action | Current Status | Gap | Required Action | Final Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -38,3 +38,27 @@ Authenticated surfaces follow the existing explicit sequence:
 `undefined` is only treated as loading after a query has actually started;
 empty arrays/records render empty states. The matrix deliberately labels
 real-session and real-record gaps instead of manufacturing data.
+
+## Phase 07.1 final closure delta
+
+The older `AUTH_BLOCKED` labels above are the previous audit snapshot. The
+current implementation keeps the same private-route guard and adds the missing
+admission journey:
+
+| Customer state | `/join` behavior | Private customer behavior |
+| --- | --- | --- |
+| No request | Real Join form | `Akun ini belum menjadi Blessfriend` with a link to `/join` |
+| Pending review | Read-only pending state; no duplicate submit CTA | Remains gated |
+| Approved / admission pending | Invitation or activation status from the persisted request | Remains gated until active |
+| Rejected | Clear rejected result; no invented resubmission policy | Remains gated |
+| Active Blessfriend | Active confirmation and customer links | Buku Saya, Tagihan, Akun, Profile, and Addresses unlock |
+
+The same signed-in Clerk identity is captured server-side on submission when
+available. Approval reuses or creates exactly one active `appUser` for that
+subject; it never auto-admits from login and never creates a duplicate Clerk
+identity. New identities remain on the existing manual Clerk invitation path.
+
+Customer visual convergence is implemented through one shared header/logo
+primitive. Local rendered smoke passed at 375, 390, 430, and 1440px; the
+remaining authenticated visual verdict is a Production session gate, not a
+route or empty-state gap.

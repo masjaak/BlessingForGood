@@ -33,7 +33,7 @@ function ConnectedAdminReadyStock() {
   );
 
   return (
-    <div className="page admin-page">
+    <div className="page admin-page admin-operational-page">
       <PageHeader
         eyebrow="Ready Stock"
         title="Stok yang siap diproses."
@@ -46,7 +46,7 @@ function ConnectedAdminReadyStock() {
       />
       <div className="admin-workspace">
         <AdminNav />
-        <div className="admin-content">
+        <div className="admin-content admin-operational-content">
           <Card className="admin-inventory-summary">
             <div>
               <span className="card-kicker">On hand</span>

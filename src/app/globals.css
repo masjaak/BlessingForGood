@@ -3318,6 +3318,24 @@ p {
   height: 17px;
   flex: 0 0 17px;
 }
+.admin-nav-label {
+  min-width: 0;
+  flex: 1;
+}
+.admin-nav-badge {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  color: var(--color-white);
+  background: var(--accent);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
 
 .admin-nav-external {
   margin-top: 2px;
@@ -3423,6 +3441,41 @@ p {
   padding: 8px 11px;
   font-size: 0.76rem;
 }
+.admin-operational-content {
+  gap: 16px;
+}
+.admin-status-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  padding: 0 !important;
+}
+.admin-status-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+}
+.admin-status-summary > div:last-child {
+  border-right: 0;
+}
+.admin-status-summary strong {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.admin-operations-disclosure {
+  display: grid;
+  gap: 12px;
+}
+.admin-operations-disclosure > summary {
+  width: fit-content;
+  cursor: pointer;
+  list-style: none;
+}
+.admin-operations-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
 
 @media (max-width: 1100px) {
   .admin-page.page {
@@ -3518,7 +3571,8 @@ p {
   }
 
   .admin-queue-grid,
-  .admin-inventory-summary {
+  .admin-inventory-summary,
+  .admin-status-summary {
     grid-template-columns: 1fr;
   }
 
@@ -3538,6 +3592,15 @@ p {
   }
 
   .admin-inventory-summary > div:last-child {
+    border-bottom: 0;
+  }
+
+  .admin-status-summary > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .admin-status-summary > div:last-child {
     border-bottom: 0;
   }
 }
@@ -3560,10 +3623,6 @@ p {
 
 .customer-shell .home-hero .lede {
   max-width: 700px;
-}
-
-.customer-shell .site-header > .brand-logo-link .homepage-header-logo {
-  transform: translateY(10px) scale(1.55);
 }
 
 .customer-shell .home-hero .hero-copy {
@@ -3899,12 +3958,6 @@ p {
 
 .customer-shell .home-order-footer .button {
   flex: 0 0 auto;
-}
-
-@media (max-width: 800px) {
-  .customer-shell .site-header > .brand-logo-link .homepage-header-logo {
-    transform: translateY(9px) scale(1.42);
-  }
 }
 
 @media (max-width: 900px) {

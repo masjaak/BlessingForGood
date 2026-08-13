@@ -1,8 +1,9 @@
 # BFG Phase 07.1 QA
 
-Status: `BFG_ADMIN_SECURITY_HARDENED_LOCAL_AUTH_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
-Phase 07.1 remains `BFG_PHASE_07_1_BLOCKED_BY_AUTH_CONFIGURATION`.
+Phase 07.1 remains open only for final deployment and real authenticated
+acceptance of the admission journey and visual convergence.
 Phase 08 remains `NOT STARTED`.
 
 ## Admin security closure
@@ -18,8 +19,9 @@ Phase 08 remains `NOT STARTED`.
   owned customer projections outside `/admin`, not operational Admin payloads.
 - All audited Admin-specific Convex queries and mutations enforce
   `requirePermission` or `requireOwner` before protected data/write access.
-- No Clerk Organization, second login, email whitelist, schema change, dummy
-  Production data, or business/financial policy change was introduced.
+- No Clerk Organization, second login, email whitelist, dummy Production data,
+  or business/financial policy change was introduced. The only schema change
+  is additive and Join-only.
 
 ## Acceptance scenarios
 
@@ -48,18 +50,20 @@ The repository Playwright suite ran against the local Next application:
 - Captured customer artifacts include `artifacts/browser-qa/customer-390-*` and
   `artifacts/browser-qa/customer-1440-*`.
 - Admin screenshots are gate screenshots only. Authenticated Admin mockup
-comparison is not claimed because no valid local customer/Admin Clerk
-credentials were available and no bypass or business fixture was added.
+  comparison remains a required real Owner-session gate; no bypass or business
+  fixture was added.
 
 ## Security hardening verification
 
-- Full Vitest projects: `133/133`.
+- Full Vitest projects: `138/138`.
 - Frontend Vitest project: `60/60`.
 - Standalone Convex command: `77/77`.
 - Playwright public/customer and signed-out Admin matrix: `114/114`.
 - TypeScript, ESLint, format check, production build, and diff check: PASS.
-- Authenticated Production random/customer/Admin/Owner and same-session tests:
-  BLOCKED by Clerk Production → Convex token configuration.
+- Authenticated Production customer/Admin/Owner and same-session tests:
+  PENDING final deployment and intentional signed-in browser sessions. The
+  pre-diff Production runtime already passes Clerk → Convex authentication and
+  non-member/Admin-denial checks.
 
 Warnings observed during smoke were framework/browser advisory messages only
 (Clerk development-key notice, Next image LCP advice, and smooth-scroll
@@ -99,6 +103,25 @@ metadata advice); no route test recorded a console error or page error.
     account-dashboard links, and shared auth-link styling. Customer mobile
     bottom navigation, public navigation, and domain flows remain unchanged.
 
+## Phase 07.1 admission and visual closure delta
+
+The canonical admission state machine is in
+`BFG-BLESSFRIEND-ADMISSION-FLOW.md`. Deterministic tests now cover:
+
+- public and signed-in missing-`appUser` Join entry;
+- valid persistence, duplicate unresolved-request prevention, and retained
+  history;
+- pending Admin count, review, approve, reject, and authorization;
+- existing Clerk identity reuse without duplicate `appUser` creation;
+- no auto-admission from Clerk login and active-appUser private-route unlock;
+- pending sidebar badge/dashboard attention and resolved-count behavior;
+- recoverable approval handoff failure with explicit retry state.
+
+The customer header now has one shared `SiteShell`/`BrandLogo` path using
+`Logo-1`; Admin uses the same asset. Admin navigation keeps one existing
+outlined icon family. Ready Stock, Exceptions, and Refunds share the Admin
+operational page grammar while keeping their distinct domain content.
+
 ## State-machine evidence
 
 The workspace and authenticated-page state contract is recorded in
@@ -107,13 +130,10 @@ authorization → data loading → empty/populated/error. Invalid customer → A
 transitions are covered by the guard tests and rejected before Admin children
 mount. Convex remains the authoritative second boundary.
 
-## Blocking truth
+## Current closure gate
 
-Production status remains `BFG_AUTH_SESSION_V3_CODE_READY_PRODUCTION_AUTH_PENDING`.
-The current blocker is exact: a Clerk Production session cannot obtain a
-Convex-compatible token, so Convex authentication fails before `appUser`
-resolution. External Clerk Production integration/template configuration and
-real-session acceptance are still required. After that is fixed, rerun:
+The current code is awaiting Production deployment and intentional real
+customer/Admin/Owner sessions. After deployment, rerun:
 
 1. real customer sign-in, `/account` → Profile → Addresses → direct `/admin`
    denial;

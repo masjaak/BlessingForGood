@@ -15,7 +15,7 @@ export const brandAssets = {
       height: 4000,
     },
     admin: {
-      src: "/brand/logos/Logo-4.png",
+      src: "/brand/logos/Logo-1",
       alt: "Blessing For Goods operational mark",
       width: 4000,
       height: 4000,
@@ -58,8 +58,7 @@ export const assetReferences = {
       "/brand/logos/Logo-3.png",
       "/brand/logos/Logo-4.png",
     ],
-    notes:
-      "Logo-1 is the approved multicolor customer primary; Logo-4 remains the compact operational admin mark and Logo-2 is the symbol.",
+    notes: "Logo-1 is the approved multicolor primary for customer and operational workspaces; Logo-2 is the symbol.",
   },
   mascot: {
     status: "confirmed",

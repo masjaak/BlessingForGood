@@ -79,6 +79,8 @@ export default defineSchema({
     name: v.string(),
     email: v.string(),
     normalizedEmail: v.string(),
+    applicantClerkUserId: v.optional(v.string()),
+    applicantEmailSnapshot: v.optional(v.string()),
     contact: v.string(),
     normalizedContact: v.string(),
     city: v.optional(v.string()),
@@ -93,13 +95,16 @@ export default defineSchema({
     reviewedByUserId: v.optional(v.id("appUsers")),
     reviewNote: v.optional(v.string()),
     rejectionReason: v.optional(v.string()),
+    admissionError: v.optional(v.string()),
+    admittedAppUserId: v.optional(v.id("appUsers")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_status_and_submitted_at", ["status", "submittedAt"])
     .index("by_submitted_at", ["submittedAt"])
     .index("by_normalized_email", ["normalizedEmail"])
-    .index("by_normalized_contact", ["normalizedContact"]),
+    .index("by_normalized_contact", ["normalizedContact"])
+    .index("by_applicant_clerk_user_id", ["applicantClerkUserId"]),
 
   customerAddresses: defineTable({
     userId: v.id("appUsers"),

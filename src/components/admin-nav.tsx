@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "convex/react";
 import { useContext } from "react";
+import { api } from "../../convex/_generated/api";
 import { ProductContext } from "@/domain/prototype/context";
 import { roleCanAccess } from "@/domain/prototype/session";
 
@@ -161,7 +163,9 @@ function isCurrent(pathname: string, href: string) {
 
 export function AdminNav() {
   const pathname = usePathname() || "/admin";
-  const sessionRole = useContext(ProductContext)?.sessionRole;
+  const product = useContext(ProductContext);
+  const sessionRole = product?.sessionRole;
+  const pendingJoinRequests = useQuery(api.joinRequests.pendingCount, product?.dataSource === "convex" ? {} : "skip");
   const visibleGroups: AdminNavGroup[] = roleCanAccess(sessionRole || null, "owner")
     ? [...groups, { label: "System", links: [{ href: "/admin/users", label: "Users", icon: "users" }] }]
     : groups;
@@ -181,7 +185,12 @@ export function AdminNav() {
                 href={link.href}
               >
                 <AdminNavIcon name={link.icon} />
-                <span>{link.label}</span>
+                <span className="admin-nav-label">{link.label}</span>
+                {link.href === "/admin/join-requests" && pendingJoinRequests ? (
+                  <span className="admin-nav-badge" aria-label={`${pendingJoinRequests} pending Join Requests`}>
+                    {pendingJoinRequests}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

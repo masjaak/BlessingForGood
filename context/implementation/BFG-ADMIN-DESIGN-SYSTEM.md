@@ -8,7 +8,7 @@ for scanning queues, comparing records, and making safe decisions.
 
 ## Layout
 
-- Sticky top context bar with the compact operational Logo-4 mark, workspace
+- Sticky top context bar with the canonical Logo-1 mark, workspace
   label, customer-side link, and Clerk account control.
 - Desktop workspace: 236px grouped sidebar plus a fluid content column inside a
   1480px maximum canvas.
