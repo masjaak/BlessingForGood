@@ -7,7 +7,12 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { ProductContext, resolveProductAuthState, type ProductContextValue } from "@/domain/prototype/context";
+import {
+  getConvexErrorCode,
+  ProductContext,
+  resolveProductAuthState,
+  type ProductContextValue,
+} from "@/domain/prototype/context";
 import { ConvexOperationsProvider } from "@/domain/prototype/operations-context";
 import {
   getCatalogAttemptKey,
@@ -211,8 +216,9 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       void ensureCurrentUser({})
         .catch((reason) => {
           if (!active) return;
-          if (String(reason).includes("ADMISSION_REQUIRED")) setAdmissionDenied(true);
-          else setProvisionError(true);
+          if (getConvexErrorCode(reason) === "ADMISSION_REQUIRED" || String(reason).includes("ADMISSION_REQUIRED")) {
+            setAdmissionDenied(true);
+          } else setProvisionError(true);
         })
         .finally(() => {
           if (active) setProvisioning(false);

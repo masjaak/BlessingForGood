@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolveProductAuthState, type ProductAuthResolutionInput } from "@/domain/prototype/context";
+import {
+  getConvexErrorCode,
+  resolveProductAuthState,
+  type ProductAuthResolutionInput,
+} from "@/domain/prototype/context";
 
 const activeCustomer = { role: "customer" as const, status: "active" as const };
 
@@ -18,6 +22,11 @@ function resolve(overrides: Partial<ProductAuthResolutionInput> = {}) {
 }
 
 describe("authenticated product session state", () => {
+  it("reads structured Convex error codes without trusting the message", () => {
+    expect(getConvexErrorCode({ data: { code: "ADMISSION_REQUIRED" } })).toBe("ADMISSION_REQUIRED");
+    expect(getConvexErrorCode(new Error("Server Error"))).toBeNull();
+  });
+
   it("keeps Clerk and Convex hydration separate", () => {
     expect(resolve({ clerkLoaded: false })).toBe("loading");
     expect(resolve({ clerkSignedIn: false })).toBe("signed-out");

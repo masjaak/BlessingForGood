@@ -25,6 +25,14 @@ export type ProductAuthState =
   | "network-error"
   | "configuration-missing";
 
+export function getConvexErrorCode(reason: unknown): string | null {
+  if (typeof reason !== "object" || reason === null) return null;
+  const data = (reason as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null) return null;
+  const code = (data as { code?: unknown }).code;
+  return typeof code === "string" ? code : null;
+}
+
 export type ProductAuthResolutionInput = {
   clerkLoaded: boolean;
   clerkSignedIn: boolean | undefined;

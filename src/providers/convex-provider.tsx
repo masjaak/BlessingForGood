@@ -8,6 +8,16 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 const noop = () => undefined;
 const ConvexRetryContext = createContext<() => void>(noop);
 
+function useBfgClerkAuth() {
+  const auth = useAuth();
+  const { getToken: clerkGetToken } = auth;
+  const getToken = useCallback(
+    ({ skipCache }: { template?: "convex"; skipCache?: boolean }) => clerkGetToken({ skipCache }),
+    [clerkGetToken],
+  );
+  return { ...auth, getToken };
+}
+
 function ConvexAuthRecovery({ onRetry, attemptRef }: { onRetry: () => void; attemptRef: { current: number } }) {
   const { isLoaded, isSignedIn, sessionId } = useAuth();
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -41,7 +51,7 @@ export function ConvexProviderBoundary({ url, children }: { url: string; childre
 
   return (
     <ConvexRetryContext.Provider value={retry}>
-      <ConvexProviderWithClerk key={generation} client={client} useAuth={useAuth}>
+      <ConvexProviderWithClerk key={generation} client={client} useAuth={useBfgClerkAuth}>
         <ConvexAuthRecovery onRetry={autoRetry} attemptRef={autoRetryAttempt} />
         {children}
       </ConvexProviderWithClerk>
