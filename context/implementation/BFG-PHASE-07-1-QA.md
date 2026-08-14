@@ -201,7 +201,7 @@ mount. Convex remains the authoritative second boundary.
 ## Current closure gate
 
 The code is merged and pushed to `origin/main`. Vercel Production deployment
-`dpl_8y4JAnQz5mj2mqf3Byxx7HpYQWXm` is `READY` and aliased to
+`dpl_EwKcjS8T7WrPRXwNKZD6JvDNnBpJ` is `READY`; alias verification passed at
 `https://www.blessingforgood.com`; Convex Production is `clean-eel-522`.
 Public live focused QA is `19/19`: How To Order and Ready Stock at
 375/390/430/768/1440px, plus signed-out Ready Stock/Exceptions/Refunds Admin

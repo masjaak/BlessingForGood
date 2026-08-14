@@ -61,10 +61,10 @@ signed-out navigation; no changed-surface assertion failed.
 No real client product information or authorized authenticated operator session
 was provided. No Production business data was created. Therefore the real
 product pilot, authenticated Production acceptance, and bulk-entry safety
-remain blocked. The final code is deployed from `origin/main` in Vercel
-deployment `dpl_8y4JAnQz5mj2mqf3Byxx7HpYQWXm` (`READY`) and Convex Production
-`clean-eel-522`; public live focused QA is `19/19`. Phase 08 remains
-`NOT STARTED`.
+remain blocked. The final code commit `2bc8137` is deployed in Vercel
+Production deployment `dpl_EwKcjS8T7WrPRXwNKZD6JvDNnBpJ` (`READY`) with
+Convex Production `clean-eel-522`; public live focused QA is `19/19`. Phase 08
+remains `NOT STARTED`.
 
 ### Admin access security hardening
 
