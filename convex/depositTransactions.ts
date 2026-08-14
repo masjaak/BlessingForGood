@@ -8,6 +8,7 @@ import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { inverseLedgerDeltas, ledgerDeltas, type LedgerTransactionType } from "./lib/depositLedger";
+import { notifyUser } from "./lib/notifications";
 
 export type DepositTransactionType = LedgerTransactionType | "reversal";
 
@@ -84,6 +85,52 @@ export const recordCredit = mutation({
     const transaction = await ctx.db.get(transactionId);
     if (!transaction) fail("DEPOSIT_TRANSACTION_NOT_FOUND");
     await recordAudit(ctx, user._id, "deposit.credit_recorded", "invoice", args.invoiceId);
+    return { ...transactionView(transaction, true), account: accountView(updatedAccount) };
+  },
+});
+
+export const adjust = mutation({
+  args: {
+    customerUserId: v.id("appUsers"),
+    direction: v.union(v.literal("credit"), v.literal("debit")),
+    amount: v.number(),
+    note: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "deposits.manage");
+    const customer = await ctx.db.get(args.customerUserId);
+    if (!customer || customer.role !== "customer") fail("DEPOSIT_CUSTOMER_MISMATCH");
+    const note = noteValue(args.note);
+    if (!note) fail("VALIDATION_FAILED", "adjustment note is required");
+    const deltas = positiveDeltas(args.direction, args.amount);
+    const now = Date.now();
+    const account = await getOrCreateDepositAccount(ctx, customer._id, now);
+    const updatedAccount = await applyLedgerDeltas(ctx, account, deltas);
+    const transactionId = await appendDepositTransaction(ctx, {
+      accountId: account._id,
+      type: args.direction,
+      amount: args.amount,
+      ...deltas,
+      note,
+      createdAt: now,
+      createdByUserId: user._id,
+    });
+    await recordAudit(ctx, user._id, "deposit.manual_adjustment", "depositTransaction", transactionId, {
+      customerUserId: String(customer._id),
+      direction: args.direction,
+      amount: String(args.amount),
+    });
+    await notifyUser(ctx, customer._id, {
+      surface: "notification",
+      eventType: "deposit.adjusted",
+      title: "Saldo deposit disesuaikan",
+      body: `Admin mencatat penyesuaian ${args.direction} IDR ${args.amount.toLocaleString("id-ID")}.`,
+      destination: "/account/deposit",
+      relatedEntityType: "depositTransaction",
+      relatedEntityId: String(transactionId),
+    });
+    const transaction = await ctx.db.get(transactionId);
+    if (!transaction) fail("DEPOSIT_TRANSACTION_NOT_FOUND");
     return { ...transactionView(transaction, true), account: accountView(updatedAccount) };
   },
 });

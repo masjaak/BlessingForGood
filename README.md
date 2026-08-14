@@ -22,7 +22,10 @@ Admin menggunakan dashboard untuk mengelola katalog, batch/cargo, publisher, cus
 
 ## Current stage
 
-**Prototype v0.1 is implemented on `prototype/v0.1` and awaiting review.** The canonical GitHub repository is the active source; see `context/PROJECT_STATUS.md` for the intake gap and current status.
+Phase 07.1 product-surface reconciliation is in local acceptance. The canonical
+GitHub repository is the active source; see `context/PROJECT_STATUS.md` and
+`context/implementation/BFG-PHASE-07-1-QA.md` for verified status and release
+blockers.
 
 ## Technology direction
 
@@ -32,12 +35,14 @@ Admin menggunakan dashboard untuk mengelola katalog, batch/cargo, publisher, cus
 - Authentication: Clerk
 - Backend and database: Convex
 - DNS and perimeter security: Cloudflare
-- Sensitive file storage: Cloudflare R2 or another guarded private object store
+- Sensitive file storage: guarded Convex storage
 - Messaging in MVP: semi-automatic WhatsApp handoff
 
-Clerk and Convex are present only as fail-closed integration boundaries; production credentials, schema, and deployment are not configured.
-
-The prototype can be exercised locally with `NEXT_PUBLIC_BFG_PROTOTYPE_MODE=true`. It starts with zero business data and uses a browser-local adapter until Convex and Clerk development configuration are restored.
+Clerk and Convex are the canonical identity and data boundaries. The application
+fails closed when either is unavailable; it has no browser-local business-data
+fallback. Production identifiers and release procedure are documented under
+`context/integrations` and `context/operations`; secret values are never stored in
+Git.
 
 ## Start here
 

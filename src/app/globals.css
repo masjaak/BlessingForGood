@@ -249,6 +249,69 @@ p {
   align-items: center;
   gap: 8px;
 }
+.workspace-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.workspace-actions > a {
+  position: relative;
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.workspace-actions > a:hover {
+  color: var(--color-brand-primary);
+  border-color: var(--color-brand-peach);
+}
+.workspace-actions svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.workspace-action-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  color: white;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--color-brand-primary);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 14px;
+  text-align: center;
+}
+.activity-card.is-unread {
+  border-color: var(--color-brand-peach);
+  box-shadow: inset 4px 0 var(--color-brand-primary);
+}
+.admin-cover-editor {
+  display: grid;
+  grid-template-columns: 132px minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .admin-cover-editor {
+    grid-template-columns: 96px 1fr;
+  }
+  .admin-cover-editor > .button {
+    grid-column: 1 / -1;
+  }
+}
 .site-auth button {
   min-height: 40px;
   padding: 8px 10px;

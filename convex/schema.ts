@@ -66,6 +66,21 @@ export default defineSchema({
     .index("by_role_and_status", ["role", "status"])
     .index("by_created_at", ["createdAt"]),
 
+  staffInvitations: defineTable({
+    email: v.string(),
+    normalizedEmail: v.string(),
+    role: v.literal("admin"),
+    status: v.union(v.literal("pending"), v.literal("claimed"), v.literal("revoked")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+    claimedAt: v.optional(v.number()),
+    claimedByUserId: v.optional(v.id("appUsers")),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_normalized_email", ["normalizedEmail"])
+    .index("by_status_and_created_at", ["status", "createdAt"]),
+
   customerProfiles: defineTable({
     userId: v.id("appUsers"),
     displayName: v.string(),
@@ -136,6 +151,43 @@ export default defineSchema({
     .index("by_target", ["targetType", "targetId"])
     .index("by_created_at", ["createdAt"]),
 
+  notifications: defineTable({
+    recipientUserId: v.id("appUsers"),
+    surface: v.union(v.literal("notification"), v.literal("inbox")),
+    eventType: v.string(),
+    title: v.string(),
+    body: v.string(),
+    destination: v.string(),
+    relatedEntityType: v.optional(v.string()),
+    relatedEntityId: v.optional(v.string()),
+    createdAt: v.number(),
+    readAt: v.optional(v.number()),
+  })
+    .index("by_recipient_surface_created_at", ["recipientUserId", "surface", "createdAt"])
+    .index("by_recipient_surface_read_at", ["recipientUserId", "surface", "readAt"]),
+
+  contentBlocks: defineTable({
+    key: v.union(v.literal("community"), v.literal("how_to_order"), v.literal("help")),
+    eyebrow: v.string(),
+    title: v.string(),
+    body: v.string(),
+    status: v.union(v.literal("draft"), v.literal("published")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    updatedByUserId: v.id("appUsers"),
+    publishedAt: v.optional(v.number()),
+  }).index("by_key", ["key"]),
+
+  appSettings: defineTable({
+    key: v.literal("primary"),
+    storeName: v.string(),
+    whatsappNumber: v.string(),
+    paymentInstructions: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    updatedByUserId: v.id("appUsers"),
+  }).index("by_key", ["key"]),
+
   publishers: defineTable({
     name: v.string(),
     slug: v.string(),
@@ -156,6 +208,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     categories: v.array(v.string()),
     coverImageUrl: v.optional(v.string()),
+    coverStorageId: v.optional(v.id("_storage")),
     publicationStatus: bookPublicationStatusValidator,
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -422,6 +475,7 @@ export default defineSchema({
     name: v.string(),
     referenceCode: v.optional(v.string()),
     description: v.optional(v.string()),
+    poDeadlineAt: v.optional(v.number()),
     currentShipmentStage: v.optional(shipmentStageValidator),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -520,6 +574,8 @@ export default defineSchema({
     transferReference: v.optional(v.string()),
     paidAt: v.number(),
     proofReference: v.optional(v.string()),
+    proofStorageId: v.optional(v.id("_storage")),
+    proofContentType: v.optional(v.string()),
     customerNote: v.optional(v.string()),
     status: paymentConfirmationStatusValidator,
     submittedAt: v.number(),
@@ -534,6 +590,25 @@ export default defineSchema({
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_status_and_created_at", ["status", "createdAt"])
     .index("by_created_at", ["createdAt"]),
+
+  depositTopUps: defineTable({
+    customerUserId: v.id("appUsers"),
+    amount: v.number(),
+    bankReference: v.optional(v.string()),
+    proofStorageId: v.id("_storage"),
+    proofContentType: v.string(),
+    status: v.union(v.literal("submitted"), v.literal("under_review"), v.literal("approved"), v.literal("rejected")),
+    customerNote: v.optional(v.string()),
+    reviewNote: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedByUserId: v.optional(v.id("appUsers")),
+    depositTransactionId: v.optional(v.id("depositTransactions")),
+  })
+    .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_status_and_created_at", ["status", "createdAt"]),
 
   invoiceItems: defineTable({
     invoiceId: v.id("invoices"),

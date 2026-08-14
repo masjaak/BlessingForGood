@@ -8,6 +8,7 @@ import { recordAudit } from "./lib/audit";
 import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
+import { notifyAdmins } from "./lib/notifications";
 import { hasUnresolvedException } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { positiveQuantity, requiredText } from "./lib/validation";
@@ -169,7 +170,7 @@ export const submit = mutation({
     await activeGrant(ctx, user._id, args.catalogId);
     const customerName = requiredText(args.customerName, "customer name");
     const resolved = await resolveItems(ctx, args.catalogId, args.items);
-    return insertOrder(
+    const order = await insertOrder(
       ctx,
       {
         customerUserId: user._id,
@@ -182,6 +183,16 @@ export const submit = mutation({
       resolved,
       catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
     );
+    await notifyAdmins(ctx, {
+      surface: "notification",
+      eventType: "order.submitted",
+      title: "Order baru diterima",
+      body: `${customerName} mengirim preorder baru.`,
+      destination: `/admin/orders/${order.orderId}`,
+      relatedEntityType: "order",
+      relatedEntityId: String(order.orderId),
+    });
+    return order;
   },
 });
 
@@ -267,6 +278,15 @@ export const createReadyStock = mutation({
     await recordAudit(ctx, user._id, "order.ready_stock_created", "order", orderId, {
       source: "ready_stock",
       quantity: String(item.quantity),
+    });
+    await notifyAdmins(ctx, {
+      surface: "notification",
+      eventType: "order.ready_stock_created",
+      title: "Order Ready Stock baru",
+      body: `${customerName} membuat order Ready Stock.`,
+      destination: `/admin/orders/${orderId}`,
+      relatedEntityType: "order",
+      relatedEntityId: String(orderId),
     });
     return orderView(ctx, orderId);
   },

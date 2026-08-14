@@ -2,6 +2,7 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
+import { validateStoredFile } from "./lib/storage";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
@@ -71,6 +72,7 @@ export const getForAdmin = query({
     ]);
     return {
       ...book,
+      coverUrl: book.coverStorageId ? await ctx.storage.getUrl(book.coverStorageId) : (book.coverImageUrl ?? null),
       publisher,
       variants: await Promise.all(
         variants.map(async (variant) => ({
@@ -85,6 +87,38 @@ export const getForAdmin = query({
         })),
       ),
     };
+  },
+});
+
+export const generateCoverUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "books.manage");
+    return ctx.storage.generateUploadUrl();
+  },
+});
+
+export const attachCover = mutation({
+  args: { bookId: v.id("books"), storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const book = await ctx.db.get(args.bookId);
+    if (!book) fail("BOOK_NOT_FOUND");
+    await validateStoredFile(
+      ctx,
+      args.storageId,
+      new Set(["image/jpeg", "image/png", "image/webp"]),
+      "cover must be a JPG, PNG, or WebP image up to 5 MB",
+    );
+    const previousStorageId = book.coverStorageId;
+    await ctx.db.patch(book._id, {
+      coverStorageId: args.storageId,
+      coverImageUrl: undefined,
+      updatedAt: Date.now(),
+    });
+    if (previousStorageId && previousStorageId !== args.storageId) await ctx.storage.delete(previousStorageId);
+    await recordAudit(ctx, user._id, "book.cover_attached", "book", book._id);
+    return { storageId: args.storageId };
   },
 });
 

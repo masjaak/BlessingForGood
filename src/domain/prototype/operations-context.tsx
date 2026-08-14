@@ -41,6 +41,7 @@ export type PaymentConfirmationInput = {
   transferReference?: string;
   paidAt: number;
   proofReference?: string;
+  proofStorageId?: Id<"_storage">;
   customerNote?: string;
 };
 
@@ -68,7 +69,12 @@ export interface OperationsContextValue {
   adminPaymentQueue: AdminPaymentQueue | undefined;
   adminPaymentHistory: AdminPaymentHistory | undefined;
   customerExceptionList: CustomerExceptionPage | undefined;
-  createBatch: (input: { name: string; referenceCode?: string; description?: string }) => Promise<BatchSummary>;
+  createBatch: (input: {
+    name: string;
+    referenceCode?: string;
+    description?: string;
+    poDeadlineAt?: number;
+  }) => Promise<BatchSummary>;
   linkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   archiveBatch: (batchId: string) => Promise<BatchSummary>;

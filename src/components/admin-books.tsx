@@ -33,13 +33,18 @@ function ConnectedAdminBooks() {
   const [author, setAuthor] = useState("");
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<"publisher" | "book" | null>(null);
+  const [managedPublisherId, setManagedPublisherId] = useState("");
+  const [managedPublisherName, setManagedPublisherName] = useState("");
+  const [managedPublisherActive, setManagedPublisherActive] = useState(true);
   const publishers = useQuery(api.publishers.list, { paginationOpts: { numItems: 100, cursor: null } });
+  const allPublishers = useQuery(api.publishers.listForAdmin, {});
   const books = useQuery(api.books.listForAdmin, {
     search: search || undefined,
     publicationStatus: status || undefined,
     availability: availability || undefined,
   });
   const createPublisher = useMutation(api.publishers.create);
+  const updatePublisher = useMutation(api.publishers.update);
   const createBook = useMutation(api.books.create);
 
   async function addPublisher(event: React.FormEvent<HTMLFormElement>) {
@@ -131,6 +136,69 @@ function ConnectedAdminBooks() {
                 {message}
               </p>
             ) : null}
+          </Card>
+          <Card>
+            <span className="card-kicker">Publisher Master</span>
+            <h2>Edit atau nonaktifkan penerbit</h2>
+            <form
+              className="form-actions"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setPendingAction("publisher");
+                try {
+                  await updatePublisher({
+                    publisherId: managedPublisherId as Id<"publishers">,
+                    name: managedPublisherName,
+                    isActive: managedPublisherActive,
+                  });
+                  setMessage("Penerbit tersimpan.");
+                } catch {
+                  setMessage("Penerbit tidak dapat diperbarui.");
+                } finally {
+                  setPendingAction(null);
+                }
+              }}
+            >
+              <Field label="Penerbit">
+                <select
+                  className="select"
+                  value={managedPublisherId}
+                  onChange={(event) => {
+                    const selected = allPublishers?.find((item) => item._id === event.target.value);
+                    setManagedPublisherId(event.target.value);
+                    setManagedPublisherName(selected?.name || "");
+                    setManagedPublisherActive(selected?.isActive ?? true);
+                  }}
+                  required
+                >
+                  <option value="">Pilih penerbit</option>
+                  {allPublishers?.map((publisher) => (
+                    <option key={publisher._id} value={publisher._id}>
+                      {publisher.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Nama">
+                <input
+                  className="input"
+                  value={managedPublisherName}
+                  onChange={(event) => setManagedPublisherName(event.target.value)}
+                  required
+                />
+              </Field>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={managedPublisherActive}
+                  onChange={(event) => setManagedPublisherActive(event.target.checked)}
+                />
+                Aktif
+              </label>
+              <Button variant="secondary" pending={pendingAction === "publisher"} pendingLabel="Menyimpan…">
+                Simpan penerbit
+              </Button>
+            </form>
           </Card>
           <Card className="admin-book-filters">
             <Field label="Cari">

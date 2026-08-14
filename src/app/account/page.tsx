@@ -86,6 +86,9 @@ function AccountDashboard() {
               "Belum ada akun deposit."
             )}
           </p>
+          <LinkButton href="/account/deposit" variant="quiet">
+            Top-up & riwayat →
+          </LinkButton>
         </Card>
         <Card className="metric">
           <span className="card-kicker">Kredit / refund</span>
@@ -97,6 +100,18 @@ function AccountDashboard() {
       </section>
 
       <div className="account-dashboard-grid">
+        <Card>
+          <div className="split-heading">
+            <div>
+              <span className="card-kicker">Batch PO</span>
+              <h2>Perjalanan batch</h2>
+            </div>
+            <LinkButton href="/account/batches" variant="quiet">
+              Lihat batch →
+            </LinkButton>
+          </div>
+          <p className="subtle">Lihat roster buku dan status konsolidasi yang disinkronkan oleh Admin.</p>
+        </Card>
         <Card>
           <div className="split-heading">
             <div>

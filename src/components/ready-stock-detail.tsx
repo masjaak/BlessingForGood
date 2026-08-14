@@ -44,7 +44,7 @@ function ConnectedDetail({ slug }: { slug: string }) {
     <>
       <PageHeader eyebrow="Ready Stock" title={book.title} description={book.author || book.publisher.name} />
       <div className="ready-stock-detail">
-        <BookCover title={book.title} publisher={book.publisher.name} src={book.coverImageUrl} />
+        <BookCover title={book.title} publisher={book.publisher.name} src={book.coverImageUrl || undefined} />
         <div className="content-stack">
           <div className="form-actions">
             <StatusBadge tone="positive">{book.totalStock} tersedia</StatusBadge>

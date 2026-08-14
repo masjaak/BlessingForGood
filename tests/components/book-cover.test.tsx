@@ -25,4 +25,16 @@ describe("BookCover", () => {
 
     expect(screen.getByRole("img", { name: "Cover placeholder for A Quiet Book" })).toBeTruthy();
   });
+
+  it("renders a trusted Convex storage cover", () => {
+    render(
+      <BookCover
+        title="A Quiet Book"
+        publisher="BFG Press"
+        src="https://example.convex.cloud/api/storage/example-id"
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "A Quiet Book cover" }).getAttribute("src")).toContain("convex.cloud");
+  });
 });

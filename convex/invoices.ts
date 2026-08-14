@@ -10,6 +10,7 @@ import { effectiveInvoiceTotal, invoiceProjection } from "./lib/invoiceProjectio
 import { invoiceNumberForId } from "./lib/invoiceNumbers";
 import { fail } from "./lib/errors";
 import { depositRequirementModeValidator } from "./validators";
+import { notifyUser } from "./lib/notifications";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -199,6 +200,15 @@ export const issue = mutation({
     if (invoice.status === "void") fail("INVOICE_VOID");
     const now = Date.now();
     await ctx.db.patch(args.invoiceId, { status: "issued", issuedAt: now, updatedAt: now });
+    await notifyUser(ctx, invoice.customerUserId, {
+      surface: "notification",
+      eventType: "invoice.issued",
+      title: "Tagihan baru diterbitkan",
+      body: `Tagihan ${invoice.invoiceNumber} sudah tersedia.`,
+      destination: `/account/invoices/${args.invoiceId}`,
+      relatedEntityType: "invoice",
+      relatedEntityId: String(args.invoiceId),
+    });
     await recordAudit(ctx, user._id, "invoice.issued", "invoice", args.invoiceId);
     return invoiceView(ctx, args.invoiceId);
   },

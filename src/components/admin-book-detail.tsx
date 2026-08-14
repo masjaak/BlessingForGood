@@ -8,6 +8,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { BookCover } from "@/components/book-cover";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
@@ -92,19 +93,21 @@ function BookEditor({ book }: { book: AdminBook }) {
   const publishers = useQuery(api.publishers.list, { paginationOpts: { numItems: 100, cursor: null } });
   const updateBook = useMutation(api.books.update);
   const createVariant = useMutation(api.bookVariants.create);
+  const generateCoverUploadUrl = useMutation(api.books.generateCoverUploadUrl);
+  const attachCover = useMutation(api.books.attachCover);
   const [publisherId, setPublisherId] = useState(book.publisherId);
   const [title, setTitle] = useState(book.title);
   const [slug, setSlug] = useState(book.slug);
   const [author, setAuthor] = useState(book.author || "");
   const [description, setDescription] = useState(book.description || "");
   const [categories, setCategories] = useState(book.categories.join(", "));
-  const [coverImageUrl, setCoverImageUrl] = useState(book.coverImageUrl || "");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [publicationStatus, setPublicationStatus] = useState<PublicationStatus>(book.publicationStatus);
   const [format, setFormat] = useState<BookFormat>("PB");
   const [isbn, setIsbn] = useState("");
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
-  const [pendingAction, setPendingAction] = useState<"book" | "variant" | null>(null);
+  const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | null>(null);
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -119,12 +122,37 @@ function BookEditor({ book }: { book: AdminBook }) {
         author,
         description,
         categories: categories.split(","),
-        coverImageUrl,
         publicationStatus,
       });
       setMessage("Book Master tersimpan.");
     } catch {
       setMessage("Book Master tidak dapat disimpan.");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function uploadCover() {
+    if (!coverFile) return;
+    setMessage("");
+    setPendingAction("cover");
+    try {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(coverFile.type) || coverFile.size > 5_000_000) {
+        throw new Error("invalid cover");
+      }
+      const uploadUrl = await generateCoverUploadUrl({});
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": coverFile.type },
+        body: coverFile,
+      });
+      if (!response.ok) throw new Error("upload failed");
+      const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+      await attachCover({ bookId: book._id, storageId });
+      setCoverFile(null);
+      setMessage("Cover tersimpan.");
+    } catch {
+      setMessage("Cover harus berupa JPG, PNG, atau WebP maksimal 5 MB.");
     } finally {
       setPendingAction(null);
     }
@@ -201,16 +229,31 @@ function BookEditor({ book }: { book: AdminBook }) {
                   </select>
                 </Field>
               </div>
-              <Field
-                label="Referensi cover"
-                hint="Gunakan referensi gambar yang sudah dikelola; upload belum tersedia."
-              >
-                <input
-                  className="input"
-                  value={coverImageUrl}
-                  onChange={(event) => setCoverImageUrl(event.target.value)}
+              <div className="admin-cover-editor">
+                <BookCover
+                  title={book.title}
+                  publisher={book.publisher?.name || "BFG"}
+                  src={book.coverUrl || undefined}
                 />
-              </Field>
+                <Field label="Upload cover" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
+                  <input
+                    className="input"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setCoverFile(event.target.files?.[0] || null)}
+                  />
+                </Field>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!coverFile}
+                  pending={pendingAction === "cover"}
+                  pendingLabel="Mengunggah…"
+                  onClick={() => void uploadCover()}
+                >
+                  Upload cover
+                </Button>
+              </div>
               <Field label="Deskripsi">
                 <textarea
                   className="textarea"

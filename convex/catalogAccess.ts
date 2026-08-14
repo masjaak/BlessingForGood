@@ -16,17 +16,14 @@ import { fail } from "./lib/errors";
 import { requireConfiguredSecret } from "./lib/previewCapability";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { requiredText } from "./lib/validation";
+import { notifyUser } from "./lib/notifications";
 
 const FAILED_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
 const CATALOG_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
-type UnlockErrorCode =
-  | "ACCESS_CODE_INVALID"
-  | "ACCESS_CODE_EXPIRED"
-  | "CATALOG_NOT_OPEN"
-  | "ACCESS_CODE_RATE_LIMITED";
+type UnlockErrorCode = "ACCESS_CODE_INVALID" | "ACCESS_CODE_EXPIRED" | "CATALOG_NOT_OPEN" | "ACCESS_CODE_RATE_LIMITED";
 
 function anonymousAttemptKey(args: { attemptKey?: string }): string {
   return requiredText(args.attemptKey || "", "attempt key");
@@ -83,7 +80,9 @@ async function rejectUnlock(
   ctx: MutationCtx,
   user: Awaited<ReturnType<typeof requirePermission>>,
   code: "ACCESS_CODE_INVALID" | "ACCESS_CODE_EXPIRED" | "CATALOG_NOT_OPEN",
-): Promise<{ errorCode: "ACCESS_CODE_INVALID" | "ACCESS_CODE_EXPIRED" | "CATALOG_NOT_OPEN" | "ACCESS_CODE_RATE_LIMITED" }> {
+): Promise<{
+  errorCode: "ACCESS_CODE_INVALID" | "ACCESS_CODE_EXPIRED" | "CATALOG_NOT_OPEN" | "ACCESS_CODE_RATE_LIMITED";
+}> {
   const now = Date.now();
   const attempt = await ctx.db
     .query("catalogAccessAttempts")
@@ -184,6 +183,109 @@ export const generateCode = mutation({
     });
     await recordAudit(ctx, user._id, "catalog.access_code_generated", "catalog", args.catalogId);
     return { catalogId: args.catalogId, codeId, code, expiresAt: args.expiresAt ?? null };
+  },
+});
+
+export const listForAdmin = query({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "catalog.manage");
+    if (!(await ctx.db.get(args.catalogId))) fail("CATALOG_NOT_FOUND");
+    const now = Date.now();
+    const codes = await ctx.db
+      .query("catalogAccessCodes")
+      .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
+      .order("desc")
+      .take(100);
+    const grants = await ctx.db
+      .query("catalogAccessGrants")
+      .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
+      .order("desc")
+      .take(200);
+    return {
+      codes: codes.map((code) => ({
+        codeId: code._id,
+        isActive: code.isActive,
+        status: !code.isActive ? "revoked" : code.expiresAt && code.expiresAt <= now ? "expired" : "active",
+        createdAt: code.createdAt,
+        expiresAt: code.expiresAt ?? null,
+      })),
+      grants: await Promise.all(
+        grants.map(async (grant) => {
+          const customer = await ctx.db.get(grant.appUserId);
+          return {
+            grantId: grant._id,
+            appUserId: grant.appUserId,
+            customerName: customer?.displayNameSnapshot || customer?.emailSnapshot || "Member",
+            customerEmail: customer?.emailSnapshot ?? null,
+            status: grant.revokedAt ? "revoked" : grant.expiresAt <= now ? "expired" : "active",
+            grantedAt: grant.grantedAt,
+            expiresAt: grant.expiresAt,
+            revokedAt: grant.revokedAt ?? null,
+          };
+        }),
+      ),
+    };
+  },
+});
+
+export const revokeGrant = mutation({
+  args: { grantId: v.id("catalogAccessGrants") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const grant = await ctx.db.get(args.grantId);
+    if (!grant) fail("CATALOG_ACCESS_GRANT_NOT_FOUND");
+    if (!grant.revokedAt) await ctx.db.patch(grant._id, { revokedAt: Date.now() });
+    await recordAudit(ctx, user._id, "catalog.access_grant_revoked", "catalog", grant.catalogId, {
+      memberId: String(grant.appUserId),
+    });
+    return { revoked: true };
+  },
+});
+
+export const grantMember = mutation({
+  args: { catalogId: v.id("secretCatalogs"), appUserId: v.id("appUsers"), expiresAt: v.number() },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const [catalog, member] = await Promise.all([ctx.db.get(args.catalogId), ctx.db.get(args.appUserId)]);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (!member || member.role !== "customer" || member.status !== "active")
+      fail("VALIDATION_FAILED", "member is unavailable");
+    if (args.expiresAt <= Date.now() || (catalog.closesAt && args.expiresAt > catalog.closesAt)) {
+      fail("VALIDATION_FAILED", "grant expiry is invalid");
+    }
+    const existing = await ctx.db
+      .query("catalogAccessGrants")
+      .withIndex("by_app_user_id_and_catalog_id", (query) =>
+        query.eq("appUserId", args.appUserId).eq("catalogId", args.catalogId),
+      )
+      .first();
+    const now = Date.now();
+    let grantId;
+    if (existing) {
+      await ctx.db.patch(existing._id, { grantedAt: now, expiresAt: args.expiresAt, revokedAt: undefined });
+      grantId = existing._id;
+    } else {
+      grantId = await ctx.db.insert("catalogAccessGrants", {
+        appUserId: args.appUserId,
+        catalogId: args.catalogId,
+        grantedAt: now,
+        expiresAt: args.expiresAt,
+      });
+    }
+    await recordAudit(ctx, user._id, "catalog.access_granted", "catalog", args.catalogId, {
+      memberId: String(args.appUserId),
+    });
+    await notifyUser(ctx, args.appUserId, {
+      surface: "inbox",
+      eventType: "catalog.access_granted",
+      title: "Akses Secret Catalog diberikan",
+      body: `${catalog.name} kini tersedia untuk akunmu.`,
+      destination: "/catalog",
+      relatedEntityType: "catalog",
+      relatedEntityId: String(args.catalogId),
+    });
+    return grantId;
   },
 });
 

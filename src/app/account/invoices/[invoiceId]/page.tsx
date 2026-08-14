@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../../../../convex/_generated/api";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 import {
   Button,
   Card,
@@ -236,6 +239,7 @@ function PaymentConfirmationForm({
       transferReference?: string;
       paidAt: number;
       proofReference?: string;
+      proofStorageId?: Id<"_storage">;
       customerNote?: string;
     },
   ) => Promise<unknown>;
@@ -244,11 +248,13 @@ function PaymentConfirmationForm({
   const [paymentMethod, setPaymentMethod] = useState("Transfer bank");
   const [transferReference, setTransferReference] = useState("");
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
-  const [proofReference, setProofReference] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [customerNote, setCustomerNote] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const generateProofUploadUrl = useMutation(api.paymentConfirmations.generateProofUploadUrl);
+  const paymentSettings = useQuery(api.settings.getForCustomer, {});
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -257,17 +263,31 @@ function PaymentConfirmationForm({
     const paidAtTimestamp = new Date(`${paidAt}T00:00:00`).getTime();
     setIsSubmitting(true);
     try {
+      if (
+        !proofFile ||
+        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(proofFile.type) ||
+        proofFile.size > 5_000_000
+      )
+        throw new Error("Bukti pembayaran tidak valid.");
+      const uploadUrl = await generateProofUploadUrl({});
+      const upload = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": proofFile.type },
+        body: proofFile,
+      });
+      if (!upload.ok) throw new Error("Upload bukti gagal.");
+      const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> };
       await submitPaymentConfirmation(invoiceId, {
         amount: Number(amount),
         paymentMethod,
         transferReference: transferReference || undefined,
         paidAt: paidAtTimestamp,
-        proofReference: proofReference || undefined,
+        proofStorageId: storageId,
         customerNote: customerNote || undefined,
       });
       setAmount("");
       setTransferReference("");
-      setProofReference("");
+      setProofFile(null);
       setCustomerNote("");
       setMessage("Konfirmasi pembayaran dikirim untuk ditinjau.");
     } catch (reason) {
@@ -280,6 +300,15 @@ function PaymentConfirmationForm({
   return (
     <form className="content-stack" onSubmit={submit}>
       <h3>Kirim konfirmasi pembayaran</h3>
+      {paymentSettings ? (
+        <p className="notice-card">
+          <strong>{paymentSettings.storeName}</strong>
+          <br />
+          {paymentSettings.paymentInstructions}
+          <br />
+          Bantuan manual: {paymentSettings.whatsappNumber}
+        </p>
+      ) : null}
       <div className="form-grid">
         <Field label={`Jumlah dibayar (maks. ${formatIdr(maxAmount)})`}>
           <input
@@ -318,8 +347,14 @@ function PaymentConfirmationForm({
           />
         </Field>
       </div>
-      <Field label="Referensi bukti (opsional)" hint="Isi referensi bukti yang diberikan admin bila tersedia.">
-        <input className="input" value={proofReference} onChange={(event) => setProofReference(event.target.value)} />
+      <Field label="Bukti pembayaran" hint="JPG, PNG, WebP, atau PDF. Maksimal 5 MB.">
+        <input
+          className="input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          onChange={(event) => setProofFile(event.target.files?.[0] || null)}
+          required
+        />
       </Field>
       <Field label="Catatan (opsional)">
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />

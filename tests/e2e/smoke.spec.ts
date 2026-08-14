@@ -15,6 +15,10 @@ const customerRoutes = [
   "/account/invoices",
   "/account/profile",
   "/account/addresses",
+  "/account/batches",
+  "/account/deposit",
+  "/account/notifications",
+  "/account/inbox",
 ];
 
 const adminRoutes = [
@@ -31,6 +35,13 @@ const adminRoutes = [
   "/admin/refunds",
   "/admin/customers",
   "/admin/users",
+  "/admin/audit",
+  "/admin/content",
+  "/admin/deposits",
+  "/admin/notifications",
+  "/admin/inbox",
+  "/admin/reports",
+  "/admin/settings",
 ];
 
 const publicShellRoutes = new Set([
@@ -46,6 +57,10 @@ const publicShellRoutes = new Set([
   "/account/invoices",
   "/account/profile",
   "/account/addresses",
+  "/account/batches",
+  "/account/deposit",
+  "/account/notifications",
+  "/account/inbox",
 ]);
 const authRoutes = new Set(["/sign-in"]);
 const protectedRoutes = new Set(adminRoutes);
@@ -80,7 +95,9 @@ async function verifyRoute(route: string, page: Page, project: string) {
   expect(response?.status(), `${route} response`).toBeLessThan(400);
   await expect(page.locator("body")).not.toHaveText("");
   await expect(page.locator("body")).not.toContainText(prohibitedCopy);
-  if (route === "/ready-stock") await expect(page.getByText("Memuat Ready Stock…")).toBeHidden({ timeout: 15_000 });
+  if (route === "/ready-stock") {
+    await expect(page.getByLabel("Memuat Ready Stock")).toBeHidden({ timeout: 15_000 });
+  }
   if (route === "/" || route === "/how-to-order") {
     await expect(page.locator('.site-header img[src*="Logo-1"]')).toHaveCount(1);
     if (route === "/") {

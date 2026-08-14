@@ -19,7 +19,15 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
   const variants = await Promise.all(variantIds.map((variantId) => ctx.db.get(variantId)));
   const books = await Promise.all(variants.map((variant) => (variant ? ctx.db.get(variant.bookId) : null)));
   const publishers = await Promise.all(books.map((book) => (book ? ctx.db.get(book.publisherId) : null)));
-  const bookMap = new Map<string, { id: string; title: string; publisher: string; variants: unknown[] }>();
+  const coverUrls = await Promise.all(
+    books.map((book) =>
+      book?.coverStorageId ? ctx.storage.getUrl(book.coverStorageId) : (book?.coverImageUrl ?? null),
+    ),
+  );
+  const bookMap = new Map<
+    string,
+    { id: string; title: string; publisher: string; coverImageUrl: string | null; variants: unknown[] }
+  >();
 
   items.forEach((item, index) => {
     const variant = variants[index];
@@ -31,6 +39,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
       id: book._id,
       title: book.title,
       publisher: publisher.name,
+      coverImageUrl: coverUrls[index],
       variants: [],
     };
     current.variants.push({

@@ -24,6 +24,7 @@ function CreateBatchForm() {
   const [name, setName] = useState("");
   const [referenceCode, setReferenceCode] = useState("");
   const [description, setDescription] = useState("");
+  const [poDeadlineAt, setPoDeadlineAt] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -31,10 +32,16 @@ function CreateBatchForm() {
     setMessage("");
     setIsSubmitting(true);
     try {
-      await createBatch({ name, referenceCode: referenceCode || undefined, description: description || undefined });
+      await createBatch({
+        name,
+        referenceCode: referenceCode || undefined,
+        description: description || undefined,
+        poDeadlineAt: Date.parse(poDeadlineAt),
+      });
       setName("");
       setReferenceCode("");
       setDescription("");
+      setPoDeadlineAt("");
       setMessage("Batch berhasil dibuat.");
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Batch belum dapat dibuat");
@@ -53,6 +60,15 @@ function CreateBatchForm() {
           </Field>
           <Field label="Kode referensi">
             <input className="input" value={referenceCode} onChange={(event) => setReferenceCode(event.target.value)} />
+          </Field>
+          <Field label="Deadline PO">
+            <input
+              className="input"
+              type="datetime-local"
+              value={poDeadlineAt}
+              onChange={(event) => setPoDeadlineAt(event.target.value)}
+              required
+            />
           </Field>
         </div>
         <Field label="Deskripsi">
@@ -112,6 +128,12 @@ function AdminBatches() {
                   </StatusBadge>
                 </div>
                 <p className="subtle">{batch.description || "Tanpa deskripsi"}</p>
+                <div className="summary-line">
+                  <span>Deadline PO</span>
+                  <strong>
+                    {batch.poDeadlineAt ? new Date(batch.poDeadlineAt).toLocaleString("id-ID") : "Belum ditentukan"}
+                  </strong>
+                </div>
                 <div className="summary-line">
                   <span>Katalog terhubung</span>
                   <strong>{batch.catalogLinks.length}</strong>

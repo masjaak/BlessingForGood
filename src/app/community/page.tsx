@@ -1,18 +1,23 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { BrandMascot } from "@/components/brand";
 import { Card, LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 
 export default function CommunityPage() {
+  const content = useQuery(api.contentBlocks.getPublished, { key: "community" });
   return (
     <SiteShell>
       <div className="page narrow-page">
         <header className="page-header">
           <div>
-            <span className="eyebrow">Komunitas Blessfriends</span>
-            <h1>Menemukan buku terasa lebih hangat saat dijalani bersama.</h1>
+            <span className="eyebrow">{content?.eyebrow || "Komunitas Blessfriends"}</span>
+            <h1>{content?.title || "Menemukan buku terasa lebih hangat saat dijalani bersama."}</h1>
             <p className="lede">
-              BFG mempertemukan pembaca dengan buku impor pilihan melalui komunitas, katalog privat, dan alur pemesanan
-              yang jelas.
+              {content?.body ||
+                "BFG mempertemukan pembaca dengan buku impor pilihan melalui komunitas, katalog privat, dan alur pemesanan yang jelas."}
             </p>
           </div>
         </header>

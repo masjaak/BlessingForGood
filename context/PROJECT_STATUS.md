@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Phase 07.1 full source-of-truth reconciliation — 2026-08-14
+
+**Status:** `LOCAL_ENGINEERING_PASS__PRODUCTION_AND_REAL_UAT_BLOCKED`
+
+Starting commit: `8392d2212844fc888e12904e680a240420d219b0`.
+
+The original PRD/UX/business/scope/success contracts and all approved Admin and
+Customer mockups have been reconciled into `context/SOURCE_OF_TRUTH.md` and the
+Phase 07.1 implementation matrices. Required local product gaps are implemented,
+including visible Secret Catalog access management, product/proof uploads,
+Admin/Customer Notifications and operational Inbox, customer Batch and Deposit
+surfaces, reports/export/analytics, multi-Admin invitations, audit, content, and
+settings. The current deterministic baseline is Vitest `163/163`, Convex
+`94/94`, with typecheck, lint, format, build, diff check, and the documented
+rendered route/viewport suite passing.
+
+This is not a closure or Production deployment claim. Convex CLI schema/codegen
+acceptance is blocked because the configured CLI identity cannot access canonical
+Development `content-snake-214`. Authenticated rendered QA and the intentional
+real Owner/Admin, Customer, product, Secret Catalog, Notification, and Inbox
+flows are also blocked because no designated identities/client product were
+provided. No alternate deployment or dummy Production record was created. Until
+those external inputs are restored, client product entry is not safe and Phase 08
+must not start.
+
 ## Phase 07.1 Product Surface Stabilization
 
 **Status:** `BFG_PHASE_07_1_LOCAL_CLOSURE_PRODUCTION_PILOT_BLOCKED`

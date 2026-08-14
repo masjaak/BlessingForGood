@@ -87,6 +87,11 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
           <span>{confirmation.proofReference}</span>
         </div>
       ) : null}
+      {confirmation.proofUrl ? (
+        <a className="button button-secondary" href={confirmation.proofUrl} target="_blank" rel="noreferrer">
+          Lihat bukti transfer
+        </a>
+      ) : null}
       {confirmation.customerNote ? <p className="subtle">Catatan customer: {confirmation.customerNote}</p> : null}
       <p className="subtle">Dikirim {new Date(confirmation.submittedAt).toLocaleString("id-ID")}</p>
       {confirmation.status === "submitted" ? (

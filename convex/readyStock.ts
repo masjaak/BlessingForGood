@@ -48,7 +48,7 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">) {
     author: book.author,
     description: book.description,
     categories: book.categories,
-    coverImageUrl: book.coverImageUrl,
+    coverImageUrl: book.coverStorageId ? await ctx.storage.getUrl(book.coverStorageId) : book.coverImageUrl,
     publisher: { id: publisher._id, name: publisher.name },
     variants: stocked,
     minPrice: Math.min(...prices),

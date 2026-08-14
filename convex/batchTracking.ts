@@ -3,12 +3,13 @@ import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { getBatchSummary } from "./batches";
-import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { canTransitionShipment } from "./lib/shipmentTransitions";
 import { fail } from "./lib/errors";
 import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { positiveQuantity } from "./lib/validation";
+import { notifyUser } from "./lib/notifications";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -125,6 +126,15 @@ export const assignOrderItem = mutation({
       createdAt: now,
       updatedAt: now,
       assignedByUserId: user._id,
+    });
+    await notifyUser(ctx, order.customerUserId, {
+      surface: "notification",
+      eventType: "batch.opened",
+      title: "Batch PO tersedia",
+      body: `${batch.name} kini memuat buku dari pesananmu.`,
+      destination: `/account/batches/${batch._id}`,
+      relatedEntityType: "batch",
+      relatedEntityId: String(batch._id),
     });
     await recordAudit(ctx, user._id, "batch.item_assigned", "orderItem", args.orderItemId);
     return assignmentId;
@@ -243,6 +253,29 @@ export const updateShipmentStage = mutation({
       changedByUserId: user._id,
       note: args.note?.trim() || undefined,
     });
+    const assignments = await ctx.db
+      .query("orderItemBatchAssignments")
+      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
+      .take(200);
+    const recipients = new Set<Id<"appUsers">>();
+    for (const assignment of assignments) {
+      const item = await ctx.db.get(assignment.orderItemId);
+      const order = item ? await ctx.db.get(item.orderId) : null;
+      if (order) recipients.add(order.customerUserId);
+    }
+    await Promise.all(
+      [...recipients].map((recipientUserId) =>
+        notifyUser(ctx, recipientUserId, {
+          surface: "notification",
+          eventType: "batch.status_changed",
+          title: "Status batch diperbarui",
+          body: `${batch.name} masuk tahap ${args.toStage.replaceAll("_", " ")}.`,
+          destination: `/account/batches/${batch._id}`,
+          relatedEntityType: "batch",
+          relatedEntityId: String(batch._id),
+        }),
+      ),
+    );
     await recordAudit(ctx, user._id, "tracking.shipment_stage_changed", "batch", args.batchId, { stage: args.toStage });
     return getBatchSummary(ctx, args.batchId);
   },
@@ -297,6 +330,7 @@ export const getMine = query({
           name: batch.name,
           referenceCode: batch.referenceCode || null,
           currentShipmentStage: batch.currentShipmentStage || null,
+          poDeadlineAt: batch.poDeadlineAt ?? null,
           updatedAt: new Date(batch.updatedAt).toISOString(),
           assignments: section.assignments,
           history: await historyView(ctx, batch._id),
@@ -304,6 +338,63 @@ export const getMine = query({
       }),
     );
     return { orderId: order._id, batches: batches.filter((batch) => batch !== null) };
+  },
+});
+
+async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"appUsers">) {
+  const batch = await ctx.db.get(batchId);
+  if (!batch) return null;
+  const assignments = await ctx.db
+    .query("orderItemBatchAssignments")
+    .withIndex("by_batch", (index) => index.eq("batchId", batchId))
+    .take(200);
+  const owned = (
+    await Promise.all(
+      assignments.map(async (assignment) => {
+        const item = await ctx.db.get(assignment.orderItemId);
+        const order = item ? await ctx.db.get(item.orderId) : null;
+        return item && order?.customerUserId === userId
+          ? {
+              assignmentId: assignment._id,
+              title: item.bookTitleSnapshot,
+              format: item.formatSnapshot,
+              quantity: assignment.assignedQuantity,
+            }
+          : null;
+      }),
+    )
+  ).filter((item) => item !== null);
+  if (!owned.length) return null;
+  return {
+    batchId: batch._id,
+    name: batch.name,
+    referenceCode: batch.referenceCode ?? null,
+    description: batch.description ?? null,
+    poDeadlineAt: batch.poDeadlineAt ?? null,
+    currentShipmentStage: batch.currentShipmentStage ?? null,
+    updatedAt: batch.updatedAt,
+    items: owned,
+    history: await historyView(ctx, batch._id),
+  };
+}
+
+export const listMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireActiveUser(ctx);
+    const assignments = await ctx.db.query("orderItemBatchAssignments").take(500);
+    const batchIds = [...new Set(assignments.map((item) => item.batchId))];
+    return (await Promise.all(batchIds.map((batchId) => batchMineView(ctx, batchId, user._id)))).filter(
+      (batch) => batch !== null,
+    );
+  },
+});
+
+export const getBatchMine = query({
+  args: { batchId: v.id("batches") },
+  handler: async (ctx, args) => {
+    const user = await requireActiveUser(ctx);
+    return batchMineView(ctx, args.batchId, user._id);
   },
 });
 

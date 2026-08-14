@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Field,
   LinkButton,
   LoadingRegion,
   Money,
@@ -25,6 +26,8 @@ import { SiteShell } from "@/components/site-shell";
 function OrderTable() {
   const { state, updateOrderStatus, dataSource, ordersLoading } = useProduct();
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
   if (ordersLoading) {
     return (
       <LoadingRegion label="Memuat pesanan">
@@ -44,97 +47,140 @@ function OrderTable() {
         }
       />
     );
+  const rows = state.orders.filter((order) => {
+    if (statusFilter && order.status !== statusFilter) return false;
+    const needle = search.trim().toLowerCase();
+    return (
+      !needle ||
+      [order.id, order.customerName, order.customerEmail, ...order.items.map((item) => item.bookTitle)]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(needle))
+    );
+  });
   return (
-    <div className="table-wrap">
-      <table className="data-table">
-        <caption className="sr-only">Daftar pesanan</caption>
-        <thead>
-          <tr>
-            <th>Customer</th>
-            <th>Source</th>
-            <th>Items</th>
-            <th>Total</th>
-            <th>Stage</th>
-            <th>Next action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {state.orders.map((order) => {
-            const statuses: OrderStatus[] =
-              dataSource === "convex"
-                ? order.status === "submitted"
-                  ? ["completed"]
-                  : []
-                : nextOrderStatuses(order.status);
-            return (
-              <tr key={order.id}>
-                <td>
-                  <strong>{order.customerName}</strong>
-                  <br />
-                  <span className="subtle">{order.customerEmail || "No email"}</span>
-                  <br />
-                  <span className="subtle">{order.id}</span>
-                  <br />
-                  <LinkButton href={`/admin/orders/${order.id}`} variant="secondary">
-                    Operations detail
-                  </LinkButton>
-                </td>
-                <td>
-                  {order.source === "admin_assisted"
-                    ? "Admin-assisted"
-                    : order.source === "ready_stock"
-                      ? "Ready Stock"
-                      : "Customer self-service"}
-                </td>
-                <td>
-                  {order.items.map((item) => (
-                    <div key={item.id}>
-                      {item.quantity} × {item.bookTitle} ({item.format})
-                    </div>
-                  ))}
-                </td>
-                <td>
-                  <Money amount={order.total} />
-                </td>
-                <td>
-                  <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
-                  <br />
-                  <span className="subtle">Updated {new Date(order.updatedAt).toLocaleString("en-GB")}</span>
-                </td>
-                <td>
-                  {statuses.length ? (
-                    <select
-                      className="select"
-                      aria-label={`Update status for ${order.id}`}
-                      defaultValue=""
-                      disabled={pendingOrderId !== null}
-                      onChange={async (event) => {
-                        const next = event.target.value as OrderStatus;
-                        if (!next) return;
-                        setPendingOrderId(order.id);
-                        try {
-                          await updateOrderStatus(order.id, next);
-                        } finally {
-                          setPendingOrderId(null);
-                        }
-                      }}
-                    >
-                      <option value="">Choose stage…</option>
-                      {statuses.map((status) => (
-                        <option value={status} key={status}>
-                          {orderStatusLabels[status]}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="subtle">No next stage</span>
-                  )}
-                </td>
+    <div className="content-stack">
+      <Card className="admin-book-filters">
+        <Field label="Cari">
+          <input
+            className="input"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Customer, order, atau buku"
+          />
+        </Field>
+        <Field label="Status">
+          <select
+            className="select"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as OrderStatus | "")}
+          >
+            <option value="">Semua</option>
+            <option value="submitted">Submitted</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+          </select>
+        </Field>
+      </Card>
+      {rows.length ? (
+        <div className="table-wrap">
+          <table className="data-table">
+            <caption className="sr-only">Daftar pesanan</caption>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Source</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Stage</th>
+                <th>Next action</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {rows.map((order) => {
+                const statuses: OrderStatus[] =
+                  dataSource === "convex"
+                    ? order.status === "submitted"
+                      ? ["completed"]
+                      : []
+                    : nextOrderStatuses(order.status);
+                return (
+                  <tr key={order.id}>
+                    <td>
+                      <strong>{order.customerName}</strong>
+                      <br />
+                      <span className="subtle">{order.customerEmail || "No email"}</span>
+                      <br />
+                      <span className="subtle">{order.id}</span>
+                      <br />
+                      <LinkButton href={`/admin/orders/${order.id}`} variant="secondary">
+                        Operations detail
+                      </LinkButton>
+                    </td>
+                    <td>
+                      {order.source === "admin_assisted"
+                        ? "Admin-assisted"
+                        : order.source === "ready_stock"
+                          ? "Ready Stock"
+                          : "Customer self-service"}
+                    </td>
+                    <td>
+                      {order.items.map((item) => (
+                        <div key={item.id}>
+                          {item.quantity} × {item.bookTitle} ({item.format})
+                        </div>
+                      ))}
+                    </td>
+                    <td>
+                      <Money amount={order.total} />
+                    </td>
+                    <td>
+                      <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
+                      <br />
+                      <span className="subtle">Updated {new Date(order.updatedAt).toLocaleString("en-GB")}</span>
+                    </td>
+                    <td>
+                      {statuses.length ? (
+                        <select
+                          className="select"
+                          aria-label={`Update status for ${order.id}`}
+                          defaultValue=""
+                          disabled={pendingOrderId !== null}
+                          onChange={async (event) => {
+                            const next = event.target.value as OrderStatus;
+                            if (!next) return;
+                            setPendingOrderId(order.id);
+                            try {
+                              await updateOrderStatus(order.id, next);
+                            } finally {
+                              setPendingOrderId(null);
+                            }
+                          }}
+                        >
+                          <option value="">Choose stage…</option>
+                          {statuses.map((status) => (
+                            <option value={status} key={status}>
+                              {orderStatusLabels[status]}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="subtle">No next stage</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState
+          title="Tidak ada order yang cocok"
+          description="Ubah pencarian atau filter status."
+          mascotVariant={false}
+        />
+      )}
     </div>
   );
 }

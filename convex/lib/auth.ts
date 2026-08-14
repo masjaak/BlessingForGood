@@ -33,6 +33,7 @@ export type Permission =
   | "users.manage_roles"
   | "users.suspend"
   | "settings.manage"
+  | "content.manage"
   | "audit.read";
 
 const customerPermissions = new Set<Permission>([
@@ -63,6 +64,7 @@ const adminPermissions = new Set<Permission>([
   "refunds.manage",
   "customers.read",
   "customers.manage",
+  "content.manage",
 ]);
 
 const allPermissions = new Set<Permission>([

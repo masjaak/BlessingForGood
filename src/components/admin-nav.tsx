@@ -21,13 +21,23 @@ type AdminIconName =
   | "invoice"
   | "payment"
   | "refund"
-  | "users";
+  | "users"
+  | "reports"
+  | "audit"
+  | "content"
+  | "settings";
 
 type AdminNavLink = { href: string; label: string; icon: AdminIconName };
 type AdminNavGroup = { label: string; links: AdminNavLink[] };
 
 const groups: AdminNavGroup[] = [
-  { label: "Overview", links: [{ href: "/admin", label: "Dashboard", icon: "dashboard" }] },
+  {
+    label: "Overview",
+    links: [
+      { href: "/admin", label: "Dashboard", icon: "dashboard" },
+      { href: "/admin/content", label: "Content", icon: "content" },
+    ],
+  },
   {
     label: "Customers",
     links: [
@@ -55,8 +65,10 @@ const groups: AdminNavGroup[] = [
     label: "Finance",
     links: [
       { href: "/admin/invoices", label: "Invoices & Deposit", icon: "invoice" },
+      { href: "/admin/deposits", label: "Deposit & Top-up", icon: "payment" },
       { href: "/admin/payments", label: "Payments", icon: "payment" },
       { href: "/admin/refunds", label: "Refunds", icon: "refund" },
+      { href: "/admin/reports", label: "Reports & Analytics", icon: "reports" },
     ],
   },
 ];
@@ -149,6 +161,31 @@ function AdminNavIcon({ name }: { name: AdminIconName }) {
         <path {...common} d="M3.5 20a5.5 5.5 0 0 1 11 0M16 11a3 3 0 1 0 0-6M16 14a5 5 0 0 1 4.5 6" />
       </>
     ),
+    reports: (
+      <>
+        <path {...common} d="M5 20V10h4v10M10 20V4h4v16M15 20v-7h4v7M3 20h18" />
+      </>
+    ),
+    audit: (
+      <>
+        <path {...common} d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4" />
+        <path {...common} d="m15.5 16 1.5 1.5 3-3" />
+      </>
+    ),
+    content: (
+      <>
+        <path {...common} d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+      </>
+    ),
+    settings: (
+      <>
+        <circle {...common} cx="12" cy="12" r="3" />
+        <path
+          {...common}
+          d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"
+        />
+      </>
+    ),
   };
   return (
     <svg className="admin-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -167,7 +204,17 @@ export function AdminNav() {
   const sessionRole = product?.sessionRole;
   const pendingJoinRequests = useQuery(api.joinRequests.pendingCount, product?.dataSource === "convex" ? {} : "skip");
   const visibleGroups: AdminNavGroup[] = roleCanAccess(sessionRole || null, "owner")
-    ? [...groups, { label: "System", links: [{ href: "/admin/users", label: "Users", icon: "users" }] }]
+    ? [
+        ...groups,
+        {
+          label: "System",
+          links: [
+            { href: "/admin/users", label: "Users", icon: "users" },
+            { href: "/admin/audit", label: "Activity Log", icon: "audit" },
+            { href: "/admin/settings", label: "Settings", icon: "settings" },
+          ],
+        },
+      ]
     : groups;
 
   return (

@@ -28,6 +28,41 @@ export const list = query({
   },
 });
 
+export const getForAdmin = query({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "catalog.manage");
+    const catalog = await ctx.db.get(args.catalogId);
+    if (!catalog) return null;
+    return { ...catalog, view: await getCatalogView(ctx, catalog._id) };
+  },
+});
+
+export const update = mutation({
+  args: {
+    catalogId: v.id("secretCatalogs"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    closesAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const catalog = await ctx.db.get(args.catalogId);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (catalog.status === "archived") fail("CATALOG_CLOSED");
+    if (args.closesAt !== undefined && args.closesAt <= Date.now())
+      fail("VALIDATION_FAILED", "closing date is invalid");
+    await ctx.db.patch(catalog._id, {
+      name: requiredText(args.name, "catalog name"),
+      description: args.description?.trim() || undefined,
+      closesAt: args.closesAt,
+      updatedAt: Date.now(),
+    });
+    await recordAudit(ctx, user._id, "catalog.updated", "catalog", catalog._id);
+    return getCatalogView(ctx, catalog._id);
+  },
+});
+
 export const create = mutation({
   args: {
     name: v.string(),

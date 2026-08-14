@@ -106,23 +106,31 @@ export const ensureCurrentUser = mutation({
       return appUserView(updated);
     }
     let approvedRequest: Doc<"joinRequests"> | null = null;
+    let staffInvitation: Doc<"staffInvitations"> | null = null;
     if (identity.subject !== ownerClerkUserId) {
       const normalizedEmail = identity.email?.trim().toLowerCase();
       if (!normalizedEmail) fail("ADMISSION_REQUIRED");
-      approvedRequest = await ctx.db
-        .query("joinRequests")
+      staffInvitation = await ctx.db
+        .query("staffInvitations")
         .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
-        .filter((query) => query.eq(query.field("status"), "approved"))
-        .filter((query) => query.eq(query.field("invitationStatus"), "ready"))
+        .filter((query) => query.eq(query.field("status"), "pending"))
         .first();
-      if (!approvedRequest) fail("ADMISSION_REQUIRED");
-      if (approvedRequest.applicantClerkUserId && approvedRequest.applicantClerkUserId !== identity.subject) {
-        fail("ADMISSION_REQUIRED");
+      if (!staffInvitation) {
+        approvedRequest = await ctx.db
+          .query("joinRequests")
+          .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
+          .filter((query) => query.eq(query.field("status"), "approved"))
+          .filter((query) => query.eq(query.field("invitationStatus"), "ready"))
+          .first();
+        if (!approvedRequest) fail("ADMISSION_REQUIRED");
+        if (approvedRequest.applicantClerkUserId && approvedRequest.applicantClerkUserId !== identity.subject) {
+          fail("ADMISSION_REQUIRED");
+        }
       }
     }
     const userId = await ctx.db.insert("appUsers", {
       clerkUserId: identity.subject,
-      role: identity.subject === ownerClerkUserId ? "owner" : "customer",
+      role: identity.subject === ownerClerkUserId ? "owner" : staffInvitation?.role || "customer",
       status: "active",
       emailSnapshot: identity.email,
       displayNameSnapshot: identity.name,
@@ -134,9 +142,89 @@ export const ensureCurrentUser = mutation({
     if (approvedRequest) {
       await ctx.db.patch(approvedRequest._id, { admittedAppUserId: userId, updatedAt: now });
     }
+    if (staffInvitation) {
+      await ctx.db.patch(staffInvitation._id, {
+        status: "claimed",
+        claimedAt: now,
+        claimedByUserId: userId,
+        updatedAt: now,
+      });
+      await recordAudit(
+        ctx,
+        staffInvitation.createdByUserId,
+        "staff_invitation.claimed",
+        "staffInvitation",
+        staffInvitation._id,
+        { appUserId: String(userId) },
+      );
+    }
     const user = await ctx.db.get(userId);
     if (!user) fail("USER_NOT_FOUND");
     return appUserView(user);
+  },
+});
+
+function normalizedInviteEmail(value: string) {
+  const email = value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) fail("VALIDATION_FAILED", "email is invalid");
+  return email;
+}
+
+export const inviteStaff = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const owner = await requireOwner(ctx);
+    const email = normalizedInviteEmail(args.email);
+    const invitations = await ctx.db
+      .query("staffInvitations")
+      .withIndex("by_normalized_email", (index) => index.eq("normalizedEmail", email))
+      .take(20);
+    if (invitations.some((invitation) => invitation.status === "pending"))
+      fail("VALIDATION_FAILED", "staff invitation already pending");
+    const now = Date.now();
+    const invitationId = await ctx.db.insert("staffInvitations", {
+      email,
+      normalizedEmail: email,
+      role: "admin",
+      status: "pending",
+      createdAt: now,
+      updatedAt: now,
+      createdByUserId: owner._id,
+    });
+    await recordAudit(ctx, owner._id, "staff_invitation.created", "staffInvitation", invitationId, { email });
+    return { invitationId, email, status: "pending" as const };
+  },
+});
+
+export const listStaffInvitations = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireOwner(ctx);
+    const rows = await ctx.db.query("staffInvitations").take(100);
+    return rows
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((row) => ({
+        invitationId: row._id,
+        email: row.email,
+        role: row.role,
+        status: row.status,
+        createdAt: row.createdAt,
+        claimedAt: row.claimedAt ?? null,
+      }));
+  },
+});
+
+export const revokeStaffInvitation = mutation({
+  args: { invitationId: v.id("staffInvitations") },
+  handler: async (ctx, args) => {
+    const owner = await requireOwner(ctx);
+    const invitation = await ctx.db.get(args.invitationId);
+    if (!invitation) fail("VALIDATION_FAILED", "staff invitation does not exist");
+    if (invitation.status !== "pending") fail("VALIDATION_FAILED", "only pending invitations can be revoked");
+    const now = Date.now();
+    await ctx.db.patch(invitation._id, { status: "revoked", revokedAt: now, updatedAt: now });
+    await recordAudit(ctx, owner._id, "staff_invitation.revoked", "staffInvitation", invitation._id);
+    return { revoked: true };
   },
 });
 

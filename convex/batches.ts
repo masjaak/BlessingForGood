@@ -36,6 +36,7 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     name: batch.name,
     referenceCode: batch.referenceCode || null,
     description: batch.description || null,
+    poDeadlineAt: batch.poDeadlineAt ?? null,
     currentShipmentStage: batch.currentShipmentStage || null,
     rosterLocked: batch.currentShipmentStage !== undefined,
     isArchived: batch.isArchived,
@@ -57,11 +58,15 @@ export const create = mutation({
     name: v.string(),
     referenceCode: v.optional(v.string()),
     description: v.optional(v.string()),
+    poDeadlineAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "batches.manage");
     const name = requiredText(args.name, "batch name");
     const referenceCode = args.referenceCode?.trim() || undefined;
+    if (args.poDeadlineAt !== undefined && args.poDeadlineAt <= Date.now()) {
+      fail("VALIDATION_FAILED", "PO deadline must be in the future");
+    }
     if (referenceCode) {
       const duplicate = await ctx.db
         .query("batches")
@@ -74,6 +79,7 @@ export const create = mutation({
       name,
       referenceCode,
       description: args.description?.trim() || undefined,
+      poDeadlineAt: args.poDeadlineAt,
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,

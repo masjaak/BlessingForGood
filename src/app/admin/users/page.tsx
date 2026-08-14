@@ -7,15 +7,19 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 
 function UserManagement() {
   const [role, setRole] = useState<"owner" | "admin" | "customer" | undefined>();
   const [status, setStatus] = useState<"active" | "suspended" | undefined>();
   const users = useQuery(api.users.list, { role, status, paginationOpts: { numItems: 100, cursor: null } });
+  const invitations = useQuery(api.users.listStaffInvitations, {});
   const updateRole = useMutation(api.users.updateRole);
   const suspend = useMutation(api.users.suspend);
   const reactivate = useMutation(api.users.reactivate);
+  const inviteStaff = useMutation(api.users.inviteStaff);
+  const revokeStaffInvitation = useMutation(api.users.revokeStaffInvitation);
+  const [staffEmail, setStaffEmail] = useState("");
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
@@ -42,6 +46,60 @@ function UserManagement() {
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content content-stack">
+          <Card>
+            <span className="card-kicker">Admin onboarding</span>
+            <h2>Pre-authorize staff email</h2>
+            <p className="subtle">
+              Bagikan link masuk BFG secara manual. Saat email yang sama masuk lewat Clerk, role Admin diklaim otomatis;
+              tidak ada password atau token yang disimpan BFG.
+            </p>
+            <form
+              className="form-actions"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void run(
+                  inviteStaff({ email: staffEmail }).then(() => setStaffEmail("")),
+                  "invite",
+                );
+              }}
+            >
+              <Field label="Email Admin">
+                <input
+                  className="input"
+                  type="email"
+                  value={staffEmail}
+                  onChange={(event) => setStaffEmail(event.target.value)}
+                  required
+                />
+              </Field>
+              <Button pending={pendingAction === "invite"} pendingLabel="Membuat…">
+                Buat invitation
+              </Button>
+            </form>
+            {invitations?.map((invitation) => (
+              <div className="summary-line" key={invitation.invitationId}>
+                <span>
+                  {invitation.email} · {invitation.role}
+                </span>
+                <span className="form-actions">
+                  <span className="status-badge">{invitation.status}</span>
+                  {invitation.status === "pending" ? (
+                    <Button
+                      variant="danger"
+                      onClick={() =>
+                        void run(
+                          revokeStaffInvitation({ invitationId: invitation.invitationId as Id<"staffInvitations"> }),
+                          `revoke:${invitation.invitationId}`,
+                        )
+                      }
+                    >
+                      Revoke
+                    </Button>
+                  ) : null}
+                </span>
+              </div>
+            ))}
+          </Card>
           <Card className="form-actions">
             <label className="field">
               <span className="field-label">Role</span>

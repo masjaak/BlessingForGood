@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { bfgClerkAppearance } from "@/config/clerk";
+import { WorkspaceActions } from "@/components/workspace-actions";
+import { ProductContext } from "@/domain/prototype/context";
 
 const customerLinks = [
   { href: "/", label: "Beranda" },
@@ -103,6 +105,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
   const { isLoaded, isSignedIn } = useAuth();
   const signedIn = Boolean(isLoaded && isSignedIn);
+  const product = useContext(ProductContext);
+  const activityEnabled = signedIn && product?.dataSource === "convex";
   const isAdmin = pathname.startsWith("/admin");
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
 
@@ -118,6 +122,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <div className="admin-account">
             <span className="admin-topbar-status">Workspace operasional</span>
             <Link href="/">Lihat sisi customer</Link>
+            <WorkspaceActions workspace="admin" enabled={activityEnabled} />
             <UserButton appearance={bfgClerkAppearance} />
           </div>
         </header>
@@ -155,6 +160,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           ) : (
             <>
               <AdminShellLink />
+              <WorkspaceActions workspace="customer" enabled={activityEnabled} />
               <UserButton appearance={bfgClerkAppearance} />
             </>
           )}

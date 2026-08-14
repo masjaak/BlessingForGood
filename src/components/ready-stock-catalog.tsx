@@ -114,7 +114,7 @@ function ReadyStockResults() {
                 title={book.title}
                 publisher={book.publisher.name}
                 format={book.variants[0]?.format}
-                src={book.coverImageUrl}
+                src={book.coverImageUrl || undefined}
               />
               <div className="ready-stock-copy">
                 <StatusBadge tone="positive">Ready Stock · {book.totalStock} tersedia</StatusBadge>

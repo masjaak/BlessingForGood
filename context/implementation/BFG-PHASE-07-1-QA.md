@@ -1,221 +1,123 @@
 # BFG Phase 07.1 QA
 
-Status: `BFG_PHASE_07_1_PRODUCTION_DEPLOYED_PRODUCTION_PILOT_BLOCKED`
+Reconciled: 2026-08-14
+Starting commit: `8392d2212844fc888e12904e680a240420d219b0`
+Status: `LOCAL_ENGINEERING_PASS__PRODUCTION_AND_REAL_UAT_PENDING`
+Phase 08: `NOT STARTED`
 
-The loading regression, product projection guards, customer-safe fields, and
-continuous How To Order journey are locally closed. Final Production
-acceptance remains blocked by missing client-provided product information and
-an authorized authenticated customer/Admin/Owner operator session.
-Phase 08 remains `NOT STARTED`.
+## Source and conflict acceptance
 
-## Product publishing and How To Order closure
+- Original PRD/UX/business rules/routes/scope/success criteria and approved policy/security/financial records were read
+  before implementation.
+- Ten Admin and eight Customer approved PNGs were opened and visually audited.
+- Canonical conflict record: `context/SOURCE_OF_TRUTH.md`.
+- Secret Catalog final model is hybrid: secure anonymous scoped code session plus explicit authenticated member grant.
+- Inbox is persistent operational messaging, not chat.
+- WhatsApp API automation and payment gateway remain excluded.
 
-- The canonical chain remains `Publisher → Book Master → Variant → ISBN/price
-  → publication status → inventory/catalog assignment → customer projection`.
-- `/admin/books` and `/admin/books/[bookId]` already provide the real publisher,
-  Book Master, variant, ISBN, price, publication, and Ready Stock entry points;
-  `/admin/catalogs` remains the separate Secret Catalog assignment path. No
-  second product wizard or frontend-only publication state was added.
-- Public Ready Stock continues to require `published`, active publisher and
-  variant, an inventory record, and positive `onHand - reserved` availability.
-- Secret Catalog projection now excludes `draft` and `archived` books at the
-  shared `getCatalogView` boundary while retaining valid scoped token access for
-  `special` products. Clerk is not introduced into that token gateway.
-- Customer Ready Stock projection no longer exposes Admin operational fields
-  (`onHandQuantity`, `reservedQuantity`, or duplicate `availableQuantity`);
-  customer availability remains the canonical `stockQuantity` projection.
-- TDD coverage proves the full deterministic local chain, unpublished leakage
-  absence, scoped Secret Catalog access, invalid-session denial, and the
-  customer-safe projection.
-- How To Order now renders seven semantic steps in one accessible ordered
-  journey (`ol`/`li`) with one connected path. The old eight independent card
-  panels are superseded and removed; the homepage keeps its three-step preview.
-- Rendered QA passes How To Order at 375, 390, 430, and 1440px with no
-  horizontal overflow, no console errors, no card surface, and the canonical
-  Logo-1/Blessy assets.
+## Implemented reconciliation delta
 
-## Production pilot boundary
+- Reachable Catalog detail and Access Management: Draft create/edit/open/close, assign/remove existing variants,
+  generate/copy/revoke expiring digest-only codes, safe history metadata, member grant/revoke.
+- Durable validated cover, payment-proof, and deposit-proof uploads through Convex storage. Server validation trusts
+  storage metadata, not client-declared MIME, and caps files at 5 MB.
+- Event-backed owned Notifications and operational Inbox for Admin and Customer with unread counts, read state, safe
+  destination, and header affordances.
+- Customer batch list/detail and batch-open/status notifications.
+- Deposit top-up submission/review/approve/reject, atomic ledger credit, audited manual adjustment, and owned history.
+- Order search/status filter, bounded order/invoice/batch report, Excel-compatible UTF-8 CSV export with formula-injection
+  protection, sales overview, batch status/performance view, and period filter.
+- Owner-only staff invitations/claim, role/status controls, immutable audit view, settings, and Admin-managed published
+  content.
+- Publisher maintenance and canonical Draft catalog creation now reuse existing domain mutations. Duplicate inline
+  catalog code controls and the legacy product-creating catalog bundle form were removed from the Admin list surface.
 
-No Production publisher, book, variant, ISBN, price, inventory, order, invoice,
-payment, refund, or other business record was created. The local render pilot
-uses deterministic fixtures only. One real client product plus authorized
-operator sessions are still required before claiming Admin → Convex → customer
-projection acceptance or bulk-entry safety.
+## State and security QA
 
-## Admin security closure
+- State machines are documented in `BFG-PHASE-07-1-STATE-MACHINES.md` for access, notifications/Inbox, publication,
+  batch, deposit/payment, and Join.
+- Recipient ownership is enforced server-side for Notification/Inbox query and read mutation.
+- Customer proofs/covers validate authoritative storage metadata; private proof URLs are returned only by authorized
+  own/Admin queries.
+- Catalog Admin metadata never returns digests or plaintext codes. Plaintext is returned once by generation only.
+- Deposit approval is transactional and state-gated, so a resolved top-up cannot credit twice.
+- Existing order snapshots, append-only financial ledger behavior, refund/exception logic, and Ready Stock reservation
+  rules remain intact.
 
-- Clerk remains the only identity provider; Clerk login alone grants no BFG
-  membership or Admin access.
-- Active `appUsers` status plus role/permission remains authoritative.
-- Signed out, missing `appUser`, suspended, and customer identities are denied
-  from Admin routes and representative direct Admin query/mutation calls.
-- Admin and Owner are allowed into `/admin`; Owner-only access operations still
-  deny Admin.
-- Admin/Owner may use the customer workspace. Route-aware providers select
-  owned customer projections outside `/admin`, not operational Admin payloads.
-- All audited Admin-specific Convex queries and mutations enforce
-  `requirePermission` or `requireOwner` before protected data/write access.
-- No Clerk Organization, second login, email whitelist, dummy Production data,
-  or business/financial policy change was introduced. The only schema change
-  is additive and Join-only.
+## TDD and engineering gates
 
-## Acceptance scenarios
+Focused reconciliation suite after the trust-boundary refactor:
 
-| Scenario | Role | Route | Starting State | Action | Expected | Actual | Visual Source | Functional Consequence | Verdict |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Customer primary navigation | customer | `/account` | authenticated role resolved in deterministic component test | Render customer shell | `Beranda`, `Katalog`, `Buku Saya`, `Tagihan`, `Akun`; no Admin link | Exact five-link assertion passes; workspace switch is in account-access region only | Customer mobile mockups 1–8; customer V4.1 | Customer IA no longer mixes operational navigation | PASS locally; Production auth pending |
-| Elevated workspace entry | admin / owner | `/account` → `/admin` | role resolved in deterministic component test | Open `Buka Workspace Admin` | Admin entry is secondary and authorized | Admin/Owner link renders; customer role renders no link | Workspace model in Phase 07.1 brief | Role-preserving navigation to Admin | PASS locally; real session pending |
-| Customer direct Admin URL | customer | `/admin` | authenticated customer | Enter URL directly | Denied; no Admin children or Admin data queries mount | `ProductAccessGuard` customer denial test passes; live customer session not available | Admin shell and RBAC matrix | Direct URL cannot grant Admin access | PASS locally; Production auth pending |
-| Signed-out Admin URL | signed out | all major `/admin/*` | no Clerk session | Enter URL directly | Clerk sign-in gate | Playwright signed-out Admin matrix passes 39/39 across 1024/1280/1440 | Admin route inventory | Protected routes fail closed | PASS |
-| Owner reverse switch | owner | `/admin` → `/` | authenticated owner | Choose `Lihat sisi customer` | Customer shell opens without role mutation | Reverse link remains in Admin shell; authenticated browser execution pending | Admin mockups; workspace matrix | Intentional workspace switch, not mixed nav | AUTH-BLOCKED |
-| Suspended access | suspended | `/admin` | resolved suspended appUser | Resolve guard | Suspension state; no Admin content | Deterministic guard test passes | Auth state contract | Business queries remain skipped | PASS locally |
-| Missing appUser | signed-in, missing appUser | `/admin` and customer account routes | admission unresolved/denied | Resolve appUser | Account-not-active state; no private content | Existing admission guard test passes | Customer state coverage | No anonymous fallback or private query | PASS locally |
-| Account route reachability | customer | `/account` → profile/addresses | account dashboard rendered | Follow Account links | Profile and Addresses reachable without manual URL entry | New links render and point to `/account/profile` and `/account/addresses`; signed-out route smoke passes | Customer mockup 8 | Existing customer surfaces become naturally reachable | PASS locally; populated auth pending |
-| Customer route smoke | signed out | customer route inventory | public/locked zero-data state | Visit each route at responsive projects | No 4xx, blank page, prohibited copy, console error, or horizontal overflow | Playwright 75/75 customer checks pass | Customer V4.1.1/V4.1.3 and mobile mockups | Public and locked states remain usable | PASS |
-| Admin dashboard hierarchy | admin | `/admin` | authenticated operational data state | Compare primary and secondary queue composition | Attention queues lead; context counts are quieter; no invented analytics | Code now renders four primary queues and three context queues; authenticated screenshot unavailable | `public/mockups/admin/admin dashboard 1.png` | No query/schema/business change | PARTIAL — render-gated |
-| Admin navigation/icon system | admin / owner | all major `/admin/*` | authenticated shell | Inspect sidebar, active state, reverse switch | Grouped BFG operations IA, one outlined icon grammar, clear active state | Source audit confirms grouped `AdminNav` and inline SVG family; authenticated screenshot unavailable | Admin mockups 1–10 | No domain change | PARTIAL — render-gated |
-| Zero-production-data safety | all | all | canonical Production remains unseeded | Run local QA | No dummy customer/order/invoice/inventory records | No production mutation or fixture created | Business policy and deployment rules | Financial/catalog/Ready Stock truth preserved | PASS |
+- 4 files, 18 tests: PASS.
+- Covers catalog metadata/revoke/grant/item assignment, notification/Inbox ownership/read, reports/audit, deadline,
+  cover upload, top-up/adjustment, payment proof, content/settings, staff invitation, and publisher maintenance.
 
-## Rendered QA evidence
+Full current baseline:
 
-The repository Playwright suite ran against the local Next application:
+- Vitest: `163/163`, 33 files, PASS.
+- Convex Vitest: `94/94`, 16 files, PASS.
+- Convex CLI schema/codegen check: BLOCKED. The configured CLI identity does not have access to canonical Development
+  `content-snake-214`; the command stopped before changing any deployment. No alternate project was selected.
+- TypeScript: PASS.
+- ESLint: PASS.
+- Format check: PASS.
+- Production build: PASS; 38 static pages generated and all dynamic routes compiled.
+- `git diff --check`: PASS.
+- No new runtime dependency.
 
-- Customer: `75/75` at 375, 390, 430, 768, and 1440px.
-- Signed-out Admin gates: `39/39` at 1024, 1280, and 1440px.
-- Admin operational loading regression harness: `9/9` affected-page/viewport
-  renders at 1024, 1280, and 1440px. Ready Stock, Exceptions, and Refunds
-  kept the Admin header, workspace, sidebar, content frame, and loading region
-  mounted with no horizontal overflow or console errors.
-- How To Order rendered QA: `4/4` at 375, 390, 430, and 1440px; seven ordered
-  steps, one connector, no card surfaces, no overflow, and no console errors.
-- Deterministic product projection render QA: Ready Stock listing/detail at
-  390 and 1440px plus Admin Book Master entry at 390 and 1440px; title,
-  publisher, price, ISBN, and availability projected without overflow. This is
-  local fixture evidence, not Production product acceptance.
-- Combined local browser result: `114/114`.
-- Admin side-by-side loading captures were rendered at 1440, 1280, and 1024px:
-  `/private/tmp/bfg-admin-qa/screenshots/admin-side-by-side-1440.png`,
-  `/private/tmp/bfg-admin-qa/screenshots/admin-side-by-side-1280.png`, and
-  `/private/tmp/bfg-admin-qa/screenshots/admin-side-by-side-1024.png`.
-- Captured customer artifacts include `artifacts/browser-qa/customer-390-*` and
-  `artifacts/browser-qa/customer-1440-*`.
-- Admin screenshots are gate screenshots only. Authenticated Admin mockup
-  comparison remains a required real Owner-session gate; no bypass or business
-  fixture was added.
+## Rendered QA
 
-The first full Playwright run on the exact change set completed `114/114` with
-transient retries. A repeat serial run showed local Clerk/browser resource and
-signed-out navigation flakiness; it did not produce a product, How To Order, or
-Admin loading assertion failure. The focused rendered harness remained green.
+- Playwright route/viewport inventory: 155 checks.
+- Customer: 19 checks × 5 projects (375/390/430/768/1440).
+- Admin signed-out gates: 20 routes × 3 projects (1024/1280/1440).
+- Capped run: 152 PASS; three Admin-1024 tests timed out waiting on the Clerk development widget under concurrent
+  load. The exact `/admin/audit`, `/admin/inbox`, and `/admin/reports` checks then passed 3/3 sequentially with one
+  worker and retries disabled. No product assertion was suppressed by retry.
+- Ready Stock loading assertion was corrected to its real accessible loading region; all five widths then passed and
+  screenshots show the canonical zero-data state rather than a skeleton.
+- Representative customer images at 375, 390, and 1440 were inspected visually; no horizontal overflow or console/page
+  error was recorded.
+- Authenticated Admin and populated Customer image comparison is not complete. The local Clerk instance has one user
+  with no role metadata and no designated Customer/Owner test identities are configured.
 
-## Phase 07.1 visual-system regression
+## Codebase Memory post-diff
 
-Before closure, Ready Stock, Exceptions, and Refunds returned their loading
-branches before the shared Admin page frame. Their unresolved queries therefore
-removed the PageHeader, workspace, AdminNav, and content geometry, unlike the
-other Admin operational pages whose loading regions render inside that frame.
+- Full index refreshed: 2,700 nodes / 7,444 edges; no skipped source files.
+- Blast radius from `8392d22`: 139 changed seed symbols, 66 impacted symbols, not truncated.
+- Impact is concentrated in `convex`, Admin/Customer routes, shared UI/shell, and prototype operation adapters.
+- Expected security/financial reach: auth helpers, deposit ledger/accounts, order exceptions/refunds, user RBAC, and
+  Ready Stock inventory. These were included in the full regression.
+- Three pre-existing parse-partial JSX locations were manually read (`account/page`, `account/orders/page`,
+  `admin/page`); no hidden Phase 07.1 change or unclassified action was found there.
 
-The fix adds one shared `AdminOperationalPage` grammar and moves only the
-loading presentation inside it. Existing query arguments, data-source gates,
-domain error/empty states, and refund/exception/inventory mutations are
-unchanged. The regression test asserts that all three frames remain mounted
-while their queries are unresolved.
+## Ponytail final review
 
-## Security hardening verification
+- Reused existing Convex mutations, `SiteShell`, Admin navigation, UI primitives, native file/date/search controls,
+  browser Blob download, and existing permission/audit helpers.
+- Removed duplicate Catalog list access controls and the composite create-bundle UI path.
+- Centralized three upload trust boundaries in one 16-line storage validator because the same security rule applies to
+  covers, payment proofs, and top-up proofs.
+- Applied report periods in the canonical database index before the 2,000-row cap; a red/green scale regression proves
+  older valid windows cannot be hidden by newer rows.
+- Kept bounded scans with explicit ceilings for operational reports and batch projections; add rollups/pagination only
+  when real volume reaches those recorded limits.
+- Skipped full chat, payment gateway, WhatsApp automation, bulk import, gallery, global search, and advanced analytics
+  because their contracts are excluded/unapproved.
 
-- Full Vitest projects: `147/147` across 30 files.
-- Frontend component tests are included in the `147/147` result.
-- Standalone Convex command: `82/82` across 15 files.
-- Playwright public/customer and signed-out Admin matrix: `114/114`.
-- TypeScript, ESLint, format check, production build, and diff check: PASS.
-- Authenticated Production customer/Admin/Owner and same-session tests:
-  PENDING final deployment and intentional signed-in browser sessions. The
-  pre-diff Production runtime already passes Clerk → Convex authentication and
-  non-member/Admin-denial checks.
+## Production acceptance boundary
 
-Warnings observed during smoke were framework/browser advisory messages only
-(Clerk development-key notice, Next image LCP advice, and smooth-scroll
-metadata advice); no route test recorded a console error or page error.
+No dummy Production data was created. No Production publisher, product, stock, catalog, access code/grant, order,
+invoice, payment, deposit, notification, or Inbox record was mutated during local QA.
 
-## Codebase Memory pre-flight answers
+Still required before Phase 07.1 closure:
 
-1. Customer primary navigation is rendered by `src/components/site-shell.tsx`.
-2. The elevated customer-side entry is `AdminShellLink`; Admin reverse access is
-   rendered by the Admin branch of `SiteShell`, with `AdminNav` providing the
-   sidebar link.
-3. `/admin` authorization is enforced by `src/app/admin/layout.tsx` for Clerk
-   sign-in, `ProductAccessGuard` for BFG role/status, and Convex permission/
-   ownership helpers for server-side authorization.
-4. Profile and Addresses existed but had no natural Account dashboard entry;
-   both now have links. Dynamic order/invoice details are reachable from their
-   list/activity surfaces when authorized records exist.
-5. No customer route was found to be an unfinished placeholder. Catalog detail
-   is intentionally an inline state and is classified `DEFERRED_BY_PRD`; private
-   populated/detail routes remain `AUTH_BLOCKED` or `BLOCKED_BY_DATA`, not empty
-   green states.
-6. Existing canonical query/mutation paths were reused: `orders.listMine`,
-   `invoices.listMine`, deposit projections, `customerProfiles`,
-   `customerAddresses`, `catalogAccess`, `readyStock`, and canonical order
-   creation.
-7. Customer/Admin share `src/components/ui.tsx` primitives and tokens, but
-   workspace shell/navigation styles are scoped: customer under
-   `.customer-shell`, Admin under `.admin-*`.
-8. Graph evidence showed `SiteShell` has 34 inbound route/component callers and
-   `AdminShellLink` had 35 inbound callers because it was mounted in the shared
-   signed-in customer nav. The fix removes that mount point and keeps the link
-   in the account-access region.
-9. Admin shell blast radius is `SiteShell` Admin branch, `AdminNav`, and shared
-   Admin CSS used by all major Admin list/detail routes; no query or schema was
-   changed.
-10. Customer blast radius is limited to signed-in desktop header composition,
-    account-dashboard links, and shared auth-link styling. Customer mobile
-    bottom navigation, public navigation, and domain flows remain unchanged.
+1. Restore authorized Convex CLI access, run schema/codegen acceptance against canonical Development, then deploy the
+   reconciled commit to canonical Convex Production and Vercel Production.
+2. Use one intentional real Owner/Admin, one admitted real Customer, and one real client product.
+3. Admin creates/uploads/publishes the product and assigns Ready Stock or Secret Catalog; Customer verifies projection.
+4. Admin generates/copies access, Customer unlocks, Admin revokes, and access consequence is observed.
+5. Execute one safe real Admin and Customer notification plus representative Inbox event and verify cross-customer denial.
+6. Capture authenticated Admin at 1024/1280/1440 and populated Customer at 375/390/430/1440 against the mockups.
 
-## Phase 07.1 admission and visual closure delta
-
-The canonical admission state machine is in
-`BFG-BLESSFRIEND-ADMISSION-FLOW.md`. Deterministic tests now cover:
-
-- public and signed-in missing-`appUser` Join entry;
-- valid persistence, duplicate unresolved-request prevention, and retained
-  history;
-- pending Admin count, review, approve, reject, and authorization;
-- existing Clerk identity reuse without duplicate `appUser` creation;
-- no auto-admission from Clerk login and active-appUser private-route unlock;
-- pending sidebar badge/dashboard attention and resolved-count behavior;
-- recoverable approval handoff failure with explicit retry state.
-
-The customer header now has one shared `SiteShell`/`BrandLogo` path using
-`Logo-1`; Admin uses the same asset. Admin navigation keeps one existing
-outlined icon family. Ready Stock, Exceptions, and Refunds share the Admin
-operational page grammar while keeping their distinct domain content.
-
-## State-machine evidence
-
-The workspace and authenticated-page state contract is recorded in
-`BFG-WORKSPACE-ACCESS-MATRIX.md`: `AUTH_SYNCING` → appUser resolution →
-authorization → data loading → empty/populated/error. Invalid customer → Admin
-transitions are covered by the guard tests and rejected before Admin children
-mount. Convex remains the authoritative second boundary.
-
-## Current closure gate
-
-The code is merged and pushed to `origin/main`. Vercel Production deployment
-`dpl_EwKcjS8T7WrPRXwNKZD6JvDNnBpJ` is `READY`; alias verification passed at
-`https://www.blessingforgood.com`; Convex Production is `clean-eel-522`.
-Public live focused QA is `19/19`: How To Order and Ready Stock at
-375/390/430/768/1440px, plus signed-out Ready Stock/Exceptions/Refunds Admin
-gates at 1024/1280/1440px. No backend data mutation was run.
-
-The current code still awaits a successful deployment plus intentional real
-customer/Admin/Owner sessions. Rerun:
-
-1. real customer sign-in, `/account` → Profile → Addresses → direct `/admin`
-   denial;
-2. real Admin/Owner sign-in, customer workspace → Admin switch → `Lihat sisi
-   customer`;
-3. authenticated Admin screenshots at 1440, 1280, and 1024px against the ten
-   local Admin mockups;
-4. authenticated customer populated/detail screenshots at 390 and 1440px.
-
-No Phase 08 work is authorized by this result.
+Until those gates pass: `CLIENT PRODUCT ENTRY = NOT SAFE`, `PHASE 08 READINESS = NO`, and
+`BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` must not be declared.

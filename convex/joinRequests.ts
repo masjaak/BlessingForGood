@@ -8,6 +8,7 @@ import { fail } from "./lib/errors";
 import { admitApprovedJoinRequest } from "./users";
 import { joinRequestStatusValidator } from "./validators";
 import { joinRequestBookInterestValidator } from "./validators";
+import { notifyAdmins, notifyUser } from "./lib/notifications";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 type JoinRequestAdmissionStatus = "pending" | "invitation_pending" | "active" | "rejected";
@@ -169,6 +170,24 @@ export const submit = mutation({
       createdAt: now,
       updatedAt: now,
     });
+    await notifyAdmins(ctx, {
+      surface: "inbox",
+      eventType: "join_request.submitted",
+      title: "Permintaan bergabung baru",
+      body: `${name} mengirim permintaan bergabung.`,
+      destination: "/admin/join-requests",
+      relatedEntityType: "joinRequest",
+      relatedEntityId: String(joinRequestId),
+    });
+    await notifyAdmins(ctx, {
+      surface: "notification",
+      eventType: "join_request.submitted",
+      title: "Join Request baru",
+      body: `${name} menunggu tinjauan Admin.`,
+      destination: "/admin/join-requests",
+      relatedEntityType: "joinRequest",
+      relatedEntityId: String(joinRequestId),
+    });
     const configuredGroupUrl = process.env.BFG_JOIN_WHATSAPP_GROUP_URL;
     let whatsappGroupUrl: string | null = null;
     if (configuredGroupUrl) {
@@ -280,7 +299,18 @@ export const approve = mutation({
     if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
     if (updated.applicantClerkUserId) {
       try {
-        await admitApprovedJoinRequest(ctx, updated, reviewer._id);
+        const admitted = await admitApprovedJoinRequest(ctx, updated, reviewer._id);
+        if (admitted) {
+          await notifyUser(ctx, admitted._id, {
+            surface: "notification",
+            eventType: "join_request.approved",
+            title: "Akun Blessfriend aktif",
+            body: "Permintaan bergabungmu disetujui. Workspace customer sudah tersedia.",
+            destination: "/account",
+            relatedEntityType: "joinRequest",
+            relatedEntityId: String(request._id),
+          });
+        }
       } catch {
         await ctx.db.patch(request._id, { admissionError: "Admission handoff needs retry.", updatedAt: Date.now() });
         await recordAudit(ctx, reviewer._id, "join_request.admission_failed", "join_request", request._id, {

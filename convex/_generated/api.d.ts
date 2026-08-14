@@ -9,6 +9,7 @@
  */
 
 import type * as batchTracking from "../batchTracking.js";
+import type * as auditEvents from "../auditEvents.js";
 import type * as batches from "../batches.js";
 import type * as bookVariants from "../bookVariants.js";
 import type * as books from "../books.js";
@@ -16,7 +17,9 @@ import type * as catalogAccess from "../catalogAccess.js";
 import type * as catalogItems from "../catalogItems.js";
 import type * as customerAddresses from "../customerAddresses.js";
 import type * as customerProfiles from "../customerProfiles.js";
+import type * as contentBlocks from "../contentBlocks.js";
 import type * as depositAccounts from "../depositAccounts.js";
+import type * as depositTopUps from "../depositTopUps.js";
 import type * as depositTransactions from "../depositTransactions.js";
 import type * as invoiceDepositAllocations from "../invoiceDepositAllocations.js";
 import type * as invoices from "../invoices.js";
@@ -31,10 +34,12 @@ import type * as lib_errors from "../lib/errors.js";
 import type * as lib_fulfillmentTransitions from "../lib/fulfillmentTransitions.js";
 import type * as lib_invoiceCalculations from "../lib/invoiceCalculations.js";
 import type * as lib_invoiceNumbers from "../lib/invoiceNumbers.js";
+import type * as lib_notifications from "../lib/notifications.js";
 import type * as lib_previewCapability from "../lib/previewCapability.js";
 import type * as lib_sessions from "../lib/sessions.js";
 import type * as lib_shipmentTransitions from "../lib/shipmentTransitions.js";
 import type * as lib_validation from "../lib/validation.js";
+import type * as notifications from "../notifications.js";
 import type * as orderFulfillment from "../orderFulfillment.js";
 import type * as orderExceptions from "../orderExceptions.js";
 import type * as orders from "../orders.js";
@@ -42,14 +47,17 @@ import type * as paymentConfirmations from "../paymentConfirmations.js";
 import type * as prototypeSessions from "../prototypeSessions.js";
 import type * as publishers from "../publishers.js";
 import type * as readyStock from "../readyStock.js";
+import type * as reports from "../reports.js";
 import type * as refunds from "../refunds.js";
 import type * as secretCatalogs from "../secretCatalogs.js";
+import type * as settings from "../settings.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 
 import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auditEvents: typeof auditEvents;
   batchTracking: typeof batchTracking;
   batches: typeof batches;
   bookVariants: typeof bookVariants;
@@ -58,7 +66,9 @@ declare const fullApi: ApiFromModules<{
   catalogItems: typeof catalogItems;
   customerAddresses: typeof customerAddresses;
   customerProfiles: typeof customerProfiles;
+  contentBlocks: typeof contentBlocks;
   depositAccounts: typeof depositAccounts;
+  depositTopUps: typeof depositTopUps;
   depositTransactions: typeof depositTransactions;
   invoiceDepositAllocations: typeof invoiceDepositAllocations;
   invoices: typeof invoices;
@@ -73,10 +83,12 @@ declare const fullApi: ApiFromModules<{
   "lib/fulfillmentTransitions": typeof lib_fulfillmentTransitions;
   "lib/invoiceCalculations": typeof lib_invoiceCalculations;
   "lib/invoiceNumbers": typeof lib_invoiceNumbers;
+  "lib/notifications": typeof lib_notifications;
   "lib/previewCapability": typeof lib_previewCapability;
   "lib/sessions": typeof lib_sessions;
   "lib/shipmentTransitions": typeof lib_shipmentTransitions;
   "lib/validation": typeof lib_validation;
+  notifications: typeof notifications;
   orderFulfillment: typeof orderFulfillment;
   orderExceptions: typeof orderExceptions;
   orders: typeof orders;
@@ -84,8 +96,10 @@ declare const fullApi: ApiFromModules<{
   prototypeSessions: typeof prototypeSessions;
   publishers: typeof publishers;
   readyStock: typeof readyStock;
+  reports: typeof reports;
   refunds: typeof refunds;
   secretCatalogs: typeof secretCatalogs;
+  settings: typeof settings;
   users: typeof users;
   validators: typeof validators;
 }>;

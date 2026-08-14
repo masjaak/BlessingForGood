@@ -8,6 +8,8 @@ import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { invoiceProjection } from "./lib/invoiceProjection";
 import { paymentConfirmationStatusValidator } from "./validators";
+import { notifyAdmins, notifyUser } from "./lib/notifications";
+import { validateStoredFile } from "./lib/storage";
 
 type DataCtx = QueryCtx | MutationCtx;
 type PaymentConfirmationStatus = "submitted" | "under_review" | "approved" | "rejected";
@@ -63,6 +65,7 @@ async function confirmationView(ctx: DataCtx, confirmation: Doc<"paymentConfirma
     transferReference: confirmation.transferReference ?? null,
     paidAt: new Date(confirmation.paidAt).toISOString(),
     proofReference: confirmation.proofReference ?? null,
+    proofUrl: confirmation.proofStorageId ? await ctx.storage.getUrl(confirmation.proofStorageId) : null,
     customerNote: confirmation.customerNote ?? null,
     status: confirmation.status,
     submittedAt: new Date(confirmation.submittedAt).toISOString(),
@@ -106,6 +109,7 @@ export const submit = mutation({
     transferReference: v.optional(v.string()),
     paidAt: v.number(),
     proofReference: v.optional(v.string()),
+    proofStorageId: v.optional(v.id("_storage")),
     customerNote: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -117,6 +121,14 @@ export const submit = mutation({
     validateAmount(args.amount);
     validatePaidAt(args.paidAt);
     if (args.amount > invoice.outstandingAmount) fail("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
+    const proofContentType = args.proofStorageId
+      ? await validateStoredFile(
+          ctx,
+          args.proofStorageId,
+          new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
+          "payment proof must be JPG, PNG, WebP, or PDF up to 5 MB",
+        )
+      : undefined;
     const existing = await ctx.db
       .query("paymentConfirmations")
       .withIndex("by_invoice", (index) => index.eq("invoiceId", invoice._id))
@@ -133,6 +145,8 @@ export const submit = mutation({
       transferReference: optionalText(args.transferReference, "transfer reference", 160),
       paidAt: args.paidAt,
       proofReference: optionalText(args.proofReference, "proof reference", 500),
+      proofStorageId: args.proofStorageId,
+      proofContentType,
       customerNote: optionalText(args.customerNote, "customer note", 500),
       status: "submitted",
       submittedAt: now,
@@ -144,9 +158,26 @@ export const submit = mutation({
       invoiceId: invoice._id,
       amount: String(args.amount),
     });
+    await notifyAdmins(ctx, {
+      surface: "notification",
+      eventType: "payment_confirmation.submitted",
+      title: "Konfirmasi pembayaran baru",
+      body: `Pembayaran ${invoice.invoiceNumber} menunggu verifikasi.`,
+      destination: "/admin/payments",
+      relatedEntityType: "paymentConfirmation",
+      relatedEntityId: String(confirmationId),
+    });
     const confirmation = await ctx.db.get(confirmationId);
     if (!confirmation) fail("PAYMENT_CONFIRMATION_NOT_FOUND");
     return confirmationView(ctx, confirmation, false);
+  },
+});
+
+export const generateProofUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "invoices.read.own");
+    return ctx.storage.generateUploadUrl();
   },
 });
 
@@ -206,6 +237,15 @@ export const approve = mutation({
       invoiceId: invoice._id,
       amount: String(confirmation.amount),
     });
+    await notifyUser(ctx, confirmation.customerUserId, {
+      surface: "notification",
+      eventType: "payment_confirmation.approved",
+      title: "Pembayaran disetujui",
+      body: `Pembayaran untuk ${invoice.invoiceNumber} sudah diverifikasi.`,
+      destination: `/account/invoices/${invoice._id}`,
+      relatedEntityType: "paymentConfirmation",
+      relatedEntityId: String(confirmation._id),
+    });
     const updated = await ctx.db.get(confirmation._id);
     if (!updated) fail("PAYMENT_CONFIRMATION_NOT_FOUND");
     return confirmationView(ctx, updated, true);
@@ -245,6 +285,15 @@ export const reject = mutation({
     });
     await recordAudit(ctx, user._id, "payment_confirmation.rejected", "payment_confirmation", confirmation._id, {
       invoiceId: invoice._id,
+    });
+    await notifyUser(ctx, confirmation.customerUserId, {
+      surface: "notification",
+      eventType: "payment_confirmation.rejected",
+      title: "Pembayaran perlu diperbaiki",
+      body: `Konfirmasi untuk ${invoice.invoiceNumber} ditolak.`,
+      destination: `/account/invoices/${invoice._id}`,
+      relatedEntityType: "paymentConfirmation",
+      relatedEntityId: String(confirmation._id),
     });
     const updated = await ctx.db.get(confirmation._id);
     if (!updated) fail("PAYMENT_CONFIRMATION_NOT_FOUND");

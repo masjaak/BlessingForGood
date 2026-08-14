@@ -54,6 +54,14 @@ describe("BFG batch roster and assisted orders", () => {
       purchaseSummary: [{ bookVariantId: catalog.variantIds[0], quantity: 2, customerCount: 2 }],
     });
     expect(detail.customerRoster).toHaveLength(2);
+    expect(await customer.query(api.batchTracking.listMine, {})).toEqual([
+      expect.objectContaining({ batchId: batch.batchId, name: "Roster Batch" }),
+    ]);
+    expect(await customer.query(api.notifications.listMine, { surface: "notification" })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ eventType: "batch.opened", destination: `/account/batches/${batch.batchId}` }),
+      ]),
+    );
     const unassigned = await admin.query(api.batchTracking.listUnassignedForAdmin, { batchId: batch.batchId });
     expect(unassigned).toMatchObject([{ orderItemId: firstOrder.items[0]._id, remainingQuantity: 1 }]);
     const actions = await t.run(async (ctx) =>
