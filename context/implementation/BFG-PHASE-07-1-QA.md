@@ -1,6 +1,6 @@
 # BFG Phase 07.1 QA
 
-Status: `BFG_PHASE_07_1_LOCAL_CLOSURE_PRODUCTION_PILOT_BLOCKED`
+Status: `BFG_PHASE_07_1_PRODUCTION_DEPLOYED_PRODUCTION_PILOT_BLOCKED`
 
 The loading regression, product projection guards, customer-safe fields, and
 continuous How To Order journey are locally closed. Final Production
@@ -200,13 +200,12 @@ mount. Convex remains the authoritative second boundary.
 
 ## Current closure gate
 
-The code is merged locally and pushed to `origin/main` at commit
-`3948fdc906c9d822b8bbf7762e498d7f4fe7ca52`. The requested Vercel Production
-deployment could not start: both the Vercel CLI and linked-project API returned
-`Not authorized`/`403 Forbidden` for the existing project credentials. The
-previous Production deployment `dpl_3vfdSRji8mXJtvZAWpa7YxWfxfYW` remains the
-live code; this change set is not claimed live. Convex Production remains
-`clean-eel-522`; no backend data mutation was run.
+The code is merged and pushed to `origin/main`. Vercel Production deployment
+`dpl_8y4JAnQz5mj2mqf3Byxx7HpYQWXm` is `READY` and aliased to
+`https://www.blessingforgood.com`; Convex Production is `clean-eel-522`.
+Public live focused QA is `19/19`: How To Order and Ready Stock at
+375/390/430/768/1440px, plus signed-out Ready Stock/Exceptions/Refunds Admin
+gates at 1024/1280/1440px. No backend data mutation was run.
 
 The current code still awaits a successful deployment plus intentional real
 customer/Admin/Owner sessions. Rerun:

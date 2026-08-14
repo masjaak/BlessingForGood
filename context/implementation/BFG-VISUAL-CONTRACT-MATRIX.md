@@ -1,6 +1,6 @@
 # BFG Visual Contract Matrix
 
-Status: `PHASE_07_1_RENDERED_VISUAL_CONTRACT_VERIFIED_PRODUCTION_PILOT_BLOCKED`
+Status: `PHASE_07_1_RENDERED_VISUAL_CONTRACT_VERIFIED_PRODUCTION_DEPLOYED_PILOT_BLOCKED`
 
 Approved sources are the local customer mockups, the Admin mockup set, the
 current V4.1/V4.1.3 visual grammar, and the official local `Logo-1`/Blessy

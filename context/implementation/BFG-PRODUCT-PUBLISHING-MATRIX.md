@@ -1,6 +1,6 @@
 # BFG Product Publishing Matrix
 
-Status: `PHASE_07_1_VISIBILITY_GUARDS_FIXED_LOCAL_PASS_PRODUCTION_PILOT_BLOCKED`
+Status: `PHASE_07_1_VISIBILITY_GUARDS_FIXED_PRODUCTION_DEPLOYED_PILOT_BLOCKED`
 
 Publication and access are separate channels. A Book Master record existing in
 Convex is not sufficient for customer visibility.
