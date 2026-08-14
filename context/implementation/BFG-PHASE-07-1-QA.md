@@ -82,7 +82,7 @@ Full current baseline:
 
 ## Codebase Memory post-diff
 
-- Full index refreshed: 2,700 nodes / 7,444 edges; no skipped source files.
+- Full index refreshed after the final commit: 2,709 nodes / 7,452 edges; no skipped source files.
 - Blast radius from `8392d22`: 139 changed seed symbols, 66 impacted symbols, not truncated.
 - Impact is concentrated in `convex`, Admin/Customer routes, shared UI/shell, and prototype operation adapters.
 - Expected security/financial reach: auth helpers, deposit ledger/accounts, order exceptions/refunds, user RBAC, and
