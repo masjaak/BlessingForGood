@@ -2,7 +2,7 @@
 
 import type { FunctionReturnType } from "convex/server";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
@@ -108,6 +108,11 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | null>(null);
+  const coverPreviewUrl = useMemo(() => (coverFile ? URL.createObjectURL(coverFile) : null), [coverFile]);
+
+  useEffect(() => {
+    if (coverPreviewUrl) return () => URL.revokeObjectURL(coverPreviewUrl);
+  }, [coverPreviewUrl]);
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -233,7 +238,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                 <BookCover
                   title={book.title}
                   publisher={book.publisher?.name || "BFG"}
-                  src={book.coverUrl || undefined}
+                  src={coverPreviewUrl || book.coverUrl || undefined}
                 />
                 <Field label="Upload cover" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
                   <input
@@ -251,9 +256,14 @@ function BookEditor({ book }: { book: AdminBook }) {
                   pendingLabel="Mengunggah…"
                   onClick={() => void uploadCover()}
                 >
-                  Upload cover
+                  Save cover
                 </Button>
               </div>
+              {coverFile ? (
+                <p className="subtle" role="status">
+                  Preview siap disimpan: {coverFile.name}
+                </p>
+              ) : null}
               <Field label="Deskripsi">
                 <textarea
                   className="textarea"

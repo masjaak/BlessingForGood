@@ -19,13 +19,14 @@ export function BookCover({
   const [imageFailed, setImageFailed] = useState(false);
   const localSource = src?.startsWith("/") ? src : undefined;
   const storageSource = /^https:\/\/[^/]+\.convex\.cloud\/api\/storage\//.test(src || "") ? src : undefined;
+  const previewSource = src?.startsWith("blob:") ? src : undefined;
 
   return (
     <div className="book-cover">
-      {storageSource && !imageFailed ? (
+      {(storageSource || previewSource) && !imageFailed ? (
         // Convex returns short-lived signed storage URLs whose hostname is deployment-specific.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={storageSource} alt={alt || `${title} cover`} onError={() => setImageFailed(true)} />
+        <img src={storageSource || previewSource} alt={alt || `${title} cover`} onError={() => setImageFailed(true)} />
       ) : localSource && !imageFailed ? (
         <Image
           src={localSource}

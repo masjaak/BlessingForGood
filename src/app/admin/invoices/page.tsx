@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
@@ -21,30 +22,51 @@ import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/o
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
-function PersistentRequirementForm({ orderId }: { orderId: string }) {
-  const { createInvoice } = useOperations();
+export function PersistentRequirementForm({ orderId }: { orderId: string }) {
+  const { createInvoice, issueInvoice } = useOperations();
   const [mode, setMode] = useState<InvoiceRequirementMode>("none");
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"draft" | "issue" | null>(null);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveInvoice(issue: boolean) {
     setMessage("");
-    setIsSaving(true);
+    setCreatedInvoiceId(null);
+    setPendingAction(issue ? "issue" : "draft");
+    let invoiceId: string | null = null;
     try {
-      await createInvoice(orderId, mode, mode === "none" ? undefined : Number(value));
+      const draft = await createInvoice(orderId, mode, mode === "none" ? undefined : Number(value));
+      invoiceId = draft.invoiceId;
+      setCreatedInvoiceId(invoiceId);
+      if (issue) {
+        await issueInvoice(invoiceId);
+        setMessage("Invoice issued.");
+      } else {
+        setMessage("Invoice draft saved.");
+      }
       setValue("");
-      setMessage("Draft saved.");
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Invoice could not be created");
+      setMessage(
+        invoiceId
+          ? "Draft saved, but the invoice is not issued yet. Open invoice operations to retry."
+          : reason instanceof Error
+            ? reason.message
+            : "Invoice could not be created",
+      );
     } finally {
-      setIsSaving(false);
+      setPendingAction(null);
     }
   }
 
   return (
-    <form className="form-actions" onSubmit={handleSubmit}>
+    <form
+      className="form-actions"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void saveInvoice(false);
+      }}
+    >
       <label className="field">
         <span className="field-label">Deposit rule</span>
         <select
@@ -71,9 +93,29 @@ function PersistentRequirementForm({ orderId }: { orderId: string }) {
           />
         </Field>
       ) : null}
-      <Button type="submit" pending={isSaving} pendingLabel="Saving…">
+      <Button
+        type="submit"
+        pending={pendingAction === "draft"}
+        disabled={pendingAction !== null}
+        pendingLabel="Saving…"
+      >
         Save draft
       </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        pending={pendingAction === "issue"}
+        disabled={pendingAction !== null}
+        pendingLabel="Issuing…"
+        onClick={() => void saveInvoice(true)}
+      >
+        Issue invoice
+      </Button>
+      {createdInvoiceId ? (
+        <LinkButton href={`/admin/invoices/${createdInvoiceId}`} variant="quiet">
+          Open invoice operations
+        </LinkButton>
+      ) : null}
       {message ? (
         <span className="subtle" role="status">
           {message}
@@ -83,9 +125,50 @@ function PersistentRequirementForm({ orderId }: { orderId: string }) {
   );
 }
 
+function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
+  const { issueInvoice } = useOperations();
+  const [message, setMessage] = useState("");
+  const [isIssuing, setIsIssuing] = useState(false);
+
+  async function issue() {
+    setMessage("");
+    setIsIssuing(true);
+    try {
+      await issueInvoice(invoiceId);
+      setMessage("Issued.");
+    } catch (reason) {
+      setMessage(reason instanceof Error ? reason.message : "Invoice could not be issued");
+    } finally {
+      setIsIssuing(false);
+    }
+  }
+
+  return (
+    <span className="form-actions">
+      <Button
+        type="button"
+        variant="secondary"
+        pending={isIssuing}
+        pendingLabel="Issuing…"
+        onClick={() => void issue()}
+      >
+        Issue invoice
+      </Button>
+      {message ? (
+        <span className="subtle" role="status">
+          {message}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function PersistentAdminInvoices() {
   const { state } = useProduct();
   const { adminInvoiceList } = useOperations();
+  const searchParams = useSearchParams();
+  const requestedOrderId = searchParams.get("orderId");
+  const requestedCustomerId = searchParams.get("customerId");
   const invoices = adminInvoiceList?.page || [];
   if (!adminInvoiceList) {
     return (
@@ -96,7 +179,10 @@ function PersistentAdminInvoices() {
     );
   }
   const ordersWithoutInvoices = state.orders.filter(
-    (order) => !invoices.some((invoice) => invoice.orderId === order.id && invoice.status !== "void"),
+    (order) =>
+      (!requestedOrderId || order.id === requestedOrderId) &&
+      (!requestedCustomerId || order.customerUserId === requestedCustomerId) &&
+      !invoices.some((invoice) => invoice.orderId === order.id && invoice.status !== "void"),
   );
   return (
     <div className="page admin-page">
@@ -151,6 +237,7 @@ function PersistentAdminInvoices() {
                   <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
                     Open invoice operations
                   </LinkButton>
+                  {invoice.status === "draft" ? <IssueInvoiceButton invoiceId={invoice.invoiceId} /> : null}
                 </Card>
               ))}
             </div>

@@ -88,3 +88,26 @@ Manual WhatsApp links/handoffs and manual bank-transfer review remain allowed wh
 - Cross-domain global Admin search; route-level canonical search is current.
 
 These backlog items do not supersede any included Phase 07.1 requirement listed above.
+
+## Phase 07.1 operational reconciliation delta — 2026-08-14
+
+- The Admin Invoices & Deposit queue now exposes the canonical draft-to-issued
+  invoice journey directly: create a draft, issue it immediately when valid,
+  or issue an existing draft from the queue. Invoice snapshots, integer IDR,
+  ownership, state guards, audit, and recipient notification remain owned by
+  the existing Convex invoice mutations.
+- Admin Book Master now previews a selected cover locally before saving it.
+  The saved reference still goes through the existing authorized Convex
+  storage URL and server metadata validation; replacement deletes the previous
+  stored object only after the new reference is attached successfully.
+- Admin Customer detail now exposes contextual “Buat invoice” and “Kelola
+  deposit” links and connects each order to its existing invoice or the
+  canonical invoice-creation flow. These are discoverability fixes, not new
+  financial shortcuts.
+- The Admin sidebar uses one fixed icon wrapper, shared optical size, baseline,
+  gap, row height, active state, and badge alignment. Authenticated rendered
+  comparison remains an external acceptance gate.
+- Canonical Development validation was rechecked with
+  `npm run convex:check`; the configured CLI identity still cannot access
+  `content-snake-214`, so no Convex Production or Vercel deployment is claimed
+  by this local reconciliation.

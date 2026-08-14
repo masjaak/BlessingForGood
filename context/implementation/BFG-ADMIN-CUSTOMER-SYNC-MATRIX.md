@@ -26,3 +26,15 @@ evidence, not a substitute for the Production column.
 
 Local sync gaps: `0 UNCLASSIFIED`. Production gaps are explicit and intentionally remain `PENDING`, never inferred from
 Convex reactivity.
+
+## Final local reconciliation delta
+
+- Invoice queue create-and-issue and issue-from-queue both use the existing
+  canonical invoice mutations; the customer invoice query and invoice-issued
+  notification remain the downstream consequence. Production event acceptance
+  is pending.
+- Cover selection preview is local-only UI state. Save still uses the existing
+  authorized storage reference, book projection, and customer cover fallback;
+  replacement cleanup remains server-controlled. Production pilot is pending.
+- Customer detail invoice/deposit links add reachability only and introduce no
+  second source of truth.

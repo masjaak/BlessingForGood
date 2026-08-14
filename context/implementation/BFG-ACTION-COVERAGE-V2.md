@@ -45,3 +45,16 @@ Reconciled: 2026-08-14. This is the zero-dead-control gate for the local change 
 
 Local gate: `UNKNOWN=0`, `DEAD_ACTION=0`. A `PARTIAL` row is operational locally but awaits the Production acceptance
 shown in the master matrix; it is not a hidden or dead control.
+
+## Final local audit additions
+
+| Surface / Control | Visible | Handler | Backend | State / consequence | Local status | Production Verified |
+| --- | --- | --- | --- | --- | --- | --- |
+| Admin invoice create and issue | YES | create then issue | `invoices.create`, `invoices.issue` | draft→issued; customer invoice/notification | ACTIVE_VERIFIED_LOCAL | NO |
+| Existing draft issue from queue | YES | issue action | `invoices.issue` | only valid draft transitions | ACTIVE_VERIFIED_LOCAL | NO |
+| Book cover local preview and save | YES | native file input + save | upload URL + `books.attachCover` | selected file→durable reference | ACTIVE_VERIFIED_LOCAL | NO |
+| Customer detail invoice/deposit context links | YES | route links | existing canonical flows | operator reaches intended workflow | ACTIVE_VERIFIED_LOCAL | NO |
+| Admin sidebar optical row primitive | YES | route link | n/a | shared icon box/baseline/badge geometry | ACTIVE_VERIFIED_LOCAL | NO |
+
+These additions do not change the zero-unknown/zero-dead-control result. They
+remain local until canonical validation, deployment, and authenticated UAT pass.

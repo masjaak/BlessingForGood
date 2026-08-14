@@ -56,9 +56,17 @@ function CustomerDetail() {
         title={name}
         description="Profil, alamat, pesanan, invoice, dan masalah customer dari sumber operasional yang sama."
         actions={
-          <LinkButton href="/admin/customers" variant="secondary">
-            Kembali
-          </LinkButton>
+          <span className="form-actions">
+            <LinkButton href={`/admin/invoices?customerId=${customerId}`} variant="secondary">
+              Buat invoice
+            </LinkButton>
+            <LinkButton href={`/admin/deposits?customerId=${customerId}`} variant="secondary">
+              Kelola deposit
+            </LinkButton>
+            <LinkButton href="/admin/customers" variant="quiet">
+              Kembali
+            </LinkButton>
+          </span>
         }
       />
       <div className="admin-workspace">
@@ -86,18 +94,34 @@ function CustomerDetail() {
               <StatusBadge>{orders.length}</StatusBadge>
             </div>
             {orders.length ? (
-              orders.map((order) => (
-                <div className="summary-line" key={order.id}>
-                  <span>
-                    <LinkButton href={`/admin/orders/${order.id}`} variant="quiet">
-                      {order.id}
-                    </LinkButton>
-                    <br />
-                    <small>{orderStatusLabels[order.status]}</small>
-                  </span>
-                  <Money amount={order.total} />
-                </div>
-              ))
+              orders.map((order) => {
+                const orderInvoice = invoices.find(
+                  (invoice) => invoice.orderId === order.id && invoice.status !== "void",
+                );
+                return (
+                  <div className="summary-line" key={order.id}>
+                    <span>
+                      <LinkButton href={`/admin/orders/${order.id}`} variant="quiet">
+                        {order.id}
+                      </LinkButton>
+                      <br />
+                      <small>{orderStatusLabels[order.status]}</small>
+                    </span>
+                    <span className="form-actions">
+                      <Money amount={order.total} />
+                      {orderInvoice ? (
+                        <LinkButton href={`/admin/invoices/${orderInvoice.invoiceId}`} variant="quiet">
+                          Buka invoice
+                        </LinkButton>
+                      ) : (
+                        <LinkButton href={`/admin/invoices?orderId=${order.id}`} variant="secondary">
+                          Buat invoice
+                        </LinkButton>
+                      )}
+                    </span>
+                  </div>
+                );
+              })
             ) : (
               <EmptyState title="Belum ada pesanan" description="Pesanan customer akan tampil di sini." />
             )}

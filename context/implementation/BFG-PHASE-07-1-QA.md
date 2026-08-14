@@ -54,7 +54,7 @@ Focused reconciliation suite after the trust-boundary refactor:
 
 Full current baseline:
 
-- Vitest: `163/163`, 33 files, PASS.
+- Vitest: `166/166`, 35 files, PASS.
 - Convex Vitest: `94/94`, 16 files, PASS.
 - Convex CLI schema/codegen check: BLOCKED. The configured CLI identity does not have access to canonical Development
   `content-snake-214`; the command stopped before changing any deployment. No alternate project was selected.
@@ -65,14 +65,31 @@ Full current baseline:
 - `git diff --check`: PASS.
 - No new runtime dependency.
 
+### Final operational completeness delta
+
+- Added `BFG-ADMIN-SECTION-OPERATIONAL-MATRIX.md` covering all 17 required
+  Admin sections and the requested action, state, authorization, consequence,
+  and Production-verification fields.
+- Invoice queue now supports direct create-and-issue and issue-from-queue;
+  Customer detail links to invoice creation and deposit management.
+- Book detail previews a selected cover before the existing durable, validated
+  storage save/replace operation.
+- Sidebar icon/text alignment now uses one shared fixed wrapper and the UI
+  regression suite checks that every Admin navigation row has it.
+- Local action coverage remains `UNKNOWN=0`, `DEAD_ACTION=0`; Production
+  verification remains `NO` for these changes.
+
 ## Rendered QA
 
 - Playwright route/viewport inventory: 155 checks.
 - Customer: 19 checks × 5 projects (375/390/430/768/1440).
 - Admin signed-out gates: 20 routes × 3 projects (1024/1280/1440).
-- Capped run: 152 PASS; three Admin-1024 tests timed out waiting on the Clerk development widget under concurrent
-  load. The exact `/admin/audit`, `/admin/inbox`, and `/admin/reports` checks then passed 3/3 sequentially with one
-  worker and retries disabled. No product assertion was suppressed by retry.
+- Capped run: 153 PASS; two transient checks failed on their first concurrent
+  attempt: Customer `/community` observed a stale local Convex
+  `contentBlocks:getPublished` function response, and Admin-1024 Notifications
+  received Clerk's 409 concurrency response. Both exact checks passed
+  sequentially with one worker and retries disabled. No product assertion was
+  suppressed by retry.
 - Ready Stock loading assertion was corrected to its real accessible loading region; all five widths then passed and
   screenshots show the canonical zero-data state rather than a skeleton.
 - Representative customer images at 375, 390, and 1440 were inspected visually; no horizontal overflow or console/page
@@ -82,7 +99,10 @@ Full current baseline:
 
 ## Codebase Memory post-diff
 
-- Full index refreshed after the final commit: 2,709 nodes / 7,452 edges; no skipped source files.
+- The prior reconciliation Codebase Memory index covered 2,709 nodes / 7,452
+  edges with no skipped source files. This final delta rechecked the impacted
+  Admin invoice, book, customer, navigation, and shared-cover callers with
+  repository symbol search; no Convex/schema files changed.
 - Blast radius from `8392d22`: 166 changed seed symbols, 71 impacted symbols, not truncated.
 - Impact is concentrated in `convex`, Admin/Customer routes, shared UI/shell, and prototype operation adapters.
 - Expected security/financial reach: auth helpers, deposit ledger/accounts, order exceptions/refunds, user RBAC, and

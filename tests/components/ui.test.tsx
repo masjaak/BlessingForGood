@@ -100,6 +100,9 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Books" }).getAttribute("href")).toBe("/admin/books");
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/admin/ready-stock");
     expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
+    expect(document.querySelectorAll(".admin-nav-icon-wrap").length).toBe(
+      document.querySelectorAll(".admin-nav-link").length,
+    );
   });
 
   it("shows only the live pending Join Requests count in the Admin sidebar", () => {

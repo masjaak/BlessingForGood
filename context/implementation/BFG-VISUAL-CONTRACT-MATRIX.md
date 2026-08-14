@@ -26,8 +26,11 @@ latest explicit notification/Inbox decision. DOM/CSS inspection is not counted a
 
 ## Rendered QA result
 
-- Full local smoke: 155 route/viewport checks. The capped run produced 152 PASS and three Clerk development-instance
-  concurrency timeouts; those exact tests passed sequentially with retries disabled.
+- Full local smoke: 155 route/viewport checks. The capped run produced 153
+  PASS and two transient concurrent checks: Customer `/community` observed a
+  stale local Convex `contentBlocks:getPublished` response, and Admin-1024
+  Notifications received Clerk's 409 concurrency response. Both exact checks
+  passed sequentially with retries disabled.
 - Ready Stock's component loading region is now the screenshot gate; five/five widths rendered the legitimate empty
   state rather than a skeleton.
 - Representative 375/390/1440 screenshots were visually inspected against the approved customer hierarchy.
@@ -37,3 +40,15 @@ latest explicit notification/Inbox decision. DOM/CSS inspection is not counted a
 The approved mockups define hierarchy, spacing, density, and control placement. Controls lacking a source contract
 (bulk import, global search, gallery, external preview) are intentionally omitted and classified in the action matrices;
 they are not rendered as dead affordances.
+
+## Final local visual delta
+
+- `AdminNav` now wraps every icon in the same fixed 22px square, with a shared
+  18px optical icon, baseline, row height, gap, active state, and badge rule.
+  The previous broad navigation selector that overrode the shared row rules
+  was removed.
+- Admin invoice queue and Customer detail now expose the source-defined
+  contextual actions at the point shown by the A-06/A-07 workflows.
+- Book detail shows the selected cover before persistence. This is local
+  rendered behavior; authenticated Admin screenshots at 1024/1280/1440 and
+  populated Customer screenshots remain externally blocked.

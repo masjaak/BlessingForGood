@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -10,13 +11,14 @@ import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, Money, StatusBadge } from "@/components/ui";
 
 function DepositOperations() {
+  const requestedCustomerId = useSearchParams().get("customerId") || "";
   const topUps = useQuery(api.depositTopUps.listForAdmin, {});
   const customers = useQuery(api.orders.listEligibleCustomers, {});
   const startReview = useMutation(api.depositTopUps.startReview);
   const approve = useMutation(api.depositTopUps.approve);
   const reject = useMutation(api.depositTopUps.reject);
   const adjust = useMutation(api.depositTransactions.adjust);
-  const [customerId, setCustomerId] = useState("");
+  const [customerId, setCustomerId] = useState(requestedCustomerId);
   const [direction, setDirection] = useState<"credit" | "debit">("credit");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");

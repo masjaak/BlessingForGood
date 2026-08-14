@@ -231,7 +231,9 @@ export function AdminNav() {
                 key={link.href}
                 href={link.href}
               >
-                <AdminNavIcon name={link.icon} />
+                <span className="admin-nav-icon-wrap">
+                  <AdminNavIcon name={link.icon} />
+                </span>
                 <span className="admin-nav-label">{link.label}</span>
                 {link.href === "/admin/join-requests" && pendingJoinRequests ? (
                   <span className="admin-nav-badge" aria-label={`${pendingJoinRequests} pending Join Requests`}>

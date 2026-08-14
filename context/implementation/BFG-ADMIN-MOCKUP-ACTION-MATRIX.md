@@ -44,3 +44,18 @@ no designated Owner/Admin browser identity is configured.
 
 Required visible controls: `UNKNOWN=0`, `DEAD_ACTION=0`. Controls not backed by the source contract are explicitly
 `INTENTIONAL_NON_ACTION`; they are not rendered as dead buttons.
+
+## Phase 07.1 final local audit delta
+
+- A-03 cover selection now shows a local preview before the existing durable
+  Save Cover operation. The action remains `ACTIVE_LOCAL`; Production proof is
+  pending deployment and an authorized real product pilot.
+- A-06 customer detail now exposes `Buat invoice` and `Kelola deposit`; order
+  rows link to an existing invoice or the canonical invoice creation flow.
+- A-07 invoice creation now has an explicit queue action for draft creation
+  and immediate issue, plus issue-from-queue for existing drafts.
+- Admin sidebar rows now use one fixed icon wrapper and shared optical
+  geometry. Authenticated mockup comparison is still `BLOCKED_BY_EXTERNAL`.
+- Global search, bulk import, product export, gallery, external preview, and
+  WhatsApp blast remain intentionally classified non-actions under the current
+  source contract; no placeholder controls were added.

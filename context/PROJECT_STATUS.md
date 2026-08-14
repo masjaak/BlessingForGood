@@ -12,9 +12,10 @@ Phase 07.1 implementation matrices. Required local product gaps are implemented,
 including visible Secret Catalog access management, product/proof uploads,
 Admin/Customer Notifications and operational Inbox, customer Batch and Deposit
 surfaces, reports/export/analytics, multi-Admin invitations, audit, content, and
-settings. The current deterministic baseline is Vitest `163/163`, Convex
+settings. The current deterministic baseline is Vitest `166/166`, Convex
 `94/94`, with typecheck, lint, format, build, diff check, and the documented
-rendered route/viewport suite passing.
+rendered route/viewport suite passing; the 155-check inventory completed with
+two known concurrent Clerk/local-Convex flakes that passed sequentially.
 
 This is not a closure or Production deployment claim. Convex CLI schema/codegen
 acceptance is blocked because the configured CLI identity cannot access canonical
@@ -24,6 +25,17 @@ flows are also blocked because no designated identities/client product were
 provided. No alternate deployment or dummy Production record was created. Until
 those external inputs are restored, client product entry is not safe and Phase 08
 must not start.
+
+### Final operational audit delta — 2026-08-14
+
+The local reconciliation additionally closes the discovered Admin reachability
+gaps: invoice create-and-issue is available from the Invoices & Deposit queue,
+existing drafts can be issued there, Book Master previews a selected cover
+before durable save, Customer detail links to invoice/deposit workflows, and
+Admin navigation rows share fixed optical geometry. These changes are local
+until canonical Convex validation, deployment, and authenticated acceptance
+are completed. The exact blocker remains lack of CLI access to Development
+project `content-snake-214`.
 
 ## Phase 07.1 Product Surface Stabilization
 

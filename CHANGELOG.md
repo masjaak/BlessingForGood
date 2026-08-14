@@ -8,6 +8,25 @@ source: conversation
 
 # Changelog
 
+## [phase-07.1-operational-completeness] — 2026-08-14
+
+### Changed
+
+- Added direct Admin invoice draft/issue actions and contextual customer
+  invoice/deposit links using the existing canonical operations.
+- Added selected-cover preview before durable Book Master save/replace.
+- Standardized Admin sidebar icon wrappers and optical row alignment.
+- Added the complete page-by-page Admin operational matrix and updated action,
+  visual, sync, and QA traceability records.
+
+### QA
+
+- Local regression tests cover invoice create-and-issue, cover preview, and
+  Admin navigation icon geometry.
+- Convex CLI canonical Development validation remains blocked by missing access
+  to `content-snake-214`; no Production deployment or business data mutation
+  was performed.
+
 ## [phase-07.1-admin-security] — 2026-08-13
 
 ### Security

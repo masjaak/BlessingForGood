@@ -37,4 +37,10 @@ describe("BookCover", () => {
 
     expect(screen.getByRole("img", { name: "A Quiet Book cover" }).getAttribute("src")).toContain("convex.cloud");
   });
+
+  it("renders the selected local preview without allowing arbitrary remote URLs", () => {
+    render(<BookCover title="A Quiet Book" publisher="BFG Press" src="blob:http://localhost/preview" />);
+
+    expect(screen.getByRole("img", { name: "A Quiet Book cover" }).getAttribute("src")).toContain("blob:");
+  });
 });

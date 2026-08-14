@@ -47,3 +47,18 @@ Every required Phase 07.1 area is classified below; `UNKNOWN=0`.
 - `EXCLUDED`: 2
 
 This is not a Phase 07.1 closure declaration. The Production column remains the controlling gap.
+
+## Current local reconciliation delta
+
+- `BOOK-03`: selected-cover preview plus Save Cover is now reachable from the
+  real Admin Book detail form; durable storage and replacement semantics remain
+  canonical. Production is still pending.
+- `INV-01`: the Invoices & Deposit queue now supports create-and-issue and
+  issue-from-queue in addition to the existing invoice detail operation.
+  Production is still pending.
+- `CUST-01`: customer detail now links to invoice creation and deposit
+  management, and each order exposes its existing invoice or the creation
+  route. No financial mutation was duplicated.
+- Admin shell: navigation rows now share a fixed icon box and optical layout.
+  DOM/CSS implementation is locally covered; authenticated image comparison
+  is still pending.

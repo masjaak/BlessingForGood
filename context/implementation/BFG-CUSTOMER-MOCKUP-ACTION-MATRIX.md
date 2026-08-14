@@ -32,3 +32,13 @@ blocked by the absence of a designated Customer QA identity and intentional real
 
 Required controls: `UNKNOWN=0`, `DEAD_ACTION=0`. Notification/Inbox placement follows the authenticated header; no
 floating controls or fake badges are used.
+
+## Phase 07.1 final local audit delta
+
+- Customer cover projection continues to consume the canonical stored cover
+  reference with the existing safe fallback. Admin-side preview/save changes
+  do not add a customer-side URL workaround.
+- Customer Notifications, Inbox, invoice, deposit, batch, and product rows
+  remain locally source-mapped and test-backed; authenticated populated
+  Production rendering is still pending deployment, designated identities, and
+  intentional real records.
