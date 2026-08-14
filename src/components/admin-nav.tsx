@@ -198,24 +198,26 @@ function isCurrent(pathname: string, href: string) {
   return pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`));
 }
 
-export function AdminNav() {
+export function AdminNav({ preview = false }: { preview?: boolean }) {
   const pathname = usePathname() || "/admin";
   const product = useContext(ProductContext);
   const sessionRole = product?.sessionRole;
-  const pendingJoinRequests = useQuery(api.joinRequests.pendingCount, product?.dataSource === "convex" ? {} : "skip");
-  const visibleGroups: AdminNavGroup[] = roleCanAccess(sessionRole || null, "owner")
-    ? [
-        ...groups,
-        {
-          label: "System",
-          links: [
-            { href: "/admin/users", label: "Users", icon: "users" },
-            { href: "/admin/audit", label: "Activity Log", icon: "audit" },
-            { href: "/admin/settings", label: "Settings", icon: "settings" },
-          ],
-        },
-      ]
-    : groups;
+  const canReadAdminNav = product?.dataSource === "convex" && roleCanAccess(sessionRole || null, "admin");
+  const pendingJoinRequests = useQuery(api.joinRequests.pendingCount, canReadAdminNav ? {} : "skip");
+  const visibleGroups: AdminNavGroup[] =
+    preview || roleCanAccess(sessionRole || null, "owner")
+      ? [
+          ...groups,
+          {
+            label: "System",
+            links: [
+              { href: "/admin/users", label: "Users", icon: "users" },
+              { href: "/admin/audit", label: "Activity Log", icon: "audit" },
+              { href: "/admin/settings", label: "Settings", icon: "settings" },
+            ],
+          },
+        ]
+      : groups;
 
   return (
     <nav className="admin-nav" aria-label="Navigasi admin">

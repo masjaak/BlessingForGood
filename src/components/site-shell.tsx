@@ -106,7 +106,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
   const signedIn = Boolean(isLoaded && isSignedIn);
   const product = useContext(ProductContext);
-  const activityEnabled = signedIn && product?.dataSource === "convex";
+  const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
   const isAdmin = pathname.startsWith("/admin");
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
 

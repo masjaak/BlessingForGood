@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import globalsCss from "../../src/app/globals.css?raw";
 import { useQuery } from "convex/react";
 import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
@@ -103,6 +104,13 @@ describe("public UI foundation", () => {
     expect(document.querySelectorAll(".admin-nav-icon-wrap").length).toBe(
       document.querySelectorAll(".admin-nav-link").length,
     );
+    expect(document.querySelectorAll(".admin-nav-icon").length).toBe(
+      document.querySelectorAll(".admin-nav-link").length,
+    );
+  });
+
+  it("does not leave a legacy selector to override the shared nav row", () => {
+    expect(globalsCss).not.toContain(".admin-nav a");
   });
 
   it("shows only the live pending Join Requests count in the Admin sidebar", () => {

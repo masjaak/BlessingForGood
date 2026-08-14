@@ -58,14 +58,14 @@ describe("Admin customer detail actions", () => {
 
     render(<AdminCustomerDetailPage />);
 
-    expect(
-      screen.getAllByRole("link", { name: "Buat invoice", exact: true }).map((link) => link.getAttribute("href")),
-    ).toContain("/admin/invoices?customerId=customer-1");
+    expect(screen.getAllByRole("link", { name: /^Buat invoice$/ }).map((link) => link.getAttribute("href"))).toContain(
+      "/admin/invoices?customerId=customer-1",
+    );
     expect(screen.getByRole("link", { name: "Kelola deposit" }).getAttribute("href")).toBe(
       "/admin/deposits?customerId=customer-1",
     );
-    expect(
-      screen.getAllByRole("link", { name: "Buat invoice", exact: true }).map((link) => link.getAttribute("href")),
-    ).toContain("/admin/invoices?orderId=order-1");
+    expect(screen.getAllByRole("link", { name: /^Buat invoice$/ }).map((link) => link.getAttribute("href"))).toContain(
+      "/admin/invoices?orderId=order-1",
+    );
   });
 });

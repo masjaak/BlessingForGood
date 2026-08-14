@@ -1,7 +1,9 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { PageAwareSkeleton } from "@/components/page-aware-skeleton";
 import { Button, ErrorState, LinkButton } from "@/components/ui";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
@@ -16,6 +18,7 @@ export function ProductAccessGuard({
   signedOutContent?: ReactNode;
 }) {
   const { hydrated, dataSource, sessionRole, userStatus, authState, retryAuth } = useProduct();
+  const pathname = usePathname() || "/";
 
   if (dataSource === "unavailable" || authState === "configuration-missing") {
     return (
@@ -73,11 +76,7 @@ export function ProductAccessGuard({
     );
   }
   if (!hydrated || authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
-    return (
-      <div className="guard-card" aria-live="polite">
-        Menyiapkan akun BFG…
-      </div>
-    );
+    return <PageAwareSkeleton workspace={pathname.startsWith("/admin") ? "admin" : "customer"} pathname={pathname} />;
   }
   const allowed = !requiredRole || roleCanAccess(sessionRole, requiredRole);
   if (!allowed) {

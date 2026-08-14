@@ -36,10 +36,12 @@ function ActionLinks({
       ).map(([type, label, count]) => (
         <Link
           key={type}
+          title={label}
           href={`${base}/${type === "notification" ? "notifications" : "inbox"}`}
           aria-label={`${label}${count ? `, ${count} belum dibaca` : ""}`}
         >
           <ActionIcon type={type} />
+          <span className="workspace-action-label">{label}</span>
           {count ? <span className="workspace-action-badge">{count > 99 ? "99+" : count}</span> : null}
         </Link>
       ))}
