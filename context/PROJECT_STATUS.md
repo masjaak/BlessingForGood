@@ -32,7 +32,7 @@ report closure until those gates pass.
 
 ### Latest Phase 07.1 product publishing and journey delta — 2026-08-14
 
-**Status:** `BFG_PHASE_07_1_PRODUCTION_DEPLOYED_PRODUCTION_PILOT_BLOCKED`
+**Status:** `BFG_PHASE_07_1_PRODUCTION_DEPLOY_BLOCKED_PRODUCTION_PILOT_BLOCKED`
 
 Starting commit for this delta: `94780ff0ba32337654bda728df534099a4b37047`.
 
@@ -61,7 +61,11 @@ signed-out navigation; no changed-surface assertion failed.
 No real client product information or authorized authenticated operator session
 was provided. No Production business data was created. Therefore the real
 product pilot, authenticated Production acceptance, and bulk-entry safety
-remain blocked; Phase 08 remains `NOT STARTED`.
+remain blocked. Commit `3948fdc906c9d822b8bbf7762e498d7f4fe7ca52` is pushed to
+`origin/main`, but the requested Vercel Production deployment is blocked by
+the current Vercel session returning `Not authorized`/`403 Forbidden` for the
+linked project. The previously deployed Production build remains unchanged;
+Phase 08 remains `NOT STARTED`.
 
 ### Admin access security hardening
 

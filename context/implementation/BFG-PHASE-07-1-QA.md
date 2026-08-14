@@ -200,11 +200,16 @@ mount. Convex remains the authoritative second boundary.
 
 ## Current closure gate
 
-The visual-system regression is deployed to Production in Vercel deployment
-`dpl_3vfdSRji8mXJtvZAWpa7YxWfxfYW` (`READY`) with Convex Production
-`clean-eel-522`. A signed-out request to `/admin/ready-stock` redirects to
-Clerk, and the deployment error-log scan returned no errors. The current code
-still awaits intentional real customer/Admin/Owner sessions. Rerun:
+The code is merged locally and pushed to `origin/main` at commit
+`3948fdc906c9d822b8bbf7762e498d7f4fe7ca52`. The requested Vercel Production
+deployment could not start: both the Vercel CLI and linked-project API returned
+`Not authorized`/`403 Forbidden` for the existing project credentials. The
+previous Production deployment `dpl_3vfdSRji8mXJtvZAWpa7YxWfxfYW` remains the
+live code; this change set is not claimed live. Convex Production remains
+`clean-eel-522`; no backend data mutation was run.
+
+The current code still awaits a successful deployment plus intentional real
+customer/Admin/Owner sessions. Rerun:
 
 1. real customer sign-in, `/account` → Profile → Addresses → direct `/admin`
    denial;
