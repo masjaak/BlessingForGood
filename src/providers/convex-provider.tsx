@@ -12,7 +12,7 @@ function useBfgClerkAuth() {
   const auth = useAuth();
   const { getToken: clerkGetToken } = auth;
   const getToken = useCallback(
-    ({ skipCache }: { template?: "convex"; skipCache?: boolean }) => clerkGetToken({ skipCache }),
+    ({ template, skipCache }: { template?: "convex"; skipCache?: boolean }) => clerkGetToken({ template, skipCache }),
     [clerkGetToken],
   );
   return { ...auth, getToken };
