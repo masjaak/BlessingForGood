@@ -208,7 +208,12 @@ export function CustomerCatalog() {
             return (
               <Card frame="list" className="book-card" key={book.id}>
                 <div className="book-card-layout">
-                  <BookCover title={book.title} publisher={book.publisher} format={selectedFormat} />
+                  <BookCover
+                    title={book.title}
+                    publisher={book.publisher}
+                    format={selectedFormat}
+                    src={book.coverImageUrl || undefined}
+                  />
                   <div className="book-card-details">
                     <div className="book-meta">
                       <div>

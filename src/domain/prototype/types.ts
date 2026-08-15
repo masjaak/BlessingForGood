@@ -38,6 +38,7 @@ export interface Book {
   id: string;
   title: string;
   publisher: string;
+  coverImageUrl?: string | null;
   variants: BookVariant[];
 }
 
