@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { BookCover } from "@/components/book-cover";
+import { BFGSelect } from "@/components/bfg-select";
 import {
   Card,
   EmptyState,
@@ -64,29 +65,29 @@ function ReadyStockResults() {
         </Field>
         {result.filters.categories.length ? (
           <Field label="Kategori">
-            <select className="select" value={category} onChange={(event) => setCategory(event.target.value)}>
+            <BFGSelect value={category} onChange={(event) => setCategory(event.target.value)}>
               <option value="">Semua kategori</option>
               {result.filters.categories.map((value) => (
                 <option key={value}>{value}</option>
               ))}
-            </select>
+            </BFGSelect>
           </Field>
         ) : null}
         {result.filters.publishers.length ? (
           <Field label="Penerbit">
-            <select className="select" value={publisherId} onChange={(event) => setPublisherId(event.target.value)}>
+            <BFGSelect value={publisherId} onChange={(event) => setPublisherId(event.target.value)}>
               <option value="">Semua penerbit</option>
               {result.filters.publishers.map((publisher) => (
                 <option value={publisher.id} key={publisher.id}>
                   {publisher.name}
                 </option>
               ))}
-            </select>
+            </BFGSelect>
           </Field>
         ) : null}
         {result.filters.formats.length ? (
           <Field label="Format">
-            <select
+            <BFGSelect
               className="select"
               value={format}
               onChange={(event) => setFormat(event.target.value as BookFormat | "")}
@@ -95,15 +96,15 @@ function ReadyStockResults() {
               {result.filters.formats.map((value) => (
                 <option key={value}>{value}</option>
               ))}
-            </select>
+            </BFGSelect>
           </Field>
         ) : null}
         <Field label="Urutkan">
-          <select className="select" value={sort} onChange={(event) => setSort(event.target.value as Sort)}>
+          <BFGSelect name="sort" value={sort} onChange={(event) => setSort(event.target.value as Sort)}>
             <option value="newest">Terbaru</option>
             <option value="title">Judul</option>
             <option value="price">Harga</option>
-          </select>
+          </BFGSelect>
         </Field>
       </Card>
       {result.items.length ? (

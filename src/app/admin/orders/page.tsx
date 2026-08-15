@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
   Button,
@@ -70,7 +71,7 @@ function OrderTable() {
           />
         </Field>
         <Field label="Status">
-          <select
+          <BFGSelect
             className="select"
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as OrderStatus | "")}
@@ -79,7 +80,7 @@ function OrderTable() {
             <option value="submitted">Masuk</option>
             <option value="cancelled">Dibatalkan</option>
             <option value="completed">Selesai</option>
-          </select>
+          </BFGSelect>
         </Field>
       </Card>
       {rows.length ? (
@@ -141,7 +142,7 @@ function OrderTable() {
                     </td>
                     <td>
                       {statuses.length ? (
-                        <select
+                        <BFGSelect
                           className="select"
                           aria-label={`Update status for ${order.id}`}
                           defaultValue=""
@@ -163,7 +164,7 @@ function OrderTable() {
                               {orderStatusLabels[status]}
                             </option>
                           ))}
-                        </select>
+                        </BFGSelect>
                       ) : (
                         <span className="subtle">Tidak ada tahap berikutnya</span>
                       )}
@@ -242,7 +243,7 @@ function ConvexAssistedOrderForm() {
           <div className="form-grid">
             <label className="field">
               <span className="field-label">Pelanggan</span>
-              <select
+              <BFGSelect
                 className="select"
                 value={customerId}
                 onChange={(event) => setCustomerId(event.target.value)}
@@ -254,11 +255,11 @@ function ConvexAssistedOrderForm() {
                     {customer.displayName}
                   </option>
                 ))}
-              </select>
+              </BFGSelect>
             </label>
             <label className="field">
               <span className="field-label">Katalog</span>
-              <select
+              <BFGSelect
                 className="select"
                 value={catalogId}
                 onChange={(event) => {
@@ -273,13 +274,13 @@ function ConvexAssistedOrderForm() {
                     {catalogOption.name}
                   </option>
                 ))}
-              </select>
+              </BFGSelect>
             </label>
           </div>
           <div className="form-grid">
             <label className="field">
               <span className="field-label">Buku / varian</span>
-              <select
+              <BFGSelect
                 className="select"
                 value={variantId}
                 onChange={(event) => setVariantId(event.target.value)}
@@ -291,7 +292,7 @@ function ConvexAssistedOrderForm() {
                     {variant.bookTitle} · {variant.format} · {variant.isbn}
                   </option>
                 ))}
-              </select>
+              </BFGSelect>
             </label>
             <label className="field">
               <span className="field-label">Jumlah</span>

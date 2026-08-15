@@ -2,21 +2,49 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
+import { ActivityCenter } from "@/components/activity-center";
 
-function ActionIcon({ type }: { type: "notification" | "inbox" }) {
-  return type === "notification" ? (
+type ActivitySurface = "notification" | "inbox";
+
+function ActivityIcon() {
+  return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6.5 10a5.5 5.5 0 0 1 11 0v4l2 2.5h-15l2-2.5zM10 19h4" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 5h16v14H4zM4 7l8 6 8-6" />
     </svg>
   );
 }
 
-function ActionLinks({
+function ActivityTrigger({
+  open,
+  total,
+  onClick,
+  triggerRef,
+}: {
+  open: boolean;
+  total?: number;
+  onClick: () => void;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+}) {
+  return (
+    <button
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      aria-label={`Aktivitas${total ? `, ${total} belum dibaca` : ""}`}
+      className="workspace-activity-trigger"
+      onClick={onClick}
+      ref={triggerRef}
+      type="button"
+    >
+      <ActivityIcon />
+      <span>Aktivitas</span>
+      {total ? <span className="workspace-action-badge">{total > 99 ? "99+" : total}</span> : null}
+    </button>
+  );
+}
+
+function ActivityPopover({
   workspace,
   notifications,
   inbox,
@@ -25,26 +53,54 @@ function ActionLinks({
   notifications?: number;
   inbox?: number;
 }) {
-  const base = workspace === "admin" ? "/admin" : "/account";
+  const [open, setOpen] = useState(false);
+  const [surface, setSurface] = useState<ActivitySurface>("notification");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const total = typeof notifications === "number" && typeof inbox === "number" ? notifications + inbox : undefined;
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (!panelRef.current?.contains(target) && !triggerRef.current?.contains(target)) {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
   return (
-    <div className="workspace-actions" aria-label="Pusat aktivitas">
-      {(
-        [
-          ["notification", "Notifikasi", notifications],
-          ["inbox", "Kotak masuk", inbox],
-        ] as const
-      ).map(([type, label, count]) => (
-        <Link
-          key={type}
-          title={label}
-          href={`${base}/${type === "notification" ? "notifications" : "inbox"}`}
-          aria-label={`${label}${count ? `, ${count} belum dibaca` : ""}`}
-        >
-          <ActionIcon type={type} />
-          <span className="workspace-action-label">{label}</span>
-          {count ? <span className="workspace-action-badge">{count > 99 ? "99+" : count}</span> : null}
-        </Link>
-      ))}
+    <div className="workspace-activity">
+      <ActivityTrigger
+        onClick={() => setOpen((current) => !current)}
+        open={open}
+        total={total}
+        triggerRef={triggerRef}
+      />
+      {open ? (
+        <div aria-label="Aktivitas" className="workspace-activity-panel" ref={panelRef} role="dialog">
+          <ActivityCenter
+            compact
+            counts={{ notification: notifications, inbox }}
+            onSurfaceChange={setSurface}
+            surface={surface}
+            workspace={workspace}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -52,9 +108,19 @@ function ActionLinks({
 function ConnectedActions({ workspace }: { workspace: "admin" | "customer" }) {
   const notifications = useQuery(api.notifications.unreadCount, { surface: "notification" });
   const inbox = useQuery(api.notifications.unreadCount, { surface: "inbox" });
-  return <ActionLinks workspace={workspace} notifications={notifications} inbox={inbox} />;
+  return <ActivityPopover inbox={inbox} notifications={notifications} workspace={workspace} />;
 }
 
 export function WorkspaceActions({ workspace, enabled }: { workspace: "admin" | "customer"; enabled: boolean }) {
-  return enabled ? <ConnectedActions workspace={workspace} /> : <ActionLinks workspace={workspace} />;
+  if (enabled) return <ConnectedActions workspace={workspace} />;
+  return (
+    <Link
+      aria-label="Aktivitas"
+      className="workspace-activity-trigger workspace-activity-link"
+      href={`${workspace === "admin" ? "/admin" : "/account"}/notifications`}
+    >
+      <ActivityIcon />
+      <span>Aktivitas</span>
+    </Link>
+  );
 }

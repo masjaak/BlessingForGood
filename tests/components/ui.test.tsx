@@ -8,7 +8,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { AdminShellContext } from "@/components/site-shell";
 import { Button, Card, InlineBooleanField, LinkButton, PageHeader } from "@/components/ui";
-import { SiteShell } from "@/components/site-shell";
+import { AdminShell, SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 import { useAuth } from "@clerk/nextjs";
 
@@ -146,6 +146,24 @@ describe("public UI foundation", () => {
 
   it("does not leave a legacy selector to override the shared nav row", () => {
     expect(globalsCss).not.toContain(".admin-nav a");
+  });
+
+  it("uses one coherent activity entry in the Admin header", () => {
+    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
+    render(
+      <ProductContext.Provider
+        value={{ dataSource: "convex", authState: "authenticated", sessionRole: "owner" } as never}
+      >
+        <AdminShell>Admin content</AdminShell>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Aktivitas" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Lihat sisi pelanggan" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Notifikasi/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Kotak masuk/ })).toBeNull();
+    expect(document.querySelectorAll(".workspace-activity-trigger")).toHaveLength(1);
+    expect(globalsCss).toContain(".admin-shell .admin-account > a,\n.workspace-activity-trigger");
   });
 
   it("shows only the live pending Join Requests count in the Admin sidebar", () => {

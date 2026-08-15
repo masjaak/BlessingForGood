@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Button, Card, EmptyState, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
@@ -211,7 +212,7 @@ function ConnectedJoinRequests() {
         <div className="admin-content content-stack">
           <Card className="form-actions">
             <Field label="Status">
-              <select
+              <BFGSelect
                 className="select"
                 value={status}
                 onChange={(event) => setStatus(event.target.value as JoinRequestStatus | "")}
@@ -221,7 +222,7 @@ function ConnectedJoinRequests() {
                 <option value="under_review">Sedang ditinjau</option>
                 <option value="approved">Disetujui</option>
                 <option value="rejected">Ditolak</option>
-              </select>
+              </BFGSelect>
             </Field>
             <Field label="Cari">
               <input

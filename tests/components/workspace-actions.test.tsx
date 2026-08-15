@@ -7,15 +7,17 @@ vi.mock("convex/react", () => ({
 }));
 
 describe("authenticated workspace actions", () => {
-  it("exposes reachable Notification and Inbox destinations for Admin", () => {
+  it("exposes one combined activity trigger for Admin", () => {
     render(<WorkspaceActions workspace="admin" enabled />);
-    expect(screen.getByRole("link", { name: /Notifikasi/ }).getAttribute("href")).toBe("/admin/notifications");
-    expect(screen.getByRole("link", { name: /Kotak masuk/ }).getAttribute("href")).toBe("/admin/inbox");
+    expect(screen.getByRole("button", { name: /Aktivitas.*4 belum dibaca/ })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Notifikasi/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Kotak masuk/ })).toBeNull();
   });
 
-  it("exposes reachable owned Notification and Inbox destinations for Customer", () => {
+  it("exposes one combined activity trigger for Customer", () => {
     render(<WorkspaceActions workspace="customer" enabled />);
-    expect(screen.getByRole("link", { name: /Notifikasi/ }).getAttribute("href")).toBe("/account/notifications");
-    expect(screen.getByRole("link", { name: /Kotak masuk/ }).getAttribute("href")).toBe("/account/inbox");
+    expect(screen.getByRole("button", { name: /Aktivitas.*4 belum dibaca/ })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Notifikasi/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Kotak masuk/ })).toBeNull();
   });
 });

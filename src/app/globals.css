@@ -377,15 +377,6 @@
 }
 
 @media (max-width: 900px) {
-  .workspace-action-label {
-    display: none;
-  }
-
-  .workspace-actions > a {
-    width: 40px;
-    padding-inline: 0;
-  }
-
   .workspace-skeleton-toolbar,
   .workspace-skeleton-panel-grid,
   .workspace-skeleton-two-column,
@@ -626,35 +617,6 @@ p {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-}
-.workspace-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.workspace-actions > a {
-  position: relative;
-  display: inline-grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  color: var(--ink-muted);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--surface);
-}
-.workspace-actions > a:hover {
-  color: var(--color-brand-primary);
-  border-color: var(--color-brand-peach);
-}
-.workspace-actions svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 .workspace-action-badge {
   position: absolute;
@@ -4580,33 +4542,6 @@ p {
   gap: var(--space-3);
 }
 
-.workspace-actions {
-  gap: var(--space-2);
-}
-
-.workspace-actions > a {
-  display: inline-flex;
-  width: auto;
-  min-width: 40px;
-  height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 10px;
-  border-radius: 11px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.workspace-actions svg {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  stroke-width: 1.7;
-}
-
 .admin-shell .admin-page.page {
   padding-bottom: var(--space-12);
 }
@@ -4674,17 +4609,6 @@ p {
 .customer-shell .guard-card,
 .customer-shell .state-panel {
   padding: var(--space-5);
-}
-
-@media (max-width: 900px) {
-  .workspace-action-label {
-    display: none;
-  }
-
-  .workspace-actions > a {
-    width: 40px;
-    padding-inline: 0;
-  }
 }
 
 /* Phase 07.1 visual contract: shared semantic geometry, not route patches. */
@@ -5389,5 +5313,271 @@ p {
   .workspace-skeleton-inline-form-master,
   .workspace-skeleton-inline-form-filters {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Phase 07.1 final controls: the expanded menu belongs to BFG, not the OS. */
+.bfg-select-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  overflow: hidden;
+  text-align: left;
+  background-image: none;
+}
+
+.bfg-select-trigger:disabled {
+  cursor: not-allowed;
+}
+
+.bfg-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bfg-select-chevron {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  margin-right: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.bfg-select-menu {
+  position: fixed;
+  z-index: 80;
+  display: grid;
+  width: max-content;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.bfg-select-option {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.bfg-select-option > span:first-child {
+  min-width: 0;
+}
+
+.bfg-select-option.is-active,
+.bfg-select-option:hover {
+  background: var(--mint);
+}
+
+.bfg-select-option.is-selected {
+  color: var(--accent-dark);
+  font-weight: var(--font-weight-bold);
+}
+
+.bfg-select-option[aria-disabled="true"] {
+  color: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.bfg-select-option[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
+.bfg-select-check {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.admin-shell .admin-account {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.admin-shell .admin-account > a,
+.workspace-activity-trigger {
+  white-space: nowrap;
+}
+
+.workspace-activity {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.workspace-activity-trigger {
+  position: relative;
+  display: inline-flex;
+  min-height: var(--button-height-compact);
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 var(--space-sm);
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--button-radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+.workspace-activity-trigger:hover {
+  color: var(--accent-dark);
+  border-color: var(--color-brand-peach);
+  background: var(--mint);
+}
+
+.workspace-activity-trigger svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.workspace-activity-link {
+  text-decoration: none;
+}
+
+.workspace-activity-panel {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(380px, calc(100vw - 28px));
+  max-height: min(560px, calc(100vh - 92px));
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.activity-panel-content {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.activity-panel-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.activity-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.activity-tab {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  color: var(--ink-muted);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.activity-tab.is-active {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.activity-tab-count {
+  min-width: 18px;
+  padding: 1px 5px;
+  color: var(--surface);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  font-size: 0.65rem;
+  line-height: 16px;
+  text-align: center;
+}
+
+.workspace-activity-panel .content-stack {
+  gap: var(--space-sm);
+}
+
+.workspace-activity-panel .activity-card {
+  padding: var(--space-sm);
+  box-shadow: none;
+}
+
+.workspace-activity-panel .activity-card h2 {
+  margin-bottom: 6px;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  letter-spacing: 0;
+}
+
+.workspace-activity-panel .activity-card p {
+  margin-bottom: var(--space-sm);
+  font-size: 0.82rem;
+}
+
+.workspace-activity-panel .activity-card .button {
+  min-height: var(--button-height-compact);
+  padding: 0 var(--space-sm);
+  font-size: 0.75rem;
+}
+
+.workspace-activity-panel .empty-state {
+  padding: var(--space-lg) var(--space-sm);
+}
+
+.activity-panel-footer {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: var(--font-weight-bold);
+}
+
+@media (max-width: 900px) {
+  .workspace-activity-trigger > span:not(.workspace-action-badge) {
+    display: none;
+  }
+
+  .workspace-activity-trigger {
+    width: 40px;
+    padding-inline: 0;
   }
 }

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, Money, StatusBadge } from "@/components/ui";
@@ -120,7 +121,7 @@ function DepositOperations() {
         >
           <div className="form-grid">
             <Field label="Pelanggan">
-              <select
+              <BFGSelect
                 className="select"
                 value={customerId}
                 onChange={(event) => setCustomerId(event.target.value)}
@@ -132,17 +133,17 @@ function DepositOperations() {
                     {customer.displayName} · {customer.email || "—"}
                   </option>
                 ))}
-              </select>
+              </BFGSelect>
             </Field>
             <Field label="Arah">
-              <select
+              <BFGSelect
                 className="select"
                 value={direction}
                 onChange={(event) => setDirection(event.target.value as "credit" | "debit")}
               >
                 <option value="credit">Kredit</option>
                 <option value="debit">Debit</option>
-              </select>
+              </BFGSelect>
             </Field>
             <Field label="Jumlah IDR">
               <input

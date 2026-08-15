@@ -2,20 +2,32 @@
 
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
+import { useId, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { Card, EmptyState, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 
+type ActivitySurface = "notification" | "inbox";
+
 export function ActivityCenter({
   surface,
   workspace,
+  compact = false,
+  counts,
+  onSurfaceChange,
 }: {
-  surface: "notification" | "inbox";
+  surface: ActivitySurface;
   workspace: "admin" | "customer";
+  compact?: boolean;
+  counts?: Partial<Record<ActivitySurface, number | undefined>>;
+  onSurfaceChange?: (surface: ActivitySurface) => void;
 }) {
-  const notices = useQuery(api.notifications.listMine, { surface });
+  const [localSurface, setLocalSurface] = useState<ActivitySurface>(surface);
+  const activeSurface = compact && onSurfaceChange ? surface : localSurface;
+  const notices = useQuery(api.notifications.listMine, { surface: activeSurface });
   const markRead = useMutation(api.notifications.markRead);
-  const label = surface === "notification" ? "Notifikasi" : "Kotak masuk";
+  const label = activeSurface === "notification" ? "Notifikasi" : "Kotak masuk";
+  const panelId = useId();
   const content =
     notices === undefined ? (
       <LoadingRegion label={`Memuat ${label}`}>
@@ -48,12 +60,56 @@ export function ActivityCenter({
       <EmptyState
         title={`${label} masih kosong`}
         description={
-          surface === "notification"
+          activeSurface === "notification"
             ? "Pembaruan operasional yang relevan akan tampil di sini."
             : "Pesan operasional BFG yang perlu ditindaklanjuti akan tampil di sini."
         }
       />
     );
+
+  if (compact) {
+    const destination = activeSurface === "notification" ? "notifications" : "inbox";
+    return (
+      <div className="activity-panel-content">
+        <div className="activity-panel-heading">
+          <strong>Aktivitas</strong>
+          <span className="subtle">Pembaruan terbaru</span>
+        </div>
+        <div className="activity-tabs" role="tablist" aria-label="Jenis aktivitas">
+          {(["notification", "inbox"] as const).map((tabSurface) => {
+            const tabLabel = tabSurface === "notification" ? "Notifikasi" : "Kotak masuk";
+            const count = counts?.[tabSurface];
+            return (
+              <button
+                aria-controls={`${panelId}-panel`}
+                aria-selected={activeSurface === tabSurface}
+                className={`activity-tab${activeSurface === tabSurface ? " is-active" : ""}`}
+                key={tabSurface}
+                onClick={() => {
+                  setLocalSurface(tabSurface);
+                  onSurfaceChange?.(tabSurface);
+                }}
+                role="tab"
+                type="button"
+              >
+                {tabLabel}
+                {count ? <span className="activity-tab-count">{count > 99 ? "99+" : count}</span> : null}
+              </button>
+            );
+          })}
+        </div>
+        <div id={`${panelId}-panel`} role="tabpanel">
+          {content}
+        </div>
+        <Link
+          className="activity-panel-footer"
+          href={`${workspace === "admin" ? "/admin" : "/account"}/${destination}`}
+        >
+          {activeSurface === "notification" ? "Lihat semua notifikasi" : "Buka Kotak Masuk"}
+        </Link>
+      </div>
+    );
+  }
 
   return workspace === "admin" ? (
     <AdminOperationalPage

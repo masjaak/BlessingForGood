@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, StatusBadge } from "@/components/ui";
@@ -38,11 +39,11 @@ function ContentEditor() {
       <Card>
         <div className="split-heading">
           <Field label="Ruang konten">
-            <select className="select" value={key} onChange={(event) => setKey(event.target.value as ContentKey)}>
+            <BFGSelect value={key} onChange={(event) => setKey(event.target.value as ContentKey)}>
               <option value="community">Komunitas</option>
               <option value="how_to_order">Cara memesan</option>
               <option value="help">Bantuan</option>
-            </select>
+            </BFGSelect>
           </Field>
           {block ? (
             <StatusBadge tone={block.status === "published" ? "positive" : "neutral"}>

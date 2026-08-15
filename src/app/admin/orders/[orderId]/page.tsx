@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
   Button,
@@ -292,7 +293,7 @@ function AssignForm({
   }
   return (
     <form className="form-actions" onSubmit={submit}>
-      <select
+      <BFGSelect
         aria-label="Batch penugasan"
         className="select"
         value={batchId}
@@ -305,7 +306,7 @@ function AssignForm({
             {batch.name}
           </option>
         ))}
-      </select>
+      </BFGSelect>
       <input
         aria-label="Jumlah penugasan"
         className="input"

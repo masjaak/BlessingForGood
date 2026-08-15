@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { BFGSelect } from "@/components/bfg-select";
 import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, SkeletonCard, StatusBadge } from "@/components/ui";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 
@@ -156,7 +157,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           }}
         >
           <Field label="Produk yang dapat ditambahkan">
-            <select
+            <BFGSelect
               className="select"
               value={variantId}
               onChange={(event) => setVariantId(event.target.value)}
@@ -168,7 +169,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                   {item.title} · {item.format} · {item.isbn}
                 </option>
               ))}
-            </select>
+            </BFGSelect>
           </Field>
           <Button pending={pending === "add"} pendingLabel="Menambahkan…">
             Tambah produk

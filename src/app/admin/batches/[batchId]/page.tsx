@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { BFGSelect } from "@/components/bfg-select";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
@@ -146,7 +147,7 @@ function AdminBatchDetail() {
               </Button>
               <label className="field">
                 <span className="field-label">Lewati/koreksi eksplisit</span>
-                <select
+                <BFGSelect
                   aria-label="Pilihan tahap pengiriman"
                   className="select"
                   value=""
@@ -159,7 +160,7 @@ function AdminBatchDetail() {
                       {shipmentStageLabels[stage]}
                     </option>
                   ))}
-                </select>
+                </BFGSelect>
               </label>
               <Button
                 type="button"
@@ -209,7 +210,7 @@ function AdminBatchDetail() {
             ))}
             {availableCatalogs.length ? (
               <div className="form-actions">
-                <select
+                <BFGSelect
                   aria-label="Katalog yang akan ditautkan"
                   className="select"
                   value={catalogId}
@@ -221,7 +222,7 @@ function AdminBatchDetail() {
                       {catalog.name}
                     </option>
                   ))}
-                </select>
+                </BFGSelect>
                 <Button
                   type="button"
                   pending={pendingAction === "link"}
@@ -280,7 +281,7 @@ function AdminBatchDetail() {
                       {movableBatches(String(assignment.catalogId)).length ? (
                         <label className="field">
                           <span className="field-label">Pindahkan ke</span>
-                          <select
+                          <BFGSelect
                             className="select"
                             defaultValue=""
                             onChange={(event) => {
@@ -299,7 +300,7 @@ function AdminBatchDetail() {
                                 {candidate.name}
                               </option>
                             ))}
-                          </select>
+                          </BFGSelect>
                         </label>
                       ) : null}
                     </div>

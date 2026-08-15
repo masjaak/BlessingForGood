@@ -1,0 +1,271 @@
+"use client";
+
+import { createPortal } from "react-dom";
+import {
+  Children,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
+
+type OptionProps = { value?: string | number; disabled?: boolean; children?: ReactNode };
+
+type BFGOption = {
+  key: string;
+  value: string;
+  label: ReactNode;
+  disabled: boolean;
+};
+
+export type BFGSelectChangeEvent = { target: { name?: string; value: string } };
+
+export type BFGSelectProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children" | "defaultValue" | "disabled" | "onChange" | "value"
+> & {
+  children: ReactNode;
+  value?: string;
+  defaultValue?: string;
+  onChange?: (event: BFGSelectChangeEvent) => void;
+  name?: string;
+  required?: boolean;
+  disabled?: boolean;
+};
+
+function nextEnabled(options: BFGOption[], start: number, direction: 1 | -1) {
+  for (let index = start; index >= 0 && index < options.length; index += direction) {
+    if (!options[index].disabled) return index;
+  }
+  return -1;
+}
+
+export function BFGSelect({
+  children,
+  value,
+  defaultValue,
+  onChange,
+  name,
+  required,
+  id,
+  className = "",
+  disabled = false,
+  ...buttonProps
+}: BFGSelectProps) {
+  const generatedId = useId();
+  const triggerId = id || `bfg-select-${generatedId}`;
+  const listboxId = `${triggerId}-listbox`;
+  const options = useMemo(
+    () =>
+      Children.toArray(children).flatMap((child, index): BFGOption[] => {
+        if (!isValidElement<OptionProps>(child) || child.type !== "option") return [];
+        const optionValue = String(child.props.value ?? child.props.children ?? "");
+        return [
+          {
+            key: child.key ? String(child.key) : `${optionValue}-${index}`,
+            value: optionValue,
+            label: child.props.children ?? optionValue,
+            disabled: Boolean(child.props.disabled),
+          },
+        ];
+      }),
+    [children],
+  );
+  const firstValue = options.find((option) => !option.disabled)?.value || "";
+  const [internalValue, setInternalValue] = useState(defaultValue ?? firstValue);
+  const selectedValue = value ?? internalValue;
+  const selectedIndex = options.findIndex((option) => option.value === selectedValue);
+  const selectedOption = options[selectedIndex];
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(selectedIndex >= 0 ? selectedIndex : nextEnabled(options, 0, 1));
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setActiveIndex(selectedIndex >= 0 ? selectedIndex : nextEnabled(options, 0, 1));
+    triggerRef.current?.focus();
+  }, [options, selectedIndex]);
+
+  function choose(option: BFGOption) {
+    if (option.disabled) return;
+    setInternalValue(option.value);
+    onChange?.({ target: { name, value: option.value } });
+    close();
+  }
+
+  function openMenu() {
+    if (disabled) return;
+    setActiveIndex(selectedIndex >= 0 ? selectedIndex : nextEnabled(options, 0, 1));
+    setOpen(true);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (disabled) return;
+    if (event.key === "Tab") {
+      if (open) setOpen(false);
+      return;
+    }
+    if (event.key === "Escape") {
+      if (open) {
+        event.preventDefault();
+        close();
+      }
+      return;
+    }
+    if (!open && ["Enter", " ", "ArrowDown", "ArrowUp"].includes(event.key)) {
+      event.preventDefault();
+      openMenu();
+      return;
+    }
+    if (!open) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      const option = options[activeIndex];
+      if (option) choose(option);
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      const next = nextEnabled(options, activeIndex + direction, direction);
+      if (next >= 0) setActiveIndex(next);
+      return;
+    }
+    if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const next = event.key === "Home" ? nextEnabled(options, 0, 1) : nextEnabled(options, options.length - 1, -1);
+      if (next >= 0) setActiveIndex(next);
+    }
+  }
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+
+    function positionMenu() {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const margin = 12;
+      const gap = 6;
+      const below = Math.max(80, window.innerHeight - rect.bottom - gap - margin);
+      const above = Math.max(80, rect.top - gap - margin);
+      const maxHeight = Math.min(320, Math.max(80, Math.max(below, above)));
+      const placeAbove = below < 160 && above > below;
+      const width = Math.min(rect.width, window.innerWidth - margin * 2);
+      setMenuPosition({
+        top: placeAbove ? Math.max(margin, rect.top - gap - maxHeight) : rect.bottom + gap,
+        left: Math.min(Math.max(margin, rect.left), window.innerWidth - margin - width),
+        width,
+        maxHeight,
+      });
+    }
+
+    positionMenu();
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!triggerRef.current?.contains(target) && !menuRef.current?.contains(target)) close();
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [close, open]);
+
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    optionRefs.current[activeIndex]?.scrollIntoView?.({ block: "nearest" });
+  }, [activeIndex, open]);
+
+  const menu =
+    open && menuPosition && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={menuRef}
+            id={listboxId}
+            className="bfg-select-menu"
+            role="listbox"
+            aria-label={buttonProps["aria-label"] || undefined}
+            aria-labelledby={buttonProps["aria-labelledby"] || undefined}
+            style={{
+              top: menuPosition.top,
+              left: menuPosition.left,
+              minWidth: menuPosition.width,
+              maxHeight: menuPosition.maxHeight,
+            }}
+          >
+            {options.map((option, index) => (
+              <div
+                aria-disabled={option.disabled || undefined}
+                aria-selected={option.value === selectedValue}
+                className={`bfg-select-option${index === activeIndex ? " is-active" : ""}${
+                  option.value === selectedValue ? " is-selected" : ""
+                }`}
+                id={`${listboxId}-option-${index}`}
+                key={option.key}
+                onClick={() => choose(option)}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => {
+                  if (!option.disabled) setActiveIndex(index);
+                }}
+                ref={(element) => {
+                  optionRefs.current[index] = element;
+                }}
+                role="option"
+              >
+                <span>{option.label}</span>
+                {option.value === selectedValue ? (
+                  <span className="bfg-select-check" aria-hidden="true">
+                    ✓
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <>
+      <button
+        {...buttonProps}
+        aria-activedescendant={open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+        aria-controls={listboxId}
+        aria-disabled={disabled || undefined}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-required={required || undefined}
+        className={`select bfg-select-trigger ${className}`.trim()}
+        disabled={disabled}
+        id={triggerId}
+        onClick={() => (open ? close() : openMenu())}
+        onKeyDown={handleKeyDown}
+        ref={triggerRef}
+        role="combobox"
+        type="button"
+      >
+        <span className="bfg-select-value">{selectedOption?.label ?? selectedValue}</span>
+        <span className="bfg-select-chevron" aria-hidden="true" />
+      </button>
+      {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
+      {menu}
+    </>
+  );
+}

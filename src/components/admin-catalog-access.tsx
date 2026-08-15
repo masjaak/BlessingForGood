@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { BFGSelect } from "@/components/bfg-select";
 import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, SkeletonCard, StatusBadge } from "@/components/ui";
 
 export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
@@ -144,14 +145,14 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
           }}
         >
           <Field label="Pelanggan">
-            <select className="select" value={memberId} onChange={(event) => setMemberId(event.target.value)} required>
+            <BFGSelect value={memberId} onChange={(event) => setMemberId(event.target.value)} required>
               <option value="">Pilih pelanggan</option>
               {customers.map((customer) => (
                 <option key={customer.customerUserId} value={customer.customerUserId}>
                   {customer.displayName} · {customer.email || "tanpa email"}
                 </option>
               ))}
-            </select>
+            </BFGSelect>
           </Field>
           <Field label="Berlaku sampai">
             <input

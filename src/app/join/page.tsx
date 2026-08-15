@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { BrandMascot } from "@/components/brand";
+import { BFGSelect } from "@/components/bfg-select";
 import { Button, Card, ErrorState, Field, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
@@ -134,8 +135,9 @@ function ConnectedJoinForm() {
             />
           </Field>
           <Field label="Minat buku">
-            <select
+            <BFGSelect
               className="input"
+              name="bookInterest"
               value={form.bookInterest}
               onChange={(event) => update("bookInterest", event.target.value)}
               required
@@ -143,7 +145,7 @@ function ConnectedJoinForm() {
               <option>Children Books</option>
               <option>Collector Books</option>
               <option>Novel</option>
-            </select>
+            </BFGSelect>
           </Field>
         </div>
         <Field label="Catatan singkat" hint="Opsional. Maksimal 500 karakter.">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
   Button,
@@ -69,7 +70,7 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
     >
       <label className="field">
         <span className="field-label">Syarat deposit</span>
-        <select
+        <BFGSelect
           className="select"
           value={mode}
           onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
@@ -77,7 +78,7 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
           <option value="none">Tidak ada</option>
           <option value="fixed">Nominal tetap (IDR)</option>
           <option value="percentage">Persentase (basis poin)</option>
-        </select>
+        </BFGSelect>
       </label>
       {mode !== "none" ? (
         <Field label={mode === "fixed" ? "Nominal (IDR)" : "Basis poin (0–10000)"}>

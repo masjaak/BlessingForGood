@@ -5,6 +5,7 @@ import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { BookCover } from "@/components/book-cover";
+import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
   Card,
@@ -116,13 +117,13 @@ function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   return (
     <form className="form-card" onSubmit={submit}>
       <Field label="Format">
-        <select className="select" value={variantId} onChange={(event) => setVariantId(event.target.value)}>
+        <BFGSelect value={variantId} onChange={(event) => setVariantId(event.target.value)}>
           {book.variants.map((variant) => (
             <option value={variant.id} key={variant.id}>
               {variant.format} · {variant.stockQuantity} tersedia
             </option>
           ))}
-        </select>
+        </BFGSelect>
       </Field>
       <Field label="Jumlah" hint={selected ? `Maksimum ${selected.stockQuantity}` : undefined}>
         <input

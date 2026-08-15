@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
@@ -108,7 +109,7 @@ function UserManagement() {
           <Card className="form-actions">
             <label className="field">
               <span className="field-label">Peran</span>
-              <select
+              <BFGSelect
                 className="select"
                 value={role || ""}
                 onChange={(event) => setRole((event.target.value || undefined) as typeof role)}
@@ -117,11 +118,11 @@ function UserManagement() {
                 <option value="owner">Pemilik</option>
                 <option value="admin">Admin</option>
                 <option value="customer">Pelanggan</option>
-              </select>
+              </BFGSelect>
             </label>
             <label className="field">
               <span className="field-label">Status</span>
-              <select
+              <BFGSelect
                 className="select"
                 value={status || ""}
                 onChange={(event) => setStatus((event.target.value || undefined) as typeof status)}
@@ -129,7 +130,7 @@ function UserManagement() {
                 <option value="">Semua</option>
                 <option value="active">Aktif</option>
                 <option value="suspended">Ditangguhkan</option>
-              </select>
+              </BFGSelect>
             </label>
           </Card>
           {message ? (

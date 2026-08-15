@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
   Card,
@@ -103,14 +104,14 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
         <form className="form-card" onSubmit={submit}>
           <div className="form-grid">
             <Field label="Jenis">
-              <select className="select" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
+              <BFGSelect value={type} onChange={(event) => setType(event.target.value as typeof type)}>
                 <option value="out_of_stock">Stok tidak tersedia</option>
                 <option value="defect">Produk rusak</option>
                 <option value="admin_cancellation">Pembatalan admin</option>
-              </select>
+              </BFGSelect>
             </Field>
             <Field label="Pesanan">
-              <select
+              <BFGSelect
                 className="select"
                 value={orderId}
                 onChange={(event) => {
@@ -125,19 +126,19 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
                     {order.customerName} · {order.orderId}
                   </option>
                 ))}
-              </select>
+              </BFGSelect>
             </Field>
           </div>
           <div className="form-grid">
             <Field label="Item">
-              <select className="select" value={itemId} onChange={(event) => setItemId(event.target.value)} required>
+              <BFGSelect value={itemId} onChange={(event) => setItemId(event.target.value)} required>
                 <option value="">Pilih item…</option>
                 {selectedOrder?.items.map((item) => (
                   <option value={item._id} key={item._id}>
                     {item.quantity} × {item.bookTitleSnapshot} · {item.formatSnapshot}
                   </option>
                 ))}
-              </select>
+              </BFGSelect>
             </Field>
             <Field label="Jumlah terdampak" hint={selectedItem ? `Maksimum: ${selectedItem.quantity}` : undefined}>
               <input
@@ -296,7 +297,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
       {exception.status === "under_review" ? (
         <div className="content-stack">
           <div className="form-actions">
-            <select
+            <BFGSelect
               className="select"
               value={resolution}
               onChange={(event) => setResolution(event.target.value as Resolution)}
@@ -306,7 +307,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
                   {label}
                 </option>
               ))}
-            </select>
+            </BFGSelect>
             {exception.type === "customer_cancellation" ? (
               <input
                 className="input"

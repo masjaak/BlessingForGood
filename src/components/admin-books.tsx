@@ -7,6 +7,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
   Card,
@@ -115,7 +116,7 @@ function ConnectedAdminBooks() {
             </form>
             <form className="form-actions" onSubmit={addBook}>
               <Field label="Penerbit">
-                <select
+                <BFGSelect
                   className="select"
                   value={publisherId}
                   onChange={(event) => setPublisherId(event.target.value)}
@@ -127,7 +128,7 @@ function ConnectedAdminBooks() {
                       {publisher.name}
                     </option>
                   ))}
-                </select>
+                </BFGSelect>
               </Field>
               <Field label="Judul">
                 <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} required />
@@ -168,7 +169,7 @@ function ConnectedAdminBooks() {
               }}
             >
               <Field label="Penerbit">
-                <select
+                <BFGSelect
                   className="select"
                   value={managedPublisherId}
                   onChange={(event) => {
@@ -185,7 +186,7 @@ function ConnectedAdminBooks() {
                       {publisher.name}
                     </option>
                   ))}
-                </select>
+                </BFGSelect>
               </Field>
               <Field label="Nama">
                 <input
@@ -212,7 +213,7 @@ function ConnectedAdminBooks() {
               />
             </Field>
             <Field label="Publikasi">
-              <select
+              <BFGSelect
                 className="select"
                 value={status}
                 onChange={(event) => setStatus(event.target.value as PublicationStatus | "")}
@@ -222,10 +223,10 @@ function ConnectedAdminBooks() {
                 <option value="published">Terbit</option>
                 <option value="special">Khusus / privat</option>
                 <option value="archived">Diarsipkan</option>
-              </select>
+              </BFGSelect>
             </Field>
             <Field label="Ready Stock">
-              <select
+              <BFGSelect
                 className="select"
                 value={availability}
                 onChange={(event) => setAvailability(event.target.value as Availability | "")}
@@ -234,7 +235,7 @@ function ConnectedAdminBooks() {
                 <option value="in_stock">Ada stok</option>
                 <option value="out_of_stock">Stok kosong</option>
                 <option value="not_listed">Belum dicatat</option>
-              </select>
+              </BFGSelect>
             </Field>
           </Card>
           {books === undefined ? (

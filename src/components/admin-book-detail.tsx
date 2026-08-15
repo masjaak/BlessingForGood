@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
   Card,
@@ -216,7 +217,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                   <input className="input" value={slug} onChange={(event) => setSlug(event.target.value)} required />
                 </Field>
                 <Field label="Penerbit">
-                  <select
+                  <BFGSelect
                     className="select"
                     value={publisherId}
                     onChange={(event) => setPublisherId(event.target.value as Id<"publishers">)}
@@ -226,7 +227,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                         {publisher.name}
                       </option>
                     ))}
-                  </select>
+                  </BFGSelect>
                 </Field>
                 <Field label="Penulis">
                   <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
@@ -235,7 +236,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                   <input className="input" value={categories} onChange={(event) => setCategories(event.target.value)} />
                 </Field>
                 <Field label="Status publikasi">
-                  <select
+                  <BFGSelect
                     className="select"
                     value={publicationStatus}
                     onChange={(event) => setPublicationStatus(event.target.value as PublicationStatus)}
@@ -244,7 +245,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                     <option value="published">Terbit</option>
                     <option value="special">Khusus / privat</option>
                     <option value="archived">Diarsipkan</option>
-                  </select>
+                  </BFGSelect>
                 </Field>
               </div>
               <div className="admin-cover-editor">
@@ -304,7 +305,7 @@ function BookEditor({ book }: { book: AdminBook }) {
             </div>
             <form className="admin-variant-create" onSubmit={addVariant}>
               <Field label="Format">
-                <select
+                <BFGSelect
                   className="select"
                   value={format}
                   onChange={(event) => setFormat(event.target.value as BookFormat)}
@@ -312,7 +313,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                   <option value="BB">BB</option>
                   <option value="PB">PB</option>
                   <option value="HB">HB</option>
-                </select>
+                </BFGSelect>
               </Field>
               <Field label="ISBN">
                 <input className="input" value={isbn} onChange={(event) => setIsbn(event.target.value)} required />
