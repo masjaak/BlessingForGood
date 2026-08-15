@@ -5,7 +5,7 @@ Applies to current `main`, whose Production implementation is
 `d9aad899a440592504117c6b57c02cd15bdec355`; the responsive/test contract was
 anchored in follow-up commit `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **entry gate PASS; implementation not started**. The entry gate is defined in
+Phase 08: **source contract prepared; implementation not started**. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -48,7 +48,7 @@ Current exact regression baseline:
 | ESLint | PASS |
 | Format | PASS |
 | Build | PASS |
-| Rendered QA | local route/viewport suite plus exact 1280 customer coverage; public Production route/viewport smoke `180 / 180`; authenticated Production visual evidence is not repeatable without a configured Clerk session |
+| Rendered QA | local route/viewport suite plus exact 1280 customer coverage; public Production route/viewport smoke `180 / 180`; private authenticated visual evidence was not rerun in this documentation-only pass |
 | Real UAT | supplied Phase 07.1 closure evidence remains PASS for the real flows listed in `PROJECT_STATUS.md`; this targeted pass did not fabricate or repeat private business UAT |
 
 No access codes, credentials, tokens, or customer-identifying business data
@@ -121,10 +121,11 @@ stable Phase 07.1 baseline.
 
 ## Phase 08 Status
 
-**Entry gate PASS; implementation not started.** Source preparation is
-authorized, but no Phase 08 feature implementation is authorized by this
-reconciliation task. Candidate scope is documented only in
-[`BFG-PHASE-08-CANDIDATES.md`](implementation/BFG-PHASE-08-CANDIDATES.md).
+**Source contract prepared; implementation not started.** Bulk Import is the
+recommended first Phase 08 candidate. Its source, data, policy, state, visual,
+and traceability contracts are linked from
+[`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
+No Phase 08 feature implementation is authorized by this reconciliation task.
 
 ## Canonical Business Rules
 
@@ -411,8 +412,8 @@ Only source-supported work appears in
 [`BFG-PHASE-08-CANDIDATES.md`](implementation/BFG-PHASE-08-CANDIDATES.md):
 
 - advanced analytics beyond the current bounded operational report;
-- approved bulk catalog/order import with mapping, validation, rollback, and
-  duplicate policy;
+- Bulk Import V1 source contract is prepared; implementation remains separate
+  and not started.
 - multi-image gallery and external preview metadata;
 - broader backup/restore operations beyond current bounded export;
 - cross-domain Admin search.
@@ -475,14 +476,14 @@ There are no unresolved material source conflicts for the completed Phase 07.1
 baseline. The following are deliberately bounded future decisions, not current
 implementation blockers:
 
-- exact import mapping/rollback/duplicate policy;
 - exact advanced analytics dimensions and retention;
 - exact gallery/preview metadata contract;
 - exact backup/restore operational procedure;
 - cross-domain Admin search scope and indexing.
 
-These questions cannot authorize Phase 08 implementation until a Phase Source
-Contract is approved.
+Bulk Import mapping, rollback, duplicate, file, publication, stock, catalog,
+and audit policies are resolved in the prepared Phase 08 Source Contract. The
+remaining items are future contracts, not current implementation blockers.
 
 ## Anchored Summary
 
@@ -527,10 +528,10 @@ contract and any external data/identity needed for acceptance.
 ### Test Baseline
 
 194 / 94 / 180 plus all static gates PASS. The public Production route matrix
-and exact 1280px Customer viewport are green; private authenticated UI remains
-explicitly blocked without a designated Clerk session.
+and exact 1280px Customer viewport are green; private authenticated UI was not
+rerun in this documentation-only pass.
 
 ### Next Milestone
 
-Create and approve a Phase 08 Source Contract. Do not start Phase 08 in this
-task.
+Review the prepared Phase 08 Bulk Import Source Contract and create a separate
+implementation prompt. Do not start Phase 08 implementation in this task.

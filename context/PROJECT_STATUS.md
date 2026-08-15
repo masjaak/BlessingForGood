@@ -5,11 +5,12 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ENTRY_GATE_PASS` — source preparation is authorized; implementation `NOT_STARTED`.
+**Phase 08:** `SOURCE_CONTRACT_PREPARED` — `BULK_IMPORT` is the current primary candidate; implementation `NOT_STARTED`.
 
 Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
 Production implementation commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
 Context/test anchor commit: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
+Documentation lock commit: `e2ad4a3b6f2148dc213fe25b6604fe56aefe7972`.
 `origin/main`: contains the implementation plus the context/test anchor; the
 follow-up commits are documentation/test-contract only.
 Convex Development: `content-snake-214`.
@@ -22,13 +23,12 @@ Current regression baseline: Vitest `194/194`, Convex `94/94`, Playwright
 `180/180`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
 `www` with HTTP 308. The public Production route matrix is `180/180`, including
-customer 375/390/430/768/1280/1440 and Admin 1024/1280/1440. Authenticated
-Production UI and intentional real-product recheck remain `BLOCKED_EXTERNAL` /
-`BLOCKED_BY_DATA` because no authorized Clerk session or client product was
-provided. The supplied Phase 07.1 closure evidence still records PASS for real
-admission, product, cover upload/persistence/projection, Secret Catalog
-generate/copy/unlock/revoke, order, Admin projection, invoice, Tagihan,
-notification, and ownership-isolation flows.
+customer 375/390/430/768/1280/1440 and Admin 1024/1280/1440. The supplied
+Phase 07.1 closure evidence records PASS for real admission, product, cover
+upload/persistence/projection, Secret Catalog generate/copy/unlock/revoke,
+order, Admin projection, invoice, Tagihan, notification, and ownership-
+isolation flows. Private authenticated UAT was not rerun in this
+documentation-only pass and no business data was mutated.
 
 The Vercel Production build hook re-pushed the unchanged Convex functions to
 `clean-eel-522`; this closure pass made no schema, auth, RBAC, financial,
@@ -40,6 +40,10 @@ The canonical reconciliation artifacts are:
 - `context/DECISION_LOG.md`
 - `context/implementation/BFG-BASELINE-RECONCILIATION-MATRIX.md`
 - `context/implementation/BFG-ROUTE-INVENTORY-V2.md`
+- `context/implementation/BFG-PHASE-08-SOURCE-CONTRACT.md`
+- `context/implementation/BFG-BULK-IMPORT-DATA-CONTRACT.md`
+- `context/implementation/BFG-BULK-IMPORT-POLICY.md`
+- `context/implementation/BFG-PHASE-08-BULK-IMPORT-TRACEABILITY.md`
 - `context/implementation/BFG-ADMIN-CUSTOMER-SYNC-MATRIX.md`
 - `context/implementation/BFG-BUSINESS-CONSEQUENCE-MATRIX.md`
 - `context/implementation/BFG-MOCKUP-TRACEABILITY-MATRIX.md`
@@ -74,9 +78,10 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-Before any Phase 08 implementation, create and approve a Phase Source Contract
-from the candidate list. This task ends at the locked baseline; it does not
-start Phase 08.
+The Phase 08 Bulk Import Source Contract, data contract, policy, and
+traceability contract are prepared. The next action is a separate
+implementation prompt after contract review; this task does not start Phase 08
+implementation.
 
 ### Responsive/media closure evidence
 
@@ -88,8 +93,8 @@ start Phase 08.
   existing Convex upload URL/attach flow remains canonical.
 - Local exact 1280 customer smoke: `20/20`; Production exact 1280 customer
   smoke: `20/20`. Existing 160-check matrix remains green, for `180/180` total.
-- Authenticated Production visual and real cover persistence/projection UAT was
-  not repeated without credentials and an intentional product record.
+- Supplied closure evidence remains the record for private flows; this
+  documentation-only pass did not repeat private UAT or mutate business data.
 
 ## Historical Status Archive
 

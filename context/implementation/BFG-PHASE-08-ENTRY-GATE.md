@@ -2,7 +2,7 @@
 
 Status: **PASS FOR ENTRY PREPARATION ONLY**
 Implementation status: **NOT STARTED**
-Reconciled: 2026-08-15
+Reconciled: 2026-08-16
 
 This gate says the Phase 07.1 baseline is safe to use as the starting point for
 a separately approved Phase 08 Source Contract. It does not authorize any
@@ -28,8 +28,8 @@ Phase 08 implementation in this task.
 
 These are classified, not silently omitted:
 
-- approved bulk catalog/order import with explicit mapping, validation,
-  duplicate, rollback, and audit policy;
+- Bulk Import V1 source, data, policy, state, visual, and traceability
+  contracts are prepared; implementation remains separate;
 - multiple media/gallery and external preview metadata contract;
 - advanced analytics beyond the current bounded report;
 - full backup/restore operating procedure beyond current bounded export;
@@ -44,7 +44,9 @@ generic Phase 08 work.
 
 Candidate details and priorities are in
 [`BFG-PHASE-08-CANDIDATES.md`](BFG-PHASE-08-CANDIDATES.md). No candidate has
-been implemented by this task.
+been implemented by this task. The primary candidate contract is
+[`BFG-PHASE-08-SOURCE-CONTRACT.md`](BFG-PHASE-08-SOURCE-CONTRACT.md), with the
+linked data, policy, and traceability documents.
 
 ## Dependencies
 
@@ -52,7 +54,8 @@ been implemented by this task.
 - Existing Clerk/Convex/Vercel environment separation.
 - Security and financial invariant indexes in this directory.
 - The current state-machine and Admin ↔ Customer matrices.
-- A decision on import/media/search/analytics contracts before schema changes.
+- The prepared import contracts before implementation; separate
+  media/search/analytics contracts before those candidates change schema.
 - Designated QA identities and intentional test records where real UAT needs
   populated states; never fabricate Production records.
 
@@ -122,5 +125,5 @@ verified by the available operator session.
 
 ## Gate Result
 
-`PHASE_08_ENTRY_GATE: PASS` for source-controlled entry preparation.
+`PHASE_08_ENTRY_GATE: PASS` for source-contract preparation.
 `PHASE_08_IMPLEMENTATION: NOT_STARTED`.
