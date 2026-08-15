@@ -1,40 +1,41 @@
-# BFG Admin ↔ Customer Sync Matrix
+# BFG ADMIN ↔ CUSTOMER SYNC MATRIX
 
-Reconciled: 2026-08-14. Convex is canonical; no manual synchronization exists. “Local result” is deterministic test
-evidence, not a substitute for the Production column.
+Reconciled: 2026-08-15
+Authority: canonical Convex records and server projections. Admin UI actions
+never manually patch a customer surface.
 
-| Domain | Admin Mutation | Canonical Record | Customer Query | Customer Visible Consequence | Expected Realtime Behavior | Authorization | Actual Production Result |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Book publication | `books.update` | books | Ready Stock/catalog projections | eligible product appears/disappears | subscription updates | books manage; safe public/session query | old behavior live; real new pilot pending |
-| Ready Stock inventory | `readyStock.setQuantity` | inventory | Ready Stock queries | available listing/quantity changes | subscription updates | Admin write/public safe read | deterministic PASS; real product pending |
-| Cover | `books.attachCover` | storage + book reference | Ready Stock/catalog URL projection | durable cover/fallback | subscription updates | trusted MIME/size; Admin write | not deployed; real upload pending |
-| Catalog assignment | `catalogItems.add/remove` | catalogItems | unlocked catalog | assigned variant appears/disappears | active valid session updates | catalog manage; scoped read | not deployed; deterministic PASS |
-| Catalog code | generate/revoke/open/close | code digest/catalog/session | unlock/getUnlocked | unlock works/fails, catalog closes | authoritative query/mutation reacts | digest, pepper, expiry, rate limit, scope | not deployed; real browser flow pending |
-| Catalog member grant | grant/revoke | catalogAccessGrants | access/unlocked/order guard | member gains/loses catalog eligibility | subscription/next action updates | catalog manage + exact member | not deployed; ownership tests PASS |
-| Join/admission | review/approve/reject | joinRequests/appUsers | mine/users.current | state/admission changes | subscriptions update | applicant own/Admin manage | deterministic PASS; real request pending |
-| Order | assisted/status actions | orders/items/history | own list/detail | owned order/status appears | subscriptions update | server-derived ownership | deterministic PASS; real order pending |
-| Batch roster | assign/move/remove/lock | assignments/batch | listMine/getBatchMine | participating batch/roster changes | subscriptions update | Admin manage/customer ownership | deterministic PASS; real roster pending |
-| Tracking | update stage | batch/status history | own tracking | one timeline advances | subscriptions update | Admin manage/customer ownership | deterministic PASS; real status pending |
-| Invoice | create/issue/void | invoices/items | own invoices | invoice/outstanding changes | subscriptions update | finance permission/ownership | deterministic PASS; real finance event not created |
-| Payment | review approve/reject | confirmations/invoice state | own confirmations/invoice | review/payment status changes | subscriptions update | finance/ownership/private proof | deterministic PASS; Production proof pending |
-| Deposit top-up | approve/reject/adjust | topUps/account/ledger | own account/topups/transactions | balance/status/history changes | atomic mutation + subscriptions | deposits manage/ownership | deterministic PASS; Production empty/real UAT pending |
-| Exception | review/resolve | exception/events/adjustments | own exception/order/invoice | safe case/financial state changes | subscriptions update | ops/ownership | existing tests PASS; real event pending |
-| Refund | payout lifecycle | obligations/payouts/ledger | own refund projection | payout state changes | subscriptions update | refund permission/ownership | existing tests PASS; real event pending |
-| Notification | domain mutations | notifications | list/count | badge, event, destination, read state | subscriptions update | exact recipient | deterministic ownership PASS; real events pending |
-| Inbox | Join submit/member grant | notifications with Inbox surface | list/count | persistent operational message | subscriptions update | exact recipient | deterministic Admin/Customer paths PASS; real message pending |
-| Content/settings | publish/update | contentBlocks/appSettings | public/customer queries | approved copy/instructions change | subscriptions update | content manage/Owner | not deployed; real edit pending |
+| Domain | Admin Action | Canonical Record | Customer Query | Customer Surface | Expected Consequence | Realtime? | Authorization | Notification? | Production Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Admission | approve/reject/retry Join request | `joinRequests`, `appUsers`, `auditEvents` | `joinRequests.mine`, `users.current` | `/join`, gated customer shell | admitted active membership or retained rejection | yes, query-backed | Admin/Owner review; server identity match | yes where configured | supplied real Blessfriend admission PASS | SYNCED |
+| Product publication | create/edit/publish Book Master | `publishers`, `books`, `bookVariants` | `books`/catalog/Ready Stock safe projections | `/catalog`, `/ready-stock` | eligible product becomes visible only after publication rules | yes | Admin/Owner mutation; customer-safe query | event-backed where relevant | supplied real product/projection PASS | SYNCED |
+| Cover | upload/attach/replace cover | `books`, Convex `_storage`, `auditEvents` | customer-safe cover URL | catalog and Ready Stock cards/detail | durable cover survives refresh and projects safely | yes | Admin/Owner upload; signed storage URL | no standalone fake notice | supplied real cover persistence/projection PASS | SYNCED |
+| Ready Stock | set on-hand quantity | `readyStockInventory` | `readyStock.list/getBySlug` | `/ready-stock` | `available = onHand - reserved` | yes | Admin/Owner | no fake notice | supplied real product/stock baseline | SYNCED |
+| Ready Stock order | create, cancel, fulfill | `orders`, `orderItems`, `readyStockReservations` | `orders.getMine`, fulfillment projections | `/account/orders/[orderId]` | reservation active, released, or fulfilled; order history updates | yes | active customer creates; Admin transitions | order/fulfillment events | supplied real order PASS | SYNCED |
+| Catalog assignment | assign/remove Book variant | `catalogItems`, `secretCatalogs` | `catalogAccess.getUnlocked` | `/catalog` | scoped customer listing changes | yes | Admin/Owner; catalog state guard | no synthetic activity | supplied Secret Catalog flow PASS | SYNCED |
+| Catalog access code | generate/copy/revoke | `catalogAccessCodes`, `auditEvents` | session validation / `getUnlocked` | `/catalog`, Admin Access Management | one-time plaintext display; new redemption blocked after revoke | yes | Admin/Owner; digest/pepper/rate limit server-side | no plaintext notification | supplied generate/copy/revoke PASS | SYNCED |
+| Member catalog grant | grant/revoke customer | `catalogAccessGrants`, `auditEvents` | `listAccessible/getUnlocked` | customer catalog and Admin Access Management | active member access starts/stops; owned orders still server-guarded | yes | Admin/Owner; customer ownership | access event only if configured | supplied ownership/access baseline | SYNCED |
+| Join/customer detail | inspect customer and link workflows | `appUsers`, profiles, addresses, orders/invoices/deposits | owned account queries | `/account`, `/account/profile`, `/account/addresses` | customer-safe detail remains isolated; Admin links do not bypass guards | yes | Admin/Owner for Admin views; customer owns own | no fake notification | supplied ownership isolation PASS | SYNCED |
+| Order | create/edit/status | `orders`, `orderItems`, status history | `orders.listMine/getMine` | `/account/orders` | owned snapshots/history and downstream invoice/batch links | yes | active customer/Admin-assisted; server ownership | order events | supplied real order/Admin projection PASS | SYNCED |
+| Batch roster | create/link/assign/move/archive | `batches`, assignments, histories | `batchTracking.listMine/getBatchMine` | `/account/batches` | customer batch list/detail reflects derived assignment | yes | Admin/Owner; stage locks edits | batch events | supplied customer/Admin projection baseline | SYNCED |
+| Tracking | move shipment/fulfillment stage | batch/order fulfillment histories | customer tracking queries | `/account/orders/[id]`, `/account/batches/[id]` | six-stage shipment and five-stage fulfillment projection | yes | Admin/Owner; transition helper | tracking event | supplied tracking baseline | SYNCED |
+| Invoice | create/issue/void | `invoices`, `invoiceItems`, `auditEvents` | `invoices.listMine/getMine` | `/account/invoices` | Tagihan reflects canonical integer-IDR snapshot and status | yes | Admin/Owner; customer ownership | issuance notification | supplied invoice issuance/Tagihan PASS | SYNCED |
+| Payment | submit proof/approve/reject | `paymentConfirmations`, private storage, invoice fields | `paymentConfirmations.listMineForInvoice`, invoice query | invoice detail and Admin queue | verified payment changes invoice consequence without deleting history | yes | customer owns proof; Admin reviews | payment/invoice event | supplied payment baseline | SYNCED |
+| Deposit top-up | submit/approve/reject | `depositTopUps`, `depositTransactions`, account | `depositAccounts.getMine`, transaction list | `/account/deposit` | approved credit and history projection | yes | customer own proof; Admin reviews | top-up event where configured | supplied deposit baseline | SYNCED |
+| Deposit allocation | allocate/release/reverse | allocation and ledger tables | account/invoice queries | Tagihan and Deposit | available/reserved balance remains derived and append-only | yes | Admin financial permission, invoice ownership | financial event where configured | local policy/financial tests; supplied invoice baseline | SYNCED |
+| Exception | open/review/resolve/reject | exception, events, financial adjustments | customer exception/order projections | order detail and Admin Exceptions | partial quantity, replacement, release, or refund obligation consequence | yes | customer request; Admin resolution | exception/invoice event | local full policy tests; supplied real order baseline | SYNCED |
+| Refund | create/start/record payout | refund obligations/payouts and ledger holds | `refunds.listMine/getMine` | customer account/order projection | pending/processing/paid/failed/partial payout without overpayment | yes | Admin payout; customer own view | refund event | local partial-safe tests; supplied baseline | SYNCED |
+| Notification | event writer/read/mark read | `notifications` | `notifications.listMine/unreadCount` | `/account/notifications`, Aktivitas | recipient-scoped unread/read attention | yes | recipient ownership; Admin permission | itself | supplied invoice/notification PASS | SYNCED |
+| Inbox | write/read/mark read | `notifications` with `surface=inbox` | same query with surface scope | `/account/inbox`, `/admin/inbox` | persistent operational message, not social chat | yes | recipient/role scope | itself | local ownership tests; supplied activity baseline | SYNCED |
+| Users/access | invite/role/suspend/reactivate | `appUsers`, `staffInvitations`, `auditEvents` | `users.current` and gated queries | customer/Admin shells | access changes are reflected on next query/session | yes | Owner/Admin server guards; Owner-only role changes | access event only | supplied ownership/admin baseline | SYNCED |
+| Activity/audit | inspect safe event history | `auditEvents` | Admin audit query | `/admin/audit` | operational evidence; not fake customer feed | yes | audit permission | no | supplied baseline; local audit tests | SYNCED |
+| Content | save draft/publish | `contentBlocks` | `contentBlocks.getPublished` | public content routes | published content only reaches customer surface | yes | Admin content permission | no | current local/content baseline | SYNCED |
+| Settings | update store/contact/payment instructions | `appSettings` | `settings.getForCustomer` | customer-safe instructions | customers see current approved instruction projection | yes | Owner mutation; customer-safe read | no gateway/WA automation | current local/settings baseline | SYNCED |
+| Reports/export | query period/export | bounded report rows, export audit | none (Admin-only) | `/admin/reports` | operational visibility without customer data leakage | yes | Admin/Owner report permission | no | current local/report baseline | SYNCED |
 
-Local sync gaps: `0 UNCLASSIFIED`. Production gaps are explicit and intentionally remain `PENDING`, never inferred from
-Convex reactivity.
+## Contract
 
-## Final local reconciliation delta
-
-- Invoice queue create-and-issue and issue-from-queue both use the existing
-  canonical invoice mutations; the customer invoice query and invoice-issued
-  notification remain the downstream consequence. Production event acceptance
-  is pending.
-- Cover selection preview is local-only UI state. Save still uses the existing
-  authorized storage reference, book projection, and customer cover fallback;
-  replacement cleanup remains server-controlled. Production pilot is pending.
-- Customer detail invoice/deposit links add reachability only and introduce no
-  second source of truth.
+`Admin action → canonical record → customer query → customer surface` must be
+traceable for every shared domain. A mutation that changes only an Admin local
+component is not a product consequence. Realtime means Convex reactive query
+projection where the active surface subscribes; it does not authorize writes
+or replace state validation.

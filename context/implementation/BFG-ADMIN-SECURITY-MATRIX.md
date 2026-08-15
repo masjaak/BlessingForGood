@@ -1,11 +1,20 @@
 # BFG Admin Security Matrix
 
-Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_BASELINE_RECONCILED`
 
-The current Production runtime already passes the Clerk → Convex token,
-issuer, audience, Convex identity, non-member, and Admin-denial checks. This
-document records the unchanged authorization boundary plus the new admission
-guards; final real customer/Admin/Owner acceptance remains deployment-gated.
+Reconciled current evidence: the exact baseline is HEAD
+`45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`, Convex Development
+`content-snake-214`, Convex Production `clean-eel-522`, and Vercel Production
+`dpl_ENarTXz1DLezwFcX3Kq14khbjzGM`. The historical “acceptance pending” text
+below is preserved evidence from the prior gate; current final invariants are
+locked in `BFG-SECURITY-INVARIANTS.md` and the current user/client baseline
+records real admission and ownership acceptance as PASS.
+
+The current Production runtime passes the Clerk → Convex token, issuer,
+audience, Convex identity, non-member, and Admin-denial checks. The current
+supplied Phase 07.1 baseline additionally records real admission and ownership
+flow acceptance. This document records the unchanged authorization boundary;
+the invariant index is the active security contract.
 
 ## Authority chain
 

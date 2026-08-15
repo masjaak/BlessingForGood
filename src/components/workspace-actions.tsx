@@ -2,16 +2,43 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../../convex/_generated/api";
 import { ActivityCenter } from "@/components/activity-center";
 
 type ActivitySurface = "notification" | "inbox";
+export type WorkspaceActivityCounts = {
+  notifications?: number;
+  inbox?: number;
+};
 
-function ActivityIcon() {
+export const WorkspaceActivityContext = createContext<WorkspaceActivityCounts>({});
+
+export function WorkspaceActivityProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const notifications = useQuery(api.notifications.unreadCount, enabled ? { surface: "notification" } : "skip");
+  const inbox = useQuery(api.notifications.unreadCount, enabled ? { surface: "inbox" } : "skip");
+
+  return (
+    <WorkspaceActivityContext.Provider value={{ inbox, notifications }}>{children}</WorkspaceActivityContext.Provider>
+  );
+}
+
+export function useWorkspaceActivity() {
+  return useContext(WorkspaceActivityContext);
+}
+
+export function ActivityIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6.5 10a5.5 5.5 0 0 1 11 0v4l2 2.5h-15l2-2.5zM10 19h4" />
+    </svg>
+  );
+}
+
+export function InboxIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 5.5h16v13H4zM4 14h4l1.5 2h5L16 14h4M8 9h8" />
     </svg>
   );
 }
@@ -106,8 +133,7 @@ function ActivityPopover({
 }
 
 function ConnectedActions({ workspace }: { workspace: "admin" | "customer" }) {
-  const notifications = useQuery(api.notifications.unreadCount, { surface: "notification" });
-  const inbox = useQuery(api.notifications.unreadCount, { surface: "inbox" });
+  const { inbox, notifications } = useWorkspaceActivity();
   return <ActivityPopover inbox={inbox} notifications={notifications} workspace={workspace} />;
 }
 

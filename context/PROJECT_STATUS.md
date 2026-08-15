@@ -1,5 +1,76 @@
 # BFG Project Status
 
+## Current Anchored Summary — 2026-08-15
+
+**Status:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
+**Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
+**Phase 08:** `NOT_STARTED` — entry gate and candidates are documented; no Phase 08 implementation was started.
+
+Starting/current stable commit: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
+`origin/main`: matches the current stable commit at verification time.
+Convex Development: `content-snake-214`.
+Convex Production: `clean-eel-522`.
+Vercel Production: `dpl_ENarTXz1DLezwFcX3Kq14khbjzGM`.
+Canonical Production: `https://www.blessingforgood.com`.
+
+Current regression baseline: Vitest `189/189`, Convex `94/94`, Playwright
+`160/160`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
+URL returned HTTP 200 in safe read-only verification and the apex redirects to
+`www` with HTTP 308. The supplied Phase 07.1 closure evidence records PASS for
+real admission, product, cover upload/persistence/projection, Secret Catalog
+generate/copy/unlock/revoke, order, Admin projection, invoice, Tagihan,
+notification, and ownership-isolation flows.
+
+The canonical reconciliation artifacts are:
+
+- `context/SOURCE_OF_TRUTH.md`
+- `context/DECISION_LOG.md`
+- `context/implementation/BFG-BASELINE-RECONCILIATION-MATRIX.md`
+- `context/implementation/BFG-ADMIN-CUSTOMER-SYNC-MATRIX.md`
+- `context/implementation/BFG-BUSINESS-CONSEQUENCE-MATRIX.md`
+- `context/implementation/BFG-MOCKUP-TRACEABILITY-MATRIX.md`
+- `context/implementation/BFG-STATE-MACHINE-INDEX.md`
+- `context/implementation/BFG-SECURITY-INVARIANTS.md`
+- `context/implementation/BFG-FINANCIAL-INVARIANTS.md`
+- `context/implementation/BFG-VISUAL-SYSTEM.md`
+- `context/implementation/BFG-PHASE-08-ENTRY-GATE.md`
+- `context/implementation/BFG-PHASE-08-CANDIDATES.md`
+
+### Current reconciliation result
+
+| Gate | Result |
+|---|---|
+| Source documents inventoried | PASS |
+| Current features classified | PASS |
+| Current routes classified | PASS |
+| Required actions classified | PASS |
+| Mockups mapped | PASS |
+| Business domains mapped | PASS |
+| State machines indexed | PASS |
+| Security invariants locked | PASS |
+| Financial invariants locked | PASS |
+| Admin ↔ Customer sync mapped | PASS |
+| Superseded decisions documented | PASS |
+| Explicit exclusions documented | PASS |
+| Phase 08 candidates source-based | PASS |
+| Unknown material source conflict | `0` |
+| Unclassified feature | `0` |
+| Unclassified route | `0` |
+| Unclassified mockup | `0` |
+
+### Next milestone
+
+Before any Phase 08 implementation, create and approve a Phase Source Contract
+from the candidate list. This task ends at the locked baseline; it does not
+start Phase 08.
+
+## Historical Status Archive
+
+The sections below preserve earlier evidence and decisions. Their old counts,
+deployment IDs, and blocked/active labels are historical and are superseded by
+the current anchored summary and the linked canonical documents. They are not
+rewritten to imply they were always current.
+
 ## Phase 07.1 full source-of-truth reconciliation — 2026-08-14
 
 **Status:** `LOCAL_ENGINEERING_PASS__PRODUCTION_AND_REAL_UAT_BLOCKED`

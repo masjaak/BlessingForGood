@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { PageAwareSkeleton } from "@/components/page-aware-skeleton";
@@ -10,6 +11,96 @@ import { orderStatusLabels } from "@/domain/prototype/logic";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
+import { ActivityIcon, InboxIcon, useWorkspaceActivity } from "@/components/workspace-actions";
+
+function AccountActivityRow({
+  description,
+  href,
+  icon,
+  label,
+  unread,
+}: {
+  description: string;
+  href: string;
+  icon: ReactNode;
+  label: string;
+  unread?: number;
+}) {
+  return (
+    <Link className="dashboard-row account-activity-row" href={href}>
+      <span className="account-activity-row-main">
+        <span className="account-activity-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <span>
+          <strong>{label}</strong>
+          <small>{description}</small>
+        </span>
+      </span>
+      <span className="account-activity-row-end">
+        {unread ? <span className="account-activity-count">{unread > 99 ? "99+" : unread} baru</span> : null}
+        <span aria-hidden="true">→</span>
+      </span>
+    </Link>
+  );
+}
+
+function AccountNavigation() {
+  const { inbox, notifications } = useWorkspaceActivity();
+
+  return (
+    <Card className="account-navigation-card">
+      <section className="account-navigation-section">
+        <div className="split-heading">
+          <div>
+            <span className="card-kicker">AKTIVITAS</span>
+            <h2>Notifikasi & pesan</h2>
+          </div>
+        </div>
+        <div className="content-stack">
+          <AccountActivityRow
+            description="Pembaruan pesanan, tagihan, dan akun"
+            href="/account/notifications"
+            icon={<ActivityIcon />}
+            label="Notifikasi"
+            unread={notifications}
+          />
+          <AccountActivityRow
+            description="Pesan masuk dari tim Blessing For Goods"
+            href="/account/inbox"
+            icon={<InboxIcon />}
+            label="Kotak Masuk"
+            unread={inbox}
+          />
+        </div>
+      </section>
+      <section className="account-navigation-section">
+        <div className="split-heading">
+          <div>
+            <span className="card-kicker">AKUN</span>
+            <h2>Profil & alamat</h2>
+          </div>
+        </div>
+        <div className="content-stack">
+          <Link className="dashboard-row" href="/account/profile">
+            <span>
+              <strong>Profil</strong>
+              <small>Nama dan informasi kontak</small>
+            </span>
+            <span aria-hidden="true">→</span>
+          </Link>
+          <Link className="dashboard-row" href="/account/addresses">
+            <span>
+              <strong>Alamat pengiriman</strong>
+              <small>Kelola alamat untuk pesananmu</small>
+            </span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </section>
+    </Card>
+  );
+}
 
 function AccountDashboard() {
   const { state, ordersLoading } = useProduct();
@@ -212,30 +303,7 @@ function AccountDashboard() {
           )}
         </Card>
 
-        <Card>
-          <div className="split-heading">
-            <div>
-              <span className="card-kicker">Pengaturan akun</span>
-              <h2>Profil & alamat</h2>
-            </div>
-          </div>
-          <div className="content-stack">
-            <Link className="dashboard-row" href="/account/profile">
-              <span>
-                <strong>Profil</strong>
-                <small>Nama dan informasi kontak</small>
-              </span>
-              <span aria-hidden="true">→</span>
-            </Link>
-            <Link className="dashboard-row" href="/account/addresses">
-              <span>
-                <strong>Alamat pengiriman</strong>
-                <small>Kelola alamat untuk pesananmu</small>
-              </span>
-              <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </Card>
+        <AccountNavigation />
       </div>
     </div>
   );

@@ -1,7 +1,16 @@
 # BFG Action Coverage V2
 
-Reconciled: 2026-08-14. This is the zero-dead-control gate for the local change set. Production verification remains
-`NO` for new controls until deployment and authenticated acceptance.
+Reconciled: 2026-08-15. The control inventory below is retained as historical
+evidence from the 2026-08-14 local audit. Its old `NO`/`PARTIAL` Production
+labels are superseded by the current supplied Phase 07.1 closure evidence and
+the current canonical classification in
+`BFG-BASELINE-RECONCILIATION-MATRIX.md`.
+
+Current control gate: `UNKNOWN=0`, `DEAD_ACTION=0`. Current exact tests are
+Vitest `189/189`, Convex `94/94`, Playwright `160/160`; TypeScript, ESLint,
+format, and build PASS. Real Production evidence for admission, product/media,
+Secret Catalog, order, invoice, notification, and ownership flows is recorded
+in the current baseline documents without exposing secrets.
 
 | Surface / Control | Visible | Enabled when valid | Handler | Real function | Backend | Authorized | Loading | Error | Success | Consequence | Destination | Production Verified | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -43,8 +52,10 @@ Reconciled: 2026-08-14. This is the zero-dead-control gate for the local change 
 | WhatsApp API blast | NO | n/a | none | none | none | n/a | n/a | n/a | n/a | intentionally absent | n/a | YES | EXCLUDED |
 | Payment gateway | NO | n/a | none | none | none | n/a | n/a | n/a | n/a | intentionally absent | n/a | YES | EXCLUDED |
 
-Local gate: `UNKNOWN=0`, `DEAD_ACTION=0`. A `PARTIAL` row is operational locally but awaits the Production acceptance
-shown in the master matrix; it is not a hidden or dead control.
+Historical local gate: `UNKNOWN=0`, `DEAD_ACTION=0`. A historical `PARTIAL`
+row was operational locally while the earlier Production acceptance gate was
+open; it is not a hidden or dead control. The current status is governed by the
+master reconciliation matrix.
 
 ## Final local audit additions
 
@@ -56,5 +67,22 @@ shown in the master matrix; it is not a hidden or dead control.
 | Customer detail invoice/deposit context links | YES | route links | existing canonical flows | operator reaches intended workflow | ACTIVE_VERIFIED_LOCAL | NO |
 | Admin sidebar optical row primitive | YES | route link | n/a | shared icon box/baseline/badge geometry | ACTIVE_VERIFIED_LOCAL | NO |
 
-These additions do not change the zero-unknown/zero-dead-control result. They
-remain local until canonical validation, deployment, and authenticated UAT pass.
+These additions do not change the zero-unknown/zero-dead-control result. The
+old local-only wording is historical; the current supplied Production closure
+evidence is anchored in the current project status and master matrix.
+
+## Targeted Phase 07.1 responsive/media closure — 2026-08-15
+
+The shared Activity trigger remains the only desktop notification/Inbox entry.
+Its two existing recipient-scoped unread queries now feed the Customer Akun
+bottom-nav dot and the `/account` Activity rows through one provider. Mobile
+top-header actions are intentionally hidden; the five-link bottom navigation
+remains the natural entry point.
+
+Book Master now uses `CoverUploadField`: the native file input remains available
+to the browser and assistive technology but is visually hidden; the BFG UI owns
+picker, filename, preview, loading, success, and actionable error states. The
+existing URL generation, upload, `books.attachCover`, replacement safety, and
+customer projection consequences are unchanged. Local component and route QA
+are green; authenticated Production cover UAT is not repeated here without an
+authorized session or intentional client product.

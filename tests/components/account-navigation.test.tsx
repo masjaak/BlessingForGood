@@ -10,6 +10,10 @@ vi.mock("@clerk/nextjs", () => ({
   useAuth: vi.fn(() => ({ isLoaded: true, isSignedIn: true })),
 }));
 
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => 0),
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/account",
 }));
@@ -46,5 +50,7 @@ describe("customer account navigation", () => {
 
     expect(screen.getByRole("link", { name: /Profil/ }).getAttribute("href")).toBe("/account/profile");
     expect(screen.getByRole("link", { name: /Alamat pengiriman/ }).getAttribute("href")).toBe("/account/addresses");
+    expect(screen.getByRole("link", { name: /Notifikasi/ }).getAttribute("href")).toBe("/account/notifications");
+    expect(screen.getByRole("link", { name: /Kotak Masuk/ }).getAttribute("href")).toBe("/account/inbox");
   });
 });

@@ -2,11 +2,58 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-12
+last_updated: 2026-08-15
 source: conversation
 ---
 
 # Changelog
+
+## [phase-07.1-responsive-cover-closure] — 2026-08-15
+
+### Changed
+
+- Locked the customer mobile header to the canonical logo-only treatment and
+  kept the five-link bottom navigation as the activity entry point.
+- Added the shared unread-count provider, Akun Activity rows for Notifikasi and
+  Kotak Masuk, and a subtle data-backed Akun indicator without changing the
+  Notification/Inbox backend model.
+- Kept Customer/Admin desktop Activity and avatar controls in the shared
+  header grammar, with a compact Admin Activity treatment at supported 1024px.
+- Replaced the visible browser file control on Book Master with reusable
+  `CoverUploadField` presentation, real cover preview, selected filename,
+  validation, loading, success, and error states. Existing Convex storage and
+  attach consequences remain unchanged.
+- Refined Book Detail into Informasi Buku, Cover Buku, Deskripsi, and
+  Variant/ISBN/Harga sections without changing domain logic.
+
+### QA
+
+- Vitest: 194/194; Convex: 94/94; Playwright: 160/160; TypeScript, ESLint,
+  format, and build pass.
+- Authenticated Production recheck and real cover/product UAT are
+  `BLOCKED_EXTERNAL`/`BLOCKED_BY_DATA` in this environment because no
+  authorized Clerk session or intentional client product was supplied. No
+  Production business data was created.
+
+## [phase-07.1-baseline-reconciled-agent-system-v2] — 2026-08-15
+
+### Changed
+
+- Reconciled the original PRD, UX flows, business/security/financial policies,
+  routes, scope, mockups, brand assets, current code, and supplied Production
+  baseline into `context/SOURCE_OF_TRUTH.md`.
+- Added the permanent decision register and V2 traceability, consequence,
+  state-machine, security, financial, visual, sync, mockup, and Phase 08 gate
+  artifacts under `context/implementation/`.
+- Updated the current project-status anchor without rewriting historical
+  reports.
+
+### QA
+
+- Current baseline: Vitest 189/189, Convex 94/94, Playwright 160/160;
+  TypeScript, ESLint, format, and build pass.
+- No Phase 08 feature was implemented and no Production business data was
+  created by this reconciliation.
 
 ## [phase-07.1-operational-completeness] — 2026-08-14
 

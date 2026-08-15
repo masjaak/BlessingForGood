@@ -189,7 +189,11 @@ test.describe("@customer BFG customer route smoke", () => {
         "Gabung",
       ]);
     }
-    await expect(page.getByRole("link", { name: "Masuk" })).toHaveAttribute("href", "/sign-in");
+    if ((page.viewportSize()?.width || 0) <= 800) {
+      await expect(page.locator(".site-header .site-auth")).toBeHidden();
+    } else {
+      await expect(page.getByRole("link", { name: "Masuk" })).toHaveAttribute("href", "/sign-in");
+    }
 
     for (const [route, copy] of [
       ["/catalog", "Kode akses katalog"],

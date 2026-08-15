@@ -1,0 +1,44 @@
+# BFG DECISION LOG
+
+Canonical decision register for the reconciled Phase 07.1 baseline and BFG
+Agent Development System V2. Historical reports remain unchanged; this file is
+the active decision index.
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+|---|---|---|---|---|---|---|
+| BFG-DEC-001 | 2026-08-15 / baseline | Previous completion reports and local PASS labels could describe closure. | Reports are evidence only; current source, implementation, tests, rendered QA, real flow, and Production evidence are reported separately. | Latest user/client reconciliation contract | Prevents implementation/reporting drift. | ACTIVE |
+| BFG-DEC-002 | 2026-08-15 / baseline | Original conceptual roles included `operator`. | Canonical application roles are `customer`, `admin`, and `owner`; Admin permissions cover current operations. | Latest explicit user/client decision; current Convex schema/auth | Matches server authorization and current route matrix. | SUPERSEDED |
+| BFG-DEC-003 | 2026-08-12 / Phase 06.7 | Ready Stock could remain a public contact/help CTA without a canonical order. | Ready Stock uses `orders.source=ready_stock`, atomic reservation, release on cancellation, and consume on fulfillment. | `context/decisions/DECISIONS.md`; `BFG-BUSINESS-POLICY-V1.md` | One canonical order and inventory consequence. | SUPERSEDED |
+| BFG-DEC-004 | 2026-08-12 / mobile V3.1 | Secret Catalog required authenticated member plus code for entry. | A valid expiring/revocable code creates an anonymous scoped browsing session; active customer grants remain for member access and owned order authorization. | `context/decisions/CUSTOMER-MOBILE-UX-V3-1.md` | Explicit later customer entry decision; preserves server secrecy and ownership. | ACTIVE |
+| BFG-DEC-005 | 2026-08-15 / baseline | Anonymous code/session alone was the complete access-management model. | Admin Access Management exposes both code generation/revocation and member grant/revoke. | Current user/client reconciliation contract; current `/admin/catalogs/[catalogId]/access` flow | A visible UI must cover every canonical access mutation. | SUPERSEDED |
+| BFG-DEC-006 | 2026-08-15 / baseline | Authenticated-only Secret Catalog access could replace scoped code browsing. | Authenticated-only access is not canonical; hybrid access is retained. | Current user/client reconciliation contract | Keeps the proven public gateway while retaining customer ownership boundaries. | SUPERSEDED |
+| BFG-DEC-007 | 2026-08-14 / Phase 07.1 | Cover URL metadata was enough for the operator media flow. | Admin uploads a validated JPG/PNG/WebP to Convex storage, attaches it to Book Master, and customer projections use the durable reference. | Phase 07.1 operational reconciliation delta; current `convex/books.ts` | Hard-refresh persistence and customer projection require durable storage. | SUPERSEDED |
+| BFG-DEC-008 | 2026-08-14 / Phase 07.1 | Invoice creation existed only as a backend/detail path. | Admin Invoices & Deposit queue exposes draft creation, immediate issue, and draft issuance. | Phase 07.1 operational reconciliation delta; current invoice page | Natural navigation is part of feature completeness. | ACTIVE |
+| BFG-DEC-009 | 2026-08-14 / Phase 07.1 | Customer detail could require manual URL navigation to billing/deposit. | Customer detail links to canonical invoice and deposit workflows without bypassing financial mutations. | Phase 07.1 operational reconciliation delta | Removes hidden-route dependency without adding a parallel flow. | ACTIVE |
+| BFG-DEC-010 | 2026-08-14 / Phase 07.1 | How To Order used an older independent card composition. | Use the approved connected seven-step journey. | Current source/visual decision and `src/components/how-to-order.tsx` | Source and current visual contract agree. | SUPERSEDED |
+| BFG-DEC-011 | 2026-08-15 / baseline | `/catalogs`, `/my-books`, `/billing`, and `/login` names had to exist literally. | Current routes are canonical adaptations: `/catalog`, `/account/orders`, `/account/invoices`, and `/sign-in`; inline detail flows replace standalone conceptual routes. | Original `product/ROUTES.md` reconciled with current route tree | Route behavior matters; legacy names do not require duplicate implementations. | SUPERSEDED |
+| BFG-DEC-012 | 2026-08-15 / baseline | `/sign-up` could be treated as public signup. | `/sign-up` is invitation-only; public self-signup remains excluded. | `context/decisions/DECISIONS.md`; `product/OUT_OF_SCOPE.md` | Admission must remain BFG-controlled. | ACTIVE |
+| BFG-DEC-013 | 2026-08-15 / baseline | Reporting, Excel export, content, settings, notification, audit, and multi-admin were automatically Phase 08 because old reports deferred them. | Existing source-supported minimum operational versions are part of the current baseline and are kept; only the residual advanced work is future. | Current source reconciliation; current routes and Convex modules | Old backlog classification is not requirement authority. | SUPERSEDED |
+| BFG-DEC-014 | 2026-08-15 / baseline | Payment Gateway and automatic WhatsApp Business API automation could be treated as future implementation scope. | Both remain explicit exclusions for this product contract. | `product/OUT_OF_SCOPE.md`; latest user/client exclusions | Technical possibility does not override scope. | ACTIVE |
+| BFG-DEC-015 | 2026-08-15 / baseline | Unified Aktivitas implied one merged Notification/Inbox backend model. | Customer presentation may be unified; Notification and Inbox remain separate event-backed data surfaces with separate ownership/query semantics. | Current user/client reconciliation contract; `convex/schema.ts` | Prevents false data-model coupling. | ACTIVE |
+| BFG-DEC-016 | 2026-08-15 / baseline | `prototypeSessions` and the `src/domain/prototype` name described the active product runtime. | Active product authority is Clerk + Convex + `appUsers`; `prototypeSessions` is isolated legacy test support and the domain name is retained only as an adapter/compatibility boundary. | `convex/schema.ts`, current imports, AGENTS.md | Avoids destructive cleanup while removing false architecture authority. | ACTIVE |
+| BFG-DEC-017 | 2026-08-15 / baseline | Original mockup sample data, My Bookshelf branding, carts, or old WhatsApp controls were product requirements. | Mockups are visual/layout evidence only; BFG brand assets, current business policy, and real backend consequences govern. | Direct asset inspection; brand docs; latest source contract | Prevents sample data and stale visual controls from becoming requirements. | ACTIVE |
+| BFG-DEC-018 | 2026-08-15 / baseline | A production “done” label could be carried forward from an earlier deployment ID. | The current baseline is anchored to HEAD, `origin/main`, Convex deployment IDs, Vercel deployment ID, live canonical smoke, exact tests, and supplied real-flow evidence. | Current task baseline and verification | Eliminates deployment/reporting drift. | ACTIVE |
+
+## Rejected or Deferred Decisions
+
+| ID | Decision | Source | Status |
+|---|---|---|---|
+| BFG-DEC-019 | Add a payment gateway or automatic bank settlement. | Product out-of-scope policy | REJECTED |
+| BFG-DEC-020 | Add automatic WhatsApp Business API sending or blasts. | Product out-of-scope policy | REJECTED |
+| BFG-DEC-021 | Add a full social chat system to Inbox. | Current Inbox contract | REJECTED |
+| BFG-DEC-022 | Add bulk import without an approved mapping, validation, rollback, and duplicate policy. | Reconciled source gap | DEFERRED |
+| BFG-DEC-023 | Add advanced analytics beyond the current bounded report. | Reconciled source gap | DEFERRED |
+| BFG-DEC-024 | Add multi-image gallery/external preview metadata without an approved data contract. | Original Ready Stock/book-detail source plus current schema boundary | DEFERRED |
+| BFG-DEC-025 | Add cross-domain global Admin search without an indexed scope contract. | Current future backlog | DEFERRED |
+
+## Rule
+
+An old decision cannot become active again merely because a historical report,
+legacy symbol, or hidden route still exists. A new decision must be explicit,
+source-backed, and added here before implementation.

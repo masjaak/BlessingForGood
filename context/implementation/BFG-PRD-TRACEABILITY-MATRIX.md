@@ -1,8 +1,11 @@
 # BFG PRD Traceability Matrix
 
-Reconciled against the original PRD/UX/business rules/routes/scope/success pack and latest decisions on 2026-08-14.
-The master coverage matrix owns final status; this table records the shortest end-to-end trace for every commercial
-scope group.
+Reconciled against the original PRD/UX/business rules/routes/scope/success pack
+and latest decisions on 2026-08-15. The wide
+`BFG-BASELINE-RECONCILIATION-MATRIX.md` owns final status; this table remains
+the short PRD-oriented end-to-end trace. Historical `PARTIAL` labels below are
+preserved evidence from the earlier 2026-08-14 acceptance gate; they do not
+override the current baseline.
 
 | PRD Requirement | Canonical Domain | Admin Route | Admin Action | Backend Query/Mutation | State Transition | Customer Projection | Customer Route | Visual Source | Test | Production Acceptance | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -24,6 +27,19 @@ scope group.
 | Admin analytics | reports | `/admin/reports` | period filter | reports.get | bounded window | none | n/a | A-09 | deterministic zero/populated query | Production populated/zero | PARTIAL |
 | Notification/Inbox latest | notifications + domain events | notification/Inbox routes | open/read/work queue | list/count/read + event writes | unread→read | owned notice/message | account notification/Inbox | authenticated shells | ownership/read tests | real Admin and Customer events | PARTIAL |
 
-Explicit exclusions: WhatsApp Business API automation and payment gateway. Advanced analytics, bulk imports, full chat,
-global search, and multi-image gallery remain outside the current canonical scope unless a later client decision adds
-their missing contracts.
+## Current Reconciliation Override
+
+The current baseline classifies the short rows as follows:
+
+| PRD group | Current status | Decision |
+|---|---|---|
+| Foundation, authentication/access, landing, Ready Stock, Join/admission, Book Master | SYNCED | KEEP |
+| Batch PO/tracking, deposit, invoices/payments, customer workspace/history | SYNCED | KEEP |
+| Secret Catalog/access, orders, report/export, multi-Admin/activity, notification/Inbox | SYNCED | KEEP |
+| Advanced analytics beyond bounded report | DEFERRED | DEFER_FUTURE |
+| Bulk imports, full chat, global search, multi-image gallery/external preview | DEFERRED or EXCLUDED per source | DEFER_FUTURE / EXCLUDE |
+
+Explicit exclusions: WhatsApp Business API automation and payment gateway. The
+current minimum report/export, content, settings, notification/Inbox, audit,
+and multi-Admin versions are not Phase 08 candidates merely because an older
+report called them backlog.

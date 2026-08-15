@@ -1,12 +1,17 @@
 # BFG Workspace Access Matrix
 
-Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_BASELINE_RECONCILED`
+
+Current baseline: HEAD `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`; current
+Production and real-flow evidence are anchored in `PROJECT_STATUS.md` and
+`SOURCE_OF_TRUTH.md`. Earlier “Production auth pending” notes below are
+historical evidence and do not override the current baseline.
 
 Customer and Admin use one Clerk/Convex application but remain separate
 presentation contexts. The client guard controls which workspace mounts; every
 private Convex query and mutation remains server-authorized.
 
-The Clerk → Convex authentication boundary is now verified in the current
+The Clerk → Convex authentication boundary is verified in the current
 Production runtime. A Clerk account still does not grant BFG membership:
 `appUsers` admission, status, role, and server authorization remain the source
 of truth. The remaining closure gate is deployment of this admission/UI diff

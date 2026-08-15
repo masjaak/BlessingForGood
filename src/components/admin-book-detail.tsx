@@ -2,7 +2,7 @@
 
 import type { FunctionReturnType } from "convex/server";
 import { useMutation, useQuery } from "convex/react";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
@@ -18,7 +18,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
-import { BookCover } from "@/components/book-cover";
+import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
@@ -120,17 +120,15 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [format, setFormat] = useState<BookFormat>("PB");
   const [isbn, setIsbn] = useState("");
   const [price, setPrice] = useState("");
-  const [message, setMessage] = useState("");
+  const [bookMessage, setBookMessage] = useState("");
+  const [variantMessage, setVariantMessage] = useState("");
+  const [coverMessage, setCoverMessage] = useState("");
+  const [coverError, setCoverError] = useState("");
   const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | null>(null);
-  const coverPreviewUrl = useMemo(() => (coverFile ? URL.createObjectURL(coverFile) : null), [coverFile]);
-
-  useEffect(() => {
-    if (coverPreviewUrl) return () => URL.revokeObjectURL(coverPreviewUrl);
-  }, [coverPreviewUrl]);
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage("");
+    setBookMessage("");
     setPendingAction("book");
     try {
       await updateBook({
@@ -143,9 +141,9 @@ function BookEditor({ book }: { book: AdminBook }) {
         categories: categories.split(","),
         publicationStatus,
       });
-      setMessage("Master Buku tersimpan.");
+      setBookMessage("Master Buku tersimpan.");
     } catch {
-      setMessage("Master Buku tidak dapat disimpan.");
+      setBookMessage("Master Buku tidak dapat disimpan.");
     } finally {
       setPendingAction(null);
     }
@@ -153,11 +151,14 @@ function BookEditor({ book }: { book: AdminBook }) {
 
   async function uploadCover() {
     if (!coverFile) return;
-    setMessage("");
+    setCoverMessage("");
+    setCoverError("");
     setPendingAction("cover");
     try {
-      if (!["image/jpeg", "image/png", "image/webp"].includes(coverFile.type) || coverFile.size > 5_000_000) {
-        throw new Error("invalid cover");
+      const validationError = validateCoverFile(coverFile);
+      if (validationError) {
+        setCoverError(validationError);
+        return;
       }
       const uploadUrl = await generateCoverUploadUrl({});
       const response = await fetch(uploadUrl, {
@@ -169,9 +170,9 @@ function BookEditor({ book }: { book: AdminBook }) {
       const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
       await attachCover({ bookId: book._id, storageId });
       setCoverFile(null);
-      setMessage("Cover tersimpan.");
+      setCoverMessage("Cover tersimpan.");
     } catch {
-      setMessage("Cover harus berupa JPG, PNG, atau WebP maksimal 5 MB.");
+      setCoverError("Cover belum tersimpan. Coba lagi.");
     } finally {
       setPendingAction(null);
     }
@@ -179,18 +180,24 @@ function BookEditor({ book }: { book: AdminBook }) {
 
   async function addVariant(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage("");
+    setVariantMessage("");
     setPendingAction("variant");
     try {
       await createVariant({ bookId: book._id, format, isbn, priceAmount: Number(price) });
       setIsbn("");
       setPrice("");
-      setMessage("Format ditambahkan.");
+      setVariantMessage("Format ditambahkan.");
     } catch {
-      setMessage("Format ditolak. Periksa ISBN, harga, dan format unik.");
+      setVariantMessage("Format ditolak. Periksa ISBN, harga, dan format unik.");
     } finally {
       setPendingAction(null);
     }
+  }
+
+  function handleCoverFileChange(file: File | null) {
+    setCoverFile(file);
+    setCoverMessage("");
+    setCoverError("");
   }
 
   return (
@@ -207,94 +214,106 @@ function BookEditor({ book }: { book: AdminBook }) {
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
-          <Card>
+          <Card className="admin-book-detail-card">
             <form className="form-card" onSubmit={saveBook}>
-              <div className="form-grid">
-                <Field label="Judul">
-                  <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} required />
-                </Field>
-                <Field label="Slug publik">
-                  <input className="input" value={slug} onChange={(event) => setSlug(event.target.value)} required />
-                </Field>
-                <Field label="Penerbit">
-                  <BFGSelect
-                    className="select"
-                    value={publisherId}
-                    onChange={(event) => setPublisherId(event.target.value as Id<"publishers">)}
-                  >
-                    {publishers?.page.map((publisher) => (
-                      <option value={publisher._id} key={publisher._id}>
-                        {publisher.name}
-                      </option>
-                    ))}
-                  </BFGSelect>
-                </Field>
-                <Field label="Penulis">
-                  <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
-                </Field>
-                <Field label="Kategori" hint="Pisahkan dengan koma.">
-                  <input className="input" value={categories} onChange={(event) => setCategories(event.target.value)} />
-                </Field>
-                <Field label="Status publikasi">
-                  <BFGSelect
-                    className="select"
-                    value={publicationStatus}
-                    onChange={(event) => setPublicationStatus(event.target.value as PublicationStatus)}
-                  >
-                    <option value="draft">Draf</option>
-                    <option value="published">Terbit</option>
-                    <option value="special">Khusus / privat</option>
-                    <option value="archived">Diarsipkan</option>
-                  </BFGSelect>
-                </Field>
-              </div>
-              <div className="admin-cover-editor">
-                <BookCover
-                  title={book.title}
-                  publisher={book.publisher?.name || "BFG"}
-                  src={coverPreviewUrl || book.coverUrl || undefined}
-                />
-                <Field label="Unggah cover" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
-                  <input
-                    className="input"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) => setCoverFile(event.target.files?.[0] || null)}
+              <section className="admin-book-detail-section">
+                <div className="split-heading">
+                  <div>
+                    <span className="card-kicker">INFORMASI BUKU</span>
+                    <h2>Identitas dan publikasi</h2>
+                  </div>
+                </div>
+                <div className="form-grid">
+                  <Field label="Judul">
+                    <input
+                      className="input"
+                      value={title}
+                      onChange={(event) => setTitle(event.target.value)}
+                      required
+                    />
+                  </Field>
+                  <Field label="Slug publik">
+                    <input className="input" value={slug} onChange={(event) => setSlug(event.target.value)} required />
+                  </Field>
+                  <Field label="Penerbit">
+                    <BFGSelect
+                      className="select"
+                      value={publisherId}
+                      onChange={(event) => setPublisherId(event.target.value as Id<"publishers">)}
+                    >
+                      {publishers?.page.map((publisher) => (
+                        <option value={publisher._id} key={publisher._id}>
+                          {publisher.name}
+                        </option>
+                      ))}
+                    </BFGSelect>
+                  </Field>
+                  <Field label="Penulis">
+                    <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
+                  </Field>
+                  <Field label="Kategori" hint="Pisahkan dengan koma.">
+                    <input
+                      className="input"
+                      value={categories}
+                      onChange={(event) => setCategories(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Status publikasi">
+                    <BFGSelect
+                      className="select"
+                      value={publicationStatus}
+                      onChange={(event) => setPublicationStatus(event.target.value as PublicationStatus)}
+                    >
+                      <option value="draft">Draf</option>
+                      <option value="published">Terbit</option>
+                      <option value="special">Khusus / privat</option>
+                      <option value="archived">Diarsipkan</option>
+                    </BFGSelect>
+                  </Field>
+                </div>
+              </section>
+              <CoverUploadField
+                currentSrc={book.coverUrl || undefined}
+                error={coverError}
+                file={coverFile}
+                format={book.variants[0]?.format}
+                message={coverMessage}
+                onFileChange={handleCoverFileChange}
+                onUpload={() => void uploadCover()}
+                pending={pendingAction === "cover"}
+                publisher={book.publisher?.name || "BFG"}
+                title={book.title}
+              />
+              <section className="admin-book-detail-section">
+                <div className="split-heading">
+                  <div>
+                    <span className="card-kicker">DESKRIPSI</span>
+                    <h2>Ceritakan isi buku</h2>
+                  </div>
+                </div>
+                <Field label="Deskripsi">
+                  <textarea
+                    className="textarea"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
                   />
                 </Field>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={!coverFile}
-                  pending={pendingAction === "cover"}
-                  pendingLabel="Mengunggah…"
-                  onClick={() => void uploadCover()}
-                >
-                  Simpan cover
-                </Button>
-              </div>
-              {coverFile ? (
-                <p className="subtle" role="status">
-                  Preview siap disimpan: {coverFile.name}
-                </p>
-              ) : null}
-              <Field label="Deskripsi">
-                <textarea
-                  className="textarea"
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                />
-              </Field>
+              </section>
               <Button type="submit" pending={pendingAction === "book"} pendingLabel="Menyimpan…">
                 Simpan Master Buku
               </Button>
+              {bookMessage ? (
+                <p className="subtle" role="status">
+                  {bookMessage}
+                </p>
+              ) : null}
             </form>
           </Card>
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Format dan Ready Stock</span>
-                <h2>ISBN, harga, dan jumlah per format</h2>
+                <span className="card-kicker">VARIANT / ISBN / HARGA</span>
+                <h2>Format dan Ready Stock</h2>
               </div>
             </div>
             <div className="content-stack">
@@ -338,9 +357,9 @@ function BookEditor({ book }: { book: AdminBook }) {
                 Tambah format
               </Button>
             </form>
-            {message ? (
+            {variantMessage ? (
               <p className="subtle" role="status">
-                {message}
+                {variantMessage}
               </p>
             ) : null}
           </Card>

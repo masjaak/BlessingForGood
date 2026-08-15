@@ -7,7 +7,7 @@ import { UserButton, useAuth } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { bfgClerkAppearance } from "@/config/clerk";
-import { WorkspaceActions } from "@/components/workspace-actions";
+import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
 import { ProductContext } from "@/domain/prototype/context";
 
 const customerLinks = [
@@ -89,16 +89,31 @@ function CustomerNavIcon({ name }: { name: (typeof customerBottomLinks)[number][
   );
 }
 
-function CustomerBottomNav({ pathname }: { pathname: string }) {
+export function CustomerBottomNav({ pathname }: { pathname: string }) {
+  const { inbox, notifications } = useWorkspaceActivity();
+  const hasUnreadActivity = (notifications || 0) > 0 || (inbox || 0) > 0;
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
   return (
     <nav className="customer-bottom-nav" aria-label="Navigasi pelanggan">
-      {customerBottomLinks.map((link) => (
-        <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
-          <CustomerNavIcon name={link.icon} />
-          <span>{link.label}</span>
-        </Link>
-      ))}
+      {customerBottomLinks.map((link) => {
+        const accountLink = link.icon === "account";
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            aria-current={current(link.href) ? "page" : undefined}
+            aria-label={accountLink && hasUnreadActivity ? "Akun, ada aktivitas baru" : undefined}
+          >
+            <span className="customer-nav-icon-wrap">
+              <CustomerNavIcon name={link.icon} />
+              {accountLink && hasUnreadActivity ? (
+                <span className="customer-nav-unread-dot" aria-hidden="true" />
+              ) : null}
+            </span>
+            <span>{link.label}</span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -110,22 +125,24 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
 
   return (
-    <div className="site-shell admin-shell">
-      <header className="admin-topbar">
-        <BrandLogo variant="admin" />
-        <div className="admin-brand-copy">
-          <strong>Operasional BFG</strong>
-          <span>Kelola toko buku dan komunitas</span>
-        </div>
-        <div className="admin-account">
-          <span className="admin-topbar-status">Ruang kerja operasional</span>
-          <Link href="/">Lihat sisi pelanggan</Link>
-          <WorkspaceActions workspace="admin" enabled={activityEnabled} />
-          <UserButton appearance={bfgClerkAppearance} />
-        </div>
-      </header>
-      <main>{children}</main>
-    </div>
+    <WorkspaceActivityProvider enabled={activityEnabled}>
+      <div className="site-shell admin-shell">
+        <header className="admin-topbar">
+          <BrandLogo variant="admin" />
+          <div className="admin-brand-copy">
+            <strong>Operasional BFG</strong>
+            <span>Kelola toko buku dan komunitas</span>
+          </div>
+          <div className="admin-account">
+            <span className="admin-topbar-status">Ruang kerja operasional</span>
+            <Link href="/">Lihat sisi pelanggan</Link>
+            <WorkspaceActions workspace="admin" enabled={activityEnabled} />
+            <UserButton appearance={bfgClerkAppearance} />
+          </div>
+        </header>
+        <main>{children}</main>
+      </div>
+    </WorkspaceActivityProvider>
   );
 }
 
@@ -142,55 +159,57 @@ export function SiteShell({ children }: { children: ReactNode }) {
   if (isAdmin) return inPersistentAdminShell ? <>{children}</> : <AdminShell>{children}</AdminShell>;
 
   return (
-    <div className={`site-shell customer-shell${signedIn ? " customer-shell-signed-in" : ""}`}>
-      <header className="site-header">
-        <BrandLogo />
-        {!signedIn ? (
-          <nav className="site-nav public-nav" aria-label="Navigasi utama">
-            {publicLinks.map((link) => (
-              <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        ) : (
-          <nav className="site-nav customer-nav" aria-label="Navigasi utama">
-            {customerLinks.map((link) => (
-              <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        )}
-        <div className="site-auth" aria-label="Akses akun">
+    <WorkspaceActivityProvider enabled={activityEnabled}>
+      <div className={`site-shell customer-shell${signedIn ? " customer-shell-signed-in" : ""}`}>
+        <header className="site-header">
+          <BrandLogo />
           {!signedIn ? (
-            <Link className="site-auth-link" href="/sign-in">
-              Masuk
-            </Link>
+            <nav className="site-nav public-nav" aria-label="Navigasi utama">
+              {publicLinks.map((link) => (
+                <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           ) : (
-            <>
-              <AdminShellLink />
-              <WorkspaceActions workspace="customer" enabled={activityEnabled} />
-              <UserButton appearance={bfgClerkAppearance} />
-            </>
+            <nav className="site-nav customer-nav" aria-label="Navigasi utama">
+              {customerLinks.map((link) => (
+                <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           )}
-        </div>
-      </header>
-      <main>{children}</main>
-      <footer className="site-footer">
-        <div>
-          <span>Blessing For Goods</span>
-          <span>Buku pilihan untuk Blessfriends</span>
-        </div>
-        <nav className="footer-nav" aria-label="Navigasi bantuan">
-          {supportLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      </footer>
-      <CustomerBottomNav pathname={pathname} />
-    </div>
+          <div className="site-auth" aria-label="Akses akun">
+            {!signedIn ? (
+              <Link className="site-auth-link" href="/sign-in">
+                Masuk
+              </Link>
+            ) : (
+              <>
+                <AdminShellLink />
+                <WorkspaceActions workspace="customer" enabled={activityEnabled} />
+                <UserButton appearance={bfgClerkAppearance} />
+              </>
+            )}
+          </div>
+        </header>
+        <main>{children}</main>
+        <footer className="site-footer">
+          <div>
+            <span>Blessing For Goods</span>
+            <span>Buku pilihan untuk Blessfriends</span>
+          </div>
+          <nav className="footer-nav" aria-label="Navigasi bantuan">
+            {supportLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </footer>
+        <CustomerBottomNav pathname={pathname} />
+      </div>
+    </WorkspaceActivityProvider>
   );
 }
