@@ -81,4 +81,15 @@ describe("page-aware workspace skeletons", () => {
     expect(document.querySelectorAll(".admin-queue-grid-secondary .workspace-skeleton-queue-card")).toHaveLength(3);
     expect(document.querySelectorAll(".workspace-skeleton-quick-actions .skeleton-quick-action")).toHaveLength(5);
   });
+
+  it("mirrors the Customer dashboard loading sections", () => {
+    render(<PageAwareSkeleton workspace="customer" pathname="/account" />);
+
+    expect(document.querySelectorAll(".workspace-skeleton-customer-metrics .workspace-skeleton-metric")).toHaveLength(
+      4,
+    );
+    expect(
+      document.querySelectorAll(".workspace-skeleton-customer-dashboard-grid .workspace-skeleton-panel"),
+    ).toHaveLength(6);
+  });
 });

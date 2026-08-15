@@ -351,6 +351,24 @@
   min-height: 184px;
 }
 
+.workspace-skeleton-customer-metrics {
+  margin-bottom: 0;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel {
+  min-height: 140px;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(1),
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(2) {
+  min-height: 460px;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(5),
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(6) {
+  min-height: 420px;
+}
+
 @media (max-width: 1100px) {
   .workspace-skeleton-metric-grid,
   .workspace-skeleton-metric-grid-secondary {
@@ -403,6 +421,26 @@
   .skeleton-cover-small {
     width: 64px;
     height: 80px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel {
+    min-height: 140px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(1) {
+    min-height: 132px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(2) {
+    min-height: 380px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(5) {
+    min-height: 360px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(6) {
+    min-height: 220px;
   }
 }
 

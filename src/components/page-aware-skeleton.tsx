@@ -445,14 +445,18 @@ function CustomerSkeletonContent({ kind }: { kind: CustomerSkeletonKind }) {
   if (kind === "dashboard") {
     return (
       <>
-        <div className="workspace-skeleton-metric-grid workspace-skeleton-customer-metrics">
+        <div className="account-metrics workspace-skeleton-customer-metrics">
           {Array.from({ length: 4 }, (_, index) => (
             <SkeletonMetric key={index} />
           ))}
         </div>
-        <div className="workspace-skeleton-panel-grid">
-          <SkeletonPanel lines={4} />
-          <SkeletonPanel lines={5} />
+        <div className="account-dashboard-grid workspace-skeleton-customer-dashboard-grid">
+          <SkeletonPanel className="workspace-skeleton-customer-dashboard-panel" lines={2} />
+          <SkeletonPanel className="workspace-skeleton-customer-dashboard-panel" lines={5} />
+          <SkeletonPanel className="workspace-skeleton-customer-dashboard-panel" lines={3} />
+          <SkeletonPanel className="workspace-skeleton-customer-dashboard-panel" lines={3} />
+          <SkeletonPanel className="workspace-skeleton-customer-dashboard-panel" lines={5} />
+          <SkeletonPanel className="workspace-skeleton-customer-dashboard-panel" lines={3} />
         </div>
       </>
     );
