@@ -14,6 +14,7 @@ import {
   EmptyState,
   Field,
   InlineBooleanField,
+  LinkButton,
   LoadingRegion,
   PageHeader,
   SkeletonTable,
@@ -96,6 +97,11 @@ function ConnectedAdminBooks() {
         eyebrow="Master Buku"
         title="Kelola buku dan Ready Stock"
         description="Metadata buku dipakai ulang; Secret Catalog dan Ready Stock hanya mengatur konteksnya."
+        actions={
+          <LinkButton href="/admin/import" variant="secondary">
+            Import Buku
+          </LinkButton>
+        }
       />
       <div className="admin-workspace">
         <AdminNav />

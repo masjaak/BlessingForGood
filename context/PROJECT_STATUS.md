@@ -5,7 +5,7 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `SOURCE_CONTRACT_PREPARED` — `BULK_IMPORT` is the current primary candidate; implementation `NOT_STARTED`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`.
 
 Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
 Production implementation commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
@@ -78,10 +78,26 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-The Phase 08 Bulk Import Source Contract, data contract, policy, and
-traceability contract are prepared. The next action is a separate
-implementation prompt after contract review; this task does not start Phase 08
-implementation.
+Complete the authorized Production Admin/Owner pilot with a legitimate 3–5-book
+CSV, verify persistence and customer non-leakage, then update this status to
+the scoped Bulk Import V1 acceptance result. Do not start another Phase 08
+candidate.
+
+### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
+
+- Status: `BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`.
+- Natural entry: `/admin/books` → `Import Buku` → `/admin/import`.
+- Backend: server-authorized preview query and one revalidated atomic confirm
+  mutation; preview writes `0`; no import-job table or schema change.
+- Contract: exact eight-column UTF-8 CSV, 2 MiB, 200 data rows, 5,000 Unicode
+  characters per cell; quoted CSV/BOM/line-ending support; no new dependency.
+- Safety: new books are draft, new variants inactive, exact rows are no-op,
+  conflicts reject the whole file, and audit stores only bounded summary data.
+- Local evidence: Vitest `216/216`, Convex `102/102`, Playwright `180/180`
+  baseline plus 3 `/admin/import` route checks, TypeScript PASS, ESLint PASS,
+  Format PASS, Build PASS, and `git diff --check` PASS.
+- Remaining gate: authorized real Production pilot and authenticated rendered
+  import-state QA; no dummy Production records or credentials were created.
 
 ### Responsive/media closure evidence
 

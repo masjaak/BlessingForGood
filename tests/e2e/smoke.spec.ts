@@ -24,6 +24,7 @@ const customerRoutes = [
 const adminRoutes = [
   "/admin",
   "/admin/books",
+  "/admin/import",
   "/admin/catalogs",
   "/admin/ready-stock",
   "/admin/join-requests",

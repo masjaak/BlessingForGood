@@ -7,6 +7,7 @@ import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
 import { bookPublicationStatusValidator } from "./validators";
+import { insertBook } from "./lib/productDomain";
 
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -28,32 +29,15 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
-    const publisher = await ctx.db.get(args.publisherId);
-    if (!publisher?.isActive) fail("VALIDATION_FAILED", "publisher is unavailable");
-    const title = requiredText(args.title, "book title");
-    const slug = slugify(args.slug || title, "book slug");
-    const existing = await ctx.db
-      .query("books")
-      .withIndex("by_slug", (query) => query.eq("slug", slug))
-      .unique();
-    if (existing) fail("DUPLICATE_SLUG");
-    const now = Date.now();
-    const bookId = await ctx.db.insert("books", {
+    return insertBook(ctx, user._id, {
       publisherId: args.publisherId,
-      title,
-      slug,
-      author: args.author?.trim() || undefined,
-      description: args.description?.trim() || undefined,
-      categories: normalizedCategories(args.categories || []),
-      coverImageUrl: args.coverImageUrl?.trim() || undefined,
-      publicationStatus: "draft",
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-      createdByUserId: user._id,
+      title: args.title,
+      slug: args.slug,
+      author: args.author,
+      description: args.description,
+      categories: args.categories,
+      coverImageUrl: args.coverImageUrl,
     });
-    await recordAudit(ctx, user._id, "book.created", "book", bookId);
-    return bookId;
   },
 });
 

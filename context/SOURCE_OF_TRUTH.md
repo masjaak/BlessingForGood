@@ -5,7 +5,9 @@ Applies to current `main`, whose Production implementation is
 `d9aad899a440592504117c6b57c02cd15bdec355`; the responsive/test contract was
 anchored in follow-up commit `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **source contract prepared; implementation not started**. The entry gate is defined in
+Phase 08: **ACTIVE**. Bulk Import V1 is implemented locally under
+`BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`; the real
+Production pilot remains a required acceptance gate. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -121,11 +123,12 @@ stable Phase 07.1 baseline.
 
 ## Phase 08 Status
 
-**Source contract prepared; implementation not started.** Bulk Import is the
-recommended first Phase 08 candidate. Its source, data, policy, state, visual,
-and traceability contracts are linked from
+**ACTIVE — Bulk Import V1 implemented; Production pilot pending.** The locked
+source, data, policy, state, visual, and traceability contracts are linked from
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
-No Phase 08 feature implementation is authorized by this reconciliation task.
+The implementation is a single `/admin/import` stateful flow, reuses the
+canonical publisher/book/variant/audit/auth boundaries, adds no schema or
+dependency, and does not start another Phase 08 candidate.
 
 ## Canonical Business Rules
 

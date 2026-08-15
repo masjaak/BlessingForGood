@@ -1,93 +1,108 @@
 # BFG PHASE 08 BULK IMPORT TRACEABILITY
 
-Status: `READY FOR IMPLEMENTATION PLANNING`
-Implementation: `NOT STARTED`
-Prepared: 2026-08-16 (Asia/Jakarta)
+Status: `IMPLEMENTED_LOCAL_PRODUCTION_PILOT_REQUIRED`
+Implementation marker: `BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`
+Prepared and implemented: 2026-08-16 (Asia/Jakarta)
 
-Unknown future code locations are intentionally marked `TBD_IMPLEMENTATION`.
-Existing functions below are reusable authority, not permission to bypass their
-domain consequences with direct table inserts.
+This document maps the locked Phase 08 Source Contract to the implementation.
+The contract remains requirement authority; this file records evidence and
+known acceptance gaps.
 
-## Requirement-to-Consequence Matrix
+## Requirement-to-Implementation Matrix
 
-| Source requirement | Bulk Import capability | Admin route | UI state | Domain mutation | Validation | Authorization | Audit | Customer consequence | Test | Production acceptance |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `product/PRD.md`: reduce spreadsheet re-entry and keep the web system as source of truth | Bounded product-master CSV import | `/admin/import` `TBD_IMPLEMENTATION`; linked from `/admin/books` | Upload → validate → preview → confirm → result | Import orchestrator `TBD_IMPLEMENTATION` using shared publisher/book/variant primitives | Full file and row contract | `requirePermission(ctx, "books.manage")` | `bulk_import.completed` plus per-record events | New records remain hidden until explicit Admin lifecycle actions | Parser, orchestration, authorization, projection tests `TBD_IMPLEMENTATION` | Authorized 3–5 book real pilot; no dummy Production records |
-| `screens/admin/05-upload-catalog.md`: import catalog data with validation preview | Template, CSV selection, server validation, no-write preview | `/admin/import` `TBD_IMPLEMENTATION` | `FILE_SELECTED`, `PARSING`, `VALIDATING`, `VALIDATION_FAILED`, `READY_FOR_REVIEW` | Read-only validation query `TBD_IMPLEMENTATION` | Exact headers, limits, normalization, error rows | Staff permission on server | No preview mutation/audit row | No customer change during preview | Zero-write preview test `TBD_IMPLEMENTATION` | Preview counts match the intentional file |
-| `product/ROUTES.md`: conceptual `/admin/import` | Natural operational entry from Books, not Settings | `/admin/books` → `/admin/import` `TBD_IMPLEMENTATION` | Route loading, denied, empty, error, ready | No domain write for navigation | Route guard plus backend permission | Admin/Owner only | None for navigation | Customer routes unchanged | Route reachability and direct-call denial | 1024/1280/1440 route QA |
-| `catalog/CATALOG_TAXONOMY.md`: publisher → Book → variant → ISBN/price | One row per variant; repeated Book identity groups variants | Same | Preview grouping and counts | `publishers`, `books`, `bookVariants` shared primitives `TBD_IMPLEMENTATION` | Publisher/title/format/ISBN/price rules | `books.manage` | Existing create events | Draft/inactive product only | Identity/variant tests | Admin can inspect created drafts |
-| `catalog/BOOK_FORMAT_RULES.md`: ISBN and price belong to format | Required `format`, `isbn`, `price_idr` columns | Same | Row validation and no-op/conflict status | Variant creation `TBD_IMPLEMENTATION` | BB/PB/HB; ISBN checksum/global identity; positive integer IDR | `books.manage` | `book_variant.created` on creation | No order/invoice snapshot is created | ISBN/price/format tests | No historical financial data changes |
-| `product/BUSINESS_RULES.md`: idempotency and immutable commercial snapshots | Exact existing canonical row becomes no-op; mismatch errors | Same | Preview warning/error and result counts | Atomic confirm `TBD_IMPLEMENTATION` | Existing ISBN and Book Master + format checks | Server revalidation | Summary fingerprint/counts | Existing customer data unchanged | Re-upload/conflict tests | Same file twice creates no duplicates |
-| `database/DATA_INVARIANTS.md` and current schema | Global ISBN identity, active publisher, valid Book Master relation | Same | Row errors before confirm | Shared domain primitives `TBD_IMPLEMENTATION` | Indexed identity checks; no direct inserts | `books.manage` | Per-record audit | Projection gates remain canonical | Invariant tests | Customer-safe projection remains unchanged until activation |
-| `database/TRANSACTION_RULES.md` and official Convex transaction contract | Validate whole plan, then one atomic mutation | Same | `IMPORTING`, `COMPLETED`, `IMPORT_FAILED` | One Convex mutation `TBD_IMPLEMENTATION` | Revalidate on confirm; fail on any conflict/limit | Permission checked inside mutation | Commit summary only on success | Zero partial product state | Late-row rollback test | Atomic real pilot evidence |
-| `context/implementation/BFG-SECURITY-INVARIANTS.md` | No client-only authority, no mass assignment | Same | Denied and error states | Existing auth helper plus import boundary `TBD_IMPLEMENTATION` | Allow-listed fields, bounded values, safe text | Active Admin/Owner with `books.manage` | No secrets in metadata | No private data leakage | Direct unauthorized calls | Authorized role-scoped pilot |
-| `context/implementation/BFG-FINANCIAL-INVARIANTS.md` | Product price only; no transactional import | Same | Price validation/error | No invoice/order/payment/deposit/refund mutation | Integer IDR; no negative/decimal/symbol input | `books.manage` | No financial audit consequence | Historical snapshots untouched | Financial side-effect tests | Finance records reconcile before/after |
-| `context/security/FILE_UPLOAD_SECURITY.md` and current cover flow | No cover/media import | Same | No media controls in V1 | No storage mutation | No URL/storage ID columns | `books.manage` does not expand media scope | No storage metadata | No media visibility | Rejected-column tests | Separate media flow remains proven |
-| `context/implementation/BFG-MOCKUP-TRACEABILITY-MATRIX.md` and Admin mockups 1–3 | Reuse BFG shell, catalog table, section cards, summary/status grammar | `/admin/books` entry; `/admin/import` `TBD_IMPLEMENTATION` | Coherent single flow, not six disconnected pages | UI-only future implementation `TBD_IMPLEMENTATION` | Accessible native file input and visible limits | Same server permission | Result/audit confirmation | No fake sample data | Component/Playwright visual tests `TBD_IMPLEMENTATION` | 1024/1280/1440 rendered comparison |
-| `BFG-PHASE-08-CANDIDATES.md`: Bulk Import is P1 | First Phase 08 source contract | Same | Contract state only | No implementation in this task | Entry gate below | Separate implementation approval | Decision log | No Phase 08 customer changes | Full current regression remains green | Real pilot after implementation |
+| Requirement | Implementation | Evidence |
+|---|---|---|
+| Natural Admin entry | `Admin Books` has one secondary `Import Buku` action to `/admin/import`; no new top-level nav | Playwright route checks at 1024/1280/1440 |
+| One coherent journey | Stateful page renders Upload → Validasi → Pratinjau → Konfirmasi → Proses → Hasil | `src/components/admin-bulk-import.tsx`; component test |
+| Exact CSV contract | Eight exact headers, UTF-8 fatal decode, optional BOM, `.csv`, 2 MiB, 200 rows, 5,000 Unicode chars/cell | `convex/lib/bulkImport.ts`; parser tests |
+| CSV correctness | Quoted fields, commas, escaped quotes, multiline fields, CRLF/LF, empty optional cells, malformed-quote rejection | `tests/lib/bulk-import.test.ts` |
+| Zero-write preview | `api.bulkImport.preview` only reads and returns a bounded plan; `previewWrites: 0` | `convex/bulkImport.test.ts` |
+| Server authority | Preview and confirm call `requirePermission`; confirm reparses/replans from current database state | authorization and stale-preview tests |
+| Atomic confirm | One `api.bulkImport.confirm` mutation applies canonical inserts or throws before partial success can commit | Convex transaction behavior; confirmation tests |
+| Domain reuse | Shared `insertPublisher`, `insertBook`, `insertVariant` helpers route ordinary creates and import writes; audit reuses `recordAudit` | `convex/lib/productDomain.ts`; domain regression suite |
+| Identity and conflicts | NFKC publisher matching, publisher+title Book Master identity, normalized global ISBN, book+format uniqueness, whole-file conflict | Convex matching/conflict tests |
+| Idempotency | Exact existing publisher/book/format/ISBN/price is `Tanpa perubahan`; retry creates no duplicate | Convex retry test |
+| Publication safety | New Book Master is draft/active; new variant is inactive; no publication input is accepted | Convex projection test |
+| Non-consequences | No Ready Stock, Catalog, media, order, invoice, payment, deposit, refund, notification, or transaction writes | schema/test count assertions and code review |
+| Audit | Per-record canonical create events plus one bounded `bulk_import.completed` summary with fingerprint/counts; no raw CSV | audit test |
+| Visual grammar | Current `AdminOperationalPage`, `PageHeader`, `Card`, `Button`, `StatusBadge`, custom hidden file input, contained table overflow, Indonesian-first copy | approved Admin mockup review; component and route checks |
 
 ## Field Traceability
 
-| Canonical field | Source basis | Destination | Identity/consequence | Implementation location |
-|---|---|---|---|---|
-| `publisher` | Catalog taxonomy; Admin catalog/upload source | `publishers.name/slug` | Exact normalized publisher key; inactive match rejects | Existing `convex/publishers.ts`; orchestration `TBD_IMPLEMENTATION` |
-| `title` | PRD, catalog taxonomy, Book Master source | `books.title/slug` | Publisher + normalized title identity; title alone is invalid | Existing `convex/books.ts`; orchestration `TBD_IMPLEMENTATION` |
-| `author` | Book Master metadata and upload mockup | `books.author` | Optional descriptive text; mismatch never overwrites | Existing `convex/books.ts`; `TBD_IMPLEMENTATION` |
-| `description` | Book Master metadata and upload mockup | `books.description` | Optional descriptive text; no HTML execution | Existing `convex/books.ts`; `TBD_IMPLEMENTATION` |
-| `categories` | Current schema/catalog surface | `books.categories` | Optional normalized set; no category entity mutation | `convex/lib/validation.ts`; `TBD_IMPLEMENTATION` |
-| `format` | Book Format Rules | `bookVariants.format` | Book + format duplicate key | Existing `convex/bookVariants.ts`; `TBD_IMPLEMENTATION` |
-| `isbn` | Book Format Rules and current schema index | `bookVariants.isbn` | Global normalized ISBN identity | Existing `convex/bookVariants.ts`; missing canonical normalization `TBD_IMPLEMENTATION` |
-| `price_idr` | Financial invariants and Book Format Rules | `bookVariants.priceAmount`, system `IDR` | Positive safe integer; no history mutation | `convex/lib/validation.ts`; existing variant domain logic; `TBD_IMPLEMENTATION` |
+| CSV field | Canonical destination | Rule |
+|---|---|---|
+| `publisher` | `publishers.name/slug` | NFKC, trim, collapsed whitespace, canonical slug key; inactive match fails |
+| `title` | `books.title/slug` | Required; Book Master identity is normalized publisher + normalized title |
+| `author` | `books.author` | Optional text; existing metadata conflicts, never silent overwrite |
+| `description` | `books.description` | Optional bounded plain text; quoted/newline CSV content remains text |
+| `categories` | `books.categories` | Optional semicolon-separated normalized set; no category entity mutation |
+| `format` | `bookVariants.format` | Required allowlist: `BB`, `PB`, `HB` |
+| `isbn` | `bookVariants.isbn` | Required normalized ISBN-10/ISBN-13 with check digit; global conflict fails |
+| `price_idr` | `bookVariants.priceAmount` | Required positive safe integer digits only; currency is canonical `IDR` |
 
 ## State Traceability
 
-| State | Source/user intent | UI consequence | Backend consequence | Test requirement |
-|---|---|---|---|---|
-| `IDLE` | No file selected | Empty upload frame and template action | None | Initial/reset state |
-| `FILE_SELECTED` | Operator selected candidate file | File name, limits, replace/reset | None | File guard |
-| `PARSING` | File is being read | Progress/skeleton; controls disabled | None | Loading/abort |
-| `VALIDATING` | Canonical validation runs | Validation progress; no confirm yet | Read-only query only | Server plan |
-| `VALIDATION_FAILED` | File/row cannot be imported | Error table with row/field/value/problem/fix | No writes | Zero-write/error recovery |
-| `READY_FOR_REVIEW` | Operator can inspect safe plan | Counts, warnings, preview table, confirm | No writes | Preview accuracy |
-| `IMPORTING` | Operator confirmed | Progress; duplicate submit disabled | One authorized atomic mutation | Direct-call guard |
-| `COMPLETED` | Full commit succeeded | Created/no-op/result summary and next Admin actions | Product + audit records committed | Projection/audit |
-| `IMPORT_FAILED` | Commit failed | Safe error, retry/reset | Transaction rolled back | Late failure/rollback |
+| State | Entry/event | UI/backend consequence | Test |
+|---|---|---|---|
+| `IDLE` | reset/initial | Upload frame and template; no write | component/state tests |
+| `FILE_SELECTED` | `SELECT_FILE` | Filename, size, replace/remove, validate | component test |
+| `PARSING` | `START_PARSE` | Read-only operation loading; no fake percentage | state test |
+| `VALIDATING` | `PARSE_SUCCESS` | Server preview query; no confirm | component/server flow |
+| `VALIDATION_FAILED` | parse/validation failure | Errors remain available; no partial import | parser/whole-file tests |
+| `READY_FOR_REVIEW` | server validation success | Summary/table/confirmation; button guarded | zero-write/preview tests |
+| `IMPORTING` | explicit `CONFIRM_IMPORT` | Disabled operation loading | state test |
+| `COMPLETED` | `IMPORT_SUCCESS` | Result counts and Admin next actions | confirm test |
+| `IMPORT_FAILED` | `IMPORT_FAILURE` | Safe failure and revalidation/reset path | stale/conflict test |
 
-## Required Future Code Map
+Invalid transitions are rejected by `bulkImportTransition`, including
+confirmation from `IDLE`, `VALIDATION_FAILED`, `PARSING`, and `VALIDATING`, and
+success without confirmation. Backend authorization prevents unauthorized
+preview or confirm regardless of UI state.
 
-These locations are intentionally not invented:
+## Security and Consequence Traceability
 
-| Concern | Current/reusable location | New location |
-|---|---|---|
-| Admin route | No active route; conceptual `/admin/import` in `product/ROUTES.md` | `TBD_IMPLEMENTATION` |
-| CSV parser | No existing import parser | `TBD_IMPLEMENTATION` |
-| Server preview | No existing import function | `TBD_IMPLEMENTATION` |
-| Atomic confirm | No existing import mutation | `TBD_IMPLEMENTATION` |
-| Publisher/book/variant primitives | `convex/publishers.ts`, `convex/books.ts`, `convex/bookVariants.ts` | Extract smallest shared helpers only if needed; `TBD_IMPLEMENTATION` |
-| Audit | `convex/lib/audit.ts`, `auditEvents` table | Reuse; no new audit system |
-| Permissions | `convex/lib/auth.ts` | Reuse `books.manage`; no new role |
-| Template | No artifact yet | `TBD_IMPLEMENTATION` after approval |
-| State machine | No implementation yet | `TBD_IMPLEMENTATION` |
-| Tests | Existing product/policy/auth/audit tests | New files `TBD_IMPLEMENTATION` |
+- Authentication, active status, role, and `books.manage` are enforced in both
+  public Convex functions; frontend guards are only reachability UX.
+- Parsed row input is explicitly allow-listed by the eight canonical headers;
+  arbitrary object fields are never spread into a write.
+- Preview returns only row summaries, bounded values, warnings, and errors; no
+  raw CSV or internal database payload is returned.
+- The confirm mutation rebuilds the plan against current state, so a preview
+  made at T1 cannot authorize a conflicting write at T2.
+- New products remain outside customer projections until normal publication,
+  activation, stock, or catalog workflows are intentionally performed.
 
-## Production Acceptance Trace
+## Code Map
 
-Before calling the implementation complete, the future agent must provide:
+| Concern | Location |
+|---|---|
+| Admin route | `src/app/admin/import/page.tsx` |
+| Admin flow | `src/components/admin-bulk-import.tsx` |
+| Shared parser/rules/state | `convex/lib/bulkImport.ts`, `src/lib/bulk-import.ts` |
+| Server preview/confirm | `convex/bulkImport.ts` |
+| Shared canonical inserts | `convex/lib/productDomain.ts` |
+| Permission/audit | `convex/lib/auth.ts`, `convex/lib/audit.ts` |
+| Navigation entry | `src/components/admin-books.tsx` |
+| Tests | `tests/lib/bulk-import.test.ts`, `tests/components/admin-bulk-import.test.tsx`, `convex/bulkImport.test.ts`, `tests/e2e/smoke.spec.ts` |
 
-1. local full regression with no baseline-count regression;
-2. local visual QA at 1024/1280/1440;
-3. Development/staging pilot with an intentional 3–5 book client file;
-4. invalid-file zero-write evidence;
-5. atomic success and same-file retry evidence;
-6. audit evidence without raw values/secrets;
-7. Admin projection showing draft/inactive records;
-8. customer projection proof that no record leaks before explicit activation;
-9. explicit publication/stock/catalog follow-up only through canonical actions;
-10. Production pilot with real operational records and an authorized role;
-11. context/status/decision updates and a clean pushed `main`.
+No schema, import-job table, parser dependency, queue, background job, file
+retention path, or customer direct UI was added.
+
+## Acceptance Evidence
+
+- Vitest: `216/216`.
+- Convex: `102/102`, including the locked 200-row preview shape.
+- Playwright: existing `180/180` baseline plus three `/admin/import`
+  signed-out route checks at 1024/1280/1440.
+- TypeScript, ESLint, Format, Build, and `git diff --check`: PASS.
+- Convex runtime review: 2 MiB/200-row input is below the verified Convex
+  function argument, return, transaction, and write limits; the implementation
+  keeps preview bounded and performs one transaction at confirm.
+- Remaining acceptance: authenticated rendered import states and a legitimate
+  3–5-book Production pilot. No dummy Production data is permitted.
 
 ## Traceability Verdict
 
-`TRACEABILITY: READY` for a separate implementation prompt. No implementation
-route, parser, schema, mutation, UI, dependency, template, import job, or
-actual implementation test was created by this task.
+`TRACEABILITY: IMPLEMENTED_LOCAL_PRODUCTION_PILOT_REQUIRED`.
+Bulk Import V1 is implemented and locally verified; Phase 08 remains active,
+and no other Phase 08 candidate has started.

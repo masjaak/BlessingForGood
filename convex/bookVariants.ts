@@ -5,6 +5,7 @@ import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { positiveMoney, requiredText } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
+import { insertVariant } from "./lib/productDomain";
 
 export const listForBook = query({
   args: { bookId: v.id("books") },
@@ -21,32 +22,13 @@ export const create = mutation({
   args: { bookId: v.id("books"), format: bookFormatValidator, isbn: v.string(), priceAmount: v.number() },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
-    const book = await ctx.db.get(args.bookId);
-    if (!book || !book.isActive) fail("VALIDATION_FAILED", "book is unavailable");
-    const isbn = requiredText(args.isbn, "ISBN");
-    const duplicateIsbn = await ctx.db
-      .query("bookVariants")
-      .withIndex("by_isbn", (q) => q.eq("isbn", isbn))
-      .unique();
-    if (duplicateIsbn) fail("DUPLICATE_ISBN");
-    const duplicateFormat = await ctx.db
-      .query("bookVariants")
-      .withIndex("by_book_and_format", (q) => q.eq("bookId", args.bookId).eq("format", args.format))
-      .unique();
-    if (duplicateFormat) fail("DUPLICATE_VARIANT");
-    const now = Date.now();
-    const variantId = await ctx.db.insert("bookVariants", {
+    return insertVariant(ctx, user._id, {
       bookId: args.bookId,
       format: args.format,
-      isbn,
-      priceAmount: positiveMoney(args.priceAmount),
-      currency: "IDR",
+      isbn: args.isbn,
+      priceAmount: args.priceAmount,
       isAvailable: true,
-      createdAt: now,
-      updatedAt: now,
     });
-    await recordAudit(ctx, user._id, "book_variant.created", "bookVariant", variantId);
-    return variantId;
   },
 });
 

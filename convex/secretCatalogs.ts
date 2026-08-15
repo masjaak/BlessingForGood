@@ -6,7 +6,8 @@ import { requirePermission } from "./lib/auth";
 import { getCatalogView } from "./lib/catalogView";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
-import { positiveMoney, requiredText, slugify } from "./lib/validation";
+import { requiredText, slugify } from "./lib/validation";
+import { insertVariant } from "./lib/productDomain";
 import { bookFormatValidator } from "./validators";
 
 const variantInput = v.object({
@@ -198,29 +199,15 @@ export const createBundle = mutation({
     for (const input of args.variants) {
       if (formats.has(input.format)) fail("DUPLICATE_VARIANT");
       formats.add(input.format);
-      const isbn = requiredText(input.isbn, "ISBN");
-      const duplicateIsbn = await ctx.db
-        .query("bookVariants")
-        .withIndex("by_isbn", (query) => query.eq("isbn", isbn))
-        .unique();
-      if (duplicateIsbn) fail("DUPLICATE_ISBN");
-      const duplicateFormat = await ctx.db
-        .query("bookVariants")
-        .withIndex("by_book_and_format", (query) => query.eq("bookId", book!._id).eq("format", input.format))
-        .unique();
-      if (duplicateFormat) fail("DUPLICATE_VARIANT");
-      const variantId = await ctx.db.insert("bookVariants", {
-        bookId: book._id,
-        format: input.format,
-        isbn,
-        priceAmount: positiveMoney(input.priceAmount),
-        currency: "IDR",
-        isAvailable: true,
-        createdAt: now,
-        updatedAt: now,
-      });
-      await recordAudit(ctx, user._id, "book_variant.created", "bookVariant", variantId);
-      variantIds.push(variantId);
+      variantIds.push(
+        await insertVariant(ctx, user._id, {
+          bookId: book._id,
+          format: input.format,
+          isbn: input.isbn,
+          priceAmount: input.priceAmount,
+          isAvailable: true,
+        }),
+      );
     }
 
     const catalogId = await ctx.db.insert("secretCatalogs", {

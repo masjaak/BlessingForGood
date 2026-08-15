@@ -5,6 +5,7 @@ import { fail } from "./lib/errors";
 import { requirePermission } from "./lib/auth";
 import { requiredText, slugify } from "./lib/validation";
 import { recordAudit } from "./lib/audit";
+import { insertPublisher } from "./lib/productDomain";
 
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -22,24 +23,7 @@ export const create = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
-    const name = requiredText(args.name, "publisher name");
-    const slug = slugify(name, "publisher name");
-    const existing = await ctx.db
-      .query("publishers")
-      .withIndex("by_slug", (query) => query.eq("slug", slug))
-      .unique();
-    if (existing) fail("DUPLICATE_SLUG");
-    const now = Date.now();
-    const publisherId = await ctx.db.insert("publishers", {
-      name,
-      slug,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-      createdByUserId: user._id,
-    });
-    await recordAudit(ctx, user._id, "publisher.created", "publisher", publisherId);
-    return publisherId;
+    return insertPublisher(ctx, user._id, args.name);
   },
 });
 
