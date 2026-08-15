@@ -15,7 +15,8 @@ Phase 08 implementation in this task.
   contains both and the follow-up is docs/test only.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
-- Vercel Production: `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`).
+- Vercel Production: canonical aliases `READY`; volatile delivery ID is
+  recorded in the closure report.
 - Canonical domain: `https://www.blessingforgood.com`.
 - Tests: Vitest `194/194`, Convex `94/94`, Playwright `180/180`; TypeScript,
   ESLint, format, build PASS.

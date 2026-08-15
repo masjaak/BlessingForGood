@@ -5,7 +5,7 @@ Status: `BFG_PHASE_07_1_BASELINE_RECONCILED`
 Reconciled current evidence: the exact implementation baseline is
 `d9aad899a440592504117c6b57c02cd15bdec355`, Convex Development
 `content-snake-214`, Convex Production `clean-eel-522`, and Vercel Production
-`dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs`. The historical “acceptance pending” text
+canonical aliases `READY`. The historical “acceptance pending” text
 below is preserved evidence from the prior gate; current final invariants are
 locked in `BFG-SECURITY-INVARIANTS.md` and the current user/client baseline
 records real admission and ownership acceptance as PASS.

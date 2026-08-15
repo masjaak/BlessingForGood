@@ -33,7 +33,7 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | `origin/main` | contains the implementation and context/test anchor; later follow-up is docs/test only |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
-| Vercel Production deployment | `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`) |
+| Vercel Production deployment | canonical aliases `READY`; volatile delivery ID is recorded in the closure report |
 | Canonical Production URL | `https://www.blessingforgood.com` |
 | Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
 

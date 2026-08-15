@@ -14,7 +14,8 @@ Context/test anchor commit: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
 follow-up commits are documentation/test-contract only.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`).
+Vercel Production: canonical aliases `READY`; the volatile delivery ID is
+recorded in the final closure report.
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current regression baseline: Vitest `194/194`, Convex `94/94`, Playwright
