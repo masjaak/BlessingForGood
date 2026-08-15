@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useContext, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
@@ -41,6 +41,8 @@ const supportLinks = [
   { href: "/how-to-order", label: "Cara memesan" },
   { href: "/help", label: "Bantuan" },
 ];
+
+export const AdminShellContext = createContext(false);
 
 function CustomerNavIcon({ name }: { name: (typeof customerBottomLinks)[number]["icon"] }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const };
@@ -101,6 +103,32 @@ function CustomerBottomNav({ pathname }: { pathname: string }) {
   );
 }
 
+export function AdminShell({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const signedIn = Boolean(isLoaded && isSignedIn);
+  const product = useContext(ProductContext);
+  const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
+
+  return (
+    <div className="site-shell admin-shell">
+      <header className="admin-topbar">
+        <BrandLogo variant="admin" />
+        <div className="admin-brand-copy">
+          <strong>Operasional BFG</strong>
+          <span>Kelola toko buku dan komunitas</span>
+        </div>
+        <div className="admin-account">
+          <span className="admin-topbar-status">Workspace operasional</span>
+          <Link href="/">Lihat sisi customer</Link>
+          <WorkspaceActions workspace="admin" enabled={activityEnabled} />
+          <UserButton appearance={bfgClerkAppearance} />
+        </div>
+      </header>
+      <main>{children}</main>
+    </div>
+  );
+}
+
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
   const { isLoaded, isSignedIn } = useAuth();
@@ -108,28 +136,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const product = useContext(ProductContext);
   const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
   const isAdmin = pathname.startsWith("/admin");
+  const inPersistentAdminShell = useContext(AdminShellContext);
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
 
-  if (isAdmin) {
-    return (
-      <div className="site-shell admin-shell">
-        <header className="admin-topbar">
-          <BrandLogo variant="admin" />
-          <div className="admin-brand-copy">
-            <strong>Operasional BFG</strong>
-            <span>Kelola toko buku dan komunitas</span>
-          </div>
-          <div className="admin-account">
-            <span className="admin-topbar-status">Workspace operasional</span>
-            <Link href="/">Lihat sisi customer</Link>
-            <WorkspaceActions workspace="admin" enabled={activityEnabled} />
-            <UserButton appearance={bfgClerkAppearance} />
-          </div>
-        </header>
-        <main>{children}</main>
-      </div>
-    );
-  }
+  if (isAdmin) return inPersistentAdminShell ? <>{children}</> : <AdminShell>{children}</AdminShell>;
 
   return (
     <div className={`site-shell customer-shell${signedIn ? " customer-shell-signed-in" : ""}`}>

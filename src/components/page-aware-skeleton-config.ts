@@ -3,6 +3,7 @@ export type CustomerSkeletonKind = "dashboard" | "list" | "detail" | "finance" |
 export type Workspace = "admin" | "customer";
 export type SkeletonVariant =
   | "batch"
+  | "book-master"
   | "catalog-list"
   | "card-list"
   | "customer-card-list"
@@ -10,7 +11,8 @@ export type SkeletonVariant =
   | "financial-list"
   | "orders"
   | "ready-stock"
-  | "report";
+  | "report"
+  | "users";
 
 export type SkeletonConfig = {
   kind: AdminSkeletonKind | CustomerSkeletonKind;
@@ -36,6 +38,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Book Master",
       title: "Kelola buku dan Ready Stock",
       description: "Metadata buku dipakai ulang; katalog rahasia dan Ready Stock hanya mengatur konteksnya.",
+      variant: "book-master",
     };
   }
   if (pathname.startsWith("/admin/books/")) {
@@ -190,7 +193,16 @@ export function adminConfig(pathname: string): SkeletonConfig {
       variant: "card-list",
     };
   }
-  if (pathname === "/admin/settings" || pathname === "/admin/users" || pathname === "/admin/content") {
+  if (pathname === "/admin/users") {
+    return {
+      kind: "settings",
+      eyebrow: "Owner security",
+      title: "Manage BFG users",
+      description: "Role and suspension changes are enforced by Convex.",
+      variant: "users",
+    };
+  }
+  if (pathname === "/admin/settings" || pathname === "/admin/content") {
     return {
       kind: "settings",
       eyebrow: "Workspace BFG",

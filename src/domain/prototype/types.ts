@@ -1,7 +1,7 @@
 export const BOOK_FORMATS = ["BB", "PB", "HB"] as const;
 
 export type BookFormat = (typeof BOOK_FORMATS)[number];
-export type CatalogStatus = "open" | "closed";
+export type CatalogStatus = "draft" | "open" | "closed" | "archived";
 export type Availability = "available" | "unavailable";
 export type OrderSource = "preorder" | "ready_stock" | "admin_assisted";
 export type DepositRequirement =

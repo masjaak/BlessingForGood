@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, SkeletonCard, StatusBadge } from "@/components/ui";
+import { catalogStatusLabels } from "@/domain/prototype/logic";
 
 export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
@@ -60,7 +61,11 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
       <Card frame="form">
         <div className="split-heading">
           <h2>Pengaturan katalog</h2>
-          <StatusBadge tone={catalog.status === "open" ? "positive" : "neutral"}>{catalog.status}</StatusBadge>
+          <StatusBadge
+            tone={catalog.status === "open" ? "positive" : catalog.status === "draft" ? "warning" : "neutral"}
+          >
+            {catalogStatusLabels[catalog.status]}
+          </StatusBadge>
         </div>
         <form
           className="form-card"

@@ -40,7 +40,76 @@ export function AdminSkeletonContent({ kind, variant }: { kind: AdminSkeletonKin
         <SkeletonTableBlock />
       </>
     );
-  if (variant === "batch" || variant === "catalog-list") {
+  if (variant === "book-master")
+    return (
+      <>
+        <Card className="workspace-skeleton-book-create" aria-hidden="true">
+          <div className="workspace-skeleton-inline-form workspace-skeleton-inline-form-publisher">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-cta" />
+          </div>
+          <div className="workspace-skeleton-inline-form workspace-skeleton-inline-form-book">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-cta" />
+          </div>
+        </Card>
+        <Card className="workspace-skeleton-book-publisher" aria-hidden="true">
+          <SkeletonText width="34%" />
+          <div className="workspace-skeleton-inline-form workspace-skeleton-inline-form-master">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-cta" />
+          </div>
+        </Card>
+        <Card className="workspace-skeleton-book-filters" aria-hidden="true">
+          <div className="workspace-skeleton-inline-form workspace-skeleton-inline-form-filters">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+          </div>
+        </Card>
+        <SkeletonTableBlock />
+      </>
+    );
+  if (variant === "catalog-list")
+    return (
+      <div className="workspace-skeleton-two-column">
+        <SkeletonForm />
+        <div className="workspace-skeleton-card-list">
+          <SkeletonListCard />
+          <SkeletonListCard />
+        </div>
+      </div>
+    );
+  if (variant === "users")
+    return (
+      <>
+        <Card className="workspace-skeleton-users-onboarding" aria-hidden="true">
+          <SkeletonText width="34%" />
+          <SkeletonText width="78%" />
+          <div className="workspace-skeleton-inline-form workspace-skeleton-inline-form-publisher">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-cta" />
+          </div>
+          <SkeletonText width="44%" />
+        </Card>
+        <Card className="workspace-skeleton-users-filters" aria-hidden="true">
+          <div className="workspace-skeleton-inline-form workspace-skeleton-inline-form-filters">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+          </div>
+        </Card>
+        <div className="workspace-skeleton-card-list">
+          <SkeletonListCard />
+          <SkeletonListCard />
+          <SkeletonListCard />
+        </div>
+      </>
+    );
+  if (variant === "batch") {
     return (
       <>
         <SkeletonForm />

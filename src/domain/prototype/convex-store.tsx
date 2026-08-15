@@ -23,6 +23,7 @@ import {
   setStoredUnlockedCatalogId,
   type StoredCatalogSession,
 } from "@/domain/prototype/session";
+import { normalizeCatalogStatus } from "@/domain/prototype/logic";
 import type {
   BookFormat,
   CreateCatalogInput,
@@ -92,7 +93,7 @@ function asCatalog(value: CatalogView | null | undefined): SecretCatalog | undef
     id: record.id,
     name: record.name,
     accessCodeHash: "convex-managed",
-    status: record.status === "open" ? "open" : "closed",
+    status: normalizeCatalogStatus(record.status),
     closingAt: record.closingAt,
     createdAt: record.createdAt,
     books: record.books,

@@ -97,6 +97,24 @@ describe("page-aware workspace skeletons", () => {
     expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(3);
   });
 
+  it("preserves the populated geometry for Books, Catalogs, and Users", () => {
+    const { unmount } = render(<PageAwareSkeleton workspace="admin" pathname="/admin/books" />);
+    expect(document.querySelector(".workspace-skeleton-book-create")).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-book-filters")).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-table-card")).toBeTruthy();
+
+    unmount();
+    render(<PageAwareSkeleton workspace="admin" pathname="/admin/catalogs" />);
+    expect(document.querySelector(".workspace-skeleton-two-column")).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-card-list")).toBeTruthy();
+
+    unmount();
+    render(<PageAwareSkeleton workspace="admin" pathname="/admin/users" />);
+    expect(screen.getByRole("heading", { name: "Manage BFG users" })).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-users-onboarding")).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-users-filters")).toBeTruthy();
+  });
+
   it("keeps customer list loading anatomy free of unrelated toolbar geometry", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account/orders" />);
 

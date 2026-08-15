@@ -10,6 +10,7 @@ import {
   emptyPrototypeState,
   calculateDepositRequired,
   calculateLedgerBalance,
+  normalizeCatalogStatus,
   transitionOrderStatus,
   unlockCatalog,
 } from "@/domain/prototype/logic";
@@ -45,6 +46,16 @@ async function createTestOrder(catalog: Catalog): Promise<Order> {
 describe("order domain logic", () => {
   it("starts with zero business records", () => {
     expect(emptyPrototypeState()).toEqual({ catalogs: [], orders: [], invoices: [] });
+  });
+
+  it("preserves the canonical catalog lifecycle at the client boundary", () => {
+    expect(["draft", "open", "closed", "archived"].map(normalizeCatalogStatus)).toEqual([
+      "draft",
+      "open",
+      "closed",
+      "archived",
+    ]);
+    expect(normalizeCatalogStatus("unknown")).toBe("closed");
   });
 
   it("unlocks only with the catalog access code", async () => {

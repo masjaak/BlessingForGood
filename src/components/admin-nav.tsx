@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { useContext } from "react";
 import { api } from "../../convex/_generated/api";
+import { AdminShellContext } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 import { roleCanAccess } from "@/domain/prototype/session";
 
@@ -198,8 +199,9 @@ function isCurrent(pathname: string, href: string) {
   return pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`));
 }
 
-export function AdminNav({ preview = false }: { preview?: boolean }) {
+export function AdminNav({ preview = false, persistent = false }: { preview?: boolean; persistent?: boolean }) {
   const pathname = usePathname() || "/admin";
+  const inPersistentAdminShell = useContext(AdminShellContext);
   const product = useContext(ProductContext);
   const sessionRole = product?.sessionRole;
   const canReadAdminNav = product?.dataSource === "convex" && roleCanAccess(sessionRole || null, "admin");
@@ -218,6 +220,9 @@ export function AdminNav({ preview = false }: { preview?: boolean }) {
           },
         ]
       : groups;
+
+  if (persistent && product?.authState === "authenticated" && !canReadAdminNav) return null;
+  if (inPersistentAdminShell && !persistent) return null;
 
   return (
     <nav className="admin-nav" aria-label="Navigasi admin">

@@ -15,9 +15,16 @@ import type {
 } from "@/domain/prototype/types";
 
 export const catalogStatusLabels: Record<CatalogStatus, string> = {
+  draft: "Draft",
   open: "Terbuka",
   closed: "Ditutup",
+  archived: "Diarsipkan",
 };
+
+export function normalizeCatalogStatus(value: string): CatalogStatus {
+  if (value === "draft" || value === "open" || value === "closed" || value === "archived") return value;
+  return "closed";
+}
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
   submitted: "Order masuk",

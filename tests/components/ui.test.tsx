@@ -6,6 +6,7 @@ import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
+import { AdminShellContext } from "@/components/site-shell";
 import { Button, Card, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
@@ -149,6 +150,36 @@ describe("public UI foundation", () => {
       </ProductContext.Provider>,
     );
     expect(screen.queryByText("0")).toBeNull();
+  });
+
+  it("keeps one mounted sidebar when Admin routes render through the persistent shell", () => {
+    const { rerender } = render(
+      <AdminShellContext.Provider value>
+        <AdminNav />
+      </AdminShellContext.Provider>,
+    );
+    expect(screen.queryByRole("navigation", { name: "Navigasi admin" })).toBeNull();
+
+    rerender(
+      <AdminShellContext.Provider value>
+        <AdminNav persistent />
+      </AdminShellContext.Provider>,
+    );
+    expect(screen.getByRole("navigation", { name: "Navigasi admin" })).toBeTruthy();
+  });
+
+  it("does not expose the persistent Admin sidebar to a resolved customer", () => {
+    render(
+      <ProductContext.Provider
+        value={{ dataSource: "convex", sessionRole: "customer", authState: "authenticated" } as never}
+      >
+        <AdminShellContext.Provider value>
+          <AdminNav persistent />
+        </AdminShellContext.Provider>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.queryByRole("navigation", { name: "Navigasi admin" })).toBeNull();
   });
 
   it("shows the shell admin link only for a resolved elevated role", () => {

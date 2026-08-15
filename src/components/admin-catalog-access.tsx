@@ -105,19 +105,27 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
             </Button>
           </div>
         ) : null}
-        <div className="content-stack">
-          {access.codes.map((code) => (
-            <div className="summary-line" key={code.codeId}>
-              <span>
-                {new Date(code.createdAt).toLocaleString("id-ID")} ·{" "}
-                {code.expiresAt
-                  ? `berakhir ${new Date(code.expiresAt).toLocaleString("id-ID")}`
-                  : "tanpa expiry eksplisit"}
-              </span>
-              <StatusBadge tone={code.status === "active" ? "positive" : "neutral"}>{code.status}</StatusBadge>
-            </div>
-          ))}
-        </div>
+        {access.codes.length ? (
+          <div className="content-stack">
+            {access.codes.map((code) => (
+              <div className="summary-line" key={code.codeId}>
+                <span>
+                  {new Date(code.createdAt).toLocaleString("id-ID")} ·{" "}
+                  {code.expiresAt
+                    ? `berakhir ${new Date(code.expiresAt).toLocaleString("id-ID")}`
+                    : "tanpa expiry eksplisit"}
+                </span>
+                <StatusBadge tone={code.status === "active" ? "positive" : "neutral"}>{code.status}</StatusBadge>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="Belum ada kode akses"
+            description="Generate Access untuk membuat satu kode yang dapat dibagikan sekali kepada customer yang dituju."
+            mascotVariant={false}
+          />
+        )}
       </Card>
       <Card frame="list">
         <span className="card-kicker">Akses member</span>

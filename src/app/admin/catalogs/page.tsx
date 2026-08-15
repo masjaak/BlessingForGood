@@ -18,6 +18,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
@@ -50,7 +51,7 @@ function CatalogForm() {
   }
 
   return (
-    <Card frame="form" className="form-card">
+    <Card frame="form" className="form-card" id="create-catalog">
       <div>
         <span className="card-kicker">Create secret catalog</span>
         <h2>Buat ruang katalog, lalu isi dengan produk yang sudah siap.</h2>
@@ -120,54 +121,59 @@ function CatalogList() {
     return (
       <EmptyState
         title="Catalog list is empty"
-        description="Buat katalog saat materi dan kode akses sudah siap dibagikan."
+        description="Buat katalog terlebih dahulu. Setelah disimpan, buka detail untuk menambahkan produk dan mengelola Access Management."
+        primaryAction={<LinkButton href="#create-catalog">Buat katalog</LinkButton>}
       />
     );
   return (
     <div className="content-stack">
-      {state.catalogs.map((catalog) => (
-        <Card frame="list" key={catalog.id}>
-          <div className="split-heading">
-            <div>
-              <span className="card-kicker">
-                {catalog.books.length} title · {catalog.books[0]?.publisher}
-              </span>
-              <h2>{catalog.name}</h2>
+      {state.catalogs.map((catalog) => {
+        const firstBook = catalog.books[0];
+        const statusTone = catalog.status === "open" ? "positive" : catalog.status === "draft" ? "warning" : "neutral";
+        return (
+          <Card frame="list" key={catalog.id}>
+            <div className="split-heading">
+              <div>
+                <span className="card-kicker">
+                  {catalog.books.length} {catalog.books.length === 1 ? "title" : "titles"}
+                  {firstBook?.publisher ? ` · ${firstBook.publisher}` : ""}
+                </span>
+                <h2>{catalog.name}</h2>
+              </div>
+              <StatusBadge tone={statusTone}>{catalogStatusLabels[catalog.status]}</StatusBadge>
             </div>
-            <StatusBadge tone={catalog.status === "open" ? "positive" : "neutral"}>
-              {catalog.status === "open" ? "Open" : "Closed"}
-            </StatusBadge>
-          </div>
-          <p>
-            {catalog.closingAt
-              ? `Closes ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
-              : "No closing date set."}
-          </p>
-          <div className="summary-line">
-            <span>{catalog.books[0]?.title}</span>
-            <span>{catalog.books[0]?.variants.length} format variants</span>
-          </div>
-          {error ? <p className="error-text">{error}</p> : null}
-          <div className="actions">
-            <LinkButton href={`/admin/catalogs/${catalog.id}`}>Kelola katalog</LinkButton>
-            <LinkButton href={`/admin/catalogs/${catalog.id}/access`} variant="secondary">
-              Access Management
-            </LinkButton>
-          </div>
-          {catalog.status === "open" ? (
-            <Button
-              variant="danger"
-              pending={pendingAction === catalog.id}
-              pendingLabel="Closing…"
-              onClick={() => void close(catalog.id)}
-            >
-              Close catalog
-            </Button>
-          ) : (
-            <span className="subtle">Closed catalogs reject new orders.</span>
-          )}
-        </Card>
-      ))}
+            <p>
+              {catalog.closingAt
+                ? `Closes ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
+                : "No closing date set."}
+            </p>
+            <div className="summary-line">
+              <span>{firstBook?.title || "Belum ada produk yang ditambahkan"}</span>
+              <span>{firstBook ? `${firstBook.variants.length} format variants` : "Buka detail untuk kurasi"}</span>
+            </div>
+            {error ? <p className="error-text">{error}</p> : null}
+            <div className="actions">
+              <LinkButton href={`/admin/catalogs/${catalog.id}`}>Kelola katalog</LinkButton>
+            </div>
+            {catalog.status === "open" ? (
+              <Button
+                variant="danger"
+                pending={pendingAction === catalog.id}
+                pendingLabel="Closing…"
+                onClick={() => void close(catalog.id)}
+              >
+                Close catalog
+              </Button>
+            ) : catalog.status === "draft" ? (
+              <span className="subtle">Draft — buka detail untuk kurasi produk dan mengelola akses.</span>
+            ) : catalog.status === "closed" ? (
+              <span className="subtle">Closed catalogs reject new orders.</span>
+            ) : (
+              <span className="subtle">Archived catalogs are no longer operational.</span>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 }

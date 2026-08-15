@@ -64,6 +64,20 @@ test.describe("BFG Clerk authenticated Production", () => {
       .click();
     await expect(page).toHaveURL(/\/$/);
 
+    await page.goto("/admin/books", { waitUntil: "networkidle" });
+    const adminNav = page.getByRole("navigation", { name: "Navigasi admin" });
+    await adminNav.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+      window.scrollTo(0, 420);
+    });
+    await adminNav.getByRole("link", { name: "Reports & Analytics" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports$/);
+    await expect(page.getByRole("heading", { name: "Rekap operasional BFG" })).toBeVisible();
+    await expect
+      .poll(() => adminNav.evaluate((element) => ({ pageY: window.scrollY, sidebarY: element.scrollTop })))
+      .toEqual(expect.objectContaining({ pageY: 0 }));
+    await expect.poll(() => adminNav.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
     const customerContext = await browser.newContext({ viewport: { width: 375, height: 812 } });
     const customerPage = await customerContext.newPage();
     try {
