@@ -2,8 +2,9 @@
 
 Phase 07.1 absolute closure contract for shared page-title sizing. The desktop
 container values below are derived from the current Admin shell grid (`236px`
-sidebar plus the content column) and the customer page max width. Final visual
-approval still requires authenticated rendered screenshots at each viewport.
+sidebar plus the content column) and the customer page max width. Local and
+signed-out Production browser checks pass; final visual approval still requires
+authenticated rendered screenshots at each viewport.
 
 | Hierarchy | Headline | Characters / Visual Width | Route | Container Width | 1024 | 1280 | 1440 | 375 | 390 | 430 | Current Lines | Target Lines | Token | Verdict |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -18,4 +19,5 @@ approval still requires authenticated rendered screenshots at each viewport.
 Shared rule: the same hierarchy uses the same token. No route-specific title
 size or manual `<br>` is permitted. Desktop uses `clamp(1.8rem, 2.4vw,
 2.4rem)`; mobile may wrap naturally into two balanced lines when the 343–398px
-content width cannot support one line without harming readability.
+content width cannot support one line without harming readability. Authenticated
+Production screenshot evidence remains the only open visual checkpoint.
