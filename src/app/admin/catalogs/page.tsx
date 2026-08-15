@@ -64,11 +64,11 @@ function CatalogForm() {
               className="input"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Contoh: daftar bacaan musim gugur"
+              placeholder="Contoh: Bacaan musim gugur"
               required
             />
           </Field>
-          <Field label="Tanggal tutup" hint="Opsional. Kosongkan bila katalog tidak memiliki tanggal tutup.">
+          <Field label="Tanggal tutup" hint="Opsional untuk menutup katalog.">
             <input
               className="input"
               type="datetime-local"

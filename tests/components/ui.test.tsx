@@ -91,6 +91,8 @@ describe("public UI foundation", () => {
 
   it("controls select and page-title geometry through shared tokens", () => {
     expect(globalsCss).toContain("appearance: none");
+    expect(globalsCss).toContain("-webkit-appearance: none");
+    expect(globalsCss).toContain("padding-right: 40px");
     expect(globalsCss).toContain("--type-page-title-size: clamp(1.8rem, 2.4vw, 2.4rem)");
   });
 
