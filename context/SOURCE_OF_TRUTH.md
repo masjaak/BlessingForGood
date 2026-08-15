@@ -1,12 +1,12 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-16 (Asia/Jakarta)
-Applies to current `main`, whose Production implementation is
-`d9aad899a440592504117c6b57c02cd15bdec355`; the responsive/test contract was
-anchored in follow-up commit `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
+Applies to current `main`, whose Phase 08 Bulk Import implementation is
+`ee46c5e`; the canonical Production deployment is Vercel
+`dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **ACTIVE**. Bulk Import V1 is implemented locally under
-`BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`; the real
+Phase 08: **ACTIVE**. Bulk Import V1 is deployed under
+`BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`; the real
 Production pilot remains a required acceptance gate. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
@@ -30,12 +30,11 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item | Canonical value |
 |---|---|
-| Production implementation commit | `d9aad899a440592504117c6b57c02cd15bdec355` |
-| Context/test anchor commit | `d1ac4276f4499889752193ed0dbdfa72c9ebb510` |
-| `origin/main` | contains the implementation and context/test anchor; later follow-up is docs/test only |
+| Phase 08 implementation commit | `ee46c5e` |
+| `origin/main` | contains the Phase 08 Bulk Import V1 implementation and context evidence |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
-| Vercel Production deployment | canonical aliases `READY`; volatile delivery ID is recorded in the closure report |
+| Vercel Production deployment | `dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` (`READY`) |
 | Canonical Production URL | `https://www.blessingforgood.com` |
 | Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
 
@@ -43,15 +42,15 @@ Current exact regression baseline:
 
 | Gate | Result |
 |---|---|
-| Vitest | `194 / 194` |
-| Convex | `94 / 94` |
-| Playwright | `180 / 180` |
+| Vitest | `216 / 216` |
+| Convex | `102 / 102` |
+| Playwright | `180 / 180` baseline + `3 / 3` `/admin/import` route checks |
 | TypeScript | PASS |
 | ESLint | PASS |
 | Format | PASS |
 | Build | PASS |
-| Rendered QA | local route/viewport suite plus exact 1280 customer coverage; public Production route/viewport smoke `180 / 180`; private authenticated visual evidence was not rerun in this documentation-only pass |
-| Real UAT | supplied Phase 07.1 closure evidence remains PASS for the real flows listed in `PROJECT_STATUS.md`; this targeted pass did not fabricate or repeat private business UAT |
+| Rendered QA | signed-out Production route protection and local route/viewport checks pass; authenticated import-state rendering remains pilot-gated |
+| Real UAT | supplied Phase 07.1 evidence remains historical; Phase 08 real 3–5-book pilot is pending and no business data was fabricated |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.

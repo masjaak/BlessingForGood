@@ -5,22 +5,22 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`.
 
 Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
-Production implementation commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
+Phase 08 implementation commit: `ee46c5e`.
 Context/test anchor commit: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
 Documentation lock commit: `e2ad4a3b6f2148dc213fe25b6604fe56aefe7972`.
 `origin/main`: contains the implementation plus the context/test anchor; the
 follow-up commits are documentation/test-contract only.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: canonical aliases `READY`; the volatile delivery ID is
-recorded in the final closure report.
+Vercel Production: `dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` (`READY`).
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current regression baseline: Vitest `194/194`, Convex `94/94`, Playwright
-`180/180`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
+Current regression baseline: Vitest `216/216`, Convex `102/102`, Playwright
+`180/180` plus three `/admin/import` route checks, TypeScript PASS, ESLint PASS,
+Format PASS, Build PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
 `www` with HTTP 308. The public Production route matrix is `180/180`, including
 customer 375/390/430/768/1280/1440 and Admin 1024/1280/1440. The supplied
@@ -30,9 +30,9 @@ order, Admin projection, invoice, Tagihan, notification, and ownership-
 isolation flows. Private authenticated UAT was not rerun in this
 documentation-only pass and no business data was mutated.
 
-The Vercel Production build hook re-pushed the unchanged Convex functions to
-`clean-eel-522`; this closure pass made no schema, auth, RBAC, financial,
-inventory, or Secret Catalog backend changes.
+The Phase 08 Vercel Production build hook pushed the new import functions to
+`clean-eel-522`; schema, auth architecture, financial, inventory, and Secret
+Catalog policy remained unchanged.
 
 The canonical reconciliation artifacts are:
 
@@ -85,7 +85,7 @@ candidate.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 
-- Status: `BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`.
+- Status: `BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`.
 - Natural entry: `/admin/books` → `Import Buku` → `/admin/import`.
 - Backend: server-authorized preview query and one revalidated atomic confirm
   mutation; preview writes `0`; no import-job table or schema change.

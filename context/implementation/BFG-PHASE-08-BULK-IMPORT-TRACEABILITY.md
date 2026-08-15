@@ -1,7 +1,7 @@
 # BFG PHASE 08 BULK IMPORT TRACEABILITY
 
-Status: `IMPLEMENTED_LOCAL_PRODUCTION_PILOT_REQUIRED`
-Implementation marker: `BFG_PHASE_08_BULK_IMPORT_V1_IMPLEMENTED_PRODUCTION_PILOT_REQUIRED`
+Status: `PRODUCTION_DEPLOYED_PILOT_REQUIRED`
+Implementation marker: `BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`
 Prepared and implemented: 2026-08-16 (Asia/Jakarta)
 
 This document maps the locked Phase 08 Source Contract to the implementation.
@@ -98,11 +98,13 @@ retention path, or customer direct UI was added.
 - Convex runtime review: 2 MiB/200-row input is below the verified Convex
   function argument, return, transaction, and write limits; the implementation
   keeps preview bounded and performs one transaction at confirm.
+- Production deployment: Vercel `dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` (`READY`),
+  Convex `clean-eel-522`.
 - Remaining acceptance: authenticated rendered import states and a legitimate
   3–5-book Production pilot. No dummy Production data is permitted.
 
 ## Traceability Verdict
 
-`TRACEABILITY: IMPLEMENTED_LOCAL_PRODUCTION_PILOT_REQUIRED`.
-Bulk Import V1 is implemented and locally verified; Phase 08 remains active,
-and no other Phase 08 candidate has started.
+`TRACEABILITY: PRODUCTION_DEPLOYED_PILOT_REQUIRED`.
+Bulk Import V1 is implemented, locally verified, and deployed; Phase 08
+remains active, and no other Phase 08 candidate has started.
