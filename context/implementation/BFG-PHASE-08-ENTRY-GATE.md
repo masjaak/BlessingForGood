@@ -10,7 +10,9 @@ Phase 08 implementation in this task.
 
 ## Current Stable Baseline
 
-- HEAD/origin baseline: `d9aad899a440592504117c6b57c02cd15bdec355`.
+- Production implementation baseline: `d9aad899a440592504117c6b57c02cd15bdec355`.
+- Context/test anchor: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`; `origin/main`
+  contains both and the follow-up is docs/test only.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
 - Vercel Production: `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`).

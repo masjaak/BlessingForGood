@@ -1,8 +1,10 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-15 (Asia/Jakarta)
-Applies to: current `main` at `d9aad899a440592504117c6b57c02cd15bdec355` and the
-Phase 07.1 responsive/media Production closure deployment.
+Applies to current `main`, whose Production implementation is
+`d9aad899a440592504117c6b57c02cd15bdec355`; the responsive/test contract was
+anchored in follow-up commit `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
+Phase 07.1 responsive/media Production closure is deployed separately below.
 Phase 08: **not started**. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
@@ -26,8 +28,9 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item | Canonical value |
 |---|---|
-| HEAD / current stable commit | `d9aad899a440592504117c6b57c02cd15bdec355` |
-| `origin/main` | matches the stable commit at verification time |
+| Production implementation commit | `d9aad899a440592504117c6b57c02cd15bdec355` |
+| Context/test anchor commit | `d1ac4276f4499889752193ed0dbdfa72c9ebb510` |
+| `origin/main` | contains the implementation and context/test anchor; later follow-up is docs/test only |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
 | Vercel Production deployment | `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`) |

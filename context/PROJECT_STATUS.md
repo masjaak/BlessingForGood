@@ -8,8 +8,10 @@
 **Phase 08:** `NOT_STARTED` — entry gate and candidates are documented; no Phase 08 implementation was started.
 
 Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
-Current stable commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
-`origin/main`: matches the current stable commit at verification time.
+Production implementation commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
+Context/test anchor commit: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
+`origin/main`: contains the implementation plus the context/test anchor; the
+follow-up commits are documentation/test-contract only.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production: `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`).
