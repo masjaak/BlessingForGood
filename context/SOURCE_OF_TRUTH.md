@@ -1,11 +1,11 @@
 # BFG SOURCE OF TRUTH
 
-Reconciled: 2026-08-15 (Asia/Jakarta)
+Reconciled: 2026-08-16 (Asia/Jakarta)
 Applies to current `main`, whose Production implementation is
 `d9aad899a440592504117c6b57c02cd15bdec355`; the responsive/test contract was
 anchored in follow-up commit `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
-Phase 07.1 responsive/media Production closure is deployed separately below.
-Phase 08: **not started**. The entry gate is defined in
+Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
+Phase 08: **entry gate PASS; implementation not started**. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -116,12 +116,13 @@ linked invariant/matrix documents.
 
 ## Current Phase
 
-`BFG_PHASE_07_1_BASELINE_RECONCILIATION` — documentation and traceability
-closure at the stable Phase 07.1 baseline.
+`BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — CLOSED + RECONCILED at the
+stable Phase 07.1 baseline.
 
 ## Phase 08 Status
 
-**Not started.** No Phase 08 feature implementation is authorized by this
+**Entry gate PASS; implementation not started.** Source preparation is
+authorized, but no Phase 08 feature implementation is authorized by this
 reconciliation task. Candidate scope is documented only in
 [`BFG-PHASE-08-CANDIDATES.md`](implementation/BFG-PHASE-08-CANDIDATES.md).
 

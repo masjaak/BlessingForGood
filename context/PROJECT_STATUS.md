@@ -1,11 +1,11 @@
 # BFG Project Status
 
-## Current Anchored Summary — 2026-08-15
+## Current Anchored Summary — 2026-08-16
 
-**Status:** `BFG_PHASE_07_1_RESPONSIVE_COVER_CLOSURE`
-**Baseline marker:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
+**Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
+**Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `NOT_STARTED` — entry gate and candidates are documented; no Phase 08 implementation was started.
+**Phase 08:** `ENTRY_GATE_PASS` — source preparation is authorized; implementation `NOT_STARTED`.
 
 Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
 Production implementation commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
@@ -39,6 +39,7 @@ The canonical reconciliation artifacts are:
 - `context/SOURCE_OF_TRUTH.md`
 - `context/DECISION_LOG.md`
 - `context/implementation/BFG-BASELINE-RECONCILIATION-MATRIX.md`
+- `context/implementation/BFG-ROUTE-INVENTORY-V2.md`
 - `context/implementation/BFG-ADMIN-CUSTOMER-SYNC-MATRIX.md`
 - `context/implementation/BFG-BUSINESS-CONSEQUENCE-MATRIX.md`
 - `context/implementation/BFG-MOCKUP-TRACEABILITY-MATRIX.md`
