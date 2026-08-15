@@ -128,7 +128,7 @@ export function CustomerCatalog() {
   if (!catalog) {
     return (
       <div className="catalog-access">
-        <Card className="form-card">
+        <Card frame="form" className="form-card">
           <PageHeader
             eyebrow="Secret Catalog"
             title="Buka katalog privatmu."
@@ -206,7 +206,7 @@ export function CustomerCatalog() {
             const selectedQuantity = selectedVariantId ? quantities[selectedVariantId] || 0 : 0;
             const selectedFormat = book.variants.find((variant) => variant.id === selectedVariantId)?.format;
             return (
-              <Card className="book-card" key={book.id}>
+              <Card frame="list" className="book-card" key={book.id}>
                 <div className="book-card-layout">
                   <BookCover title={book.title} publisher={book.publisher} format={selectedFormat} />
                   <div className="book-card-details">
@@ -271,7 +271,7 @@ export function CustomerCatalog() {
             );
           })}
         </div>
-        <Card className="order-summary">
+        <Card frame="detail" className="order-summary">
           <div>
             <span className="card-kicker">Tinjau preorder</span>
             <h2>Pastikan pilihanmu.</h2>

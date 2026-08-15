@@ -3,10 +3,13 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { BrandMascot, type BrandMascotVariant } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 
-type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+export type ButtonSize = "default" | "compact" | "icon";
+export type FrameVariant = "operational" | "form" | "table" | "list" | "summary" | "detail" | "empty" | "attention";
 
 export function Button({
   variant = "primary",
+  size = "default",
   className = "",
   pending = false,
   pendingLabel = "Memproses…",
@@ -15,12 +18,13 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   pending?: boolean;
   pendingLabel?: string;
 }) {
   return (
     <button
-      className={`button button-${variant} ${className}`.trim()}
+      className={`button button-${variant} button-size-${size} ${className}`.trim()}
       disabled={pending || disabled}
       aria-busy={pending || undefined}
       {...props}
@@ -33,24 +37,31 @@ export function Button({
 export function LinkButton({
   href,
   variant = "primary",
+  size = "default",
   className = "",
   children,
 }: {
   href: string;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <Link className={`button button-${variant} ${className}`.trim()} href={href}>
+    <Link className={`button button-${variant} button-size-${size} ${className}`.trim()} href={href}>
       {children}
     </Link>
   );
 }
 
-export function Card({ className = "", children, ...props }: HTMLAttributes<HTMLElement> & { children: ReactNode }) {
+export function Card({
+  frame = "operational",
+  className = "",
+  children,
+  ...props
+}: HTMLAttributes<HTMLElement> & { children: ReactNode; frame?: FrameVariant }) {
   return (
-    <section className={`card ${className}`.trim()} {...props}>
+    <section className={`card frame-${frame} ${className}`.trim()} {...props}>
       {children}
     </section>
   );

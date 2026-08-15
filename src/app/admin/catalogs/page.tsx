@@ -50,7 +50,7 @@ function CatalogForm() {
   }
 
   return (
-    <Card className="form-card">
+    <Card frame="form" className="form-card">
       <div>
         <span className="card-kicker">Create secret catalog</span>
         <h2>Buat ruang katalog, lalu isi dengan produk yang sudah siap.</h2>
@@ -126,7 +126,7 @@ function CatalogList() {
   return (
     <div className="content-stack">
       {state.catalogs.map((catalog) => (
-        <Card key={catalog.id}>
+        <Card frame="list" key={catalog.id}>
           <div className="split-heading">
             <div>
               <span className="card-kicker">

@@ -141,3 +141,59 @@ Still required before Phase 07.1 closure:
 
 Until those gates pass: `CLIENT PRODUCT ENTRY = NOT SAFE`, `PHASE 08 READINESS = NO`, and
 `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` must not be declared.
+
+## Phase 07.1 visual system convergence pass — 2026-08-15
+
+### Source and baseline
+
+- Current Git baseline was verified at `99db772`; `origin/main` matched before
+  implementation.
+- Canonical Convex Development `content-snake-214` passed `npm run convex:check`
+  and remained the target for local verification. Canonical Convex Production
+  remains `clean-eel-522`; no backend source changed.
+- The current Vercel Production baseline was verified as
+  `dpl_35MpBhZJeKmdmEKYb6HLhLxnddVC` before this pass.
+- All 10 Admin and all 8 Customer approved mockups were opened directly.
+  `Logo-1` remains the runtime official mark.
+
+### Visual implementation
+
+- Shared tokens now define layout, semantic spacing relationships, typography,
+  button sizes, frame types, sidebar rhythm, and mobile bottom-navigation
+  breathing room.
+- The logo optical wrapper is centralized in `BrandLogo`, with an explicit
+  visible-overflow exception for auth and splash presentations.
+- Page-aware skeletons now share the final shell and route-specific archetypes.
+  Dashboard preserves four metric regions and six corresponding operational
+  regions; Ready Stock, Batch, Orders, Catalogs, Finance, Settings, and
+  Customer list/detail variants use their final structural grammar.
+- Catalog forms, lists, detail, access management, assigned books, and order
+  summary now declare semantic `Card` frames. Existing business actions and
+  data contracts are unchanged.
+
+### Engineering validation
+
+- Focused visual component tests: `20/20 PASS`.
+- Full Vitest: `175/175 PASS` across 36 files.
+- Convex tests: `94/94 PASS` across 16 files.
+- `npm run convex:check`: PASS; Convex functions ready against
+  `content-snake-214`.
+- `npm run check`: PASS (format, ESLint, TypeScript, tests, production build;
+  38 routes).
+- Playwright browser matrix: `155/155 PASS` across Customer
+  `375/390/430/768/1440` and Admin signed-out `1024/1280/1440`.
+- `git diff --check`: PASS. No Convex or schema diff was detected.
+
+### Rendered acceptance boundary
+
+Local public/locked and signed-out rendered evidence is under
+`artifacts/visual-convergence/`, including before/after screenshots and the
+auth logo crop regression fix. The local implementation is ready for
+authenticated visual acceptance. Production populated Admin and Customer
+screenshots at the required widths remain `BLOCKED_BY_EXTERNAL`: no designated
+QA identities or safe real records are available, and no bypass or fabricated
+Production data was used.
+
+Current verdict: `LOCAL_VISUAL_SYSTEM_READY`;
+`PRODUCTION_AUTHENTICATED_VISUAL_ACCEPTANCE_BLOCKED`;
+`PHASE_08_LOCKED`.

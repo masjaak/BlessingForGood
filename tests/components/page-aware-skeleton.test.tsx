@@ -82,6 +82,29 @@ describe("page-aware workspace skeletons", () => {
     expect(document.querySelectorAll(".workspace-skeleton-quick-actions .skeleton-quick-action")).toHaveLength(5);
   });
 
+  it("keeps route-specific Admin loading anatomy tied to the ready state", () => {
+    const { unmount } = render(<PageAwareSkeleton workspace="admin" pathname="/admin/ready-stock" />);
+
+    expect(document.querySelector('[data-skeleton-layout="ready-stock"]')).toBeTruthy();
+    expect(document.querySelectorAll(".workspace-skeleton-summary-grid .workspace-skeleton-metric")).toHaveLength(3);
+    expect(document.querySelector(".workspace-skeleton-table-card")).toBeTruthy();
+
+    unmount();
+    render(<PageAwareSkeleton workspace="admin" pathname="/admin/batches" />);
+
+    expect(document.querySelector('[data-skeleton-layout="batch"]')).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-form")).toBeTruthy();
+    expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(3);
+  });
+
+  it("keeps customer list loading anatomy free of unrelated toolbar geometry", () => {
+    render(<PageAwareSkeleton workspace="customer" pathname="/account/orders" />);
+
+    expect(document.querySelector('[data-skeleton-layout="customer-card-list"]')).toBeTruthy();
+    expect(document.querySelector(".workspace-skeleton-toolbar")).toBeNull();
+    expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(4);
+  });
+
   it("mirrors the Customer dashboard loading sections", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account" />);
 

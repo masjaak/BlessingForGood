@@ -6,7 +6,7 @@ import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
-import { LinkButton, PageHeader } from "@/components/ui";
+import { Button, Card, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 import { useAuth } from "@clerk/nextjs";
@@ -59,6 +59,24 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("img", { name: "Blessing For Goods mascot celebrating" }).getAttribute("src")).toContain(
       "Mascott-3.png",
     );
+    expect(document.querySelector(".brand-logo-frame-primary")).toBeTruthy();
+    expect(document.querySelector(".brand-logo-frame-admin")).toBeTruthy();
+  });
+
+  it("exposes shared button sizes and frame semantics", () => {
+    render(
+      <div>
+        <Button size="compact">Compact action</Button>
+        <LinkButton href="/catalog" size="compact">
+          Compact link
+        </LinkButton>
+        <Card frame="detail">Detail surface</Card>
+      </div>,
+    );
+
+    expect(screen.getByRole("button", { name: "Compact action" }).className).toContain("button-size-compact");
+    expect(screen.getByRole("link", { name: "Compact link" }).className).toContain("button-size-compact");
+    expect(document.querySelector("section.frame-detail")).toBeTruthy();
   });
 
   it("keeps customer discovery links on public surfaces", () => {

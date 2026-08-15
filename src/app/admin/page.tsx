@@ -3,8 +3,9 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
+import { PageAwareSkeleton } from "@/components/page-aware-skeleton";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
+import { Card, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
@@ -26,13 +27,7 @@ function AdminOverview() {
     exceptions === undefined ||
     refunds === undefined
   ) {
-    return (
-      <LoadingRegion label="Memuat ringkasan operasional">
-        <SkeletonCard variant="account" />
-        <SkeletonCard variant="account" />
-        <SkeletonCard variant="account" />
-      </LoadingRegion>
-    );
+    return <PageAwareSkeleton workspace="admin" pathname="/admin" />;
   }
   const pendingAdmissions =
     joinRequests?.filter((item) => item.status === "submitted" || item.status === "under_review").length || 0;

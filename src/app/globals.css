@@ -4686,3 +4686,459 @@ p {
     padding-inline: 0;
   }
 }
+
+/* Phase 07.1 visual contract: shared semantic geometry, not route patches. */
+:root {
+  --layout-page-inline-admin: 24px;
+  --layout-page-inline-customer: 16px;
+  --layout-page-top: 32px;
+  --layout-page-bottom: 48px;
+  --layout-content-max: 1480px;
+  --layout-sidebar-width: 236px;
+  --layout-header-height: 72px;
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-section: 40px;
+  --space-page: 56px;
+  --title-description-gap: 8px;
+  --description-section-gap: 24px;
+  --section-section-gap: 32px;
+  --frame-frame-gap: 16px;
+  --frame-padding-operational: 20px;
+  --frame-padding-form: 24px;
+  --frame-padding-table: 0;
+  --frame-padding-empty: 32px 20px;
+  --frame-heading-gap: 14px;
+  --form-label-field-gap: 8px;
+  --form-field-field-gap: 16px;
+  --toolbar-content-gap: 16px;
+  --button-group-gap: 8px;
+  --sidebar-section-gap: 24px;
+  --sidebar-heading-item-gap: 8px;
+  --sidebar-item-gap: 4px;
+  --button-height-default: 44px;
+  --button-height-compact: 36px;
+  --button-height-icon: 40px;
+  --button-padding-default: 16px;
+  --button-padding-compact: 12px;
+  --button-radius: 10px;
+  --type-page-title-size: clamp(1.9rem, 3vw, 2.8rem);
+  --type-page-title-line: 1.04;
+  --type-section-title-size: 1.2rem;
+  --type-body-line: 1.55;
+  --type-label-size: 0.78rem;
+}
+
+.brand-logo-link {
+  overflow: visible;
+}
+
+.brand-logo-frame {
+  display: inline-grid;
+  width: max-content;
+  height: max-content;
+  place-items: center;
+  overflow: hidden;
+}
+
+.brand-logo-link > .brand-logo-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.brand-logo {
+  transform: translateY(var(--logo-optical-y, 0px)) scale(var(--logo-scale, 1.55));
+  transform-origin: center;
+}
+
+.brand-logo-primary {
+  --logo-optical-y: -1px;
+  --logo-scale: 1.65;
+}
+
+.brand-logo-admin {
+  --logo-optical-y: -1px;
+  --logo-scale: 1.5;
+}
+
+.brand-logo-symbol {
+  --logo-scale: 1;
+}
+
+.page-header {
+  gap: var(--space-lg);
+  margin-bottom: var(--description-section-gap);
+}
+
+.page-header > div:first-child {
+  display: grid;
+  gap: var(--title-description-gap);
+  align-content: start;
+}
+
+.page-header h1,
+.page-header .lede {
+  margin-bottom: 0;
+}
+
+.page-header h1 {
+  font-size: var(--type-page-title-size);
+  line-height: var(--type-page-title-line);
+}
+
+.page-header-actions,
+.form-actions,
+.actions {
+  gap: var(--button-group-gap);
+}
+
+.button {
+  min-height: var(--button-height-default);
+  padding: 0 var(--button-padding-default);
+  border-radius: var(--button-radius);
+  line-height: 1;
+}
+
+.button-size-compact {
+  min-height: var(--button-height-compact);
+  padding-inline: var(--button-padding-compact);
+  font-size: 0.82rem;
+}
+
+.button-size-icon {
+  width: var(--button-height-icon);
+  min-height: var(--button-height-icon);
+  padding: 0;
+}
+
+.button-quiet {
+  min-height: var(--button-height-compact);
+  padding-inline: var(--space-xs);
+}
+
+.admin-page .button {
+  min-height: var(--button-height-default);
+  padding: 0 var(--button-padding-default);
+  font-size: 0.84rem;
+}
+
+.admin-page .button-size-compact {
+  min-height: var(--button-height-compact);
+  padding-inline: var(--button-padding-compact);
+  font-size: 0.78rem;
+}
+
+.admin-page .button-size-icon {
+  width: var(--button-height-icon);
+  min-height: var(--button-height-icon);
+  padding: 0;
+}
+
+.admin-page .button-quiet,
+.admin-page .data-table .button,
+.admin-page .table-wrap .button {
+  min-height: var(--button-height-compact);
+  padding-inline: var(--button-padding-compact);
+  font-size: 0.78rem;
+}
+
+.card {
+  padding: var(--frame-padding-operational);
+  border-radius: var(--radius-md);
+}
+
+.card.frame-form {
+  padding: var(--frame-padding-form);
+}
+
+.card.frame-table {
+  padding: var(--frame-padding-table) !important;
+}
+
+.card.frame-empty {
+  padding: var(--frame-padding-empty);
+}
+
+.card.frame-detail,
+.card.frame-attention,
+.card.frame-list,
+.card.frame-summary {
+  padding: var(--frame-padding-operational);
+}
+
+.content-stack,
+.admin-content,
+.customer-skeleton-content {
+  gap: var(--frame-frame-gap);
+}
+
+.form-card {
+  gap: var(--form-field-field-gap);
+}
+
+.field {
+  gap: var(--form-label-field-gap);
+}
+
+.form-grid {
+  gap: var(--form-field-field-gap);
+}
+
+.split-heading {
+  gap: var(--frame-heading-gap);
+  margin-bottom: var(--frame-heading-gap);
+}
+
+.empty-state {
+  padding: var(--frame-padding-empty);
+}
+
+.summary-line {
+  gap: var(--frame-heading-gap);
+  padding: 10px 0;
+}
+
+.admin-shell .admin-topbar {
+  min-height: var(--layout-header-height);
+}
+
+.admin-shell .admin-page.page {
+  grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr);
+  width: min(calc(100% - (var(--layout-page-inline-admin) * 2)), var(--layout-content-max));
+  padding-top: var(--layout-page-top);
+  padding-bottom: var(--layout-page-bottom);
+}
+
+.admin-shell .admin-page > .page-header {
+  margin-bottom: var(--description-section-gap);
+}
+
+.admin-shell .admin-content {
+  gap: var(--description-section-gap);
+}
+
+.admin-shell .admin-dashboard-section + .admin-dashboard-section {
+  margin-top: 0;
+}
+
+.admin-shell .admin-section-heading {
+  gap: var(--frame-heading-gap);
+  margin-bottom: var(--space-md);
+}
+
+.admin-shell .admin-nav {
+  top: calc(var(--layout-header-height) + var(--space-md));
+  gap: var(--sidebar-section-gap);
+}
+
+.admin-shell .admin-nav-group {
+  gap: var(--sidebar-item-gap);
+}
+
+.admin-shell .admin-nav-group-label {
+  margin-bottom: var(--sidebar-heading-item-gap);
+}
+
+.admin-shell .admin-nav-link {
+  min-height: 40px;
+  gap: var(--admin-sidebar-icon-label-gap);
+  line-height: 20px;
+}
+
+.admin-shell .admin-nav-icon-wrap {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+.admin-shell .admin-nav-label {
+  line-height: 20px;
+}
+
+.workspace-skeleton .admin-queue-grid-primary .workspace-skeleton-queue-card {
+  min-height: 188px;
+}
+
+.workspace-skeleton .admin-queue-grid-secondary .workspace-skeleton-queue-card {
+  min-height: 160px;
+}
+
+.workspace-skeleton-quick-actions {
+  min-height: 136px;
+}
+
+.workspace-skeleton-summary-grid {
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.workspace-skeleton-summary-grid .workspace-skeleton-summary-item {
+  min-height: 116px;
+  align-content: center;
+}
+
+.workspace-skeleton-summary-grid .skeleton-metric-value {
+  width: 44%;
+  height: 28px;
+}
+
+.workspace-skeleton-card-list {
+  display: grid;
+  gap: var(--frame-frame-gap);
+}
+
+.workspace-skeleton-list-card {
+  display: grid;
+  min-height: 172px;
+  gap: var(--space-sm);
+  align-content: start;
+}
+
+.workspace-skeleton-list-card .split-heading {
+  margin-bottom: var(--space-xs);
+}
+
+.workspace-skeleton-list-title {
+  height: 22px;
+  margin-top: var(--space-xs);
+}
+
+.workspace-skeleton-list-card .skeleton-cta {
+  width: 120px;
+  height: var(--button-height-compact);
+  margin-top: var(--space-xs);
+}
+
+.workspace-skeleton-deposit-grid {
+  align-items: start;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel {
+  min-height: 188px;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(1) {
+  min-height: 172px;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(2) {
+  min-height: 300px;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(5) {
+  min-height: 280px;
+}
+
+.workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(6) {
+  min-height: 196px;
+}
+
+.customer-shell {
+  --layout-page-inline-customer: 16px;
+  --layout-page-bottom: 48px;
+}
+
+.customer-shell .brand-logo-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.customer-shell .brand-logo-primary {
+  --logo-scale: 1.65;
+}
+
+.customer-shell .page {
+  width: min(calc(100% - (var(--layout-page-inline-customer) * 2)), 1180px);
+  padding-top: var(--layout-page-top);
+  padding-bottom: var(--layout-page-bottom);
+}
+
+.customer-shell .page-header {
+  margin-bottom: var(--description-section-gap);
+}
+
+.customer-shell .card,
+.customer-shell .guard-card,
+.customer-shell .state-panel {
+  padding: var(--frame-padding-operational);
+}
+
+.customer-shell .form-card {
+  gap: var(--form-field-field-gap);
+}
+
+.customer-shell .button {
+  min-height: var(--button-height-default);
+  padding: 0 var(--button-padding-default);
+  border-radius: var(--button-radius);
+}
+
+.customer-shell .button-quiet {
+  min-height: var(--button-height-compact);
+  padding-inline: var(--space-xs);
+}
+
+.customer-shell .account-dashboard-grid {
+  gap: var(--frame-frame-gap);
+}
+
+@media (max-width: 900px) {
+  .admin-shell .admin-page.page {
+    width: min(calc(100% - (var(--layout-page-inline-admin) * 2)), var(--layout-content-max));
+  }
+
+  .customer-shell .page {
+    padding-top: var(--space-lg);
+  }
+
+  .customer-shell > main {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel {
+    min-height: 188px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(1) {
+    min-height: 156px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(2) {
+    min-height: 280px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(5) {
+    min-height: 260px;
+  }
+
+  .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel:nth-child(6) {
+    min-height: 196px;
+  }
+}
+
+.auth-page .brand-logo-frame {
+  width: 104px;
+  height: 104px;
+  overflow: visible;
+}
+
+.auth-page .brand-logo {
+  width: 104px;
+  height: 104px;
+  transform: translateY(var(--logo-optical-y, 0px)) scale(2.15);
+}
+
+@media (max-width: 640px) {
+  .admin-shell .admin-page.page,
+  .customer-shell .page {
+    width: min(calc(100% - 32px), var(--layout-content-max));
+  }
+
+  .customer-shell .page {
+    padding-bottom: var(--layout-page-bottom);
+  }
+}

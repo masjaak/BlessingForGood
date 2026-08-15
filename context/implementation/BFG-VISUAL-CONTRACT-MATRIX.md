@@ -52,3 +52,30 @@ they are not rendered as dead affordances.
 - Book detail shows the selected cover before persistence. This is local
   rendered behavior; authenticated Admin screenshots at 1024/1280/1440 and
   populated Customer screenshots remain externally blocked.
+
+## Phase 07.1 visual system convergence delta — 2026-08-15
+
+Starting commit: `99db772` (`origin/main` matched exactly). This pass changed
+shared visual primitives and route composition only; no `convex/` files,
+schema, auth, RBAC, inventory, order, invoice, payment, deposit, refund,
+notification, or Inbox logic changed.
+
+- `BrandLogo` now owns the optical wrapper, asset proportions, and one shared
+  optical correction. Header, auth, splash, Admin, and Customer presentations
+  use the same primitive.
+- `Button` / `LinkButton` expose `default`, `compact`, and `icon` geometry;
+  `Card` exposes semantic operational, form, table, list, summary, detail,
+  empty, and attention frames.
+- Admin and Customer dashboard loading now reuse the final page-aware shell;
+  route archetypes cover dashboard, table, form/list, detail, finance,
+  settings, and customer card-list geometry.
+- Catalog create/list/detail/access/book/order surfaces now declare the same
+  frame grammar instead of relying on route-local card styling.
+- The token, button, and convergence contracts are recorded in
+  `BFG-VISUAL-TOKEN-CONTRACT.md`, `BFG-BUTTON-VISUAL-MATRIX.md`, and
+  `BFG-VISUAL-CONVERGENCE-MATRIX.md`.
+
+Rendered evidence is retained under `artifacts/visual-convergence/`. Public
+and signed-out local geometry is green; authenticated populated Admin and
+Customer comparison remains blocked by the missing designated QA identities
+and safe real records.

@@ -57,7 +57,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
       description="Atur metadata, produk, status, dan akses dari satu alur yang dapat dijangkau."
       actions={<LinkButton href={`/admin/catalogs/${catalogId}/access`}>Access Management</LinkButton>}
     >
-      <Card>
+      <Card frame="form">
         <div className="split-heading">
           <h2>Pengaturan katalog</h2>
           <StatusBadge tone={catalog.status === "open" ? "positive" : "neutral"}>{catalog.status}</StatusBadge>
@@ -131,7 +131,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           </div>
         </form>
       </Card>
-      <Card>
+      <Card frame="list">
         <div className="split-heading">
           <div>
             <span className="card-kicker">Kurasi produk</span>

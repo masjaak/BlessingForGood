@@ -57,7 +57,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
         </LinkButton>
       }
     >
-      <Card>
+      <Card frame="form">
         <span className="card-kicker">Kode akses aman</span>
         <h2>Generate, salin, lalu bagikan secara manual</h2>
         <div className="form-actions">
@@ -119,7 +119,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
           ))}
         </div>
       </Card>
-      <Card>
+      <Card frame="list">
         <span className="card-kicker">Akses member</span>
         <h2>Grant atau revoke customer aktif</h2>
         <form
