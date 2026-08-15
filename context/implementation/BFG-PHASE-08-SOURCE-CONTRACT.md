@@ -130,7 +130,8 @@ final implementation check against the selected deployment class.
 - Development system: `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
-- Current `main` and `origin/main`: documentation-lock commit `e2ad4a3`.
+- Application baseline before this source-contract documentation: lock commit
+  `e2ad4a3`.
 - Vitest: `194/194`.
 - Convex: `94/94`.
 - Playwright: `180/180`.
