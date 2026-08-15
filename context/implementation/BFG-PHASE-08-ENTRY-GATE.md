@@ -10,12 +10,12 @@ Phase 08 implementation in this task.
 
 ## Current Stable Baseline
 
-- HEAD/origin baseline: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
+- HEAD/origin baseline: `d9aad899a440592504117c6b57c02cd15bdec355`.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
-- Vercel Production: `dpl_ENarTXz1DLezwFcX3Kq14khbjzGM`.
+- Vercel Production: `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`).
 - Canonical domain: `https://www.blessingforgood.com`.
-- Tests: Vitest `189/189`, Convex `94/94`, Playwright `160/160`; TypeScript,
+- Tests: Vitest `194/194`, Convex `94/94`, Playwright `180/180`; TypeScript,
   ESLint, format, build PASS.
 - Supplied real-flow evidence: admission, product/media/projection, Secret
   Catalog access/revoke, order, invoice/Tagihan, notification, and ownership

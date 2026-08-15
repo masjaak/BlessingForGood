@@ -2,7 +2,7 @@
 
 Status: `BFG_PHASE_07_1_BASELINE_RECONCILED`
 
-Current baseline: HEAD `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`; current
+Current implementation baseline: `d9aad899a440592504117c6b57c02cd15bdec355`; current
 Production and real-flow evidence are anchored in `PROJECT_STATUS.md` and
 `SOURCE_OF_TRUTH.md`. Earlier “Production auth pending” notes below are
 historical evidence and do not override the current baseline.

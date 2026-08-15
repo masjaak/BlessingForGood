@@ -7,7 +7,7 @@ the current canonical classification in
 `BFG-BASELINE-RECONCILIATION-MATRIX.md`.
 
 Current control gate: `UNKNOWN=0`, `DEAD_ACTION=0`. Current exact tests are
-Vitest `189/189`, Convex `94/94`, Playwright `160/160`; TypeScript, ESLint,
+Vitest `194/194`, Convex `94/94`, Playwright `180/180`; TypeScript, ESLint,
 format, and build PASS. Real Production evidence for admission, product/media,
 Secret Catalog, order, invoice, notification, and ownership flows is recorded
 in the current baseline documents without exposing secrets.

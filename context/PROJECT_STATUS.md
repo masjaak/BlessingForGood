@@ -2,24 +2,34 @@
 
 ## Current Anchored Summary — 2026-08-15
 
-**Status:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
+**Status:** `BFG_PHASE_07_1_RESPONSIVE_COVER_CLOSURE`
+**Baseline marker:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
 **Phase 08:** `NOT_STARTED` — entry gate and candidates are documented; no Phase 08 implementation was started.
 
-Starting/current stable commit: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
+Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
+Current stable commit: `d9aad899a440592504117c6b57c02cd15bdec355`.
 `origin/main`: matches the current stable commit at verification time.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_ENarTXz1DLezwFcX3Kq14khbjzGM`.
+Vercel Production: `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`).
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current regression baseline: Vitest `189/189`, Convex `94/94`, Playwright
-`160/160`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
+Current regression baseline: Vitest `194/194`, Convex `94/94`, Playwright
+`180/180`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
-`www` with HTTP 308. The supplied Phase 07.1 closure evidence records PASS for
-real admission, product, cover upload/persistence/projection, Secret Catalog
+`www` with HTTP 308. The public Production route matrix is `180/180`, including
+customer 375/390/430/768/1280/1440 and Admin 1024/1280/1440. Authenticated
+Production UI and intentional real-product recheck remain `BLOCKED_EXTERNAL` /
+`BLOCKED_BY_DATA` because no authorized Clerk session or client product was
+provided. The supplied Phase 07.1 closure evidence still records PASS for real
+admission, product, cover upload/persistence/projection, Secret Catalog
 generate/copy/unlock/revoke, order, Admin projection, invoice, Tagihan,
 notification, and ownership-isolation flows.
+
+The Vercel Production build hook re-pushed the unchanged Convex functions to
+`clean-eel-522`; this closure pass made no schema, auth, RBAC, financial,
+inventory, or Secret Catalog backend changes.
 
 The canonical reconciliation artifacts are:
 
@@ -63,6 +73,19 @@ The canonical reconciliation artifacts are:
 Before any Phase 08 implementation, create and approve a Phase Source Contract
 from the candidate list. This task ends at the locked baseline; it does not
 start Phase 08.
+
+### Responsive/media closure evidence
+
+- Customer mobile top header is logo-only; Activity is reachable through Akun,
+  with a shared unread dot on the five-link bottom navigation.
+- Customer desktop and Admin Activity/avatar clusters remain inline; Admin
+  `Lihat sisi pelanggan` is nowrap at 1024/1280/1440.
+- `CoverUploadField` owns the custom accessible file presentation while the
+  existing Convex upload URL/attach flow remains canonical.
+- Local exact 1280 customer smoke: `20/20`; Production exact 1280 customer
+  smoke: `20/20`. Existing 160-check matrix remains green, for `180/180` total.
+- Authenticated Production visual and real cover persistence/projection UAT was
+  not repeated without credentials and an intentional product record.
 
 ## Historical Status Archive
 

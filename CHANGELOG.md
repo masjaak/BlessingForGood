@@ -28,8 +28,10 @@ source: conversation
 
 ### QA
 
-- Vitest: 194/194; Convex: 94/94; Playwright: 160/160; TypeScript, ESLint,
-  format, and build pass.
+- Vitest: 194/194; Convex: 94/94; Playwright: 180/180; TypeScript, ESLint,
+  format, and build pass. The exact 1280px Customer matrix is green locally
+  and on Production (20/20 each). Vercel Production is deployed as
+  `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs`.
 - Authenticated Production recheck and real cover/product UAT are
   `BLOCKED_EXTERNAL`/`BLOCKED_BY_DATA` in this environment because no
   authorized Clerk session or intentional client product was supplied. No

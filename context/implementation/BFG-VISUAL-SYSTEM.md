@@ -110,7 +110,7 @@ not a generic random loading animation and it must not move the shell.
 The current shared CSS defines the responsive behavior around the existing
 700/800/900/1100px media boundaries. Verify at the current Playwright viewports:
 
-- customer: 375, 390, 430, 768, 1440px;
+- customer: 375, 390, 430, 768, 1280, 1440px;
 - Admin: 1024, 1280, 1440px.
 
 Mobile is a layout contract, not a scaled desktop header. Desktop Admin remains

@@ -1,8 +1,8 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-15 (Asia/Jakarta)
-Applies to: current `main` at `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c` and the
-Phase 07.1 production baseline.
+Applies to: current `main` at `d9aad899a440592504117c6b57c02cd15bdec355` and the
+Phase 07.1 responsive/media Production closure deployment.
 Phase 08: **not started**. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
@@ -26,11 +26,11 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item | Canonical value |
 |---|---|
-| HEAD / supplied stable commit | `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c` |
+| HEAD / current stable commit | `d9aad899a440592504117c6b57c02cd15bdec355` |
 | `origin/main` | matches the stable commit at verification time |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
-| Vercel Production deployment | `dpl_ENarTXz1DLezwFcX3Kq14khbjzGM` |
+| Vercel Production deployment | `dpl_D3MCiwvhvA2WZorUg7HLMFG6SnBs` (`READY`) |
 | Canonical Production URL | `https://www.blessingforgood.com` |
 | Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
 
@@ -38,15 +38,15 @@ Current exact regression baseline:
 
 | Gate | Result |
 |---|---|
-| Vitest | `189 / 189` |
+| Vitest | `194 / 194` |
 | Convex | `94 / 94` |
-| Playwright | `160 / 160` |
+| Playwright | `180 / 180` |
 | TypeScript | PASS |
 | ESLint | PASS |
 | Format | PASS |
 | Build | PASS |
-| Rendered QA | local route/viewport suite included in the 160 Playwright checks; populated authenticated Production visual evidence is recorded as the supplied Phase 07.1 closure evidence |
-| Real UAT | supplied Phase 07.1 closure evidence: PASS for the real flows listed in `PROJECT_STATUS.md` and the baseline reconciliation report |
+| Rendered QA | local route/viewport suite plus exact 1280 customer coverage; public Production route/viewport smoke `180 / 180`; authenticated Production visual evidence is not repeatable without a configured Clerk session |
+| Real UAT | supplied Phase 07.1 closure evidence remains PASS for the real flows listed in `PROJECT_STATUS.md`; this targeted pass did not fabricate or repeat private business UAT |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -451,7 +451,7 @@ Production deployment, applicable real flow verification, and context update.
 
 ## Current Test Baseline
 
-Vitest `194/194`; Convex `94/94`; Playwright `160/160`; TypeScript, ESLint,
+Vitest `194/194`; Convex `94/94`; Playwright `180/180`; TypeScript, ESLint,
 format, and build all PASS. The targeted responsive/media component tests are
 included in the higher Vitest baseline. Future reports must also state
 rendered QA and real UAT separately, with `BLOCKED_BY_DATA` and
@@ -522,7 +522,9 @@ contract and any external data/identity needed for acceptance.
 
 ### Test Baseline
 
-189 / 94 / 160 plus all static gates PASS.
+194 / 94 / 180 plus all static gates PASS. The public Production route matrix
+and exact 1280px Customer viewport are green; private authenticated UI remains
+explicitly blocked without a designated Clerk session.
 
 ### Next Milestone
 

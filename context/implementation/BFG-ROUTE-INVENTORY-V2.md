@@ -1,7 +1,7 @@
 # BFG Route Inventory V2
 
 Generated from the successful Next production build on 2026-08-15 at
-`45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
+`d9aad899a440592504117c6b57c02cd15bdec355`.
 
 The table contains 50 generated routes including `/_not-found` (49 App Router
 page files plus the framework not-found surface).
