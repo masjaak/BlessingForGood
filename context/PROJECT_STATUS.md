@@ -397,9 +397,10 @@ environment-sensitive operation instead of switching or creating a project.
 
 ## Phase 07.1 visual convergence status — 2026-08-15
 
-- Local systemic visual pass is complete at commit `6a84bc0`: shared logo,
-  skeleton, spacing, button, frame, sidebar, typography, and Catalog grammar
-  are implemented and locally verified.
+- Local systemic visual pass is complete at runtime commit `6a84bc0` with
+  documentation follow-up `9bb0093`: shared logo, skeleton, spacing, button,
+  frame, sidebar, typography, and Catalog grammar are implemented and locally
+  verified.
 - Local validation is green: `npm run check`, Convex check/tests, focused visual
   tests, `git diff --check`, and Playwright `155/155` signed-out/public matrix.
 - Vercel Production `dpl_CsHVTKox5LVhhKQYZPG8TV1y2fk9` is READY and aliased to

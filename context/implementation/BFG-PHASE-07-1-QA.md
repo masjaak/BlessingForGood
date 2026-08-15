@@ -200,7 +200,8 @@ Current verdict: `LOCAL_VISUAL_SYSTEM_READY`;
 
 ## Phase 07.1 Production delivery verdict — 2026-08-15
 
-- Final pushed commit: `6a84bc0`.
+- Runtime visual commit: `6a84bc0`; documentation follow-up commit:
+  `9bb0093`.
 - Vercel Production: `dpl_CsHVTKox5LVhhKQYZPG8TV1y2fk9`, `READY`, aliased to
   `www.blessingforgood.com`, `blessingforgood.com`,
   `blessingforgood.vercel.app`, and the project aliases.
