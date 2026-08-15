@@ -318,24 +318,64 @@ function SkeletonForm() {
   );
 }
 
+function SkeletonQueueCard() {
+  return (
+    <Card className="metric workspace-skeleton-queue-card" aria-hidden="true">
+      <div className="split-heading">
+        <SkeletonText className="skeleton-queue-label" width="58%" />
+        <Skeleton className="skeleton-queue-status" />
+      </div>
+      <Skeleton className="metric-value skeleton-queue-value" />
+      <p className="skeleton-queue-description">
+        <SkeletonText width="92%" />
+        <SkeletonText width="68%" />
+      </p>
+      <div className="skeleton-queue-action-slot">
+        <Skeleton className="skeleton-queue-action" />
+      </div>
+    </Card>
+  );
+}
+
+function SkeletonDashboardSection({ secondary = false }: { secondary?: boolean }) {
+  const cardCount = secondary ? 3 : 4;
+  return (
+    <section className="admin-dashboard-section" aria-hidden="true">
+      <div className="admin-section-heading">
+        <div className="skeleton-section-copy">
+          <SkeletonText className="skeleton-section-kicker" width={secondary ? "112px" : "118px"} />
+          <Skeleton className="skeleton-section-title" />
+        </div>
+        <SkeletonText className="skeleton-section-description" width={secondary ? "250px" : "286px"} />
+      </div>
+      <div className={`admin-queue-grid ${secondary ? "admin-queue-grid-secondary" : "admin-queue-grid-primary"}`}>
+        {Array.from({ length: cardCount }, (_, index) => (
+          <SkeletonQueueCard key={index} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function AdminSkeletonContent({ kind }: { kind: AdminSkeletonKind }) {
   if (kind === "dashboard") {
     return (
       <>
-        <div className="workspace-skeleton-metric-grid workspace-skeleton-metric-grid-primary">
-          {Array.from({ length: 4 }, (_, index) => (
-            <SkeletonMetric key={index} />
-          ))}
-        </div>
-        <div className="workspace-skeleton-panel-grid">
-          <SkeletonPanel lines={6} />
-          <SkeletonPanel lines={6} />
-        </div>
-        <div className="workspace-skeleton-metric-grid workspace-skeleton-metric-grid-secondary">
-          {Array.from({ length: 3 }, (_, index) => (
-            <SkeletonMetric key={index} />
-          ))}
-        </div>
+        <SkeletonDashboardSection />
+        <SkeletonDashboardSection secondary />
+        <Card className="workspace-skeleton-quick-actions" aria-hidden="true">
+          <div className="split-heading">
+            <div className="skeleton-section-copy">
+              <SkeletonText className="skeleton-section-kicker" width="92px" />
+              <Skeleton className="skeleton-section-title" />
+            </div>
+          </div>
+          <div className="actions admin-quick-actions">
+            {Array.from({ length: 5 }, (_, index) => (
+              <Skeleton className="skeleton-quick-action" key={index} />
+            ))}
+          </div>
+        </Card>
       </>
     );
   }

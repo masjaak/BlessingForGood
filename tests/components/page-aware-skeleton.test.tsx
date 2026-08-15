@@ -72,4 +72,13 @@ describe("page-aware workspace skeletons", () => {
       unmount();
     }
   });
+
+  it("mirrors the Admin dashboard loading sections", () => {
+    render(<PageAwareSkeleton workspace="admin" pathname="/admin" />);
+
+    expect(document.querySelectorAll(".admin-dashboard-section")).toHaveLength(2);
+    expect(document.querySelectorAll(".admin-queue-grid-primary .workspace-skeleton-queue-card")).toHaveLength(4);
+    expect(document.querySelectorAll(".admin-queue-grid-secondary .workspace-skeleton-queue-card")).toHaveLength(3);
+    expect(document.querySelectorAll(".workspace-skeleton-quick-actions .skeleton-quick-action")).toHaveLength(5);
+  });
 });
