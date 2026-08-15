@@ -394,3 +394,19 @@ environment-sensitive operation instead of switching or creating a project.
 - **Next action:** keep reporting, Excel export, analytics, CMS, settings,
   notification platform, payment gateway, and full Admin visual redesign out
   of scope until their own phase is authorized.
+
+## Phase 07.1 visual convergence status — 2026-08-15
+
+- Local systemic visual pass is complete at commit `6a84bc0`: shared logo,
+  skeleton, spacing, button, frame, sidebar, typography, and Catalog grammar
+  are implemented and locally verified.
+- Local validation is green: `npm run check`, Convex check/tests, focused visual
+  tests, `git diff --check`, and Playwright `155/155` signed-out/public matrix.
+- Vercel Production `dpl_CsHVTKox5LVhhKQYZPG8TV1y2fk9` is READY and aliased to
+  the canonical domains. Canonical Convex Production remains `clean-eel-522`.
+- Production populated Admin/Customer visual acceptance is blocked by missing
+  designated QA identities/real records and Vercel Deployment Protection in
+  the current browser environment. No bypass or dummy records were used.
+- **Phase 07.1:** NOT CLOSED (`LOCAL_VISUAL_SYSTEM_READY`,
+  `PRODUCTION_AUTHENTICATED_VISUAL_ACCEPTANCE_BLOCKED`).
+- **Phase 08:** LOCKED.
