@@ -35,16 +35,16 @@ export function adminConfig(pathname: string): SkeletonConfig {
   if (pathname === "/admin/books") {
     return {
       kind: "form-list",
-      eyebrow: "Book Master",
+      eyebrow: "Master Buku",
       title: "Kelola buku dan Ready Stock",
-      description: "Metadata buku dipakai ulang; katalog rahasia dan Ready Stock hanya mengatur konteksnya.",
+      description: "Metadata buku dipakai ulang; Secret Catalog dan Ready Stock hanya mengatur konteksnya.",
       variant: "book-master",
     };
   }
   if (pathname.startsWith("/admin/books/")) {
     return {
       kind: "detail",
-      eyebrow: "Book Master",
+      eyebrow: "Master Buku",
       title: "Detail buku",
       description: "Metadata, cover, variant, dan status publikasi.",
     };
@@ -64,7 +64,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       kind: "detail",
       eyebrow: "Secret Catalog",
       title: "Detail katalog",
-      description: "Lifecycle, buku, dan Access Management.",
+      description: "Status, buku, dan pengelolaan akses.",
     };
   }
   if (pathname === "/admin/ready-stock") {
@@ -72,7 +72,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       kind: "table-queue",
       eyebrow: "Ready Stock",
       title: "Pantau stok siap proses.",
-      description: "On hand, reserved, dan available dalam satu antrian operasional.",
+      description: "Stok fisik, dipesan, dan tersedia dalam satu antrian operasional.",
       variant: "ready-stock",
     };
   }
@@ -88,7 +88,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
   if (pathname.startsWith("/admin/batches/")) {
     return {
       kind: "detail",
-      eyebrow: "Batch operations",
+      eyebrow: "Operasi batch",
       title: "Detail operasi batch",
       description: "Status, roster, dan tindakan batch.",
     };
@@ -96,63 +96,63 @@ export function adminConfig(pathname: string): SkeletonConfig {
   if (pathname === "/admin/orders") {
     return {
       kind: "table-queue",
-      eyebrow: "Order operations",
-      title: "See the preorder, then move its stage.",
-      description: "Status transitions, assisted orders, and batch links use the canonical order pipeline.",
+      eyebrow: "Operasi pesanan",
+      title: "Tinjau pesanan, lalu lanjutkan tahapnya.",
+      description: "Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan kanonik.",
       variant: "orders",
     };
   }
   if (pathname.startsWith("/admin/orders/")) {
     return {
       kind: "detail",
-      eyebrow: "Order operations",
+      eyebrow: "Operasi pesanan",
       title: "Detail pesanan",
-      description: "Tracking, fulfillment, batch, dan exception.",
+      description: "Pelacakan, pemenuhan, batch, dan masalah.",
     };
   }
   if (pathname === "/admin/customers") {
     return {
       kind: "table-queue",
-      eyebrow: "Operasional customer",
-      title: "Customer aktif",
-      description: "Buka customer untuk melihat profil dan riwayat operasional.",
+      eyebrow: "Operasional pelanggan",
+      title: "Pelanggan aktif",
+      description: "Buka pelanggan untuk melihat profil dan riwayat operasional.",
     };
   }
   if (pathname === "/admin/join-requests" || pathname === "/admin/exceptions") {
     const isJoinRequests = pathname.endsWith("join-requests");
     return {
       kind: "table-queue",
-      eyebrow: isJoinRequests ? "Admission" : "Exception operations",
-      title: isJoinRequests ? "Tinjau permintaan join." : "Tangani masalah pesanan.",
+      eyebrow: isJoinRequests ? "Penerimaan anggota" : "Operasi masalah",
+      title: isJoinRequests ? "Tinjau permintaan bergabung." : "Tangani masalah pesanan.",
       description: isJoinRequests
-        ? "Permintaan nyata tetap melalui review dan audit."
-        : "Exception item-level tetap terhubung ke order dan invoice asal.",
+        ? "Permintaan nyata tetap melalui peninjauan dan audit."
+        : "Masalah per item tetap terhubung ke pesanan dan invoice asal.",
       variant: "card-list",
     };
   }
   if (pathname.startsWith("/admin/customers/")) {
     return {
       kind: "detail",
-      eyebrow: "Detail customer",
-      title: "Detail customer",
-      description: "Profil, alamat, pesanan, invoice, dan masalah customer.",
+      eyebrow: "Detail pelanggan",
+      title: "Detail pelanggan",
+      description: "Profil, alamat, pesanan, invoice, dan masalah pelanggan.",
     };
   }
   if (pathname === "/admin/invoices") {
     return {
       kind: "finance",
-      eyebrow: "Invoice and deposit operations",
-      title: "Make the money state explicit.",
-      description: "Invoice, deposit, allocation, release, dan reversal tetap terpisah.",
+      eyebrow: "Operasi invoice dan deposit",
+      title: "Jaga status keuangan tetap jelas.",
+      description: "Tagihan, deposit, alokasi, pelepasan, dan pembalikan tetap terpisah.",
       variant: "financial-list",
     };
   }
   if (pathname.startsWith("/admin/invoices/")) {
     return {
       kind: "detail",
-      eyebrow: "Invoice operations",
+      eyebrow: "Operasi invoice",
       title: "Detail invoice",
-      description: "Invoice, account, allocation, dan ledger.",
+      description: "Tagihan, akun, alokasi, dan catatan transaksi.",
     };
   }
   if (["/admin/payments", "/admin/deposits", "/admin/refunds"].includes(pathname)) {
@@ -167,9 +167,9 @@ export function adminConfig(pathname: string): SkeletonConfig {
   if (pathname === "/admin/reports") {
     return {
       kind: "finance",
-      eyebrow: "Reports & Analytics",
+      eyebrow: "Laporan & analitik",
       title: "Lihat performa operasional.",
-      description: "Ringkasan berbasis periode dan export.",
+      description: "Ringkasan berbasis periode dan ekspor.",
       variant: "report",
     };
   }
@@ -177,18 +177,18 @@ export function adminConfig(pathname: string): SkeletonConfig {
     return {
       kind: "table-queue",
       eyebrow: "Pusat aktivitas",
-      title: pathname.endsWith("inbox") ? "Inbox" : "Notifikasi",
+      title: pathname.endsWith("inbox") ? "Kotak masuk" : "Notifikasi",
       description: pathname.endsWith("inbox")
         ? "Pesan operasional yang perlu ditindaklanjuti."
-        : "Pembaruan sistem untuk workspace Admin.",
+        : "Pembaruan sistem untuk ruang kerja Admin.",
       variant: "card-list",
     };
   }
   if (pathname === "/admin/audit") {
     return {
       kind: "table-queue",
-      eyebrow: "System audit",
-      title: "Activity Log",
+      eyebrow: "Audit sistem",
+      title: "Log aktivitas",
       description: "Peristiwa operasional yang dapat ditelusuri kembali ke aktor dan record asal.",
       variant: "card-list",
     };
@@ -196,9 +196,9 @@ export function adminConfig(pathname: string): SkeletonConfig {
   if (pathname === "/admin/users") {
     return {
       kind: "settings",
-      eyebrow: "Owner security",
-      title: "Manage BFG users",
-      description: "Role and suspension changes are enforced by Convex.",
+      eyebrow: "Keamanan Owner",
+      title: "Kelola pengguna BFG",
+      description: "Perubahan role dan penangguhan ditegakkan oleh Convex.",
       variant: "users",
     };
   }
@@ -206,14 +206,14 @@ export function adminConfig(pathname: string): SkeletonConfig {
     return {
       kind: "settings",
       eyebrow: "Workspace BFG",
-      title: "Pengaturan workspace.",
+      title: "Pengaturan ruang kerja.",
       description: "Kontrol operasional yang aman dan terstruktur.",
     };
   }
   return {
     kind: "table-queue",
     eyebrow: "Operasional BFG",
-    title: "Memuat workspace.",
+    title: "Memuat ruang kerja.",
     description: "Menyiapkan antrian kerja.",
   };
 }
@@ -240,9 +240,9 @@ export function customerConfig(pathname: string): SkeletonConfig {
   if (pathname.startsWith("/account/orders/")) {
     return {
       kind: "detail",
-      eyebrow: "Tracking pesanan",
+      eyebrow: "Pelacakan pesanan",
       title: "Detail pesanan",
-      description: "Status, timeline, dan catatan pengiriman.",
+      description: "Status, linimasa, dan catatan pengiriman.",
       narrow: true,
     };
   }
@@ -251,7 +251,7 @@ export function customerConfig(pathname: string): SkeletonConfig {
       kind: "finance",
       eyebrow: "Invoice & deposit",
       title: "Lihat jumlah yang perlu diselesaikan.",
-      description: "Invoice, pembayaran, dan sisa tagihan dari catatan BFG terbaru.",
+      description: "Tagihan, pembayaran, dan sisa tagihan dari catatan BFG terbaru.",
       narrow: true,
       variant: "customer-card-list",
     };
@@ -271,7 +271,7 @@ export function customerConfig(pathname: string): SkeletonConfig {
       kind: "list",
       eyebrow: "Batch PO",
       title: "Perjalanan batch bukumu",
-      description: "Status batch diperbarui untuk customer yang memiliki buku di roster.",
+      description: "Status batch diperbarui untuk pelanggan yang memiliki buku di roster.",
       narrow: true,
       variant: "customer-card-list",
     };
@@ -298,7 +298,7 @@ export function customerConfig(pathname: string): SkeletonConfig {
     return {
       kind: "activity",
       eyebrow: "Akun Blessfriends",
-      title: pathname.endsWith("inbox") ? "Inbox" : "Notifikasi",
+      title: pathname.endsWith("inbox") ? "Kotak masuk" : "Notifikasi",
       description: pathname.endsWith("inbox")
         ? "Pesan operasional dari BFG untuk akunmu."
         : "Pembaruan pesanan, batch, tagihan, dan pembayaranmu.",

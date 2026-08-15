@@ -31,14 +31,14 @@ function DepositOperations() {
       await action();
       setMessage(success);
     } catch {
-      setMessage("Aksi deposit ditolak oleh aturan state/otorisasi.");
+      setMessage("Aksi deposit ditolak oleh aturan status atau otorisasi.");
     } finally {
       setPending("");
     }
   }
   return (
     <AdminOperationalPage
-      eyebrow="Finance"
+      eyebrow="Keuangan"
       title="Deposit & top-up"
       description="Verifikasi bukti top-up, lihat status, dan catat penyesuaian manual yang selalu masuk activity log."
     >
@@ -101,11 +101,11 @@ function DepositOperations() {
             </div>
           ))
         ) : (
-          <EmptyState title="Tidak ada top-up" description="Permintaan customer akan tampil di sini." />
+          <EmptyState title="Tidak ada top-up" description="Permintaan pelanggan akan tampil di sini." />
         )}
       </Card>
       <Card>
-        <span className="card-kicker">Manual adjustment</span>
+        <span className="card-kicker">Penyesuaian manual</span>
         <h2>Koreksi saldo dengan alasan wajib</h2>
         <form
           className="form-card"
@@ -119,14 +119,14 @@ function DepositOperations() {
           }}
         >
           <div className="form-grid">
-            <Field label="Customer">
+            <Field label="Pelanggan">
               <select
                 className="select"
                 value={customerId}
                 onChange={(event) => setCustomerId(event.target.value)}
                 required
               >
-                <option value="">Pilih customer</option>
+                <option value="">Pilih pelanggan</option>
                 {customers?.map((customer) => (
                   <option key={customer.customerUserId} value={customer.customerUserId}>
                     {customer.displayName} · {customer.email || "—"}
@@ -140,7 +140,7 @@ function DepositOperations() {
                 value={direction}
                 onChange={(event) => setDirection(event.target.value as "credit" | "debit")}
               >
-                <option value="credit">Credit</option>
+                <option value="credit">Kredit</option>
                 <option value="debit">Debit</option>
               </select>
             </Field>
@@ -160,7 +160,7 @@ function DepositOperations() {
             <textarea className="textarea" value={note} onChange={(event) => setNote(event.target.value)} required />
           </Field>
           <Button pending={pending === "adjust"} pendingLabel="Mencatat…">
-            Catat adjustment
+            Catat penyesuaian
           </Button>
         </form>
       </Card>

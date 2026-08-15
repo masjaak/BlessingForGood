@@ -15,7 +15,7 @@ import type {
 } from "@/domain/prototype/types";
 
 export const catalogStatusLabels: Record<CatalogStatus, string> = {
-  draft: "Draft",
+  draft: "Draf",
   open: "Terbuka",
   closed: "Ditutup",
   archived: "Diarsipkan",
@@ -27,9 +27,9 @@ export function normalizeCatalogStatus(value: string): CatalogStatus {
 }
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
-  submitted: "Order masuk",
+  submitted: "Pesanan masuk",
   po_closed: "PO Ditutup",
-  ordered_to_supplier: "Dipesan ke Supplier",
+  ordered_to_supplier: "Dipesan ke pemasok",
   shipped_internationally: "Dikirim dari Luar Negeri",
   customs: "Pemeriksaan Bea Cukai",
   to_indonesia_warehouse: "Menuju Gudang Indonesia",

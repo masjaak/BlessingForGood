@@ -113,7 +113,7 @@ function AdminOverview() {
             </div>
             <div className="actions admin-quick-actions">
               <LinkButton href="/admin/books" variant="secondary">
-                Book Master
+                Master Buku
               </LinkButton>
               <LinkButton href="/admin/catalogs" variant="secondary">
                 Secret Catalog

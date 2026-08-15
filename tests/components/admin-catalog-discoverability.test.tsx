@@ -49,10 +49,13 @@ describe("Secret Catalog operational discoverability", () => {
 
     expect(document.getElementById("create-catalog")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Buat katalog" }).getAttribute("href")).toBe("#create-catalog");
-    expect(screen.getByText(/mengelola Access Management/)).toBeTruthy();
+    expect(screen.getByText(/mengelola akses/)).toBeTruthy();
+    expect(screen.getByText("Nama katalog")).toBeTruthy();
+    expect(screen.getByText("Tanggal tutup")).toBeTruthy();
+    expect(document.querySelectorAll("#create-catalog .field-hint")).toHaveLength(3);
   });
 
-  it("exposes Access Management from catalog detail", () => {
+  it("exposes Kelola akses from catalog detail", () => {
     vi.mocked(useQuery)
       .mockReturnValueOnce({
         id: "catalog-1",
@@ -66,14 +69,14 @@ describe("Secret Catalog operational discoverability", () => {
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
 
-    expect(screen.getByRole("link", { name: "Access Management" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Kelola akses" }).getAttribute("href")).toBe(
       "/admin/catalogs/catalog-1/access",
     );
-    expect(screen.getByText("Draft")).toBeTruthy();
+    expect(screen.getByText("Draf")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Buku dalam katalog" })).toBeTruthy();
   });
 
-  it("keeps Generate Access actionable only after a catalog exists", () => {
+  it("keeps Buat kode akses actionable only after a catalog exists", () => {
     vi.mocked(useQuery)
       .mockReturnValueOnce({
         id: "catalog-1",
@@ -87,7 +90,7 @@ describe("Secret Catalog operational discoverability", () => {
 
     render(<AdminCatalogAccess catalogId="catalog-1" />);
 
-    expect(screen.getByRole("button", { name: "Generate Access" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Buat kode akses" })).toBeTruthy();
     expect(screen.getByText("Belum ada kode akses")).toBeTruthy();
   });
 });

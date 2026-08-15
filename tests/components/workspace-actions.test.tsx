@@ -10,12 +10,12 @@ describe("authenticated workspace actions", () => {
   it("exposes reachable Notification and Inbox destinations for Admin", () => {
     render(<WorkspaceActions workspace="admin" enabled />);
     expect(screen.getByRole("link", { name: /Notifikasi/ }).getAttribute("href")).toBe("/admin/notifications");
-    expect(screen.getByRole("link", { name: /Inbox/ }).getAttribute("href")).toBe("/admin/inbox");
+    expect(screen.getByRole("link", { name: /Kotak masuk/ }).getAttribute("href")).toBe("/admin/inbox");
   });
 
   it("exposes reachable owned Notification and Inbox destinations for Customer", () => {
     render(<WorkspaceActions workspace="customer" enabled />);
     expect(screen.getByRole("link", { name: /Notifikasi/ }).getAttribute("href")).toBe("/account/notifications");
-    expect(screen.getByRole("link", { name: /Inbox/ }).getAttribute("href")).toBe("/account/inbox");
+    expect(screen.getByRole("link", { name: /Kotak masuk/ }).getAttribute("href")).toBe("/account/inbox");
   });
 });

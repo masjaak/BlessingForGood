@@ -121,7 +121,7 @@ function AddressForm() {
                 <span className="card-kicker">{address.label}</span>
                 <h2>{address.recipientName}</h2>
               </div>
-              {address.isDefault ? <span className="status-badge status-positive">Default</span> : null}
+              {address.isDefault ? <span className="status-badge status-positive">Utama</span> : null}
             </div>
             <p>
               {address.addressLine1}

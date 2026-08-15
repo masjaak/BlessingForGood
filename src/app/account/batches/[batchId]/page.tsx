@@ -42,7 +42,7 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
       />
       <Card>
         <span className="card-kicker">Buku milikmu</span>
-        <h2>Roster customer</h2>
+        <h2>Roster pelanggan</h2>
         {batch.items.map((item) => (
           <div className="summary-line" key={item.assignmentId}>
             <span>
@@ -53,8 +53,8 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
         ))}
       </Card>
       <Card>
-        <span className="card-kicker">Tracking</span>
-        <h2>Timeline batch</h2>
+        <span className="card-kicker">Pelacakan</span>
+        <h2>Linimasa batch</h2>
         {batch.history.length ? (
           <ul className="timeline">
             {batch.history.map((event) => (

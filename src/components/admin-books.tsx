@@ -12,6 +12,7 @@ import {
   Card,
   EmptyState,
   Field,
+  InlineBooleanField,
   LoadingRegion,
   PageHeader,
   SkeletonTable,
@@ -21,6 +22,13 @@ import { useProduct } from "@/domain/prototype/store";
 
 type PublicationStatus = "draft" | "published" | "special" | "archived";
 type Availability = "in_stock" | "out_of_stock" | "not_listed";
+
+const publicationLabels: Record<PublicationStatus, string> = {
+  draft: "Draf",
+  published: "Terbit",
+  special: "Khusus / privat",
+  archived: "Diarsipkan",
+};
 
 function ConnectedAdminBooks() {
   const router = useRouter();
@@ -84,9 +92,9 @@ function ConnectedAdminBooks() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Book Master"
+        eyebrow="Master Buku"
         title="Kelola buku dan Ready Stock"
-        description="Metadata buku dipakai ulang; katalog rahasia dan Ready Stock hanya mengatur konteksnya."
+        description="Metadata buku dipakai ulang; Secret Catalog dan Ready Stock hanya mengatur konteksnya."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -128,7 +136,7 @@ function ConnectedAdminBooks() {
                 <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
               </Field>
               <Button type="submit" pending={pendingAction === "book"} pendingLabel="Membuat…">
-                Buat draft buku
+                Buat draf buku
               </Button>
             </form>
             {message ? (
@@ -138,8 +146,8 @@ function ConnectedAdminBooks() {
             ) : null}
           </Card>
           <Card>
-            <span className="card-kicker">Publisher Master</span>
-            <h2>Edit atau nonaktifkan penerbit</h2>
+            <span className="card-kicker">Master Penerbit</span>
+            <h2>Ubah atau nonaktifkan penerbit</h2>
             <form
               className="form-actions"
               onSubmit={async (event) => {
@@ -187,14 +195,7 @@ function ConnectedAdminBooks() {
                   required
                 />
               </Field>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={managedPublisherActive}
-                  onChange={(event) => setManagedPublisherActive(event.target.checked)}
-                />
-                Aktif
-              </label>
+              <InlineBooleanField checked={managedPublisherActive} label="Aktif" onChange={setManagedPublisherActive} />
               <Button variant="secondary" pending={pendingAction === "publisher"} pendingLabel="Menyimpan…">
                 Simpan penerbit
               </Button>
@@ -217,10 +218,10 @@ function ConnectedAdminBooks() {
                 onChange={(event) => setStatus(event.target.value as PublicationStatus | "")}
               >
                 <option value="">Semua</option>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="special">Special/private</option>
-                <option value="archived">Archived</option>
+                <option value="draft">Draf</option>
+                <option value="published">Terbit</option>
+                <option value="special">Khusus / privat</option>
+                <option value="archived">Diarsipkan</option>
               </select>
             </Field>
             <Field label="Ready Stock">
@@ -237,7 +238,7 @@ function ConnectedAdminBooks() {
             </Field>
           </Card>
           {books === undefined ? (
-            <LoadingRegion label="Memuat Book Master">
+            <LoadingRegion label="Memuat Master Buku">
               <SkeletonTable rows={5} />
             </LoadingRegion>
           ) : null}
@@ -265,7 +266,7 @@ function ConnectedAdminBooks() {
                       <td>{book.variants.map((variant) => variant.format).join(" · ") || "—"}</td>
                       <td>
                         <StatusBadge tone={book.publicationStatus === "published" ? "positive" : "neutral"}>
-                          {book.publicationStatus}
+                          {publicationLabels[book.publicationStatus]}
                         </StatusBadge>
                       </td>
                       <td>{book.isListed ? book.stockQuantity : "Belum dicatat"}</td>
@@ -281,7 +282,7 @@ function ConnectedAdminBooks() {
             </div>
           ) : books ? (
             <EmptyState
-              title="Book Master kosong"
+              title="Master Buku kosong"
               description="Buat penerbit dan buku pertama untuk mulai menata katalog."
             />
           ) : null}
@@ -295,6 +296,6 @@ export function AdminBooks() {
   return useProduct().dataSource === "convex" ? (
     <ConnectedAdminBooks />
   ) : (
-    <div className="state-panel">Book Master memerlukan sumber data Convex.</div>
+    <div className="state-panel">Master Buku memerlukan sumber data Convex.</div>
   );
 }

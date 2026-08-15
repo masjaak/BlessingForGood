@@ -33,43 +33,43 @@ type AdminNavGroup = { label: string; links: AdminNavLink[] };
 
 const groups: AdminNavGroup[] = [
   {
-    label: "Overview",
+    label: "Ikhtisar",
     links: [
-      { href: "/admin", label: "Dashboard", icon: "dashboard" },
-      { href: "/admin/content", label: "Content", icon: "content" },
+      { href: "/admin", label: "Dasbor", icon: "dashboard" },
+      { href: "/admin/content", label: "Konten", icon: "content" },
     ],
   },
   {
-    label: "Customers",
+    label: "Pelanggan",
     links: [
-      { href: "/admin/join-requests", label: "Join Requests", icon: "join" },
-      { href: "/admin/customers", label: "Customers", icon: "customers" },
+      { href: "/admin/join-requests", label: "Permintaan bergabung", icon: "join" },
+      { href: "/admin/customers", label: "Pelanggan", icon: "customers" },
     ],
   },
   {
-    label: "Catalog",
+    label: "Katalog",
     links: [
-      { href: "/admin/books", label: "Books", icon: "books" },
-      { href: "/admin/catalogs", label: "Catalogs", icon: "catalog" },
+      { href: "/admin/books", label: "Buku", icon: "books" },
+      { href: "/admin/catalogs", label: "Katalog", icon: "catalog" },
       { href: "/admin/ready-stock", label: "Ready Stock", icon: "stock" },
     ],
   },
   {
-    label: "Operations",
+    label: "Operasional",
     links: [
-      { href: "/admin/orders", label: "Orders", icon: "orders" },
+      { href: "/admin/orders", label: "Pesanan", icon: "orders" },
       { href: "/admin/batches", label: "Batch PO", icon: "batch" },
-      { href: "/admin/exceptions", label: "Exceptions", icon: "exception" },
+      { href: "/admin/exceptions", label: "Masalah pesanan", icon: "exception" },
     ],
   },
   {
-    label: "Finance",
+    label: "Keuangan",
     links: [
-      { href: "/admin/invoices", label: "Invoices & Deposit", icon: "invoice" },
+      { href: "/admin/invoices", label: "Tagihan & Deposit", icon: "invoice" },
       { href: "/admin/deposits", label: "Deposit & Top-up", icon: "payment" },
-      { href: "/admin/payments", label: "Payments", icon: "payment" },
-      { href: "/admin/refunds", label: "Refunds", icon: "refund" },
-      { href: "/admin/reports", label: "Reports & Analytics", icon: "reports" },
+      { href: "/admin/payments", label: "Pembayaran", icon: "payment" },
+      { href: "/admin/refunds", label: "Pengembalian", icon: "refund" },
+      { href: "/admin/reports", label: "Laporan & analitik", icon: "reports" },
     ],
   },
 ];
@@ -213,9 +213,9 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
           {
             label: "System",
             links: [
-              { href: "/admin/users", label: "Users", icon: "users" },
-              { href: "/admin/audit", label: "Activity Log", icon: "audit" },
-              { href: "/admin/settings", label: "Settings", icon: "settings" },
+              { href: "/admin/users", label: "Pengguna", icon: "users" },
+              { href: "/admin/audit", label: "Log aktivitas", icon: "audit" },
+              { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
             ],
           },
         ]
@@ -243,7 +243,7 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
                 </span>
                 <span className="admin-nav-label">{link.label}</span>
                 {link.href === "/admin/join-requests" && pendingJoinRequests ? (
-                  <span className="admin-nav-badge" aria-label={`${pendingJoinRequests} pending Join Requests`}>
+                  <span className="admin-nav-badge" aria-label={`${pendingJoinRequests} permintaan bergabung menunggu`}>
                     {pendingJoinRequests}
                   </span>
                 ) : null}
@@ -253,7 +253,7 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
         </div>
       ))}
       <Link className="admin-nav-external" href="/catalog">
-        Lihat sisi customer →
+        Lihat sisi pelanggan →
       </Link>
     </nav>
   );

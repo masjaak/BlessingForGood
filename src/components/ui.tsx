@@ -231,3 +231,28 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
     </label>
   );
 }
+
+export function InlineBooleanField({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="field boolean-field">
+      <span className="field-label boolean-field-spacer" aria-hidden="true" />
+      <span className="check-row">
+        <input
+          type="checkbox"
+          checked={checked}
+          aria-label={label}
+          onChange={(event) => onChange(event.target.checked)}
+        />
+        {label}
+      </span>
+    </label>
+  );
+}

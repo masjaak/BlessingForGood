@@ -6,7 +6,16 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
-import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  Field,
+  InlineBooleanField,
+  LoadingRegion,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { BookCover } from "@/components/book-cover";
 
@@ -14,6 +23,13 @@ type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
 type BookFormat = "BB" | "PB" | "HB";
 type PublicationStatus = "draft" | "published" | "special" | "archived";
+
+const publicationLabels: Record<PublicationStatus, string> = {
+  draft: "Draf",
+  published: "Terbit",
+  special: "Khusus / privat",
+  archived: "Diarsipkan",
+};
 
 function VariantRow({ variant }: { variant: Variant }) {
   const updateVariant = useMutation(api.bookVariants.update);
@@ -73,10 +89,7 @@ function VariantRow({ variant }: { variant: Variant }) {
           required
         />
       </Field>
-      <label className="check-row">
-        <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-        Aktif
-      </label>
+      <InlineBooleanField checked={enabled} label="Aktif" onChange={setEnabled} />
       <Button type="submit" variant="secondary" pending={isSaving} pendingLabel="Menyimpan…">
         Simpan
       </Button>
@@ -129,9 +142,9 @@ function BookEditor({ book }: { book: AdminBook }) {
         categories: categories.split(","),
         publicationStatus,
       });
-      setMessage("Book Master tersimpan.");
+      setMessage("Master Buku tersimpan.");
     } catch {
-      setMessage("Book Master tidak dapat disimpan.");
+      setMessage("Master Buku tidak dapat disimpan.");
     } finally {
       setPendingAction(null);
     }
@@ -151,7 +164,7 @@ function BookEditor({ book }: { book: AdminBook }) {
         headers: { "Content-Type": coverFile.type },
         body: coverFile,
       });
-      if (!response.ok) throw new Error("upload failed");
+      if (!response.ok) throw new Error("unggah gagal");
       const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
       await attachCover({ bookId: book._id, storageId });
       setCoverFile(null);
@@ -182,11 +195,11 @@ function BookEditor({ book }: { book: AdminBook }) {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Book Master"
+        eyebrow="Master Buku"
         title={book.title}
         actions={
           <StatusBadge tone={book.publicationStatus === "published" ? "positive" : "neutral"}>
-            {book.publicationStatus}
+            {publicationLabels[book.publicationStatus]}
           </StatusBadge>
         }
       />
@@ -227,10 +240,10 @@ function BookEditor({ book }: { book: AdminBook }) {
                     value={publicationStatus}
                     onChange={(event) => setPublicationStatus(event.target.value as PublicationStatus)}
                   >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="special">Special/private</option>
-                    <option value="archived">Archived</option>
+                    <option value="draft">Draf</option>
+                    <option value="published">Terbit</option>
+                    <option value="special">Khusus / privat</option>
+                    <option value="archived">Diarsipkan</option>
                   </select>
                 </Field>
               </div>
@@ -240,7 +253,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                   publisher={book.publisher?.name || "BFG"}
                   src={coverPreviewUrl || book.coverUrl || undefined}
                 />
-                <Field label="Upload cover" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
+                <Field label="Unggah cover" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
                   <input
                     className="input"
                     type="file"
@@ -256,7 +269,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                   pendingLabel="Mengunggah…"
                   onClick={() => void uploadCover()}
                 >
-                  Save cover
+                  Simpan cover
                 </Button>
               </div>
               {coverFile ? (
@@ -272,7 +285,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                 />
               </Field>
               <Button type="submit" pending={pendingAction === "book"} pendingLabel="Menyimpan…">
-                Simpan Book Master
+                Simpan Master Buku
               </Button>
             </form>
           </Card>
@@ -354,6 +367,6 @@ export function AdminBookDetail({ bookId }: { bookId: string }) {
   return useProduct().dataSource === "convex" ? (
     <ConnectedAdminBookDetail bookId={bookId as Id<"books">} />
   ) : (
-    <div className="state-panel">Book Master memerlukan sumber data Convex.</div>
+    <div className="state-panel">Master Buku memerlukan sumber data Convex.</div>
   );
 }

@@ -40,7 +40,7 @@ describe("page-aware workspace skeletons", () => {
       </ProductContext.Provider>,
     );
 
-    expect(screen.getByRole("heading", { name: "Make the money state explicit." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Jaga status keuangan tetap jelas." })).toBeTruthy();
     expect(document.querySelector('[data-skeleton="ADMIN_FINANCE_SKELETON"]')).toBeTruthy();
     expect(document.querySelector(".admin-page > .admin-workspace")).toBeTruthy();
     expect(document.querySelector(".admin-nav")).toBeTruthy();
@@ -51,7 +51,7 @@ describe("page-aware workspace skeletons", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account/inbox" />);
 
     expect(document.querySelector('[data-skeleton="CUSTOMER_ACTIVITY_SKELETON"]')).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Inbox" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Kotak masuk" })).toBeTruthy();
     expect(document.querySelector(".admin-nav")).toBeNull();
   });
 
@@ -110,7 +110,7 @@ describe("page-aware workspace skeletons", () => {
 
     unmount();
     render(<PageAwareSkeleton workspace="admin" pathname="/admin/users" />);
-    expect(screen.getByRole("heading", { name: "Manage BFG users" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Kelola pengguna BFG" })).toBeTruthy();
     expect(document.querySelector(".workspace-skeleton-users-onboarding")).toBeTruthy();
     expect(document.querySelector(".workspace-skeleton-users-filters")).toBeTruthy();
   });

@@ -1,16 +1,18 @@
+import { readFileSync } from "node:fs";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import globalsCss from "../../src/app/globals.css?raw";
 import { useQuery } from "convex/react";
 import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { AdminShellContext } from "@/components/site-shell";
-import { Button, Card, LinkButton, PageHeader } from "@/components/ui";
+import { Button, Card, InlineBooleanField, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 import { useAuth } from "@clerk/nextjs";
+
+const globalsCss = readFileSync("src/app/globals.css", "utf8");
 
 vi.mock("@clerk/nextjs", () => ({
   SignInButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
@@ -38,7 +40,7 @@ describe("public UI foundation", () => {
     );
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Navigasi utama" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Open catalog" }).getAttribute("href")).toBe("/catalog");
   });
 
@@ -80,6 +82,18 @@ describe("public UI foundation", () => {
     expect(document.querySelector("section.frame-detail")).toBeTruthy();
   });
 
+  it("keeps boolean fields in the shared field row grammar", () => {
+    render(<InlineBooleanField checked label="Aktif" onChange={vi.fn()} />);
+
+    expect(document.querySelector(".boolean-field .boolean-field-spacer")).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "Aktif" })).toHaveProperty("checked", true);
+  });
+
+  it("controls select and page-title geometry through shared tokens", () => {
+    expect(globalsCss).toContain("appearance: none");
+    expect(globalsCss).toContain("--type-page-title-size: clamp(1.8rem, 2.4vw, 2.4rem)");
+  });
+
   it("keeps customer discovery links on public surfaces", () => {
     render(<SiteShell>Navigation content</SiteShell>);
 
@@ -115,11 +129,11 @@ describe("public UI foundation", () => {
   it("links the grouped admin workspace destinations", () => {
     render(<AdminNav />);
 
-    expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/admin");
-    expect(screen.getByRole("link", { name: "Catalogs" }).getAttribute("href")).toBe("/admin/catalogs");
-    expect(screen.getByRole("link", { name: "Books" }).getAttribute("href")).toBe("/admin/books");
+    expect(screen.getByRole("link", { name: "Dasbor" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Katalog" }).getAttribute("href")).toBe("/admin/catalogs");
+    expect(screen.getByRole("link", { name: "Buku" }).getAttribute("href")).toBe("/admin/books");
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/admin/ready-stock");
-    expect(screen.getByRole("link", { name: "Payments" }).getAttribute("href")).toBe("/admin/payments");
+    expect(screen.getByRole("link", { name: "Pembayaran" }).getAttribute("href")).toBe("/admin/payments");
     expect(document.querySelectorAll(".admin-nav-icon-wrap").length).toBe(
       document.querySelectorAll(".admin-nav-link").length,
     );
@@ -141,7 +155,7 @@ describe("public UI foundation", () => {
     );
 
     expect(screen.getByText("3")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Join Requests.*3/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Permintaan bergabung.*3/ })).toBeTruthy();
 
     vi.mocked(useQuery).mockReturnValue(0 as never);
     render(
@@ -188,14 +202,14 @@ describe("public UI foundation", () => {
         <AdminShellLink />
       </ProductContext.Provider>,
     );
-    expect(screen.getByRole("link", { name: "Buka Workspace Admin" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Buka ruang kerja Admin" }).getAttribute("href")).toBe("/admin");
 
     rerender(
       <ProductContext.Provider value={{ sessionRole: "customer" } as never}>
         <AdminShellLink />
       </ProductContext.Provider>,
     );
-    expect(screen.queryByRole("link", { name: "Buka Workspace Admin" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Buka ruang kerja Admin" })).toBeNull();
   });
 
   it("keeps the Admin workspace switch out of customer primary navigation", () => {
@@ -206,20 +220,20 @@ describe("public UI foundation", () => {
       </ProductContext.Provider>,
     );
 
-    const navigation = screen.getByRole("navigation", { name: "Primary navigation" });
+    const navigation = screen.getByRole("navigation", { name: "Navigasi utama" });
     expect(
       within(navigation)
         .getAllByRole("link")
         .map((link) => link.textContent?.trim()),
     ).toEqual(["Beranda", "Katalog", "Buku Saya", "Tagihan", "Akun"]);
-    expect(within(navigation).queryByRole("link", { name: "Buka Workspace Admin" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Buka Workspace Admin" }).getAttribute("href")).toBe("/admin");
+    expect(within(navigation).queryByRole("link", { name: "Buka ruang kerja Admin" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Buka ruang kerja Admin" }).getAttribute("href")).toBe("/admin");
   });
 
   it("renders the mockup-aligned customer bottom navigation for signed-out customers", () => {
     render(<SiteShell>Customer content</SiteShell>);
 
-    const navigation = screen.getByRole("navigation", { name: "Navigasi customer" });
+    const navigation = screen.getByRole("navigation", { name: "Navigasi pelanggan" });
     expect(
       within(navigation)
         .getAllByRole("link")
@@ -232,7 +246,7 @@ describe("public UI foundation", () => {
     vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
     render(<SiteShell>Customer content</SiteShell>);
 
-    const navigation = screen.getByRole("navigation", { name: "Navigasi customer" });
+    const navigation = screen.getByRole("navigation", { name: "Navigasi pelanggan" });
     expect(
       within(navigation)
         .getAllByRole("link")

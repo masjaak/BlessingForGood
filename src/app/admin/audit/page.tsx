@@ -11,24 +11,24 @@ function AuditLog() {
   const events = useQuery(api.auditEvents.list, { paginationOpts: { numItems: 100, cursor: null } });
   return (
     <AdminOperationalPage
-      eyebrow="Owner security"
-      title="Activity log"
+      eyebrow="Keamanan Owner"
+      title="Log aktivitas"
       description="Riwayat immutable untuk tindakan operasional dan perubahan akses yang sensitif."
     >
       {events === undefined ? (
-        <LoadingRegion label="Memuat activity log">
+        <LoadingRegion label="Memuat log aktivitas">
           <SkeletonTable rows={6} />
         </LoadingRegion>
       ) : events.page.length ? (
         <div className="table-wrap">
           <table className="data-table">
-            <caption className="sr-only">Activity log</caption>
+            <caption className="sr-only">Log aktivitas</caption>
             <thead>
               <tr>
                 <th>Waktu</th>
-                <th>Actor</th>
-                <th>Action</th>
-                <th>Target</th>
+                <th>Pelaku</th>
+                <th>Tindakan</th>
+                <th>Sasaran</th>
               </tr>
             </thead>
             <tbody>
@@ -46,7 +46,7 @@ function AuditLog() {
           </table>
         </div>
       ) : (
-        <EmptyState title="Activity log kosong" description="Tindakan Admin dan Owner akan dicatat di sini." />
+        <EmptyState title="Log aktivitas masih kosong" description="Tindakan Admin dan Owner akan dicatat di sini." />
       )}
     </AdminOperationalPage>
   );

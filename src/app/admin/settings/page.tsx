@@ -15,9 +15,9 @@ function SettingsEditor() {
   const [pending, setPending] = useState(false);
   return (
     <AdminOperationalPage
-      eyebrow="Owner controls"
-      title="Settings"
-      description="Critical store, contact, and payment instructions. This does not enable WhatsApp API automation or a payment gateway."
+      eyebrow="Kontrol Owner"
+      title="Pengaturan"
+      description="Instruksi penting untuk toko, kontak, dan pembayaran. Ini tidak mengaktifkan otomasi WhatsApp API atau gateway pembayaran."
     >
       <Card>
         <form
@@ -33,9 +33,9 @@ function SettingsEditor() {
                 whatsappNumber: String(data.get("whatsappNumber")),
                 paymentInstructions: String(data.get("paymentInstructions")),
               });
-              setMessage("Settings tersimpan dan dicatat di activity log.");
+              setMessage("Pengaturan tersimpan dan dicatat di log aktivitas.");
             } catch {
-              setMessage("Settings ditolak.");
+              setMessage("Pengaturan ditolak.");
             } finally {
               setPending(false);
             }
@@ -57,7 +57,7 @@ function SettingsEditor() {
             />
           </Field>
           <Button pending={pending} pendingLabel="Menyimpan…">
-            Simpan settings
+            Simpan pengaturan
           </Button>
         </form>
       </Card>

@@ -252,7 +252,7 @@ function SignedOutAccount() {
         primaryAction={<LinkButton href="/sign-in?redirect_url=/account">Masuk</LinkButton>}
         secondaryAction={
           <LinkButton href="/join" variant="secondary">
-            Join Blessfriends
+            Gabung Blessfriends
           </LinkButton>
         }
       />

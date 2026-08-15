@@ -36,7 +36,7 @@ function CatalogForm() {
     setError("");
     setIsSubmitting(true);
     try {
-      if (closingAt && Number.isNaN(new Date(closingAt).getTime())) throw new Error("closing date is invalid");
+      if (closingAt && Number.isNaN(new Date(closingAt).getTime())) throw new Error("tanggal tutup tidak valid");
       const catalogId = await createCatalog({
         name,
         description: description || undefined,
@@ -44,7 +44,7 @@ function CatalogForm() {
       });
       router.push(`/admin/catalogs/${catalogId}`);
     } catch (reason) {
-      setError(productErrorMessage(reason, "Catalog could not be created"));
+      setError(productErrorMessage(reason, "Katalog tidak dapat dibuat."));
     } finally {
       setIsSubmitting(false);
     }
@@ -53,22 +53,22 @@ function CatalogForm() {
   return (
     <Card frame="form" className="form-card" id="create-catalog">
       <div>
-        <span className="card-kicker">Create secret catalog</span>
+        <span className="card-kicker">Buat Secret Catalog</span>
         <h2>Buat ruang katalog, lalu isi dengan produk yang sudah siap.</h2>
-        <p>Katalog dimulai sebagai Draft. Produk, status Open, dan akses dikelola dari halaman detail.</p>
+        <p>Katalog dimulai sebagai Draf. Produk, status, dan akses dikelola dari halaman detail.</p>
       </div>
       <form onSubmit={handleSubmit} className="form-card">
         <div className="form-grid">
-          <Field label="Catalog name">
+          <Field label="Nama katalog" hint="Nama singkat untuk membedakan katalog ini.">
             <input
               className="input"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. Autumn reading list"
+              placeholder="Contoh: daftar bacaan musim gugur"
               required
             />
           </Field>
-          <Field label="Closing date" hint="Opsional. Kosongkan bila katalog tidak memiliki tanggal tutup.">
+          <Field label="Tanggal tutup" hint="Opsional. Kosongkan bila katalog tidak memiliki tanggal tutup.">
             <input
               className="input"
               type="datetime-local"
@@ -77,7 +77,7 @@ function CatalogForm() {
             />
           </Field>
         </div>
-        <Field label="Description" hint="Opsional">
+        <Field label="Deskripsi" hint="Opsional">
           <textarea className="textarea" value={description} onChange={(event) => setDescription(event.target.value)} />
         </Field>
         {error ? (
@@ -85,8 +85,8 @@ function CatalogForm() {
             {error}
           </p>
         ) : null}
-        <Button type="submit" pending={isSubmitting} pendingLabel="Creating…">
-          Create draft catalog
+        <Button type="submit" pending={isSubmitting} pendingLabel="Membuat…">
+          Buat draf katalog
         </Button>
       </form>
     </Card>
@@ -120,8 +120,8 @@ function CatalogList() {
   if (state.catalogs.length === 0)
     return (
       <EmptyState
-        title="Catalog list is empty"
-        description="Buat katalog terlebih dahulu. Setelah disimpan, buka detail untuk menambahkan produk dan mengelola Access Management."
+        title="Daftar katalog masih kosong"
+        description="Buat katalog terlebih dahulu. Setelah disimpan, buka detail untuk menambahkan produk dan mengelola akses."
         primaryAction={<LinkButton href="#create-catalog">Buat katalog</LinkButton>}
       />
     );
@@ -135,7 +135,7 @@ function CatalogList() {
             <div className="split-heading">
               <div>
                 <span className="card-kicker">
-                  {catalog.books.length} {catalog.books.length === 1 ? "title" : "titles"}
+                  {catalog.books.length} {catalog.books.length === 1 ? "judul" : "judul"}
                   {firstBook?.publisher ? ` · ${firstBook.publisher}` : ""}
                 </span>
                 <h2>{catalog.name}</h2>
@@ -144,12 +144,12 @@ function CatalogList() {
             </div>
             <p>
               {catalog.closingAt
-                ? `Closes ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
-                : "No closing date set."}
+                ? `Tutup ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
+                : "Belum ada tanggal tutup."}
             </p>
             <div className="summary-line">
               <span>{firstBook?.title || "Belum ada produk yang ditambahkan"}</span>
-              <span>{firstBook ? `${firstBook.variants.length} format variants` : "Buka detail untuk kurasi"}</span>
+              <span>{firstBook ? `${firstBook.variants.length} format` : "Buka detail untuk kurasi"}</span>
             </div>
             {error ? <p className="error-text">{error}</p> : null}
             <div className="actions">
@@ -159,17 +159,17 @@ function CatalogList() {
               <Button
                 variant="danger"
                 pending={pendingAction === catalog.id}
-                pendingLabel="Closing…"
+                pendingLabel="Menutup…"
                 onClick={() => void close(catalog.id)}
               >
-                Close catalog
+                Tutup katalog
               </Button>
             ) : catalog.status === "draft" ? (
-              <span className="subtle">Draft — buka detail untuk kurasi produk dan mengelola akses.</span>
+              <span className="subtle">Draf — buka detail untuk kurasi produk dan mengelola akses.</span>
             ) : catalog.status === "closed" ? (
-              <span className="subtle">Closed catalogs reject new orders.</span>
+              <span className="subtle">Katalog tertutup tidak menerima pesanan baru.</span>
             ) : (
-              <span className="subtle">Archived catalogs are no longer operational.</span>
+              <span className="subtle">Katalog yang diarsipkan tidak lagi beroperasi.</span>
             )}
           </Card>
         );

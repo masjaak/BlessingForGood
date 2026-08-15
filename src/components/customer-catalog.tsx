@@ -83,7 +83,7 @@ export function CustomerCatalog() {
 
   if (submittedOrder) {
     const whatsappText = encodeURIComponent(
-      `Halo, saya ${submittedOrder.customerName}. Order ${submittedOrder.id} sudah tercatat.`,
+      `Halo, saya ${submittedOrder.customerName}. Pesanan ${submittedOrder.id} sudah tercatat.`,
     );
     return (
       <div className="content-stack">

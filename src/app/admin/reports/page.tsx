@@ -8,6 +8,8 @@ import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonTable, StatusBadge } from "@/components/ui";
 import { toExcelCsv } from "@/lib/excel-export";
+import { orderStatusLabels } from "@/domain/prototype/logic";
+import { invoiceStatusLabel, shipmentStageLabels } from "@/domain/prototype/operations";
 
 function dayValue(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -30,28 +32,28 @@ function Reports() {
   async function download() {
     if (!report) return;
     const csv = toExcelCsv([
-      ["Order ID", "Customer", "Status", "Total IDR", "Created At"],
+      ["ID Pesanan", "Pelanggan", "Status", "Total IDR", "Dibuat pada"],
       ...orders.map((row) => [
         row.orderId,
         row.customerName,
-        row.status,
+        orderStatusLabels[row.status],
         row.totalAmount,
         new Date(row.createdAt).toISOString(),
       ]),
       [],
-      ["Invoice Number", "Status", "Total IDR", "Outstanding IDR", "Created At"],
+      ["Nomor invoice", "Status", "Total IDR", "Sisa IDR", "Dibuat pada"],
       ...report.invoices.map((row) => [
         row.invoiceNumber,
-        row.status,
+        invoiceStatusLabel(row.status),
         row.totalAmount,
         row.outstandingAmount,
         new Date(row.createdAt).toISOString(),
       ]),
       [],
-      ["Batch", "Stage", "PO Deadline", "Created At"],
+      ["Batch", "Tahap", "Batas PO", "Dibuat pada"],
       ...report.batches.map((row) => [
         row.name,
-        row.stage || "editable",
+        row.stage ? shipmentStageLabels[row.stage] : "dapat diedit",
         row.deadlineAt ? new Date(row.deadlineAt).toISOString() : "",
         new Date(row.createdAt).toISOString(),
       ]),
@@ -71,12 +73,12 @@ function Reports() {
 
   return (
     <AdminOperationalPage
-      eyebrow="Reports & analytics"
+      eyebrow="Laporan & analitik"
       title="Rekap operasional BFG"
-      description="Sales overview, kinerja batch, pencarian order, dan export memakai data canonical pada periode terpilih."
+      description="Ringkasan penjualan, kinerja batch, pencarian pesanan, dan ekspor memakai data kanonik pada periode terpilih."
       actions={
         <Button onClick={() => void download()} disabled={!report}>
-          Export Excel-compatible CSV
+          Ekspor CSV yang kompatibel dengan Excel
         </Button>
       }
     >
@@ -93,13 +95,13 @@ function Reports() {
         <Field label="Sampai">
           <input className="input" type="date" value={to} min={from} onChange={(event) => setTo(event.target.value)} />
         </Field>
-        <Field label="Cari order">
+        <Field label="Cari pesanan">
           <input
             className="input"
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Customer atau order ID"
+            placeholder="Pelanggan atau ID pesanan"
           />
         </Field>
       </Card>
@@ -109,19 +111,19 @@ function Reports() {
         </LoadingRegion>
       ) : (
         <>
-          <section className="account-metrics" aria-label="Sales overview">
+          <section className="account-metrics" aria-label="Ringkasan penjualan">
             <Card className="metric">
-              <span className="card-kicker">Invoice issued</span>
+              <span className="card-kicker">Invoice terbit</span>
               <strong className="metric-value">{report.sales.invoiceCount}</strong>
             </Card>
             <Card className="metric">
-              <span className="card-kicker">Nilai invoice issued</span>
+              <span className="card-kicker">Nilai invoice terbit</span>
               <strong className="metric-value metric-money">
                 <Money amount={report.sales.issuedAmount} />
               </strong>
             </Card>
             <Card className="metric">
-              <span className="card-kicker">Order periode</span>
+              <span className="card-kicker">Pesanan periode</span>
               <strong className="metric-value">{report.orders.length}</strong>
             </Card>
             <Card className="metric">
@@ -132,11 +134,11 @@ function Reports() {
           {orders.length ? (
             <div className="table-wrap">
               <table className="data-table">
-                <caption className="sr-only">Rekap order</caption>
+                <caption className="sr-only">Rekap pesanan</caption>
                 <thead>
                   <tr>
-                    <th>Order</th>
-                    <th>Customer</th>
+                    <th>Pesanan</th>
+                    <th>Pelanggan</th>
                     <th>Status</th>
                     <th>Total</th>
                     <th>Tanggal</th>
@@ -161,18 +163,18 @@ function Reports() {
             </div>
           ) : (
             <EmptyState
-              title="Tidak ada order pada periode ini"
-              description="Ubah periode atau pencarian. Export akan tetap memakai hasil filter canonical."
+              title="Tidak ada pesanan pada periode ini"
+              description="Ubah periode atau pencarian. Ekspor tetap memakai hasil filter kanonik."
             />
           )}
           <Card>
-            <span className="card-kicker">Batch performance</span>
+            <span className="card-kicker">Kinerja batch</span>
             <h2>Status batch pada periode</h2>
             {report.batches.length ? (
               report.batches.map((batch) => (
                 <div className="summary-line" key={batch.batchId}>
                   <span>{batch.name}</span>
-                  <StatusBadge>{batch.stage || "editable"}</StatusBadge>
+                  <StatusBadge>{batch.stage || "dapat diedit"}</StatusBadge>
                 </div>
               ))
             ) : (

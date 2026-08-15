@@ -54,7 +54,7 @@ function RefundCard({ refund }: { refund: Refund }) {
             <Money amount={refund.remainingAmount} /> tersisa
           </h2>
           <p className="subtle">
-            Customer {refund.customerUserId} · total kewajiban <Money amount={refund.amount} />
+            Pelanggan {refund.customerUserId} · total kewajiban <Money amount={refund.amount} />
           </p>
         </div>
         <StatusBadge tone={refund.status === "paid" ? "positive" : "neutral"}>
@@ -224,7 +224,7 @@ export function AdminRefunds() {
   if (dataSource !== "convex") return <div className="state-panel">Antrian refund belum tersedia.</div>;
   return (
     <AdminOperationalPage
-      eyebrow="Refund queue"
+      eyebrow="Antrian refund"
       title="Kewajiban refund dan payout."
       description="Catat transfer tanpa menghapus invoice atau pembayaran historis."
     >

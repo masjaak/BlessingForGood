@@ -8,7 +8,7 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Katalog ini sudah ditutup.";
   }
   if (message.includes("BOOK_VARIANT_UNAVAILABLE")) return "Format yang dipilih sudah tidak tersedia.";
-  if (message.includes("ORDER_LOCKED")) return "Order sudah terkunci setelah katalog ditutup.";
+  if (message.includes("ORDER_LOCKED")) return "Pesanan sudah terkunci setelah katalog ditutup.";
   if (message.includes("ORDER_EMPTY")) return "Pilih minimal satu buku sebelum mengirim preorder.";
   if (message.includes("SESSION")) return "Sesi tidak tersedia. Muat ulang halaman dan coba lagi.";
   return message && !message.includes("[CONVEX") ? message : fallback;

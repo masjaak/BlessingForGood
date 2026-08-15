@@ -55,8 +55,8 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     <AdminOperationalPage
       eyebrow="Secret Catalog"
       title={catalog.name}
-      description="Atur metadata, produk, status, dan akses dari satu alur yang dapat dijangkau."
-      actions={<LinkButton href={`/admin/catalogs/${catalogId}/access`}>Access Management</LinkButton>}
+      description="Atur metadata, produk, status, dan akses dari satu alur yang mudah ditemukan."
+      actions={<LinkButton href={`/admin/catalogs/${catalogId}/access`}>Kelola akses</LinkButton>}
     >
       <Card frame="form">
         <div className="split-heading">
@@ -205,7 +205,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
         ) : (
           <EmptyState
             title="Belum ada produk"
-            description="Tambahkan produk Published atau Special dari Book Master."
+            description="Tambahkan produk berstatus Terbit atau Khusus dari Master Buku."
             mascotVariant={false}
           />
         )}

@@ -38,11 +38,11 @@ function OrderTable() {
   if (state.orders.length === 0)
     return (
       <EmptyState
-        title="No orders to review"
-        description="Pesanan customer akan tampil di sini bersama snapshot harga dan item saat dibuat."
+        title="Belum ada pesanan untuk ditinjau"
+        description="Pesanan pelanggan akan tampil di sini bersama snapshot harga dan item saat dibuat."
         action={
           <LinkButton href="/catalog" variant="secondary">
-            Lihat sisi customer
+            Lihat sisi pelanggan
           </LinkButton>
         }
       />
@@ -66,7 +66,7 @@ function OrderTable() {
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Customer, order, atau buku"
+            placeholder="Pelanggan, pesanan, atau buku"
           />
         </Field>
         <Field label="Status">
@@ -76,9 +76,9 @@ function OrderTable() {
             onChange={(event) => setStatusFilter(event.target.value as OrderStatus | "")}
           >
             <option value="">Semua</option>
-            <option value="submitted">Submitted</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
+            <option value="submitted">Masuk</option>
+            <option value="cancelled">Dibatalkan</option>
+            <option value="completed">Selesai</option>
           </select>
         </Field>
       </Card>
@@ -88,12 +88,12 @@ function OrderTable() {
             <caption className="sr-only">Daftar pesanan</caption>
             <thead>
               <tr>
-                <th>Customer</th>
-                <th>Source</th>
-                <th>Items</th>
+                <th>Pelanggan</th>
+                <th>Sumber</th>
+                <th>Item</th>
                 <th>Total</th>
-                <th>Stage</th>
-                <th>Next action</th>
+                <th>Tahap</th>
+                <th>Tindakan berikutnya</th>
               </tr>
             </thead>
             <tbody>
@@ -109,20 +109,20 @@ function OrderTable() {
                     <td>
                       <strong>{order.customerName}</strong>
                       <br />
-                      <span className="subtle">{order.customerEmail || "No email"}</span>
+                      <span className="subtle">{order.customerEmail || "Tidak ada email"}</span>
                       <br />
                       <span className="subtle">{order.id}</span>
                       <br />
                       <LinkButton href={`/admin/orders/${order.id}`} variant="secondary">
-                        Operations detail
+                        Detail operasional
                       </LinkButton>
                     </td>
                     <td>
                       {order.source === "admin_assisted"
-                        ? "Admin-assisted"
+                        ? "Dibantu Admin"
                         : order.source === "ready_stock"
                           ? "Ready Stock"
-                          : "Customer self-service"}
+                          : "Mandiri pelanggan"}
                     </td>
                     <td>
                       {order.items.map((item) => (
@@ -137,7 +137,7 @@ function OrderTable() {
                     <td>
                       <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
                       <br />
-                      <span className="subtle">Updated {new Date(order.updatedAt).toLocaleString("en-GB")}</span>
+                      <span className="subtle">Diperbarui {new Date(order.updatedAt).toLocaleString("id-ID")}</span>
                     </td>
                     <td>
                       {statuses.length ? (
@@ -157,7 +157,7 @@ function OrderTable() {
                             }
                           }}
                         >
-                          <option value="">Choose stage…</option>
+                          <option value="">Pilih tahap…</option>
                           {statuses.map((status) => (
                             <option value={status} key={status}>
                               {orderStatusLabels[status]}
@@ -165,7 +165,7 @@ function OrderTable() {
                           ))}
                         </select>
                       ) : (
-                        <span className="subtle">No next stage</span>
+                        <span className="subtle">Tidak ada tahap berikutnya</span>
                       )}
                     </td>
                   </tr>
@@ -176,7 +176,7 @@ function OrderTable() {
         </div>
       ) : (
         <EmptyState
-          title="Tidak ada order yang cocok"
+          title="Tidak ada pesanan yang cocok"
           description="Ubah pencarian atau filter status."
           mascotVariant={false}
         />
@@ -221,9 +221,9 @@ function ConvexAssistedOrderForm() {
       setVariantId("");
       setQuantity("1");
       submissionKeyRef.current = null;
-      setMessage("Admin-assisted order recorded in the canonical order pipeline.");
+      setMessage("Pesanan berbantuan Admin tercatat di alur pesanan kanonik.");
     } catch {
-      setMessage("Assisted order could not be recorded.");
+      setMessage("Pesanan berbantuan tidak dapat dicatat.");
     } finally {
       setSubmitting(false);
     }
@@ -231,24 +231,24 @@ function ConvexAssistedOrderForm() {
 
   return (
     <Card>
-      <span className="card-kicker">Manual customer operation</span>
-      <h2>Record an assisted order</h2>
+      <span className="card-kicker">Operasi pelanggan oleh Admin</span>
+      <h2>Catat pesanan berbantuan</h2>
       <p className="subtle">
-        Choose an existing active BFG customer. The server derives the customer snapshot and price.
+        Pilih pelanggan BFG aktif yang sudah ada. Server menentukan snapshot pelanggan dan harga.
       </p>
-      {customers === undefined ? <div className="state-panel">Loading eligible customers…</div> : null}
+      {customers === undefined ? <div className="state-panel">Memuat pelanggan yang memenuhi syarat…</div> : null}
       {customers && customers.length > 0 && catalogs.length > 0 ? (
         <form className="form-card" onSubmit={submit}>
           <div className="form-grid">
             <label className="field">
-              <span className="field-label">Customer</span>
+              <span className="field-label">Pelanggan</span>
               <select
                 className="select"
                 value={customerId}
                 onChange={(event) => setCustomerId(event.target.value)}
                 required
               >
-                <option value="">Choose customer…</option>
+                <option value="">Pilih pelanggan…</option>
                 {customers.map((customer) => (
                   <option value={customer.customerUserId} key={customer.customerUserId}>
                     {customer.displayName}
@@ -257,7 +257,7 @@ function ConvexAssistedOrderForm() {
               </select>
             </label>
             <label className="field">
-              <span className="field-label">Catalog</span>
+              <span className="field-label">Katalog</span>
               <select
                 className="select"
                 value={catalogId}
@@ -267,7 +267,7 @@ function ConvexAssistedOrderForm() {
                 }}
                 required
               >
-                <option value="">Choose open catalog…</option>
+                <option value="">Pilih katalog terbuka…</option>
                 {catalogs.map((catalogOption) => (
                   <option value={catalogOption.id} key={catalogOption.id}>
                     {catalogOption.name}
@@ -278,14 +278,14 @@ function ConvexAssistedOrderForm() {
           </div>
           <div className="form-grid">
             <label className="field">
-              <span className="field-label">Book / variant</span>
+              <span className="field-label">Buku / varian</span>
               <select
                 className="select"
                 value={variantId}
                 onChange={(event) => setVariantId(event.target.value)}
                 required
               >
-                <option value="">Choose variant…</option>
+                <option value="">Pilih varian…</option>
                 {variants.map((variant) => (
                   <option value={variant.id} key={variant.id}>
                     {variant.bookTitle} · {variant.format} · {variant.isbn}
@@ -294,7 +294,7 @@ function ConvexAssistedOrderForm() {
               </select>
             </label>
             <label className="field">
-              <span className="field-label">Quantity</span>
+              <span className="field-label">Jumlah</span>
               <input
                 className="input"
                 type="number"
@@ -309,11 +309,10 @@ function ConvexAssistedOrderForm() {
           </div>
           <div className="form-actions">
             <span className="subtle">
-              Server price:{" "}
-              {selectedVariant ? `IDR ${selectedVariant.price.toLocaleString("id-ID")}` : "choose a variant"}
+              Harga server: {selectedVariant ? `IDR ${selectedVariant.price.toLocaleString("id-ID")}` : "pilih varian"}
             </span>
-            <Button type="submit" pending={submitting} pendingLabel="Recording…">
-              Record assisted order
+            <Button type="submit" pending={submitting} pendingLabel="Mencatat…">
+              Catat pesanan berbantuan
             </Button>
           </div>
           {message ? (
@@ -323,7 +322,7 @@ function ConvexAssistedOrderForm() {
           ) : null}
         </form>
       ) : customers !== undefined ? (
-        <p className="subtle">An active customer and an open catalog are required.</p>
+        <p className="subtle">Pelanggan aktif dan katalog terbuka diperlukan.</p>
       ) : null}
     </Card>
   );
@@ -337,7 +336,7 @@ function OrderTimeline({ orderId }: { orderId: string }) {
     <Card>
       <div className="split-heading">
         <div>
-          <span className="card-kicker">Selected order</span>
+          <span className="card-kicker">Pesanan terpilih</span>
           <h2>{order.customerName}</h2>
         </div>
         <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
@@ -372,10 +371,10 @@ function AdminOrders() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Order operations"
-        title="See the preorder, then move its stage."
-        description="Status transitions, assisted orders, and batch links use the existing canonical Convex order pipeline."
-        actions={<span className="button button-secondary">{state.orders.length} recorded</span>}
+        eyebrow="Operasi pesanan"
+        title="Tinjau pesanan, lalu lanjutkan tahapnya."
+        description="Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan Convex kanonik."
+        actions={<span className="button button-secondary">{state.orders.length} tercatat</span>}
       />
       <div className="admin-workspace">
         <AdminNav />

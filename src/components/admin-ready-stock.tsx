@@ -15,6 +15,13 @@ function number(value: number) {
 
 type ReadyStockRows = Awaited<FunctionReturnType<typeof api.readyStock.listForAdmin>>;
 
+const publicationLabels: Record<string, string> = {
+  draft: "Draf",
+  published: "Terbit",
+  special: "Khusus / privat",
+  archived: "Diarsipkan",
+};
+
 function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
   const totals = rows.reduce(
     (summary, row) => ({
@@ -29,17 +36,17 @@ function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
     <>
       <Card className="admin-inventory-summary">
         <div>
-          <span className="card-kicker">On hand</span>
+          <span className="card-kicker">Stok fisik</span>
           <strong>{number(totals.onHand)}</strong>
           <span className="subtle">Jumlah fisik yang tercatat</span>
         </div>
         <div>
-          <span className="card-kicker">Reserved</span>
+          <span className="card-kicker">Dipesan</span>
           <strong>{number(totals.reserved)}</strong>
           <span className="subtle">Sudah diklaim pesanan aktif</span>
         </div>
         <div>
-          <span className="card-kicker">Available</span>
+          <span className="card-kicker">Tersedia</span>
           <strong>{number(totals.available)}</strong>
           <span className="subtle">Dapat dipesan sekarang</span>
         </div>
@@ -53,9 +60,9 @@ function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
                 <th>Buku / ISBN</th>
                 <th>Format</th>
                 <th>Status</th>
-                <th>On hand</th>
-                <th>Reserved</th>
-                <th>Available</th>
+                <th>Stok fisik</th>
+                <th>Dipesan</th>
+                <th>Tersedia</th>
                 <th>Aksi</th>
               </tr>
             </thead>
@@ -73,7 +80,9 @@ function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
                     <StatusBadge
                       tone={row.publicationStatus === "published" && row.isAvailable ? "positive" : "neutral"}
                     >
-                      {row.publicationStatus === "published" && row.isAvailable ? "Listed" : row.publicationStatus}
+                      {row.publicationStatus === "published" && row.isAvailable
+                        ? "Tercantum"
+                        : publicationLabels[row.publicationStatus] || row.publicationStatus}
                     </StatusBadge>
                   </td>
                   <td className="numeric-cell">{number(row.onHandQuantity)}</td>
@@ -94,8 +103,8 @@ function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
       ) : (
         <EmptyState
           title="Belum ada format Ready Stock."
-          description="Tambahkan format buku dari Book Master untuk mulai mencatat stok fisik."
-          action={<LinkButton href="/admin/books">Buka Book Master</LinkButton>}
+          description="Tambahkan format buku dari Master Buku untuk mulai mencatat stok fisik."
+          action={<LinkButton href="/admin/books">Buka Master Buku</LinkButton>}
         />
       )}
     </>
@@ -109,10 +118,10 @@ function ConnectedAdminReadyStock() {
     <AdminOperationalPage
       eyebrow="Ready Stock"
       title="Stok yang siap diproses."
-      description="On hand adalah jumlah fisik. Reserved berasal dari pesanan aktif. Available selalu dihitung server: on hand dikurangi reserved."
+      description="Stok fisik adalah jumlah yang tercatat. Dipesan berasal dari pesanan aktif. Tersedia selalu dihitung server."
       actions={
         <LinkButton href="/admin/books" variant="secondary">
-          Kelola Book Master
+          Kelola Master Buku
         </LinkButton>
       }
     >

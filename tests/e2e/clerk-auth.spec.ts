@@ -33,8 +33,8 @@ test.describe("BFG Clerk authenticated Production", () => {
     await expect(page.getByRole("heading", { name: "Alamat pengiriman" })).toBeVisible();
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Halaman ini tidak tersedia untuk akunmu" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Primary navigation" })).toHaveCount(1);
-    await expect(page.getByRole("link", { name: "Buka Workspace Admin" })).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Navigasi utama" })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Buka ruang kerja Admin" })).toHaveCount(0);
     await clerk.signOut({ page });
     await page.goto("/account/orders", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/sign-in/);
@@ -47,19 +47,19 @@ test.describe("BFG Clerk authenticated Production", () => {
     await expect(page.getByRole("heading", { name: "Pekerjaan penting hari ini." })).toBeVisible();
     await expect(page.locator(".loading-region")).toHaveCount(0);
     await page.goto("/admin/users", { waitUntil: "networkidle" });
-    await expect(page.getByRole("heading", { name: "Manage BFG users" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kelola pengguna BFG" })).toBeVisible();
     await page.goto("/account", { waitUntil: "networkidle" });
-    await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link")).toHaveText([
+    await expect(page.getByRole("navigation", { name: "Navigasi utama" }).getByRole("link")).toHaveText([
       "Beranda",
       "Katalog",
       "Buku Saya",
       "Tagihan",
       "Akun",
     ]);
-    await page.getByRole("link", { name: "Buka Workspace Admin" }).click();
+    await page.getByRole("link", { name: "Buka ruang kerja Admin" }).click();
     await expect(page).toHaveURL(/\/admin$/);
     await page
-      .getByRole("link", { name: /Lihat sisi customer/ })
+      .getByRole("link", { name: /Lihat sisi pelanggan/ })
       .first()
       .click();
     await expect(page).toHaveURL(/\/$/);

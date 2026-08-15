@@ -11,7 +11,7 @@ type OrderStep = {
 export const orderSteps: OrderStep[] = [
   {
     title: "Temukan bukunya",
-    description: "Browse Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
+    description: "Jelajahi Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
     icon: "discover",
   },
   {

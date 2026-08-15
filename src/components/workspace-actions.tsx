@@ -31,7 +31,7 @@ function ActionLinks({
       {(
         [
           ["notification", "Notifikasi", notifications],
-          ["inbox", "Inbox", inbox],
+          ["inbox", "Kotak masuk", inbox],
         ] as const
       ).map(([type, label, count]) => (
         <Link

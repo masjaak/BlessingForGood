@@ -50,11 +50,11 @@ function CustomerOrderDetail() {
   const { currentCustomerTracking, currentCustomerFulfillment, customerInvoiceList } = useOperations();
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (dataSource !== "convex") {
-    return <div className="state-panel">Tracking belum tersedia saat ini.</div>;
+    return <div className="state-panel">Pelacakan belum tersedia saat ini.</div>;
   }
   if (ordersLoading || currentCustomerTracking === undefined || currentCustomerFulfillment === undefined) {
     return (
-      <LoadingRegion label="Memuat tracking pesanan">
+      <LoadingRegion label="Memuat pelacakan pesanan">
         <SkeletonCard variant="order" />
         <SkeletonCard />
         <SkeletonCard />
@@ -74,8 +74,8 @@ function CustomerOrderDetail() {
   return (
     <div className="page narrow-page">
       <PageHeader
-        eyebrow="Tracking pesanan"
-        title={order.items[0]?.bookTitle || "Order detail"}
+        eyebrow="Pelacakan pesanan"
+        title={order.items[0]?.bookTitle || "Detail pesanan"}
         description={`${order.customerName} · ${order.id}`}
         actions={
           <LinkButton href="/account/orders" variant="secondary">
@@ -134,7 +134,7 @@ function CustomerOrderDetail() {
               <div className="content-stack" key={batch.batchId}>
                 <div>
                   <strong>{batch.name}</strong>
-                  <span className="subtle">{batch.referenceCode || "No reference"}</span>
+                  <span className="subtle">{batch.referenceCode || "Tanpa referensi"}</span>
                 </div>
                 {batch.assignments.map((assignment, index) => (
                   <div className="summary-line" key={`${batch.batchId}-${index}`}>

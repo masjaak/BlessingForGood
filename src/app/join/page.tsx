@@ -59,7 +59,7 @@ function ConnectedJoinForm() {
       <Card className="success-card join-success-card">
         <BrandMascot variant="success" className="success-mascot" />
         <span className="card-kicker">Permintaan diterima</span>
-        <h2>Request terkirim 🎉</h2>
+        <h2>Permintaan terkirim 🎉</h2>
         <p>Satu langkah lagi untuk jadi Blessfriend.</p>
         {whatsappGroupUrl ? (
           <a className="button button-primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
@@ -85,7 +85,7 @@ function ConnectedJoinForm() {
   return (
     <Card className="form-card">
       <div>
-        <span className="card-kicker">Join Blessfriends</span>
+        <span className="card-kicker">Gabung Blessfriends</span>
         <h2>Ceritakan cara terbaik untuk menghubungimu.</h2>
         <p>Setiap permintaan ditinjau sebelum undangan dikirim. Bagikan hanya informasi yang diperlukan.</p>
       </div>
@@ -215,7 +215,7 @@ function JoinPageContent() {
         <Card className="notice-card content-stack">
           <span className="card-kicker">Blessfriend aktif</span>
           <h2>Akun BFG-mu sudah aktif.</h2>
-          <p>Private workspace-mu sudah terbuka. Lanjutkan ke akun atau katalog komunitas.</p>
+          <p>Ruang kerja privatmu sudah terbuka. Lanjutkan ke akun atau katalog komunitas.</p>
           <div className="actions">
             <LinkButton href="/account">Buka akun</LinkButton>
             <LinkButton href="/catalog" variant="secondary">
@@ -238,7 +238,7 @@ function JoinPageContent() {
       <Card className="notice-card content-stack">
         <span className="card-kicker">Dalam peninjauan</span>
         <h2>Permintaanmu sedang ditinjau.</h2>
-        <p>Tim BFG akan mengabari setelah proses review selesai.</p>
+        <p>Tim BFG akan mengabari setelah proses peninjauan selesai.</p>
       </Card>
     );
   }

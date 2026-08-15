@@ -14,10 +14,10 @@ describe("Admin invoice issue entry", () => {
     vi.mocked(useOperations).mockReturnValue({ createInvoice, issueInvoice } as never);
 
     render(<PersistentRequirementForm orderId="order-1" />);
-    fireEvent.click(screen.getByRole("button", { name: "Issue invoice" }));
+    fireEvent.click(screen.getByRole("button", { name: "Terbitkan invoice" }));
 
     await waitFor(() => expect(issueInvoice).toHaveBeenCalledWith("invoice-1"));
     expect(createInvoice).toHaveBeenCalledWith("order-1", "none", undefined);
-    expect(screen.getByRole("status").textContent).toContain("Invoice issued.");
+    expect(screen.getByRole("status").textContent).toContain("Invoice diterbitkan.");
   });
 });

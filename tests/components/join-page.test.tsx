@@ -37,7 +37,7 @@ describe("Join Blessfriends admission entry", () => {
     render(<JoinPage />);
 
     expect(screen.getByRole("heading", { name: "Permintaanmu sedang ditinjau." })).toBeTruthy();
-    expect(screen.getByText("Tim BFG akan mengabari setelah proses review selesai.")).toBeTruthy();
+    expect(screen.getByText("Tim BFG akan mengabari setelah proses peninjauan selesai.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
   });
 });

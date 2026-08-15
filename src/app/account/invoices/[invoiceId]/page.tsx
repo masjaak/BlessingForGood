@@ -64,7 +64,7 @@ function CustomerInvoiceDetail() {
       <PageHeader
         eyebrow="Detail invoice"
         title={currentCustomerInvoice.invoiceNumber}
-        description={`Order ${currentCustomerInvoice.orderId}`}
+        description={`Pesanan ${currentCustomerInvoice.orderId}`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">
             Kembali ke invoice

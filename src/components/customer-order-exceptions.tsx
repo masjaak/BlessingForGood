@@ -96,7 +96,7 @@ function ExceptionCard({ exception }: { exception: CustomerException }) {
       <div className="split-heading">
         <div>
           <span className="card-kicker">{typeLabels[exception.type]}</span>
-          <h3>{exception.item?.bookTitle || "Order item"}</h3>
+          <h3>{exception.item?.bookTitle || "Item pesanan"}</h3>
         </div>
         <StatusBadge tone={statusTone(exception.status)}>{statusLabels[exception.status]}</StatusBadge>
       </div>

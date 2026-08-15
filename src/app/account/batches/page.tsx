@@ -15,7 +15,7 @@ function CustomerBatches() {
       <PageHeader
         eyebrow="Batch PO"
         title="Perjalanan batch bukumu"
-        description="Satu status batch diperbarui untuk semua customer yang memiliki buku di roster tersebut."
+        description="Satu status batch diperbarui untuk semua pelanggan yang memiliki buku di roster tersebut."
       />
       {batches === undefined ? (
         <LoadingRegion label="Memuat batch">

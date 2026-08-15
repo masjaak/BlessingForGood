@@ -62,9 +62,9 @@ function AdminOrderDetail() {
   if (!order)
     return (
       <EmptyState
-        title="Order not found"
-        description="The admin session cannot access that order."
-        action={<LinkButton href="/admin/orders">Back to orders</LinkButton>}
+        title="Pesanan tidak ditemukan"
+        description="Sesi Admin tidak dapat mengakses pesanan tersebut."
+        action={<LinkButton href="/admin/orders">Kembali ke pesanan</LinkButton>}
       />
     );
   const eligibleBatches = batchList.page.filter(
@@ -84,7 +84,7 @@ function AdminOrderDetail() {
       await action();
       setMessage(success);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Operation failed");
+      setMessage(reason instanceof Error ? reason.message : "Operasi gagal.");
     } finally {
       setPendingAction(null);
     }
@@ -93,12 +93,12 @@ function AdminOrderDetail() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Order operations"
+        eyebrow="Operasi pesanan"
         title={order.customerName}
         description={order.id}
         actions={
           <LinkButton href="/admin/orders" variant="secondary">
-            Back to orders
+            Kembali ke pesanan
           </LinkButton>
         }
       />
@@ -113,7 +113,7 @@ function AdminOrderDetail() {
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Order snapshot</span>
+                <span className="card-kicker">Snapshot pesanan</span>
                 <h2>
                   <Money amount={order.total} />
                 </h2>
@@ -130,52 +130,52 @@ function AdminOrderDetail() {
             ))}
             {invoice ? (
               <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
-                Open {invoice.invoiceNumber}
+                Buka {invoice.invoiceNumber}
               </LinkButton>
             ) : (
-              <p className="subtle">No invoice exists for this order.</p>
+              <p className="subtle">Belum ada invoice untuk pesanan ini.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Exceptions</span>
-                <h2>Operational history</h2>
+                <span className="card-kicker">Masalah pesanan</span>
+                <h2>Riwayat operasional</h2>
               </div>
               <LinkButton href="/admin/exceptions" variant="secondary">
-                Open queue
+                Buka antrian
               </LinkButton>
             </div>
             {adminExceptions?.length ? (
               adminExceptions.map((exception) => (
                 <div className="summary-line" key={exception.exceptionId}>
                   <span>
-                    {exception.type} · {exception.affectedQuantity} affected
+                    {exception.type} · {exception.affectedQuantity} terdampak
                     <br />
                     <span className="subtle">
-                      {exception.status} · {exception.resolution || "no resolution selected"}
+                      {exception.status} · {exception.resolution || "belum ada penyelesaian"}
                     </span>
                   </span>
                   <span>
                     {exception.financialImpact ? (
                       <Money amount={Math.abs(exception.financialImpact.invoiceAdjustmentAmount)} />
                     ) : (
-                      "No financial adjustment"
+                      "Tidak ada penyesuaian keuangan"
                     )}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="subtle">No exception recorded for this order.</p>
+              <p className="subtle">Belum ada masalah yang tercatat untuk pesanan ini.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Batch assignments</span>
-                <h2>Assign quantities safely</h2>
+                <span className="card-kicker">Penugasan batch</span>
+                <h2>Bagikan jumlah dengan aman</h2>
               </div>
             </div>
             {currentAdminOrderTracking.items.map((item) => (
@@ -184,7 +184,7 @@ function AdminOrderDetail() {
                   <strong>
                     {item.bookTitle} · {item.format}
                   </strong>
-                  <span>{item.orderedQuantity} ordered</span>
+                  <span>{item.orderedQuantity} dipesan</span>
                 </div>
                 {item.assignments.map((assignment) => (
                   <div className="summary-line" key={assignment.assignmentId}>
@@ -194,7 +194,7 @@ function AdminOrderDetail() {
                     <span className="subtle">
                       {assignment.currentShipmentStage
                         ? shipmentStageLabels[assignment.currentShipmentStage]
-                        : "No shipment stage"}
+                        : "Belum ada tahap pengiriman"}
                     </span>
                   </div>
                 ))}
@@ -202,12 +202,12 @@ function AdminOrderDetail() {
                   orderItemId={item.orderItemId}
                   batches={eligibleBatches}
                   assignOrderItem={assignOrderItem}
-                  onDone={() => setMessage("Assignment saved.")}
+                  onDone={() => setMessage("Penugasan tersimpan.")}
                 />
               </div>
             ))}
             {!eligibleBatches.length ? (
-              <p className="subtle">Link a catalog-compatible batch before assigning an item.</p>
+              <p className="subtle">Hubungkan batch yang kompatibel dengan katalog sebelum menugaskan item.</p>
             ) : null}
           </Card>
 
@@ -218,7 +218,7 @@ function AdminOrderDetail() {
                 <h2>
                   {currentAdminFulfillment.currentStage
                     ? fulfillmentStageLabels[currentAdminFulfillment.currentStage]
-                    : "Not started"}
+                    : "Belum dimulai"}
                 </h2>
               </div>
             </div>
@@ -226,18 +226,18 @@ function AdminOrderDetail() {
               <Button
                 type="button"
                 pending={pendingAction === "fulfillment"}
-                pendingLabel="Updating…"
+                pendingLabel="Memperbarui…"
                 onClick={() =>
                   nextStage &&
                   void run(
                     () => updateFulfillmentStage(orderId, nextStage),
-                    "Fulfillment stage updated.",
+                    "Tahap pemenuhan diperbarui.",
                     "fulfillment",
                   )
                 }
                 disabled={!nextStage || pendingAction !== null}
               >
-                Advance to {nextStage ? fulfillmentStageLabels[nextStage] : "complete"}
+                Lanjut ke {nextStage ? fulfillmentStageLabels[nextStage] : "selesai"}
               </Button>
             </div>
             <ul className="timeline">
@@ -253,7 +253,7 @@ function AdminOrderDetail() {
               ))}
             </ul>
             {!currentAdminFulfillment.history.length ? (
-              <p className="subtle">No fulfillment stage has been recorded.</p>
+              <p className="subtle">Belum ada tahap pemenuhan yang tercatat.</p>
             ) : null}
           </Card>
         </div>
@@ -285,7 +285,7 @@ function AssignForm({
       await assignOrderItem(orderItemId, batchId, Number(quantity));
       onDone();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Assignment failed");
+      setError(reason instanceof Error ? reason.message : "Penugasan gagal.");
     } finally {
       setIsSubmitting(false);
     }
@@ -293,13 +293,13 @@ function AssignForm({
   return (
     <form className="form-actions" onSubmit={submit}>
       <select
-        aria-label="Assignment batch"
+        aria-label="Batch penugasan"
         className="select"
         value={batchId}
         onChange={(event) => setBatchId(event.target.value)}
         required
       >
-        <option value="">Choose linked batch…</option>
+        <option value="">Pilih batch terhubung…</option>
         {batches.map((batch) => (
           <option value={batch.batchId} key={batch.batchId}>
             {batch.name}
@@ -307,7 +307,7 @@ function AssignForm({
         ))}
       </select>
       <input
-        aria-label="Assignment quantity"
+        aria-label="Jumlah penugasan"
         className="input"
         type="number"
         min="1"
@@ -316,8 +316,8 @@ function AssignForm({
         onChange={(event) => setQuantity(event.target.value)}
         required
       />
-      <Button type="submit" pending={isSubmitting} pendingLabel="Assigning…">
-        Assign
+      <Button type="submit" pending={isSubmitting} pendingLabel="Menugaskan…">
+        Tugaskan
       </Button>
       {error ? (
         <span className="error-text" role="alert">

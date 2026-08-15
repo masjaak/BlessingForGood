@@ -37,7 +37,7 @@ export function BookCover({
         />
       ) : (
         <div className="book-cover-fallback" role="img" aria-label={`Cover placeholder for ${title}`}>
-          <span className="book-cover-format">{format || "Book"}</span>
+          <span className="book-cover-format">{format || "Buku"}</span>
           <strong>{title}</strong>
           <span>{publisher}</span>
         </div>

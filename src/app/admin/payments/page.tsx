@@ -62,7 +62,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
         </StatusBadge>
       </div>
       <div className="summary-line">
-        <span>Jumlah yang dikirim</span>
+        <span>Jumlah yang dibayarkan</span>
         <strong>{formatIdr(confirmation.amount)}</strong>
       </div>
       <div className="summary-line">
@@ -92,7 +92,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
           Lihat bukti transfer
         </a>
       ) : null}
-      {confirmation.customerNote ? <p className="subtle">Catatan customer: {confirmation.customerNote}</p> : null}
+      {confirmation.customerNote ? <p className="subtle">Catatan pelanggan: {confirmation.customerNote}</p> : null}
       <p className="subtle">Dikirim {new Date(confirmation.submittedAt).toLocaleString("id-ID")}</p>
       {confirmation.status === "submitted" ? (
         <Button
@@ -185,7 +185,7 @@ function AdminPayments() {
       <PageHeader
         eyebrow="Operasi pembayaran"
         title="Tinjau konfirmasi pembayaran."
-        description="Setujui hanya setelah bukti pembayaran cocok dengan kiriman customer. Jumlah yang disetujui dihitung satu kali terhadap invoice."
+        description="Setujui hanya setelah bukti pembayaran cocok dengan kiriman pelanggan. Jumlah yang disetujui dihitung satu kali terhadap invoice."
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
             Operasi invoice
@@ -204,7 +204,7 @@ function AdminPayments() {
           ) : (
             <EmptyState
               title="Tidak ada konfirmasi yang menunggu"
-              description="Konfirmasi pembayaran dari customer akan tampil di sini untuk ditinjau."
+              description="Konfirmasi pembayaran dari pelanggan akan tampil di sini untuk ditinjau."
             />
           )}
           {resolvedHistory.length ? (
@@ -219,7 +219,7 @@ function AdminPayments() {
                 <div className="summary-line" key={confirmation.confirmationId}>
                   <span>
                     {confirmation.invoice?.invoiceNumber || confirmation.invoiceId} ·{" "}
-                    {confirmation.invoice?.customerName || "Customer tidak dikenal"}
+                    {confirmation.invoice?.customerName || "Pelanggan tidak dikenal"}
                     <br />
                     {paymentConfirmationStatusLabel(confirmation.status)} ·{" "}
                     {confirmation.reviewedAt

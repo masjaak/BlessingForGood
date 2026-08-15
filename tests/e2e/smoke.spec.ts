@@ -113,10 +113,10 @@ async function verifyRoute(route: string, page: Page, project: string) {
   if (publicShellRoutes.has(route)) {
     await expect(page.locator("h1, h2, h3").first()).toBeVisible({ timeout: 15_000 });
     if ((page.viewportSize()?.width || 0) <= 800) {
-      await expect(page.getByRole("navigation", { name: "Navigasi customer" })).toBeVisible();
+      await expect(page.getByRole("navigation", { name: "Navigasi pelanggan" })).toBeVisible();
       await expect(page.locator('summary[aria-label="Buka menu"]')).toHaveCount(0);
     } else {
-      await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+      await expect(page.getByRole("navigation", { name: "Navigasi utama" })).toBeVisible();
     }
     await expect(page.getByRole("link", { name: "Blessing For Goods home" }).getByRole("img")).toBeVisible();
   } else if (authRoutes.has(route)) {
@@ -167,7 +167,7 @@ test.describe("@customer BFG customer route smoke", () => {
     await page.goto("/", { waitUntil: "networkidle" });
     const links = await page
       .getByRole("navigation", {
-        name: (page.viewportSize()?.width || 0) <= 800 ? "Navigasi customer" : "Primary navigation",
+        name: (page.viewportSize()?.width || 0) <= 800 ? "Navigasi pelanggan" : "Navigasi utama",
       })
       .getByRole("link")
       .evaluateAll((items) =>
@@ -208,7 +208,10 @@ test.describe("@customer BFG customer route smoke", () => {
       "href",
       "/sign-in?redirect_url=/account",
     );
-    await expect(page.getByRole("link", { name: "Join Blessfriends" })).toHaveAttribute("href", "/join");
+    await expect(page.getByRole("main").getByRole("link", { name: "Gabung Blessfriends" })).toHaveAttribute(
+      "href",
+      "/join",
+    );
     await page.getByRole("main").getByRole("link", { name: "Masuk" }).click();
     await expect(page).toHaveURL(/\/sign-in\?redirect_url=%2Faccount|\/sign-in\?redirect_url=\/account/);
     await page.getByRole("button", { name: "Kembali" }).click();

@@ -27,7 +27,7 @@ type Resolution = "remove_item" | "deposit_release" | "refund_required" | "repla
 const typeLabels = {
   out_of_stock: "Stok tidak tersedia",
   defect: "Defect",
-  customer_cancellation: "Pembatalan customer",
+  customer_cancellation: "Pembatalan pelanggan",
   admin_cancellation: "Pembatalan admin",
 } as const;
 
@@ -95,7 +95,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
 
   return (
     <details className="admin-operations-disclosure">
-      <summary className="button button-primary">Catat exception</summary>
+      <summary className="button button-primary">Catat masalah</summary>
       <Card>
         <span className="card-kicker">Operasi admin</span>
         <h2>Buka masalah pesanan</h2>
@@ -105,7 +105,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
             <Field label="Jenis">
               <select className="select" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
                 <option value="out_of_stock">Stok tidak tersedia</option>
-                <option value="defect">Defect</option>
+                <option value="defect">Produk rusak</option>
                 <option value="admin_cancellation">Pembatalan admin</option>
               </select>
             </Field>
@@ -161,7 +161,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
             />
           </Field>
           <div className="form-grid">
-            <Field label="Catatan untuk customer (opsional)">
+            <Field label="Catatan untuk pelanggan (opsional)">
               <textarea
                 className="textarea"
                 value={customerNote}
@@ -226,7 +226,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </span>
           <h2>{exception.item?.bookTitle || "Item pesanan"}</h2>
           <p className="subtle">
-            {exception.order?.customerName || "Customer tidak dikenal"} · {exception.orderId}
+            {exception.order?.customerName || "Pelanggan tidak dikenal"} · {exception.orderId}
           </p>
         </div>
         <StatusBadge tone={tone(exception.status)}>{statusLabels[exception.status]}</StatusBadge>
@@ -279,7 +279,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </span>
         </div>
       ) : null}
-      {exception.customerNote ? <p className="subtle">Catatan customer: {exception.customerNote}</p> : null}
+      {exception.customerNote ? <p className="subtle">Catatan pelanggan: {exception.customerNote}</p> : null}
       {exception.internalNote ? <p className="subtle">Catatan internal: {exception.internalNote}</p> : null}
       {exception.status === "opened" ? (
         <div className="form-actions">

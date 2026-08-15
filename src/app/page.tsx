@@ -57,7 +57,7 @@ export default function HomePage() {
         <section className="section-block discovery-section" id="book-discovery" aria-labelledby="discovery-title">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Book discovery</span>
+              <span className="eyebrow">Temukan buku</span>
               <h2 id="discovery-title">Mulai dari buku yang ingin kamu temukan.</h2>
             </div>
             <p>Ruang pertama untuk menjelajah: pilihan yang sudah tersedia atau katalog privat sesuai aksesmu.</p>
@@ -115,7 +115,7 @@ export default function HomePage() {
         >
           <div className="section-heading">
             <div>
-              <span className="eyebrow">How to order</span>
+              <span className="eyebrow">Cara memesan</span>
               <h2 id="order-title">Pesan dengan alur yang jelas.</h2>
               <p>Kenali tiga momen utamanya sebelum masuk ke panduan lengkap.</p>
             </div>

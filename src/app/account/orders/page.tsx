@@ -134,7 +134,7 @@ function CustomerOrders() {
                 <Money amount={order.total} />
               </div>
               <LinkButton href={`/account/orders/${order.id}`} variant="secondary">
-                Lihat detail & tracking
+                Lihat detail & pelacakan
               </LinkButton>
               <EditOrderForm orderId={order.id} />
               <ul className="timeline">

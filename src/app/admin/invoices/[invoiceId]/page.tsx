@@ -59,9 +59,9 @@ function AdminInvoiceDetail() {
   if (!currentAdminInvoice)
     return (
       <EmptyState
-        title="Invoice not found"
-        description="The admin session cannot access that invoice."
-        action={<LinkButton href="/admin/invoices">Back to invoices</LinkButton>}
+        title="Invoice tidak ditemukan"
+        description="Sesi Admin tidak dapat mengakses invoice tersebut."
+        action={<LinkButton href="/admin/invoices">Kembali ke invoice</LinkButton>}
       />
     );
   const account = adminAccount?.account;
@@ -73,7 +73,7 @@ function AdminInvoiceDetail() {
       await action();
       setMessage(success);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Operation failed");
+      setMessage(reason instanceof Error ? reason.message : "Operasi gagal.");
     } finally {
       setPendingAction(null);
     }
@@ -82,12 +82,12 @@ function AdminInvoiceDetail() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Invoice operations"
+        eyebrow="Operasi invoice"
         title={currentAdminInvoice.invoiceNumber}
-        description={`Order ${currentAdminInvoice.orderId}`}
+        description={`Pesanan ${currentAdminInvoice.orderId}`}
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
-            Back to invoices
+            Kembali ke invoice
           </LinkButton>
         }
       />
@@ -116,36 +116,36 @@ function AdminInvoiceDetail() {
               </div>
             ))}
             <div className="summary-line">
-              <span>Deposit required</span>
+              <span>Deposit diperlukan</span>
               <strong>{formatIdr(currentAdminInvoice.depositRequiredAmount)}</strong>
             </div>
             <div className="summary-line">
-              <span>Allocated</span>
+              <span>Teralokasi</span>
               <strong>{formatIdr(currentAdminInvoice.allocatedDepositAmount)}</strong>
             </div>
             <div className="summary-line">
-              <span>Outstanding</span>
+              <span>Sisa tagihan</span>
               <strong>{formatIdr(currentAdminInvoice.outstandingAmount)}</strong>
             </div>
             <div className="summary-line">
-              <span>Payment state · verified</span>
+              <span>Status pembayaran · terverifikasi</span>
               <strong>
                 {invoicePaymentStatusLabel(currentAdminInvoice.paymentStatus)} ·{" "}
                 {formatIdr(currentAdminInvoice.verifiedPaymentAmount)}
               </strong>
             </div>
             <LinkButton href="/admin/payments" variant="secondary">
-              Review payment confirmations
+              Tinjau konfirmasi pembayaran
             </LinkButton>
             <div className="form-actions">
               {currentAdminInvoice.status === "draft" ? (
                 <Button
                   type="button"
                   pending={pendingAction === "issue"}
-                  pendingLabel="Issuing…"
-                  onClick={() => void run(() => issueInvoice(invoiceId), "Invoice issued.", "issue")}
+                  pendingLabel="Menerbitkan…"
+                  onClick={() => void run(() => issueInvoice(invoiceId), "Invoice diterbitkan.", "issue")}
                 >
-                  Issue invoice
+                  Terbitkan invoice
                 </Button>
               ) : null}
               {currentAdminInvoice.status !== "void" ? (
@@ -153,10 +153,10 @@ function AdminInvoiceDetail() {
                   type="button"
                   variant="danger"
                   pending={pendingAction === "void"}
-                  pendingLabel="Voiding…"
-                  onClick={() => void run(() => voidInvoice(invoiceId), "Invoice voided.", "void")}
+                  pendingLabel="Membatalkan…"
+                  onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
                 >
-                  Void invoice
+                  Batalkan invoice
                 </Button>
               ) : null}
             </div>
@@ -165,37 +165,37 @@ function AdminInvoiceDetail() {
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Deposit account</span>
-                <h2>Available and reserved</h2>
+                <span className="card-kicker">Akun deposit</span>
+                <h2>Tersedia dan dipesan</h2>
               </div>
             </div>
             <div className="summary-line">
-              <span>Available</span>
+              <span>Tersedia</span>
               <strong>{formatIdr(account?.availableAmount || 0)}</strong>
             </div>
             <div className="summary-line">
-              <span>Reserved</span>
+              <span>Dipesan</span>
               <strong>{formatIdr(account?.reservedAmount || 0)}</strong>
             </div>
             <CreditForm
               invoiceId={invoiceId}
               recordCredit={recordCredit}
-              onDone={() => setMessage("Credit appended.")}
+              onDone={() => setMessage("Kredit dicatat.")}
             />
             <AllocationForm
               invoiceId={invoiceId}
               outstanding={currentAdminInvoice.outstandingAmount}
               allocateDeposit={allocateDeposit}
               disabled={currentAdminInvoice.status === "void"}
-              onDone={() => setMessage("Deposit allocated.")}
+              onDone={() => setMessage("Deposit dialokasikan.")}
             />
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Allocations</span>
-                <h2>Invoice reservations</h2>
+                <span className="card-kicker">Alokasi</span>
+                <h2>Reservasi invoice</h2>
               </div>
             </div>
             {adminAllocations === undefined ? (
@@ -215,31 +215,31 @@ function AdminInvoiceDetail() {
                           type="button"
                           variant="quiet"
                           pending={pendingAction === `release-${allocation.allocationId}`}
-                          pendingLabel="Releasing…"
+                          pendingLabel="Melepaskan…"
                           onClick={() =>
                             void run(
                               () => releaseAllocation(allocation.allocationId),
-                              "Allocation released.",
+                              "Alokasi dilepaskan.",
                               `release-${allocation.allocationId}`,
                             )
                           }
                         >
-                          Release
+                          Lepaskan
                         </Button>
                         <Button
                           type="button"
                           variant="quiet"
                           pending={pendingAction === `reverse-${allocation.allocationId}`}
-                          pendingLabel="Reversing…"
+                          pendingLabel="Membalikkan…"
                           onClick={() =>
                             void run(
                               () => reverseAllocation(allocation.allocationId),
-                              "Allocation reversed.",
+                              "Alokasi dibalikkan.",
                               `reverse-${allocation.allocationId}`,
                             )
                           }
                         >
-                          Reverse
+                          Balikkan
                         </Button>
                       </>
                     ) : null}
@@ -247,15 +247,15 @@ function AdminInvoiceDetail() {
                 </div>
               ))
             ) : (
-              <p className="subtle">No allocation history.</p>
+              <p className="subtle">Belum ada riwayat alokasi.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Append-only ledger</span>
-                <h2>Transactions</h2>
+                <span className="card-kicker">Ledger yang hanya menambah catatan</span>
+                <h2>Transaksi</h2>
               </div>
             </div>
             {adminTransactions === undefined ? (
@@ -277,24 +277,24 @@ function AdminInvoiceDetail() {
                         pending={pendingAction === `transaction-${transaction.transactionId}`}
                         pendingLabel="Reversing…"
                         onClick={() => {
-                          if (window.confirm("Append a reversal transaction for this row?"))
+                          if (window.confirm("Catat transaksi pembalikan untuk baris ini?"))
                             void run(
                               () => reverseTransaction(transaction.transactionId, "admin correction"),
-                              "Transaction reversed.",
+                              "Transaksi dibalikkan.",
                               `transaction-${transaction.transactionId}`,
                             );
                         }}
                       >
-                        Reverse
+                        Balikkan
                       </Button>
                     ) : transaction.reversedByTransactionId ? (
-                      <span className="subtle">Reversed</span>
+                      <span className="subtle">Dibalikkan</span>
                     ) : null}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="subtle">No deposit transactions recorded.</p>
+              <p className="subtle">Belum ada transaksi deposit yang tercatat.</p>
             )}
           </Card>
         </div>
@@ -333,7 +333,7 @@ function CreditForm({
   }
   return (
     <form className="form-actions" onSubmit={submit}>
-      <Field label="Record credit">
+      <Field label="Catat kredit">
         <input
           className="input"
           type="number"
@@ -344,11 +344,11 @@ function CreditForm({
           required
         />
       </Field>
-      <Field label="Note (optional)">
+      <Field label="Catatan (opsional)">
         <input className="input" value={note} onChange={(event) => setNote(event.target.value)} />
       </Field>
-      <Button type="submit" pending={isSubmitting} pendingLabel="Appending…">
-        Append credit
+      <Button type="submit" pending={isSubmitting} pendingLabel="Mencatat…">
+        Catat kredit
       </Button>
       {error ? (
         <span className="error-text" role="alert">
@@ -391,7 +391,7 @@ function AllocationForm({
   }
   return (
     <form className="form-actions" onSubmit={submit}>
-      <Field label={`Allocate (outstanding ${formatIdr(outstanding)})`}>
+      <Field label={`Alokasikan (sisa ${formatIdr(outstanding)})`}>
         <input
           className="input"
           type="number"
@@ -404,8 +404,13 @@ function AllocationForm({
           disabled={disabled || outstanding < 1}
         />
       </Field>
-      <Button type="submit" pending={isSubmitting} pendingLabel="Allocating…" disabled={disabled || outstanding < 1}>
-        Allocate deposit
+      <Button
+        type="submit"
+        pending={isSubmitting}
+        pendingLabel="Mengalokasikan…"
+        disabled={disabled || outstanding < 1}
+      >
+        Alokasikan deposit
       </Button>
       {error ? (
         <span className="error-text" role="alert">

@@ -31,21 +31,23 @@ function ContentEditor() {
   }
   return (
     <AdminOperationalPage
-      eyebrow="Content management"
+      eyebrow="Manajemen konten"
       title="Konten terstruktur"
-      description="Edit field yang disetujui tanpa mengubah code. Draft tidak tampil ke customer sampai dipublikasikan."
+      description="Edit field yang disetujui tanpa mengubah kode. Draf tidak tampil ke pelanggan sampai dipublikasikan."
     >
       <Card>
         <div className="split-heading">
-          <Field label="Surface">
+          <Field label="Ruang konten">
             <select className="select" value={key} onChange={(event) => setKey(event.target.value as ContentKey)}>
-              <option value="community">Community</option>
-              <option value="how_to_order">How to order</option>
-              <option value="help">Help</option>
+              <option value="community">Komunitas</option>
+              <option value="how_to_order">Cara memesan</option>
+              <option value="help">Bantuan</option>
             </select>
           </Field>
           {block ? (
-            <StatusBadge tone={block.status === "published" ? "positive" : "neutral"}>{block.status}</StatusBadge>
+            <StatusBadge tone={block.status === "published" ? "positive" : "neutral"}>
+              {block.status === "published" ? "Terbit" : "Draf"}
+            </StatusBadge>
           ) : null}
         </div>
         <form
@@ -62,23 +64,23 @@ function ContentEditor() {
                   title: String(data.get("title")),
                   body: String(data.get("body")),
                 }),
-              "Draft tersimpan.",
+              "Draf tersimpan.",
             );
           }}
           key={`${key}-${block?.updatedAt || "empty"}`}
         >
-          <Field label="Eyebrow">
+          <Field label="Label pembuka">
             <input className="input" name="eyebrow" defaultValue={block?.eyebrow || ""} required />
           </Field>
           <Field label="Judul">
             <input className="input" name="title" defaultValue={block?.title || ""} required />
           </Field>
-          <Field label="Body">
+          <Field label="Isi">
             <textarea className="textarea" name="body" defaultValue={block?.body || ""} required />
           </Field>
           <div className="form-actions">
             <Button pending={pending === "save"} pendingLabel="Menyimpan…">
-              Simpan draft
+              Simpan draf
             </Button>
             <Button
               type="button"
@@ -88,7 +90,7 @@ function ContentEditor() {
               pendingLabel="Menerbitkan…"
               onClick={() => void run("publish", () => publish({ key }), "Konten dipublikasikan.")}
             >
-              Publish
+              Terbitkan
             </Button>
           </div>
         </form>

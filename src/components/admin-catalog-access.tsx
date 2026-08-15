@@ -40,7 +40,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
       setMessage(success);
       return result;
     } catch {
-      setMessage("Aksi akses ditolak. Periksa status katalog, customer, dan tanggal berakhir.");
+      setMessage("Aksi akses ditolak. Periksa status katalog, pelanggan, dan tanggal berakhir.");
     } finally {
       setPending("");
     }
@@ -49,8 +49,8 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
   return (
     <AdminOperationalPage
       eyebrow="Secret Catalog"
-      title={`Access Management · ${catalog.name}`}
-      description="Kode mentah hanya ditampilkan sekali. Server menyimpan digest, status, masa berlaku, dan metadata grant."
+      title={`Kelola akses · ${catalog.name}`}
+      description="Kode mentah hanya ditampilkan sekali. Server menyimpan digest, status, masa berlaku, dan metadata pemberian akses."
       actions={
         <LinkButton href={`/admin/catalogs/${catalogId}`} variant="secondary">
           Kembali ke katalog
@@ -59,7 +59,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
     >
       <Card frame="form">
         <span className="card-kicker">Kode akses aman</span>
-        <h2>Generate, salin, lalu bagikan secara manual</h2>
+        <h2>Buat, salin, lalu bagikan secara manual</h2>
         <div className="form-actions">
           <Field label="Kode berakhir (opsional)">
             <input
@@ -82,7 +82,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
               })
             }
           >
-            Generate Access
+            Buat kode akses
           </Button>
           <Button
             variant="danger"
@@ -90,7 +90,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
             pendingLabel="Mencabut…"
             onClick={() => void run("revoke-code", () => revokeCode({ catalogId: id }), "Kode aktif dicabut.")}
           >
-            Revoke active code
+            Cabut kode aktif
           </Button>
         </div>
         {oneTimeCode ? (
@@ -113,23 +113,25 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
                   {new Date(code.createdAt).toLocaleString("id-ID")} ·{" "}
                   {code.expiresAt
                     ? `berakhir ${new Date(code.expiresAt).toLocaleString("id-ID")}`
-                    : "tanpa expiry eksplisit"}
+                    : "tanpa masa berlaku eksplisit"}
                 </span>
-                <StatusBadge tone={code.status === "active" ? "positive" : "neutral"}>{code.status}</StatusBadge>
+                <StatusBadge tone={code.status === "active" ? "positive" : "neutral"}>
+                  {code.status === "active" ? "Aktif" : "Dicabut"}
+                </StatusBadge>
               </div>
             ))}
           </div>
         ) : (
           <EmptyState
             title="Belum ada kode akses"
-            description="Generate Access untuk membuat satu kode yang dapat dibagikan sekali kepada customer yang dituju."
+            description="Buat kode akses untuk dibagikan sekali kepada pelanggan yang dituju."
             mascotVariant={false}
           />
         )}
       </Card>
       <Card frame="list">
-        <span className="card-kicker">Akses member</span>
-        <h2>Grant atau revoke customer aktif</h2>
+        <span className="card-kicker">Akses anggota</span>
+        <h2>Berikan atau cabut akses pelanggan aktif</h2>
         <form
           className="form-actions"
           onSubmit={(event) => {
@@ -137,13 +139,13 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
             void run(
               "grant",
               () => grant({ catalogId: id, appUserId: memberId as Id<"appUsers">, expiresAt: Date.parse(grantExpiry) }),
-              "Akses member diberikan.",
+              "Akses anggota diberikan.",
             );
           }}
         >
-          <Field label="Customer">
+          <Field label="Pelanggan">
             <select className="select" value={memberId} onChange={(event) => setMemberId(event.target.value)} required>
-              <option value="">Pilih customer</option>
+              <option value="">Pilih pelanggan</option>
               {customers.map((customer) => (
                 <option key={customer.customerUserId} value={customer.customerUserId}>
                   {customer.displayName} · {customer.email || "tanpa email"}
@@ -161,7 +163,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
             />
           </Field>
           <Button pending={pending === "grant"} pendingLabel="Memberi akses…">
-            Grant access
+            Berikan akses
           </Button>
         </form>
         {access.grants.length ? (
@@ -176,7 +178,9 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
                   </small>
                 </span>
                 <span className="form-actions">
-                  <StatusBadge tone={item.status === "active" ? "positive" : "neutral"}>{item.status}</StatusBadge>
+                  <StatusBadge tone={item.status === "active" ? "positive" : "neutral"}>
+                    {item.status === "active" ? "Aktif" : "Dicabut"}
+                  </StatusBadge>
                   {item.status === "active" ? (
                     <Button
                       variant="danger"
@@ -189,7 +193,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
                         )
                       }
                     >
-                      Revoke
+                      Cabut akses
                     </Button>
                   ) : null}
                 </span>
@@ -198,8 +202,8 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
           </div>
         ) : (
           <EmptyState
-            title="Belum ada member grant"
-            description="Customer dapat memakai kode atau menerima grant langsung."
+            title="Belum ada pemberian akses anggota"
+            description="Pelanggan dapat memakai kode atau menerima akses langsung."
             mascotVariant={false}
           />
         )}

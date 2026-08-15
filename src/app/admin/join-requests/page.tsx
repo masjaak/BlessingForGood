@@ -19,10 +19,10 @@ function useJoinRequests(status: JoinRequestStatus | undefined) {
 }
 
 const statusLabels: Record<JoinRequestStatus, string> = {
-  submitted: "Submitted",
-  under_review: "Under review",
-  approved: "Approved",
-  rejected: "Rejected",
+  submitted: "Dikirim",
+  under_review: "Sedang ditinjau",
+  approved: "Disetujui",
+  rejected: "Ditolak",
 };
 
 function statusTone(status: JoinRequestStatus): "neutral" | "positive" | "warning" {
@@ -59,7 +59,7 @@ function JoinRequestCard({
       await action();
       setMessage(success);
     } catch {
-      setError("That review action is no longer available. Refresh the queue and try again.");
+      setError("Tindakan tinjauan itu sudah tidak tersedia. Muat ulang antrian lalu coba lagi.");
     } finally {
       setPendingAction(null);
     }
@@ -69,42 +69,42 @@ function JoinRequestCard({
     <Card>
       <div className="split-heading">
         <div>
-          <span className="card-kicker">{request.city || "Location not provided"}</span>
+          <span className="card-kicker">{request.city || "Lokasi belum diisi"}</span>
           <h2>{request.name}</h2>
           <p className="subtle">{request.email}</p>
         </div>
         <StatusBadge tone={statusTone(request.status)}>{statusLabels[request.status]}</StatusBadge>
       </div>
       <div className="summary-line">
-        <span>WhatsApp / phone</span>
+        <span>WhatsApp / telepon</span>
         <span>{request.contact}</span>
       </div>
       <div className="summary-line">
-        <span>Book interest</span>
-        <span>{request.bookInterest || "Not provided"}</span>
+        <span>Minat buku</span>
+        <span>{request.bookInterest || "Belum diisi"}</span>
       </div>
       <div className="summary-line">
-        <span>Submitted</span>
-        <span>{new Date(request.submittedAt).toLocaleString("en-GB")}</span>
+        <span>Dikirim</span>
+        <span>{new Date(request.submittedAt).toLocaleString("id-ID")}</span>
       </div>
-      {request.note ? <p className="subtle">Applicant note: {request.note}</p> : null}
+      {request.note ? <p className="subtle">Catatan pendaftar: {request.note}</p> : null}
       {request.status === "submitted" ? (
         <Button
           type="button"
           variant="secondary"
-          pending={pendingAction === "Review started."}
-          pendingLabel="Starting…"
-          onClick={() => void run(() => startReview(requestId), "Review started.")}
+          pending={pendingAction === "Tinjauan dimulai."}
+          pendingLabel="Memulai…"
+          onClick={() => void run(() => startReview(requestId), "Tinjauan dimulai.")}
         >
-          Review
+          Tinjau
         </Button>
       ) : null}
       {request.status === "under_review" ? (
         <div className="content-stack">
-          <Field label="Review note (optional)">
+          <Field label="Catatan tinjauan (opsional)">
             <textarea className="textarea" value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} />
           </Field>
-          <Field label="Rejection reason (required to reject)">
+          <Field label="Alasan penolakan (wajib untuk menolak)">
             <textarea
               className="textarea"
               value={rejectionReason}
@@ -115,25 +115,25 @@ function JoinRequestCard({
           <div className="form-actions">
             <Button
               type="button"
-              pending={pendingAction === "Approved; admission handoff started."}
-              pendingLabel="Approving…"
+              pending={pendingAction === "Disetujui; proses admission dimulai."}
+              pendingLabel="Menyetujui…"
               onClick={() =>
-                void run(() => approve(requestId, reviewNote || undefined), "Approved; admission handoff started.")
+                void run(() => approve(requestId, reviewNote || undefined), "Disetujui; proses admission dimulai.")
               }
             >
-              Approve
+              Setujui
             </Button>
             <Button
               type="button"
               variant="danger"
               disabled={!rejectionReason.trim()}
-              pending={pendingAction === "Request rejected."}
-              pendingLabel="Rejecting…"
+              pending={pendingAction === "Permintaan ditolak."}
+              pendingLabel="Menolak…"
               onClick={() =>
-                void run(() => reject(requestId, rejectionReason, reviewNote || undefined), "Request rejected.")
+                void run(() => reject(requestId, rejectionReason, reviewNote || undefined), "Permintaan ditolak.")
               }
             >
-              Reject
+              Tolak
             </Button>
           </div>
         </div>
@@ -142,30 +142,30 @@ function JoinRequestCard({
         <div className="content-stack">
           <p className="success-banner" role="status">
             {request.admissionStatus === "active"
-              ? "Blessfriend aktif. Akses customer sudah terbuka."
+              ? "Blessfriend aktif. Akses pelanggan sudah terbuka."
               : request.admissionStatus === "invitation_pending"
                 ? "Disetujui. Buat undangan Clerk secara manual untuk identitas baru."
                 : "Disetujui, tetapi admission masih perlu diselesaikan."}
           </p>
           {request.admissionError ? (
             <div className="form-actions">
-              <span className="error-text">Admission handoff perlu dicoba lagi.</span>
+              <span className="error-text">Proses penerimaan anggota perlu dicoba lagi.</span>
               <Button
                 type="button"
                 variant="secondary"
-                pending={pendingAction === "Admission handoff retried."}
-                pendingLabel="Retrying…"
-                onClick={() => void run(() => retryAdmission(requestId), "Admission handoff retried.")}
+                pending={pendingAction === "Proses admission dicoba kembali."}
+                pendingLabel="Mencoba lagi…"
+                onClick={() => void run(() => retryAdmission(requestId), "Proses admission dicoba kembali.")}
               >
-                Retry admission
+                Coba lagi
               </Button>
             </div>
           ) : null}
         </div>
       ) : null}
-      {request.status === "rejected" ? <p className="subtle">Reason: {request.rejectionReason}</p> : null}
+      {request.status === "rejected" ? <p className="subtle">Alasan: {request.rejectionReason}</p> : null}
       {request.reviewedAt ? (
-        <p className="subtle">Reviewed {new Date(request.reviewedAt).toLocaleString("en-GB")}</p>
+        <p className="subtle">Ditinjau {new Date(request.reviewedAt).toLocaleString("id-ID")}</p>
       ) : null}
       {message ? (
         <p className="success-banner" role="status">
@@ -202,9 +202,9 @@ function ConnectedJoinRequests() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Admission operations"
-        title="Review Blessfriends requests."
-        description="Approval is the BFG admission event. Existing linked Clerk identities are activated without duplication; new identities continue through the manual invitation handoff."
+        eyebrow="Operasi admission"
+        title="Tinjau permintaan Blessfriends."
+        description="Persetujuan adalah peristiwa admission BFG. Identitas Clerk yang sudah terhubung diaktifkan tanpa duplikasi; identitas baru dilanjutkan melalui undangan manual."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -216,18 +216,18 @@ function ConnectedJoinRequests() {
                 value={status}
                 onChange={(event) => setStatus(event.target.value as JoinRequestStatus | "")}
               >
-                <option value="">All requests</option>
-                <option value="submitted">Submitted</option>
-                <option value="under_review">Under review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="">Semua permintaan</option>
+                <option value="submitted">Dikirim</option>
+                <option value="under_review">Sedang ditinjau</option>
+                <option value="approved">Disetujui</option>
+                <option value="rejected">Ditolak</option>
               </select>
             </Field>
-            <Field label="Search">
+            <Field label="Cari">
               <input
                 className="input"
                 type="search"
-                placeholder="Name, email, or contact"
+                placeholder="Nama, email, atau kontak"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -254,10 +254,10 @@ function ConnectedJoinRequests() {
             ))
           ) : filteredRequests ? (
             <EmptyState
-              title={search ? "No matching requests" : "No join requests yet"}
+              title={search ? "Tidak ada permintaan yang cocok" : "Belum ada permintaan bergabung"}
               description={
                 search
-                  ? "Try a different name, email, contact, or city."
+                  ? "Coba nama, email, kontak, atau kota lain."
                   : "Permintaan baru akan muncul setelah formulir Gabung dikirim."
               }
             />

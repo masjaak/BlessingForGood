@@ -7,7 +7,7 @@ import type {
 
 export const shipmentStageLabels: Record<ShipmentStage, string> = {
   po_closed: "PO Ditutup",
-  ordered_to_supplier: "Dipesan ke Supplier",
+  ordered_to_supplier: "Dipesan ke pemasok",
   shipped_internationally: "Dikirim dari Luar Negeri",
   customs: "Pemeriksaan Bea Cukai",
   to_indonesia_warehouse: "Menuju Gudang Indonesia",
@@ -26,7 +26,7 @@ export const shipmentStages = Object.keys(shipmentStageLabels) as ShipmentStage[
 export const fulfillmentStages = Object.keys(fulfillmentStageLabels) as FulfillmentStage[];
 
 export function invoiceStatusLabel(status: "draft" | "issued" | "void"): string {
-  return { draft: "Draft", issued: "Terbit", void: "Dibatalkan" }[status];
+  return { draft: "Draf", issued: "Terbit", void: "Dibatalkan" }[status];
 }
 
 export function invoicePaymentStatusLabel(status: InvoicePaymentStatus): string {

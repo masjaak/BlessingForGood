@@ -10,7 +10,7 @@ export function AdminShellLink() {
   if (!roleCanAccess(role || null, "admin")) return null;
   return (
     <Link className="workspace-switch-link" href="/admin">
-      Buka Workspace Admin
+      Buka ruang kerja Admin
     </Link>
   );
 }

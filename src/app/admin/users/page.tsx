@@ -9,6 +9,9 @@ import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 
+const roleLabels = { owner: "Pemilik", admin: "Admin", customer: "Pelanggan" } as const;
+const userStatusLabels = { active: "Aktif", suspended: "Ditangguhkan", pending: "Menunggu" } as const;
+
 function UserManagement() {
   const [role, setRole] = useState<"owner" | "admin" | "customer" | undefined>();
   const [status, setStatus] = useState<"active" | "suspended" | undefined>();
@@ -28,9 +31,9 @@ function UserManagement() {
     setPendingAction(actionId);
     try {
       await action;
-      setMessage("User updated.");
+      setMessage("Pengguna diperbarui.");
     } catch {
-      setMessage("User update denied.");
+      setMessage("Perubahan pengguna ditolak.");
     } finally {
       setPendingAction(null);
     }
@@ -39,16 +42,16 @@ function UserManagement() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Owner security"
-        title="Manage BFG users"
-        description="Role and suspension changes are enforced by Convex."
+        eyebrow="Keamanan Owner"
+        title="Kelola pengguna BFG"
+        description="Perubahan role dan penangguhan ditegakkan oleh Convex."
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content content-stack">
           <Card>
-            <span className="card-kicker">Admin onboarding</span>
-            <h2>Pre-authorize staff email</h2>
+            <span className="card-kicker">Penyiapan Admin</span>
+            <h2>Praotorisasi email staf</h2>
             <p className="subtle">
               Bagikan link masuk BFG secara manual. Saat email yang sama masuk lewat Clerk, role Admin diklaim otomatis;
               tidak ada password atau token yang disimpan BFG.
@@ -73,16 +76,18 @@ function UserManagement() {
                 />
               </Field>
               <Button pending={pendingAction === "invite"} pendingLabel="Membuat…">
-                Buat invitation
+                Buat undangan
               </Button>
             </form>
             {invitations?.map((invitation) => (
               <div className="summary-line" key={invitation.invitationId}>
                 <span>
-                  {invitation.email} · {invitation.role}
+                  {invitation.email} · {roleLabels[invitation.role as keyof typeof roleLabels] || invitation.role}
                 </span>
                 <span className="form-actions">
-                  <span className="status-badge">{invitation.status}</span>
+                  <span className="status-badge">
+                    {userStatusLabels[invitation.status as keyof typeof userStatusLabels] || invitation.status}
+                  </span>
                   {invitation.status === "pending" ? (
                     <Button
                       variant="danger"
@@ -93,7 +98,7 @@ function UserManagement() {
                         )
                       }
                     >
-                      Revoke
+                      Cabut
                     </Button>
                   ) : null}
                 </span>
@@ -102,16 +107,16 @@ function UserManagement() {
           </Card>
           <Card className="form-actions">
             <label className="field">
-              <span className="field-label">Role</span>
+              <span className="field-label">Peran</span>
               <select
                 className="select"
                 value={role || ""}
                 onChange={(event) => setRole((event.target.value || undefined) as typeof role)}
               >
-                <option value="">All</option>
-                <option value="owner">Owner</option>
+                <option value="">Semua</option>
+                <option value="owner">Pemilik</option>
                 <option value="admin">Admin</option>
-                <option value="customer">Customer</option>
+                <option value="customer">Pelanggan</option>
               </select>
             </label>
             <label className="field">
@@ -121,9 +126,9 @@ function UserManagement() {
                 value={status || ""}
                 onChange={(event) => setStatus((event.target.value || undefined) as typeof status)}
               >
-                <option value="">All</option>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
+                <option value="">Semua</option>
+                <option value="active">Aktif</option>
+                <option value="suspended">Ditangguhkan</option>
               </select>
             </label>
           </Card>
@@ -136,11 +141,13 @@ function UserManagement() {
             <Card key={user.appUserId}>
               <div className="split-heading">
                 <div>
-                  <span className="card-kicker">{user.role}</span>
-                  <h2>{user.displayNameSnapshot || "BFG user"}</h2>
-                  <p className="subtle">{user.emailSnapshot || "No email snapshot"}</p>
+                  <span className="card-kicker">{roleLabels[user.role as keyof typeof roleLabels] || user.role}</span>
+                  <h2>{user.displayNameSnapshot || "Pengguna BFG"}</h2>
+                  <p className="subtle">{user.emailSnapshot || "Tidak ada email tersimpan"}</p>
                 </div>
-                <span className="status-badge">{user.status}</span>
+                <span className="status-badge">
+                  {userStatusLabels[user.status as keyof typeof userStatusLabels] || user.status}
+                </span>
               </div>
               {user.role !== "owner" ? (
                 <div className="form-actions">
@@ -156,25 +163,25 @@ function UserManagement() {
                       )
                     }
                     pending={pendingAction === `role:${user.appUserId}`}
-                    pendingLabel="Updating…"
+                    pendingLabel="Memperbarui…"
                   >
-                    {user.role === "admin" ? "Demote to customer" : "Promote to admin"}
+                    {user.role === "admin" ? "Turunkan ke pelanggan" : "Jadikan Admin"}
                   </Button>
                   {user.status === "active" ? (
                     <Button
                       variant="danger"
                       pending={pendingAction === `suspend:${user.appUserId}`}
-                      pendingLabel="Suspending…"
+                      pendingLabel="Menangguhkan…"
                       onClick={() =>
                         void run(suspend({ userId: user.appUserId as Id<"appUsers"> }), `suspend:${user.appUserId}`)
                       }
                     >
-                      Suspend
+                      Tangguhkan
                     </Button>
                   ) : (
                     <Button
                       pending={pendingAction === `reactivate:${user.appUserId}`}
-                      pendingLabel="Reactivating…"
+                      pendingLabel="Mengaktifkan…"
                       onClick={() =>
                         void run(
                           reactivate({ userId: user.appUserId as Id<"appUsers"> }),
@@ -182,7 +189,7 @@ function UserManagement() {
                         )
                       }
                     >
-                      Reactivate
+                      Aktifkan kembali
                     </Button>
                   )}
                 </div>

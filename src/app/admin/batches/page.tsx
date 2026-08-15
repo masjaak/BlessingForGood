@@ -141,12 +141,12 @@ function AdminBatches() {
                 <div className="summary-line">
                   <span>Roster</span>
                   <strong>
-                    {batch.rosterLocked ? "Dikunci" : "Dapat diubah"} · {batch.assignmentCount} assignment ·{" "}
-                    {batch.customerCount} customer
+                    {batch.rosterLocked ? "Dikunci" : "Dapat diubah"} · {batch.assignmentCount} penugasan ·{" "}
+                    {batch.customerCount} pelanggan
                   </strong>
                 </div>
                 <div className="summary-line">
-                  <span>Jumlah ter-assignment</span>
+                  <span>Jumlah yang ditugaskan</span>
                   <strong>{batch.assignedQuantity}</strong>
                 </div>
                 {batch.catalogLinks.map((link) => (

@@ -15,7 +15,7 @@ export function ActivityCenter({
 }) {
   const notices = useQuery(api.notifications.listMine, { surface });
   const markRead = useMutation(api.notifications.markRead);
-  const label = surface === "notification" ? "Notifikasi" : "Inbox";
+  const label = surface === "notification" ? "Notifikasi" : "Kotak masuk";
   const content =
     notices === undefined ? (
       <LoadingRegion label={`Memuat ${label}`}>

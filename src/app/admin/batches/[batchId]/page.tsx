@@ -51,9 +51,9 @@ function AdminBatchDetail() {
   if (!currentBatch) {
     return (
       <EmptyState
-        title="Batch not found"
-        description="The admin session cannot access that batch."
-        action={<LinkButton href="/admin/batches">Back to batches</LinkButton>}
+        title="Batch tidak ditemukan"
+        description="Sesi Admin tidak dapat mengakses batch tersebut."
+        action={<LinkButton href="/admin/batches">Kembali ke batch</LinkButton>}
       />
     );
   }
@@ -82,7 +82,7 @@ function AdminBatchDetail() {
       await action();
       setMessage(success);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Operation failed");
+      setMessage(reason instanceof Error ? reason.message : "Operasi gagal.");
     } finally {
       setPendingAction(null);
     }
@@ -90,7 +90,7 @@ function AdminBatchDetail() {
 
   async function advance() {
     if (!nextStage) return;
-    await run(() => updateShipmentStage(batchId, nextStage), "Shipment stage updated.", "shipment");
+    await run(() => updateShipmentStage(batchId, nextStage), "Tahap pengiriman diperbarui.", "shipment");
   }
 
   async function chooseStage(value: string) {
@@ -98,19 +98,19 @@ function AdminBatchDetail() {
     const target = value as (typeof shipmentStages)[number];
     const targetIndex = shipmentStages.indexOf(target);
     const allowSkip = targetIndex > currentIndex + 1;
-    if (allowSkip && !window.confirm("Confirm skipping forward in the shipment timeline?")) return;
-    await run(() => updateShipmentStage(batchId, target, allowSkip), "Shipment stage updated.", "shipment");
+    if (allowSkip && !window.confirm("Lewati ke depan dalam linimasa pengiriman?")) return;
+    await run(() => updateShipmentStage(batchId, target, allowSkip), "Tahap pengiriman diperbarui.", "shipment");
   }
 
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Batch operations"
+        eyebrow="Operasi batch"
         title={currentBatch.name}
         description={currentBatch.referenceCode || currentBatch.batchId}
         actions={
           <LinkButton href="/admin/batches" variant="secondary">
-            Back to batches
+            Kembali ke batch
           </LinkButton>
         }
       />
@@ -125,35 +125,35 @@ function AdminBatchDetail() {
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Shipment stage</span>
+                <span className="card-kicker">Tahap pengiriman</span>
                 <h2>
                   {currentBatch.currentShipmentStage
                     ? shipmentStageLabels[currentBatch.currentShipmentStage]
-                    : "Not set"}
+                    : "Belum ditentukan"}
                 </h2>
               </div>
-              <StatusBadge>{currentBatch.isArchived ? "Archived" : "Active"}</StatusBadge>
+              <StatusBadge>{currentBatch.isArchived ? "Diarsipkan" : "Aktif"}</StatusBadge>
             </div>
             <div className="form-actions">
               <Button
                 type="button"
                 pending={pendingAction === "shipment"}
-                pendingLabel="Updating…"
+                pendingLabel="Memperbarui…"
                 onClick={() => void advance()}
                 disabled={currentBatch.isArchived || !nextStage}
               >
-                Advance to {nextStage ? shipmentStageLabels[nextStage] : "complete"}
+                Lanjut ke {nextStage ? shipmentStageLabels[nextStage] : "selesai"}
               </Button>
               <label className="field">
-                <span className="field-label">Explicit skip/correction</span>
+                <span className="field-label">Lewati/koreksi eksplisit</span>
                 <select
-                  aria-label="Shipment stage choice"
+                  aria-label="Pilihan tahap pengiriman"
                   className="select"
                   value=""
                   disabled={currentBatch.isArchived || pendingAction !== null}
                   onChange={(event) => void chooseStage(event.target.value)}
                 >
-                  <option value="">Choose a later stage…</option>
+                  <option value="">Pilih tahap berikutnya…</option>
                   {shipmentStages.slice(currentIndex + 2).map((stage) => (
                     <option value={stage} key={stage}>
                       {shipmentStageLabels[stage]}
@@ -165,25 +165,25 @@ function AdminBatchDetail() {
                 type="button"
                 variant="danger"
                 pending={pendingAction === "archive"}
-                pendingLabel="Archiving…"
-                onClick={() => void run(() => archiveBatch(batchId), "Batch archived.", "archive")}
+                pendingLabel="Mengarsipkan…"
+                onClick={() => void run(() => archiveBatch(batchId), "Batch diarsipkan.", "archive")}
                 disabled={currentBatch.isArchived}
               >
-                Archive batch
+                Arsipkan batch
               </Button>
             </div>
             <p className="subtle">
               {rosterLocked
-                ? "Roster locked at the first shipment stage; assignments and catalog links are read-only."
-                : "Roster is editable until the PO is closed."}
+                ? "Roster dikunci pada tahap pengiriman pertama; penugasan dan tautan katalog hanya dapat dibaca."
+                : "Roster dapat diubah sampai PO ditutup."}
             </p>
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Catalog links</span>
-                <h2>{currentBatch.catalogLinks.length} linked</h2>
+                <span className="card-kicker">Tautan katalog</span>
+                <h2>{currentBatch.catalogLinks.length} terhubung</h2>
               </div>
             </div>
             {currentBatch.catalogLinks.map((link) => (
@@ -193,29 +193,29 @@ function AdminBatchDetail() {
                   type="button"
                   variant="quiet"
                   pending={pendingAction === `unlink-${link.catalogId}`}
-                  pendingLabel="Unlinking…"
+                  pendingLabel="Melepas tautan…"
                   onClick={() =>
                     void run(
                       () => unlinkCatalog(batchId, link.catalogId),
-                      "Catalog unlinked.",
+                      "Tautan katalog dilepas.",
                       `unlink-${link.catalogId}`,
                     )
                   }
                   disabled={rosterLocked}
                 >
-                  Unlink
+                  Lepas tautan
                 </Button>
               </div>
             ))}
             {availableCatalogs.length ? (
               <div className="form-actions">
                 <select
-                  aria-label="Catalog to link"
+                  aria-label="Katalog yang akan ditautkan"
                   className="select"
                   value={catalogId}
                   onChange={(event) => setCatalogId(event.target.value)}
                 >
-                  <option value="">Select catalog…</option>
+                  <option value="">Pilih katalog…</option>
                   {availableCatalogs.map((catalog) => (
                     <option value={catalog.id} key={catalog.id}>
                       {catalog.name}
@@ -225,25 +225,25 @@ function AdminBatchDetail() {
                 <Button
                   type="button"
                   pending={pendingAction === "link"}
-                  pendingLabel="Linking…"
+                  pendingLabel="Menautkan…"
                   onClick={() => {
-                    if (catalogId) void run(() => linkCatalog(batchId, catalogId), "Catalog linked.", "link");
+                    if (catalogId) void run(() => linkCatalog(batchId, catalogId), "Katalog ditautkan.", "link");
                   }}
                   disabled={rosterLocked || pendingAction !== null}
                 >
-                  Link catalog
+                  Tautkan katalog
                 </Button>
               </div>
             ) : (
-              <p className="subtle">No unlinked catalog is available in this session.</p>
+              <p className="subtle">Tidak ada katalog yang belum ditautkan pada sesi ini.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Assigned order items</span>
-                <h2>{currentBatch.assignments.length} assignments</h2>
+                <span className="card-kicker">Item pesanan yang ditugaskan</span>
+                <h2>{currentBatch.assignments.length} penugasan</h2>
               </div>
             </div>
             {currentBatch.assignments.length ? (
@@ -266,11 +266,11 @@ function AdminBatchDetail() {
                         type="button"
                         variant="quiet"
                         pending={pendingAction === `unassign-${assignment.assignmentId}`}
-                        pendingLabel="Removing…"
+                        pendingLabel="Menghapus…"
                         onClick={() =>
                           void run(
                             () => unassignOrderItem(assignment.orderItemId, batchId),
-                            "Assignment removed.",
+                            "Penugasan dihapus.",
                             `unassign-${assignment.assignmentId}`,
                           )
                         }
@@ -279,7 +279,7 @@ function AdminBatchDetail() {
                       </Button>
                       {movableBatches(String(assignment.catalogId)).length ? (
                         <label className="field">
-                          <span className="field-label">Move to</span>
+                          <span className="field-label">Pindahkan ke</span>
                           <select
                             className="select"
                             defaultValue=""
@@ -293,7 +293,7 @@ function AdminBatchDetail() {
                               }
                             }}
                           >
-                            <option value="">Choose editable batch…</option>
+                            <option value="">Pilih batch yang dapat diubah…</option>
                             {movableBatches(String(assignment.catalogId)).map((candidate) => (
                               <option key={candidate.batchId} value={candidate.batchId}>
                                 {candidate.name}
@@ -307,15 +307,15 @@ function AdminBatchDetail() {
                 </div>
               ))
             ) : (
-              <p className="subtle">No order item is assigned to this batch yet.</p>
+              <p className="subtle">Belum ada item pesanan yang ditugaskan ke batch ini.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Customer roster</span>
-                <h2>{currentBatch.customerRoster.length} customers</h2>
+                <span className="card-kicker">Roster pelanggan</span>
+                <h2>{currentBatch.customerRoster.length} pelanggan</h2>
               </div>
             </div>
             {currentBatch.customerRoster.length ? (
@@ -333,27 +333,27 @@ function AdminBatchDetail() {
                 </div>
               ))
             ) : (
-              <p className="subtle">No customer has been assigned to this batch.</p>
+              <p className="subtle">Belum ada pelanggan yang ditugaskan ke batch ini.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Purchase summary</span>
-                <h2>{currentBatch.purchaseSummary.length} variants</h2>
+                <span className="card-kicker">Ringkasan pembelian</span>
+                <h2>{currentBatch.purchaseSummary.length} varian</h2>
               </div>
             </div>
             {currentBatch.purchaseSummary.length ? (
               <div className="table-wrap">
                 <table className="data-table">
-                  <caption className="sr-only">Batch purchase summary</caption>
+                  <caption className="sr-only">Ringkasan pembelian batch</caption>
                   <thead>
                     <tr>
-                      <th>Book / variant</th>
+                      <th>Buku / varian</th>
                       <th>ISBN</th>
-                      <th>Qty</th>
-                      <th>Customers</th>
+                      <th>Jumlah</th>
+                      <th>Pelanggan</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -373,15 +373,15 @@ function AdminBatchDetail() {
                 </table>
               </div>
             ) : (
-              <p className="subtle">No assigned quantity is ready for purchasing.</p>
+              <p className="subtle">Belum ada jumlah yang ditugaskan dan siap dibeli.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Unassigned work queue</span>
-                <h2>{currentBatchUnassigned.length} order items</h2>
+                <span className="card-kicker">Antrian kerja belum ditugaskan</span>
+                <h2>{currentBatchUnassigned.length} item pesanan</h2>
               </div>
             </div>
             {currentBatchUnassigned.length ? (
@@ -398,7 +398,7 @@ function AdminBatchDetail() {
                     type="button"
                     variant="secondary"
                     pending={pendingAction === `assign-${item.orderItemId}`}
-                    pendingLabel="Assigning…"
+                    pendingLabel="Menugaskan…"
                     disabled={rosterLocked || pendingAction !== null}
                     onClick={() =>
                       void run(
@@ -408,25 +408,25 @@ function AdminBatchDetail() {
                             batchId,
                             item.assignedToBatchQuantity + item.remainingQuantity,
                           ),
-                        "Remaining quantity assigned.",
+                        "Sisa jumlah ditugaskan.",
                         `assign-${item.orderItemId}`,
                       )
                     }
                   >
-                    Assign remaining
+                    Tugaskan sisa
                   </Button>
                 </div>
               ))
             ) : (
-              <p className="subtle">No submitted order quantity is waiting for this batch.</p>
+              <p className="subtle">Tidak ada jumlah pesanan yang menunggu batch ini.</p>
             )}
           </Card>
 
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Status history</span>
-                <h2>Append-only timeline</h2>
+                <span className="card-kicker">Riwayat status</span>
+                <h2>Linimasa append-only</h2>
               </div>
             </div>
             <ul className="timeline">
@@ -441,7 +441,7 @@ function AdminBatchDetail() {
                 </li>
               ))}
             </ul>
-            {!currentBatch.history.length ? <p className="subtle">No customer-visible stage has been set.</p> : null}
+            {!currentBatch.history.length ? <p className="subtle">Belum ada tahap yang terlihat pelanggan.</p> : null}
           </Card>
         </div>
       </div>

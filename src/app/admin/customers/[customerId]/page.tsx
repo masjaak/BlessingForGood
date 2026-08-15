@@ -41,20 +41,20 @@ function CustomerDetail() {
 
   if (profile === undefined || addresses === undefined || !adminInvoiceList || exceptions === undefined) {
     return (
-      <LoadingRegion label="Memuat detail customer">
+      <LoadingRegion label="Memuat detail pelanggan">
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
       </LoadingRegion>
     );
   }
-  const name = profile?.displayName || orders[0]?.customerName || "Customer BFG";
+  const name = profile?.displayName || orders[0]?.customerName || "Pelanggan BFG";
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Detail customer"
+        eyebrow="Detail pelanggan"
         title={name}
-        description="Profil, alamat, pesanan, invoice, dan masalah customer dari sumber operasional yang sama."
+        description="Profil, alamat, pesanan, invoice, dan masalah pelanggan dari sumber operasional yang sama."
         actions={
           <span className="form-actions">
             <LinkButton href={`/admin/invoices?customerId=${customerId}`} variant="secondary">
@@ -123,7 +123,7 @@ function CustomerDetail() {
                 );
               })
             ) : (
-              <EmptyState title="Belum ada pesanan" description="Pesanan customer akan tampil di sini." />
+              <EmptyState title="Belum ada pesanan" description="Pesanan pelanggan akan tampil di sini." />
             )}
           </Card>
           <Card>

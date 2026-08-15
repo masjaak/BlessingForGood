@@ -41,18 +41,18 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
       setCreatedInvoiceId(invoiceId);
       if (issue) {
         await issueInvoice(invoiceId);
-        setMessage("Invoice issued.");
+        setMessage("Invoice diterbitkan.");
       } else {
-        setMessage("Invoice draft saved.");
+        setMessage("Draf invoice tersimpan.");
       }
       setValue("");
     } catch (reason) {
       setMessage(
         invoiceId
-          ? "Draft saved, but the invoice is not issued yet. Open invoice operations to retry."
+          ? "Draf tersimpan, tetapi invoice belum diterbitkan. Buka operasi invoice untuk mencoba lagi."
           : reason instanceof Error
             ? reason.message
-            : "Invoice could not be created",
+            : "Invoice tidak dapat dibuat.",
       );
     } finally {
       setPendingAction(null);
@@ -68,19 +68,19 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
       }}
     >
       <label className="field">
-        <span className="field-label">Deposit rule</span>
+        <span className="field-label">Syarat deposit</span>
         <select
           className="select"
           value={mode}
           onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
         >
-          <option value="none">None</option>
-          <option value="fixed">Fixed IDR</option>
-          <option value="percentage">Percentage basis points</option>
+          <option value="none">Tidak ada</option>
+          <option value="fixed">Nominal tetap (IDR)</option>
+          <option value="percentage">Persentase (basis poin)</option>
         </select>
       </label>
       {mode !== "none" ? (
-        <Field label={mode === "fixed" ? "Amount (IDR)" : "Basis points (0–10000)"}>
+        <Field label={mode === "fixed" ? "Nominal (IDR)" : "Basis poin (0–10000)"}>
           <input
             className="input"
             type="number"
@@ -97,23 +97,23 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
         type="submit"
         pending={pendingAction === "draft"}
         disabled={pendingAction !== null}
-        pendingLabel="Saving…"
+        pendingLabel="Menyimpan…"
       >
-        Save draft
+        Simpan draf
       </Button>
       <Button
         type="button"
         variant="secondary"
         pending={pendingAction === "issue"}
         disabled={pendingAction !== null}
-        pendingLabel="Issuing…"
+        pendingLabel="Menerbitkan…"
         onClick={() => void saveInvoice(true)}
       >
-        Issue invoice
+        Terbitkan invoice
       </Button>
       {createdInvoiceId ? (
         <LinkButton href={`/admin/invoices/${createdInvoiceId}`} variant="quiet">
-          Open invoice operations
+          Buka operasi invoice
         </LinkButton>
       ) : null}
       {message ? (
@@ -135,9 +135,9 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
     setIsIssuing(true);
     try {
       await issueInvoice(invoiceId);
-      setMessage("Issued.");
+      setMessage("Diterbitkan.");
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Invoice could not be issued");
+      setMessage(reason instanceof Error ? reason.message : "Invoice tidak dapat diterbitkan.");
     } finally {
       setIsIssuing(false);
     }
@@ -149,10 +149,10 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
         type="button"
         variant="secondary"
         pending={isIssuing}
-        pendingLabel="Issuing…"
+        pendingLabel="Menerbitkan…"
         onClick={() => void issue()}
       >
-        Issue invoice
+        Terbitkan invoice
       </Button>
       {message ? (
         <span className="subtle" role="status">
@@ -187,17 +187,17 @@ function PersistentAdminInvoices() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Invoice and deposit operations"
-        title="Make the money state explicit."
-        description="Invoices use order snapshots. Deposits use an append-only ledger; allocation, release, and reversal remain separate operations."
+        eyebrow="Operasi invoice dan deposit"
+        title="Jaga status keuangan tetap jelas."
+        description="Invoice memakai snapshot pesanan. Deposit memakai ledger append-only; alokasi, pelepasan, dan pembalikan tetap terpisah."
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
           {ordersWithoutInvoices.length ? (
             <Card>
-              <span className="card-kicker">Orders needing invoices</span>
-              <h2>Save the next draft.</h2>
+              <span className="card-kicker">Pesanan yang membutuhkan invoice</span>
+              <h2>Simpan draf berikutnya.</h2>
               {ordersWithoutInvoices.map((order) => (
                 <div className="invoice-issue-row" key={order.id}>
                   <div>
@@ -223,19 +223,19 @@ function PersistentAdminInvoices() {
                     <StatusBadge>{invoiceStatusLabel(invoice.status)}</StatusBadge>
                   </div>
                   <div className="summary-line">
-                    <span>Order</span>
+                    <span>Pesanan</span>
                     <span>{invoice.orderId}</span>
                   </div>
                   <div className="summary-line">
-                    <span>Outstanding</span>
+                    <span>Sisa tagihan</span>
                     <strong>{formatIdr(invoice.outstandingAmount)}</strong>
                   </div>
                   <div className="summary-line">
-                    <span>Payment state</span>
+                    <span>Status pembayaran</span>
                     <strong>{invoicePaymentStatusLabel(invoice.paymentStatus)}</strong>
                   </div>
                   <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
-                    Open invoice operations
+                    Buka operasi invoice
                   </LinkButton>
                   {invoice.status === "draft" ? <IssueInvoiceButton invoiceId={invoice.invoiceId} /> : null}
                 </Card>
@@ -243,7 +243,7 @@ function PersistentAdminInvoices() {
             </div>
           ) : (
             <EmptyState
-              title="No invoices yet"
+              title="Belum ada invoice"
               description="Buat invoice dari pesanan yang sudah tercatat saat tagihan siap diterbitkan."
             />
           )}

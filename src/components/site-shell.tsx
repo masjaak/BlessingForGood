@@ -92,7 +92,7 @@ function CustomerNavIcon({ name }: { name: (typeof customerBottomLinks)[number][
 function CustomerBottomNav({ pathname }: { pathname: string }) {
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
   return (
-    <nav className="customer-bottom-nav" aria-label="Navigasi customer">
+    <nav className="customer-bottom-nav" aria-label="Navigasi pelanggan">
       {customerBottomLinks.map((link) => (
         <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
           <CustomerNavIcon name={link.icon} />
@@ -118,8 +118,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <span>Kelola toko buku dan komunitas</span>
         </div>
         <div className="admin-account">
-          <span className="admin-topbar-status">Workspace operasional</span>
-          <Link href="/">Lihat sisi customer</Link>
+          <span className="admin-topbar-status">Ruang kerja operasional</span>
+          <Link href="/">Lihat sisi pelanggan</Link>
           <WorkspaceActions workspace="admin" enabled={activityEnabled} />
           <UserButton appearance={bfgClerkAppearance} />
         </div>
@@ -146,7 +146,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <header className="site-header">
         <BrandLogo />
         {!signedIn ? (
-          <nav className="site-nav public-nav" aria-label="Primary navigation">
+          <nav className="site-nav public-nav" aria-label="Navigasi utama">
             {publicLinks.map((link) => (
               <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
                 {link.label}
@@ -154,7 +154,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         ) : (
-          <nav className="site-nav customer-nav" aria-label="Primary navigation">
+          <nav className="site-nav customer-nav" aria-label="Navigasi utama">
             {customerLinks.map((link) => (
               <Link key={link.href} href={link.href} aria-current={current(link.href) ? "page" : undefined}>
                 {link.label}
@@ -162,7 +162,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         )}
-        <div className="site-auth" aria-label="Account access">
+        <div className="site-auth" aria-label="Akses akun">
           {!signedIn ? (
             <Link className="site-auth-link" href="/sign-in">
               Masuk
@@ -182,7 +182,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <span>Blessing For Goods</span>
           <span>Buku pilihan untuk Blessfriends</span>
         </div>
-        <nav className="footer-nav" aria-label="Support navigation">
+        <nav className="footer-nav" aria-label="Navigasi bantuan">
           {supportLinks.map((link) => (
             <Link key={link.href} href={link.href}>
               {link.label}
