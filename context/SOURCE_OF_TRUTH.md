@@ -1,7 +1,7 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-20 (Asia/Jakarta)
-Applies to current `main` at `4eafc75`; the canonical Production deployment is
+Applies to current `main` at `faed491`; the canonical Production deployment is
 the latest Git-triggered `READY` deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
 Phase 08: **ACTIVE**. Client UAT fixes are deployed and publicly rechecked;
@@ -31,11 +31,11 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `4eafc75`                                                                |
+| Phase 08 implementation commit | `faed491`                                                                |
 | `origin/main`                  | contains the Phase 08 Bulk Import V1 implementation and context evidence |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | latest Git-triggered `READY` deployment for current `main`               |
+| Vercel Production deployment   | `dpl_AyExVLEmattZinNxK2iMWjTCM2UC` (`READY`)                              |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
 | Safe live evidence             | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308   |
 
@@ -45,12 +45,12 @@ Current exact regression baseline:
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Vitest      | `222 / 222`                                                                                                                                                                               |
 | Convex      | `107 / 107` (included in Vitest)                                                                                                                                                          |
-| Playwright  | `177 / 177` route smoke + `12 / 12` rendered client UAT checks                                                                                                                            |
+| Playwright  | `177 / 177` route smoke + `18 / 18` rendered client UAT checks                                                                                                                            |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local and canonical Production signed-out route/viewport checks pass; authenticated Admin cover/nav and customer Ready Stock cover were rechecked in Chrome                               |
+| Rendered QA | local and canonical Production signed-out route/viewport checks pass; Homepage rhythm is `18/18`; authenticated Admin spacing is blocked by the available Chrome session being signed out |
 | Real UAT    | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; Bulk Import pilot is deferred by user and final acceptance is not claimed |
 
 No access codes, credentials, tokens, or customer-identifying business data
@@ -465,11 +465,10 @@ Production deployment, applicable real flow verification, and context update.
 
 ## Current Test Baseline
 
-Vitest `194/194`; Convex `94/94`; Playwright `180/180`; TypeScript, ESLint,
-format, and build all PASS. The targeted responsive/media component tests are
-included in the higher Vitest baseline. Future reports must also state
-rendered QA and real UAT separately, with `BLOCKED_BY_DATA` and
-`BLOCKED_EXTERNAL` used explicitly.
+Vitest `222/222`; Convex `107/107`; Playwright `177/177` route smoke plus
+`18/18` rendered Homepage/shared-surface checks; TypeScript, ESLint, format,
+and build all PASS. Future reports must also state rendered QA and real UAT
+separately, with `BLOCKED_BY_DATA` and `BLOCKED_EXTERNAL` used explicitly.
 
 ## Current Production Infrastructure
 

@@ -16,15 +16,15 @@ Gallery implementation is not authorized while material ownership and
 external-preview decisions remain open.
 
 Starting commit for this closure pass: `a97740a`.
-Phase 08 client-UAT implementation commit: `4eafc75`.
-`origin/main`: `4eafc75`.
+Phase 08 spacing milestone commit: `faed491`.
+`origin/main`: `faed491`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
+Vercel Production: `dpl_AyExVLEmattZinNxK2iMWjTCM2UC` (`READY`).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current regression baseline: Vitest `222/222`, Convex `107/107` (included in
-Vitest), Playwright `177/177` route smoke plus `12/12` rendered client-UAT
+Vitest), Playwright `177/177` route smoke plus `18/18` rendered client-UAT
 checks, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
 `www` with HTTP 308. The public Production route matrix is green at customer
