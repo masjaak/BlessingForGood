@@ -53,8 +53,12 @@ client CSV and an authenticated Admin checkpoint.
 ## Current status
 
 Focused implementation, local gates, `origin/main`, Convex Production, Vercel
-Production, and public rendered rechecks are complete. Authenticated Admin and
-Customer Production UAT remains the external checkpoint. Phase 08 is not
-stabilized and Bulk Import V1 is not closed until the UAT matrix is all GREEN
-and the authenticated real-data pilot proves persistence, draft/inactive
-safety, audit, idempotent preview, and zero customer leakage.
+Production, public rendered rechecks, and authenticated Admin Chrome evidence
+are complete. The Admin evidence includes the additive backfill of three real
+legacy order references, with no internal IDs shown on the resulting list.
+Customer-facing Ready Stock cover containment was also verified live. A
+separate customer-owned order/catalog journey and the legitimate CSV pilot
+remain pending. Phase 08 is not stabilized and Bulk Import V1 is not closed
+until the UAT matrix is all GREEN and the authenticated real-data pilot proves
+persistence, draft/inactive safety, audit, idempotent preview, and zero
+customer leakage.

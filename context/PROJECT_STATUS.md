@@ -15,11 +15,11 @@ AMENDMENTS-2026-08-19.md`, `context/implementation/BFG-CLIENT-UAT-2026-08-19.md`
 and `context/implementation/BFG-CLIENT-UAT-FIX-MATRIX.md`.
 
 Starting commit for this closure pass: `a97740a`.
-Phase 08 client-UAT implementation commit: `65d864a`.
-`origin/main`: `65d864a`.
+Phase 08 client-UAT implementation commit: `ec424d0`.
+`origin/main`: `ec424d0`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_6JvLqPsSGtEQgnUBNUnnTH9M8pUJ` (`READY`).
+Vercel Production: `dpl_8nVQMU1mBzKg5v86aky89hUVcYxW` (`READY`).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current regression baseline: Vitest `222/222`, Convex `107/107` (included in
@@ -27,8 +27,11 @@ Vitest), Playwright `177/177` route smoke plus `12/12` rendered client-UAT
 checks, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
 `www` with HTTP 308. The public Production route matrix is green at customer
-375/390/430/768/1280/1440. Convex Production and Vercel Production are green;
-authenticated Admin/Customer UAT and the real CSV pilot remain pending.
+375/390/430/768/1280/1440. Convex Production and Vercel Production are green.
+Authenticated Chrome evidence covers Admin Content, Settings, Orders,
+Invoices, Batch, Books, `/admin/import`, and the customer-facing Ready Stock
+cover; the separate customer-owned data journey and real CSV pilot remain
+pending.
 
 The Phase 08 Vercel Production build hook pushed the client-UAT changes and
 new order/settings functions to `clean-eel-522`; build logs confirm schema
@@ -80,7 +83,7 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-Complete authenticated Admin/Customer Client UAT, then run the authorized
+Complete the remaining authenticated Admin/Customer Client UAT, then run the authorized
 Production Admin pilot with a legitimate 3–5-book CSV and verify persistence,
 customer non-leakage, and audit. Do not start another Phase 08 candidate.
 

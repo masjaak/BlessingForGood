@@ -1,8 +1,8 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-20 (Asia/Jakarta)
-Applies to current `main` at `65d864a`; the canonical Production deployment is
-Vercel `dpl_6JvLqPsSGtEQgnUBNUnnTH9M8pUJ` with Convex `clean-eel-522`.
+Applies to current `main` at `ec424d0`; the canonical Production deployment is
+Vercel `dpl_8nVQMU1mBzKg5v86aky89hUVcYxW` with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
 Phase 08: **ACTIVE**. Client UAT fixes are deployed and publicly rechecked;
 authenticated Client UAT and the legitimate Bulk Import V1 Production pilot
@@ -29,11 +29,11 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item | Canonical value |
 |---|---|
-| Phase 08 implementation commit | `65d864a` |
+| Phase 08 implementation commit | `ec424d0` |
 | `origin/main` | contains the Phase 08 Bulk Import V1 implementation and context evidence |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
-| Vercel Production deployment | `dpl_6JvLqPsSGtEQgnUBNUnnTH9M8pUJ` (`READY`) |
+| Vercel Production deployment | `dpl_8nVQMU1mBzKg5v86aky89hUVcYxW` (`READY`) |
 | Canonical Production URL | `https://www.blessingforgood.com` |
 | Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
 
@@ -48,8 +48,8 @@ Current exact regression baseline:
 | ESLint | PASS |
 | Format | PASS |
 | Build | PASS |
-| Rendered QA | local and canonical Production signed-out route/viewport checks pass; authenticated Admin/Customer rendering remains checkpoint-gated |
-| Real UAT | Client UAT implementation is Production-deployed; authenticated Admin/Customer recheck and real 3–5-book pilot remain pending; no business data was fabricated |
+| Rendered QA | local and canonical Production signed-out route/viewport checks pass; authenticated Admin cover/nav and customer Ready Stock cover were rechecked in Chrome |
+| Real UAT | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; the legitimate 3–5-book pilot remains pending |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -121,8 +121,8 @@ CLOSED + RECONCILED; Phase 08 authenticated UAT is still open.
 
 ## Phase 08 Status
 
-**ACTIVE — Client UAT fixes are deployed; authenticated recheck and Bulk Import
-V1 Production pilot pending.** The locked source, data, policy, state, visual,
+**ACTIVE — Client UAT fixes are deployed; authenticated Admin recheck is in
+progress and the Bulk Import V1 Production pilot is pending.** The locked source, data, policy, state, visual,
 and traceability contracts are linked from
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
 The implementation is a single `/admin/import` stateful flow, reuses the
