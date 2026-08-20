@@ -24,6 +24,24 @@ import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
+export function invoiceVoidBlockReason({
+  allocatedDepositAmount,
+  verifiedPaymentAmount,
+  paymentStatus,
+}: {
+  allocatedDepositAmount: number;
+  verifiedPaymentAmount: number;
+  paymentStatus: string;
+}): string | null {
+  if (allocatedDepositAmount > 0 || verifiedPaymentAmount > 0) {
+    return "Lepaskan atau balikkan pembayaran sebelum membatalkan invoice.";
+  }
+  if (paymentStatus === "payment_submitted") {
+    return "Selesaikan tinjauan konfirmasi pembayaran sebelum membatalkan invoice.";
+  }
+  return null;
+}
+
 function AdminInvoiceDetail() {
   const params = useParams<{ invoiceId: string }>();
   const invoiceId = String(params.invoiceId);
@@ -66,8 +84,7 @@ function AdminInvoiceDetail() {
       />
     );
   const account = adminAccount?.account;
-  const voidBlockedBySettlement =
-    currentAdminInvoice.allocatedDepositAmount > 0 || currentAdminInvoice.verifiedPaymentAmount > 0;
+  const voidBlockReason = invoiceVoidBlockReason(currentAdminInvoice);
 
   async function run(action: () => Promise<unknown>, success: string, actionId: string) {
     setMessage("");
@@ -169,14 +186,12 @@ function AdminInvoiceDetail() {
                   pending={pendingAction === "void"}
                   pendingLabel="Membatalkan…"
                   onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
-                  disabled={voidBlockedBySettlement || pendingAction !== null}
+                  disabled={voidBlockReason !== null || pendingAction !== null}
                 >
                   Batalkan invoice
                 </Button>
               ) : null}
-              {voidBlockedBySettlement ? (
-                <span className="subtle">Lepaskan atau balikkan pembayaran sebelum membatalkan invoice.</span>
-              ) : null}
+              {voidBlockReason ? <span className="subtle">{voidBlockReason}</span> : null}
             </div>
           </Card>
 
@@ -378,7 +393,7 @@ function CreditForm({
   );
 }
 
-function AllocationForm({
+export function AllocationForm({
   invoiceId,
   outstanding,
   available,
@@ -394,16 +409,18 @@ function AllocationForm({
   onDone: () => void;
 }) {
   const maxAllocatable = Math.min(outstanding, available);
-  const [amount, setAmount] = useState(String(maxAllocatable || ""));
+  const [amountOverride, setAmountOverride] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const amount = amountOverride ?? String(maxAllocatable || "");
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setIsSubmitting(true);
     try {
       await allocateDeposit(invoiceId, Number(amount));
-      setAmount(String(Math.min(outstanding, available) || ""));
+      setAmountOverride(null);
       onDone();
     } catch (reason) {
       setError(productErrorMessage(reason, "Deposit belum dapat dialokasikan."));
@@ -421,7 +438,7 @@ function AllocationForm({
           max={maxAllocatable}
           step="1"
           value={amount}
-          onChange={(event) => setAmount(event.target.value)}
+          onChange={(event) => setAmountOverride(event.target.value)}
           required
           disabled={disabled || maxAllocatable < 1}
         />

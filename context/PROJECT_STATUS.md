@@ -1,31 +1,30 @@
 # BFG Project Status
 
-## Current Anchored Summary — 2026-08-20
+## Current Anchored Summary — 2026-08-21
 
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_SPACING_AND_PRODUCT_MEDIA_SOURCE_IN_PROGRESS`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_CLIENT_UAT_STABILIZED`.
 
-Client UAT stabilization remains preserved evidence. Bulk Import V1 remains
-implemented and Production-deployed, but its legitimate Production pilot is
-**DEFERRED BY USER** and final Production acceptance is **NOT YET CLAIMED**.
-The current approved milestone is shared Admin action spacing and Customer
-Homepage section rhythm, followed by a Product Media source contract. Product
-Gallery implementation is not authorized while material ownership and
-external-preview decisions remain open.
+The original Client UAT findings 01–17 are reconciled in one matrix with
+`RED=0`, `YELLOW=0`, and `UNKNOWN=0`. Bulk Import V1 remains implemented and
+Production-deployed, but its legitimate Production pilot is **DEFERRED BY
+USER**. Product Media implementation remains **ON HOLD** while Gallery
+ownership and External Preview policy remain open.
 
-Starting commit for this closure pass: `a97740a`.
-Phase 08 spacing milestone commit: `faed491`.
-`origin/main`: `faed491`.
+Starting commit for this closure pass: `195bc4d`.
+Final closure commit: recorded in the closure report for the delivered `HEAD`.
+`origin/main`: delivered `HEAD` after this pass.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current regression baseline: Vitest `222/222`, Convex `107/107` (included in
-Vitest), Playwright `177/177` route smoke plus `18/18` rendered client-UAT
-checks, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
+Current regression baseline: Vitest `225/225`, Convex `108/108` (included in
+Vitest), Playwright `195/195` route smoke/rendered checks, including `18/18`
+rendered client-UAT checks, TypeScript PASS, ESLint PASS, Format PASS, Build
+PASS, and `git diff --check` PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
 `www` with HTTP 308. The public Production route matrix is green at customer
 375/390/430/768/1280/1440. Convex Production and Vercel Production are green.
@@ -33,10 +32,10 @@ Authenticated Chrome evidence covers Admin Content, Settings, Orders,
 Invoices, Batch, Books, `/admin/import`, and the customer-facing Ready Stock
 cover. The spacing recheck now covers `/admin/books` and a real invoice detail
 at 1440px: owner visible, divider-to-action spacing intentional, settled
-cancellation disabled, and no horizontal overflow. The browser shell did not
-honor temporary 1024/1280 resizing; those widths remain code/render-suite
-evidence rather than direct authenticated Chrome evidence. The separate
-customer-owned data journey and real CSV pilot remain pending.
+cancellation disabled, and no horizontal overflow. The fresh local production
+server browser pass covers all 195 public and protected-route smoke/rendered
+checks at the configured widths. No dummy Production business records were
+created.
 
 The Phase 08 Vercel Production build hook pushed the client-UAT changes and
 new order/settings functions to `clean-eel-522`; build logs confirm schema
@@ -88,9 +87,9 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-Complete the shared Admin action-spacing and Customer Homepage rhythm pass.
-Resolve the Product Media source contract’s two material decisions before
-implementing schema/UI. Do not touch Bulk Import or run its deferred pilot.
+Keep Phase 08 active for the user-authorized next milestone: resolve the two
+Product Media source decisions before any implementation. Do not touch Bulk
+Import or run its deferred pilot.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 

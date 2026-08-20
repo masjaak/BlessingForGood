@@ -1,14 +1,15 @@
 # BFG SOURCE OF TRUTH
 
-Reconciled: 2026-08-20 (Asia/Jakarta)
-Applies to current `main` at `faed491`; the canonical Production deployment is
+Reconciled: 2026-08-21 (Asia/Jakarta)
+Applies to the current `main` after the Phase 08 Client UAT closure pass; the canonical Production deployment is
 the latest Git-triggered `READY` deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **ACTIVE**. Client UAT fixes are deployed and publicly rechecked;
+Phase 08: **ACTIVE**. The original Client UAT matrix is stabilized with no
+red, yellow, or unknown findings;
 the Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED BY USER**. Final Bulk Import Production acceptance is not
-claimed. The current milestone is spacing stabilization plus Product Media
-source-contract preparation. The entry gate is defined in
+claimed. The current milestone is the stabilized Client UAT matrix; Product
+Media remains source-contract preparation only. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -31,8 +32,8 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `faed491`                                                                |
-| `origin/main`                  | contains the Phase 08 Bulk Import V1 implementation and context evidence |
+| Phase 08 implementation commit | current `main` after the Client UAT closure pass                         |
+| `origin/main`                  | current `main` after the Client UAT closure pass                         |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
 | Vercel Production deployment   | latest Git-triggered `READY` deployment for current `main`               |
@@ -43,15 +44,15 @@ Current exact regression baseline:
 
 | Gate        | Result                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vitest      | `222 / 222`                                                                                                                                                                               |
-| Convex      | `107 / 107` (included in Vitest)                                                                                                                                                          |
-| Playwright  | `177 / 177` route smoke + `18 / 18` rendered client UAT checks                                                                                                                            |
+| Vitest      | `225 / 225`                                                                                                                                                                               |
+| Convex      | `108 / 108` (included in Vitest)                                                                                                                                                          |
+| Playwright  | `195 / 195` route smoke/rendered checks, including `18 / 18` rendered client UAT checks                                                                                                  |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local and canonical Production signed-out route/viewport checks pass; Homepage rhythm is `18/18`; authenticated Admin Books/invoice spacing rechecked at 1440px |
-| Real UAT    | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; Bulk Import pilot is deferred by user and final acceptance is not claimed |
+| Rendered QA | local production-server route/viewport checks pass; Homepage rhythm and shared visual checks are green; authenticated Admin Books/invoice spacing baseline is preserved at 1440px |
+| Real UAT    | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; the Client UAT matrix is closed; Bulk Import pilot remains deferred by user |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -118,13 +119,14 @@ linked invariant/matrix documents.
 
 ## Current Phase
 
-`BFG_PHASE_08_CLIENT_UAT_STABILIZATION_IN_PROGRESS` — Phase 07.1 remains
-CLOSED + RECONCILED; Phase 08 authenticated UAT is still open.
+`BFG_PHASE_08_CLIENT_UAT_STABILIZED` — Phase 07.1 remains CLOSED +
+RECONCILED; Phase 08 remains active for the deferred Bulk Import pilot and the
+Product Media source decisions.
 
 ## Phase 08 Status
 
-**ACTIVE — Client UAT fixes are deployed; authenticated Admin recheck is in
-progress and the Bulk Import V1 Production pilot is pending.** The locked source, data, policy, state, visual,
+**ACTIVE — Client UAT is stabilized; the Bulk Import V1 Production pilot is
+pending by user decision.** The locked source, data, policy, state, visual,
 and traceability contracts are linked from
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
 The implementation is a single `/admin/import` stateful flow, reuses the
@@ -270,6 +272,17 @@ locked according to the state guards. Customer list/detail surfaces are
 derived from canonical orders, assignments, linked catalogs, and ownership;
 they do not duplicate an order system.
 
+Batch targeting is not a separate customer table. Admin targets an eligible
+active Blessfriend through submitted order items that belong to a linked
+Catalog. Assigning an item creates the customer/item roster projection. Before
+the first shipment stage, Admin may assign an item, change its quantity,
+remove it, or move it to another editable linked Batch. At `po_closed` and every
+later shipment stage, the server denies roster, assignment, and Catalog-link
+editing. Purchase Summary is derived from the roster assignments by book
+variant and customer count; it is never a second editable purchasing source.
+Batch ↔ Catalog is a relation: unlinking removes only the relation and never
+deletes the Batch or Catalog.
+
 ## Tracking
 
 Customer fulfillment uses:
@@ -328,6 +341,12 @@ Notifications are event-backed attention receipts with recipient ownership,
 event type, safe copy, destination, related entity, creation time, and `readAt`.
 They never replace canonical order/invoice/payment state and never contain
 credentials, access codes, or digests.
+
+`Aktivitas` is the single customer/Admin UI entry for the two surfaces below.
+`Notifikasi` means automatic system/state events such as invoice, payment, or
+Batch updates. `Kotak Masuk` means persistent operational messages from BFG.
+The UI presentation is unified for discoverability, but the backend tables,
+queries, ownership, and authorization remain separate.
 
 ## Inbox
 
@@ -566,26 +585,26 @@ contract and any external data/identity needed for acceptance.
 
 ### Test Baseline
 
-194 / 94 / 180 plus all static gates PASS. The public Production route matrix
-and exact 1280px Customer viewport are green; private authenticated UI was not
-rerun in this documentation-only pass.
+225 / 108 / 195 plus all static gates PASS. The public Production route matrix,
+configured 1024/1280/1440 Admin widths, and customer viewports are green. The
+authenticated business-data evidence remains safe baseline evidence; no dummy
+Production records were created.
 
 ### Next Milestone
 
-Complete the shared Admin action-spacing and Customer Homepage rhythm pass,
-then resolve the two material Product Media source decisions before any
-Product Gallery schema or UI implementation. Bulk Import V1 remains deployed
-but its Production pilot is deferred by user.
+Client UAT is stabilized. Resolve the two material Product Media source
+decisions before any Product Gallery schema or UI implementation. Bulk Import
+V1 remains deployed but its Production pilot is deferred by user.
 
-## Phase 08 Next Milestone — 2026-08-20
+## Phase 08 Next Milestone — 2026-08-21
 
 - Phase 07.1: **CLOSED + RECONCILED**.
 - Development System V2: **ACTIVE**.
-- Phase 08: **ACTIVE**.
+- Phase 08: **ACTIVE — CLIENT UAT STABILIZED**.
 - Bulk Import V1: **IMPLEMENTED + PRODUCTION DEPLOYED**.
 - Bulk Import Production pilot: **DEFERRED BY USER**.
 - Bulk Import final Production acceptance: **NOT YET CLAIMED**.
-- Current priority: `BFG-SPACING-SYSTEM.md` plus
-  `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md`.
+- Current priority: `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` after the
+  Client UAT closure matrix.
 - Product Media implementation entry gate: **BLOCKED by 2 material source
   decisions**; spacing work is independent and authorized.

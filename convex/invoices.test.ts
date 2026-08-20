@@ -110,4 +110,29 @@ describe("BFG invoice persistence", () => {
     await admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId });
     await expect(admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow("INVOICE_VOID");
   });
+
+  it("denies cancellation while a payment confirmation is unresolved", async () => {
+    const t = testConvex();
+    const { admin, customer, order } = await createOrder(t);
+    const invoice = await admin.mutation(api.invoices.create, {
+      orderId: order.orderId,
+      depositRequirementMode: "none",
+    });
+    const issued = await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
+    await customer.mutation(api.paymentConfirmations.submit, {
+      invoiceId: issued.invoiceId,
+      amount: 100000,
+      paymentMethod: "Bank transfer",
+      transferReference: "BFG-UAT-VOID-GUARD",
+      paidAt: Date.now() - 86_400_000,
+    });
+
+    await expect(admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow(
+      "INVOICE_INVALID_STATE",
+    );
+    expect(await admin.query(api.invoices.getForAdmin, { invoiceId: issued.invoiceId })).toMatchObject({
+      status: "issued",
+      paymentStatus: "payment_submitted",
+    });
+  });
 });

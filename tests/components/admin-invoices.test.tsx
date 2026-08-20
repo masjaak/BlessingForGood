@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PersistentRequirementForm } from "@/app/admin/invoices/page";
+import { AllocationForm, invoiceVoidBlockReason } from "@/app/admin/invoices/[invoiceId]/page";
 import { useOperations } from "@/domain/prototype/operations-context";
 
 vi.mock("@/domain/prototype/operations-context", () => ({
@@ -19,5 +20,59 @@ describe("Admin invoice issue entry", () => {
     await waitFor(() => expect(issueInvoice).toHaveBeenCalledWith("invoice-1"));
     expect(createInvoice).toHaveBeenCalledWith("order-1", "none", undefined);
     expect(screen.getByRole("status").textContent).toContain("Invoice diterbitkan.");
+  });
+
+  it("fills the remaining allocation when deposit availability arrives after the form mounts", async () => {
+    const allocateDeposit = vi.fn().mockResolvedValue({});
+    const { rerender } = render(
+      <AllocationForm
+        invoiceId="invoice-1"
+        outstanding={250000}
+        available={0}
+        allocateDeposit={allocateDeposit}
+        disabled={false}
+        onDone={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Alokasikan sisa deposit" })).toHaveProperty("disabled", true);
+    rerender(
+      <AllocationForm
+        invoiceId="invoice-1"
+        outstanding={250000}
+        available={100000}
+        allocateDeposit={allocateDeposit}
+        disabled={false}
+        onDone={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByRole("spinbutton")).toHaveProperty("value", "100000"));
+    fireEvent.click(screen.getByRole("button", { name: "Alokasikan sisa deposit" }));
+    await waitFor(() => expect(allocateDeposit).toHaveBeenCalledWith("invoice-1", 100000));
+  });
+
+  it("explains why an invoice cannot be voided before the mutation is attempted", () => {
+    expect(
+      invoiceVoidBlockReason({
+        allocatedDepositAmount: 0,
+        verifiedPaymentAmount: 0,
+        paymentStatus: "payment_submitted",
+      }),
+    ).toContain("Selesaikan tinjauan");
+    expect(
+      invoiceVoidBlockReason({
+        allocatedDepositAmount: 50000,
+        verifiedPaymentAmount: 0,
+        paymentStatus: "partially_paid",
+      }),
+    ).toContain("Lepaskan atau balikkan");
+    expect(
+      invoiceVoidBlockReason({
+        allocatedDepositAmount: 0,
+        verifiedPaymentAmount: 0,
+        paymentStatus: "unpaid",
+      }),
+    ).toBeNull();
   });
 });
