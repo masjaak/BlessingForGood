@@ -50,7 +50,7 @@ Current exact regression baseline:
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local and canonical Production signed-out route/viewport checks pass; Homepage rhythm is `18/18`; authenticated Admin spacing is blocked by the available Chrome session being signed out |
+| Rendered QA | local and canonical Production signed-out route/viewport checks pass; Homepage rhythm is `18/18`; authenticated Admin Books/invoice spacing rechecked at 1440px |
 | Real UAT    | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; Bulk Import pilot is deferred by user and final acceptance is not claimed |
 
 No access codes, credentials, tokens, or customer-identifying business data

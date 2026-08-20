@@ -31,8 +31,12 @@ URL returned HTTP 200 in safe read-only verification and the apex redirects to
 375/390/430/768/1280/1440. Convex Production and Vercel Production are green.
 Authenticated Chrome evidence covers Admin Content, Settings, Orders,
 Invoices, Batch, Books, `/admin/import`, and the customer-facing Ready Stock
-cover; the separate customer-owned data journey and real CSV pilot remain
-pending.
+cover. The spacing recheck now covers `/admin/books` and a real invoice detail
+at 1440px: owner visible, divider-to-action spacing intentional, settled
+cancellation disabled, and no horizontal overflow. The browser shell did not
+honor temporary 1024/1280 resizing; those widths remain code/render-suite
+evidence rather than direct authenticated Chrome evidence. The separate
+customer-owned data journey and real CSV pilot remain pending.
 
 The Phase 08 Vercel Production build hook pushed the client-UAT changes and
 new order/settings functions to `clean-eel-522`; build logs confirm schema
