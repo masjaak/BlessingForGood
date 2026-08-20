@@ -35,7 +35,7 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | `origin/main`                  | contains the Phase 08 Bulk Import V1 implementation and context evidence |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | `dpl_AyExVLEmattZinNxK2iMWjTCM2UC` (`READY`)                              |
+| Vercel Production deployment   | latest Git-triggered `READY` deployment for current `main`               |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
 | Safe live evidence             | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308   |
 

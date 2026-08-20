@@ -20,7 +20,7 @@ Phase 08 spacing milestone commit: `faed491`.
 `origin/main`: `faed491`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_AyExVLEmattZinNxK2iMWjTCM2UC` (`READY`).
+Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current regression baseline: Vitest `222/222`, Convex `107/107` (included in
