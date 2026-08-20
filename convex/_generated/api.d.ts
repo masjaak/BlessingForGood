@@ -40,6 +40,7 @@ import type * as lib_invoiceCalculations from "../lib/invoiceCalculations.js";
 import type * as lib_invoiceNumbers from "../lib/invoiceNumbers.js";
 import type * as lib_invoiceProjection from "../lib/invoiceProjection.js";
 import type * as lib_notifications from "../lib/notifications.js";
+import type * as lib_orderCodes from "../lib/orderCodes.js";
 import type * as lib_orderExceptionState from "../lib/orderExceptionState.js";
 import type * as lib_orderExceptionViews from "../lib/orderExceptionViews.js";
 import type * as lib_previewCapability from "../lib/previewCapability.js";
@@ -103,6 +104,7 @@ declare const fullApi: ApiFromModules<{
   "lib/invoiceNumbers": typeof lib_invoiceNumbers;
   "lib/invoiceProjection": typeof lib_invoiceProjection;
   "lib/notifications": typeof lib_notifications;
+  "lib/orderCodes": typeof lib_orderCodes;
   "lib/orderExceptionState": typeof lib_orderExceptionState;
   "lib/orderExceptionViews": typeof lib_orderExceptionViews;
   "lib/previewCapability": typeof lib_previewCapability;

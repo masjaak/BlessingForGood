@@ -86,4 +86,28 @@ describe("BFG invoice persistence", () => {
       "INVOICE_ACCESS_DENIED",
     );
   });
+
+  it("denies cancellation while settlement exists, then allows it after a ledger-safe release", async () => {
+    const t = testConvex();
+    const { admin, customer, order } = await createOrder(t);
+    const invoice = await admin.mutation(api.invoices.create, {
+      orderId: order.orderId,
+      depositRequirementMode: "none",
+    });
+    const issued = await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: issued.invoiceId, amount: 100000 });
+    const allocation = await admin.mutation(api.invoiceDepositAllocations.allocate, {
+      invoiceId: issued.invoiceId,
+      amount: 50000,
+    });
+    await expect(admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow(
+      "INVOICE_INVALID_STATE",
+    );
+    await expect(customer.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    await admin.mutation(api.invoiceDepositAllocations.release, { allocationId: allocation.allocationId });
+    await admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId });
+    await expect(admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow("INVOICE_VOID");
+  });
 });

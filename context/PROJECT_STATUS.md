@@ -1,11 +1,18 @@
 # BFG Project Status
 
-## Current Anchored Summary — 2026-08-16
+## Current Anchored Summary — 2026-08-20
 
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_CLIENT_UAT_STABILIZATION_IN_PROGRESS`.
+
+Client UAT stabilization is the current gate. Bulk Import V1 remains
+implemented and Production-deployed, but its final legitimate pilot cannot
+resume until the Client UAT matrix is all GREEN. The additive product
+amendments and implementation matrix are `context/product/PRD-CLIENT-
+AMENDMENTS-2026-08-19.md`, `context/implementation/BFG-CLIENT-UAT-2026-08-19.md`,
+and `context/implementation/BFG-CLIENT-UAT-FIX-MATRIX.md`.
 
 Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
 Phase 08 implementation commit: `ee46c5e`.

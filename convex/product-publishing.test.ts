@@ -87,4 +87,41 @@ describe("BFG product publishing projections", () => {
       }),
     ).toBeNull();
   });
+
+  it("counts distinct Book Master titles instead of catalog formats", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const bundle = await admin.mutation(api.secretCatalogs.createBundle, {
+      name: "Distinct Title Catalog",
+      publisherName: "Distinct Publisher",
+      bookTitle: "Same Book",
+      accessCode: "distinct-title-code",
+      variants: [
+        { format: "PB", isbn: "9780000011111", priceAmount: 125000 },
+        { format: "HB", isbn: "9780000011112", priceAmount: 150000 },
+      ],
+    });
+    await admin.mutation(api.secretCatalogs.open, { catalogId: bundle.catalogId });
+    expect((await admin.query(api.secretCatalogs.list, { paginationOpts: { numItems: 10, cursor: null } })).page[0]).toMatchObject({
+      titleCount: 1,
+      books: [{ title: "Same Book", variants: [{ format: "PB" }, { format: "HB" }] }],
+    });
+
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Second Distinct Publisher" });
+    const secondBookId = await admin.mutation(api.books.create, { publisherId, title: "Second Book" });
+    await admin.mutation(api.books.update, { bookId: secondBookId, publicationStatus: "published" });
+    const secondVariantId = await admin.mutation(api.bookVariants.create, {
+      bookId: secondBookId,
+      format: "PB",
+      isbn: "9780000011113",
+      priceAmount: 175000,
+    });
+    await admin.mutation(api.catalogItems.add, { catalogId: bundle.catalogId, bookVariantId: secondVariantId });
+
+    const adminCatalog = await admin.query(api.secretCatalogs.getForAdmin, { catalogId: bundle.catalogId });
+    if (!adminCatalog) throw new Error("catalog missing after title-count setup");
+    const view = adminCatalog.view;
+    expect(view.titleCount).toBe(2);
+    expect(view.books).toHaveLength(2);
+  });
 });

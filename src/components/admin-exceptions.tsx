@@ -19,6 +19,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { orderReference } from "@/domain/prototype/order-reference";
 
 type AdminException = Awaited<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>[number];
 type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForAdmin>>;
@@ -123,7 +124,8 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
                 <option value="">Pilih pesanan…</option>
                 {orders.map((order) => (
                   <option value={order.orderId} key={order.orderId}>
-                    {order.customerName} · {order.orderId}
+                    {order.customerName} ·{" "}
+                    {orderReference({ id: order.orderId, orderCode: order.orderCode || undefined })}
                   </option>
                 ))}
               </BFGSelect>
@@ -227,7 +229,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </span>
           <h2>{exception.item?.bookTitle || "Item pesanan"}</h2>
           <p className="subtle">
-            {exception.order?.customerName || "Pelanggan tidak dikenal"} · {exception.orderId}
+            {exception.order?.customerName || "Pelanggan tidak dikenal"} ·{" "}
+            {orderReference({ id: exception.orderId, orderCode: exception.order?.orderCode || undefined })}
           </p>
         </div>
         <StatusBadge tone={tone(exception.status)}>{statusLabels[exception.status]}</StatusBadge>

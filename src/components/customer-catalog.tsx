@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { orderReference } from "@/domain/prototype/order-reference";
 import { formatIdr } from "@/domain/prototype/logic";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
@@ -83,7 +84,7 @@ export function CustomerCatalog() {
 
   if (submittedOrder) {
     const whatsappText = encodeURIComponent(
-      `Halo, saya ${submittedOrder.customerName}. Pesanan ${submittedOrder.id} sudah tercatat.`,
+      `Halo, saya ${submittedOrder.customerName}. Pesanan ${orderReference(submittedOrder)} sudah tercatat.`,
     );
     return (
       <div className="content-stack">
@@ -94,7 +95,7 @@ export function CustomerCatalog() {
         />
         <Card className="success-banner success-card">
           <BrandMascot variant="success" className="success-mascot" />
-          <strong>{submittedOrder.id}</strong>
+          <strong>{orderReference(submittedOrder)}</strong>
           <p>
             Total {formatIdr(submittedOrder.total)} · {submittedOrder.items.length} pilihan buku
           </p>

@@ -17,6 +17,7 @@ type DataCtx = QueryCtx | MutationCtx;
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
+  const order = await ctx.db.get(invoice.orderId);
   const items = await ctx.db
     .query("invoiceItems")
     .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
@@ -26,7 +27,10 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     invoiceId: invoice._id,
     id: invoice._id,
     customerUserId: invoice.customerUserId,
+    customerName: order?.customerName || "Pelanggan BFG",
+    customerEmail: order?.customerEmail || null,
     orderId: invoice.orderId,
+    orderCode: order?.orderCode || null,
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,
     currency: invoice.currency,

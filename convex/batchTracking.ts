@@ -49,6 +49,7 @@ async function historyView(ctx: QueryCtx, batchId: Id<"batches">, includeNote = 
 type AdminAssignment = {
   assignmentId: Id<"orderItemBatchAssignments">;
   orderId: Id<"orders">;
+  orderCode: string | null;
   customerUserId: Id<"appUsers">;
   customerName: string;
   catalogId: Id<"secretCatalogs">;
@@ -473,6 +474,7 @@ export const getForAdmin = query({
         {
           assignmentId: assignment._id,
           orderId: order._id,
+          orderCode: order.orderCode || null,
           customerUserId: order.customerUserId,
           customerName: order.customerName,
           catalogId: order.catalogId,
@@ -586,6 +588,7 @@ export const listUnassignedForAdmin = query({
         if (assignedQuantity < fulfillableQuantity) {
           result.push({
             orderId: order._id,
+            orderCode: order.orderCode || null,
             customerUserId: order.customerUserId,
             customerName: order.customerName,
             catalogId: order.catalogId,

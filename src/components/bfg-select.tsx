@@ -160,13 +160,19 @@ export function BFGSelect({
       if (!rect) return;
       const margin = 12;
       const gap = 6;
-      const below = Math.max(80, window.innerHeight - rect.bottom - gap - margin);
-      const above = Math.max(80, rect.top - gap - margin);
-      const maxHeight = Math.min(320, Math.max(80, Math.max(below, above)));
-      const placeAbove = below < 160 && above > below;
+      const below = Math.max(0, window.innerHeight - rect.bottom - gap - margin);
+      const above = Math.max(0, rect.top - gap - margin);
+      const renderedHeight = menuRef.current?.getBoundingClientRect().height;
+      const desiredHeight = renderedHeight || Math.min(160, Math.max(80, Math.max(above, below)));
+      const placeAbove = below < desiredHeight && above > below;
+      const available = placeAbove ? above : below;
+      const maxHeight = Math.min(320, Math.max(80, available), window.innerHeight - margin * 2);
+      const height = renderedHeight || maxHeight;
       const width = Math.min(rect.width, window.innerWidth - margin * 2);
       setMenuPosition({
-        top: placeAbove ? Math.max(margin, rect.top - gap - maxHeight) : rect.bottom + gap,
+        top: placeAbove
+          ? Math.max(margin, rect.top - gap - height)
+          : Math.min(rect.bottom + gap, window.innerHeight - margin - height),
         left: Math.min(Math.max(margin, rect.left), window.innerWidth - margin - width),
         width,
         maxHeight,
@@ -174,6 +180,10 @@ export function BFGSelect({
     }
 
     positionMenu();
+    let followUpFrame = 0;
+    const frame = window.requestAnimationFrame(() => {
+      followUpFrame = window.requestAnimationFrame(positionMenu);
+    });
     window.addEventListener("resize", positionMenu);
     window.addEventListener("scroll", positionMenu, true);
     const handlePointerDown = (event: PointerEvent) => {
@@ -182,6 +192,8 @@ export function BFGSelect({
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(followUpFrame);
       window.removeEventListener("resize", positionMenu);
       window.removeEventListener("scroll", positionMenu, true);
       document.removeEventListener("pointerdown", handlePointerDown);

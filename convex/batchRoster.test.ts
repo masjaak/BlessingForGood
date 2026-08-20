@@ -40,6 +40,11 @@ describe("BFG batch roster and assisted orders", () => {
       assignedQuantity: 1,
     });
     await admin.mutation(api.batchTracking.assignOrderItem, {
+      orderItemId: firstOrder.items[0]._id,
+      batchId: batch.batchId,
+      assignedQuantity: 2,
+    });
+    await admin.mutation(api.batchTracking.assignOrderItem, {
       orderItemId: secondOrder.items[0]._id,
       batchId: batch.batchId,
       assignedQuantity: 1,
@@ -49,9 +54,9 @@ describe("BFG batch roster and assisted orders", () => {
     expect(detail).toMatchObject({
       rosterLocked: false,
       assignmentCount: 2,
-      assignedQuantity: 2,
+      assignedQuantity: 3,
       customerCount: 2,
-      purchaseSummary: [{ bookVariantId: catalog.variantIds[0], quantity: 2, customerCount: 2 }],
+      purchaseSummary: [{ bookVariantId: catalog.variantIds[0], quantity: 3, customerCount: 2 }],
     });
     expect(detail.customerRoster).toHaveLength(2);
     expect(await customer.query(api.batchTracking.listMine, {})).toEqual([
@@ -63,7 +68,7 @@ describe("BFG batch roster and assisted orders", () => {
       ]),
     );
     const unassigned = await admin.query(api.batchTracking.listUnassignedForAdmin, { batchId: batch.batchId });
-    expect(unassigned).toMatchObject([{ orderItemId: firstOrder.items[0]._id, remainingQuantity: 1 }]);
+    expect(unassigned).toMatchObject([]);
     const actions = await t.run(async (ctx) =>
       (await ctx.db.query("auditEvents").collect()).map((event) => event.action),
     );

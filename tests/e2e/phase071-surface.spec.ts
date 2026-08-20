@@ -1,6 +1,37 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("@customer Phase 07.1 shared surface", () => {
+  test("Phase 08 slider swap and dropdown anchor stay rendered correctly", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".story-card-opening")).toBeVisible();
+    await expect(page.locator(".story-card-logo")).toBeVisible();
+    const backgrounds = await page
+      .locator(".story-card-opening, .story-card-logo")
+      .evaluateAll((cards) => cards.map((card) => getComputedStyle(card).backgroundColor));
+    expect(backgrounds[0]).not.toBe(backgrounds[1]);
+
+    await page.goto("/ready-stock", { waitUntil: "domcontentloaded" });
+    await expect(page.getByLabel("Memuat Ready Stock")).toBeHidden({ timeout: 15_000 });
+    const trigger = page.locator(".bfg-select-trigger").last();
+    const triggerBox = await trigger.boundingBox();
+    await trigger.click();
+    const menu = page.locator(".bfg-select-menu");
+    const gap = 6;
+    expect(triggerBox).not.toBeNull();
+    await expect
+      .poll(
+        async () => {
+          const menuBox = await menu.boundingBox();
+          if (!menuBox || !triggerBox) return false;
+          const opensBelow = Math.abs(menuBox.y - (triggerBox.y + triggerBox.height + gap)) <= 2;
+          const opensAbove = Math.abs(menuBox.y + menuBox.height - (triggerBox.y - gap)) <= 2;
+          return Math.abs(menuBox.x - triggerBox.x) <= 1 && (opensBelow || opensAbove);
+        },
+        { timeout: 1_000 },
+      )
+      .toBe(true);
+  });
+
   test("custom select renders and opens without a native menu", async ({ page }, testInfo) => {
     await page.goto("/ready-stock", { waitUntil: "domcontentloaded" });
     await expect(page.getByLabel("Memuat Ready Stock")).toBeHidden({ timeout: 15_000 });

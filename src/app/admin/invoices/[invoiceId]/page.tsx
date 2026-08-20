@@ -19,6 +19,7 @@ import {
 } from "@/components/ui";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
@@ -65,6 +66,8 @@ function AdminInvoiceDetail() {
       />
     );
   const account = adminAccount?.account;
+  const voidBlockedBySettlement =
+    currentAdminInvoice.allocatedDepositAmount > 0 || currentAdminInvoice.verifiedPaymentAmount > 0;
 
   async function run(action: () => Promise<unknown>, success: string, actionId: string) {
     setMessage("");
@@ -73,7 +76,7 @@ function AdminInvoiceDetail() {
       await action();
       setMessage(success);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Operasi gagal.");
+      setMessage(productErrorMessage(reason, "Operasi invoice tidak dapat diselesaikan."));
     } finally {
       setPendingAction(null);
     }
@@ -84,7 +87,7 @@ function AdminInvoiceDetail() {
       <PageHeader
         eyebrow="Operasi invoice"
         title={currentAdminInvoice.invoiceNumber}
-        description={`Pesanan ${currentAdminInvoice.orderId}`}
+        description={`${currentAdminInvoice.customerName} · ${currentAdminInvoice.orderCode || `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}`}
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
             Kembali ke invoice
@@ -106,6 +109,17 @@ function AdminInvoiceDetail() {
                 <h2>{formatIdr(currentAdminInvoice.totalAmount)}</h2>
               </div>
               <StatusBadge>{invoiceStatusLabel(currentAdminInvoice.status)}</StatusBadge>
+            </div>
+            <div className="summary-line">
+              <span>Pelanggan</span>
+              <strong>{currentAdminInvoice.customerName}</strong>
+            </div>
+            <div className="summary-line">
+              <span>Referensi pesanan</span>
+              <span>
+                {currentAdminInvoice.orderCode ||
+                  `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}
+              </span>
             </div>
             {currentAdminInvoice.items.map((item) => (
               <div className="summary-line" key={item.invoiceItemId}>
@@ -155,9 +169,13 @@ function AdminInvoiceDetail() {
                   pending={pendingAction === "void"}
                   pendingLabel="Membatalkan…"
                   onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
+                  disabled={voidBlockedBySettlement || pendingAction !== null}
                 >
                   Batalkan invoice
                 </Button>
+              ) : null}
+              {voidBlockedBySettlement ? (
+                <span className="subtle">Lepaskan atau balikkan pembayaran sebelum membatalkan invoice.</span>
               ) : null}
             </div>
           </Card>
@@ -185,6 +203,7 @@ function AdminInvoiceDetail() {
             <AllocationForm
               invoiceId={invoiceId}
               outstanding={currentAdminInvoice.outstandingAmount}
+              available={account?.availableAmount || 0}
               allocateDeposit={allocateDeposit}
               disabled={currentAdminInvoice.status === "void"}
               onDone={() => setMessage("Deposit dialokasikan.")}
@@ -326,7 +345,7 @@ function CreditForm({
       setNote("");
       onDone();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Credit failed");
+      setError(productErrorMessage(reason, "Kredit belum dapat dicatat."));
     } finally {
       setIsSubmitting(false);
     }
@@ -362,17 +381,20 @@ function CreditForm({
 function AllocationForm({
   invoiceId,
   outstanding,
+  available,
   allocateDeposit,
   disabled,
   onDone,
 }: {
   invoiceId: string;
   outstanding: number;
+  available: number;
   allocateDeposit: (invoiceId: string, amount: number) => Promise<unknown>;
   disabled: boolean;
   onDone: () => void;
 }) {
-  const [amount, setAmount] = useState("");
+  const maxAllocatable = Math.min(outstanding, available);
+  const [amount, setAmount] = useState(String(maxAllocatable || ""));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -381,10 +403,10 @@ function AllocationForm({
     setIsSubmitting(true);
     try {
       await allocateDeposit(invoiceId, Number(amount));
-      setAmount("");
+      setAmount(String(Math.min(outstanding, available) || ""));
       onDone();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Allocation failed");
+      setError(productErrorMessage(reason, "Deposit belum dapat dialokasikan."));
     } finally {
       setIsSubmitting(false);
     }
@@ -396,22 +418,23 @@ function AllocationForm({
           className="input"
           type="number"
           min="1"
-          max={outstanding}
+          max={maxAllocatable}
           step="1"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
           required
-          disabled={disabled || outstanding < 1}
+          disabled={disabled || maxAllocatable < 1}
         />
       </Field>
       <Button
         type="submit"
         pending={isSubmitting}
         pendingLabel="Mengalokasikan…"
-        disabled={disabled || outstanding < 1}
+        disabled={disabled || maxAllocatable < 1}
       >
-        Alokasikan deposit
+        Alokasikan sisa deposit
       </Button>
+      {!disabled && maxAllocatable < 1 ? <span className="subtle">Saldo deposit tersedia belum mencukupi.</span> : null}
       {error ? (
         <span className="error-text" role="alert">
           {error}

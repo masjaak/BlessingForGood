@@ -183,6 +183,11 @@ export default defineSchema({
     storeName: v.string(),
     whatsappNumber: v.string(),
     paymentInstructions: v.string(),
+    supportEmail: v.optional(v.string()),
+    socialContact: v.optional(v.string()),
+    bankName: v.optional(v.string()),
+    bankAccountNumber: v.optional(v.string()),
+    bankAccountName: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     updatedByUserId: v.id("appUsers"),
@@ -347,6 +352,7 @@ export default defineSchema({
     catalogId: v.optional(v.id("secretCatalogs")),
     source: v.optional(orderSourceValidator),
     assistedSubmissionKey: v.optional(v.string()),
+    orderCode: v.optional(v.string()),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     status: orderStatus,
@@ -368,6 +374,12 @@ export default defineSchema({
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_assisted_submission_key", ["assistedSubmissionKey"])
     .index("by_created_at", ["createdAt"]),
+
+  orderReferenceCounters: defineTable({
+    key: v.literal("primary"),
+    nextNumber: v.number(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 
   orderItems: defineTable({
     orderId: v.id("orders"),

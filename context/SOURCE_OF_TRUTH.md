@@ -487,6 +487,36 @@ Bulk Import mapping, rollback, duplicate, file, publication, stock, catalog,
 and audit policies are resolved in the prepared Phase 08 Source Contract. The
 remaining items are future contracts, not current implementation blockers.
 
+## Phase 08 Client UAT Canonical Amendments — 2026-08-19
+
+The original PRD remains historical contract evidence. The additive product
+decisions for the current Client UAT are recorded in
+`context/product/PRD-CLIENT-AMENDMENTS-2026-08-19.md`.
+
+- **Content** controls approved public informational copy for Community, How To
+  Order, and Help. It is not a generic CMS. **Settings** controls bounded
+  operational store/contact/manual-payment configuration only.
+- **Batch targeting** is assignment-based: Admin selects customers through
+  eligible submitted order items. The roster is the resulting customer/item
+  projection, editable before the first shipment stage and locked afterward.
+- **Batch item assignment** uses the canonical order-item assignment mutation;
+  add, quantity change, remove, and move are allowed only while editable.
+- **Purchase Summary** is derived from roster assignments by book variant and
+  customer count. It is not independently editable.
+- **Order references** shown to people are stable BFG display codes. The
+  Convex order ID remains the internal ownership/database identity.
+- **Activity** is one UI entry containing two semantic streams: Notifikasi is
+  system-event information; Kotak Masuk is persistent operational messaging.
+  Backend tables and authorization semantics remain separate.
+- **Admin responsive navigation** uses the same canonical navigation groups on
+  desktop and tablet/mobile; Pengguna, Log aktivitas, and Pengaturan cannot be
+  lost to horizontal clipping.
+- **Settings V1** preserves store name, WhatsApp, and payment instructions and
+  may add only consumed support/contact/manual-bank fields. Owner permission,
+  validation, and safe fallbacks remain required.
+- **Homepage slide decision:** swap the approved green background assignment
+  between slide 1 and slide 3 without changing copy, order, layout, or motion.
+
 ## Anchored Summary
 
 ### Source of Truth

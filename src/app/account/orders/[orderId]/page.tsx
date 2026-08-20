@@ -19,6 +19,7 @@ import { formatIdr, orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
+import { orderReference } from "@/domain/prototype/order-reference";
 
 function Timeline({
   history,
@@ -76,7 +77,7 @@ function CustomerOrderDetail() {
       <PageHeader
         eyebrow="Pelacakan pesanan"
         title={order.items[0]?.bookTitle || "Detail pesanan"}
-        description={`${order.customerName} · ${order.id}`}
+        description={`${order.customerName} · ${orderReference(order)}`}
         actions={
           <LinkButton href="/account/orders" variant="secondary">
             Kembali ke pesanan

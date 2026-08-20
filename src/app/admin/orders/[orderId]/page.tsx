@@ -24,6 +24,7 @@ import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { orderReference } from "@/domain/prototype/order-reference";
 
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
@@ -96,7 +97,7 @@ function AdminOrderDetail() {
       <PageHeader
         eyebrow="Operasi pesanan"
         title={order.customerName}
-        description={order.id}
+        description={orderReference(order)}
         actions={
           <LinkButton href="/admin/orders" variant="secondary">
             Kembali ke pesanan

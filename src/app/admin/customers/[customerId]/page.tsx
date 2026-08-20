@@ -17,6 +17,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabels } from "@/domain/prototype/logic";
@@ -102,7 +103,7 @@ function CustomerDetail() {
                   <div className="summary-line" key={order.id}>
                     <span>
                       <LinkButton href={`/admin/orders/${order.id}`} variant="quiet">
-                        {order.id}
+                        {orderReference(order)}
                       </LinkButton>
                       <br />
                       <small>{orderStatusLabels[order.status]}</small>

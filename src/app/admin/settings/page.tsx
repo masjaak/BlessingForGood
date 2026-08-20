@@ -28,10 +28,16 @@ function SettingsEditor() {
             setPending(true);
             setMessage("");
             try {
+              const optionalValue = (name: string) => String(data.get(name) || "").trim() || undefined;
               await update({
                 storeName: String(data.get("storeName")),
                 whatsappNumber: String(data.get("whatsappNumber")),
                 paymentInstructions: String(data.get("paymentInstructions")),
+                supportEmail: optionalValue("supportEmail"),
+                socialContact: optionalValue("socialContact"),
+                bankName: optionalValue("bankName"),
+                bankAccountNumber: optionalValue("bankAccountNumber"),
+                bankAccountName: optionalValue("bankAccountName"),
               });
               setMessage("Pengaturan tersimpan dan dicatat di log aktivitas.");
             } catch {
@@ -48,6 +54,37 @@ function SettingsEditor() {
           <Field label="Nomor WhatsApp manual">
             <input className="input" name="whatsappNumber" defaultValue={settings?.whatsappNumber || ""} required />
           </Field>
+          <div className="section-heading">
+            <div>
+              <span className="card-kicker">Kontak operasional (opsional)</span>
+              <p className="subtle">Tampil bersama informasi bantuan pembayaran pelanggan jika diisi.</p>
+            </div>
+          </div>
+          <div className="form-grid">
+            <Field label="Email bantuan">
+              <input className="input" name="supportEmail" type="email" defaultValue={settings?.supportEmail || ""} />
+            </Field>
+            <Field label="Instagram / kontak sosial">
+              <input className="input" name="socialContact" defaultValue={settings?.socialContact || ""} />
+            </Field>
+          </div>
+          <div className="section-heading">
+            <div>
+              <span className="card-kicker">Pembayaran manual (opsional)</span>
+              <p className="subtle">Detail ini membantu pelanggan membayar secara manual; bukan gateway pembayaran.</p>
+            </div>
+          </div>
+          <div className="form-grid">
+            <Field label="Nama bank">
+              <input className="input" name="bankName" defaultValue={settings?.bankName || ""} />
+            </Field>
+            <Field label="Nomor rekening">
+              <input className="input" name="bankAccountNumber" defaultValue={settings?.bankAccountNumber || ""} />
+            </Field>
+            <Field label="Nama pemilik rekening">
+              <input className="input" name="bankAccountName" defaultValue={settings?.bankAccountName || ""} />
+            </Field>
+          </div>
           <Field label="Instruksi pembayaran">
             <textarea
               className="textarea"

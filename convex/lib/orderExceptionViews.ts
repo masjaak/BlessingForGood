@@ -63,8 +63,9 @@ export async function orderExceptionView(ctx: DataCtx, exception: Doc<"orderExce
     rejectedAt: exception.rejectedAt ? new Date(exception.rejectedAt).toISOString() : null,
     order: order
       ? {
-          orderId: order._id,
-          customerName: order.customerName,
+        orderId: order._id,
+        orderCode: order.orderCode || null,
+        customerName: order.customerName,
           customerEmail: order.customerEmail || null,
           status: order.status,
           totalAmount: order.totalAmount,

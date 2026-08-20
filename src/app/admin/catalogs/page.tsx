@@ -135,7 +135,7 @@ function CatalogList() {
             <div className="split-heading">
               <div>
                 <span className="card-kicker">
-                  {catalog.books.length} {catalog.books.length === 1 ? "judul" : "judul"}
+                  {catalog.titleCount ?? catalog.books.length} judul
                   {firstBook?.publisher ? ` · ${firstBook.publisher}` : ""}
                 </span>
                 <h2>{catalog.name}</h2>

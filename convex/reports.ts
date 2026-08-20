@@ -45,6 +45,7 @@ export const get = query({
       },
       orders: orders.map((order) => ({
         orderId: order._id,
+        orderCode: order.orderCode || null,
         customerName: order.customerName,
         status: order.status,
         totalAmount: order.totalAmount,

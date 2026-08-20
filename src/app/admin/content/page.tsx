@@ -36,6 +36,17 @@ function ContentEditor() {
       title="Konten terstruktur"
       description="Edit field yang disetujui tanpa mengubah kode. Draf tidak tampil ke pelanggan sampai dipublikasikan."
     >
+      <Card className="notice-card">
+        <span className="card-kicker">Untuk apa Konten?</span>
+        <h2>Atur pesan publik BFG di satu tempat.</h2>
+        <p>
+          Konten mengatur label, judul, dan isi yang tampil di halaman Komunitas, Cara memesan, dan Bantuan setelah
+          diterbitkan.
+        </p>
+        <p className="subtle">
+          Ini bukan CMS, blog, pengaturan toko, atau otomasi pemasaran. Pengaturan operasional ada di Pengaturan.
+        </p>
+      </Card>
       <Card>
         <div className="split-heading">
           <Field label="Ruang konten">

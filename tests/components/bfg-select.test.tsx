@@ -59,4 +59,28 @@ describe("BFGSelect", () => {
     expect(screen.getByRole("option", { name: "Draf" }).className).toContain("is-active");
     expect(screen.getByRole("option", { name: "Terbit" }).getAttribute("aria-disabled")).toBe("true");
   });
+
+  it("keeps the menu height tied to the side where it is rendered", () => {
+    const originalHeight = Object.getOwnPropertyDescriptor(window, "innerHeight");
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 600 });
+    render(
+      <BFGSelect defaultValue="draft">
+        <option value="draft">Draf</option>
+        <option value="published">Terbit</option>
+        <option value="archived">Diarsipkan</option>
+      </BFGSelect>,
+    );
+    const trigger = screen.getByRole("combobox");
+    Object.defineProperty(trigger, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({ top: 300, bottom: 340, left: 100, width: 200 }),
+    });
+
+    fireEvent.click(trigger);
+
+    const menu = screen.getByRole("listbox");
+    expect(menu.getAttribute("style")).toContain("max-height: 242px");
+    expect(menu.getAttribute("style")).toContain("top: 346px");
+    if (originalHeight) Object.defineProperty(window, "innerHeight", originalHeight);
+  });
 });

@@ -16,7 +16,8 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { shipmentStageLabels, shipmentStages } from "@/domain/prototype/operations";
-import { useOperations } from "@/domain/prototype/operations-context";
+import { useOperations, type BatchDetail } from "@/domain/prototype/operations-context";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
@@ -65,6 +66,14 @@ function AdminBatchDetail() {
   const linked = new Set(currentBatch.catalogLinks.map((link) => String(link.catalogId)));
   const availableCatalogs = state.catalogs.filter((catalog) => !linked.has(catalog.id));
   const rosterLocked = currentBatch.rosterLocked;
+  const customerTargets = currentBatchUnassigned.reduce<
+    Array<{ customerUserId: string; customerName: string; items: typeof currentBatchUnassigned }>
+  >((groups, item) => {
+    const existing = groups.find((group) => group.customerUserId === String(item.customerUserId));
+    if (existing) existing.items.push(item);
+    else groups.push({ customerUserId: String(item.customerUserId), customerName: item.customerName, items: [item] });
+    return groups;
+  }, []);
 
   function movableBatches(catalogId: string) {
     return (batchList?.page || []).filter(
@@ -187,6 +196,10 @@ function AdminBatchDetail() {
                 <h2>{currentBatch.catalogLinks.length} terhubung</h2>
               </div>
             </div>
+            <p className="subtle">
+              Satu Batch dapat terhubung ke beberapa Catalog. Melepas tautan hanya menghapus relasi; Catalog dan Batch
+              tetap ada. Relasi yang memiliki assignment aktif tetap dilindungi server.
+            </p>
             {currentBatch.catalogLinks.map((link) => (
               <div className="summary-line" key={link.catalogId}>
                 <span>{link.catalogName}</span>
@@ -256,11 +269,20 @@ function AdminBatchDetail() {
                       {assignment.format} · {assignment.customerName}
                       <br />
                       <span className="subtle">
-                        {assignment.isbn} · {assignment.catalogName} · {assignment.orderId}
+                        {assignment.isbn} · {assignment.catalogName} ·{" "}
+                        {assignment.orderCode || `BFG-ORD-LEGACY-${String(assignment.orderId).slice(-8).toUpperCase()}`}
                       </span>
                     </span>
                     <span className="subtle">IDR {assignment.unitPriceAmount.toLocaleString("id-ID")}</span>
                   </div>
+                  {!rosterLocked ? (
+                    <AssignmentQuantityForm
+                      assignment={assignment}
+                      batchId={batchId}
+                      assignOrderItem={assignOrderItem}
+                      onDone={() => setMessage("Jumlah penugasan diperbarui.")}
+                    />
+                  ) : null}
                   {!rosterLocked ? (
                     <div className="form-actions">
                       <Button
@@ -319,6 +341,10 @@ function AdminBatchDetail() {
                 <h2>{currentBatch.customerRoster.length} pelanggan</h2>
               </div>
             </div>
+            <p className="subtle">
+              Pelanggan masuk ke roster saat item pesanan mereka ditugaskan. Targetkan pelanggan dari item pesanan yang
+              tersedia di bawah ini; tidak ada pelanggan lain yang otomatis ikut.
+            </p>
             {currentBatch.customerRoster.length ? (
               currentBatch.customerRoster.map((customer) => (
                 <div className="content-stack" key={customer.customerUserId}>
@@ -345,6 +371,9 @@ function AdminBatchDetail() {
                 <h2>{currentBatch.purchaseSummary.length} varian</h2>
               </div>
             </div>
+            <p className="subtle">
+              Dihitung otomatis dari total assignment per varian buku; ringkasan ini tidak diedit terpisah.
+            </p>
             {currentBatch.purchaseSummary.length ? (
               <div className="table-wrap">
                 <table className="data-table">
@@ -385,6 +414,44 @@ function AdminBatchDetail() {
                 <h2>{currentBatchUnassigned.length} item pesanan</h2>
               </div>
             </div>
+            {customerTargets.length ? (
+              <div className="content-stack">
+                <span className="card-kicker">Target pelanggan</span>
+                {customerTargets.map((target) => (
+                  <div className="summary-line" key={target.customerUserId}>
+                    <span>
+                      <strong>{target.customerName}</strong>
+                      <br />
+                      <span className="subtle">{target.items.length} item pesanan masih tersedia</span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      pending={pendingAction === `target-${target.customerUserId}`}
+                      pendingLabel="Menargetkan…"
+                      disabled={rosterLocked || pendingAction !== null}
+                      onClick={() =>
+                        void run(
+                          async () => {
+                            for (const item of target.items) {
+                              await assignOrderItem(
+                                item.orderItemId,
+                                batchId,
+                                item.assignedToBatchQuantity + item.remainingQuantity,
+                              );
+                            }
+                          },
+                          `${target.customerName} ditambahkan ke roster.`,
+                          `target-${target.customerUserId}`,
+                        )
+                      }
+                    >
+                      Targetkan pelanggan
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {currentBatchUnassigned.length ? (
               currentBatchUnassigned.map((item) => (
                 <div className="summary-line" key={item.orderItemId}>
@@ -392,7 +459,8 @@ function AdminBatchDetail() {
                     {item.remainingQuantity} remaining × {item.bookTitle} · {item.format} · {item.customerName}
                     <br />
                     <span className="subtle">
-                      {item.isbn} · {item.catalogName} · {item.orderId}
+                      {item.isbn} · {item.catalogName} ·{" "}
+                      {item.orderCode || `BFG-ORD-LEGACY-${String(item.orderId).slice(-8).toUpperCase()}`}
                     </span>
                   </span>
                   <Button
@@ -447,6 +515,61 @@ function AdminBatchDetail() {
         </div>
       </div>
     </div>
+  );
+}
+
+function AssignmentQuantityForm({
+  assignment,
+  batchId,
+  assignOrderItem,
+  onDone,
+}: {
+  assignment: BatchDetail["assignments"][number];
+  batchId: string;
+  assignOrderItem: (orderItemId: string, batchId: string, assignedQuantity: number) => Promise<unknown>;
+  onDone: () => void;
+}) {
+  const [quantity, setQuantity] = useState(String(assignment.assignedQuantity));
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setPending(true);
+    try {
+      await assignOrderItem(assignment.orderItemId, batchId, Number(quantity));
+      onDone();
+    } catch (reason) {
+      setError(productErrorMessage(reason, "Jumlah belum dapat diperbarui."));
+    } finally {
+      setPending(false);
+    }
+  }
+  return (
+    <form className="form-actions" onSubmit={submit}>
+      <label className="field">
+        <span className="field-label">Jumlah assignment</span>
+        <input
+          aria-label={`Jumlah ${assignment.bookTitle} untuk ${assignment.customerName}`}
+          className="input"
+          type="number"
+          min="1"
+          max={assignment.orderedQuantity}
+          step="1"
+          value={quantity}
+          onChange={(event) => setQuantity(event.target.value)}
+          required
+        />
+      </label>
+      <Button type="submit" variant="quiet" pending={pending} pendingLabel="Menyimpan…">
+        Simpan jumlah
+      </Button>
+      {error ? (
+        <span className="error-text" role="alert">
+          {error}
+        </span>
+      ) : null}
+    </form>
   );
 }
 

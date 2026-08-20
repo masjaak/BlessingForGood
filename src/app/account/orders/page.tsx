@@ -17,6 +17,7 @@ import { isCatalogOpen, orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
+import { orderReference } from "@/domain/prototype/order-reference";
 
 function EditOrderForm({ orderId }: { orderId: string }) {
   const { state, editOrder } = useProduct();
@@ -46,7 +47,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
           quantity: quantities[item.variantId] || 0,
         })),
       });
-      setMessage(`Pesanan ${updated.id} diperbarui.`);
+      setMessage(`Pesanan ${orderReference(updated)} diperbarui.`);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Preorder belum dapat diperbarui");
     } finally {
@@ -122,7 +123,7 @@ function CustomerOrders() {
             <Card key={order.id}>
               <div className="split-heading">
                 <div>
-                  <span className="card-kicker">{order.id}</span>
+                  <span className="card-kicker">{orderReference(order)}</span>
                   <h2>{order.items[0]?.bookTitle || "Pesanan BFG"}</h2>
                 </div>
                 <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>

@@ -9,6 +9,7 @@ import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonTable, StatusBadge } from "@/components/ui";
 import { toExcelCsv } from "@/lib/excel-export";
 import { orderStatusLabels } from "@/domain/prototype/logic";
+import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceStatusLabel, shipmentStageLabels } from "@/domain/prototype/operations";
 
 function dayValue(date: Date) {
@@ -26,15 +27,18 @@ function Reports() {
   });
   const recordExport = useMutation(api.reports.recordExport);
   const orders =
-    report?.orders.filter((row) => `${row.customerName} ${row.orderId}`.toLowerCase().includes(search.toLowerCase())) ||
-    [];
+    report?.orders.filter((row) =>
+      `${row.customerName} ${orderReference({ id: row.orderId, orderCode: row.orderCode || undefined })}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    ) || [];
 
   async function download() {
     if (!report) return;
     const csv = toExcelCsv([
-      ["ID Pesanan", "Pelanggan", "Status", "Total IDR", "Dibuat pada"],
+      ["Referensi pesanan", "Pelanggan", "Status", "Total IDR", "Dibuat pada"],
       ...orders.map((row) => [
-        row.orderId,
+        orderReference({ id: row.orderId, orderCode: row.orderCode || undefined }),
         row.customerName,
         orderStatusLabels[row.status],
         row.totalAmount,
@@ -147,7 +151,7 @@ function Reports() {
                 <tbody>
                   {orders.map((row) => (
                     <tr key={row.orderId}>
-                      <td>{row.orderId}</td>
+                      <td>{orderReference({ id: row.orderId, orderCode: row.orderCode || undefined })}</td>
                       <td>{row.customerName}</td>
                       <td>
                         <StatusBadge>{row.status}</StatusBadge>

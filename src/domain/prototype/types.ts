@@ -49,6 +49,7 @@ export interface SecretCatalog {
   status: CatalogStatus;
   closingAt: string | null;
   books: Book[];
+  titleCount?: number;
   createdAt: string;
 }
 
@@ -74,6 +75,7 @@ export interface OrderStatusEvent {
 
 export interface Order {
   id: string;
+  orderCode?: string;
   customerUserId?: string;
   catalogId: string | null;
   customerName: string;

@@ -18,6 +18,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
+import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
@@ -204,7 +205,7 @@ function PersistentAdminInvoices() {
                   <div>
                     <strong>{order.customerName}</strong>
                     <span className="subtle">
-                      {order.id} · <Money amount={order.total} />
+                      {orderReference(order)} · <Money amount={order.total} />
                     </span>
                   </div>
                   <PersistentRequirementForm orderId={order.id} />
@@ -224,8 +225,12 @@ function PersistentAdminInvoices() {
                     <StatusBadge>{invoiceStatusLabel(invoice.status)}</StatusBadge>
                   </div>
                   <div className="summary-line">
-                    <span>Pesanan</span>
-                    <span>{invoice.orderId}</span>
+                    <span>Pelanggan</span>
+                    <strong>{invoice.customerName}</strong>
+                  </div>
+                  <div className="summary-line">
+                    <span>Referensi pesanan</span>
+                    <span>{invoice.orderCode || `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}`}</span>
                   </div>
                   <div className="summary-line">
                     <span>Sisa tagihan</span>

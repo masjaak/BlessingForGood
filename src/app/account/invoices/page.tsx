@@ -53,10 +53,15 @@ function PersistentCustomerInvoices() {
                 <div>
                   <span className="card-kicker">{invoice.invoiceNumber}</span>
                   <h2>{formatIdr(invoice.totalAmount)}</h2>
+                  <span className="subtle">{invoice.customerName}</span>
                 </div>
                 <StatusBadge tone={invoice.status === "issued" ? "positive" : "warning"}>
                   {invoiceStatusLabel(invoice.status)}
                 </StatusBadge>
+              </div>
+              <div className="summary-line">
+                <span>Referensi pesanan</span>
+                <span>{invoice.orderCode || `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}`}</span>
               </div>
               {invoice.items.map((item) => (
                 <div className="summary-line" key={item.invoiceItemId}>

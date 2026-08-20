@@ -24,6 +24,7 @@ describe("compact ActivityCenter", () => {
 
     expect(screen.getByRole("tab", { name: /Notifikasi.*3/ }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("tab", { name: /Kotak masuk.*2/ }).getAttribute("aria-selected")).toBe("false");
+    expect(screen.getByText(/Notifikasi berisi perubahan sistem/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Lihat semua notifikasi" }).getAttribute("href")).toBe(
       "/account/notifications",
     );

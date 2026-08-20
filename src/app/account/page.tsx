@@ -8,6 +8,7 @@ import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { customerActivity, outstandingRefundObligation } from "@/domain/customer-activity";
 import { orderStatusLabels } from "@/domain/prototype/logic";
+import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
@@ -199,7 +200,7 @@ function AccountDashboard() {
                   <span>
                     <strong>{order.items[0]?.bookTitle || "Pesanan BFG"}</strong>
                     <small>
-                      {order.items.reduce((total, item) => total + item.quantity, 0)} buku · {order.id}
+                      {order.items.reduce((total, item) => total + item.quantity, 0)} buku · {orderReference(order)}
                     </small>
                   </span>
                   <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>

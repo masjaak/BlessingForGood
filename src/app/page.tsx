@@ -138,7 +138,7 @@ export default function HomePage() {
             <p>Geser untuk bertemu dengan alasan, orang, dan teman kecil di balik BFG.</p>
           </div>
           <div className="story-scroller" aria-label="Cerita Blessing For Goods">
-            <article className="story-card">
+            <article className="story-card story-card-opening">
               <span className="eyebrow">Kenapa BFG ada?</span>
               <h3>Semua bisa dimulai dari satu buku.</h3>
               <p>

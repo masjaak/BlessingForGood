@@ -75,6 +75,10 @@ export function ActivityCenter({
           <strong>Aktivitas</strong>
           <span className="subtle">Pembaruan terbaru</span>
         </div>
+        <p className="activity-explanation">
+          Notifikasi berisi perubahan sistem; Kotak masuk berisi pesan operasional. Keduanya satu pintu di Aktivitas,
+          tetapi riwayatnya tetap terpisah.
+        </p>
         <div className="activity-tabs" role="tablist" aria-label="Jenis aktivitas">
           {(["notification", "inbox"] as const).map((tabSurface) => {
             const tabLabel = tabSurface === "notification" ? "Notifikasi" : "Kotak masuk";
@@ -116,9 +120,7 @@ export function ActivityCenter({
       eyebrow="Pusat aktivitas"
       title={label}
       description={
-        surface === "notification"
-          ? "Pembaruan sistem untuk workspace Admin."
-          : "Pesan operasional yang perlu ditindaklanjuti."
+        "Aktivitas adalah satu pintu: Notifikasi untuk perubahan sistem dan Kotak masuk untuk pesan operasional."
       }
     >
       {content}
@@ -129,9 +131,7 @@ export function ActivityCenter({
         eyebrow="Akun Blessfriends"
         title={label}
         description={
-          surface === "notification"
-            ? "Pembaruan pesanan, batch, tagihan, dan pembayaranmu."
-            : "Pesan operasional dari BFG untuk akunmu."
+          "Aktivitas adalah satu pintu: Notifikasi untuk perubahan sistem dan Kotak masuk untuk pesan operasional."
         }
       />
       {content}

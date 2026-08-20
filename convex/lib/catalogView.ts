@@ -58,6 +58,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
     name: catalog.name,
     status: catalog.status === "open" && catalog.closesAt && catalog.closesAt <= Date.now() ? "closed" : catalog.status,
     closingAt: catalog.closesAt ? new Date(catalog.closesAt).toISOString() : null,
+    titleCount: bookMap.size,
     books: Array.from(bookMap.values()),
     createdAt: new Date(catalog.createdAt).toISOString(),
   };

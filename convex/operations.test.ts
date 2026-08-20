@@ -33,6 +33,22 @@ describe("BFG batches and shipment tracking", () => {
     );
   });
 
+  it("supports multiple Catalog relationships and unlinks only the relationship", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const firstCatalog = await createOpenCatalog(admin, "Multi Catalog One", "1010", "multi-catalog-one");
+    const secondCatalog = await createOpenCatalog(admin, "Multi Catalog Two", "1011", "multi-catalog-two");
+    const batch = await admin.mutation(api.batches.create, { name: "Multi Catalog Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: firstCatalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: secondCatalog.catalogId });
+    expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).catalogLinks).toHaveLength(2);
+
+    await admin.mutation(api.batches.unlinkCatalog, { batchId: batch.batchId, catalogId: firstCatalog.catalogId });
+    const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
+    expect(detail.catalogLinks).toEqual([expect.objectContaining({ catalogId: secondCatalog.catalogId })]);
+    expect(await admin.query(api.secretCatalogs.getForAdmin, { catalogId: firstCatalog.catalogId })).not.toBeNull();
+  });
+
   it("assigns only linked catalog items without exceeding quantity", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

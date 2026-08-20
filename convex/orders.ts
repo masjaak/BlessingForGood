@@ -12,6 +12,7 @@ import { notifyAdmins } from "./lib/notifications";
 import { hasUnresolvedException } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { positiveQuantity, requiredText } from "./lib/validation";
+import { nextOrderCode } from "./lib/orderCodes";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
@@ -45,6 +46,7 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
     catalogId: order.catalogId ?? null,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
+    orderCode: order.orderCode || null,
     source: order.source ?? "customer_self_service",
     status: order.status,
     currency: order.currency,
@@ -112,11 +114,13 @@ async function insertOrder(
 ) {
   const totalAmount = resolved.reduce((total, item) => total + item.subtotalAmount, 0);
   const now = Date.now();
+  const orderCode = await nextOrderCode(ctx, now);
   const orderId = await ctx.db.insert("orders", {
     customerUserId: input.customerUserId,
     catalogId: input.catalogId,
     source: input.source,
     assistedSubmissionKey: input.assistedSubmissionKey,
+    orderCode,
     customerName: input.customerName,
     customerEmail: input.customerEmail,
     status: "submitted",
@@ -235,9 +239,11 @@ export const createReadyStock = mutation({
       .unique();
     const customerName = profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer";
     const now = Date.now();
+    const orderCode = await nextOrderCode(ctx, now);
     const orderId = await ctx.db.insert("orders", {
       customerUserId: user._id,
       source: "ready_stock",
+      orderCode,
       customerName,
       customerEmail: user.emailSnapshot,
       status: "submitted",
@@ -381,6 +387,25 @@ export const listForAdmin = query({
     await requirePermission(ctx, "orders.read.all");
     const page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((order) => orderView(ctx, order._id))) };
+  },
+});
+
+export const backfillOrderCodes = mutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "orders.manage");
+    const limit = Math.min(Math.max(Math.floor(args.limit || 200), 1), 2000);
+    // ponytail: bounded one-time migration; rerun after the ceiling if BFG exceeds 2,000 legacy orders.
+    const orders = await ctx.db.query("orders").withIndex("by_created_at").order("asc").take(2000);
+    const missing = orders.filter((order) => !order.orderCode).slice(0, limit);
+    let updated = 0;
+    for (const order of missing) {
+      const orderCode = await nextOrderCode(ctx, order.createdAt);
+      await ctx.db.patch(order._id, { orderCode, updatedAt: Date.now() });
+      await recordAudit(ctx, user._id, "order.reference_backfilled", "order", order._id, { orderCode });
+      updated += 1;
+    }
+    return { updated, scanned: orders.length, hasMore: orders.some((order) => !order.orderCode) && missing.length === limit };
   },
 });
 

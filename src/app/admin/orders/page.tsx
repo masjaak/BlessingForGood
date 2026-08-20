@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { nextOrderStatuses, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
+import { orderReference } from "@/domain/prototype/order-reference";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
@@ -53,7 +54,13 @@ function OrderTable() {
     const needle = search.trim().toLowerCase();
     return (
       !needle ||
-      [order.id, order.customerName, order.customerEmail, ...order.items.map((item) => item.bookTitle)]
+      [
+        orderReference(order),
+        order.id,
+        order.customerName,
+        order.customerEmail,
+        ...order.items.map((item) => item.bookTitle),
+      ]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(needle))
     );
@@ -99,6 +106,7 @@ function OrderTable() {
             </thead>
             <tbody>
               {rows.map((order) => {
+                const reference = orderReference(order);
                 const statuses: OrderStatus[] =
                   dataSource === "convex"
                     ? order.status === "submitted"
@@ -112,7 +120,7 @@ function OrderTable() {
                       <br />
                       <span className="subtle">{order.customerEmail || "Tidak ada email"}</span>
                       <br />
-                      <span className="subtle">{order.id}</span>
+                      <span className="subtle">{reference}</span>
                       <br />
                       <LinkButton href={`/admin/orders/${order.id}`} variant="secondary">
                         Detail operasional
@@ -144,7 +152,7 @@ function OrderTable() {
                       {statuses.length ? (
                         <BFGSelect
                           className="select"
-                          aria-label={`Update status for ${order.id}`}
+                          aria-label={`Update status for ${reference}`}
                           defaultValue=""
                           disabled={pendingOrderId !== null}
                           onChange={async (event) => {
@@ -337,7 +345,7 @@ function OrderTimeline({ orderId }: { orderId: string }) {
     <Card>
       <div className="split-heading">
         <div>
-          <span className="card-kicker">Pesanan terpilih</span>
+          <span className="card-kicker">{orderReference(order)}</span>
           <h2>{order.customerName}</h2>
         </div>
         <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
@@ -375,7 +383,12 @@ function AdminOrders() {
         eyebrow="Operasi pesanan"
         title="Tinjau pesanan, lalu lanjutkan tahapnya."
         description="Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan Convex kanonik."
-        actions={<span className="button button-secondary">{state.orders.length} tercatat</span>}
+        actions={
+          <div className="form-actions">
+            <span className="button button-secondary">{state.orders.length} tercatat</span>
+            {dataSource === "convex" ? <BackfillOrderReferences /> : null}
+          </div>
+        }
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -386,6 +399,41 @@ function AdminOrders() {
         </div>
       </div>
     </div>
+  );
+}
+
+function BackfillOrderReferences() {
+  const backfill = useMutation(api.orders.backfillOrderCodes);
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+  return (
+    <span className="form-actions">
+      <Button
+        type="button"
+        variant="quiet"
+        pending={pending}
+        pendingLabel="Melengkapi…"
+        onClick={async () => {
+          setPending(true);
+          setMessage("");
+          try {
+            const result = await backfill({ limit: 2000 });
+            setMessage(`${result.updated} referensi dilengkapi.`);
+          } catch {
+            setMessage("Referensi belum dapat dilengkapi.");
+          } finally {
+            setPending(false);
+          }
+        }}
+      >
+        Lengkapi referensi order
+      </Button>
+      {message ? (
+        <span className="subtle" role="status">
+          {message}
+        </span>
+      ) : null}
+    </span>
   );
 }
 

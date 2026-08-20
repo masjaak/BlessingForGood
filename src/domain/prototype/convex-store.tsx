@@ -44,6 +44,7 @@ type CatalogRecord = {
   status: string;
   closingAt: string | null;
   createdAt: string;
+  titleCount?: number;
   books: Array<{
     id: string;
     title: string;
@@ -66,6 +67,7 @@ type OrderRecord = {
   catalogId: string | null;
   customerName: string;
   customerEmail?: string;
+  orderCode?: string | null;
   source?: "customer_self_service" | "admin_assisted" | "ready_stock";
   status: OrderStatus;
   subtotalAmount: number;
@@ -97,6 +99,7 @@ function asCatalog(value: CatalogView | null | undefined): SecretCatalog | undef
     status: normalizeCatalogStatus(record.status),
     closingAt: record.closingAt,
     createdAt: record.createdAt,
+    titleCount: record.titleCount,
     books: record.books,
   };
 }
@@ -106,6 +109,7 @@ function asOrder(value: OrderView | null | undefined): Order | undefined {
   const record = value as unknown as OrderRecord;
   return {
     id: record.orderId,
+    orderCode: record.orderCode || undefined,
     customerUserId: record.customerUserId,
     catalogId: record.catalogId,
     customerName: record.customerName,

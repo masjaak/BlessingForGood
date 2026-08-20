@@ -64,7 +64,7 @@ function CustomerInvoiceDetail() {
       <PageHeader
         eyebrow="Detail invoice"
         title={currentCustomerInvoice.invoiceNumber}
-        description={`Pesanan ${currentCustomerInvoice.orderId}`}
+        description={`${currentCustomerInvoice.customerName} · ${currentCustomerInvoice.orderCode || `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`}`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">
             Kembali ke invoice
@@ -79,6 +79,10 @@ function CustomerInvoiceDetail() {
               <h2>{formatIdr(currentCustomerInvoice.totalAmount)}</h2>
             </div>
             <StatusBadge>{invoiceStatusLabel(currentCustomerInvoice.status)}</StatusBadge>
+          </div>
+          <div className="summary-line">
+            <span>Pelanggan</span>
+            <strong>{currentCustomerInvoice.customerName}</strong>
           </div>
           {currentCustomerInvoice.items.map((item) => (
             <div className="summary-line" key={item.invoiceItemId}>
@@ -305,8 +309,23 @@ function PaymentConfirmationForm({
           <strong>{paymentSettings.storeName}</strong>
           <br />
           {paymentSettings.paymentInstructions}
+          {paymentSettings.bankName || paymentSettings.bankAccountNumber || paymentSettings.bankAccountName ? (
+            <>
+              <br />
+              {paymentSettings.bankName || "Bank"}: {paymentSettings.bankAccountNumber || "Nomor rekening belum diisi"}
+              {paymentSettings.bankAccountName ? ` · a.n. ${paymentSettings.bankAccountName}` : ""}
+            </>
+          ) : null}
           <br />
           Bantuan manual: {paymentSettings.whatsappNumber}
+          {paymentSettings.supportEmail || paymentSettings.socialContact ? (
+            <>
+              <br />
+              {paymentSettings.supportEmail ? `Email: ${paymentSettings.supportEmail}` : null}
+              {paymentSettings.supportEmail && paymentSettings.socialContact ? " · " : null}
+              {paymentSettings.socialContact ? `Sosial: ${paymentSettings.socialContact}` : null}
+            </>
+          ) : null}
         </p>
       ) : null}
       <div className="form-grid">
