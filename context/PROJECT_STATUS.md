@@ -16,10 +16,10 @@ and `context/implementation/BFG-CLIENT-UAT-FIX-MATRIX.md`.
 
 Starting commit for this closure pass: `a97740a`.
 Phase 08 client-UAT implementation commit: `ec424d0`.
-`origin/main`: `ec424d0`.
+`origin/main`: `f4ece09`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_8nVQMU1mBzKg5v86aky89hUVcYxW` (`READY`).
+Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current regression baseline: Vitest `222/222`, Convex `107/107` (included in

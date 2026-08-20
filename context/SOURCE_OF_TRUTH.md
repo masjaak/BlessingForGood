@@ -1,8 +1,8 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-20 (Asia/Jakarta)
-Applies to current `main` at `ec424d0`; the canonical Production deployment is
-Vercel `dpl_8nVQMU1mBzKg5v86aky89hUVcYxW` with Convex `clean-eel-522`.
+Applies to current `main` at `f4ece09`; the canonical Production deployment is
+the latest Git-triggered `READY` deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
 Phase 08: **ACTIVE**. Client UAT fixes are deployed and publicly rechecked;
 authenticated Client UAT and the legitimate Bulk Import V1 Production pilot
@@ -33,7 +33,7 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | `origin/main` | contains the Phase 08 Bulk Import V1 implementation and context evidence |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
-| Vercel Production deployment | `dpl_8nVQMU1mBzKg5v86aky89hUVcYxW` (`READY`) |
+| Vercel Production deployment | latest Git-triggered `READY` deployment for current `main` |
 | Canonical Production URL | `https://www.blessingforgood.com` |
 | Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
 
