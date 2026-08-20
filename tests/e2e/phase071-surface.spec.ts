@@ -12,6 +12,31 @@ test.describe("@customer Phase 07.1 shared surface", () => {
 
     await page.goto("/ready-stock", { waitUntil: "domcontentloaded" });
     await expect(page.getByLabel("Memuat Ready Stock")).toBeHidden({ timeout: 15_000 });
+    const cover = page.locator(".book-cover").first();
+    const coverImage = cover.locator("img");
+    await expect(coverImage).toBeVisible();
+    const coverGeometry = await cover.evaluate((element) => {
+      const image = element.querySelector("img");
+      if (!image) return null;
+      const frame = element.getBoundingClientRect();
+      const artwork = image.getBoundingClientRect();
+      return {
+        frame: { left: frame.left, top: frame.top, right: frame.right, bottom: frame.bottom },
+        artwork: {
+          left: artwork.left,
+          top: artwork.top,
+          right: artwork.right,
+          bottom: artwork.bottom,
+          objectFit: getComputedStyle(image).objectFit,
+        },
+      };
+    });
+    expect(coverGeometry).not.toBeNull();
+    expect(coverGeometry?.artwork.objectFit).toBe("contain");
+    expect(coverGeometry?.artwork.left).toBeGreaterThanOrEqual((coverGeometry?.frame.left ?? 0) - 1);
+    expect(coverGeometry?.artwork.top).toBeGreaterThanOrEqual((coverGeometry?.frame.top ?? 0) - 1);
+    expect(coverGeometry?.artwork.right).toBeLessThanOrEqual((coverGeometry?.frame.right ?? 0) + 1);
+    expect(coverGeometry?.artwork.bottom).toBeLessThanOrEqual((coverGeometry?.frame.bottom ?? 0) + 1);
     const trigger = page.locator(".bfg-select-trigger").last();
     const triggerBox = await trigger.boundingBox();
     await trigger.click();
