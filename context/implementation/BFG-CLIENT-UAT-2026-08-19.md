@@ -52,7 +52,9 @@ client CSV and an authenticated Admin checkpoint.
 
 ## Current status
 
-Implementation is in progress. Phase 08 is not stabilized and Bulk Import V1
-is not closed until the UAT matrix is all GREEN and the authenticated real-data
-pilot proves persistence, draft/inactive safety, audit, idempotent preview,
-and zero customer leakage.
+Focused implementation, local gates, `origin/main`, Convex Production, Vercel
+Production, and public rendered rechecks are complete. Authenticated Admin and
+Customer Production UAT remains the external checkpoint. Phase 08 is not
+stabilized and Bulk Import V1 is not closed until the UAT matrix is all GREEN
+and the authenticated real-data pilot proves persistence, draft/inactive
+safety, audit, idempotent preview, and zero customer leakage.

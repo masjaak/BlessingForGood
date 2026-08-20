@@ -14,32 +14,27 @@ amendments and implementation matrix are `context/product/PRD-CLIENT-
 AMENDMENTS-2026-08-19.md`, `context/implementation/BFG-CLIENT-UAT-2026-08-19.md`,
 and `context/implementation/BFG-CLIENT-UAT-FIX-MATRIX.md`.
 
-Starting commit for this closure pass: `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c`.
-Phase 08 implementation commit: `ee46c5e`.
-Context/test anchor commit: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`.
-Documentation lock commit: `e2ad4a3b6f2148dc213fe25b6604fe56aefe7972`.
-`origin/main`: contains the implementation plus the context/test anchor; the
-follow-up commits are documentation/test-contract only.
+Starting commit for this closure pass: `a97740a`.
+Phase 08 client-UAT implementation commit: `65d864a`.
+`origin/main`: `65d864a`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` (`READY`).
+Vercel Production: `dpl_6JvLqPsSGtEQgnUBNUnnTH9M8pUJ` (`READY`).
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current regression baseline: Vitest `216/216`, Convex `102/102`, Playwright
-`180/180` plus three `/admin/import` route checks, TypeScript PASS, ESLint PASS,
-Format PASS, Build PASS. The canonical
+Current regression baseline: Vitest `222/222`, Convex `107/107` (included in
+Vitest), Playwright `177/177` route smoke plus `12/12` rendered client-UAT
+checks, TypeScript PASS, ESLint PASS, Format PASS, Build PASS. The canonical
 URL returned HTTP 200 in safe read-only verification and the apex redirects to
-`www` with HTTP 308. The public Production route matrix is `180/180`, including
-customer 375/390/430/768/1280/1440 and Admin 1024/1280/1440. The supplied
-Phase 07.1 closure evidence records PASS for real admission, product, cover
-upload/persistence/projection, Secret Catalog generate/copy/unlock/revoke,
-order, Admin projection, invoice, Tagihan, notification, and ownership-
-isolation flows. Private authenticated UAT was not rerun in this
-documentation-only pass and no business data was mutated.
+`www` with HTTP 308. The public Production route matrix is green at customer
+375/390/430/768/1280/1440. Convex Production and Vercel Production are green;
+authenticated Admin/Customer UAT and the real CSV pilot remain pending.
 
-The Phase 08 Vercel Production build hook pushed the new import functions to
-`clean-eel-522`; schema, auth architecture, financial, inventory, and Secret
-Catalog policy remained unchanged.
+The Phase 08 Vercel Production build hook pushed the client-UAT changes and
+new order/settings functions to `clean-eel-522`; build logs confirm schema
+validation and the additive `orderReferenceCounters.by_key` index. Auth,
+financial, inventory, Secret Catalog, and Bulk Import policy remained within
+their locked boundaries.
 
 The canonical reconciliation artifacts are:
 
@@ -85,10 +80,9 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-Complete the authorized Production Admin/Owner pilot with a legitimate 3–5-book
-CSV, verify persistence and customer non-leakage, then update this status to
-the scoped Bulk Import V1 acceptance result. Do not start another Phase 08
-candidate.
+Complete authenticated Admin/Customer Client UAT, then run the authorized
+Production Admin pilot with a legitimate 3–5-book CSV and verify persistence,
+customer non-leakage, and audit. Do not start another Phase 08 candidate.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 

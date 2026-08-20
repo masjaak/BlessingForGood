@@ -1,13 +1,12 @@
 # BFG SOURCE OF TRUTH
 
-Reconciled: 2026-08-16 (Asia/Jakarta)
-Applies to current `main`, whose Phase 08 Bulk Import implementation is
-`ee46c5e`; the canonical Production deployment is Vercel
-`dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` with Convex `clean-eel-522`.
+Reconciled: 2026-08-20 (Asia/Jakarta)
+Applies to current `main` at `65d864a`; the canonical Production deployment is
+Vercel `dpl_6JvLqPsSGtEQgnUBNUnnTH9M8pUJ` with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **ACTIVE**. Bulk Import V1 is deployed under
-`BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`; the real
-Production pilot remains a required acceptance gate. The entry gate is defined in
+Phase 08: **ACTIVE**. Client UAT fixes are deployed and publicly rechecked;
+authenticated Client UAT and the legitimate Bulk Import V1 Production pilot
+remain required acceptance gates. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -30,11 +29,11 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item | Canonical value |
 |---|---|
-| Phase 08 implementation commit | `ee46c5e` |
+| Phase 08 implementation commit | `65d864a` |
 | `origin/main` | contains the Phase 08 Bulk Import V1 implementation and context evidence |
 | Convex Development | `content-snake-214` |
 | Convex Production | `clean-eel-522` |
-| Vercel Production deployment | `dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` (`READY`) |
+| Vercel Production deployment | `dpl_6JvLqPsSGtEQgnUBNUnnTH9M8pUJ` (`READY`) |
 | Canonical Production URL | `https://www.blessingforgood.com` |
 | Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
 
@@ -42,15 +41,15 @@ Current exact regression baseline:
 
 | Gate | Result |
 |---|---|
-| Vitest | `216 / 216` |
-| Convex | `102 / 102` |
-| Playwright | `180 / 180` baseline + `3 / 3` `/admin/import` route checks |
+| Vitest | `222 / 222` |
+| Convex | `107 / 107` (included in Vitest) |
+| Playwright | `177 / 177` route smoke + `12 / 12` rendered client UAT checks |
 | TypeScript | PASS |
 | ESLint | PASS |
 | Format | PASS |
 | Build | PASS |
-| Rendered QA | signed-out Production route protection and local route/viewport checks pass; authenticated import-state rendering remains pilot-gated |
-| Real UAT | supplied Phase 07.1 evidence remains historical; Phase 08 real 3–5-book pilot is pending and no business data was fabricated |
+| Rendered QA | local and canonical Production signed-out route/viewport checks pass; authenticated Admin/Customer rendering remains checkpoint-gated |
+| Real UAT | Client UAT implementation is Production-deployed; authenticated Admin/Customer recheck and real 3–5-book pilot remain pending; no business data was fabricated |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -117,13 +116,14 @@ linked invariant/matrix documents.
 
 ## Current Phase
 
-`BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — CLOSED + RECONCILED at the
-stable Phase 07.1 baseline.
+`BFG_PHASE_08_CLIENT_UAT_STABILIZATION_IN_PROGRESS` — Phase 07.1 remains
+CLOSED + RECONCILED; Phase 08 authenticated UAT is still open.
 
 ## Phase 08 Status
 
-**ACTIVE — Bulk Import V1 implemented; Production pilot pending.** The locked
-source, data, policy, state, visual, and traceability contracts are linked from
+**ACTIVE — Client UAT fixes are deployed; authenticated recheck and Bulk Import
+V1 Production pilot pending.** The locked source, data, policy, state, visual,
+and traceability contracts are linked from
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
 The implementation is a single `/admin/import` stateful flow, reuses the
 canonical publisher/book/variant/audit/auth boundaries, adds no schema or
