@@ -5,18 +5,19 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_CLIENT_UAT_STABILIZATION_IN_PROGRESS`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_SPACING_AND_PRODUCT_MEDIA_SOURCE_IN_PROGRESS`.
 
-Client UAT stabilization is the current gate. Bulk Import V1 remains
-implemented and Production-deployed, but its final legitimate pilot cannot
-resume until the Client UAT matrix is all GREEN. The additive product
-amendments and implementation matrix are `context/product/PRD-CLIENT-
-AMENDMENTS-2026-08-19.md`, `context/implementation/BFG-CLIENT-UAT-2026-08-19.md`,
-and `context/implementation/BFG-CLIENT-UAT-FIX-MATRIX.md`.
+Client UAT stabilization remains preserved evidence. Bulk Import V1 remains
+implemented and Production-deployed, but its legitimate Production pilot is
+**DEFERRED BY USER** and final Production acceptance is **NOT YET CLAIMED**.
+The current approved milestone is shared Admin action spacing and Customer
+Homepage section rhythm, followed by a Product Media source contract. Product
+Gallery implementation is not authorized while material ownership and
+external-preview decisions remain open.
 
 Starting commit for this closure pass: `a97740a`.
-Phase 08 client-UAT implementation commit: `ec424d0`.
-`origin/main`: `f4ece09`.
+Phase 08 client-UAT implementation commit: `4eafc75`.
+`origin/main`: `4eafc75`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
@@ -61,35 +62,35 @@ The canonical reconciliation artifacts are:
 
 ### Current reconciliation result
 
-| Gate | Result |
-|---|---|
-| Source documents inventoried | PASS |
-| Current features classified | PASS |
-| Current routes classified | PASS |
-| Required actions classified | PASS |
-| Mockups mapped | PASS |
-| Business domains mapped | PASS |
-| State machines indexed | PASS |
-| Security invariants locked | PASS |
-| Financial invariants locked | PASS |
-| Admin ↔ Customer sync mapped | PASS |
-| Superseded decisions documented | PASS |
-| Explicit exclusions documented | PASS |
-| Phase 08 candidates source-based | PASS |
-| Unknown material source conflict | `0` |
-| Unclassified feature | `0` |
-| Unclassified route | `0` |
-| Unclassified mockup | `0` |
+| Gate                             | Result |
+| -------------------------------- | ------ |
+| Source documents inventoried     | PASS   |
+| Current features classified      | PASS   |
+| Current routes classified        | PASS   |
+| Required actions classified      | PASS   |
+| Mockups mapped                   | PASS   |
+| Business domains mapped          | PASS   |
+| State machines indexed           | PASS   |
+| Security invariants locked       | PASS   |
+| Financial invariants locked      | PASS   |
+| Admin ↔ Customer sync mapped     | PASS   |
+| Superseded decisions documented  | PASS   |
+| Explicit exclusions documented   | PASS   |
+| Phase 08 candidates source-based | PASS   |
+| Unknown material source conflict | `0`    |
+| Unclassified feature             | `0`    |
+| Unclassified route               | `0`    |
+| Unclassified mockup              | `0`    |
 
 ### Next milestone
 
-Complete the remaining authenticated Admin/Customer Client UAT, then run the authorized
-Production Admin pilot with a legitimate 3–5-book CSV and verify persistence,
-customer non-leakage, and audit. Do not start another Phase 08 candidate.
+Complete the shared Admin action-spacing and Customer Homepage rhythm pass.
+Resolve the Product Media source contract’s two material decisions before
+implementing schema/UI. Do not touch Bulk Import or run its deferred pilot.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 
-- Status: `BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_REQUIRED`.
+- Status: `BFG_PHASE_08_BULK_IMPORT_V1_PRODUCTION_DEPLOYED_PILOT_DEFERRED_BY_USER`.
 - Natural entry: `/admin/books` → `Import Buku` → `/admin/import`.
 - Backend: server-authorized preview query and one revalidated atomic confirm
   mutation; preview writes `0`; no import-job table or schema change.
@@ -101,7 +102,18 @@ customer non-leakage, and audit. Do not start another Phase 08 candidate.
   baseline plus 3 `/admin/import` route checks, TypeScript PASS, ESLint PASS,
   Format PASS, Build PASS, and `git diff --check` PASS.
 - Remaining gate: authorized real Production pilot and authenticated rendered
-  import-state QA; no dummy Production records or credentials were created.
+  import-state QA remain unclaimed by explicit user choice; no dummy Production
+  records or credentials were created.
+
+### Phase 08 next milestone context — 2026-08-20
+
+- `BFG-SPACING-SYSTEM.md` records the semantic Admin action and Homepage rhythm
+  contract.
+- `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` records source evidence and
+  two material open Product decisions; no Product Media implementation has
+  started.
+- `BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md` records the entry gate.
+- Bulk Import implementation files and contract remain untouched.
 
 ### Responsive/media closure evidence
 

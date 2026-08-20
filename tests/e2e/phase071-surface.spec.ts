@@ -57,6 +57,25 @@ test.describe("@customer Phase 07.1 shared surface", () => {
       .toBe(true);
   });
 
+  test("Homepage keeps a deliberate responsive chapter rhythm", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const chapterSelector = ".discovery-section, .community-section, .home-order-section, .story-section";
+    await expect(page.locator(chapterSelector).first()).toBeVisible();
+    const rhythm = await page.locator(chapterSelector).evaluateAll((sections) =>
+      sections.map((section) => {
+        const rect = section.getBoundingClientRect();
+        const style = getComputedStyle(section);
+        return { top: rect.top, bottom: rect.bottom, paddingTop: Number.parseFloat(style.paddingTop) };
+      }),
+    );
+    const viewportWidth = page.viewportSize()?.width || 0;
+    const minimumPadding = viewportWidth <= 640 ? 30 : viewportWidth <= 900 ? 38 : 46;
+    expect(rhythm).toHaveLength(4);
+    expect(rhythm.every((section) => section.paddingTop >= minimumPadding)).toBe(true);
+    expect(rhythm.every((section, index) => index === 0 || section.top >= rhythm[index - 1].bottom)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewportWidth + 1);
+  });
+
   test("custom select renders and opens without a native menu", async ({ page }, testInfo) => {
     await page.goto("/ready-stock", { waitUntil: "domcontentloaded" });
     await expect(page.getByLabel("Memuat Ready Stock")).toBeHidden({ timeout: 15_000 });

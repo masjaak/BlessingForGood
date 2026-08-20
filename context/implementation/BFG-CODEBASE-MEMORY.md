@@ -135,3 +135,33 @@ skipped files. `src/app/account/page.tsx` retains a best-effort parse-partial
 warning in the index; the flagged source ranges were read directly and are
 covered by the full frontend test and build gates. Pre-existing/untracked
 `artifacts/visual-convergence` screenshots were preserved.
+
+## Post-diff Memory — Phase 08 Spacing / Product Media Source Contract
+
+Changed application reach:
+
+- `src/app/globals.css`: shared Admin summary-to-action separation now uses
+  `--space-divider-to-actions`; the Customer Homepage Journey and four major
+  chapter sections use responsive semantic rhythm tokens. No route-specific
+  action margin, component API, or business mutation changed.
+- `tests/e2e/phase071-surface.spec.ts`: one rendered geometry regression covers
+  Homepage chapter padding, locked section order, non-overlap, and page-level
+  horizontal overflow at the six supported customer widths.
+- Product Media changes are context-only: the source contract and traceability
+  matrix document the two material decisions that block schema, storage,
+  projection, and UI implementation.
+
+Blast-radius verdict:
+
+| Reach | Result |
+|---|---|
+| Admin action regions | shared CSS spacing only; representative production surfaces require authenticated recheck |
+| Customer Homepage | shared Homepage CSS only; locked content/order and shell navigation preserved |
+| Book media / storage | unchanged; Product Media remains unimplemented pending source decisions |
+| Catalog / Ready Stock / Secret Catalog projections | unchanged |
+| Auth/RBAC | unchanged |
+| Finance / inventory / state machines | unchanged |
+| Bulk Import | unchanged; Production pilot remains deferred by user |
+
+Codebase Memory post-diff conclusion: no unexpected backend, authorization,
+financial, inventory, Secret Catalog, or Bulk Import blast radius was found.

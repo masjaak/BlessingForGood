@@ -43,6 +43,9 @@ The current token source is the beginning of `src/app/globals.css`:
 - Radius: 8/12/16px and pill.
 - Layout widths and responsive behavior stay in the shared CSS; page-specific
   margin hacks are not a visual-system fix.
+- Phase 08 semantic relationship guidance is recorded in
+  `BFG-SPACING-SYSTEM.md`; use it for Admin action/divider rhythm and Homepage
+  chapter separation.
 
 ## Button Variants
 

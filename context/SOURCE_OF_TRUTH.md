@@ -1,12 +1,14 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-20 (Asia/Jakarta)
-Applies to current `main` at `f4ece09`; the canonical Production deployment is
+Applies to current `main` at `4eafc75`; the canonical Production deployment is
 the latest Git-triggered `READY` deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
 Phase 08: **ACTIVE**. Client UAT fixes are deployed and publicly rechecked;
-authenticated Client UAT and the legitimate Bulk Import V1 Production pilot
-remain required acceptance gates. The entry gate is defined in
+the Bulk Import V1 implementation is deployed but its legitimate Production
+pilot is **DEFERRED BY USER**. Final Bulk Import Production acceptance is not
+claimed. The current milestone is spacing stabilization plus Product Media
+source-contract preparation. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -27,29 +29,29 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 ## Current Production Baseline
 
-| Item | Canonical value |
-|---|---|
-| Phase 08 implementation commit | `ec424d0` |
-| `origin/main` | contains the Phase 08 Bulk Import V1 implementation and context evidence |
-| Convex Development | `content-snake-214` |
-| Convex Production | `clean-eel-522` |
-| Vercel Production deployment | latest Git-triggered `READY` deployment for current `main` |
-| Canonical Production URL | `https://www.blessingforgood.com` |
-| Safe live evidence | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308 |
+| Item                           | Canonical value                                                          |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| Phase 08 implementation commit | `4eafc75`                                                                |
+| `origin/main`                  | contains the Phase 08 Bulk Import V1 implementation and context evidence |
+| Convex Development             | `content-snake-214`                                                      |
+| Convex Production              | `clean-eel-522`                                                          |
+| Vercel Production deployment   | latest Git-triggered `READY` deployment for current `main`               |
+| Canonical Production URL       | `https://www.blessingforgood.com`                                        |
+| Safe live evidence             | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308   |
 
 Current exact regression baseline:
 
-| Gate | Result |
-|---|---|
-| Vitest | `222 / 222` |
-| Convex | `107 / 107` (included in Vitest) |
-| Playwright | `177 / 177` route smoke + `12 / 12` rendered client UAT checks |
-| TypeScript | PASS |
-| ESLint | PASS |
-| Format | PASS |
-| Build | PASS |
-| Rendered QA | local and canonical Production signed-out route/viewport checks pass; authenticated Admin cover/nav and customer Ready Stock cover were rechecked in Chrome |
-| Real UAT | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; the legitimate 3–5-book pilot remains pending |
+| Gate        | Result                                                                                                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vitest      | `222 / 222`                                                                                                                                                                               |
+| Convex      | `107 / 107` (included in Vitest)                                                                                                                                                          |
+| Playwright  | `177 / 177` route smoke + `12 / 12` rendered client UAT checks                                                                                                                            |
+| TypeScript  | PASS                                                                                                                                                                                      |
+| ESLint      | PASS                                                                                                                                                                                      |
+| Format      | PASS                                                                                                                                                                                      |
+| Build       | PASS                                                                                                                                                                                      |
+| Rendered QA | local and canonical Production signed-out route/viewport checks pass; authenticated Admin cover/nav and customer Ready Stock cover were rechecked in Chrome                               |
+| Real UAT    | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; Bulk Import pilot is deferred by user and final acceptance is not claimed |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -61,19 +63,19 @@ document set at `/Users/masjak/Documents/BLESSINGFORGOOD/BFG WEB/context/`.
 The repository copies and later policy/decision files are reconciled evidence
 and implementation context.
 
-| Category | Canonical source set | Reconciliation result |
-|---|---|---|
-| Product | `product/PRD.md`, `UX_FLOWS.md`, `BUSINESS_RULES.md`, `SCOPE.md`, `SUCCESS_CRITERIA.md`, `ROUTES.md`, `PERMISSIONS.md`, `OUT_OF_SCOPE.md` | inventoried and mapped in the master matrix |
-| Features | all files under `features/`, including auth, order, profile, deposit, invoice, payment, cancellation, tracking, Secret Catalog, Ready Stock, reports, settings, content, audit, users, upload, and WhatsApp handoff | inventoried; active minimum scope is implemented or explicitly classified |
-| Catalog rules | `catalog/*.md` | publisher/book/variant/catalog, preorder, Ready Stock, Secret Catalog, and batch rules locked |
-| Database | `database/*.md` | schema, snapshots, transactions, invariants, retention, deletion, backup, and indexes reconciled with Convex |
-| Security | `security/*.md` | Clerk identity, BFG admission/RBAC, ownership, Admin boundary, file access, Secret Catalog secrecy, rate limits, audit, and fail-closed rules locked |
-| Integrations | `integrations/*.md` | Clerk and Convex active; manual WhatsApp active; gateway and automated WhatsApp excluded; infrastructure docs remain operational reference |
-| Brand | `brand/*.md` | official Logo-1, approved Blessy assets, typography, tone, layout, mascot, and content rules locked |
-| Screens | `screens/admin/*.md`, `screens/mobile/*.md` | source screen contracts mapped to the 10 tracked Admin and 8 tracked mobile image assets |
-| Mockup mapping | `mockups/ADMIN_MAPPING.md`, `MOBILE_MAPPING.md`, `MOCKUP_MANIFEST.md`, `MOCKUP_GAP_LIST.md` | historical filenames are stale; actual tracked assets are the visual evidence listed in the mockup matrix |
-| Decisions | original `decisions/DECISIONS.md`, `SUPERSEDED_DECISIONS.md`, repository `context/decisions/*`, current user instructions | explicit later decisions win and are logged in `DECISION_LOG.md` |
-| Phase contracts | original `implementation/PHASE-01...PHASE-09...` | phases 01–07.1 are historical delivery context; the old Phase 08 list is reclassified from reconciled source, not copied as scope |
+| Category        | Canonical source set                                                                                                                                                                                                | Reconciliation result                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Product         | `product/PRD.md`, `UX_FLOWS.md`, `BUSINESS_RULES.md`, `SCOPE.md`, `SUCCESS_CRITERIA.md`, `ROUTES.md`, `PERMISSIONS.md`, `OUT_OF_SCOPE.md`                                                                           | inventoried and mapped in the master matrix                                                                                                          |
+| Features        | all files under `features/`, including auth, order, profile, deposit, invoice, payment, cancellation, tracking, Secret Catalog, Ready Stock, reports, settings, content, audit, users, upload, and WhatsApp handoff | inventoried; active minimum scope is implemented or explicitly classified                                                                            |
+| Catalog rules   | `catalog/*.md`                                                                                                                                                                                                      | publisher/book/variant/catalog, preorder, Ready Stock, Secret Catalog, and batch rules locked                                                        |
+| Database        | `database/*.md`                                                                                                                                                                                                     | schema, snapshots, transactions, invariants, retention, deletion, backup, and indexes reconciled with Convex                                         |
+| Security        | `security/*.md`                                                                                                                                                                                                     | Clerk identity, BFG admission/RBAC, ownership, Admin boundary, file access, Secret Catalog secrecy, rate limits, audit, and fail-closed rules locked |
+| Integrations    | `integrations/*.md`                                                                                                                                                                                                 | Clerk and Convex active; manual WhatsApp active; gateway and automated WhatsApp excluded; infrastructure docs remain operational reference           |
+| Brand           | `brand/*.md`                                                                                                                                                                                                        | official Logo-1, approved Blessy assets, typography, tone, layout, mascot, and content rules locked                                                  |
+| Screens         | `screens/admin/*.md`, `screens/mobile/*.md`                                                                                                                                                                         | source screen contracts mapped to the 10 tracked Admin and 8 tracked mobile image assets                                                             |
+| Mockup mapping  | `mockups/ADMIN_MAPPING.md`, `MOBILE_MAPPING.md`, `MOCKUP_MANIFEST.md`, `MOCKUP_GAP_LIST.md`                                                                                                                         | historical filenames are stale; actual tracked assets are the visual evidence listed in the mockup matrix                                            |
+| Decisions       | original `decisions/DECISIONS.md`, `SUPERSEDED_DECISIONS.md`, repository `context/decisions/*`, current user instructions                                                                                           | explicit later decisions win and are logged in `DECISION_LOG.md`                                                                                     |
+| Phase contracts | original `implementation/PHASE-01...PHASE-09...`                                                                                                                                                                    | phases 01–07.1 are historical delivery context; the old Phase 08 list is reclassified from reconciled source, not copied as scope                    |
 
 If a future task cannot locate a cited original source, it must record
 `SOURCE_MISSING` rather than infer content.
@@ -205,8 +207,12 @@ availability. Publication visibility is server-controlled. Current durable
 media proof is Admin upload → validated Convex storage → persisted reference →
 hard-refresh persistence → customer-safe projection.
 
-Multi-image galleries and external preview metadata are not silently implied by
-the current cover-only model; they are future candidates.
+Multi-image galleries and external preview metadata are a separate Phase 08
+candidate. The original source requires a Ready Stock detail gallery and the
+mockup shows up to eight gallery images plus external-preview fields, but the
+current reconciled model still lacks an approved media owner and external URL
+allowlist. See
+[`BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md).
 
 ## Ready Stock
 
@@ -414,8 +420,9 @@ Only source-supported work appears in
 [`BFG-PHASE-08-CANDIDATES.md`](implementation/BFG-PHASE-08-CANDIDATES.md):
 
 - advanced analytics beyond the current bounded operational report;
-- Bulk Import V1 source contract is prepared; implementation remains separate
-  and not started.
+- Bulk Import V1 is implemented and Production-deployed; its legitimate
+  Production pilot is deferred by explicit user decision and final acceptance
+  is not claimed.
 - multi-image gallery and external preview metadata;
 - broader backup/restore operations beyond current bounded export;
 - cross-domain Admin search.
@@ -479,7 +486,8 @@ baseline. The following are deliberately bounded future decisions, not current
 implementation blockers:
 
 - exact advanced analytics dimensions and retention;
-- exact gallery/preview metadata contract;
+- exact gallery/preview metadata contract, including canonical ownership,
+  projection, and external URL allowlist;
 - exact backup/restore operational procedure;
 - cross-domain Admin search scope and indexing.
 
@@ -565,5 +573,20 @@ rerun in this documentation-only pass.
 
 ### Next Milestone
 
-Review the prepared Phase 08 Bulk Import Source Contract and create a separate
-implementation prompt. Do not start Phase 08 implementation in this task.
+Complete the shared Admin action-spacing and Customer Homepage rhythm pass,
+then resolve the two material Product Media source decisions before any
+Product Gallery schema or UI implementation. Bulk Import V1 remains deployed
+but its Production pilot is deferred by user.
+
+## Phase 08 Next Milestone — 2026-08-20
+
+- Phase 07.1: **CLOSED + RECONCILED**.
+- Development System V2: **ACTIVE**.
+- Phase 08: **ACTIVE**.
+- Bulk Import V1: **IMPLEMENTED + PRODUCTION DEPLOYED**.
+- Bulk Import Production pilot: **DEFERRED BY USER**.
+- Bulk Import final Production acceptance: **NOT YET CLAIMED**.
+- Current priority: `BFG-SPACING-SYSTEM.md` plus
+  `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md`.
+- Product Media implementation entry gate: **BLOCKED by 2 material source
+  decisions**; spacing work is independent and authorized.

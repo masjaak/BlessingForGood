@@ -4061,6 +4061,7 @@ p {
 }
 
 .customer-shell .home-journey {
+  margin-top: var(--space-lg);
   padding: 20px 0 18px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -4139,7 +4140,7 @@ p {
 .customer-shell .community-section,
 .customer-shell .home-order-section,
 .customer-shell .story-section {
-  padding-top: 36px;
+  padding-top: var(--homepage-section-gap-desktop);
 }
 
 .customer-shell .discovery-grid {
@@ -4412,6 +4413,13 @@ p {
     grid-template-columns: minmax(0, 1fr) minmax(180px, 0.45fr);
   }
 
+  .customer-shell .discovery-section,
+  .customer-shell .community-section,
+  .customer-shell .home-order-section,
+  .customer-shell .story-section {
+    padding-top: var(--homepage-section-gap-tablet);
+  }
+
   .customer-shell .home-page .order-steps-preview {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4460,6 +4468,7 @@ p {
   }
 
   .customer-shell .home-journey {
+    margin-top: var(--space-md);
     padding: 12px 0 8px;
   }
 
@@ -4503,7 +4512,7 @@ p {
   .customer-shell .community-section,
   .customer-shell .home-order-section,
   .customer-shell .story-section {
-    padding-top: 22px;
+    padding-top: var(--homepage-section-gap-mobile);
   }
 
   .customer-shell .discovery-card {
@@ -4681,6 +4690,10 @@ p {
   --form-field-field-gap: 16px;
   --toolbar-content-gap: 16px;
   --button-group-gap: 8px;
+  --space-divider-to-actions: var(--space-md);
+  --homepage-section-gap-mobile: 32px;
+  --homepage-section-gap-tablet: 40px;
+  --homepage-section-gap-desktop: 48px;
   --sidebar-section-gap: 24px;
   --sidebar-heading-item-gap: 8px;
   --sidebar-item-gap: 4px;
@@ -5183,6 +5196,12 @@ p {
 
 .admin-shell .summary-line > .form-actions {
   align-items: center;
+}
+
+.admin-shell .summary-line + .form-actions,
+.admin-shell .summary-line + .button,
+.admin-shell .summary-line + a.button {
+  margin-top: var(--space-divider-to-actions);
 }
 
 .admin-shell .summary-line .button,
