@@ -1,22 +1,28 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-21 (Asia/Jakarta)
-Applies to the current `main` after final Customer Production acceptance; the
-canonical Production deployment is the latest Git-triggered `READY` deployment
-with Convex `clean-eel-522`.
+Applies to the current `main` after targeted post-closure visual stabilization;
+the canonical Production deployment is the latest Git-triggered `READY`
+deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **COMPLETE — FINAL CUSTOMER ACCEPTANCE + PRODUCT CLOSURE**. The
-previous generic no-red/yellow/unknown closure is superseded by the completed
-Activity responsive correction and user-controlled authenticated Customer
-Production acceptance. Current evidence is classified as `GREEN_REAL_PRODUCTION`,
+Phase 08: **COMPLETE — TARGETED VISUAL STABILIZATION RE-CLOSED**. The previous
+closure was temporarily superseded by four real-Production visual findings:
+How To Order rhythm, Perjalanan Bukumu grouping, Mengenal BFG contrast, and
+non-destructive cover framing. All four are now implemented, tested, deployed,
+and publicly rechecked; the cover renderer's safe public fallback is rechecked,
+while cover mutation UAT remains classified as
+`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` because the current public seed has no
+cover and no authorized Admin session or approved asset was fabricated.
+Current evidence is classified as `GREEN_REAL_PRODUCTION`,
 `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`, `OPTIONAL_FUTURE`, or `EXCLUDED` in
-the final completion matrix; user-controlled browser evidence is recorded as
-such and direct browser automation is not claimed.
+the final completion matrix.
 The Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are now locked and the
 bounded implementation is deployed through the canonical Production hook;
 authenticated Admin rendering is verified on one real book, while populated
-media mutation remains blocked only by approved data. The entry gate is defined in
+media mutation remains blocked only by approved data. Cover presentation is
+additive metadata over the original storage object and is projected through all
+customer cover consumers. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -39,28 +45,28 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `ac5e33e` — final deployed Activity verification and application baseline |
-| Closure context commit         | documentation-only local closure snapshot (local main, not Production) |
-| `origin/main`                  | `ac5e33e` — Production application baseline; closure docs are one local commit ahead |
+| Phase 08 implementation commit | `b80f2e7` — targeted visual stabilization and non-destructive cover framing |
+| Closure context commit         | current `main` after this post-closure context reconciliation              |
+| `origin/main`                  | current `main`; source and context are pushed together                      |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` — `READY`, aliased to canonical domains |
+| Vercel Production deployment   | latest verified source deployment `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` — `READY`, aliased to canonical domains |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
-| Safe live evidence             | canonical URL returned HTTP 200; public Production rendered suite `24/24`; deployed Activity matrix passed all eight viewports; user-controlled authenticated Customer walkthrough passed |
+| Safe live evidence             | canonical URL returned HTTP 200; live targeted visual suite `18/18`; homepage/How To Order smoke `12/12`; Ready Stock smoke `6/6`; Vercel error scan found no logs |
 
 Current exact regression baseline:
 
 | Gate        | Result                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vitest      | `232 / 232`                                                                                                                                                                               |
-| Convex      | `110 / 110` (included in Vitest)                                                                                                                                                          |
-| Playwright  | `202 / 202` route smoke/rendered checks, including `24 / 24` rendered client UAT checks and the eight-viewport Activity geometry matrix |
+| Vitest      | `237 / 237`                                                                                                                                                                               |
+| Convex      | `111 / 111` (included in Vitest)                                                                                                                                                          |
+| Playwright  | local baseline `214 / 214` after the six new responsive contracts; live targeted visual suite `18 / 18`, homepage/How To Order smoke `12 / 12`, Ready Stock smoke `6 / 6` |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local production-server route/viewport checks pass; Homepage rhythm and shared visual checks are green; authenticated Admin Books/invoice spacing baseline is preserved at 1440px |
-| Real UAT    | Authenticated Admin baseline remains green; user-controlled authenticated Customer Production acceptance passed at 375/390/430/768/1440; no new defect was reported |
+| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; live screenshots show the four targeted fixes and zero body overflow |
+| Real UAT    | Public Production recheck passed; the current Ready Stock seed has no stored cover, so no cover mutation or fake media record was used |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -127,14 +133,15 @@ linked invariant/matrix documents.
 
 ## Current Phase
 
-`BFG_PHASE_08_COMPLETE_PRODUCT_CLOSURE` — Phase 07.1 remains CLOSED +
-RECONCILED; Phase 08 final Customer acceptance, scope reconciliation, and
-maintenance entry are complete. Data and operational deferrals remain explicit.
+`BFG_PHASE_08_TARGETED_VISUAL_STABILIZATION_RECLOSED` — Phase 07.1 remains
+CLOSED + RECONCILED; the four verified visual findings were fixed through
+shared primitives, deployed, and rechecked on the canonical Production domain.
+Data and operational deferrals remain explicit.
 
 ## Phase 08 Status
 
-**COMPLETE — final completion is closed.** The locked source, data, policy,
-state, visual, and traceability contracts are linked from
+**COMPLETE — targeted visual stabilization is closed.** The locked source,
+data, policy, state, visual, and traceability contracts are linked from
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
 The implementation is a single `/admin/import` stateful flow, reuses the
 canonical publisher/book/variant/audit/auth boundaries, adds no schema or
@@ -148,6 +155,14 @@ panel did not measure right-side collision and the narrow fixed surface could
 inherit an unsafe containing block. The canonical fix uses `minmax(0, 1fr)`,
 `min-width: 0`, normal wrapping, measured viewport-safe width/position/height,
 and internal vertical scrolling without hiding or deleting content.
+
+The post-closure visual stabilization fixed four additional shared contracts:
+How To Order is a continuous seven-step desktop journey with one outline icon
+family and a vertical mobile/tablet timeline; Perjalanan Bukumu is a compact
+grouped three-step orientation; Mengenal BFG uses the canonical high-contrast
+section headline hierarchy; and BookCover preserves the original uploaded
+image while applying optional Admin-controlled zoom/position metadata for the
+customer frame.
 
 ## Canonical Business Rules
 
@@ -395,6 +410,20 @@ primitives include `SiteShell`, `AdminLayoutShell`, `AdminNav`, `BrandLogo`,
 buttons/cards/fields/status badges, `WorkspaceActivityProvider`, and the
 mobile bottom navigation.
 
+### Permanent visual contracts — Phase 08 post-closure stabilization
+
+- **How To Order:** the canonical seven business steps remain one shared data
+  set; desktop uses a connected seven-step journey, mobile/tablet use a
+  readable vertical timeline, and all icons use one normalized semantic outline
+  family.
+- **Perjalanan Bukumu:** the three orientation steps remain one compact grouped
+  tool inside a narrower internal wrapper; the page container is unchanged.
+- **Mengenal BFG:** `Satu cerita, beberapa langkah kecil.` uses the canonical
+  high-contrast primary heading hierarchy on the approved surfaces.
+- **Book Cover:** the original uploaded media remains untouched; optional
+  `{ zoom, x, y }` presentation metadata controls framing inside the canonical
+  cover card without distortion or a second destructive source image.
+
 ## Responsive Rules
 
 - Customer mobile: logo-only top header; bottom primary navigation; no desktop
@@ -534,10 +563,12 @@ Production deployment, applicable real flow verification, and context update.
 
 ## Current Test Baseline
 
-Vitest `232/232`; Convex `110/110`; Playwright `202/202` route smoke/rendered
-checks; rendered `24/24` plus the Activity matrix; TypeScript, ESLint, format,
-build, and `git diff --check` all PASS. Data-limited UAT is classified
-explicitly and is not treated as an implementation defect.
+Vitest `237/237`; Convex `111/111`; local Playwright `214/214` after the new
+responsive contracts; live targeted visual suite `18/18`, homepage/How To Order
+smoke `12/12`, and Ready Stock smoke `6/6`; rendered screenshots at the required
+widths; TypeScript, ESLint, format, build, and `git diff --check` all PASS.
+Data-limited cover UAT is classified explicitly and is not treated as a reason
+to fabricate Production media.
 
 ## Current Production Infrastructure
 
@@ -601,10 +632,10 @@ This file plus the linked matrices and invariant indexes.
 
 ### Current Production
 
-Phase 08 final product scope is stable on the canonical domain; safe public
-smoke, the deployed Activity matrix, and user-controlled authenticated Customer
-acceptance are verified. Vercel Production is `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv`;
-Convex Production is `clean-eel-522`.
+Phase 08 final product scope is stable on the canonical domain after the
+targeted visual stabilization; safe public smoke and the four-finding live
+visual recheck are verified. The source deployment was
+`dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx`; Convex Production is `clean-eel-522`.
 
 ### Final Decisions
 
@@ -615,8 +646,8 @@ exceptions/refunds/ledger, and Indonesian-first responsive shells.
 ### Completed
 
 Phase 07.1 product surface stabilization, Phase 08 scope implementation,
-source reconciliation, operational surfaces, test baseline, deployment baseline,
-and final Customer Production acceptance.
+post-closure visual stabilization, source reconciliation, operational surfaces,
+test baseline, deployment baseline, and final public Production recheck.
 
 ### Active
 
@@ -648,16 +679,21 @@ plus the Activity matrix; TypeScript, ESLint, Format, Build, and
 Monthly maintenance review and client-driven defect handling only. Do not
 create Phase 09 without a genuine new business requirement.
 
-## Phase 08 Closure — 2026-08-21
+## Phase 08 Post-Closure Visual Stabilization — 2026-08-21
 
 - Phase 07.1: **CLOSED + RECONCILED**.
 - Development System V2: **ACTIVE**.
-- Phase 08: **COMPLETE — FINAL CUSTOMER ACCEPTANCE + PRODUCT CLOSURE**.
+- Phase 08: **COMPLETE — TARGETED VISUAL STABILIZATION RE-CLOSED**.
 - Bulk Import V1: **IMPLEMENTED + PRODUCTION DEPLOYED**.
 - Bulk Import Production pilot: **DEFERRED BY USER**.
 - Bulk Import final Production acceptance: **DEFERRED_BY_USER_DATA**.
-- Customer Production acceptance: **PASS** at 375/390/430/768/1440 by user
-  controlled real-session walkthrough; no defect reported.
+- Homepage, How To Order, and Ready Stock public Production recheck: **PASS**;
+  targeted visual suite `18/18`, homepage/How To Order smoke `12/12`, and Ready
+  Stock smoke `6/6` across the configured widths.
+- Cover presentation: **GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA**; original
+  storage preservation, metadata validation/projection, reset, persistence,
+  authorization, and legacy defaults are covered without fabricating a live
+  cover or mutating Production business data.
 - Product Media source decisions: **LOCKED**; populated Gallery/Preview UAT is
   `BLOCKED_BY_APPROVED_DATA`, with implementation and empty states green.
 - Product status: `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE`,

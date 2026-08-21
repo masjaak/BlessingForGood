@@ -5,45 +5,44 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `COMPLETE` — `BFG_PHASE_08_COMPLETE_PRODUCT_CLOSURE`.
+**Phase 08:** `COMPLETE` — `BFG_PHASE_08_TARGETED_VISUAL_STABILIZATION_RECLOSED`.
 
-The previous generic `RED=0`, `YELLOW=0`, and `UNKNOWN=0` closure is superseded
-by the fixed Activity responsive defect and final user-controlled authenticated
-Customer Production acceptance. Activity is now one responsive user-facing feed
-over separate Notification and Inbox backends; the shared clipping root cause
-is fixed and covered by the eight-viewport rendered matrix. Bulk Import V1
-remains implemented and Production-deployed, but its legitimate Production
-pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are locked and the
-bounded implementation is deployed; populated Gallery/Preview UAT is blocked
-only by approved data.
+The previous closure was temporarily superseded by four verified Production
+visual findings. The shared How To Order journey, homepage Perjalanan Bukumu
+orientation, Mengenal BFG contrast hierarchy, and non-destructive BookCover
+presentation are now fixed and rechecked. Activity remains one responsive
+user-facing feed over separate Notification and Inbox backends; the shared
+clipping root cause is fixed and covered by the eight-viewport rendered matrix.
+Bulk Import V1 remains implemented and Production-deployed, but its legitimate
+Production pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are
+locked and populated Gallery/Preview UAT remains blocked only by approved data;
+cover framing uses additive metadata and keeps the original source.
 
-Starting commit for this correction pass: `cb609ab`; Activity responsive
-closure commit: `b900e74`.
-Final delivery: current `main` after final context reconciliation.
-Current deployed application commit: `ac5e33e`.
-Closure context commit: documentation-only local snapshot.
-`origin/main`: `ac5e33e` Production application baseline; local main is one
-closure-documentation commit ahead.
+Starting commit for this correction pass: `e1795a1`; visual stabilization
+implementation commit: `b80f2e7`.
+Final delivery: current `main` after this context reconciliation.
+Current verified source deployment: `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx`.
+`origin/main`: current `main` after the source and context commits.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` (`READY`, canonical aliases).
+Vercel Production source deployment: `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current local regression is Vitest `232/232`, Convex `110/110` (included in
-Vitest), Playwright `202/202`, rendered `24/24` plus the eight-viewport Activity
-matrix, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
-`git diff --check` PASS. Public Production is reachable and the live public
-rendered suite is `24/24`. The existing authenticated Admin evidence remains
-green; deployed Activity geometry passes the same eight-viewport matrix.
-User-controlled authenticated Customer Production acceptance passed at
-375/390/430/768/1440 with no reported defect. No dummy business record or
-unapproved business value was created.
+Current local regression is Vitest `237/237`, Convex `111/111` (included in
+Vitest), local Playwright `214/214`, rendered QA at
+375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format PASS,
+Build PASS, and `git diff --check` PASS. Live targeted visual checks passed
+`18/18`; homepage/How To Order smoke passed `12/12`; Ready Stock smoke passed
+`6/6`. No dummy business record, cover asset, credential, or unapproved
+business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
-Authenticated acceptance is complete for the current Customer checkpoint. Auth,
-financial, inventory, Secret Catalog, and Bulk Import policy remain within their
-locked boundaries. Product mode is now `MAINTENANCE`; no Phase 09 is started.
+The live public visual recheck is complete. The current public Ready Stock seed
+has no stored cover, so cover mutation UAT remains a deterministic/no-safe-data
+classification rather than an invented Production write. Auth, financial,
+inventory, Secret Catalog, and Bulk Import policy remain within their locked
+boundaries. Product mode is now `MAINTENANCE`; no Phase 09 is started.
 
 The canonical reconciliation artifacts are:
 
@@ -154,8 +153,41 @@ remains unchanged and its real pilot remains deferred by user data.
 - Local exact 1280 customer smoke: `20/20`; canonical Production public
   Activity/visual suite: `24/24`. Authenticated Admin Activity, BFGSelect,
   Batch, Settings, and Master Buku evidence is now recorded; no business data
-  was mutated. The new Activity Production recheck and authenticated Customer
-  checkpoint remain open.
+  was mutated. The prior Activity Production recheck is closed; the post-closure
+  visual recheck is recorded below.
+
+## Phase 08 post-closure visual stabilization — 2026-08-21
+
+Status: `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE` · `BFG_PRODUCTION_STABLE` ·
+`PHASE_08_COMPLETE` · `PRODUCT_MODE: MAINTENANCE`.
+
+The real Production screenshot findings were addressed only at their shared
+roots:
+
+- How To Order keeps all seven canonical steps and uses one normalized outline
+  icon family, a connected desktop row, and a vertical mobile/tablet timeline.
+- Perjalanan Bukumu uses a narrower internal wrapper so Temukan → Pesan → Ikuti
+  reads as one compact orientation tool without shrinking the page container.
+- Mengenal BFG keeps the approved palette and restores the canonical high-
+  contrast heading hierarchy.
+- BookCover keeps the original uploaded storage object and applies optional
+  `{ zoom, x, y }` presentation metadata through the shared customer renderers;
+  existing covers without metadata use the safe default.
+
+Production evidence:
+
+- Vercel source deployment `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` is `READY` and
+  aliased to the canonical domain; Convex Production is `clean-eel-522`.
+- Live responsive visual contracts passed `18/18`; homepage/How To Order smoke
+  passed `12/12`; Ready Stock smoke passed `6/6`; the Vercel error scan found
+  no logs.
+- The current public Ready Stock seed has no cover image. No Admin mutation,
+  fake cover, access code, or business record was created to force the crop UAT;
+  its validation, authorization, persistence, reset, legacy default, and
+  customer projection are covered deterministically.
+
+Permanent visual contracts are also recorded in `SOURCE_OF_TRUTH.md`, the final
+completion matrix, and the maintenance playbook. Do not start Phase 09.
 
 ## Historical Status Archive
 

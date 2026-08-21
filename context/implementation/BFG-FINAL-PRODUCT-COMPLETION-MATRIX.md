@@ -1,12 +1,16 @@
 # BFG FINAL PRODUCT COMPLETION MATRIX
 
-Status: `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE — BFG_PRODUCTION_STABLE — PRODUCT_MODE: MAINTENANCE`
+Status: `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE — BFG_PRODUCTION_STABLE — PHASE_08_COMPLETE — PRODUCT_MODE: MAINTENANCE`
 Reconciled: 2026-08-21 (Asia/Jakarta)
 
 This matrix is the final Phase 08 scope ledger. The category column is limited
 to the allowed final classifications. The evidence column is authoritative for
 whether a row may be promoted to `GREEN_REAL_PRODUCTION`; no unauthenticated,
 synthetic, or inferred evidence closes a real UAT gate.
+
+The post-closure visual stabilization addendum is intentionally limited to the
+four verified Production findings. Existing green domains and the homepage
+section order remain unchanged.
 
 | Requirement / capability | Classification | Current evidence / remaining gate |
 | --- | --- | --- |
@@ -27,6 +31,10 @@ synthetic, or inferred evidence closes a real UAT gate.
 | 15 Catalog left-frame geometry | `GREEN_REAL_PRODUCTION` | Existing authenticated/rendered evidence. |
 | 16 Admin action spacing | `GREEN_REAL_PRODUCTION` | Existing authenticated 1440px Production evidence and shared action tokens cover the affected Admin surfaces; no new defect appeared in closure. |
 | 17 Master Buku render | `GREEN_REAL_PRODUCTION` | Existing authenticated Production Master Buku `Maisy's Funfair` evidence covers cover, `COVER BUKU`, upload controls, and Product Media layout. |
+| How To Order presentation | `GREEN_REAL_PRODUCTION` | Live responsive contract suite `18/18` preserves all seven canonical steps, one icon family, intentional desktop wrapping, vertical mobile/tablet rhythm, and zero body overflow. |
+| Perjalanan Bukumu orientation | `GREEN_REAL_PRODUCTION` | Live homepage visual suite confirms the three steps remain grouped inside a narrower internal wrapper with a controlled connector at mobile through desktop widths. |
+| Mengenal BFG headline visibility/contrast | `GREEN_REAL_PRODUCTION` | Live homepage screenshots confirm `Satu cerita, beberapa langkah kecil.` uses the canonical primary contrast on the approved story surfaces; palette and copy are unchanged. |
+| Book Cover original preservation and presentation control | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Additive `coverPresentation` metadata, zoom/position/reset/save, authorization, legacy defaults, original storage preservation, and Ready Stock/Secret Catalog/customer projections pass `111/111` Convex plus component coverage. The current public Ready Stock seed has no stored cover and no approved Admin session/asset was fabricated. |
 | Product Gallery V1 | `BLOCKED_BY_APPROVED_DATA` | Implementation and real empty state are green; no approved additional image asset exists for populated Gallery UAT. |
 | External Preview V1 | `BLOCKED_BY_APPROVED_DATA` | Implementation and real empty state are green; no approved HTTPS preview URL exists for populated UAT. |
 | Bulk Import V1 implementation/deployment | `GREEN_REAL_PRODUCTION` | Existing Production deployment and deterministic suite are green. |
@@ -53,6 +61,18 @@ passed for Customer Production at 375/390/430/768/1440 with no defect reported.
 `BLOCKED_BY_APPROVED_DATA`, `BLOCKED_BY_OPERATIONAL_DATA`, and
 `DEFERRED_BY_USER_DATA` are data classifications, not implementation defects.
 `OPTIONAL_FUTURE` and `EXCLUDED` rows never create Phase 09 work.
+
+## Permanent visual contracts
+
+- How To Order is one seven-step data journey: connected horizontal desktop,
+  vertical mobile/tablet, and one normalized semantic outline icon family.
+- Perjalanan Bukumu is one compact grouped three-step orientation tool with a
+  narrower inner width and a connector aligned to the step grid.
+- Mengenal BFG uses the canonical high-contrast section headline token and does
+  not inherit muted/card state color for its primary heading.
+- Book Cover preserves the original uploaded image; display framing is optional,
+  non-destructive `{ zoom, x, y }` metadata consumed by the shared customer
+  renderer. No distortion and no duplicate source image are allowed.
 
 ## User-controlled acceptance checkpoints
 

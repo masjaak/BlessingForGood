@@ -1,6 +1,6 @@
 # BFG CODEBASE MEMORY
 
-Post-diff map refreshed at HEAD `eca8310` on 2026-08-21. This is structural
+Post-diff map refreshed at implementation HEAD `b80f2e7` on 2026-08-21. This is structural
 memory, not product requirement authority.
 
 ## Major Domain Modules
@@ -32,6 +32,24 @@ memory, not product requirement authority.
 The route-to-source classification is authoritative in
 `BFG-ROUTE-INVENTORY-V2.md`; the route tree contains no unclassified required
 route and no hidden URL dependency for the active baseline.
+
+## Post-diff memory — Phase 08 post-closure visual stabilization
+
+Shared blast radius is intentionally small:
+
+| Surface | Shared path | Result |
+|---|---|---|
+| How To Order | `how-to-order.tsx` + scoped customer CSS | Seven canonical steps keep one data source; desktop uses the connected row and mobile/tablet use the vertical timeline. |
+| Homepage journey | `src/app/page.tsx` + scoped customer CSS | `home-journey` gets a narrower inner wrapper; homepage section order and global container stay unchanged. |
+| Mengenal BFG | story card CSS token assignment | The primary story heading is forced to the canonical high-contrast light token on the green card; copy/palette are unchanged. |
+| Book Cover | `book-cover.tsx`, `cover-upload-field.tsx`, `books.ts`, `schema.ts` | Original storage is preserved; optional presentation metadata is validated, persisted, resettable, and projected through Ready Stock and Secret Catalog/customer renderers. |
+| Product Media | existing `bookMedia` path | Gallery remains separate; no gallery ownership or upload flow was changed. |
+
+Expected zero-impact domains: Auth, Orders, Batch, Finance (Invoices,
+Payments, Deposit, Refunds), Activity, Admin permissions, and Bulk Import. No
+state machine, ownership rule, navigation IA, or operational Admin route was
+changed. `Buku Saya` has no BookCover renderer in the current source, so it has
+no new cover-renderer blast radius.
 
 ## Canonical Server Permission Helpers
 

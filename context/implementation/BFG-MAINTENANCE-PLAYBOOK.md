@@ -1,14 +1,29 @@
 # BFG MAINTENANCE PLAYBOOK
 
-Status: `ACTIVE — ENTERED AFTER PHASE 08 FINAL ACCEPTANCE`
+Status: `ACTIVE — RE-ENTERED AFTER PHASE 08 POST-CLOSURE VISUAL STABILIZATION`
 Owner: BFG Owner/Admin with engineering support
 Cadence: monthly, plus incident-driven review
 
-Closure entry: 2026-08-21, application commit `ac5e33e`, supplied Vercel
-Production `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` (`READY`), Convex Production
-`clean-eel-522`, and user-controlled Customer Production PASS at
-375/390/430/768/1440. This playbook is not a new feature backlog and does not
-authorize Phase 09.
+Closure entry: 2026-08-21, visual stabilization commit `b80f2e7`, Vercel
+Production source deployment `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` (`READY`),
+Convex Production `clean-eel-522`, live targeted visual suite `18/18`,
+homepage/How To Order smoke `12/12`, and Ready Stock smoke `6/6`. The current
+public seed has no stored cover, so cover mutation remains a
+`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` check with no fabricated asset or write.
+This playbook is not a new feature backlog and does not authorize Phase 09.
+
+## Permanent visual contracts
+
+- How To Order is one seven-step journey: connected desktop timeline, vertical
+  mobile/tablet timeline, shared semantic outline icon family, shared internal
+  spacing, and zero body horizontal overflow.
+- Perjalanan Bukumu is a compact grouped three-step orientation inside a
+  narrower inner wrapper; the global page container remains unchanged.
+- Mengenal BFG uses the canonical high-contrast primary section headline token;
+  muted/card state colors must not leak into the primary heading.
+- Book Cover preserves the original uploaded storage object. `{ zoom, x, y }`
+  is optional non-destructive presentation metadata consumed by the shared
+  customer renderer; legacy covers default safely and must never distort.
 
 ## Monthly Security
 
