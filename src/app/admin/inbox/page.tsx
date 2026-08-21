@@ -8,7 +8,7 @@ export default function AdminInboxPage() {
   return (
     <SiteShell>
       <ProductAccessGuard requiredRole="admin">
-        <ActivityCenter surface="inbox" workspace="admin" />
+        <ActivityCenter workspace="admin" />
       </ProductAccessGuard>
     </SiteShell>
   );

@@ -12,7 +12,7 @@ import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
-import { ActivityIcon, InboxIcon, useWorkspaceActivity } from "@/components/workspace-actions";
+import { ActivityIcon, useWorkspaceActivity } from "@/components/workspace-actions";
 
 function AccountActivityRow({
   description,
@@ -47,7 +47,7 @@ function AccountActivityRow({
 }
 
 function AccountNavigation() {
-  const { inbox, notifications } = useWorkspaceActivity();
+  const { activity } = useWorkspaceActivity();
 
   return (
     <Card className="account-navigation-card">
@@ -55,23 +55,16 @@ function AccountNavigation() {
         <div className="split-heading">
           <div>
             <span className="card-kicker">AKTIVITAS</span>
-            <h2>Notifikasi & pesan</h2>
+            <h2>Aktivitas</h2>
           </div>
         </div>
         <div className="content-stack">
           <AccountActivityRow
-            description="Pembaruan pesanan, tagihan, dan akun"
+            description="Pembaruan sistem dan pesan operasional BFG"
             href="/account/notifications"
             icon={<ActivityIcon />}
-            label="Notifikasi"
-            unread={notifications}
-          />
-          <AccountActivityRow
-            description="Pesan masuk dari tim Blessing For Goods"
-            href="/account/inbox"
-            icon={<InboxIcon />}
-            label="Kotak Masuk"
-            unread={inbox}
+            label="Buka Aktivitas"
+            unread={activity}
           />
         </div>
       </section>

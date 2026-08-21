@@ -1,12 +1,12 @@
 # BFG PHASE 08 PRODUCT MEDIA SOURCE CONTRACT
 
-Status: `SOURCE_TRACED — PRODUCT MEDIA IMPLEMENTATION BLOCKED`
+Status: `DECISIONS_LOCKED — IMPLEMENTED; READY STOCK PROJECTION IN V1`
 Reconciled: 2026-08-20 (Asia/Jakarta)
 
 This contract records the source-backed Product Gallery / External Preview
-Metadata candidate. It does not authorize schema, storage, mutation, or UI
-implementation while the material ownership and external-link decisions below
-remain open.
+implementation. The latest user decision locks Book Master ownership and an
+optional HTTPS metadata-only external preview link; Secret Catalog gallery
+projection remains outside V1 until separately source-approved.
 
 ## Objective
 
@@ -72,41 +72,29 @@ swipeable/thumbnail-supported product detail experience. The cover remains the
 primary identity image and is not silently duplicated as an additional gallery
 record.
 
-The supplied Admin visual source shows a maximum of eight additional gallery
-images. This is a visual source signal, not yet a complete data contract.
+The supplied Admin visual source sets V1 to a maximum of eight additional
+gallery images.
 
 ## Gallery Ownership
 
-`OPEN_PRODUCT_DECISION`: choose the canonical owner for gallery media:
-
-1. `Book Master` — one reusable gallery for Catalog and Ready Stock product
-   presentation; recommended because title-level cover/media already belongs to
-   Book Master and avoids duplicating the same images per format.
-2. `Ready Stock listing/variant` — follows the original `readyStockMedia`
-   schema concept and allows stock-specific imagery, but requires the current
-   implementation to introduce a canonical listing boundary.
-
-No media schema or mutation is authorized until the owner is explicitly locked.
+`LOCKED: Book Master` — one reusable gallery for the Book identity. V1 has no
+variant-specific override and does not create a separate Ready Stock listing
+media boundary.
 
 ## Variant Relationship
 
-Recommended direction, pending the ownership decision: gallery media is
-Book-level and variants do not override it in V1. ISBN, price, stock, and
-catalog price remain variant/listing concerns. A variant-specific gallery is
-not source-resolved.
+Gallery media is Book-level and variants do not override it in V1. ISBN, price,
+stock, and catalog price remain variant/listing concerns.
 
 ## Maximum Media Count
 
-The mockup shows up to eight gallery images in addition to the required cover.
-The final owner, whether the limit is per Book Master or per Ready Stock
-listing, and whether replacement counts toward the limit must be locked with
-ownership.
+V1 permits up to eight additional Book Master gallery images. The cover is not
+counted as a gallery item.
 
 ## Media Ordering
 
-The source requires deterministic gallery order for swipeable images. If Admin
-reordering is approved, one persisted zero-based or one-based ordering field
-must be canonical; there must be no second independently editable order list.
+V1 uses one persisted `bookMedia.displayOrder` field and small move-up/move-down
+actions; there is no second independently editable order list.
 
 ## Primary Cover Relationship
 
@@ -132,16 +120,14 @@ denied server-side.
 
 ## Delete
 
-Deletion is not authorized until ownership is locked. The safe shape is:
-authorize → remove canonical reference → verify persistence → delete the
-storage object only when no other canonical reference uses it. Deleting a
-gallery image must not delete the cover or the Book/Ready Stock entity.
+V1 uses: authorize → remove the canonical reference → delete the storage object
+only when no other gallery or cover reference uses it. Deleting a gallery image
+never deletes the cover or Book entity.
 
 ## Reorder
 
-Reordering is not authorized until ownership and the maximum/order field are
-locked. If approved, use the smallest existing interaction (for example,
-move-left/move-right) before adding a drag-and-drop dependency.
+V1 reorders with the smallest existing interaction: move up/down buttons. No
+drag-and-drop dependency is used.
 
 ## External Preview Definition
 
@@ -151,18 +137,14 @@ destinations. The original product narrative does not define the authoritative
 platform allowlist, whether these are per Book or per variant, or whether any
 remote image/metadata is fetched.
 
-`OPEN_PRODUCT_DECISION`: lock the external preview contract. Recommended V1:
-optional metadata-only HTTPS URLs for an explicit allowlist of legitimate
-publisher/product-preview destinations (Amazon, Instagram, and YouTube only if
-the client confirms those labels); no fetch, scrape, embed, or remote image
-hotlink.
+`LOCKED: optional HTTPS metadata-only link` — V1 stores a label and HTTPS URL
+only. BFG never fetches, scrapes, embeds, or hotlinks remote media.
 
 ## URL Policy
 
-Pending the external-preview decision, the minimum non-negotiable policy is:
-reject `javascript:`, `data:`, `file:`, localhost/internal destinations,
-credentials in URLs, unsupported protocols, and unbounded strings. The server
-must validate any allowlist; a client-side input pattern is insufficient.
+The server rejects `javascript:`, `data:`, `file:`, localhost/internal/private
+destinations, credentials in URLs, unsupported protocols, and URLs over 2,048
+characters. Client validation is reachability UX only.
 
 ## Customer Projection
 
@@ -174,17 +156,14 @@ safe media projection to Secret Catalog only after an explicit source decision.
 
 ## Ready Stock Projection
 
-`READY_STOCK: SOURCE-LOCKED IN PRINCIPLE` — the public detail must be able to
-show the ordered gallery without exposing internal cost, supplier data, storage
-IDs, or private media. Exact ownership and query shape remain blocked by the
-open ownership decision.
+`READY_STOCK: GREEN` — the public detail projects ordered gallery URLs, alt
+text, and optional preview metadata without exposing storage IDs or private
+media.
 
 ## Secret Catalog Projection
 
-`OPEN_PRODUCT_DECISION` — current sources define Secret Catalog product access
-and cover presentation, but do not explicitly settle whether the new gallery or
-external preview links appear there. Do not leak media into private catalog
-projections by inference.
+`NOT IN V1` — Secret Catalog currently keeps its existing cover-only projection;
+no media is leaked into that projection by inference.
 
 ## Admin UI
 
@@ -268,8 +247,6 @@ stale entity state must fail safely.
 
 ## Success Criteria
 
-Only after the open decisions are locked:
-
 - approved media survives hard refresh;
 - order is deterministic and remains safe after repeat operations;
 - cover remains intact;
@@ -281,11 +258,11 @@ Only after the open decisions are locked:
 
 ## Tests
 
-Tests are not authorized beyond source-contract coverage until the open behavior
-is locked. The eventual RED set must cover only locked behavior: authorization,
-file validation/count, persistence/order, delete safety, cover integrity,
-customer projection, external URL validation, audit, responsive reachability,
-and no leakage into unauthorized projections.
+`convex/product-media.test.ts` covers authorization, file validation/reference
+separation, persistence/order, delete safety, cover integrity, Ready Stock
+customer projection, external URL validation, audit, and no Admin projection
+for customers. Component and rendered checks cover the shared contained gallery
+controls and responsive no-overflow grammar.
 
 ## Production UAT
 
@@ -296,39 +273,35 @@ audit, and URL behavior are rechecked. No dummy Production record is allowed.
 
 ## Open Decisions
 
-There are currently **2 material open product decisions**:
+There are **0 material open Product Media decisions for V1**:
 
-1. `PRODUCT_MEDIA_OWNERSHIP`: Book Master gallery versus Ready Stock
-   listing/variant gallery. Recommendation: Book Master gallery, no
-   variant-specific override in V1.
-2. `EXTERNAL_PREVIEW_SCOPE`: canonical platforms and whether the mockup’s
-   Amazon/Instagram/YouTube fields are active product behavior. Recommendation:
-   explicit allowlisted HTTPS metadata-only links, no fetch/embed/hotlink.
+1. `PRODUCT_MEDIA_OWNERSHIP`: locked to Book Master; no variant override.
+2. `EXTERNAL_PREVIEW_SCOPE`: locked to one optional HTTPS metadata-only link;
+   no fetch, scrape, embed, hotlink, or credentials in URL.
 
-Secret Catalog projection follows the ownership/platform decision and remains
-blocked rather than inferred.
+Secret Catalog gallery projection is explicitly `NOT IN V1`, not unknown.
 
 ## Implementation Entry Gate
 
 ```text
-GALLERY DEFINITION: LOCKED IN PRINCIPLE; OWNER DEPENDENT
-OWNERSHIP: OPEN_PRODUCT_DECISION
-BOOK VS VARIANT: OPEN UNTIL OWNERSHIP LOCKED
-MAX COUNT: VISUAL SIGNAL = 8; FINAL SCOPE OPEN
-ORDERING: SOURCE REQUIRES DETERMINISTIC ORDER; MUTATION OPEN
+GALLERY DEFINITION: LOCKED
+OWNERSHIP: BOOK MASTER
+BOOK VS VARIANT: BOOK MASTER ONLY; NO VARIANT OVERRIDE IN V1
+MAX COUNT: 8 ADDITIONAL IMAGES
+ORDERING: PERSISTED `bookMedia.displayOrder` WITH MOVE UP/DOWN
 COVER RELATIONSHIP: LOCKED — COVER REMAINS PRIMARY
-UPLOAD: EXISTING ARCHITECTURE REUSE; FINAL LIMIT OPEN
-DELETE: OPEN
-REORDER: OPEN
-EXTERNAL PREVIEW: OPEN_PRODUCT_DECISION
-URL POLICY: MINIMUM SECURITY LOCKED; ALLOWLIST OPEN
-CUSTOMER PROJECTION: READY STOCK IN PRINCIPLE; SECRET CATALOG OPEN
-READY STOCK: OPEN QUERY/OWNER DEPENDENCY
-SECRET CATALOG: OPEN_PRODUCT_DECISION
+UPLOAD: EXISTING CONVEX STORAGE; JPG/PNG/WEBP; 5 MB
+DELETE: LOCKED; SAFE REFERENCE CLEANUP
+REORDER: LOCKED; MOVE UP/DOWN
+EXTERNAL PREVIEW: OPTIONAL HTTPS METADATA-ONLY LINK
+URL POLICY: SERVER-VALIDATED HTTPS; PRIVATE/LOCAL/CREDENTIAL DESTINATIONS REJECTED
+CUSTOMER PROJECTION: READY STOCK ONLY IN V1
+READY STOCK: IMPLEMENTED
+SECRET CATALOG: NOT IN V1
 AUTHORIZATION: EXISTING ADMIN/OWNER BOUNDARY LOCKED
 AUDIT: EXISTING APPEND-ONLY AUDIT LOCKED
 SECURITY: EXISTING INVARIANTS LOCKED
-VISUAL CONTRACT: LOCKED IN PRINCIPLE
-OPEN MATERIAL QUESTIONS: 2
-IMPLEMENTATION: NOT AUTHORIZED
+VISUAL CONTRACT: LOCKED
+OPEN MATERIAL QUESTIONS: 0
+IMPLEMENTATION: COMPLETE LOCALLY; PRODUCTION DEPLOYMENT/UAT PENDING
 ```

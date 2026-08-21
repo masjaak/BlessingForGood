@@ -30,7 +30,7 @@ CSS inspection pass.
 | 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — authenticated Admin contexts not available | `RECHECK_PENDING` |
 | 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — exact operator journey not re-run | `RECHECK_PENDING` |
 | 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 12 Activity semantics | `PRESERVED` | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — no authenticated browser session available | `RECHECK_PENDING` |
+| 12 Activity semantics | `FIXED` — one chronological projection over separate Notification/Inbox sources; no primary tabs or panel Inbox CTA | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — current unified build is not yet Production-accepted in an authenticated session | `RECHECK_PENDING` |
 | 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — mobile/tablet authenticated render unavailable | `RECHECK_PENDING` |
 | 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — edit/save/refresh journey not re-run | `RECHECK_PENDING` |
 | 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — latest screenshot proves frame | `FROZEN_GREEN` |
@@ -224,16 +224,16 @@ eligible Production record is available for mutation; no record is fabricated.
 - **Finding:** The Activity information architecture was unclear.
 - **Classification:** PRODUCT_CLARITY.
 - **Source:** Latest Client UAT; Activity decision; Notifications and Inbox contracts.
-- **Current Production Evidence:** Authenticated customer/Admin Activity surface presents one entry with the two labeled meanings.
-- **Expected Behavior:** `Aktivitas` is one UI destination; `Notifikasi` describes automatic system/state events; `Kotak Masuk` describes persistent operational messages.
-- **Root Cause:** The UI needed concise semantic labels, not a merged backend.
+- **Current Production Evidence:** The latest real recording reopened this item: the desktop panel overflowed and exposed a competing Inbox destination. The corrected local build is not yet Production-accepted.
+- **Expected Behavior:** `Aktivitas` is one newest-first feed; `Sistem` describes automatic system/state events; `Pesan BFG` describes persistent operational messages. Users do not choose a category before reading activity.
+- **Root Cause:** The prior composition preserved the backend distinction too literally in the primary UI, with a constrained panel and a redundant `Buka Kotak Masuk` CTA.
 - **Affected Route:** Customer/Admin shell Activity entry and activity surfaces.
 - **Affected Domain:** Notifications and Inbox remain separate.
 - **State Machine Impact:** None; event/message ownership and read semantics remain separate.
-- **Fix:** Preserve explanatory copy and separate backend queries/tables.
-- **Regression:** Activity projection/domain tests and authenticated surface check.
-- **Production Evidence:** Current Production labels both streams without coupling their data models.
-- **Status:** `GREEN`.
+- **Fix:** Project both canonical sources into one deterministic newest-first feed, combine unread counts without duplicating records, keep only clicked-item read behavior, remove the panel Inbox CTA, and use a bounded desktop panel/full-width narrow surface.
+- **Regression:** Activity projection/domain tests, component tests, viewport overflow checks, and authenticated Production surface check.
+- **Production Evidence:** Local deterministic and component evidence is green; authenticated Production acceptance remains pending after deployment.
+- **Status:** `REOPENED — PRODUCTION ACCEPTANCE PENDING`.
 
 ## 13 — Responsive Admin navigation
 
@@ -333,6 +333,8 @@ eligible Production record is available for mutation; no record is fabricated.
 
 ## Closure rule
 
-Product Media implementation remains **zero** in this pass. Bulk Import V1
-remains deployed and unchanged; its Production pilot remains **DEFERRED BY
-USER**. Neither is a Client UAT closure dependency.
+Product Media V1 is implemented under its locked Book Master ownership and
+HTTPS metadata-only source contract; its Production deployment and one-real-book
+UAT are final completion gates. Bulk Import V1 remains deployed and unchanged;
+its Production pilot remains **DEFERRED BY USER DATA** and does not justify
+fabricating Products or business records.

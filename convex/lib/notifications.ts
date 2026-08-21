@@ -1,4 +1,4 @@
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 
 type Notice = {
@@ -10,6 +10,41 @@ type Notice = {
   relatedEntityType?: string;
   relatedEntityId?: string;
 };
+
+export type ActivityItem = {
+  source: "notification" | "inbox";
+  type: "system" | "message";
+  timestamp: number;
+  title: string;
+  description: string;
+  readAt: number | null;
+  destination: string;
+  sourceId: Id<"notifications">;
+};
+
+function safeDestination(destination: string) {
+  return destination.startsWith("/") && !destination.startsWith("//") ? destination : "/";
+}
+
+export function projectActivity(notices: Doc<"notifications">[]): ActivityItem[] {
+  return notices
+    .map((notice) => ({
+      source: notice.surface,
+      type: (notice.surface === "notification" ? "system" : "message") as ActivityItem["type"],
+      timestamp: notice.createdAt,
+      title: notice.title,
+      description: notice.body,
+      readAt: notice.readAt ?? null,
+      destination: safeDestination(notice.destination),
+      sourceId: notice._id,
+    }))
+    .sort(
+      (left, right) =>
+        right.timestamp - left.timestamp ||
+        (left.type === right.type ? 0 : left.type === "system" ? -1 : 1) ||
+        String(left.sourceId).localeCompare(String(right.sourceId)),
+    );
+}
 
 export function notifyUser(ctx: MutationCtx, recipientUserId: Id<"appUsers">, notice: Notice) {
   return ctx.db.insert("notifications", { recipientUserId, ...notice, createdAt: Date.now() });

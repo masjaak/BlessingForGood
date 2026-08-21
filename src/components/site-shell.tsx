@@ -90,8 +90,8 @@ function CustomerNavIcon({ name }: { name: (typeof customerBottomLinks)[number][
 }
 
 export function CustomerBottomNav({ pathname }: { pathname: string }) {
-  const { inbox, notifications } = useWorkspaceActivity();
-  const hasUnreadActivity = (notifications || 0) > 0 || (inbox || 0) > 0;
+  const { activity } = useWorkspaceActivity();
+  const hasUnreadActivity = (activity || 0) > 0;
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));
   return (
     <nav className="customer-bottom-nav" aria-label="Navigasi pelanggan">

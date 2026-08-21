@@ -1,11 +1,14 @@
 # BFG BULK IMPORT POLICY
 
-Status: `LOCKED FOR BULK IMPORT V1`
-Phase 08: `SOURCE CONTRACT PREPARED; IMPLEMENTATION NOT STARTED`
+Status: `LOCKED — IMPLEMENTED/DEPLOYED; PILOT DEFERRED BY USER DATA`
+Phase 08: `IMPLEMENTED + PRODUCTION DEPLOYED; REAL PILOT DEFERRED`
 Prepared: 2026-08-16 (Asia/Jakarta)
 
-This policy is the decision authority for the future Bulk Import
-implementation. It applies only to product-master CSV import.
+This policy is the decision authority for the implemented Bulk Import V1. It
+applies only to product-master CSV import. The implementation and Production
+deployment are green; a legitimate 3–5-book pilot remains deferred because no
+user-provided pilot CSV is available. No data is fabricated to close that
+pilot.
 
 ## Scope
 
@@ -240,5 +243,6 @@ smuggled into V1 as infrastructure.
 
 ## Implementation Boundary
 
-This policy does not implement a route, parser, dependency, schema, mutation,
-UI, template, import job, or actual implementation tests.
+This policy does not authorize order import, stock import, Secret Catalog
+assignment, media ingestion, arbitrary metadata, or an import-job subsystem.
+Those boundaries remain true in the deployed V1 implementation.

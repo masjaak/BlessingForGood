@@ -8,7 +8,7 @@ export default function AdminNotificationsPage() {
   return (
     <SiteShell>
       <ProductAccessGuard requiredRole="admin">
-        <ActivityCenter surface="notification" workspace="admin" />
+        <ActivityCenter workspace="admin" />
       </ProductAccessGuard>
     </SiteShell>
   );

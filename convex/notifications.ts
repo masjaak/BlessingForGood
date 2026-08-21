@@ -1,9 +1,55 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireActiveUser } from "./lib/auth";
 import { fail } from "./lib/errors";
+import { projectActivity } from "./lib/notifications";
 
 const surface = v.union(v.literal("notification"), v.literal("inbox"));
+
+async function mineBySurface(ctx: QueryCtx, recipientUserId: Id<"appUsers">) {
+  return Promise.all(
+    (["notification", "inbox"] as const).map((currentSurface) =>
+      ctx.db
+        .query("notifications")
+        .withIndex("by_recipient_surface_created_at", (index) =>
+          index.eq("recipientUserId", recipientUserId).eq("surface", currentSurface),
+        )
+        .order("desc")
+        .take(100),
+    ),
+  );
+}
+
+export const listActivity = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireActiveUser(ctx);
+    const [notifications, inbox] = await mineBySurface(ctx, user._id);
+    // ponytail: two bounded source reads, enough for the visible feed; add cursor pagination only when activity volume warrants it.
+    return projectActivity([...notifications, ...inbox]);
+  },
+});
+
+export const unreadActivityCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireActiveUser(ctx);
+    const counts = await Promise.all(
+      (["notification", "inbox"] as const).map((currentSurface) =>
+        ctx.db
+          .query("notifications")
+          .withIndex("by_recipient_surface_read_at", (index) =>
+            index.eq("recipientUserId", user._id).eq("surface", currentSurface).eq("readAt", undefined),
+          )
+          .take(100),
+      ),
+    );
+    // ponytail: badge caps at 200 unread rows; the UI already renders 99+.
+    return counts[0].length + counts[1].length;
+  },
+});
 
 export const listMine = query({
   args: { surface },

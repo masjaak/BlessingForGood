@@ -6,21 +6,14 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { api } from "../../convex/_generated/api";
 import { ActivityCenter } from "@/components/activity-center";
 
-type ActivitySurface = "notification" | "inbox";
-export type WorkspaceActivityCounts = {
-  notifications?: number;
-  inbox?: number;
-};
+export type WorkspaceActivityCounts = { activity?: number };
 
 export const WorkspaceActivityContext = createContext<WorkspaceActivityCounts>({});
 
 export function WorkspaceActivityProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  const notifications = useQuery(api.notifications.unreadCount, enabled ? { surface: "notification" } : "skip");
-  const inbox = useQuery(api.notifications.unreadCount, enabled ? { surface: "inbox" } : "skip");
+  const activity = useQuery(api.notifications.unreadActivityCount, enabled ? {} : "skip");
 
-  return (
-    <WorkspaceActivityContext.Provider value={{ inbox, notifications }}>{children}</WorkspaceActivityContext.Provider>
-  );
+  return <WorkspaceActivityContext.Provider value={{ activity }}>{children}</WorkspaceActivityContext.Provider>;
 }
 
 export function useWorkspaceActivity() {
@@ -35,22 +28,14 @@ export function ActivityIcon() {
   );
 }
 
-export function InboxIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 5.5h16v13H4zM4 14h4l1.5 2h5L16 14h4M8 9h8" />
-    </svg>
-  );
-}
-
 function ActivityTrigger({
   open,
-  total,
+  activity,
   onClick,
   triggerRef,
 }: {
   open: boolean;
-  total?: number;
+  activity?: number;
   onClick: () => void;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }) {
@@ -58,7 +43,7 @@ function ActivityTrigger({
     <button
       aria-expanded={open}
       aria-haspopup="dialog"
-      aria-label={`Aktivitas${total ? `, ${total} belum dibaca` : ""}`}
+      aria-label={`Aktivitas${activity ? `, ${activity} belum dibaca` : ""}`}
       className="workspace-activity-trigger"
       onClick={onClick}
       ref={triggerRef}
@@ -66,39 +51,31 @@ function ActivityTrigger({
     >
       <ActivityIcon />
       <span>Aktivitas</span>
-      {total ? <span className="workspace-action-badge">{total > 99 ? "99+" : total}</span> : null}
+      {activity ? <span className="workspace-action-badge">{activity > 99 ? "99+" : activity}</span> : null}
     </button>
   );
 }
 
-function ActivityPopover({
-  workspace,
-  notifications,
-  inbox,
-}: {
-  workspace: "admin" | "customer";
-  notifications?: number;
-  inbox?: number;
-}) {
+function ActivityPopover({ workspace, activity }: { workspace: "admin" | "customer"; activity?: number }) {
   const [open, setOpen] = useState(false);
-  const [surface, setSurface] = useState<ActivitySurface>("notification");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const total = typeof notifications === "number" && typeof inbox === "number" ? notifications + inbox : undefined;
+  function closePanel() {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }
 
   useEffect(() => {
     if (!open) return;
     function handlePointerDown(event: PointerEvent) {
       const target = event.target as Node;
       if (!panelRef.current?.contains(target) && !triggerRef.current?.contains(target)) {
-        setOpen(false);
-        triggerRef.current?.focus();
+        closePanel();
       }
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
+        closePanel();
       }
     }
     document.addEventListener("pointerdown", handlePointerDown);
@@ -112,20 +89,14 @@ function ActivityPopover({
   return (
     <div className="workspace-activity">
       <ActivityTrigger
+        activity={activity}
         onClick={() => setOpen((current) => !current)}
         open={open}
-        total={total}
         triggerRef={triggerRef}
       />
       {open ? (
         <div aria-label="Aktivitas" className="workspace-activity-panel" ref={panelRef} role="dialog">
-          <ActivityCenter
-            compact
-            counts={{ notification: notifications, inbox }}
-            onSurfaceChange={setSurface}
-            surface={surface}
-            workspace={workspace}
-          />
+          <ActivityCenter compact onClose={closePanel} workspace={workspace} />
         </div>
       ) : null}
     </div>
@@ -133,8 +104,8 @@ function ActivityPopover({
 }
 
 function ConnectedActions({ workspace }: { workspace: "admin" | "customer" }) {
-  const { inbox, notifications } = useWorkspaceActivity();
-  return <ActivityPopover inbox={inbox} notifications={notifications} workspace={workspace} />;
+  const { activity } = useWorkspaceActivity();
+  return <ActivityPopover activity={activity} workspace={workspace} />;
 }
 
 export function WorkspaceActions({ workspace, enabled }: { workspace: "admin" | "customer"; enabled: boolean }) {

@@ -8,13 +8,20 @@ import { fail } from "./lib/errors";
 import { nonNegativeQuantity } from "./lib/validation";
 import { bookFormatValidator, bookSortValidator } from "./validators";
 
-async function publicBookView(ctx: QueryCtx, book: Doc<"books">) {
-  const [publisher, variants] = await Promise.all([
+async function publicBookView(ctx: QueryCtx, book: Doc<"books">, includeMedia = false) {
+  const [publisher, variants, gallery] = await Promise.all([
     ctx.db.get(book.publisherId),
     ctx.db
       .query("bookVariants")
       .withIndex("by_book", (query) => query.eq("bookId", book._id))
       .collect(),
+    includeMedia
+      ? ctx.db
+          .query("bookMedia")
+          .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
+          .order("asc")
+          .take(8)
+      : Promise.resolve([]),
   ]);
   if (!publisher?.isActive) return null;
   const stocked = (
@@ -49,6 +56,18 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">) {
     description: book.description,
     categories: book.categories,
     coverImageUrl: book.coverStorageId ? await ctx.storage.getUrl(book.coverStorageId) : book.coverImageUrl,
+    gallery: await Promise.all(
+      gallery.map(async (media) => ({
+        mediaId: media._id,
+        displayOrder: media.displayOrder,
+        altText: media.altText,
+        url: await ctx.storage.getUrl(media.storageId),
+      })),
+    ).then((items) => items.filter((item): item is typeof item & { url: string } => Boolean(item.url))),
+    externalPreview:
+      book.externalPreviewUrl && book.externalPreviewLabel
+        ? { label: book.externalPreviewLabel, url: book.externalPreviewUrl }
+        : null,
     publisher: { id: publisher._id, name: publisher.name },
     variants: stocked,
     minPrice: Math.min(...prices),
@@ -170,7 +189,7 @@ export const getBySlug = query({
       .withIndex("by_slug", (index) => index.eq("slug", args.slug))
       .unique();
     if (!book || book.publicationStatus !== "published") return null;
-    return publicBookView(ctx, book);
+    return publicBookView(ctx, book, true);
   },
 });
 

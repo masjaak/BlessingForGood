@@ -51,7 +51,7 @@ describe("page-aware workspace skeletons", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account/inbox" />);
 
     expect(document.querySelector('[data-skeleton="CUSTOMER_ACTIVITY_SKELETON"]')).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Kotak masuk" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Aktivitas" })).toBeTruthy();
     expect(document.querySelector(".admin-nav")).toBeNull();
   });
 

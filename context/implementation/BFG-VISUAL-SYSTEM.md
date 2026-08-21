@@ -84,11 +84,15 @@ icon package for a single glyph or use emoji as an operational icon.
 ## Activity
 
 `src/components/workspace-actions.tsx` owns the shared
-`WorkspaceActivityProvider`, combined Activity trigger, and notification/Inbox
-unread queries. `CustomerBottomNav` and `/account` consume the same counts, so
-the mobile Akun dot is data-backed without a second unread-query path. The
-presentation is unified; the backend Notification and Inbox data model stays
-separate.
+`WorkspaceActivityProvider`, combined Activity trigger, and one unread count
+projected from both canonical sources. `CustomerBottomNav` and `/account`
+consume the same count, so the mobile Akun dot is data-backed without a second
+unread-query path. Activity is one newest-first feed with compact `Sistem` and
+`Pesan BFG` labels, no Notification/Inbox tabs, and no primary panel-level
+`Buka Kotak Masuk` CTA. Desktop uses a bounded anchored panel; narrow Admin and
+mobile use a bounded sheet/full-width Activity surface with vertical scrolling
+only. The presentation is unified; backend Notification and Inbox storage,
+ownership, retention, and read semantics stay separate.
 
 ## Page-aware Skeleton
 

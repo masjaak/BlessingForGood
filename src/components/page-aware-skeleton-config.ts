@@ -177,10 +177,8 @@ export function adminConfig(pathname: string): SkeletonConfig {
     return {
       kind: "table-queue",
       eyebrow: "Pusat aktivitas",
-      title: pathname.endsWith("inbox") ? "Kotak masuk" : "Notifikasi",
-      description: pathname.endsWith("inbox")
-        ? "Pesan operasional yang perlu ditindaklanjuti."
-        : "Pembaruan sistem untuk ruang kerja Admin.",
+      title: "Aktivitas",
+      description: "Satu feed kronologis untuk perubahan sistem dan pesan operasional BFG.",
       variant: "card-list",
     };
   }
@@ -298,10 +296,8 @@ export function customerConfig(pathname: string): SkeletonConfig {
     return {
       kind: "activity",
       eyebrow: "Akun Blessfriends",
-      title: pathname.endsWith("inbox") ? "Kotak masuk" : "Notifikasi",
-      description: pathname.endsWith("inbox")
-        ? "Pesan operasional dari BFG untuk akunmu."
-        : "Pembaruan pesanan, batch, tagihan, dan pembayaranmu.",
+      title: "Aktivitas",
+      description: "Satu feed kronologis untuk perubahan sistem dan pesan operasional BFG.",
       narrow: true,
       variant: "customer-card-list",
     };

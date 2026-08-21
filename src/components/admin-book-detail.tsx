@@ -19,9 +19,11 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
+import { ProductGallery } from "@/components/product-gallery";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
+type GalleryImage = AdminBook["gallery"][number];
 type BookFormat = "BB" | "PB" | "HB";
 type PublicationStatus = "draft" | "published" | "special" | "archived";
 
@@ -109,6 +111,11 @@ function BookEditor({ book }: { book: AdminBook }) {
   const createVariant = useMutation(api.bookVariants.create);
   const generateCoverUploadUrl = useMutation(api.books.generateCoverUploadUrl);
   const attachCover = useMutation(api.books.attachCover);
+  const generateGalleryUploadUrl = useMutation(api.books.generateGalleryUploadUrl);
+  const attachGalleryImage = useMutation(api.books.attachGalleryImage);
+  const removeGalleryImage = useMutation(api.books.removeGalleryImage);
+  const moveGalleryImage = useMutation(api.books.moveGalleryImage);
+  const updateExternalPreview = useMutation(api.books.updateExternalPreview);
   const [publisherId, setPublisherId] = useState(book.publisherId);
   const [title, setTitle] = useState(book.title);
   const [slug, setSlug] = useState(book.slug);
@@ -124,7 +131,16 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [variantMessage, setVariantMessage] = useState("");
   const [coverMessage, setCoverMessage] = useState("");
   const [coverError, setCoverError] = useState("");
-  const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | null>(null);
+  const [galleryFile, setGalleryFile] = useState<File | null>(null);
+  const [galleryAltText, setGalleryAltText] = useState(book.title);
+  const [galleryMessage, setGalleryMessage] = useState("");
+  const [galleryError, setGalleryError] = useState("");
+  const [galleryPendingMediaId, setGalleryPendingMediaId] = useState<string | null>(null);
+  const [previewLabel, setPreviewLabel] = useState(book.externalPreviewLabel || "");
+  const [previewUrl, setPreviewUrl] = useState(book.externalPreviewUrl || "");
+  const [previewMessage, setPreviewMessage] = useState("");
+  const [previewError, setPreviewError] = useState("");
+  const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | "gallery" | "preview" | null>(null);
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,6 +194,80 @@ function BookEditor({ book }: { book: AdminBook }) {
     }
   }
 
+  async function uploadGalleryImage() {
+    if (!galleryFile) return;
+    setGalleryMessage("");
+    setGalleryError("");
+    setPendingAction("gallery");
+    try {
+      const validationError = validateCoverFile(galleryFile);
+      if (validationError) {
+        setGalleryError(validationError.replace("Cover", "Gambar galeri"));
+        return;
+      }
+      const uploadUrl = await generateGalleryUploadUrl({});
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": galleryFile.type },
+        body: galleryFile,
+      });
+      if (!response.ok) throw new Error("unggah gagal");
+      const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+      await attachGalleryImage({ bookId: book._id, storageId, altText: galleryAltText });
+      setGalleryFile(null);
+      setGalleryMessage("Gambar galeri tersimpan.");
+    } catch {
+      setGalleryError("Gambar galeri belum tersimpan. Coba lagi.");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function removeGallery(media: GalleryImage) {
+    setGalleryMessage("");
+    setGalleryError("");
+    setGalleryPendingMediaId(media.mediaId);
+    try {
+      await removeGalleryImage({ mediaId: media.mediaId });
+      setGalleryMessage("Gambar galeri dihapus.");
+    } catch {
+      setGalleryError("Gambar galeri belum dapat dihapus.");
+    } finally {
+      setGalleryPendingMediaId(null);
+    }
+  }
+
+  async function moveGallery(media: GalleryImage, direction: "up" | "down") {
+    setGalleryMessage("");
+    setGalleryError("");
+    setGalleryPendingMediaId(media.mediaId);
+    try {
+      await moveGalleryImage({ mediaId: media.mediaId, direction });
+    } catch {
+      setGalleryError("Urutan galeri belum dapat diubah.");
+    } finally {
+      setGalleryPendingMediaId(null);
+    }
+  }
+
+  async function saveExternalPreview() {
+    setPreviewMessage("");
+    setPreviewError("");
+    if (previewUrl && !/^https:\/\//i.test(previewUrl.trim())) {
+      setPreviewError("Pratinjau eksternal harus menggunakan HTTPS.");
+      return;
+    }
+    setPendingAction("preview");
+    try {
+      await updateExternalPreview({ bookId: book._id, label: previewLabel, url: previewUrl });
+      setPreviewMessage(previewUrl.trim() ? "Pratinjau eksternal tersimpan." : "Pratinjau eksternal dihapus.");
+    } catch {
+      setPreviewError("Pratinjau eksternal belum dapat disimpan.");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function addVariant(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setVariantMessage("");
@@ -198,6 +288,12 @@ function BookEditor({ book }: { book: AdminBook }) {
     setCoverFile(file);
     setCoverMessage("");
     setCoverError("");
+  }
+
+  function handleGalleryFileChange(file: File | null) {
+    setGalleryFile(file);
+    setGalleryMessage("");
+    setGalleryError("");
   }
 
   return (
@@ -284,6 +380,155 @@ function BookEditor({ book }: { book: AdminBook }) {
                 publisher={book.publisher?.name || "BFG"}
                 title={book.title}
               />
+              <section className="admin-book-detail-section product-media-admin-section">
+                <div className="split-heading">
+                  <div>
+                    <span className="card-kicker">GALERI PRODUK</span>
+                    <h2>Gambar tambahan</h2>
+                  </div>
+                  <span className="subtle">{book.gallery.length}/8</span>
+                </div>
+                <ProductGallery
+                  images={book.gallery
+                    .filter((image) => Boolean(image.url))
+                    .map((image) => ({
+                      mediaId: image.mediaId,
+                      url: image.url!,
+                      altText: image.altText,
+                      displayOrder: image.displayOrder,
+                    }))}
+                  title={book.title}
+                />
+                <div className="product-media-list">
+                  {book.gallery.map((media, index) => (
+                    <div className="product-media-row" key={media.mediaId}>
+                      <span>
+                        <strong>Gambar {index + 1}</strong>
+                        <small>{media.altText}</small>
+                      </span>
+                      <span className="form-actions">
+                        <Button
+                          aria-label={`Naikkan gambar ${index + 1}`}
+                          disabled={index === 0 || galleryPendingMediaId === media.mediaId}
+                          onClick={() => void moveGallery(media, "up")}
+                          size="compact"
+                          type="button"
+                          variant="quiet"
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          aria-label={`Turunkan gambar ${index + 1}`}
+                          disabled={index === book.gallery.length - 1 || galleryPendingMediaId === media.mediaId}
+                          onClick={() => void moveGallery(media, "down")}
+                          size="compact"
+                          type="button"
+                          variant="quiet"
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          disabled={galleryPendingMediaId === media.mediaId}
+                          onClick={() => void removeGallery(media)}
+                          size="compact"
+                          type="button"
+                          variant="danger"
+                        >
+                          Hapus
+                        </Button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="form-grid">
+                  <Field label="Alt text gambar" hint="Maksimal 160 karakter.">
+                    <input
+                      className="input"
+                      maxLength={160}
+                      value={galleryAltText}
+                      onChange={(event) => setGalleryAltText(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Pilih gambar" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
+                    <input
+                      accept="image/jpeg,image/png,image/webp"
+                      className="input"
+                      onChange={(event) => handleGalleryFileChange(event.target.files?.[0] || null)}
+                      type="file"
+                    />
+                  </Field>
+                </div>
+                <div className="form-actions">
+                  <Button
+                    disabled={!galleryFile || book.gallery.length >= 8}
+                    onClick={() => void uploadGalleryImage()}
+                    pending={pendingAction === "gallery"}
+                    pendingLabel="Mengunggah…"
+                    type="button"
+                    variant="secondary"
+                  >
+                    Simpan gambar
+                  </Button>
+                  <span className="subtle">{galleryFile?.name || "Belum ada file dipilih"}</span>
+                </div>
+                {galleryError ? <p className="error-text">{galleryError}</p> : null}
+                {galleryMessage ? (
+                  <p className="subtle" role="status">
+                    {galleryMessage}
+                  </p>
+                ) : null}
+              </section>
+              <section className="admin-book-detail-section">
+                <div className="split-heading">
+                  <div>
+                    <span className="card-kicker">PRATINJAU EKSTERNAL</span>
+                    <h2>Tambahkan tautan aman</h2>
+                  </div>
+                </div>
+                <div className="form-grid">
+                  <Field label="Label tautan">
+                    <input
+                      className="input"
+                      maxLength={120}
+                      placeholder="Mis. Preview Amazon"
+                      value={previewLabel}
+                      onChange={(event) => setPreviewLabel(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="URL HTTPS" hint="BFG tidak mengambil, menyematkan, atau meng-hotlink isi tautan.">
+                    <input
+                      className="input"
+                      inputMode="url"
+                      placeholder="https://..."
+                      type="url"
+                      value={previewUrl}
+                      onChange={(event) => setPreviewUrl(event.target.value)}
+                    />
+                  </Field>
+                </div>
+                <div className="form-actions">
+                  <Button
+                    onClick={() => void saveExternalPreview()}
+                    pending={pendingAction === "preview"}
+                    pendingLabel="Menyimpan…"
+                    type="button"
+                    variant="secondary"
+                  >
+                    Simpan pratinjau
+                  </Button>
+                  {book.externalPreviewUrl ? (
+                    <a href={book.externalPreviewUrl} rel="noreferrer noopener" target="_blank">
+                      Buka tautan ↗
+                    </a>
+                  ) : null}
+                </div>
+                {previewError ? <p className="error-text">{previewError}</p> : null}
+                {previewMessage ? (
+                  <p className="subtle" role="status">
+                    {previewMessage}
+                  </p>
+                ) : null}
+              </section>
               <section className="admin-book-detail-section">
                 <div className="split-heading">
                   <div>

@@ -8,7 +8,7 @@ export default function CustomerInboxPage() {
   return (
     <SiteShell>
       <ProductAccessGuard requiredRole="customer">
-        <ActivityCenter surface="inbox" workspace="customer" />
+        <ActivityCenter workspace="customer" />
       </ProductAccessGuard>
     </SiteShell>
   );

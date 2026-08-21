@@ -8,7 +8,7 @@ export default function CustomerNotificationsPage() {
   return (
     <SiteShell>
       <ProductAccessGuard requiredRole="customer">
-        <ActivityCenter surface="notification" workspace="customer" />
+        <ActivityCenter workspace="customer" />
       </ProductAccessGuard>
     </SiteShell>
   );

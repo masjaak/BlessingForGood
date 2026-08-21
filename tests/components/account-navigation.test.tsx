@@ -50,7 +50,8 @@ describe("customer account navigation", () => {
 
     expect(screen.getByRole("link", { name: /Profil/ }).getAttribute("href")).toBe("/account/profile");
     expect(screen.getByRole("link", { name: /Alamat pengiriman/ }).getAttribute("href")).toBe("/account/addresses");
-    expect(screen.getByRole("link", { name: /Notifikasi/ }).getAttribute("href")).toBe("/account/notifications");
-    expect(screen.getByRole("link", { name: /Kotak Masuk/ }).getAttribute("href")).toBe("/account/inbox");
+    expect(screen.getByRole("link", { name: /Buka Aktivitas/ }).getAttribute("href")).toBe("/account/notifications");
+    expect(screen.queryByRole("link", { name: /Notifikasi/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Kotak Masuk/ })).toBeNull();
   });
 });

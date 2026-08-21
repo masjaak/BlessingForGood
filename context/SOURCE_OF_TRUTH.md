@@ -4,17 +4,17 @@ Reconciled: 2026-08-21 (Asia/Jakarta)
 Applies to the current `main` after the Phase 08 Client UAT closure pass; the canonical Production deployment is
 the latest Git-triggered `READY` deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **ACTIVE — REAL CLIENT UAT REOPENED**. The previous generic
-no-red/yellow/unknown closure is superseded by a real Production screenshot
-showing Admin Catalog action spacing was still incorrect. Current evidence is
-classified as `GREEN_REAL_PRODUCTION`, `GREEN_DETERMINISTIC`,
-`BLOCKED_BY_DATA`, or `BLOCKED_EXTERNAL`; the original Client UAT matrix is
-not closed until the reopened operator journeys and post-fix authenticated
-rendering are rechecked.
-the Bulk Import V1 implementation is deployed but its legitimate Production
-pilot is **DEFERRED BY USER**. Final Bulk Import Production acceptance is not
-claimed. The current milestone is the stabilized Client UAT matrix; Product
-Media remains source-contract preparation only. The entry gate is defined in
+Phase 08: **ACTIVE — FINAL PRODUCT COMPLETION AND STABILIZATION**. The previous
+generic no-red/yellow/unknown closure is superseded by the reopened Activity
+responsive defect and the remaining authenticated Production gates. Current
+evidence is classified as `GREEN_REAL_PRODUCTION`,
+`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`, `OPTIONAL_FUTURE`, or `EXCLUDED` in
+the final completion matrix; external browser/deployment evidence is recorded
+separately and is never invented.
+The Bulk Import V1 implementation is deployed but its legitimate Production
+pilot is **DEFERRED BY USER**. Product Media decisions are now locked and the
+bounded implementation is present locally; Production deployment and one-real-
+book UAT remain delivery gates. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -49,15 +49,15 @@ Current exact regression baseline:
 
 | Gate        | Result                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vitest      | `225 / 225`                                                                                                                                                                               |
-| Convex      | `108 / 108` (included in Vitest)                                                                                                                                                          |
-| Playwright  | `195 / 195` route smoke/rendered checks, including `18 / 18` rendered client UAT checks                                                                                                  |
+| Vitest      | `229 / 229`                                                                                                                                                                               |
+| Convex      | `110 / 110` (included in Vitest)                                                                                                                                                          |
+| Playwright  | `201 / 201` route smoke/rendered checks, including `24 / 24` rendered client UAT checks; one environmental retry recovered                                                                 |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
 | Rendered QA | local production-server route/viewport checks pass; Homepage rhythm and shared visual checks are green; authenticated Admin Books/invoice spacing baseline is preserved at 1440px |
-| Real UAT    | Authenticated Admin UAT evidence is recorded for Content, Settings, Orders, Invoices, Batch, Books, and Import; the Client UAT matrix is closed; Bulk Import pilot remains deferred by user |
+| Real UAT    | Existing authenticated evidence is preserved; Activity/Product Media and remaining operator/settings/responsive journeys still require authenticated Production acceptance; Bulk Import pilot remains deferred by user |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -124,19 +124,20 @@ linked invariant/matrix documents.
 
 ## Current Phase
 
-`BFG_PHASE_08_CLIENT_UAT_STABILIZED` — Phase 07.1 remains CLOSED +
-RECONCILED; Phase 08 remains active for the deferred Bulk Import pilot and the
-Product Media source decisions.
+`BFG_PHASE_08_FINAL_COMPLETION_ACTIVE` — Phase 07.1 remains CLOSED +
+RECONCILED; Phase 08 is finishing Activity, Product Media, remaining real UAT,
+and final Production acceptance. Bulk Import pilot deferral remains explicit.
 
 ## Phase 08 Status
 
-**ACTIVE — Client UAT is stabilized; the Bulk Import V1 Production pilot is
-pending by user decision.** The locked source, data, policy, state, visual,
-and traceability contracts are linked from
+**ACTIVE — final completion is in progress.** The locked source, data, policy,
+state, visual, and traceability contracts are linked from
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-SOURCE-CONTRACT.md).
 The implementation is a single `/admin/import` stateful flow, reuses the
 canonical publisher/book/variant/audit/auth boundaries, adds no schema or
-dependency, and does not start another Phase 08 candidate.
+dependency, and does not start another Phase 08 candidate. Activity is one
+unified presentation over separate Notification and Inbox sources. Product
+Media V1 is Book Master-owned and uses the existing Convex storage boundary.
 
 ## Canonical Business Rules
 
@@ -214,11 +215,10 @@ availability. Publication visibility is server-controlled. Current durable
 media proof is Admin upload → validated Convex storage → persisted reference →
 hard-refresh persistence → customer-safe projection.
 
-Multi-image galleries and external preview metadata are a separate Phase 08
-candidate. The original source requires a Ready Stock detail gallery and the
-mockup shows up to eight gallery images plus external-preview fields, but the
-current reconciled model still lacks an approved media owner and external URL
-allowlist. See
+Product Gallery V1 is Book Master-owned and permits up to eight additional
+ordered images; variants do not override it. External Preview V1 is optional
+HTTPS metadata only: label/title plus URL, with no server fetch, scrape, iframe,
+or remote image hotlink. Cover remains a separate primary identity image. See
 [`BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md).
 
 ## Ready Stock
@@ -347,11 +347,13 @@ event type, safe copy, destination, related entity, creation time, and `readAt`.
 They never replace canonical order/invoice/payment state and never contain
 credentials, access codes, or digests.
 
-`Aktivitas` is the single customer/Admin UI entry for the two surfaces below.
-`Notifikasi` means automatic system/state events such as invoice, payment, or
-Batch updates. `Kotak Masuk` means persistent operational messages from BFG.
-The UI presentation is unified for discoverability, but the backend tables,
-queries, ownership, and authorization remain separate.
+`Aktivitas` is one newest-first customer/Admin feed projected from both
+surfaces. Each item carries a compact `Sistem` or `Pesan BFG` label for context;
+the user does not choose a category before reading activity. `Notifikasi` means
+automatic system/state events such as invoice, payment, or Batch updates.
+`Kotak Masuk` means persistent operational messages from BFG. The UI projection
+is unified, but backend tables, queries, ownership, retention, and read
+semantics remain separate.
 
 ## Inbox
 
@@ -359,7 +361,8 @@ Inbox is a persistent operational message surface sourced from real submissions
 and workflow events. It is not social chat: no presence, typing, reactions,
 rooms, or arbitrary attachments are in scope. Customer ownership is enforced.
 The unified Aktivitas presentation does not merge the Notification and Inbox
-data models.
+data models. Existing Inbox routes remain compatibility/deep-link surfaces, not
+a second primary Activity destination.
 
 ## Admin Users / Access
 
@@ -385,14 +388,16 @@ mobile bottom navigation.
 ## Responsive Rules
 
 - Customer mobile: logo-only top header; bottom primary navigation; no desktop
-  header control return. Notification and Inbox are discoverable under Akun →
-  Aktivitas, with a small data-backed unread dot on Akun when either surface
-  has unread records.
+  header control return. The full-width Aktivitas surface is discoverable under
+  Akun, with a small data-backed unread dot on Akun when either source has
+  unread records.
 - Customer desktop: coherent one-row header with logo, primary nav, Aktivitas,
-  and avatar.
+  and avatar; its anchored panel is bounded to the viewport, vertically
+  scrollable, and never horizontally scrollable.
 - Admin desktop: one-row operational header with no wrapping at supported
   widths; `Lihat sisi pelanggan` remains one line and Activity/Avatar remain in
-  the same action cluster.
+  the same action cluster. Narrow Admin widths use a bounded sheet/full-width
+  surface rather than an escaping popover.
 - Book Detail: `COVER BUKU` uses a real aspect-ratio preview and
   `CoverUploadField` custom trigger over an accessible visually-hidden native
   file input. The canonical storage/upload consequence is unchanged.
@@ -447,9 +452,15 @@ Only source-supported work appears in
 - Bulk Import V1 is implemented and Production-deployed; its legitimate
   Production pilot is deferred by explicit user decision and final acceptance
   is not claimed.
-- multi-image gallery and external preview metadata;
+- Product Media V1 is implemented locally and remains a Production/UAT gate;
+  it is no longer an unresolved candidate.
 - broader backup/restore operations beyond current bounded export;
 - cross-domain Admin search.
+
+Advanced analytics, custom backup/restore operations, and cross-domain Admin
+search are explicitly `OPTIONAL_FUTURE`; they do not block current-product
+completion. Bulk Import V1 is implemented and deployed, while its 3–5-book
+pilot is `DEFERRED_BY_USER_DATA` and must not be fabricated.
 
 The excluded integrations above are not Phase 08 candidates.
 
@@ -597,19 +608,20 @@ Production records were created.
 
 ### Next Milestone
 
-Client UAT is stabilized. Resolve the two material Product Media source
-decisions before any Product Gallery schema or UI implementation. Bulk Import
-V1 remains deployed but its Production pilot is deferred by user.
+Complete the unified Activity Production acceptance, deploy and accept Product
+Media against one legitimate existing book, close the remaining authenticated
+Client UAT journeys, reconcile the final matrix, and establish maintenance
+mode. Do not create Phase 09.
 
 ## Phase 08 Next Milestone — 2026-08-21
 
 - Phase 07.1: **CLOSED + RECONCILED**.
 - Development System V2: **ACTIVE**.
-- Phase 08: **ACTIVE — CLIENT UAT STABILIZED**.
+- Phase 08: **ACTIVE — FINAL COMPLETION / STABILIZATION**.
 - Bulk Import V1: **IMPLEMENTED + PRODUCTION DEPLOYED**.
 - Bulk Import Production pilot: **DEFERRED BY USER**.
 - Bulk Import final Production acceptance: **NOT YET CLAIMED**.
-- Current priority: `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` after the
-  Client UAT closure matrix.
-- Product Media implementation entry gate: **BLOCKED by 2 material source
-  decisions**; spacing work is independent and authorized.
+- Current priority: unified Activity Production acceptance, Product Media
+  Production acceptance, and the remaining real UAT matrix.
+- Product Media source decisions: **LOCKED**; implementation is local and its
+  Production/UAT gate remains open until evidence exists.

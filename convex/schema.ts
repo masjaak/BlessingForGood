@@ -214,6 +214,8 @@ export default defineSchema({
     categories: v.array(v.string()),
     coverImageUrl: v.optional(v.string()),
     coverStorageId: v.optional(v.id("_storage")),
+    externalPreviewLabel: v.optional(v.string()),
+    externalPreviewUrl: v.optional(v.string()),
     publicationStatus: bookPublicationStatusValidator,
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -222,7 +224,20 @@ export default defineSchema({
   })
     .index("by_slug", ["slug"])
     .index("by_publication_status", ["publicationStatus"])
-    .index("by_created_at", ["createdAt"]),
+    .index("by_created_at", ["createdAt"])
+    .index("by_cover_storage_id", ["coverStorageId"]),
+
+  bookMedia: defineTable({
+    bookId: v.id("books"),
+    storageId: v.id("_storage"),
+    displayOrder: v.number(),
+    altText: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_book_and_order", ["bookId", "displayOrder"])
+    .index("by_storage_id", ["storageId"]),
 
   bookVariants: defineTable({
     bookId: v.id("books"),

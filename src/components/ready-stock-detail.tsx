@@ -5,6 +5,7 @@ import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { BookCover } from "@/components/book-cover";
+import { ProductGallery, type ProductGalleryImage } from "@/components/product-gallery";
 import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
@@ -41,6 +42,14 @@ function ConnectedDetail({ slug }: { slug: string }) {
         action={<LinkButton href="/ready-stock">Kembali ke Ready Stock</LinkButton>}
       />
     );
+  const gallery = book.gallery
+    .filter((image) => Boolean(image.url))
+    .map((image): ProductGalleryImage => ({
+      mediaId: image.mediaId,
+      url: image.url!,
+      altText: image.altText,
+      displayOrder: image.displayOrder,
+    }));
   return (
     <>
       <PageHeader eyebrow="Ready Stock" title={book.title} description={book.author || book.publisher.name} />
@@ -53,6 +62,17 @@ function ConnectedDetail({ slug }: { slug: string }) {
           </div>
           {book.description ? <p>{book.description}</p> : null}
           {book.categories.length ? <p className="subtle">{book.categories.join(" · ")}</p> : null}
+          {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}
+          {book.externalPreview ? (
+            <a
+              className="button button-secondary"
+              href={book.externalPreview.url}
+              rel="noreferrer noopener"
+              target="_blank"
+            >
+              {book.externalPreview.label} ↗
+            </a>
+          ) : null}
           <div className="content-stack">
             {book.variants.map((variant) => (
               <Card className="ready-stock-variant" key={variant.id}>

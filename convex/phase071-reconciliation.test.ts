@@ -2,7 +2,13 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
-import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
+import {
+  configureTestEnvironment,
+  createOpenCatalog,
+  CUSTOMER_SUBJECT,
+  setupUsers,
+  testConvex,
+} from "../tests/convex-helpers";
 
 describe("Phase 07.1 reconciliation", () => {
   beforeEach(configureTestEnvironment);
@@ -84,6 +90,43 @@ describe("Phase 07.1 reconciliation", () => {
     const notifications = await customer.query(api.notifications.listMine, { surface: "notification" });
     expect(notifications[0]).toMatchObject({ eventType: "invoice.issued", readAt: null });
     expect(await customer.query(api.notifications.unreadCount, { surface: "notification" })).toBe(1);
+
+    await t.run(async (ctx) => {
+      const customerUser = await ctx.db
+        .query("appUsers")
+        .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", CUSTOMER_SUBJECT))
+        .unique();
+      if (!customerUser) throw new Error("customer fixture missing");
+      await ctx.db.insert("notifications", {
+        recipientUserId: customerUser._id,
+        surface: "inbox",
+        eventType: "message.test",
+        title: "Pesan operasional",
+        body: "Pesan yang lebih baru.",
+        destination: "javascript:alert(1)",
+        createdAt: 2_000,
+      });
+      await ctx.db.insert("notifications", {
+        recipientUserId: customerUser._id,
+        surface: "notification",
+        eventType: "system.test",
+        title: "Sistem test",
+        body: "Tie-break sistem.",
+        destination: "/account/orders",
+        createdAt: 2_000,
+        readAt: 1,
+      });
+    });
+
+    const activity = await customer.query(api.notifications.listActivity, {});
+    const messageIndex = activity.findIndex((item) => item.title === "Pesan operasional");
+    const systemIndex = activity.findIndex((item) => item.title === "Sistem test");
+    expect(activity[messageIndex]).toMatchObject({ type: "message", source: "inbox", destination: "/" });
+    expect(activity[systemIndex]).toMatchObject({ type: "system", source: "notification" });
+    expect(systemIndex).toBeLessThan(messageIndex);
+    expect(await customer.query(api.notifications.unreadActivityCount, {})).toBe(2);
+    expect(await secondCustomer.query(api.notifications.listActivity, {})).toEqual([]);
+
     await expect(
       secondCustomer.mutation(api.notifications.markRead, { notificationId: notifications[0].notificationId }),
     ).rejects.toThrow("NOTIFICATION_ACCESS_DENIED");

@@ -95,4 +95,19 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     await trigger.press("Escape");
     await expect(page.locator(".bfg-select-menu")).toBeHidden();
   });
+
+  test("Activity stays one bounded feed without horizontal overflow", async ({ page }) => {
+    await page.goto("/account/notifications", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Aktivitas" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".activity-tabs")).toHaveCount(0);
+    await expect(page.getByText("Buka Kotak Masuk", { exact: true })).toHaveCount(0);
+
+    const geometry = await page.evaluate(() => ({
+      bodyScrollWidth: document.body.scrollWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(geometry.bodyScrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+    expect(geometry.documentScrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+  });
 });

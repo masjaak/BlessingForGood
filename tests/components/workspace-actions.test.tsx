@@ -4,7 +4,7 @@ import { CustomerBottomNav } from "@/components/site-shell";
 import { WorkspaceActivityContext, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
 
 vi.mock("convex/react", () => ({
-  useQuery: vi.fn((_query, args) => (args === "skip" ? undefined : 2)),
+  useQuery: vi.fn((_query, args) => (args === "skip" ? undefined : 4)),
 }));
 
 describe("authenticated workspace actions", () => {
@@ -32,7 +32,7 @@ describe("authenticated workspace actions", () => {
 
   it("signals unread customer activity on the Akun bottom-nav item", () => {
     render(
-      <WorkspaceActivityContext.Provider value={{ notifications: 1, inbox: 0 }}>
+      <WorkspaceActivityContext.Provider value={{ activity: 1 }}>
         <CustomerBottomNav pathname="/account" />
       </WorkspaceActivityContext.Provider>,
     );
@@ -43,7 +43,7 @@ describe("authenticated workspace actions", () => {
 
   it("hides the Akun unread signal when both activity surfaces are clear", () => {
     render(
-      <WorkspaceActivityContext.Provider value={{ notifications: 0, inbox: 0 }}>
+      <WorkspaceActivityContext.Provider value={{ activity: 0 }}>
         <CustomerBottomNav pathname="/account" />
       </WorkspaceActivityContext.Provider>,
     );

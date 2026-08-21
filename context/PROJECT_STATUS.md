@@ -5,15 +5,17 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_REAL_CLIENT_UAT_REOPENED`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_FINAL_COMPLETION_ACTIVE`.
 
 The previous generic `RED=0`, `YELLOW=0`, and `UNKNOWN=0` closure is superseded
 by a real Production screenshot showing Catalog action spacing was still wrong.
 The correction pass uses explicit `GREEN_REAL_PRODUCTION`,
 `GREEN_DETERMINISTIC`, `BLOCKED_BY_DATA`, and `BLOCKED_EXTERNAL` evidence. Bulk
 Import V1 remains implemented and Production-deployed, but its legitimate
-Production pilot is **DEFERRED BY USER**. Product Media implementation remains
-**ON HOLD** while Gallery ownership and External Preview policy remain open.
+Production pilot is **DEFERRED BY USER**. Activity is being completed as one
+responsive user-facing feed over separate Notification and Inbox backends.
+Product Media decisions are locked and the bounded implementation exists
+locally; Production deployment and real-book UAT remain open gates.
 
 Starting commit for this correction pass: `cb609ab`.
 Final correction commit: recorded in the delivery report for the delivered
@@ -24,18 +26,18 @@ Convex Production: `clean-eel-522`.
 Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current regression baseline before this correction remains Vitest `225/225`,
-Convex `108/108` (included in Vitest), Playwright `195/195`, rendered `18/18`,
-TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and `git diff --check`
-PASS. The current pass adds focused tests; final counts must be rerun. Public
-Production is reachable, but the current environment has no authenticated
-browser session and Vercel API access is unauthorized. No dummy Production
-business records were created.
+Current local regression is Vitest `229/229`, Convex `110/110` (included in
+Vitest), Playwright `201/201` with one environmental retry recovered, rendered
+`24/24`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
+`git diff --check` PASS. Public Production is reachable, but the current
+environment has no authenticated browser session and Vercel API access is
+unauthorized. No dummy Production business records were created.
 
-The Phase 08 Vercel Production build hook pushed the client-UAT changes and
-new order/settings functions to `clean-eel-522`; build logs confirm schema
-validation and the additive `orderReferenceCounters.by_key` index. Auth,
-financial, inventory, Secret Catalog, and Bulk Import policy remained within
+The known Production baseline is Convex `clean-eel-522` and the latest
+Git-triggered Vercel deployment. This completion pass must produce a new
+delivery commit and re-run the deployment/acceptance gates; no current code
+change is called Production-accepted before that evidence exists. Auth,
+financial, inventory, Secret Catalog, and Bulk Import policy remain within
 their locked boundaries.
 
 The canonical reconciliation artifacts are:
@@ -57,6 +59,10 @@ The canonical reconciliation artifacts are:
 - `context/implementation/BFG-VISUAL-SYSTEM.md`
 - `context/implementation/BFG-PHASE-08-ENTRY-GATE.md`
 - `context/implementation/BFG-PHASE-08-CANDIDATES.md`
+- `context/implementation/BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md`
+- `context/implementation/BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md`
+- `context/implementation/BFG-FINAL-PRODUCT-COMPLETION-MATRIX.md`
+- `context/implementation/BFG-MAINTENANCE-PLAYBOOK.md`
 
 ### Current reconciliation result
 
@@ -82,9 +88,11 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-Keep Phase 08 active for the user-authorized next milestone: resolve the two
-Product Media source decisions before any implementation. Do not touch Bulk
-Import or run its deferred pilot.
+Finish Activity responsive acceptance, deploy and accept Product Media on one
+legitimate existing book, close the remaining authenticated UAT journeys, and
+write the final completion matrix plus maintenance playbook. Do not start
+Phase 09. Bulk Import remains unchanged and its real pilot remains deferred by
+user data.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 
@@ -103,15 +111,18 @@ Import or run its deferred pilot.
   import-state QA remain unclaimed by explicit user choice; no dummy Production
   records or credentials were created.
 
-### Phase 08 next milestone context — 2026-08-20
+### Phase 08 final-completion context — 2026-08-21
 
 - `BFG-SPACING-SYSTEM.md` records the semantic Admin action and Homepage rhythm
   contract.
-- `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` records source evidence and
-  two material open Product decisions; no Product Media implementation has
-  started.
-- `BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md` records the entry gate.
-- Bulk Import implementation files and contract remain untouched.
+- `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` records the locked
+  Book-Master ownership and HTTPS metadata-only preview decisions.
+- `BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md` records the local implementation
+  and the remaining Production/real-book acceptance gate.
+- Activity now projects notifications and messages into one newest-first feed;
+  backend tables, ownership, retention, and read semantics remain separate.
+- Bulk Import implementation and contract remain unchanged; its pilot is
+  `DEFERRED_BY_USER_DATA`.
 
 ### Responsive/media closure evidence
 
