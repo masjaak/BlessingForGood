@@ -5,25 +5,28 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_FINAL_COMPLETION_ACTIVE`.
+**Phase 08:** `COMPLETE` — `BFG_PHASE_08_COMPLETE_PRODUCT_CLOSURE`.
 
 The previous generic `RED=0`, `YELLOW=0`, and `UNKNOWN=0` closure is superseded
-by the real Activity screenshot defect and the remaining authenticated gates.
-Activity is now one responsive user-facing feed over separate Notification and
-Inbox backends; the shared clipping root cause is fixed locally and covered by
-the eight-viewport rendered matrix. Bulk Import V1 remains implemented and
-Production-deployed, but its legitimate Production pilot is **DEFERRED BY USER**.
-Product Media decisions are locked and the bounded implementation is deployed;
-authenticated Admin rendering is now verified on one legitimate book, while
-safe media mutation and customer projection acceptance remain open.
+by the fixed Activity responsive defect and final user-controlled authenticated
+Customer Production acceptance. Activity is now one responsive user-facing feed
+over separate Notification and Inbox backends; the shared clipping root cause
+is fixed and covered by the eight-viewport rendered matrix. Bulk Import V1
+remains implemented and Production-deployed, but its legitimate Production
+pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are locked and the
+bounded implementation is deployed; populated Gallery/Preview UAT is blocked
+only by approved data.
 
 Starting commit for this correction pass: `cb609ab`; Activity responsive
 closure commit: `b900e74`.
 Final delivery: current `main` after final context reconciliation.
-`origin/main`: current `main` after final context reconciliation.
+Current deployed application commit: `ac5e33e`.
+Closure context commit: documentation-only local snapshot.
+`origin/main`: `ac5e33e` Production application baseline; local main is one
+closure-documentation commit ahead.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` (`READY`, canonical aliases).
+Vercel Production: `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `232/232`, Convex `110/110` (included in
@@ -31,15 +34,16 @@ Vitest), Playwright `202/202`, rendered `24/24` plus the eight-viewport Activity
 matrix, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
 `git diff --check` PASS. Public Production is reachable and the live public
 rendered suite is `24/24`. The existing authenticated Admin evidence remains
-the baseline; deployed Activity geometry passes the same eight-viewport matrix.
-The authenticated Admin recheck and Customer session are still open. No dummy
-business record or unapproved business value was created.
+green; deployed Activity geometry passes the same eight-viewport matrix.
+User-controlled authenticated Customer Production acceptance passed at
+375/390/430/768/1440 with no reported defect. No dummy business record or
+unapproved business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
-Authenticated acceptance is still required before declaring the current
-product stable. Auth, financial, inventory, Secret Catalog, and Bulk Import
-policy remain within their locked boundaries.
+Authenticated acceptance is complete for the current Customer checkpoint. Auth,
+financial, inventory, Secret Catalog, and Bulk Import policy remain within their
+locked boundaries. Product mode is now `MAINTENANCE`; no Phase 09 is started.
 
 The canonical reconciliation artifacts are:
 
@@ -87,17 +91,14 @@ The canonical reconciliation artifacts are:
 | Unclassified route               | `0`    |
 | Unclassified mockup              | `0`    |
 
-### Next milestone
+### Maintenance entry
 
-Complete Customer acceptance, close the remaining Admin UAT journeys, and apply
-the data-safe checkpoints in the final matrix. The Admin pass verified the
-unified Activity feed, a real `Pesan BFG` item interleaved with system events,
-live BFGSelect anchoring, and the legitimate Maisy's Funfair Master Buku media
-surface. The only safe Production Batch is locked, Settings has no approved
-values to edit, and no approved gallery asset or preview URL was available.
-The completion matrix and maintenance playbook are established. Do not start
-Phase 09. Bulk Import remains unchanged and its real pilot remains deferred by
-user data.
+Monthly security, dependency, auth, permission, ownership, financial, media,
+Vercel, Convex, responsive, and critical-flow smoke reviews follow
+`context/implementation/BFG-MAINTENANCE-PLAYBOOK.md`. The only safe Production
+Batch is locked, Settings has no approved values to edit, and no approved
+gallery asset or preview URL is available. Do not start Phase 09. Bulk Import
+remains unchanged and its real pilot remains deferred by user data.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 
@@ -123,20 +124,22 @@ user data.
 - `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` records the locked
   Book-Master ownership and HTTPS metadata-only preview decisions.
 - `BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md` records the deployed
-  implementation and the remaining real-book acceptance gate.
+  implementation; populated Gallery/Preview UAT remains blocked only by
+  approved data.
 - Activity now projects notifications and messages into one newest-first feed;
   backend tables, ownership, retention, and read semantics remain separate.
 - Activity responsive closure is covered locally at 375, 390, 430, 768, 834,
   1024, 1280, and 1440 widths. The panel width/position/height is measured
   against the real visual viewport; nested content tracks shrink and wrap, and
   no horizontal overflow is hidden as a substitute for fitting the layout.
-- The deployed `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` passes that populated
-  Activity matrix; authenticated Admin and Customer checkpoints remain open.
+- The supplied READY deployment `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` passes that
+  populated Activity matrix; the user-controlled authenticated Customer
+  checkpoint passed at 375/390/430/768/1440.
 - Authenticated Admin Production evidence now covers `/admin`,
   `/admin/notifications`, `/admin/books`, `/admin/books/[bookId]`,
   `/admin/batches`, `/admin/catalogs`, `/admin/invoices`,
   `/admin/orders`, and `/admin/settings`; one real `Pesan BFG` item is visible
-  in the unified feed.
+  in the unified feed. No new defect was reported during final acceptance.
 - Bulk Import implementation and contract remain unchanged; its pilot is
   `DEFERRED_BY_USER_DATA`.
 

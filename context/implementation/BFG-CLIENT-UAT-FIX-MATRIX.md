@@ -1,47 +1,48 @@
-# BFG Client UAT Fix Matrix — Phase 08 Real Reopen
+# BFG Client UAT Fix Matrix — Phase 08 Final Closure
 
 This is the canonical reconciliation of the original Client UAT findings. It
 uses the user-supplied 01–17 grouping, keeps previously proven green behavior
 frozen, and records implementation evidence separately from deterministic,
 authenticated Production, and client-recheck evidence.
 
-The 2026-08-21 real Production screenshot supersedes the previous generic
+The 2026-08-21 final Production acceptance supersedes the previous generic
 `RED=0 / YELLOW=0 / UNKNOWN=0` closure for Admin action spacing. The historical
 finding narratives below remain useful evidence, but the correction-pass table
 below is authoritative for current status.
 
-Status vocabulary for this pass is intentionally explicit:
-`GREEN_REAL_PRODUCTION`, `GREEN_DETERMINISTIC`, `BLOCKED_BY_DATA`, and
-`BLOCKED_EXTERNAL`. A finding is not client-closed merely because its tests or
-CSS inspection pass.
+Final status vocabulary is limited to `GREEN_REAL_PRODUCTION`,
+`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`, `BLOCKED_BY_APPROVED_DATA`,
+`BLOCKED_BY_OPERATIONAL_DATA`, `DEFERRED_BY_USER_DATA`, `OPTIONAL_FUTURE`, and
+`EXCLUDED`. The deterministic evidence column may use the shorter
+`GREEN_DETERMINISTIC` test label; the Client Recheck column uses only the final
+classifications. No implementation defect remains open.
 
 ## Correction-pass evidence matrix — 2026-08-21
 
 | Finding | Implementation | Deterministic | Authenticated Production | Client Recheck |
 |---|---|---|---|---|
-| 01 Content purpose | `PRESERVED` | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — no authenticated browser session available | `RECHECK_PENDING` |
-| 02 Cover full visibility | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 03 Catalog count | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 04 Invoice cancellation | `GREEN` — server/UI guard preserved | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` for settled denial; `BLOCKED_BY_DATA` for eligible live cancellation | `RECHECK_PENDING` |
-| 05 Deposit allocation | `GREEN` — bounded form/mutation preserved | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` for zero-balance denial; `BLOCKED_BY_DATA` for eligible live allocation | `RECHECK_PENDING` |
-| 06 Invoice owner | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 07 Batch ↔ Catalog | `GREEN` — existing relation controls preserved | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — authenticated Admin found only locked Batch 5; no editable Batch was safe to mutate | `RECHECK_PENDING` |
-| 08 Slide background | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied rendered evidence | `FROZEN_GREEN` |
-| 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated `/admin/books` menu opened below its trigger; middle/bottom collision contexts remain | `RECHECK_PENDING` |
-| 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — only discovered real Batch is locked; no assignment mutation was fabricated | `RECHECK_PENDING` |
-| 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 12 Activity semantics + responsive geometry | `FIXED` — one chronological projection over separate Notification/Inbox sources; viewport-safe panel, wrapping, and no panel/feed/item horizontal overflow | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — unit and rendered matrix pass at 375/390/430/768/834/1024/1280/1440 | `RECHECK_PENDING` — deployed `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` passes the public rendered matrix; authenticated Admin/Customer recheck remains required | `RECHECK_PENDING` |
-| 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — mobile/tablet authenticated render unavailable | `RECHECK_PENDING` |
-| 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — authenticated form renders, but no approved real store/payment values were supplied for a safe save/refresh test | `RECHECK_PENDING` |
-| 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — latest screenshot proves frame | `FROZEN_GREEN` |
-| 16 Admin action spacing | `FIXED` — shared semantic action region/stack/support tokens | `GREEN_DETERMINISTIC` — component composition + CSS source | `GREEN_REAL_PRODUCTION` at authenticated 1440px; 1024/1280 audit remains | `RECHECK_PENDING` |
-| 17 Master Buku alignment | `PRESERVED` — CoverUploadField unchanged | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated Maisy's Funfair detail renders cover and media sections at 1440px; 1024/1280 audit remains | `RECHECK_PENDING` |
-| Homepage section rhythm | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied rendered evidence | `FROZEN_GREEN` |
+| 01 Content purpose | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated Admin evidence | `GREEN_REAL_PRODUCTION` |
+| 02 Cover full visibility | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated evidence | `GREEN_REAL_PRODUCTION` |
+| 03 Catalog count | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated evidence | `GREEN_REAL_PRODUCTION` |
+| 04 Invoice cancellation | `GREEN` — server/UI guard preserved | `GREEN_DETERMINISTIC` | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — settled denial is green; no eligible live cancellation was safe | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` |
+| 05 Deposit allocation | `GREEN` — bounded form/mutation preserved | `GREEN_DETERMINISTIC` | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — zero-balance denial is green; no eligible live pair was safe | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` |
+| 06 Invoice owner | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated evidence | `GREEN_REAL_PRODUCTION` |
+| 07 Batch ↔ Catalog | `GREEN` — existing relation controls preserved | `GREEN_DETERMINISTIC` | `BLOCKED_BY_OPERATIONAL_DATA` — only discovered real Batch 5 is locked | `BLOCKED_BY_OPERATIONAL_DATA` |
+| 08 Slide background | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing rendered evidence | `GREEN_REAL_PRODUCTION` |
+| 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated/rendered evidence | `GREEN_REAL_PRODUCTION` |
+| 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_BY_OPERATIONAL_DATA` — only discovered real Batch is locked | `BLOCKED_BY_OPERATIONAL_DATA` |
+| 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated evidence | `GREEN_REAL_PRODUCTION` |
+| 12 Activity semantics + responsive geometry | `FIXED` — one chronological projection over separate Notification/Inbox sources; viewport-safe panel, wrapping, and no panel/feed/item horizontal overflow | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — unit and rendered matrix pass at 375/390/430/768/834/1024/1280/1440 | `GREEN_REAL_PRODUCTION` — user-controlled Customer Production pass at 375/390/430/768/1440; `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` remains the supplied READY deployment | `GREEN_REAL_PRODUCTION` |
+| 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated Admin navigation evidence | `GREEN_REAL_PRODUCTION` |
+| 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — form is green; no approved values were supplied for a safe save | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` |
+| 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated evidence | `GREEN_REAL_PRODUCTION` |
+| 16 Admin action spacing | `FIXED` — shared semantic action region/stack/support tokens | `GREEN_DETERMINISTIC` — component composition + CSS source | `GREEN_REAL_PRODUCTION` — existing authenticated 1440px evidence | `GREEN_REAL_PRODUCTION` |
+| 17 Master Buku alignment | `PRESERVED` — CoverUploadField unchanged | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing authenticated Maisy's Funfair evidence | `GREEN_REAL_PRODUCTION` |
+| Homepage section rhythm | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — existing rendered evidence | `GREEN_REAL_PRODUCTION` |
 
-`BLOCKED_EXTERNAL` here means the current environment has no authenticated
-browser session or deploy verification authority. It is not a product failure.
-`BLOCKED_BY_DATA` means the safe state exists in tests/guards but no legitimate
-eligible Production record is available for mutation; no record is fabricated.
+`BLOCKED_BY_APPROVED_DATA` and `BLOCKED_BY_OPERATIONAL_DATA` mean the safe
+implementation exists but no legitimate approved asset/value or editable live
+record is available for mutation; no record is fabricated.
 
 ## 01 — Admin Konten purpose / clarity
 
@@ -224,16 +225,16 @@ eligible Production record is available for mutation; no record is fabricated.
 - **Finding:** The Activity information architecture was unclear.
 - **Classification:** PRODUCT_CLARITY.
 - **Source:** Latest Client UAT; Activity decision; Notifications and Inbox contracts.
-- **Current Production Evidence:** The latest real recording reopened this item: the desktop panel overflowed and exposed a competing Inbox destination. The corrected build is locally green but has not yet been rechecked in the new Production deployment.
+- **Current Production Evidence:** The corrected build is deployed in supplied READY deployment `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv`; the user-controlled authenticated Customer walkthrough passed at 375/390/430/768/1440 with one feed and no clipping or horizontal overflow.
 - **Expected Behavior:** `Aktivitas` is one newest-first feed; `Sistem` describes automatic system/state events; `Pesan BFG` describes persistent operational messages. Users do not choose a category before reading activity.
 - **Root Cause:** A combination of an intrinsic implicit grid track in the nested `.content-stack`, missing `min-width: 0` on shrinkable descendants, and anchor-only positioning that did not measure right-side collision. A narrow fixed panel could also inherit an unsafe containing block from the header's visual effects. The old `overflow-x: hidden` rule masked the child/card width instead of fixing it.
 - **Affected Route:** Customer/Admin shell Activity entry and activity surfaces.
 - **Affected Domain:** Notifications and Inbox remain separate.
 - **State Machine Impact:** None; event/message ownership and read semantics remain separate.
 - **Fix:** Keep the unified projection and read semantics; calculate panel width/position/max-height from the actual visual viewport on open, resize, scroll, viewport change, and anchor resize. Use a bounded 380px panel with safe gutters, collision shifting, internal vertical scroll, `minmax(0, 1fr)`, `min-width: 0`, and normal safe wrapping. No Activity copy, item, reference, or action was removed.
-- **Regression:** Activity projection/domain tests, component geometry tests, an eight-viewport populated rendered matrix, and an authenticated Production panel/focus regression for when the Clerk QA session is available.
-- **Production Evidence:** `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` is READY and the populated eight-viewport rendered Activity matrix passes against the deployment. Authenticated Admin/Customer acceptance remains pending.
-- **Status:** `FIXED + DEPLOYED — AUTHENTICATED PRODUCTION ACCEPTANCE PENDING`.
+- **Regression:** Activity projection/domain tests, component geometry tests, populated rendered matrix, Playwright `202/202`, Vitest `232/232`, and the user-controlled authenticated Customer Production recheck.
+- **Production Evidence:** `dpl_H5KPpMDmHtzFqZ44q9p7JHuPogsv` is supplied as READY; the populated Activity matrix passes and Customer acceptance is recorded as user-supplied real-session evidence.
+- **Status:** `GREEN_REAL_PRODUCTION` — fixed, deployed, and accepted.
 
 ## 13 — Responsive Admin navigation
 
@@ -334,7 +335,8 @@ eligible Production record is available for mutation; no record is fabricated.
 ## Closure rule
 
 Product Media V1 is implemented under its locked Book Master ownership and
-HTTPS metadata-only source contract; its Production deployment and one-real-book
-UAT are final completion gates. Bulk Import V1 remains deployed and unchanged;
-its Production pilot remains **DEFERRED BY USER DATA** and does not justify
-fabricating Products or business records.
+HTTPS metadata-only source contract; empty state and implementation are green,
+while populated Gallery/Preview UAT is `BLOCKED_BY_APPROVED_DATA`. Bulk Import
+V1 remains deployed and unchanged; its Production pilot remains
+`DEFERRED_BY_USER_DATA` and does not justify fabricating Products or business
+records. Phase 08 is closed and the product is in Maintenance.
