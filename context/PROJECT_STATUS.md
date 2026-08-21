@@ -5,46 +5,50 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `REOPENED — TARGETED UI STABILIZATION` — implementation and public
-recheck green; authenticated Admin media recheck remains `BLOCKED_EXTERNAL`.
-**Product mode:** `MAINTENANCE PAUSED` pending that private-surface recheck.
+**Phase 08:** `PHASE_08_COMPLETE` — External Preview form alignment closed.
+**Current product:** `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE`.
+**Production:** `BFG_PRODUCTION_STABLE`.
+**Product mode:** `MAINTENANCE`.
 
-The previous closure was temporarily superseded by four verified Production
-visual findings. The shared How To Order journey, homepage Perjalanan Bukumu
-orientation, Mengenal BFG contrast hierarchy, and non-destructive BookCover
-presentation are now fixed and rechecked. Activity remains one responsive
-user-facing feed over separate Notification and Inbox backends; the shared
-clipping root cause is fixed and covered by the eight-viewport rendered matrix.
+The latest authenticated Production screenshot established the real Admin Book
+Detail surface and exposed the final External Preview geometry defect. The
+paired fields now render as explicit label/control/support rows, so both input
+frames share one horizontal control row while the URL helper remains below its
+control. The shared How To Order journey, homepage Perjalanan Bukumu
+orientation, Mengenal BFG contrast hierarchy, non-destructive BookCover
+presentation, Activity surface, custom BFG file picker, and Gallery layout
+remain unchanged.
 Bulk Import V1 remains implemented and Production-deployed, but its legitimate
 Production pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are
 locked and populated Gallery/Preview UAT remains blocked only by approved data;
 cover framing uses additive metadata and keeps the original source.
 
-Starting commit for this targeted pass: `98b3c7f`.
-Implementation commit: `3c60b4a`.
+Starting commit for this targeted pass: `db4f628`.
+Implementation commit: `e04f3cd`.
 Final delivery: current `main` after the targeted-pass context anchor.
-Current verified source deployment: `dpl_HG9UfaiYBEcKDBm98hMkU3FEzgad`.
+Current verified source deployment: `dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb`.
 `origin/main`: current `main` after the source and targeted context commits.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production source deployment: `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY` (`READY`, canonical aliases).
+Vercel Production source deployment: `dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `241/241`, Convex `111/111`, local
-Playwright `264/264`, rendered QA at
-375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format PASS,
-Build PASS, and `git diff --check` PASS. Live How To Order assertions passed
-`8/8` and signed-out Admin protection passed `3/3`. No dummy business record,
-cover asset, credential, or unapproved business value was created.
+Playwright `264/264`, focused local media/file-picker checks `6/6`, rendered QA
+at 375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format
+PASS, Build PASS, and `git diff --check` PASS. Live signed-out Admin protection
+passed `3/3`; the live public visual suite recorded `40/48`, with eight
+identical pre-existing cover-geometry assertion failures outside this diff.
+No dummy business record, cover asset, credential, or unapproved business
+value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
-The live public visual recheck is complete. The current public Ready Stock seed
-has no stored cover, and no authorized Admin session or representative real
-book was available for the private Book Detail media screenshot. That private
-check remains `BLOCKED_EXTERNAL` rather than an invented Production write.
-Auth, financial, inventory, Secret Catalog, and Bulk Import policy remain within
-their locked boundaries. No Phase 09 is started.
+The live public recheck is complete for the touched boundary. The supplied real
+authenticated Admin Book Detail screenshot is the private-surface evidence;
+the correction is deployed without a media mutation. Auth, financial,
+inventory, Secret Catalog, and Bulk Import policy remain within their locked
+boundaries. No Phase 09 is started.
 
 The canonical reconciliation artifacts are:
 

@@ -241,13 +241,13 @@ Blast-radius verdict:
 | Convex schema/functions | additive Activity projection and Book Media changes; deployed through canonical Production hook |
 | Auth/RBAC | unchanged |
 | Financial/inventory/Secret Catalog state machines | unchanged |
-| Product Media | Book Master-owned gallery and HTTPS metadata-only preview implemented; real-book UAT pending |
+| Product Media | Book Master-owned gallery and HTTPS metadata-only preview implemented; no real-book mutation was needed for this presentation-only fix |
 | Bulk Import | unchanged; legitimate Production pilot remains deferred by user |
 
-Current evidence boundary: the supplied real Production screenshot proved the
-pre-fix Catalog action rhythm was wrong. The public post-fix Production render
-is green; authenticated private-flow render and real-business UAT remain
-`BLOCKED_EXTERNAL`, not green.
+Historical evidence boundary for that earlier reopen: the supplied real
+Production screenshot proved the pre-fix Catalog action rhythm was wrong. That
+status is superseded by the later authenticated Book Detail evidence and
+External Preview alignment closure recorded below.
 
 ## Post-diff Memory — Phase 08 Activity Responsive Closure
 
@@ -324,3 +324,33 @@ contracts, cover metadata, Bulk Import parsing/confirmation, Admin IA, and
 customer route behavior were preserved. `rg` confirms visible file-input
 markup is owned by the shared picker only. No Convex schema/function change is
 part of this pass.
+
+## Post-diff Memory — Phase 08 External Preview Form Alignment — 2026-08-21
+
+Changed application reach is limited to two files:
+
+- `src/components/admin-book-detail.tsx`: the External Preview pair now has
+  explicit label, control, and support rows. Existing label text, placeholder,
+  HTTPS validation, helper copy, error semantics, and separate save action are
+  preserved.
+- `src/app/globals.css`: the local pair uses named grid areas on the existing
+  two-column form grid and stacks at the existing 900px breakpoint. Both
+  controls keep the canonical Admin input height and form-column gap.
+
+Root-cause verdict: the shared `Field` primitive renders `label → hint →
+control`, which is valid for its other consumers but misaligned this paired
+form. The fix therefore stays local; no invisible helper, empty spacer,
+translation, per-field margin, or height override was added.
+
+Blast-radius verdict: the custom BFG file picker, Gallery alt-text/file-picker
+pair, cover upload, Product Media backend, Book schema, HTTPS validation,
+Auth/RBAC, Orders, Batch, Finance, Activity, Homepage, How To Order, Button
+system, and Bulk Import remain unchanged. No Convex source file was touched.
+
+Evidence: local `npm run check` remains green (`241/241` Vitest including
+`111/111` Convex); focused media/file-picker checks pass `6/6`; the deployed
+Vercel CSS contains the new grid selectors; signed-out `/admin/books` passes
+`3/3` at 1024/1280/1440; and the supplied authenticated Production screenshot
+is the real Book Detail evidence. The live public suite's eight identical
+cover-geometry failures are outside this diff and remain intentionally out of
+scope.

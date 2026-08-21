@@ -1,6 +1,6 @@
 # BFG PHASE 08 PRODUCT MEDIA TRACEABILITY
 
-Status: `PRODUCTION_DEPLOYED — AUTHENTICATED_ADMIN_RENDER_VERIFIED — SAFE_MUTATION_AND_CUSTOMER_UAT_PENDING`
+Status: `PRODUCTION_DEPLOYED — AUTHENTICATED_ADMIN_EVIDENCE — EXTERNAL_PREVIEW_ALIGNMENT_CLOSED`
 Reconciled: 2026-08-21 (Asia/Jakarta)
 
 | Requirement | Source trace | Current implementation | Decision/status |
@@ -13,16 +13,16 @@ Reconciled: 2026-08-21 (Asia/Jakarta)
 | Deterministic ordering | Original `displayOrder`; swipeable gallery source | `bookMedia.displayOrder`; move-up/down mutation and persisted query order | `GREEN_DETERMINISTIC` |
 | Upload validation | File Upload source; current cover flow; SEC-12 | Existing Convex storage URL flow; JPG/PNG/WebP; 5 MB; Admin permission; duplicate/cross-reference guards | `GREEN_DETERMINISTIC` |
 | Delete/reorder | Admin mockup actions and candidate acceptance | Authorized remove with safe storage cleanup; authorized move up/down; append-only audit | `GREEN_DETERMINISTIC` |
-| External preview fields | Admin/customer mockup preview controls; latest user decision | One optional label + HTTPS URL on Book Master; no fetch, scrape, embed, or hotlink | `GREEN_DETERMINISTIC` |
+| External preview fields | Admin/customer mockup preview controls; latest user decision | One optional label + HTTPS URL on Book Master; Admin uses explicit label/control/support rows so paired controls align; no fetch, scrape, embed, or hotlink | `GREEN_PRODUCTION_UI` |
 | External URL security | Security invariants and latest user decision | Server rejects unsafe schemes, credentials, local/private destinations, and >2,048 characters | `GREEN_DETERMINISTIC` |
 | Ready Stock projection | Ready Stock source | Customer-safe URLs, alt text, and preview metadata; no storage IDs/private data | `GREEN_DETERMINISTIC` |
 | Secret Catalog projection | Source contract does not resolve V1 projection | Existing Catalog projection remains cover-only | `NOT IN V1` |
 | Authorization | SEC-05, SEC-06, current `books.manage` boundary | All media mutations use existing Admin/Owner permission; customer Admin query denied | `GREEN_DETERMINISTIC` |
 | Audit | SEC-14, current `recordAudit` | Add/remove/reorder/external-preview actions record safe target metadata | `GREEN_DETERMINISTIC` |
 | Customer safety | SEC-07/08/09/11/12; source projections | Public projection omits storage IDs and internal media records | `GREEN_DETERMINISTIC` |
-| Responsive Admin | Visual system and Admin mockup | Media section extends Book Detail; shared contained gallery; no new route | `GREEN_DETERMINISTIC` — authenticated `Maisy's Funfair` render verified at 1440px; narrow audit pending |
+| Responsive Admin | Visual system and Admin mockup | Media section extends Book Detail; shared contained gallery; External Preview uses two columns at desktop and stacks at 768/834; no new route | `GREEN_PRODUCTION_UI` — supplied authenticated Book Detail evidence; local responsive checks pass |
 | Responsive Customer | Visual system and mobile mockup 4 | Ready Stock detail uses shared contained gallery and responsive controls | `GREEN_DETERMINISTIC` — canonical public suite `24/24` |
-| Real Production UAT | Product Media source contract | Authenticated Admin verified the legitimate `Maisy's Funfair` Book Detail, gallery `0/8`, upload/remove area, and HTTPS preview fields; no approved image asset or real preview URL was available for mutation | `GREEN_DETERMINISTIC — SAFE_MUTATION_AND_CUSTOMER_UAT_PENDING` |
+| Real Production UAT | Product Media source contract | Supplied authenticated Production screenshot verifies the legitimate Book Detail media surface and the corrected External Preview composition; no approved image asset or real preview URL was used for mutation | `GREEN_PRODUCTION_EVIDENCE — NO_MUTATION_PERFORMED` |
 
 ## End-to-end trace
 
@@ -34,5 +34,6 @@ tests → Production deployment → one legitimate-book UAT`
 ## Verdict
 
 The two source decisions are locked and implementation is Production-deployed.
-Authenticated Admin rendering evidence now exists; safe real-book mutation and
-Customer projection acceptance remain explicit delivery gates.
+The supplied authenticated Admin screenshot is the current real-flow evidence;
+the final External Preview geometry correction is closed. No safe real-book
+media mutation was needed for this presentation-only task.

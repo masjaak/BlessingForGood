@@ -1,22 +1,20 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-21 (Asia/Jakarta)
-Applies to the current `main` after the Phase 08 targeted interaction, form,
-and journey-rhythm stabilization; the canonical Production deployment is
-`dpl_HG9UfaiYBEcKDBm98hMkU3FEzgad` with Convex `clean-eel-522`.
+Applies to the current `main` after the Phase 08 External Preview form
+alignment closure; the canonical Production deployment is
+`dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb` with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **REOPENED — TARGETED UI STABILIZATION IMPLEMENTED + PUBLICLY
-RECHECKED**. The previous closure was superseded by the newest real screenshots:
-low-affordance controls, native file-picker chrome, Admin media form geometry,
-and How To Order rhythm. The shared implementation, local full regression,
-and public Production journey/Admin-boundary checks are green. Authenticated
-Admin Book Detail recheck remains `BLOCKED_EXTERNAL` because no authorized
-session and representative real book were available; no credential or dummy
-record was fabricated. Do not restore `BFG_PRODUCTION_STABLE` until that private
-surface is rechecked.
-Current evidence is classified as `GREEN_PUBLIC_PRODUCTION`,
-`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`, `BLOCKED_EXTERNAL`, `OPTIONAL_FUTURE`,
-or `EXCLUDED` in the final completion matrix.
+Phase 08: **COMPLETE — EXTERNAL PREVIEW FORM ALIGNMENT CLOSED**. The latest
+real authenticated Production screenshot established the reachable Admin Book
+Detail surface and the exact misalignment. The correction is deployed: paired
+media fields now use explicit label, control, and support rows; the shared
+`Field` primitive, validation, custom file picker, Gallery, and backend remain
+unchanged. No credential, dummy record, or Production media mutation was
+fabricated or performed.
+Current product status is `PHASE_08_COMPLETE`,
+`BFG_CURRENT_PRODUCT_SCOPE_COMPLETE`, `BFG_PRODUCTION_STABLE`, and
+`PRODUCT_MODE: MAINTENANCE`. No Phase 09 is started.
 The Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are now locked and the
 bounded implementation is deployed through the canonical Production hook;
@@ -46,14 +44,14 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `3c60b4a` — targeted interaction, file-picker, media-grid, and journey-rhythm stabilization |
+| Phase 08 implementation commit | `e04f3cd` — align External Preview label/control/support rows |
 | Closure context commit         | current `main` after this targeted-pass context anchor                        |
 | `origin/main`                  | current `main`; source and targeted context are pushed together                |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | `dpl_HG9UfaiYBEcKDBm98hMkU3FEzgad` — `READY`, aliased to canonical domains |
+| Vercel Production deployment   | `dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb` — `READY`, aliased to canonical domains |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
-| Safe live evidence             | `/how-to-order` returned HTTP 200; live How To Order matrix `8/8` at 375/390/430/768/834/1024/1280/1440; signed-out `/admin` boundary `3/3` at 1024/1280/1440 |
+| Safe live evidence             | `/how-to-order` returned HTTP 200; deployed CSS contains the External Preview grid; signed-out `/admin/books` boundary `3/3` at 1024/1280/1440 |
 
 Current exact regression baseline:
 
@@ -61,16 +59,35 @@ Current exact regression baseline:
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Vitest      | `241 / 241`                                                                                                                                                                               |
 | Convex      | `111 / 111` (included in Vitest)                                                                                                                                                          |
-| Playwright  | local full suite `264 / 264`; live How To Order `8 / 8`; live signed-out Admin boundary `3 / 3` |
+| Playwright  | local full suite `264 / 264`; focused local media/file-picker checks `6 / 6`; live signed-out Admin boundary `3 / 3`; live public surface `40 / 48` with eight identical pre-existing cover-geometry failures outside this diff |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; live public journey checks pass with zero body overflow |
-| Real UAT    | Public Production recheck passed; authenticated Admin Book Detail remains `BLOCKED_EXTERNAL` without an authorized real session/book |
+| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; deployed CSS contains the named paired-grid rules |
+| Real UAT    | Latest user-supplied authenticated Production screenshot is the real Book Detail acceptance evidence; the corrected surface is deployed and no mutation was performed |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
+
+## Phase 08 External Preview Closure — 2026-08-21
+
+The authenticated Production screenshot supplied for the real Admin Book
+Detail is the acceptance evidence for this targeted correction. The root
+cause was inconsistent field-local DOM order: the URL field rendered its
+support copy before its control while the label field did not. The fix uses a
+local explicit grid with label, control, and support rows. Desktop controls
+share one row and the canonical input height; at 768px and 834px the pair
+stacks into independently readable fields. The URL helper remains below the
+URL control with its original security meaning.
+
+The shared `Field` primitive, Gallery, custom BFG file picker, file-upload
+backend, URL validation, Book schema, Auth, Orders, Batch, Finance, Activity,
+Homepage, How To Order, and Button system were not reopened. The implementation
+commit is `e04f3cd`; Production deployment is
+`dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb`. The live public visual suite recorded eight
+identical cover-geometry assertion failures outside this diff; that unrelated
+baseline remains out of scope.
 
 ## Source Inventory
 
