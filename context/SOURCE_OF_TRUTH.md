@@ -45,14 +45,14 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `b80f2e7` — targeted visual stabilization and non-destructive cover framing |
+| Phase 08 implementation commit | `b80f2e7` — targeted visual stabilization and non-destructive cover framing; `1c0e429` — final journey icon and homepage process correction |
 | Closure context commit         | current `main` after this post-closure context reconciliation              |
 | `origin/main`                  | current `main`; source and context are pushed together                      |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | latest verified source deployment `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` — `READY`, aliased to canonical domains |
+| Vercel Production deployment   | latest verified source deployment `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY` — `READY`, aliased to canonical domains |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
-| Safe live evidence             | canonical URL returned HTTP 200; live targeted visual suite `18/18`; homepage/How To Order smoke `12/12`; Ready Stock smoke `6/6`; Vercel error scan found no logs |
+| Safe live evidence             | canonical URL returned HTTP 200; current eight-width screenshot matrix `16/16`; homepage/How To Order smoke `12/12`; Ready Stock smoke `6/6`; Vercel error scan found no logs |
 
 Current exact regression baseline:
 

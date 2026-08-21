@@ -18,23 +18,24 @@ Production pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are
 locked and populated Gallery/Preview UAT remains blocked only by approved data;
 cover framing uses additive metadata and keeps the original source.
 
-Starting commit for this correction pass: `e1795a1`; visual stabilization
-implementation commit: `b80f2e7`.
+Starting commit for the previous correction pass: `e1795a1`; visual
+stabilization implementation commit: `b80f2e7`. Final journey correction
+started from `5e40d2a` and shipped in `1c0e429`.
 Final delivery: current `main` after this context reconciliation.
-Current verified source deployment: `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx`.
+Current verified source deployment: `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY`.
 `origin/main`: current `main` after the source and context commits.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production source deployment: `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` (`READY`, canonical aliases).
+Vercel Production source deployment: `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `237/237`, Convex `111/111` (included in
 Vitest), local Playwright `214/214`, rendered QA at
 375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format PASS,
-Build PASS, and `git diff --check` PASS. Live targeted visual checks passed
-`18/18`; homepage/How To Order smoke passed `12/12`; Ready Stock smoke passed
-`6/6`. No dummy business record, cover asset, credential, or unapproved
-business value was created.
+Build PASS, and `git diff --check` PASS. The current live screenshot matrix is
+`16/16`; live homepage/How To Order assertions passed `12/12`; Ready Stock
+smoke remains `6/6`. No dummy business record, cover asset, credential, or
+unapproved business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
