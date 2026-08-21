@@ -42,9 +42,9 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | `origin/main`                  | current `main` after final context reconciliation                           |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | latest Git-triggered `READY` deployment for `origin/main`                  |
+| Vercel Production deployment   | `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` — `READY`, aliased to canonical domains |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
-| Safe live evidence             | canonical URL returned HTTP 200; public Production rendered suite `24/24` |
+| Safe live evidence             | canonical URL returned HTTP 200; public Production rendered suite `24/24`; deployed Activity matrix passed all eight viewports |
 
 Current exact regression baseline:
 
@@ -58,7 +58,7 @@ Current exact regression baseline:
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
 | Rendered QA | local production-server route/viewport checks pass; Homepage rhythm and shared visual checks are green; authenticated Admin Books/invoice spacing baseline is preserved at 1440px |
-| Real UAT    | Existing authenticated Admin evidence remains green; the Activity clipping fix is locally rendered and regression-tested, while Production recheck and Customer acceptance remain open |
+| Real UAT    | Existing authenticated Admin evidence remains green; deployed Activity geometry is green at all eight public rendered viewports, while authenticated Admin/Customer recheck remains open |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.

@@ -30,7 +30,7 @@ CSS inspection pass.
 | 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated `/admin/books` menu opened below its trigger; middle/bottom collision contexts remain | `RECHECK_PENDING` |
 | 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — only discovered real Batch is locked; no assignment mutation was fabricated | `RECHECK_PENDING` |
 | 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 12 Activity semantics + responsive geometry | `FIXED` — one chronological projection over separate Notification/Inbox sources; viewport-safe panel, wrapping, and no panel/feed/item horizontal overflow | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — unit and rendered matrix pass at 375/390/430/768/834/1024/1280/1440 | `RECHECK_PENDING` — the current Production screenshot is the pre-fix evidence; deploy and authenticated Admin/Customer recheck remain required | `RECHECK_PENDING` |
+| 12 Activity semantics + responsive geometry | `FIXED` — one chronological projection over separate Notification/Inbox sources; viewport-safe panel, wrapping, and no panel/feed/item horizontal overflow | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — unit and rendered matrix pass at 375/390/430/768/834/1024/1280/1440 | `RECHECK_PENDING` — deployed `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` passes the public rendered matrix; authenticated Admin/Customer recheck remains required | `RECHECK_PENDING` |
 | 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — mobile/tablet authenticated render unavailable | `RECHECK_PENDING` |
 | 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — authenticated form renders, but no approved real store/payment values were supplied for a safe save/refresh test | `RECHECK_PENDING` |
 | 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — latest screenshot proves frame | `FROZEN_GREEN` |
@@ -232,8 +232,8 @@ eligible Production record is available for mutation; no record is fabricated.
 - **State Machine Impact:** None; event/message ownership and read semantics remain separate.
 - **Fix:** Keep the unified projection and read semantics; calculate panel width/position/max-height from the actual visual viewport on open, resize, scroll, viewport change, and anchor resize. Use a bounded 380px panel with safe gutters, collision shifting, internal vertical scroll, `minmax(0, 1fr)`, `min-width: 0`, and normal safe wrapping. No Activity copy, item, reference, or action was removed.
 - **Regression:** Activity projection/domain tests, component geometry tests, an eight-viewport populated rendered matrix, and an authenticated Production panel/focus regression for when the Clerk QA session is available.
-- **Production Evidence:** Local deterministic evidence is green; authenticated Production acceptance remains pending after deployment.
-- **Status:** `FIXED LOCALLY — PRODUCTION ACCEPTANCE PENDING`.
+- **Production Evidence:** `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` is READY and the populated eight-viewport rendered Activity matrix passes against the deployment. Authenticated Admin/Customer acceptance remains pending.
+- **Status:** `FIXED + DEPLOYED — AUTHENTICATED PRODUCTION ACCEPTANCE PENDING`.
 
 ## 13 — Responsive Admin navigation
 

@@ -23,7 +23,7 @@ Final delivery: current `main` after final context reconciliation.
 `origin/main`: current `main` after final context reconciliation.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
+Vercel Production: `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `232/232`, Convex `110/110` (included in
@@ -31,8 +31,9 @@ Vitest), Playwright `202/202`, rendered `24/24` plus the eight-viewport Activity
 matrix, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
 `git diff --check` PASS. Public Production is reachable and the live public
 rendered suite is `24/24`. The existing authenticated Admin evidence remains
-the baseline; the new Production Activity recheck and Customer session are
-still open. No dummy business record or unapproved business value was created.
+the baseline; deployed Activity geometry passes the same eight-viewport matrix.
+The authenticated Admin recheck and Customer session are still open. No dummy
+business record or unapproved business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
@@ -129,6 +130,8 @@ user data.
   1024, 1280, and 1440 widths. The panel width/position/height is measured
   against the real visual viewport; nested content tracks shrink and wrap, and
   no horizontal overflow is hidden as a substitute for fitting the layout.
+- The deployed `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` passes that populated
+  Activity matrix; authenticated Admin and Customer checkpoints remain open.
 - Authenticated Admin Production evidence now covers `/admin`,
   `/admin/notifications`, `/admin/books`, `/admin/books/[bookId]`,
   `/admin/batches`, `/admin/catalogs`, `/admin/invoices`,

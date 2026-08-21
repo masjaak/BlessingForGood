@@ -21,7 +21,7 @@ synthetic, or inferred evidence closes a real UAT gate.
 | 09 BFGSelect authenticated anchor | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Production `/admin/books` menu opened directly below its trigger on a long page; middle/bottom collision contexts remain a responsive checkpoint. |
 | 10 Batch targeting/assignment/Summary | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Server consequences and derived summary are covered; the only discovered real Batch is locked, so no assignment mutation was fabricated. |
 | 11 Human-facing order reference | `GREEN_REAL_PRODUCTION` | Existing authenticated Production evidence. |
-| 12 Unified Activity feed and responsive geometry | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared projection, read/ordering semantics, and the rendered eight-viewport geometry matrix are green; the Production recheck and authenticated Customer/mobile acceptance checkpoint remain open. |
+| 12 Unified Activity feed and responsive geometry | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared projection, read/ordering semantics, and the deployed `dpl_BvZaiZYhyxAN4qCUoEqt7LaMxEpV` eight-viewport geometry matrix are green; authenticated Admin/Customer acceptance remains open. |
 | 13 Responsive Admin navigation | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared navigation/scroll geometry is covered locally; authenticated 390–1024 Production render remains open. |
 | 14 Settings edit/save/refresh | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Settings form renders, but required store/payment fields are empty and no approved business values were supplied; no unsafe write was fabricated. |
 | 15 Catalog left-frame geometry | `GREEN_REAL_PRODUCTION` | Existing authenticated/rendered evidence. |
