@@ -16,19 +16,19 @@ synthetic, or inferred evidence closes a real UAT gate.
 | 04 Eligible invoice cancellation | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | State-machine and invalid Production guards are green; execute only when a legitimate eligible invoice exists. |
 | 05 Eligible deposit allocation | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Ledger/allocation invariants and invalid Production guards are green; execute only with a legitimate eligible deposit/invoice pair. |
 | 06 Invoice owner/reference | `GREEN_REAL_PRODUCTION` | Existing authenticated Production evidence. |
-| 07 Batch ↔ Catalog journey | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Canonical link/unlink and locked-state tests are green; real operator journey still requires authenticated Admin acceptance. |
+| 07 Batch ↔ Catalog journey | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin reached the real Batch 5 card; it is already locked with 2 catalogs and 0 assignments, so no editable Batch was safe for mutation. |
 | 08 Homepage slide background | `GREEN_REAL_PRODUCTION` | Existing rendered Production evidence. |
-| 09 BFGSelect authenticated anchor | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Collision tests are green; authenticated long-page Admin render remains a final acceptance gate. |
-| 10 Batch targeting/assignment/Summary | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Server consequences and derived summary are covered; real operator journey remains an acceptance gate. |
+| 09 BFGSelect authenticated anchor | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Production `/admin/books` menu opened directly below its trigger on a long page; middle/bottom collision contexts remain a responsive checkpoint. |
+| 10 Batch targeting/assignment/Summary | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Server consequences and derived summary are covered; the only discovered real Batch is locked, so no assignment mutation was fabricated. |
 | 11 Human-facing order reference | `GREEN_REAL_PRODUCTION` | Existing authenticated Production evidence. |
-| 12 Unified Activity feed | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Projection, combined unread count, ownership, safe destination, responsive CSS, component tests, and canonical public Production suite `24/24` are green; authenticated real-user acceptance remains open. |
+| 12 Unified Activity feed | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin Production verifies one feed, newest-first system items, and a real `Pesan BFG` item interleaved in the same timeline; Customer/mobile acceptance remains open. |
 | 13 Responsive Admin navigation | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared navigation/scroll geometry is covered locally; authenticated 390–1024 Production render remains open. |
-| 14 Settings edit/save/refresh | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Existing server contract and tests are green; authenticated Production persistence journey remains open. |
+| 14 Settings edit/save/refresh | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Settings form renders, but required store/payment fields are empty and no approved business values were supplied; no unsafe write was fabricated. |
 | 15 Catalog left-frame geometry | `GREEN_REAL_PRODUCTION` | Existing authenticated/rendered evidence. |
-| 16 Admin action spacing | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared semantic tokens and local render are green; post-fix authenticated Production audit remains open. |
-| 17 Master Buku render | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Cover flow and local geometry are green; authenticated Production Book Detail audit remains open. |
-| Product Gallery V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Book Master ownership, max 8, ordering, safe storage, remove, projection, tests, and Production deployment are green; one legitimate-book UAT remains open. |
-| External Preview V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Optional HTTPS metadata-only link, rejection rules, and Production deployment are green; one legitimate-book UAT remains open. |
+| 16 Admin action spacing | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated 1440px Production Admin surfaces render with the shared spacing; 1024/1280 authenticated audit remains open. |
+| 17 Master Buku render | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Production Master Buku `Maisy's Funfair` renders cover, `COVER BUKU`, upload controls, and the Product Media area at 1440px; 1024/1280 audit remains open. |
+| Product Gallery V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin renders `Maisy's Funfair` Book Master gallery at `0/8`; no approved additional image asset was available for a safe Production mutation. |
+| External Preview V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin renders the HTTPS metadata-only fields; no approved real preview URL was supplied, so no fabricated link was saved. |
 | Bulk Import V1 implementation/deployment | `GREEN_REAL_PRODUCTION` | Existing Production deployment and deterministic suite are green. |
 | Bulk Import real pilot | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Explicitly `DEFERRED_BY_USER_DATA`; no legitimate 3–5-book CSV is available and no data is fabricated. |
 | Authentication/admission/RBAC | `GREEN_REAL_PRODUCTION` | Existing Production baseline plus server authorization regression. |

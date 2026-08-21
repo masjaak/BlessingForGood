@@ -14,7 +14,8 @@ separately and is never invented.
 The Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED BY USER**. Product Media decisions are now locked and the
 bounded implementation is deployed through the canonical Production hook;
-one-real-book UAT remains the delivery gate. The entry gate is defined in
+authenticated Admin rendering is verified on one real book, while safe media
+mutation and customer projection remain delivery gates. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -57,7 +58,7 @@ Current exact regression baseline:
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
 | Rendered QA | local production-server route/viewport checks pass; Homepage rhythm and shared visual checks are green; authenticated Admin Books/invoice spacing baseline is preserved at 1440px |
-| Real UAT    | Existing authenticated evidence is preserved; Activity/Product Media and remaining operator/settings/responsive journeys still require authenticated Production acceptance; Bulk Import pilot remains deferred by user |
+| Real UAT    | Authenticated Admin Production evidence now verifies unified Activity, system/message projection, BFGSelect anchoring, Batch/Settings/Master Buku surfaces, and Product Media rendering on Maisy's Funfair; Customer acceptance, safe media mutation, editable Batch, approved Settings values, narrow Admin geometry, and Bulk Import pilot remain open |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.

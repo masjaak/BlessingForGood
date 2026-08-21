@@ -2,9 +2,10 @@
 
 ## Current final-completion checkpoints
 
-- [AUTHENTICATED UAT] The canonical Production deployment is live, but this
-  environment has no authenticated Admin/Customer browser session. Use the
-  user-controlled checkpoints `Admin sudah login` or `Customer sudah login`.
+- [AUTHENTICATED UAT] The canonical Production deployment is live and an
+  authenticated Admin session has verified Activity, BFGSelect, Batch, Settings,
+  and Master Buku/Product Media rendering. Customer acceptance still uses the
+  user-controlled checkpoint `Customer sudah login`.
 - [REAL DATA] Eligible invoice cancellation, eligible deposit allocation, and
   the Bulk Import 3–5-book pilot require legitimate user-controlled data. Do
   not fabricate financial history or products.

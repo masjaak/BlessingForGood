@@ -25,17 +25,17 @@ CSS inspection pass.
 | 04 Invoice cancellation | `GREEN` — server/UI guard preserved | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` for settled denial; `BLOCKED_BY_DATA` for eligible live cancellation | `RECHECK_PENDING` |
 | 05 Deposit allocation | `GREEN` — bounded form/mutation preserved | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` for zero-balance denial; `BLOCKED_BY_DATA` for eligible live allocation | `RECHECK_PENDING` |
 | 06 Invoice owner | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 07 Batch ↔ Catalog | `GREEN` — existing relation controls preserved | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — exact operator journey not re-run | `RECHECK_PENDING` |
+| 07 Batch ↔ Catalog | `GREEN` — existing relation controls preserved | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — authenticated Admin found only locked Batch 5; no editable Batch was safe to mutate | `RECHECK_PENDING` |
 | 08 Slide background | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied rendered evidence | `FROZEN_GREEN` |
-| 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — authenticated Admin contexts not available | `RECHECK_PENDING` |
-| 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — exact operator journey not re-run | `RECHECK_PENDING` |
+| 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated `/admin/books` menu opened below its trigger; middle/bottom collision contexts remain | `RECHECK_PENDING` |
+| 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — only discovered real Batch is locked; no assignment mutation was fabricated | `RECHECK_PENDING` |
 | 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 12 Activity semantics | `FIXED` — one chronological projection over separate Notification/Inbox sources; no primary tabs or panel Inbox CTA | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — current unified build is not yet Production-accepted in an authenticated session | `RECHECK_PENDING` |
+| 12 Activity semantics | `FIXED` — one chronological projection over separate Notification/Inbox sources; no primary tabs or panel Inbox CTA | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated Admin verifies one feed with real system and `Pesan BFG` items; Customer/mobile recheck remains open | `RECHECK_PENDING` |
 | 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — mobile/tablet authenticated render unavailable | `RECHECK_PENDING` |
-| 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — edit/save/refresh journey not re-run | `RECHECK_PENDING` |
+| 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — authenticated form renders, but no approved real store/payment values were supplied for a safe save/refresh test | `RECHECK_PENDING` |
 | 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — latest screenshot proves frame | `FROZEN_GREEN` |
-| 16 Admin action spacing | `FIXED` — shared semantic action region/stack/support tokens | `GREEN_DETERMINISTIC` — component composition + CSS source | `BLOCKED_EXTERNAL` — latest supplied screenshot was pre-fix; post-deploy render pending | `RECHECK_PENDING` |
-| 17 Master Buku alignment | `PRESERVED` — CoverUploadField unchanged | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — authenticated Book Detail render unavailable | `RECHECK_PENDING` |
+| 16 Admin action spacing | `FIXED` — shared semantic action region/stack/support tokens | `GREEN_DETERMINISTIC` — component composition + CSS source | `GREEN_REAL_PRODUCTION` at authenticated 1440px; 1024/1280 audit remains | `RECHECK_PENDING` |
+| 17 Master Buku alignment | `PRESERVED` — CoverUploadField unchanged | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated Maisy's Funfair detail renders cover and media sections at 1440px; 1024/1280 audit remains | `RECHECK_PENDING` |
 | Homepage section rhythm | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied rendered evidence | `FROZEN_GREEN` |
 
 `BLOCKED_EXTERNAL` here means the current environment has no authenticated
