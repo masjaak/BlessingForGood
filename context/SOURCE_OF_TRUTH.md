@@ -95,6 +95,27 @@ and implementation context.
 If a future task cannot locate a cited original source, it must record
 `SOURCE_MISSING` rather than infer content.
 
+## Latest Phase 08 Targeted UI Reopen — 2026-08-21
+
+The newest real Production screenshots temporarily supersede the previous
+visual green label for this bounded pass only. The active scope is Button and
+LinkButton affordance states, the shared accessible BFG file-picker
+presentation, Admin media upload form geometry, and How To Order desktop/mobile
+spacing. Auth, RBAC, Orders, Batch, Invoice, Deposit, Payment, Refund, Secret
+Catalog, Activity, Human references, Product Media data contracts, cover crop
+metadata, Bulk Import, Admin IA, customer navigation, the seven-step business
+sequence, and Tabler icons remain locked and are not reopened.
+
+The permanent visual contract is: secondary/quiet controls must remain visibly
+clickable against cream/white surfaces; every clickable control exposes default,
+hover where supported, active/pressed, focus-visible, and disabled states; all
+visible upload controls use one BFG picker over an accessible native input; the
+Admin media form uses a semantic field grid and separate action row; and the
+locked How To Order journey uses shared desktop rows plus tokenized mobile
+section gaps. Closure requires local regression, rendered responsive QA, the
+current Git/Production anchor, and a real Production recheck of the reachable
+surfaces.
+
 ## Source Precedence
 
 When sources conflict, use this order:

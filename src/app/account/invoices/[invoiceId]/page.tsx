@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { BFGFilePicker } from "@/components/bfg-file-picker";
 import {
   Button,
   Card,
@@ -366,15 +367,17 @@ function PaymentConfirmationForm({
           />
         </Field>
       </div>
-      <Field label="Bukti pembayaran" hint="JPG, PNG, WebP, atau PDF. Maksimal 5 MB.">
-        <input
-          className="input"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
-          onChange={(event) => setProofFile(event.target.files?.[0] || null)}
-          required
-        />
-      </Field>
+      <BFGFilePicker
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        ariaLabel="Pilih bukti pembayaran"
+        buttonLabel="Pilih bukti pembayaran"
+        changeLabel="Ganti bukti pembayaran"
+        file={proofFile}
+        helper="JPG, PNG, WebP, atau PDF. Maksimal 5 MB."
+        label="Bukti pembayaran"
+        onFileChange={setProofFile}
+        required
+      />
       <Field label="Catatan (opsional)">
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>

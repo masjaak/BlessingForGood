@@ -2,9 +2,10 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { Button, Card, LinkButton, LoadingRegion, StatusBadge } from "@/components/ui";
 import {
   BULK_IMPORT_HEADERS,
@@ -193,7 +194,6 @@ function Result({ result, onReset }: { result: ImportResult; onReset: () => void
 }
 
 export function AdminBulkImport() {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<BulkImportState>("IDLE");
   const [file, setFile] = useState<File | null>(null);
   const [csv, setCsv] = useState("");
@@ -223,7 +223,6 @@ export function AdminBulkImport() {
     setLocalErrors([]);
     setFailureMessage("");
     setMimeType("");
-    if (inputRef.current) inputRef.current.value = "";
   }
 
   function selectFile(nextFile: File | null) {
@@ -289,7 +288,6 @@ export function AdminBulkImport() {
     }
   }
 
-  const hasSelectedFile = Boolean(file);
   return (
     <AdminOperationalPage
       eyebrow="Master Buku"
@@ -319,21 +317,16 @@ export function AdminBulkImport() {
               </p>
             </div>
           </div>
-          <input
-            ref={inputRef}
-            accept=".csv,text/csv,application/csv"
-            aria-label="Pilih file CSV"
-            className="bulk-import-file-input"
-            onChange={(event) => {
-              selectFile(event.target.files?.[0] || null);
-              event.target.value = "";
-            }}
-            type="file"
-          />
           <div className="bulk-import-file-actions">
-            <Button type="button" variant="secondary" onClick={() => inputRef.current?.click()}>
-              {hasSelectedFile ? "Ganti file CSV" : "Pilih file CSV"}
-            </Button>
+            <BFGFilePicker
+              accept=".csv,text/csv,application/csv"
+              ariaLabel="Pilih file CSV"
+              buttonLabel="Pilih file CSV"
+              changeLabel="Ganti file CSV"
+              file={file}
+              inputClassName="bulk-import-file-input"
+              onFileChange={selectFile}
+            />
             {file ? (
               <span className="bulk-import-file-meta">
                 {file.name} · {formatBytes(file.size)}

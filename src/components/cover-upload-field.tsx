@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { BookCover, type CoverPresentation } from "@/components/book-cover";
 import { Button } from "@/components/ui";
 
@@ -38,7 +39,6 @@ export function CoverUploadField({
   title: string;
   currentPresentation?: CoverPresentation | null;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [selectionError, setSelectionError] = useState("");
   const [presentation, setPresentation] = useState<CoverPresentation>(currentPresentation || defaultCoverPresentation);
@@ -50,14 +50,6 @@ export function CoverUploadField({
   useEffect(() => {
     if (previewUrl) return () => URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
-
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const nextFile = event.target.files?.[0] || null;
-    setSelectionError(nextFile ? validateCoverFile(nextFile) || "" : "");
-    if (nextFile) setPresentation(defaultCoverPresentation);
-    onFileChange(nextFile);
-    event.target.value = "";
-  }
 
   function updatePresentation(key: keyof CoverPresentation, value: string) {
     const nextValue = Number(value);
@@ -86,9 +78,6 @@ export function CoverUploadField({
           <span className="card-kicker">COVER BUKU</span>
           <h2 id={`${inputId}-heading`}>Unggah cover</h2>
         </div>
-        <p className="field-hint" id={`${inputId}-help`}>
-          JPG, PNG, atau WebP. Maksimal 5 MB.
-        </p>
         {displaySrc ? (
           <div className="cover-presentation-controls" aria-label="Atur tampilan cover">
             <span className="card-kicker">ATUR TAMPILAN</span>
@@ -138,20 +127,25 @@ export function CoverUploadField({
             </Button>
           </div>
         ) : null}
-        <input
-          ref={inputRef}
-          aria-describedby={`${inputId}-help`}
-          aria-label="Pilih file cover"
+        <BFGFilePicker
           accept="image/jpeg,image/png,image/webp"
-          className="cover-upload-file-input"
-          id={`${inputId}-input`}
-          onChange={handleFileChange}
-          type="file"
+          ariaLabel="Pilih file cover"
+          buttonLabel="Pilih gambar"
+          changeLabel="Ganti gambar"
+          error={error}
+          file={file}
+          helper="JPG, PNG, atau WebP. Maksimal 5 MB."
+          inputClassName="cover-upload-file-input"
+          label="File cover"
+          onFileChange={(nextFile) => {
+            if (nextFile) setPresentation(defaultCoverPresentation);
+            onFileChange(nextFile);
+          }}
+          onValidationError={setSelectionError}
+          pending={pending}
+          validateFile={validateCoverFile}
         />
         <div className="cover-upload-actions">
-          <Button type="button" variant="secondary" onClick={() => inputRef.current?.click()}>
-            {file ? "Ganti gambar" : "Pilih gambar"}
-          </Button>
           <Button
             disabled={!displaySrc || Boolean(blockingError)}
             pending={pending}
@@ -162,14 +156,6 @@ export function CoverUploadField({
             {file ? "Simpan cover" : "Simpan tampilan"}
           </Button>
         </div>
-        <p className="cover-upload-file-state" aria-live="polite">
-          {file ? file.name : "Belum ada file dipilih"}
-        </p>
-        {blockingError ? (
-          <p className="cover-upload-feedback is-error" role="alert">
-            {blockingError}
-          </p>
-        ) : null}
         {message ? (
           <p className="cover-upload-feedback is-success" role="status">
             {message}

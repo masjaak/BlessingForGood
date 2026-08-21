@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { HowToOrderSteps } from "@/components/how-to-order";
+
+const globalsCss = readFileSync("src/app/globals.css", "utf8");
 
 describe("How To Order journey", () => {
   it("keeps seven canonical steps in one accessible ordered journey", () => {
@@ -48,5 +51,11 @@ describe("How To Order journey", () => {
         ),
       ),
     ).toEqual(new Set(["2"]));
+  });
+
+  it("uses shared desktop rows instead of per-step headline spacing", () => {
+    expect(globalsCss).toContain("grid-template-rows: auto auto auto;");
+    expect(globalsCss).toContain("grid-template-rows: subgrid;");
+    expect(globalsCss).toContain("--journey-step-gap-mobile");
   });
 });

@@ -385,7 +385,7 @@ function AdminOrders() {
         description="Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan Convex kanonik."
         actions={
           <div className="form-actions">
-            <span className="button button-secondary">{state.orders.length} tercatat</span>
+            <span className="subtle order-count">{state.orders.length} tercatat</span>
             {dataSource === "convex" ? <BackfillOrderReferences /> : null}
           </div>
         }

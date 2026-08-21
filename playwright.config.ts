@@ -41,6 +41,16 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 768, height: 1024 } },
     },
     {
+      name: "customer-834",
+      grep: /@customer/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 834, height: 1112 } },
+    },
+    {
+      name: "customer-1024",
+      grep: /@customer/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1024, height: 768 } },
+    },
+    {
       name: "customer-1280",
       grep: /@customer/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },

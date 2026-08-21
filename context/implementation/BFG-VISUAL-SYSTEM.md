@@ -152,3 +152,32 @@ previous object.
 alone is not a pass. A visual bug must be traced to its shared primitive,
 rendered across consumers, checked at supported viewports, and recorded in the
 mockup matrix before closure.
+
+## Phase 08 Targeted Interaction Contract — 2026-08-21
+
+The real Production screenshots reopened Phase 08 for a bounded interaction,
+form, and journey-rhythm correction. This does not reopen business domains or
+start Phase 09.
+
+- `Button` and `LinkButton` share the semantic variants `primary`, `secondary`,
+  `quiet`, and `danger`. Each genuinely clickable control has visible default,
+  hover, active/pressed, focus-visible, and disabled states. Secondary and quiet
+  surfaces must remain visibly distinct from cream, white, and light-green
+  frames; danger never inherits a positive-action hover treatment.
+- Interaction timing is restrained and shared. Pointer hover is additive on
+  hover-capable devices; touch feedback comes from active/pressed state, not a
+  sticky hover approximation. Icon-only buttons and button-like links consume
+  the same state grammar. Non-interactive badges and count labels do not gain
+  click affordance.
+- `src/components/bfg-file-picker.tsx` is the shared BFG file-picker primitive.
+  It keeps the native file input in the accessibility tree while visually
+  hiding browser chrome and owns the custom trigger, empty/selected filename,
+  accepted-file helper, validation/error, disabled, pending, required, and
+  focus states. Cover, Gallery, Deposit, Payment, and Bulk Import visible file
+  controls route through this presentation.
+- How To Order keeps the locked seven-step Tabler journey. Desktop uses one
+  shared grid/subgrid for number, icon, headline, and description rows; the
+  headline block is calibrated for one or two lines so description starts align
+  without per-step margins. Mobile/tablet keep the vertical structure and use
+  semantic shared gaps for step rhythm, final-step → help card, help card → CTA,
+  and CTA → bottom navigation safe-area clearance.

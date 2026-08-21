@@ -293,3 +293,34 @@ files, and three existing parse-partial files (`src/app/account/orders/page.tsx`
 `src/app/account/page.tsx`, and `src/app/admin/page.tsx`). The repository index
 is best-effort; those flagged ranges remain covered by direct source inspection
 and the frontend gates.
+
+## Post-diff Memory — Phase 08 Interaction/Form/Journey Stabilization — 2026-08-21
+
+The targeted diff is limited to shared presentation and its consumers:
+
+- `src/components/ui.tsx` and `src/app/globals.css`: shared Button/LinkButton
+  variants and default/hover/active/focus-visible/disabled affordance states;
+  the existing non-interactive Admin count label no longer presents as a
+  button.
+- `src/components/bfg-file-picker.tsx`: one accessible custom picker over a
+  visually-hidden native input. Cover, Gallery, Deposit, Payment, and Bulk
+  Import now share the visible picker language; upload and authorization
+  consequences remain in their existing callers.
+- `src/components/cover-upload-field.tsx`,
+  `src/components/admin-book-detail.tsx`,
+  `src/components/admin-bulk-import.tsx`, and the two customer proof-upload
+  pages: custom file presentation and the deliberate Gallery media field grid.
+- `src/components/bfg-select.tsx`: portal positioning now remeasures after
+  render at constrained viewports without changing its collision contract.
+- `src/app/globals.css`, `src/components/how-to-order.tsx` consumers, and
+  `tests/e2e/phase071-surface.spec.ts`: shared desktop journey rows and mobile
+  rhythm; no business sequence, copy, or icon family change.
+- Focused component/E2E tests and Playwright projects cover the contract at
+  375, 390, 430, 768, 834, 1024, 1280, and 1440px.
+
+Blast-radius verdict: Auth, RBAC, Orders, Batch, Invoice, Deposit, Payment,
+Refund, Secret Catalog, Activity data, Human references, Product Media data
+contracts, cover metadata, Bulk Import parsing/confirmation, Admin IA, and
+customer route behavior were preserved. `rg` confirms visible file-input
+markup is owned by the shared picker only. No Convex schema/function change is
+part of this pass.

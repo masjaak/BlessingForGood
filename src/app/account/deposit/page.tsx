@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import {
@@ -121,15 +122,17 @@ function DepositPage() {
                 <Field label="Referensi bank (opsional)">
                   <input className="input" value={reference} onChange={(event) => setReference(event.target.value)} />
                 </Field>
-                <Field label="Bukti transfer" hint="JPG, PNG, WebP, atau PDF. Maksimal 5 MB.">
-                  <input
-                    className="input"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    onChange={(event) => setFile(event.target.files?.[0] || null)}
-                    required
-                  />
-                </Field>
+                <BFGFilePicker
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  ariaLabel="Pilih bukti transfer"
+                  buttonLabel="Pilih bukti transfer"
+                  changeLabel="Ganti bukti transfer"
+                  file={file}
+                  helper="JPG, PNG, WebP, atau PDF. Maksimal 5 MB."
+                  label="Bukti transfer"
+                  onFileChange={setFile}
+                  required
+                />
                 <Button pending={pending} pendingLabel="Mengunggah…">
                   Kirim top-up
                 </Button>

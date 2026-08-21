@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -152,7 +153,7 @@ export function BFGSelect({
     }
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
 
     function positionMenu() {
@@ -169,21 +170,29 @@ export function BFGSelect({
       const maxHeight = Math.min(320, Math.max(80, available), window.innerHeight - margin * 2);
       const height = renderedHeight || maxHeight;
       const width = Math.min(rect.width, window.innerWidth - margin * 2);
-      setMenuPosition({
+      const nextPosition = {
         top: placeAbove
           ? Math.max(margin, rect.top - gap - height)
           : Math.min(rect.bottom + gap, window.innerHeight - margin - height),
         left: Math.min(Math.max(margin, rect.left), window.innerWidth - margin - width),
         width,
         maxHeight,
+      };
+      setMenuPosition((current) => {
+        if (
+          current &&
+          current.top === nextPosition.top &&
+          current.left === nextPosition.left &&
+          current.width === nextPosition.width &&
+          current.maxHeight === nextPosition.maxHeight
+        ) {
+          return current;
+        }
+        return nextPosition;
       });
     }
 
     positionMenu();
-    let followUpFrame = 0;
-    const frame = window.requestAnimationFrame(() => {
-      followUpFrame = window.requestAnimationFrame(positionMenu);
-    });
     window.addEventListener("resize", positionMenu);
     window.addEventListener("scroll", positionMenu, true);
     const handlePointerDown = (event: PointerEvent) => {
@@ -192,13 +201,11 @@ export function BFGSelect({
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => {
-      window.cancelAnimationFrame(frame);
-      window.cancelAnimationFrame(followUpFrame);
       window.removeEventListener("resize", positionMenu);
       window.removeEventListener("scroll", positionMenu, true);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [close, open]);
+  }, [close, menuPosition, open]);
 
   useEffect(() => {
     if (!open || activeIndex < 0) return;

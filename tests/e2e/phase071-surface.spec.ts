@@ -14,21 +14,29 @@ test.describe("@customer Phase 07.1 shared surface", () => {
       }),
     }));
 
-    if (viewportWidth <= 1100) {
+    if (viewportWidth <= 900) {
       expect(new Set(layout.steps.map((step) => step.left)).size).toBe(1);
     } else {
       expect(layout.columns.split(" ")).toHaveLength(7);
-      const longestHeadline = await page
-        .locator(".order-step h3")
-        .nth(4)
-        .evaluate((heading) => {
-          const style = getComputedStyle(heading);
+      const geometry = await page.locator(".order-step").evaluateAll((steps) =>
+        steps.map((step) => {
+          const heading = step.querySelector("h3");
+          const description = step.querySelector("p");
+          if (!heading || !description) return null;
+          const range = document.createRange();
+          range.selectNodeContents(heading);
           return {
-            height: heading.getBoundingClientRect().height,
-            lineHeight: Number.parseFloat(style.lineHeight),
+            headingTop: heading.getBoundingClientRect().top,
+            headingLines: range.getClientRects().length,
+            descriptionTop: description.getBoundingClientRect().top,
           };
-        });
-      expect(longestHeadline.height).toBeLessThanOrEqual(longestHeadline.lineHeight * 2.1);
+        }),
+      );
+      expect(geometry.every(Boolean)).toBe(true);
+      const rows = geometry.filter((step): step is NonNullable<typeof step> => Boolean(step));
+      expect(new Set(rows.map((step) => Math.round(step.headingTop))).size).toBe(1);
+      expect(new Set(rows.map((step) => Math.round(step.descriptionTop))).size).toBe(1);
+      expect(rows.every((step) => step.headingLines >= 1 && step.headingLines <= 2)).toBe(true);
     }
   });
 

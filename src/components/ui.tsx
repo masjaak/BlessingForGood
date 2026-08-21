@@ -39,16 +39,23 @@ export function LinkButton({
   variant = "primary",
   size = "default",
   className = "",
+  disabled = false,
   children,
 }: {
   href: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
   className?: string;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
-    <Link className={`button button-${variant} button-size-${size} ${className}`.trim()} href={href}>
+    <Link
+      aria-disabled={disabled || undefined}
+      className={`button button-${variant} button-size-${size} ${className}`.trim()}
+      href={href}
+      tabIndex={disabled ? -1 : undefined}
+    >
       {children}
     </Link>
   );

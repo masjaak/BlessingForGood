@@ -82,6 +82,27 @@ describe("public UI foundation", () => {
     expect(document.querySelector("section.frame-detail")).toBeTruthy();
   });
 
+  it("keeps Button and LinkButton on one complete interaction contract", () => {
+    render(
+      <div>
+        <Button variant="secondary" disabled>
+          Disabled action
+        </Button>
+        <LinkButton disabled href="/catalog" variant="secondary">
+          Disabled link
+        </LinkButton>
+      </div>,
+    );
+
+    expect(screen.getByRole("button", { name: "Disabled action" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("link", { name: "Disabled link" }).getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("link", { name: "Disabled link" }).getAttribute("tabindex")).toBe("-1");
+    expect(globalsCss).toContain(".button:focus-visible");
+    expect(globalsCss).toContain(".button:active:not(:disabled)");
+    expect(globalsCss).toContain(".button:disabled");
+    expect(globalsCss).toContain("--color-button-secondary-surface");
+  });
+
   it("keeps boolean fields in the shared field row grammar", () => {
     render(<InlineBooleanField checked label="Aktif" onChange={vi.fn()} />);
 

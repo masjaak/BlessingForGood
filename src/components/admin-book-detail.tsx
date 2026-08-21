@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
+import { BFGFilePicker } from "@/components/bfg-file-picker";
 import {
   Button,
   Card,
@@ -447,7 +448,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                     </div>
                   ))}
                 </div>
-                <div className="form-grid">
+                <div className="form-grid product-media-upload-grid">
                   <Field label="Alt text gambar" hint="Maksimal 160 karakter.">
                     <input
                       className="input"
@@ -456,16 +457,22 @@ function BookEditor({ book }: { book: AdminBook }) {
                       onChange={(event) => setGalleryAltText(event.target.value)}
                     />
                   </Field>
-                  <Field label="Pilih gambar" hint="JPG, PNG, atau WebP. Maksimal 5 MB.">
-                    <input
-                      accept="image/jpeg,image/png,image/webp"
-                      className="input"
-                      onChange={(event) => handleGalleryFileChange(event.target.files?.[0] || null)}
-                      type="file"
-                    />
-                  </Field>
+                  <BFGFilePicker
+                    accept="image/jpeg,image/png,image/webp"
+                    ariaLabel="Pilih file gambar galeri"
+                    buttonLabel="Pilih gambar"
+                    changeLabel="Ganti gambar"
+                    error={galleryError}
+                    file={galleryFile}
+                    helper="JPG, PNG, atau WebP. Maksimal 5 MB."
+                    label="Pilih gambar"
+                    onFileChange={handleGalleryFileChange}
+                    onValidationError={setGalleryError}
+                    validateFile={validateCoverFile}
+                    disabled={book.gallery.length >= 8}
+                  />
                 </div>
-                <div className="form-actions">
+                <div className="form-actions product-media-action-row">
                   <Button
                     disabled={!galleryFile || book.gallery.length >= 8}
                     onClick={() => void uploadGalleryImage()}
@@ -476,14 +483,10 @@ function BookEditor({ book }: { book: AdminBook }) {
                   >
                     Simpan gambar
                   </Button>
-                  <span className="subtle">{galleryFile?.name || "Belum ada file dipilih"}</span>
+                  <span className="subtle" aria-live="polite">
+                    {galleryMessage || (galleryFile ? "File siap diunggah." : "Belum ada file dipilih")}
+                  </span>
                 </div>
-                {galleryError ? <p className="error-text">{galleryError}</p> : null}
-                {galleryMessage ? (
-                  <p className="subtle" role="status">
-                    {galleryMessage}
-                  </p>
-                ) : null}
               </section>
               <section className="admin-book-detail-section">
                 <div className="split-heading">

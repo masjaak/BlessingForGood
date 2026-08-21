@@ -132,3 +132,19 @@ not change the frame height architecture or any Customer Homepage token.
 An exception requires a rendered visual reason and belongs on the shared
 semantic region, not a page-specific selector. No optical exception is added by
 this milestone before representative Admin surfaces are rendered.
+
+## Phase 08 Media Form and Journey Rhythm — 2026-08-21
+
+Admin media upload fields use the existing `Field` anatomy: label, helper when
+needed, then control. Gallery Alt text and the shared BFG file picker occupy a
+deliberate two-column grid on wide screens and stack at constrained widths;
+the save/status action row is a separate aligned row. External Preview fields
+and Description retain the same left grid edge and section boundary rhythm.
+No control alignment is achieved with per-field compensating margins.
+
+How To Order desktop uses shared journey rows/subgrid so headline and
+description starts are aligned across all seven columns. On mobile/tablet the
+locked vertical layout uses one semantic step gap, a larger final-step → help
+card section gap, a deliberate help card → CTA gap, and safe-area-aware CTA →
+bottom-navigation clearance. Internal step anatomy remains tight; no per-step
+spacing values are allowed.
