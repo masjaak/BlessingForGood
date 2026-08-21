@@ -53,6 +53,7 @@ describe("BFG Book Master product media", () => {
 
     const adminBook = await admin.query(api.books.getForAdmin, { bookId });
     expect(adminBook?.coverStorageId).toBe(cover);
+    expect(adminBook?.coverPresentation).toBeUndefined();
     expect(adminBook?.gallery.map((image) => image.storageId)).toEqual([second, first]);
     expect(adminBook).toMatchObject({
       externalPreviewLabel: "Preview Amazon",
@@ -61,6 +62,7 @@ describe("BFG Book Master product media", () => {
 
     const publicBook = await customer.query(api.readyStock.getBySlug, { slug: "media-book" });
     expect(publicBook?.gallery.map((image) => image.altText)).toEqual(["Halaman isi kedua", "Halaman isi pertama"]);
+    expect(publicBook?.coverPresentation).toBeNull();
     expect(JSON.stringify(publicBook)).not.toContain(String(cover));
     expect(JSON.stringify(publicBook)).not.toContain(String(first));
     expect(JSON.stringify(publicBook)).not.toContain(String(second));
@@ -103,5 +105,56 @@ describe("BFG Book Master product media", () => {
       );
     }
     await expect(customer.query(api.books.getForAdmin, { bookId })).rejects.toThrow("PERMISSION_DENIED");
+  });
+
+  it("persists non-destructive cover framing, projects it to customers, and supports reset", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Framing Publisher" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Framing Book" });
+    const variantId = await admin.mutation(api.bookVariants.create, {
+      bookId,
+      format: "PB",
+      isbn: "9780000088028",
+      priceAmount: 150000,
+    });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 1 });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+    const storageId = await storeImage(t, "framing-cover");
+
+    await admin.mutation(api.books.attachCover, {
+      bookId,
+      storageId,
+      presentation: { zoom: 1.4, x: 18, y: -12 },
+    });
+
+    expect((await admin.query(api.books.getForAdmin, { bookId }))?.coverPresentation).toEqual({
+      zoom: 1.4,
+      x: 18,
+      y: -12,
+    });
+    expect((await customer.query(api.readyStock.getBySlug, { slug: "framing-book" }))?.coverPresentation).toEqual({
+      zoom: 1.4,
+      x: 18,
+      y: -12,
+    });
+    expect((await t.run(async (ctx) => ctx.db.get(bookId)))?.coverStorageId).toBe(storageId);
+
+    await expect(
+      admin.mutation(api.books.updateCoverPresentation, {
+        bookId,
+        presentation: { zoom: 5, x: 0, y: 0 },
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+
+    await expect(
+      customer.mutation(api.books.updateCoverPresentation, {
+        bookId,
+        presentation: { zoom: 1.2, x: 0, y: 0 },
+      }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await admin.mutation(api.books.updateCoverPresentation, { bookId });
+    expect((await admin.query(api.books.getForAdmin, { bookId }))?.coverPresentation).toBeUndefined();
+    expect((await customer.query(api.readyStock.getBySlug, { slug: "framing-book" }))?.coverPresentation).toBeNull();
   });
 });

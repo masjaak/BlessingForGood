@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { BookCover } from "@/components/book-cover";
+import { BookCover, type CoverPresentation } from "@/components/book-cover";
 import { Button } from "@/components/ui";
 
 const acceptedCoverTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const defaultCoverPresentation: CoverPresentation = { zoom: 1, x: 0, y: 0 };
 
 export function validateCoverFile(file: File) {
   if (!acceptedCoverTypes.has(file.type)) return "Cover harus berupa JPG, PNG, atau WebP.";
@@ -14,6 +15,7 @@ export function validateCoverFile(file: File) {
 
 export function CoverUploadField({
   currentSrc,
+  currentPresentation,
   error,
   file,
   format,
@@ -30,14 +32,16 @@ export function CoverUploadField({
   format?: string;
   message?: string;
   onFileChange: (file: File | null) => void;
-  onUpload: () => void;
+  onUpload: (presentation: CoverPresentation) => void;
   pending?: boolean;
   publisher: string;
   title: string;
+  currentPresentation?: CoverPresentation | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [selectionError, setSelectionError] = useState("");
+  const [presentation, setPresentation] = useState<CoverPresentation>(currentPresentation || defaultCoverPresentation);
   const previewUrl = useMemo(
     () => (file && typeof URL.createObjectURL === "function" ? URL.createObjectURL(file) : null),
     [file],
@@ -50,8 +54,15 @@ export function CoverUploadField({
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const nextFile = event.target.files?.[0] || null;
     setSelectionError(nextFile ? validateCoverFile(nextFile) || "" : "");
+    if (nextFile) setPresentation(defaultCoverPresentation);
     onFileChange(nextFile);
     event.target.value = "";
+  }
+
+  function updatePresentation(key: keyof CoverPresentation, value: string) {
+    const nextValue = Number(value);
+    if (!Number.isFinite(nextValue)) return;
+    setPresentation((current) => ({ ...current, [key]: nextValue }));
   }
 
   const displaySrc = previewUrl || currentSrc;
@@ -63,6 +74,7 @@ export function CoverUploadField({
         <BookCover
           alt={displaySrc ? `${title} cover preview` : undefined}
           format={format}
+          presentation={displaySrc ? presentation : null}
           publisher={publisher}
           src={displaySrc}
           title={title}
@@ -77,6 +89,55 @@ export function CoverUploadField({
         <p className="field-hint" id={`${inputId}-help`}>
           JPG, PNG, atau WebP. Maksimal 5 MB.
         </p>
+        {displaySrc ? (
+          <div className="cover-presentation-controls" aria-label="Atur tampilan cover">
+            <span className="card-kicker">ATUR TAMPILAN</span>
+            <label className="cover-presentation-control">
+              <span>Zoom cover</span>
+              <input
+                aria-label="Zoom cover"
+                max="4"
+                min="1"
+                onChange={(event) => updatePresentation("zoom", event.target.value)}
+                step="0.01"
+                type="range"
+                value={presentation.zoom}
+              />
+            </label>
+            <label className="cover-presentation-control">
+              <span>Posisi horizontal cover</span>
+              <input
+                aria-label="Posisi horizontal cover"
+                max="50"
+                min="-50"
+                onChange={(event) => updatePresentation("x", event.target.value)}
+                step="1"
+                type="range"
+                value={presentation.x}
+              />
+            </label>
+            <label className="cover-presentation-control">
+              <span>Posisi vertikal cover</span>
+              <input
+                aria-label="Posisi vertikal cover"
+                max="50"
+                min="-50"
+                onChange={(event) => updatePresentation("y", event.target.value)}
+                step="1"
+                type="range"
+                value={presentation.y}
+              />
+            </label>
+            <Button
+              type="button"
+              variant="quiet"
+              size="compact"
+              onClick={() => setPresentation(defaultCoverPresentation)}
+            >
+              Reset tampilan
+            </Button>
+          </div>
+        ) : null}
         <input
           ref={inputRef}
           aria-describedby={`${inputId}-help`}
@@ -92,13 +153,13 @@ export function CoverUploadField({
             {file ? "Ganti gambar" : "Pilih gambar"}
           </Button>
           <Button
-            disabled={!file || Boolean(blockingError)}
+            disabled={!displaySrc || Boolean(blockingError)}
             pending={pending}
-            pendingLabel="Mengunggah…"
+            pendingLabel="Menyimpan…"
             type="button"
-            onClick={onUpload}
+            onClick={() => onUpload(presentation)}
           >
-            Simpan cover
+            {file ? "Simpan cover" : "Simpan tampilan"}
           </Button>
         </div>
         <p className="cover-upload-file-state" aria-live="polite">

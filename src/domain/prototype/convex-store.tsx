@@ -50,6 +50,7 @@ type CatalogRecord = {
     title: string;
     publisher: string;
     coverImageUrl?: string | null;
+    coverPresentation?: { zoom: number; x: number; y: number } | null;
     variants: Array<{
       id: string;
       format: BookFormat;

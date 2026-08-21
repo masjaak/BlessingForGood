@@ -128,6 +128,16 @@ describe("public UI foundation", () => {
     expect(screen.getAllByRole("link", { name: "Cara memesan" })[0].getAttribute("href")).toBe("/how-to-order");
   });
 
+  it("keeps the homepage journey grouped and the BFG opening headline readable", () => {
+    render(<HomePage />);
+
+    expect(document.querySelector(".home-journey")).toBeTruthy();
+    expect(globalsCss).toContain(".customer-shell .home-journey {");
+    expect(globalsCss).toContain("max-width: 940px;");
+    expect(globalsCss).toContain(".customer-shell .story-card-opening h3 {");
+    expect(globalsCss).toContain("color: var(--color-white);");
+  });
+
   it("links the grouped admin workspace destinations", () => {
     render(<AdminNav />);
 

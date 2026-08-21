@@ -11,6 +11,25 @@ import { insertBook } from "./lib/productDomain";
 
 const galleryLimit = 8;
 const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const coverPresentationValidator = v.object({ zoom: v.number(), x: v.number(), y: v.number() });
+
+function normalizeCoverPresentation(presentation?: { zoom: number; x: number; y: number }) {
+  if (!presentation) return undefined;
+  if (
+    !Number.isFinite(presentation.zoom) ||
+    presentation.zoom < 1 ||
+    presentation.zoom > 4 ||
+    !Number.isFinite(presentation.x) ||
+    presentation.x < -50 ||
+    presentation.x > 50 ||
+    !Number.isFinite(presentation.y) ||
+    presentation.y < -50 ||
+    presentation.y > 50
+  ) {
+    fail("VALIDATION_FAILED", "cover presentation is outside the supported range");
+  }
+  return presentation;
+}
 
 function validateExternalPreviewUrl(value: string) {
   if (value.length > 2_048) fail("VALIDATION_FAILED", "external preview URL is too long");
@@ -136,7 +155,7 @@ export const generateGalleryUploadUrl = mutation({
 });
 
 export const attachCover = mutation({
-  args: { bookId: v.id("books"), storageId: v.id("_storage") },
+  args: { bookId: v.id("books"), storageId: v.id("_storage"), presentation: v.optional(coverPresentationValidator) },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
@@ -147,15 +166,31 @@ export const attachCover = mutation({
       new Set(["image/jpeg", "image/png", "image/webp"]),
       "cover must be a JPG, PNG, or WebP image up to 5 MB",
     );
+    const coverPresentation = normalizeCoverPresentation(args.presentation);
     const previousStorageId = book.coverStorageId;
     await ctx.db.patch(book._id, {
       coverStorageId: args.storageId,
       coverImageUrl: undefined,
+      coverPresentation,
       updatedAt: Date.now(),
     });
     if (previousStorageId && previousStorageId !== args.storageId) await ctx.storage.delete(previousStorageId);
     await recordAudit(ctx, user._id, "book.cover_attached", "book", book._id);
     return { storageId: args.storageId };
+  },
+});
+
+export const updateCoverPresentation = mutation({
+  args: { bookId: v.id("books"), presentation: v.optional(coverPresentationValidator) },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const book = await ctx.db.get(args.bookId);
+    if (!book) fail("BOOK_NOT_FOUND");
+    if (!book.coverStorageId && !book.coverImageUrl) fail("VALIDATION_FAILED", "book has no cover to present");
+    const coverPresentation = normalizeCoverPresentation(args.presentation);
+    await ctx.db.patch(book._id, { coverPresentation, updatedAt: Date.now() });
+    await recordAudit(ctx, user._id, "book.cover_presentation_updated", "book", book._id);
+    return coverPresentation ?? null;
   },
 });
 

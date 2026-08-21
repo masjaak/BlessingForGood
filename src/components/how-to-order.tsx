@@ -87,7 +87,7 @@ function OrderStepIcon({ name }: { name: OrderStepIconName }) {
     stroke: "currentColor",
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
-    strokeWidth: 1.8,
+    strokeWidth: 1.7,
   };
 
   const icons: Record<OrderStepIconName, ReactNode> = {

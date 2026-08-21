@@ -26,7 +26,14 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
   );
   const bookMap = new Map<
     string,
-    { id: string; title: string; publisher: string; coverImageUrl: string | null; variants: unknown[] }
+    {
+      id: string;
+      title: string;
+      publisher: string;
+      coverImageUrl: string | null;
+      coverPresentation: { zoom: number; x: number; y: number } | null;
+      variants: unknown[];
+    }
   >();
 
   items.forEach((item, index) => {
@@ -40,6 +47,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
       title: book.title,
       publisher: publisher.name,
       coverImageUrl: coverUrls[index],
+      coverPresentation: book.coverPresentation ?? null,
       variants: [],
     };
     current.variants.push({

@@ -115,6 +115,7 @@ function ReadyStockResults() {
                 title={book.title}
                 publisher={book.publisher.name}
                 format={book.variants[0]?.format}
+                presentation={book.coverPresentation}
                 src={book.coverImageUrl || undefined}
               />
               <div className="ready-stock-copy">

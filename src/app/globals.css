@@ -1293,6 +1293,10 @@ p {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transform-origin: center;
+}
+.book-cover > img.is-positioned {
+  transform: translate(var(--cover-x), var(--cover-y)) scale(var(--cover-zoom));
 }
 .book-cover-fallback {
   display: flex;
@@ -2625,7 +2629,15 @@ p {
 
 .customer-shell .story-card-opening .eyebrow,
 .customer-shell .story-card-opening p {
-  color: #d4e0d7;
+  color: var(--color-brand-secondary);
+}
+
+.customer-shell .story-card-opening .eyebrow {
+  color: var(--color-brand-gold);
+}
+
+.customer-shell .story-card-opening h3 {
+  color: var(--color-white);
 }
 
 .customer-shell .story-card-logo {
@@ -3413,10 +3425,6 @@ p {
 }
 
 /* Phase 07 customer patch: illustrated order journey, scoped to customer pages. */
-.customer-shell .how-to-order-page {
-  max-width: 1180px;
-}
-
 .customer-shell .how-to-order-page .page-header {
   max-width: 760px;
 }
@@ -3425,6 +3433,7 @@ p {
   position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: start;
   gap: 0;
   overflow: visible;
   margin: 0;
@@ -3457,10 +3466,10 @@ p {
   position: relative;
   z-index: 1;
   display: grid;
-  min-height: 178px;
+  min-height: 0;
   grid-template-rows: auto 1fr;
-  gap: 14px;
-  padding: 0 12px;
+  gap: 12px;
+  padding: 0 8px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -3477,7 +3486,7 @@ p {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 7px;
 }
 
 .customer-shell .order-step-number {
@@ -3504,6 +3513,9 @@ p {
 }
 
 .customer-shell .order-step-content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
   text-align: center;
 }
 
@@ -3513,10 +3525,15 @@ p {
 }
 
 .customer-shell .order-step h3 {
-  font-size: 1.05rem;
+  margin-inline: -4px;
+  font-size: clamp(0.86rem, 0.95vw, 0.92rem);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
 }
 
 .customer-shell .order-step p {
+  margin-inline: 0;
   font-size: 0.86rem;
   line-height: 1.45;
 }
@@ -3525,19 +3542,7 @@ p {
   display: none;
 }
 
-@media (max-width: 1024px) {
-  .customer-shell .order-steps,
-  .customer-shell .order-steps-compact {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .customer-shell .order-steps::before {
-    right: 12.5%;
-    left: 12.5%;
-  }
-}
-
-@media (max-width: 520px) {
+@media (max-width: 1100px) {
   .customer-shell .order-steps,
   .customer-shell .order-steps-compact {
     grid-template-columns: 1fr;
@@ -3547,7 +3552,7 @@ p {
     top: 24px;
     right: auto;
     bottom: 24px;
-    left: 26px;
+    left: 29px;
     width: 1px;
     height: auto;
   }
@@ -3555,10 +3560,10 @@ p {
   .customer-shell .order-step,
   .customer-shell .order-step:nth-child(n) {
     min-height: 0;
-    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-columns: 58px minmax(0, 1fr);
     grid-template-rows: auto;
-    gap: 14px;
-    padding: 0 0 24px;
+    gap: 16px;
+    padding: 0 0 28px;
     text-align: left;
   }
 
@@ -3574,13 +3579,23 @@ p {
   }
 
   .customer-shell .order-step-content {
-    padding-top: 4px;
+    padding-top: 3px;
     text-align: left;
   }
 
   .customer-shell .order-step-icon-wrap {
     width: 48px;
     height: 48px;
+  }
+
+  .customer-shell .order-step h3 {
+    margin-inline: 0;
+    font-size: 1.08rem;
+  }
+
+  .customer-shell .order-step p {
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 }
 
@@ -4061,6 +4076,9 @@ p {
 }
 
 .customer-shell .home-journey {
+  width: min(100%, 940px);
+  max-width: 940px;
+  margin-inline: auto;
   margin-top: var(--space-lg);
   padding: 20px 0 18px;
   border-top: 1px solid var(--line);
@@ -4087,11 +4105,11 @@ p {
   gap: 10px;
   align-items: start;
   min-height: 70px;
-  padding: 0 28px 0 0;
+  padding: 0 20px 0 0;
 }
 
 .customer-shell .home-hero .hero-sequence li + li {
-  padding-left: 28px;
+  padding-left: 20px;
   border-left: 1px solid var(--line);
 }
 
@@ -5035,6 +5053,10 @@ p {
   width: min(calc(100% - (var(--layout-page-inline-customer) * 2)), 1180px);
   padding-top: var(--layout-page-top);
   padding-bottom: var(--layout-page-bottom);
+}
+
+.customer-shell .how-to-order-page {
+  width: min(calc(100% - 40px), 1240px);
 }
 
 .customer-shell .page-header {
@@ -5994,6 +6016,28 @@ p {
 
 .cover-upload-controls > .field-hint {
   margin: 0;
+}
+
+.cover-presentation-controls {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.cover-presentation-control {
+  display: grid;
+  gap: 4px;
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.cover-presentation-control input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
 }
 
 .cover-upload-actions {

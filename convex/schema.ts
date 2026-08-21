@@ -214,6 +214,13 @@ export default defineSchema({
     categories: v.array(v.string()),
     coverImageUrl: v.optional(v.string()),
     coverStorageId: v.optional(v.id("_storage")),
+    coverPresentation: v.optional(
+      v.object({
+        zoom: v.number(),
+        x: v.number(),
+        y: v.number(),
+      }),
+    ),
     externalPreviewLabel: v.optional(v.string()),
     externalPreviewUrl: v.optional(v.string()),
     publicationStatus: bookPublicationStatusValidator,

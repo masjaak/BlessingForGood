@@ -1,6 +1,61 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("@customer Phase 07.1 shared surface", () => {
+  test("How To Order keeps one seven-step journey and switches to a readable vertical timeline", async ({ page }) => {
+    await page.goto("/how-to-order", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".order-step")).toHaveCount(7);
+
+    const viewportWidth = page.viewportSize()?.width || 0;
+    const layout = await page.locator(".order-steps").evaluate((element) => ({
+      columns: getComputedStyle(element).gridTemplateColumns,
+      steps: [...element.children].map((step) => {
+        const rect = step.getBoundingClientRect();
+        return { left: rect.left, top: rect.top };
+      }),
+    }));
+
+    if (viewportWidth <= 1100) {
+      expect(new Set(layout.steps.map((step) => step.left)).size).toBe(1);
+    } else {
+      expect(layout.columns.split(" ")).toHaveLength(7);
+      const longestHeadline = await page
+        .locator(".order-step h3")
+        .nth(4)
+        .evaluate((heading) => {
+          const style = getComputedStyle(heading);
+          return {
+            height: heading.getBoundingClientRect().height,
+            lineHeight: Number.parseFloat(style.lineHeight),
+          };
+        });
+      expect(longestHeadline.height).toBeLessThanOrEqual(longestHeadline.lineHeight * 2.1);
+    }
+  });
+
+  test("Homepage keeps one compact three-step orientation", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const journey = page.locator(".home-journey");
+    await expect(journey).toBeVisible();
+    await expect(journey.locator(".hero-sequence > li")).toHaveCount(3);
+    expect(await journey.locator(".hero-sequence > li strong").allTextContents()).toEqual([
+      "Temukan",
+      "Pesan",
+      "Ikuti",
+    ]);
+
+    const layout = await journey.locator(".hero-sequence").evaluate((element) => ({
+      columns: getComputedStyle(element).gridTemplateColumns,
+      steps: [...element.children].map((step) => step.getBoundingClientRect().left),
+      width: element.getBoundingClientRect().width,
+    }));
+    expect(layout.width).toBeLessThanOrEqual(940);
+    if ((page.viewportSize()?.width || 0) <= 640) {
+      expect(new Set(layout.steps).size).toBe(1);
+    } else {
+      expect(layout.columns.split(" ")).toHaveLength(3);
+    }
+  });
+
   test("Phase 08 slider swap and dropdown anchor stay rendered correctly", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".story-card-opening")).toBeVisible();

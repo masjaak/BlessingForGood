@@ -19,6 +19,7 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
+import type { CoverPresentation } from "@/components/book-cover";
 import { ProductGallery } from "@/components/product-gallery";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
@@ -111,6 +112,7 @@ function BookEditor({ book }: { book: AdminBook }) {
   const createVariant = useMutation(api.bookVariants.create);
   const generateCoverUploadUrl = useMutation(api.books.generateCoverUploadUrl);
   const attachCover = useMutation(api.books.attachCover);
+  const updateCoverPresentation = useMutation(api.books.updateCoverPresentation);
   const generateGalleryUploadUrl = useMutation(api.books.generateGalleryUploadUrl);
   const attachGalleryImage = useMutation(api.books.attachGalleryImage);
   const removeGalleryImage = useMutation(api.books.removeGalleryImage);
@@ -165,30 +167,34 @@ function BookEditor({ book }: { book: AdminBook }) {
     }
   }
 
-  async function uploadCover() {
-    if (!coverFile) return;
+  async function saveCover(presentation: CoverPresentation) {
     setCoverMessage("");
     setCoverError("");
     setPendingAction("cover");
     try {
-      const validationError = validateCoverFile(coverFile);
-      if (validationError) {
-        setCoverError(validationError);
-        return;
+      if (coverFile) {
+        const validationError = validateCoverFile(coverFile);
+        if (validationError) {
+          setCoverError(validationError);
+          return;
+        }
+        const uploadUrl = await generateCoverUploadUrl({});
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": coverFile.type },
+          body: coverFile,
+        });
+        if (!response.ok) throw new Error("unggah gagal");
+        const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+        await attachCover({ bookId: book._id, storageId, presentation });
+        setCoverFile(null);
+        setCoverMessage("Cover dan tampilannya tersimpan.");
+      } else {
+        await updateCoverPresentation({ bookId: book._id, presentation });
+        setCoverMessage("Tampilan cover tersimpan.");
       }
-      const uploadUrl = await generateCoverUploadUrl({});
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": coverFile.type },
-        body: coverFile,
-      });
-      if (!response.ok) throw new Error("unggah gagal");
-      const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
-      await attachCover({ bookId: book._id, storageId });
-      setCoverFile(null);
-      setCoverMessage("Cover tersimpan.");
     } catch {
-      setCoverError("Cover belum tersimpan. Coba lagi.");
+      setCoverError("Cover atau tampilannya belum tersimpan. Coba lagi.");
     } finally {
       setPendingAction(null);
     }
@@ -370,12 +376,13 @@ function BookEditor({ book }: { book: AdminBook }) {
               </section>
               <CoverUploadField
                 currentSrc={book.coverUrl || undefined}
+                currentPresentation={book.coverPresentation || null}
                 error={coverError}
                 file={coverFile}
                 format={book.variants[0]?.format}
                 message={coverMessage}
                 onFileChange={handleCoverFileChange}
-                onUpload={() => void uploadCover()}
+                onUpload={(presentation) => void saveCover(presentation)}
                 pending={pendingAction === "cover"}
                 publisher={book.publisher?.name || "BFG"}
                 title={book.title}

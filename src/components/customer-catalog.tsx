@@ -213,6 +213,7 @@ export function CustomerCatalog() {
                     title={book.title}
                     publisher={book.publisher}
                     format={selectedFormat}
+                    presentation={book.coverPresentation}
                     src={book.coverImageUrl || undefined}
                   />
                   <div className="book-card-details">

@@ -68,4 +68,35 @@ describe("CoverUploadField", () => {
     Object.defineProperty(oversized, "size", { value: 5_000_001 });
     expect(validateCoverFile(oversized)).toMatch(/5 MB/);
   });
+
+  it("lets Admin adjust and reset the customer-facing cover framing", () => {
+    const onFileChange = vi.fn();
+    const onUpload = vi.fn();
+
+    render(
+      <CoverUploadField
+        currentSrc="https://clean-eel-522.convex.cloud/api/storage/cover"
+        file={null}
+        onFileChange={onFileChange}
+        onUpload={onUpload}
+        publisher="BFG"
+        title="A Quiet Book"
+      />,
+    );
+
+    const zoom = screen.getByLabelText("Zoom cover");
+    const horizontal = screen.getByLabelText("Posisi horizontal cover");
+    const vertical = screen.getByLabelText("Posisi vertikal cover");
+    fireEvent.change(zoom, { target: { value: "1.4" } });
+    fireEvent.change(horizontal, { target: { value: "18" } });
+    fireEvent.change(vertical, { target: { value: "-12" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan tampilan" }));
+
+    expect(onUpload).toHaveBeenCalledWith({ zoom: 1.4, x: 18, y: -12 });
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset tampilan" }));
+    expect((zoom as HTMLInputElement).value).toBe("1");
+    expect((horizontal as HTMLInputElement).value).toBe("0");
+    expect((vertical as HTMLInputElement).value).toBe("0");
+  });
 });
