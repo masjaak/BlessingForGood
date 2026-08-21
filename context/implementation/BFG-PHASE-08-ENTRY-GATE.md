@@ -11,10 +11,10 @@ the final Phase 08 completion program. It does not authorize speculative Phase
 ## Current Stable Baseline
 
 - Production implementation baseline: `eca8310`.
-- `origin/main`: `eca8310`.
+- `origin/main`: current `main` after final context reconciliation.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
-- Vercel Production: `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`).
+- Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 - Canonical domain: `https://www.blessingforgood.com`.
 - Tests: Vitest `229/229`, Convex `110/110`, Playwright `201/201`; TypeScript,
   ESLint, format, build PASS.

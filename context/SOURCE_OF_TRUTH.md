@@ -38,10 +38,10 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
 | Phase 08 implementation commit | `eca8310` — Activity/Product Media completion pass                         |
-| `origin/main`                  | `eca8310`                                                                  |
+| `origin/main`                  | current `main` after final context reconciliation                           |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`)                              |
+| Vercel Production deployment   | latest Git-triggered `READY` deployment for `origin/main`                  |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
 | Safe live evidence             | canonical URL returned HTTP 200; public Production rendered suite `24/24` |
 

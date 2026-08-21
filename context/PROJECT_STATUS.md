@@ -18,11 +18,11 @@ Product Media decisions are locked and the bounded implementation is deployed;
 real-book UAT remains an open gate.
 
 Starting commit for this correction pass: `cb609ab`.
-Final delivery commit: `eca8310`.
-`origin/main`: `eca8310`.
+Final delivery: current `main` after final context reconciliation.
+`origin/main`: current `main` after final context reconciliation.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`).
+Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `229/229`, Convex `110/110` (included in
@@ -32,12 +32,11 @@ Vitest), Playwright `201/201` with one environmental retry recovered, rendered
 rendered suite is `24/24`; the current environment still has no authenticated
 product browser session. No dummy Production business records were created.
 
-The known Production baseline is Convex `clean-eel-522` and Vercel deployment
-`dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU`; the configured Production hook completed
-the Convex `--prod` step before the Next build. Authenticated acceptance is
-still required before declaring the current product stable. Auth, financial,
-inventory, Secret Catalog, and Bulk Import policy remain within their locked
-boundaries.
+The known Production baseline is Convex `clean-eel-522`; the configured
+Production hook completed the Convex `--prod` step before the Next build.
+Authenticated acceptance is still required before declaring the current
+product stable. Auth, financial, inventory, Secret Catalog, and Bulk Import
+policy remain within their locked boundaries.
 
 The canonical reconciliation artifacts are:
 
