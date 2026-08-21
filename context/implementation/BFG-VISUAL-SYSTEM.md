@@ -72,6 +72,11 @@ Use the existing inline SVGs and shared icon wrappers in the shell/navigation.
 Keep one optical size, baseline, gap, and active treatment. Do not add a new
 icon package for a single glyph or use emoji as an operational icon.
 
+Customer journey icons in `src/components/how-to-order.tsx` use the local
+official Tabler Icons v3.46.0 outline subset: 24x24 viewBox, 2px
+`currentColor` stroke, round caps, and round joins. The homepage preview reuses
+this component; shell, navigation, and Admin icon systems remain unchanged.
+
 ## Dropdowns, Tables, and Forms
 
 - `BFGSelect` is the shared select control.

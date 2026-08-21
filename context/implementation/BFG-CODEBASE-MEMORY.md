@@ -1,7 +1,7 @@
 # BFG CODEBASE MEMORY
 
-Post-diff map refreshed at implementation HEAD `b80f2e7` on 2026-08-21. This is structural
-memory, not product requirement authority.
+Post-diff map refreshed for the Phase 08 final journey correction on 2026-08-21.
+This is structural memory, not product requirement authority.
 
 ## Major Domain Modules
 
@@ -50,6 +50,27 @@ Payments, Deposit, Refunds), Activity, Admin permissions, and Bulk Import. No
 state machine, ownership rule, navigation IA, or operational Admin route was
 changed. `Buku Saya` has no BookCover renderer in the current source, so it has
 no new cover-renderer blast radius.
+
+## Post-diff memory — Phase 08 final journey icon + homepage process correction
+
+- `src/components/how-to-order.tsx` owns one local `JourneyIcon` component and
+  the seven-step semantic mapping. It uses the official Tabler Icons v3.46.0
+  outline paths for search, book, send, package, receipt, delivery truck, and
+  home-check; no icon dependency was added. The homepage icon-bearing preview
+  reuses this same component.
+- `src/app/globals.css` keeps the full journey desktop row and mobile/tablet
+  timeline, while the homepage `home-journey` is a left-aligned, bounded 860px
+  rail with short arrow connectors. At widths up to 900px it becomes a compact
+  vertical sequence without cards or full-height dividers.
+- Deterministic coverage is in
+  `tests/components/how-to-order.test.tsx` and
+  `tests/e2e/phase071-surface.spec.ts`; rendered evidence is in
+  `artifacts/phase08-journey/`.
+
+This correction's blast radius is limited to How To Order, the homepage
+journey, the shared customer journey icon component, responsive CSS, and their
+tests. Admin, Auth, Orders, Batch, Finance, Activity, Cover, Gallery, and Bulk
+Import paths were not changed.
 
 ## Canonical Server Permission Helpers
 

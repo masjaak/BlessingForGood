@@ -47,12 +47,17 @@ test.describe("@customer Phase 07.1 shared surface", () => {
       columns: getComputedStyle(element).gridTemplateColumns,
       steps: [...element.children].map((step) => step.getBoundingClientRect().left),
       width: element.getBoundingClientRect().width,
+      left: element.getBoundingClientRect().left,
+      journeyLeft: element.parentElement?.getBoundingClientRect().left ?? 0,
+      secondStepBorder: getComputedStyle(element.children[1]).borderLeftWidth,
     }));
-    expect(layout.width).toBeLessThanOrEqual(940);
-    if ((page.viewportSize()?.width || 0) <= 640) {
+    expect(layout.width).toBeLessThanOrEqual(860);
+    expect(Math.abs(layout.left - layout.journeyLeft)).toBeLessThanOrEqual(1);
+    if ((page.viewportSize()?.width || 0) <= 900) {
       expect(new Set(layout.steps).size).toBe(1);
     } else {
       expect(layout.columns.split(" ")).toHaveLength(3);
+      expect(layout.secondStepBorder).toBe("0px");
     }
   });
 

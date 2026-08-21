@@ -4076,23 +4076,23 @@ p {
 }
 
 .customer-shell .home-journey {
-  width: min(100%, 940px);
-  max-width: 940px;
-  margin-inline: auto;
+  width: min(100%, 860px);
+  max-width: 860px;
+  margin-inline: 0;
   margin-top: var(--space-lg);
-  padding: 20px 0 18px;
+  padding: 18px 0 16px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .customer-shell .home-journey h2 {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .customer-shell .home-hero .hero-sequence {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
+  gap: 0 48px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -4104,23 +4104,25 @@ p {
   grid-template-columns: 30px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
-  min-height: 70px;
-  padding: 0 20px 0 0;
+  min-height: 64px;
+  padding: 0;
 }
 
 .customer-shell .home-hero .hero-sequence li + li {
-  padding-left: 20px;
-  border-left: 1px solid var(--line);
+  padding-left: 0;
+  border-left: 0;
 }
 
 .customer-shell .home-hero .hero-sequence li:not(:last-child)::after {
   position: absolute;
   top: 13px;
-  right: -7px;
+  right: -34px;
+  width: 20px;
   color: var(--accent);
   content: "→";
   font-size: 0.9rem;
   line-height: 1;
+  text-align: center;
 }
 
 .customer-shell .home-hero .hero-step-number {
@@ -4436,6 +4438,41 @@ p {
   .customer-shell .home-order-section,
   .customer-shell .story-section {
     padding-top: var(--homepage-section-gap-tablet);
+  }
+
+  .customer-shell .home-journey {
+    width: min(100%, 640px);
+    max-width: 640px;
+  }
+
+  .customer-shell .home-hero .hero-sequence {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .home-hero .hero-sequence li,
+  .customer-shell .home-hero .hero-sequence li + li {
+    grid-template-columns: 30px minmax(0, 1fr);
+    min-height: 0;
+    padding: 8px 0;
+    border-left: 0;
+  }
+
+  .customer-shell .home-hero .hero-sequence li:not(:last-child)::before {
+    position: absolute;
+    top: 36px;
+    bottom: -8px;
+    left: 14px;
+    width: 1px;
+    background: var(--accent);
+    content: "";
+  }
+
+  .customer-shell .home-hero .hero-sequence li:not(:last-child)::after {
+    display: none;
+  }
+
+  .customer-shell .home-hero .hero-sequence small {
+    max-width: none;
   }
 
   .customer-shell .home-page .order-steps-preview {

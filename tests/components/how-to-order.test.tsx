@@ -27,12 +27,26 @@ describe("How To Order journey", () => {
     const icons = [...document.querySelectorAll<SVGElement>(".order-step-icon")];
     expect(icons).toHaveLength(7);
     expect(new Set(icons.map((icon) => icon.getAttribute("viewBox")))).toEqual(new Set(["0 0 24 24"]));
+    expect(icons.map((icon) => icon.getAttribute("data-icon"))).toEqual([
+      "discover",
+      "select",
+      "send",
+      "process",
+      "invoice",
+      "track",
+      "arrive",
+    ]);
+    expect(new Set(icons.map((icon) => icon.getAttribute("fill")))).toEqual(new Set(["none"]));
+    expect(new Set(icons.map((icon) => icon.getAttribute("stroke")))).toEqual(new Set(["currentColor"]));
+    expect(new Set(icons.map((icon) => icon.getAttribute("stroke-width")))).toEqual(new Set(["2"]));
+    expect(new Set(icons.map((icon) => icon.getAttribute("stroke-linecap")))).toEqual(new Set(["round"]));
+    expect(new Set(icons.map((icon) => icon.getAttribute("stroke-linejoin")))).toEqual(new Set(["round"]));
     expect(
       new Set(
         icons.flatMap((icon) =>
           [...icon.querySelectorAll<SVGElement>("*")].map((path) => path.getAttribute("stroke-width")),
         ),
       ),
-    ).toEqual(new Set(["1.7"]));
+    ).toEqual(new Set(["2"]));
   });
 });
