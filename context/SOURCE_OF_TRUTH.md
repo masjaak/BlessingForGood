@@ -1,21 +1,22 @@
 # BFG SOURCE OF TRUTH
 
 Reconciled: 2026-08-21 (Asia/Jakarta)
-Applies to the current `main` after targeted post-closure visual stabilization;
-the canonical Production deployment is the latest Git-triggered `READY`
-deployment with Convex `clean-eel-522`.
+Applies to the current `main` after the Phase 08 targeted interaction, form,
+and journey-rhythm stabilization; the canonical Production deployment is
+`dpl_HG9UfaiYBEcKDBm98hMkU3FEzgad` with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **COMPLETE — TARGETED VISUAL STABILIZATION RE-CLOSED**. The previous
-closure was temporarily superseded by four real-Production visual findings:
-How To Order rhythm, Perjalanan Bukumu grouping, Mengenal BFG contrast, and
-non-destructive cover framing. All four are now implemented, tested, deployed,
-and publicly rechecked; the cover renderer's safe public fallback is rechecked,
-while cover mutation UAT remains classified as
-`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` because the current public seed has no
-cover and no authorized Admin session or approved asset was fabricated.
-Current evidence is classified as `GREEN_REAL_PRODUCTION`,
-`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`, `OPTIONAL_FUTURE`, or `EXCLUDED` in
-the final completion matrix.
+Phase 08: **REOPENED — TARGETED UI STABILIZATION IMPLEMENTED + PUBLICLY
+RECHECKED**. The previous closure was superseded by the newest real screenshots:
+low-affordance controls, native file-picker chrome, Admin media form geometry,
+and How To Order rhythm. The shared implementation, local full regression,
+and public Production journey/Admin-boundary checks are green. Authenticated
+Admin Book Detail recheck remains `BLOCKED_EXTERNAL` because no authorized
+session and representative real book were available; no credential or dummy
+record was fabricated. Do not restore `BFG_PRODUCTION_STABLE` until that private
+surface is rechecked.
+Current evidence is classified as `GREEN_PUBLIC_PRODUCTION`,
+`GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`, `BLOCKED_EXTERNAL`, `OPTIONAL_FUTURE`,
+or `EXCLUDED` in the final completion matrix.
 The Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are now locked and the
 bounded implementation is deployed through the canonical Production hook;
@@ -45,28 +46,28 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `b80f2e7` — targeted visual stabilization and non-destructive cover framing; `1c0e429` — final journey icon and homepage process correction |
-| Closure context commit         | current `main` after this post-closure context reconciliation              |
-| `origin/main`                  | current `main`; source and context are pushed together                      |
+| Phase 08 implementation commit | `3c60b4a` — targeted interaction, file-picker, media-grid, and journey-rhythm stabilization |
+| Closure context commit         | current `main` after this targeted-pass context anchor                        |
+| `origin/main`                  | current `main`; source and targeted context are pushed together                |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | latest verified source deployment `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY` — `READY`, aliased to canonical domains |
+| Vercel Production deployment   | `dpl_HG9UfaiYBEcKDBm98hMkU3FEzgad` — `READY`, aliased to canonical domains |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
-| Safe live evidence             | canonical URL returned HTTP 200; current eight-width screenshot matrix `16/16`; homepage/How To Order smoke `12/12`; Ready Stock smoke `6/6`; Vercel error scan found no logs |
+| Safe live evidence             | `/how-to-order` returned HTTP 200; live How To Order matrix `8/8` at 375/390/430/768/834/1024/1280/1440; signed-out `/admin` boundary `3/3` at 1024/1280/1440 |
 
 Current exact regression baseline:
 
 | Gate        | Result                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vitest      | `237 / 237`                                                                                                                                                                               |
+| Vitest      | `241 / 241`                                                                                                                                                                               |
 | Convex      | `111 / 111` (included in Vitest)                                                                                                                                                          |
-| Playwright  | local baseline `214 / 214` after the six new responsive contracts; live targeted visual suite `18 / 18`, homepage/How To Order smoke `12 / 12`, Ready Stock smoke `6 / 6` |
+| Playwright  | local full suite `264 / 264`; live How To Order `8 / 8`; live signed-out Admin boundary `3 / 3` |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; live screenshots show the four targeted fixes and zero body overflow |
-| Real UAT    | Public Production recheck passed; the current Ready Stock seed has no stored cover, so no cover mutation or fake media record was used |
+| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; live public journey checks pass with zero body overflow |
+| Real UAT    | Public Production recheck passed; authenticated Admin Book Detail remains `BLOCKED_EXTERNAL` without an authorized real session/book |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.

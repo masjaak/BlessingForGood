@@ -5,7 +5,9 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `COMPLETE` — `BFG_PHASE_08_TARGETED_VISUAL_STABILIZATION_RECLOSED`.
+**Phase 08:** `REOPENED — TARGETED UI STABILIZATION` — implementation and public
+recheck green; authenticated Admin media recheck remains `BLOCKED_EXTERNAL`.
+**Product mode:** `MAINTENANCE PAUSED` pending that private-surface recheck.
 
 The previous closure was temporarily superseded by four verified Production
 visual findings. The shared How To Order journey, homepage Perjalanan Bukumu
@@ -18,32 +20,31 @@ Production pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are
 locked and populated Gallery/Preview UAT remains blocked only by approved data;
 cover framing uses additive metadata and keeps the original source.
 
-Starting commit for the previous correction pass: `e1795a1`; visual
-stabilization implementation commit: `b80f2e7`. Final journey correction
-started from `5e40d2a` and shipped in `1c0e429`.
-Final delivery: current `main` after this context reconciliation.
-Current verified source deployment: `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY`.
-`origin/main`: current `main` after the source and context commits.
+Starting commit for this targeted pass: `98b3c7f`.
+Implementation commit: `3c60b4a`.
+Final delivery: current `main` after the targeted-pass context anchor.
+Current verified source deployment: `dpl_HG9UfaiYBEcKDBm98hMkU3FEzgad`.
+`origin/main`: current `main` after the source and targeted context commits.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production source deployment: `dpl_9k8F9icg1rp4xyKWJkCsxdA2BsfY` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current local regression is Vitest `237/237`, Convex `111/111` (included in
-Vitest), local Playwright `214/214`, rendered QA at
+Current local regression is Vitest `241/241`, Convex `111/111`, local
+Playwright `264/264`, rendered QA at
 375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format PASS,
-Build PASS, and `git diff --check` PASS. The current live screenshot matrix is
-`16/16`; live homepage/How To Order assertions passed `12/12`; Ready Stock
-smoke remains `6/6`. No dummy business record, cover asset, credential, or
-unapproved business value was created.
+Build PASS, and `git diff --check` PASS. Live How To Order assertions passed
+`8/8` and signed-out Admin protection passed `3/3`. No dummy business record,
+cover asset, credential, or unapproved business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
 The live public visual recheck is complete. The current public Ready Stock seed
-has no stored cover, so cover mutation UAT remains a deterministic/no-safe-data
-classification rather than an invented Production write. Auth, financial,
-inventory, Secret Catalog, and Bulk Import policy remain within their locked
-boundaries. Product mode is now `MAINTENANCE`; no Phase 09 is started.
+has no stored cover, and no authorized Admin session or representative real
+book was available for the private Book Detail media screenshot. That private
+check remains `BLOCKED_EXTERNAL` rather than an invented Production write.
+Auth, financial, inventory, Secret Catalog, and Bulk Import policy remain within
+their locked boundaries. No Phase 09 is started.
 
 The canonical reconciliation artifacts are:
 
