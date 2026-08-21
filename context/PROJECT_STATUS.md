@@ -14,31 +14,30 @@ The correction pass uses explicit `GREEN_REAL_PRODUCTION`,
 Import V1 remains implemented and Production-deployed, but its legitimate
 Production pilot is **DEFERRED BY USER**. Activity is being completed as one
 responsive user-facing feed over separate Notification and Inbox backends.
-Product Media decisions are locked and the bounded implementation exists
-locally; Production deployment and real-book UAT remain open gates.
+Product Media decisions are locked and the bounded implementation is deployed;
+real-book UAT remains an open gate.
 
 Starting commit for this correction pass: `cb609ab`.
-Final correction commit: recorded in the delivery report for the delivered
-`HEAD`.
-`origin/main`: delivered `HEAD` after this pass.
+Final delivery commit: `eca8310`.
+`origin/main`: `eca8310`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
+Vercel Production: `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `229/229`, Convex `110/110` (included in
 Vitest), Playwright `201/201` with one environmental retry recovered, rendered
 `24/24`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
-`git diff --check` PASS. Public Production is reachable, but the current
-environment has no authenticated browser session and Vercel API access is
-unauthorized. No dummy Production business records were created.
+`git diff --check` PASS. Public Production is reachable and the live public
+rendered suite is `24/24`; the current environment still has no authenticated
+product browser session. No dummy Production business records were created.
 
-The known Production baseline is Convex `clean-eel-522` and the latest
-Git-triggered Vercel deployment. This completion pass must produce a new
-delivery commit and re-run the deployment/acceptance gates; no current code
-change is called Production-accepted before that evidence exists. Auth,
-financial, inventory, Secret Catalog, and Bulk Import policy remain within
-their locked boundaries.
+The known Production baseline is Convex `clean-eel-522` and Vercel deployment
+`dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU`; the configured Production hook completed
+the Convex `--prod` step before the Next build. Authenticated acceptance is
+still required before declaring the current product stable. Auth, financial,
+inventory, Secret Catalog, and Bulk Import policy remain within their locked
+boundaries.
 
 The canonical reconciliation artifacts are:
 
@@ -88,11 +87,11 @@ The canonical reconciliation artifacts are:
 
 ### Next milestone
 
-Finish Activity responsive acceptance, deploy and accept Product Media on one
-legitimate existing book, close the remaining authenticated UAT journeys, and
-write the final completion matrix plus maintenance playbook. Do not start
-Phase 09. Bulk Import remains unchanged and its real pilot remains deferred by
-user data.
+Complete authenticated Activity/Product Media acceptance on one legitimate
+existing book, close the remaining authenticated UAT journeys, and apply the
+user-controlled data checkpoints in the final matrix. The completion matrix and
+maintenance playbook are now established. Do not start Phase 09. Bulk Import
+remains unchanged and its real pilot remains deferred by user data.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 
@@ -117,8 +116,8 @@ user data.
   contract.
 - `BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md` records the locked
   Book-Master ownership and HTTPS metadata-only preview decisions.
-- `BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md` records the local implementation
-  and the remaining Production/real-book acceptance gate.
+- `BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md` records the deployed
+  implementation and the remaining real-book acceptance gate.
 - Activity now projects notifications and messages into one newest-first feed;
   backend tables, ownership, retention, and read semantics remain separate.
 - Bulk Import implementation and contract remain unchanged; its pilot is
@@ -132,10 +131,9 @@ user data.
   `Lihat sisi pelanggan` is nowrap at 1024/1280/1440.
 - `CoverUploadField` owns the custom accessible file presentation while the
   existing Convex upload URL/attach flow remains canonical.
-- Local exact 1280 customer smoke: `20/20`; Production exact 1280 customer
-  smoke: `20/20`. Existing 160-check matrix remains green, for `180/180` total.
-- Supplied closure evidence remains the record for private flows; this
-  documentation-only pass did not repeat private UAT or mutate business data.
+- Local exact 1280 customer smoke: `20/20`; canonical Production public
+  Activity/visual suite: `24/24`. Existing private-flow evidence remains the
+  record for authenticated journeys; no business data was mutated.
 
 ## Historical Status Archive
 

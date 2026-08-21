@@ -1,6 +1,6 @@
 # BFG CODEBASE MEMORY
 
-Pre-flight map captured at HEAD `cb609ab` on 2026-08-21. This is structural
+Post-diff map refreshed at HEAD `eca8310` on 2026-08-21. This is structural
 memory, not product requirement authority.
 
 ## Major Domain Modules
@@ -15,6 +15,7 @@ memory, not product requirement authority.
 | Finance | `invoices.ts`, `paymentConfirmations.ts`, `depositTopUps.ts`, `depositAccounts.ts`, `depositTransactions.ts`, `invoiceDepositAllocations.ts`, `refunds.ts` | Tagihan, Deposit, Payments, Refunds, Admin finance |
 | Exceptions | `orderExceptions.ts`, exception state/views; exception and adjustment tables | customer order detail, Admin Exceptions |
 | Attention | `notifications.ts`, `lib/notifications.ts`; `notifications` with `surface=notification/inbox` | Activity, Notifications, Inbox |
+| Product media | `books.ts`, `readyStock.ts`, `schema.ts`; `bookMedia` plus Book preview metadata | Admin Book Detail, Ready Stock detail, customer-safe gallery |
 | Operations | `reports.ts`, `contentBlocks.ts`, `settings.ts`, `auditEvents`/`lib/audit.ts` | Reports, Content, Settings, Audit |
 
 ## Route Consumers
@@ -198,13 +199,13 @@ Blast-radius verdict:
 | Settings | unchanged; existing consumed fields and persistence preserved |
 | BFGSelect algorithm | unchanged; only a collision regression was added |
 | Admin navigation | unchanged; one existing scroll source preserved |
-| Convex schema/functions | unchanged; no backend deploy required |
+| Convex schema/functions | additive Activity projection and Book Media changes; deployed through canonical Production hook |
 | Auth/RBAC | unchanged |
 | Financial/inventory/Secret Catalog state machines | unchanged |
-| Product Media | unchanged; implementation remains on hold |
+| Product Media | Book Master-owned gallery and HTTPS metadata-only preview implemented; real-book UAT pending |
 | Bulk Import | unchanged; legitimate Production pilot remains deferred by user |
 
-Current evidence boundary: the supplied real Production screenshot proves the
-pre-fix Catalog action rhythm was wrong. The current environment has no
-authenticated browser session and Vercel API access is unauthorized, so the
-post-fix Production render is recorded as `BLOCKED_EXTERNAL`, not green.
+Current evidence boundary: the supplied real Production screenshot proved the
+pre-fix Catalog action rhythm was wrong. The public post-fix Production render
+is green; authenticated private-flow render and real-business UAT remain
+`BLOCKED_EXTERNAL`, not green.

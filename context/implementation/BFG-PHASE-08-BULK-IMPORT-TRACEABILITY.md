@@ -90,15 +90,15 @@ retention path, or customer direct UI was added.
 
 ## Acceptance Evidence
 
-- Vitest: `216/216`.
-- Convex: `102/102`, including the locked 200-row preview shape.
-- Playwright: existing `180/180` baseline plus three `/admin/import`
-  signed-out route checks at 1024/1280/1440.
+- Vitest: `229/229`.
+- Convex: `110/110`, including the locked 200-row preview shape.
+- Playwright: `201/201`, including `/admin/import` signed-out route checks at
+  1024/1280/1440.
 - TypeScript, ESLint, Format, Build, and `git diff --check`: PASS.
 - Convex runtime review: 2 MiB/200-row input is below the verified Convex
   function argument, return, transaction, and write limits; the implementation
   keeps preview bounded and performs one transaction at confirm.
-- Production deployment: Vercel `dpl_4dqW87MonmEnkPsiqa9VuvdKrUTi` (`READY`),
+- Production deployment: Vercel `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`),
   Convex `clean-eel-522`.
 - Remaining acceptance: authenticated rendered import states and a legitimate
   3–5-book Production pilot. No dummy Production data is permitted.

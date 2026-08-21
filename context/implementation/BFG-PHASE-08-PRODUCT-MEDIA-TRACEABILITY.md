@@ -1,6 +1,6 @@
 # BFG PHASE 08 PRODUCT MEDIA TRACEABILITY
 
-Status: `IMPLEMENTED_LOCALLY — PRODUCTION_DEPLOYMENT_AND_UAT_PENDING`
+Status: `PRODUCTION_DEPLOYED — AUTHENTICATED_REAL_BOOK_UAT_PENDING`
 Reconciled: 2026-08-21 (Asia/Jakarta)
 
 | Requirement | Source trace | Current implementation | Decision/status |
@@ -20,8 +20,8 @@ Reconciled: 2026-08-21 (Asia/Jakarta)
 | Authorization | SEC-05, SEC-06, current `books.manage` boundary | All media mutations use existing Admin/Owner permission; customer Admin query denied | `GREEN_DETERMINISTIC` |
 | Audit | SEC-14, current `recordAudit` | Add/remove/reorder/external-preview actions record safe target metadata | `GREEN_DETERMINISTIC` |
 | Customer safety | SEC-07/08/09/11/12; source projections | Public projection omits storage IDs and internal media records | `GREEN_DETERMINISTIC` |
-| Responsive Admin | Visual system and Admin mockup | Media section extends Book Detail; shared contained gallery; no new route | `LOCAL_RENDER_PENDING` |
-| Responsive Customer | Visual system and mobile mockup 4 | Ready Stock detail uses shared contained gallery and responsive controls | `LOCAL_RENDER_PENDING` |
+| Responsive Admin | Visual system and Admin mockup | Media section extends Book Detail; shared contained gallery; no new route | `GREEN_DETERMINISTIC` — public shell suite green; authenticated media render pending |
+| Responsive Customer | Visual system and mobile mockup 4 | Ready Stock detail uses shared contained gallery and responsive controls | `GREEN_DETERMINISTIC` — canonical public suite `24/24` |
 | Real Production UAT | Product Media source contract | Requires one legitimate existing book; no dummy record created | `BLOCKED_EXTERNAL until authenticated UAT` |
 
 ## End-to-end trace
@@ -33,6 +33,6 @@ tests → Production deployment → one legitimate-book UAT`
 
 ## Verdict
 
-The two source decisions are locked and implementation is locally complete.
-Production deployment and authenticated real-book acceptance remain explicit
-delivery gates; they are not represented as green until evidence exists.
+The two source decisions are locked and implementation is Production-deployed.
+Authenticated real-book acceptance remains an explicit delivery gate; it is not
+represented as green until evidence exists.

@@ -1,6 +1,6 @@
 # BFG FINAL PRODUCT COMPLETION MATRIX
 
-Status: `WORKING RECONCILIATION — PRODUCTION ACCEPTANCE GATES OPEN`
+Status: `PRODUCTION DEPLOYED — AUTHENTICATED ACCEPTANCE GATES OPEN`
 Reconciled: 2026-08-21 (Asia/Jakarta)
 
 This matrix is the final Phase 08 scope ledger. The category column is limited
@@ -21,14 +21,14 @@ synthetic, or inferred evidence closes a real UAT gate.
 | 09 BFGSelect authenticated anchor | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Collision tests are green; authenticated long-page Admin render remains a final acceptance gate. |
 | 10 Batch targeting/assignment/Summary | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Server consequences and derived summary are covered; real operator journey remains an acceptance gate. |
 | 11 Human-facing order reference | `GREEN_REAL_PRODUCTION` | Existing authenticated Production evidence. |
-| 12 Unified Activity feed | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Projection, combined unread count, ownership, safe destination, responsive CSS, and component tests are green; deploy and authenticated real-user acceptance remain open. |
+| 12 Unified Activity feed | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Projection, combined unread count, ownership, safe destination, responsive CSS, component tests, and canonical public Production suite `24/24` are green; authenticated real-user acceptance remains open. |
 | 13 Responsive Admin navigation | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared navigation/scroll geometry is covered locally; authenticated 390–1024 Production render remains open. |
 | 14 Settings edit/save/refresh | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Existing server contract and tests are green; authenticated Production persistence journey remains open. |
 | 15 Catalog left-frame geometry | `GREEN_REAL_PRODUCTION` | Existing authenticated/rendered evidence. |
 | 16 Admin action spacing | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared semantic tokens and local render are green; post-fix authenticated Production audit remains open. |
 | 17 Master Buku render | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Cover flow and local geometry are green; authenticated Production Book Detail audit remains open. |
-| Product Gallery V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Book Master ownership, max 8, ordering, safe storage, remove, projection, and tests are green; deploy plus one legitimate-book UAT remains open. |
-| External Preview V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Optional HTTPS metadata-only link and rejection rules are green; deploy plus one legitimate-book UAT remains open. |
+| Product Gallery V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Book Master ownership, max 8, ordering, safe storage, remove, projection, tests, and Production deployment are green; one legitimate-book UAT remains open. |
+| External Preview V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Optional HTTPS metadata-only link, rejection rules, and Production deployment are green; one legitimate-book UAT remains open. |
 | Bulk Import V1 implementation/deployment | `GREEN_REAL_PRODUCTION` | Existing Production deployment and deterministic suite are green. |
 | Bulk Import real pilot | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Explicitly `DEFERRED_BY_USER_DATA`; no legitimate 3–5-book CSV is available and no data is fabricated. |
 | Authentication/admission/RBAC | `GREEN_REAL_PRODUCTION` | Existing Production baseline plus server authorization regression. |
@@ -50,3 +50,12 @@ required row has real Production evidence or the explicit
 of safe legitimate data, and the remaining authenticated gates have either
 passed or received a user-controlled acceptance checkpoint. `OPTIONAL_FUTURE`
 and `EXCLUDED` rows never create Phase 09 work.
+
+## User-controlled acceptance checkpoints
+
+- Authenticated Admin: user-controlled checkpoint is `Admin sudah login`.
+- Authenticated Customer: user-controlled checkpoint is `Customer sudah login`.
+- Eligible invoice cancellation/deposit allocation: use only a legitimate
+  eligible Production record; never fabricate financial history.
+- Bulk Import pilot: use only a legitimate user-provided 3–5-book CSV; current
+  state is `DEFERRED_BY_USER_DATA`.

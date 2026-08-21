@@ -2,9 +2,10 @@
 
 ## Status
 
-`SOURCE_CONTRACT_PREPARED` — `BULK_IMPORT` is the recommended first Phase 08
-candidate. Phase 07.1 is `CLOSED + RECONCILED`. Phase 08 implementation is
-`NOT_STARTED` and is not authorized by this document alone.
+`SOURCE_CONTRACT_IMPLEMENTED_AND_DEPLOYED` — `BULK_IMPORT` V1 is complete as
+an implementation and Production deployment; its legitimate pilot is
+`DEFERRED_BY_USER_DATA`. Phase 07.1 is `CLOSED + RECONCILED`; no speculative
+Phase 09 implementation is authorized.
 
 Prepared: 2026-08-16 (Asia/Jakarta)
 
@@ -23,8 +24,9 @@ requires confirmation, and commits only safe new product records.
 The original PRD identifies repetitive spreadsheet re-entry as an operational
 problem and requires an Admin dashboard that does not use a spreadsheet as the
 system of record. The original upload screen requires catalog-data import with
-validation preview. The current BFG baseline has safe single-record publisher,
-Book Master, and variant entry, but no bounded bulk-entry path.
+validation preview. The current BFG baseline now adds a bounded bulk-entry path
+without bypassing the canonical publisher, Book Master, variant, audit, or
+publication boundaries.
 
 The problem is operational scale, not customer transaction migration. Product
 Bulk Import must never become a second order, invoice, payment, deposit, refund,
@@ -130,14 +132,14 @@ final implementation check against the selected deployment class.
 - Development system: `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
-- Application baseline before this source-contract documentation: lock commit
-  `e2ad4a3`.
-- Vitest: `194/194`.
-- Convex: `94/94`.
-- Playwright: `180/180`.
+- Application delivery commit: `eca8310`.
+- Vitest: `229/229`.
+- Convex: `110/110`.
+- Playwright: `201/201`.
 - TypeScript, ESLint, format, and build: PASS.
-- No Phase 08 route, parser, schema, mutation, UI, dependency, import job,
-  template file, or implementation test exists.
+- `/admin/import`, parser, preview/confirm mutations, UI, and canonical tests
+  exist; no import-job table, background worker, or new parser dependency was
+  added.
 
 ## Primary Candidate
 
@@ -213,7 +215,7 @@ source of truth and leave all customer/financial consequences explicit.
 | CSV export | `src/lib/excel-export.ts` | Reuse its formula-safe behavior for any future export; it does not define input parsing. |
 | Admin shell | `AdminOperationalPage`, `AdminNav`, `PageHeader` | Reuse current BFG operational layout. |
 | Admin controls | `Button`, `Card`, `StatusBadge`, `SkeletonTable`, `ErrorState`, `EmptyState`, `BFGSelect` | Reuse existing visual grammar; no generic SaaS import kit. |
-| Current route | `BFG-ROUTE-INVENTORY-V2.md` | `/admin/import` is source-supported but currently absent; future route is `TBD_IMPLEMENTATION` and should be linked from `/admin/books`. |
+| Current route | `BFG-ROUTE-INVENTORY-V2.md` | `/admin/import` is implemented and linked from `/admin/books`; it remains behind the existing Admin permission boundary. |
 
 The current public mutations are not a safe instruction to call one public
 mutation from another. Implementation must extract the smallest shared domain
@@ -408,8 +410,7 @@ The flow should use the existing BFG Admin operational surface:
 
 - `AdminOperationalPage`, `AdminNav`, and `PageHeader` provide the route shell;
 - the natural entry is the existing `/admin/books` surface with `Import Buku`
-  action; the source-supported `/admin/import` route is
-  `TBD_IMPLEMENTATION` until code is authorized;
+  action; the source-supported `/admin/import` route is implemented and linked;
 - the upload state uses an existing BFG `Card`/form frame, native file input,
   clear file constraints, and a visible `Download template` action;
 - preview uses existing `Card` summary frames, `StatusBadge`, the canonical
@@ -426,7 +427,7 @@ The flow should use the existing BFG Admin operational surface:
 
 ## Responsive Requirements
 
-Admin is desktop-first. Rendered QA for the future implementation is required
+Admin is desktop-first. Rendered QA for the implementation is required
 at `1440`, `1280`, and `1024` widths.
 
 - At 1440, upload, preview summary, and table should fit the existing Admin
@@ -538,7 +539,7 @@ Future implementation acceptance is measurable:
 
 ## Required Tests
 
-The future implementation must add the smallest complete regression set:
+The implemented V1 carries the smallest complete regression set:
 
 - CSV encoding, quoting, line endings, blank-row, header-order, unknown-field,
   MIME/extension, file-size, row-count, and cell-length tests;
@@ -560,13 +561,15 @@ The future implementation must add the smallest complete regression set:
   completion, import failure, reset, keyboard, and accessible file-input tests;
 - Playwright route and responsive checks at 1024/1280/1440.
 
-New test file locations are `TBD_IMPLEMENTATION`; existing product, policy,
-authorization, storage, and audit tests are reusable regression anchors.
+Tests live in `convex/bulkImport.test.ts`, `tests/lib/bulk-import.test.ts`,
+`tests/components/admin-bulk-import.test.tsx`, and the route smoke suite;
+existing product, policy, authorization, storage, and audit tests remain
+regression anchors.
 
 ## Required Real UAT
 
-Do not run this pilot in the current task. After implementation and deployment,
-use one small intentional client spreadsheet containing three to five legitimate
+The real pilot remains deferred by explicit user decision. When user data is
+available, use one small intentional client spreadsheet containing three to five legitimate
 books:
 
 - one new publisher;
@@ -622,11 +625,9 @@ source contract:
 
 ## Blockers
 
-No blocker prevents source-contract preparation. Implementation must wait for a
-separate Phase 08 implementation prompt/approval. Production pilot acceptance
-also requires an authorized real operator identity and legitimate client
-records; that is an acceptance prerequisite, not permission to create dummy
-data.
+No implementation blocker remains. Production pilot acceptance still requires
+an authorized real operator identity and legitimate client records; that is an
+acceptance prerequisite, not permission to create dummy data.
 
 ## Codebase Memory
 
@@ -656,8 +657,8 @@ Only the minimum new orchestration is expected after approval:
   need reuse;
 - a small Admin flow using existing shell/table/button primitives.
 
-`TBD_IMPLEMENTATION` marks new route/function/test locations. No import-job
-table, background worker, dependency, media path, or transaction subsystem is
+The V1 route/function/test locations are implemented. No import-job table,
+background worker, dependency, media path, or transaction subsystem is
 justified by the V1 contract.
 
 ### Ponytail findings

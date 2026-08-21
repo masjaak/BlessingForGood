@@ -1,27 +1,29 @@
 # Open Questions
 
-## Production V1 release blockers
+## Current final-completion checkpoints
 
-- [PRODUCTION VISUAL BLOCKER] Authenticated customer/admin rendered acceptance
-  is blocked until one matching Clerk Production instance/domain and canonical
-  Convex Production configuration are supplied. Do not use Development keys,
-  switch Convex projects, or add demo data.
-
-- [PRODUCTION BLOCKER] The linked Vercel project has zero Production environment
-  variables. Complete one Production-environment setup with a Clerk Production
-  instance/domain/redirects and live keys plus a Production deploy key and
-  required environment names for canonical Convex `clean-eel-522`. The current
-  historical Production target is errored and no custom domain is assigned.
-  Do not merge `main` until names-only preflight passes.
-- [ENVIRONMENT ACCESS] Names-only Convex checks for `content-snake-214` and
-  `clean-eel-522` were denied. The operation stopped without switching account,
-  selecting another project, or creating a deployment. Production still needs
-  a deploy key for canonical `clean-eel-522`.
+- [AUTHENTICATED UAT] The canonical Production deployment is live, but this
+  environment has no authenticated Admin/Customer browser session. Use the
+  user-controlled checkpoints `Admin sudah login` or `Customer sudah login`.
+- [REAL DATA] Eligible invoice cancellation, eligible deposit allocation, and
+  the Bulk Import 3–5-book pilot require legitimate user-controlled data. Do
+  not fabricate financial history or products.
 - [CONTENT APPROVAL] Final brand story, community promise, support details, and
   customer rules remain client-owned copy. Current text is concise product copy,
   not a new business promise.
-- [POST-V1 BACKLOG] Reporting, Excel export, Analytics, Content management,
-  Settings, and a dedicated audit-log UI are not implemented.
+- [OPTIONAL FUTURE] Advanced analytics beyond the current report, custom
+  backup/restore UI, and cross-domain Admin search are explicitly optional and
+  do not block current product completion.
+
+The canonical Vercel Production deployment is `READY`, uses Convex Production
+`clean-eel-522`, and the public rendered suite is green. Historical environment
+and release blockers remain archived below and are not current status.
+
+## Historical Production V1 questions
+
+The original Production environment-access and setup blockers below are kept as
+historical evidence; the current delivery baseline is anchored in
+`SOURCE_OF_TRUTH.md` and `PROJECT_STATUS.md`.
 
 The original PRD pack was located at
 `/Users/masjak/Documents/BLESSINGFORGOOD/BFG WEB/context/product/` and audited

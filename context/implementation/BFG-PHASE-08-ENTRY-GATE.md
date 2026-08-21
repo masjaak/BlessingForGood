@@ -1,24 +1,22 @@
 # BFG PHASE 08 ENTRY GATE
 
-Status: **PASS FOR ENTRY PREPARATION ONLY**
-Implementation status: **NOT STARTED**
-Reconciled: 2026-08-16
+Status: **PASS — FINAL COMPLETION ACTIVE**
+Implementation status: **ACTIVITY + PRODUCT MEDIA IMPLEMENTED/DEPLOYED; UAT OPEN**
+Reconciled: 2026-08-21
 
 This gate says the Phase 07.1 baseline is safe to use as the starting point for
-a separately approved Phase 08 Source Contract. It does not authorize any
-Phase 08 implementation in this task.
+the final Phase 08 completion program. It does not authorize speculative Phase
+09 work.
 
 ## Current Stable Baseline
 
-- Production implementation baseline: `d9aad899a440592504117c6b57c02cd15bdec355`.
-- Context/test anchor: `d1ac4276f4499889752193ed0dbdfa72c9ebb510`; `origin/main`
-  contains both and the follow-up is docs/test only.
+- Production implementation baseline: `eca8310`.
+- `origin/main`: `eca8310`.
 - Convex Development: `content-snake-214`.
 - Convex Production: `clean-eel-522`.
-- Vercel Production: canonical aliases `READY`; volatile delivery ID is
-  recorded in the closure report.
+- Vercel Production: `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`).
 - Canonical domain: `https://www.blessingforgood.com`.
-- Tests: Vitest `194/194`, Convex `94/94`, Playwright `180/180`; TypeScript,
+- Tests: Vitest `229/229`, Convex `110/110`, Playwright `201/201`; TypeScript,
   ESLint, format, build PASS.
 - Supplied real-flow evidence: admission, product/media/projection, Secret
   Catalog access/revoke, order, invoice/Tagihan, notification, and ownership
@@ -29,8 +27,9 @@ Phase 08 implementation in this task.
 These are classified, not silently omitted:
 
 - Bulk Import V1 source, data, policy, state, visual, and traceability
-  contracts are prepared; implementation remains separate;
-- multiple media/gallery and external preview metadata contract;
+  contracts are implemented/deployed; the real pilot is deferred by user data;
+- Product Media V1 is implemented/deployed under locked Book Master ownership;
+  one-real-book UAT remains open;
 - advanced analytics beyond the current bounded report;
 - full backup/restore operating procedure beyond current bounded export;
 - cross-domain Admin search/index contract.
@@ -42,9 +41,11 @@ generic Phase 08 work.
 
 ## Candidate Scope
 
-Candidate details and priorities are in
-[`BFG-PHASE-08-CANDIDATES.md`](BFG-PHASE-08-CANDIDATES.md). No candidate has
-been implemented by this task. The primary candidate contract is
+Candidate details and current classifications are in
+[`BFG-PHASE-08-CANDIDATES.md`](BFG-PHASE-08-CANDIDATES.md). Bulk Import and
+Product Media are implemented current-scope work; advanced analytics, custom
+backup/restore UI, and cross-domain search remain optional future work. The
+primary candidate contract is
 [`BFG-PHASE-08-SOURCE-CONTRACT.md`](BFG-PHASE-08-SOURCE-CONTRACT.md), with the
 linked data, policy, and traceability documents.
 
@@ -67,7 +68,7 @@ linked data, policy, and traceability documents.
 - No replacement of Clerk/Convex authority.
 - No role/authentication weakening.
 - No financial ledger rewrite or manual settlement shortcut.
-- No Phase 08 UI, schema, mutation, route, or migration in this task.
+- No speculative Phase 09 UI, schema, mutation, route, or migration in this task.
 - No aesthetic rebuild of a correct Phase 07.1 system.
 
 ## Security Invariants
@@ -125,5 +126,5 @@ verified by the available operator session.
 
 ## Gate Result
 
-`PHASE_08_ENTRY_GATE: PASS` for source-contract preparation.
-`PHASE_08_IMPLEMENTATION: NOT_STARTED`.
+`PHASE_08_ENTRY_GATE: PASS` for final completion work.
+`PHASE_08_IMPLEMENTATION: ACTIVITY_AND_PRODUCT_MEDIA_DEPLOYED; UAT_OPEN`.

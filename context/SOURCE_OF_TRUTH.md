@@ -13,8 +13,8 @@ the final completion matrix; external browser/deployment evidence is recorded
 separately and is never invented.
 The Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED BY USER**. Product Media decisions are now locked and the
-bounded implementation is present locally; Production deployment and one-real-
-book UAT remain delivery gates. The entry gate is defined in
+bounded implementation is deployed through the canonical Production hook;
+one-real-book UAT remains the delivery gate. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
 This document is the canonical product contract. It records requirements and
@@ -37,13 +37,13 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | current `main` after the Client UAT closure pass                         |
-| `origin/main`                  | current `main` after the Client UAT closure pass                         |
+| Phase 08 implementation commit | `eca8310` — Activity/Product Media completion pass                         |
+| `origin/main`                  | `eca8310`                                                                  |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | latest Git-triggered `READY` deployment for current `main`               |
+| Vercel Production deployment   | `dpl_6C2t8NYhHn5J6a2nRmph19aKR3FU` (`READY`)                              |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
-| Safe live evidence             | canonical URL returned HTTP 200; apex redirects to `www` with HTTP 308   |
+| Safe live evidence             | canonical URL returned HTTP 200; public Production rendered suite `24/24` |
 
 Current exact regression baseline:
 
