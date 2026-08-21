@@ -26,11 +26,11 @@ cover framing uses additive metadata and keeps the original source.
 Starting commit for this targeted pass: `db4f628`.
 Implementation commit: `e04f3cd`.
 Final delivery: current `main` after the targeted-pass context anchor.
-Current verified source deployment: `dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb`.
+Current verified source deployment: `dpl_BQPQjpQConKwYqxibYcAVnZD1fCj`.
 `origin/main`: current `main` after the source and targeted context commits.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
-Vercel Production source deployment: `dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb` (`READY`, canonical aliases).
+Vercel Production source deployment: `dpl_BQPQjpQConKwYqxibYcAVnZD1fCj` (`READY`, canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
 Current local regression is Vitest `241/241`, Convex `111/111`, local

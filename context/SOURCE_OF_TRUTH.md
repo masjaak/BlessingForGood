@@ -3,7 +3,7 @@
 Reconciled: 2026-08-21 (Asia/Jakarta)
 Applies to the current `main` after the Phase 08 External Preview form
 alignment closure; the canonical Production deployment is
-`dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb` with Convex `clean-eel-522`.
+`dpl_BQPQjpQConKwYqxibYcAVnZD1fCj` with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
 Phase 08: **COMPLETE — EXTERNAL PREVIEW FORM ALIGNMENT CLOSED**. The latest
 real authenticated Production screenshot established the reachable Admin Book
@@ -49,7 +49,7 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | `origin/main`                  | current `main`; source and targeted context are pushed together                |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | `dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb` — `READY`, aliased to canonical domains |
+| Vercel Production deployment   | `dpl_BQPQjpQConKwYqxibYcAVnZD1fCj` — `READY`, aliased to canonical domains |
 | Canonical Production URL       | `https://www.blessingforgood.com`                                        |
 | Safe live evidence             | `/how-to-order` returned HTTP 200; deployed CSS contains the External Preview grid; signed-out `/admin/books` boundary `3/3` at 1024/1280/1440 |
 
@@ -85,7 +85,7 @@ The shared `Field` primitive, Gallery, custom BFG file picker, file-upload
 backend, URL validation, Book schema, Auth, Orders, Batch, Finance, Activity,
 Homepage, How To Order, and Button system were not reopened. The implementation
 commit is `e04f3cd`; Production deployment is
-`dpl_BRgUgYwT3YuDLJ1RumHR6Gd52Nbb`. The live public visual suite recorded eight
+`dpl_BQPQjpQConKwYqxibYcAVnZD1fCj`. The live public visual suite recorded eight
 identical cover-geometry assertion failures outside this diff; that unrelated
 baseline remains out of scope.
 
