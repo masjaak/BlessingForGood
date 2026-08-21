@@ -17,7 +17,8 @@ Product Media decisions are locked and the bounded implementation is deployed;
 authenticated Admin rendering is now verified on one legitimate book, while
 safe media mutation and customer projection acceptance remain open.
 
-Starting commit for this correction pass: `cb609ab`.
+Starting commit for this correction pass: `cb609ab`; Activity responsive
+closure commit: `b900e74`.
 Final delivery: current `main` after final context reconciliation.
 `origin/main`: current `main` after final context reconciliation.
 Convex Development: `content-snake-214`.

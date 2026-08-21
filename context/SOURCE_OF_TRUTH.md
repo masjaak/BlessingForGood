@@ -38,7 +38,7 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `eca8310` — Activity/Product Media completion pass; Activity geometry closure follows from `26309a8` |
+| Phase 08 implementation commit | `b900e74` — Activity viewport-safe geometry closure on the `26309a8` acceptance baseline |
 | `origin/main`                  | current `main` after final context reconciliation                           |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
