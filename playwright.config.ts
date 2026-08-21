@@ -65,6 +65,11 @@ export default defineConfig({
       grep: /@admin/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
+    {
+      name: "activity-matrix",
+      grep: /@activity/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
+    },
   ],
   webServer: process.env.BFG_E2E_BASE_URL
     ? undefined

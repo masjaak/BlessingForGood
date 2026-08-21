@@ -21,7 +21,7 @@ synthetic, or inferred evidence closes a real UAT gate.
 | 09 BFGSelect authenticated anchor | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Production `/admin/books` menu opened directly below its trigger on a long page; middle/bottom collision contexts remain a responsive checkpoint. |
 | 10 Batch targeting/assignment/Summary | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Server consequences and derived summary are covered; the only discovered real Batch is locked, so no assignment mutation was fabricated. |
 | 11 Human-facing order reference | `GREEN_REAL_PRODUCTION` | Existing authenticated Production evidence. |
-| 12 Unified Activity feed | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin Production verifies one feed, newest-first system items, and a real `Pesan BFG` item interleaved in the same timeline; Customer/mobile acceptance remains open. |
+| 12 Unified Activity feed and responsive geometry | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared projection, read/ordering semantics, and the rendered eight-viewport geometry matrix are green; the Production recheck and authenticated Customer/mobile acceptance checkpoint remain open. |
 | 13 Responsive Admin navigation | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Shared navigation/scroll geometry is covered locally; authenticated 390–1024 Production render remains open. |
 | 14 Settings edit/save/refresh | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Settings form renders, but required store/payment fields are empty and no approved business values were supplied; no unsafe write was fabricated. |
 | 15 Catalog left-frame geometry | `GREEN_REAL_PRODUCTION` | Existing authenticated/rendered evidence. |
@@ -30,7 +30,7 @@ synthetic, or inferred evidence closes a real UAT gate.
 | Product Gallery V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin renders `Maisy's Funfair` Book Master gallery at `0/8`; no approved additional image asset was available for a safe Production mutation. |
 | External Preview V1 | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Authenticated Admin renders the HTTPS metadata-only fields; no approved real preview URL was supplied, so no fabricated link was saved. |
 | Bulk Import V1 implementation/deployment | `GREEN_REAL_PRODUCTION` | Existing Production deployment and deterministic suite are green. |
-| Bulk Import real pilot | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` | Explicitly `DEFERRED_BY_USER_DATA`; no legitimate 3–5-book CSV is available and no data is fabricated. |
+| Bulk Import real pilot | `DEFERRED_BY_USER_DATA` | No legitimate 3–5-book CSV was supplied; no data is fabricated. |
 | Authentication/admission/RBAC | `GREEN_REAL_PRODUCTION` | Existing Production baseline plus server authorization regression. |
 | Secret Catalog boundaries | `GREEN_REAL_PRODUCTION` | Existing Production/security evidence; Product Media gallery is not projected into Secret Catalog V1. |
 | Financial invariants | `GREEN_REAL_PRODUCTION` | Integer IDR, snapshots, append-only ledger, payment/deposit/refund guards retained and tested. |

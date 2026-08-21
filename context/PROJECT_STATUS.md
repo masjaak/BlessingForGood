@@ -8,12 +8,11 @@
 **Phase 08:** `ACTIVE` — `BFG_PHASE_08_FINAL_COMPLETION_ACTIVE`.
 
 The previous generic `RED=0`, `YELLOW=0`, and `UNKNOWN=0` closure is superseded
-by a real Production screenshot showing Catalog action spacing was still wrong.
-The correction pass uses explicit `GREEN_REAL_PRODUCTION`,
-`GREEN_DETERMINISTIC`, `BLOCKED_BY_DATA`, and `BLOCKED_EXTERNAL` evidence. Bulk
-Import V1 remains implemented and Production-deployed, but its legitimate
-Production pilot is **DEFERRED BY USER**. Activity is now one responsive
-user-facing feed over separate Notification and Inbox backends.
+by the real Activity screenshot defect and the remaining authenticated gates.
+Activity is now one responsive user-facing feed over separate Notification and
+Inbox backends; the shared clipping root cause is fixed locally and covered by
+the eight-viewport rendered matrix. Bulk Import V1 remains implemented and
+Production-deployed, but its legitimate Production pilot is **DEFERRED BY USER**.
 Product Media decisions are locked and the bounded implementation is deployed;
 authenticated Admin rendering is now verified on one legitimate book, while
 safe media mutation and customer projection acceptance remain open.
@@ -26,13 +25,13 @@ Convex Production: `clean-eel-522`.
 Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current local regression is Vitest `229/229`, Convex `110/110` (included in
-Vitest), Playwright `201/201` with one environmental retry recovered, rendered
-`24/24`, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
+Current local regression is Vitest `232/232`, Convex `110/110` (included in
+Vitest), Playwright `202/202`, rendered `24/24` plus the eight-viewport Activity
+matrix, TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and
 `git diff --check` PASS. Public Production is reachable and the live public
-rendered suite is `24/24`. An authenticated Admin Chrome session is now
-verified against Production; no Customer session, dummy business record, or
-unapproved business value was created.
+rendered suite is `24/24`. The existing authenticated Admin evidence remains
+the baseline; the new Production Activity recheck and Customer session are
+still open. No dummy business record or unapproved business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
@@ -125,6 +124,10 @@ user data.
   implementation and the remaining real-book acceptance gate.
 - Activity now projects notifications and messages into one newest-first feed;
   backend tables, ownership, retention, and read semantics remain separate.
+- Activity responsive closure is covered locally at 375, 390, 430, 768, 834,
+  1024, 1280, and 1440 widths. The panel width/position/height is measured
+  against the real visual viewport; nested content tracks shrink and wrap, and
+  no horizontal overflow is hidden as a substitute for fitting the layout.
 - Authenticated Admin Production evidence now covers `/admin`,
   `/admin/notifications`, `/admin/books`, `/admin/books/[bookId]`,
   `/admin/batches`, `/admin/catalogs`, `/admin/invoices`,
@@ -144,7 +147,8 @@ user data.
 - Local exact 1280 customer smoke: `20/20`; canonical Production public
   Activity/visual suite: `24/24`. Authenticated Admin Activity, BFGSelect,
   Batch, Settings, and Master Buku evidence is now recorded; no business data
-  was mutated.
+  was mutated. The new Activity Production recheck and authenticated Customer
+  checkpoint remain open.
 
 ## Historical Status Archive
 

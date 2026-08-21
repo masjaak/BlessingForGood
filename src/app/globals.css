@@ -5555,9 +5555,9 @@ p {
   right: 0;
   box-sizing: border-box;
   width: min(380px, calc(100vw - 28px));
+  max-width: calc(100vw - 24px);
   min-width: 0;
-  max-height: min(560px, calc(100vh - 92px));
-  overflow-x: hidden;
+  max-height: min(560px, calc(100dvh - 92px));
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -5567,6 +5567,11 @@ p {
 
 .activity-panel-content {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   gap: var(--space-md);
   padding: var(--space-md);
 }
@@ -5603,17 +5608,32 @@ p {
   margin: 0;
   color: var(--ink-muted);
   font-size: var(--font-size-caption);
+  overflow-wrap: anywhere;
 }
 
 .workspace-activity-panel .content-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
   gap: var(--space-sm);
   min-width: 0;
 }
 
 .workspace-activity-panel .activity-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   min-width: 0;
   padding: var(--space-sm);
   box-shadow: none;
+}
+
+.workspace-activity-panel .content-stack > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .activity-card-topline {
@@ -5623,6 +5643,11 @@ p {
   justify-content: space-between;
   gap: var(--space-sm);
   margin-bottom: 8px;
+}
+
+.activity-card-topline > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .activity-type {
@@ -5687,30 +5712,12 @@ p {
     width: 40px;
     padding-inline: 0;
   }
-
-  .workspace-activity-panel {
-    position: fixed;
-    top: calc(var(--layout-header-height) + 8px);
-    right: 12px;
-    left: 12px;
-    width: auto;
-    max-width: none;
-    max-height: calc(100dvh - var(--layout-header-height) - 20px);
-  }
 }
 
 @media (max-width: 480px) {
   .workspace-activity-panel {
-    top: var(--layout-header-height);
-    right: 0;
-    bottom: 0;
-    left: 0;
-    max-height: none;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    padding-bottom: env(safe-area-inset-bottom);
+    width: min(380px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
   }
 }
 

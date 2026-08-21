@@ -30,7 +30,7 @@ CSS inspection pass.
 | 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated `/admin/books` menu opened below its trigger; middle/bottom collision contexts remain | `RECHECK_PENDING` |
 | 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — only discovered real Batch is locked; no assignment mutation was fabricated | `RECHECK_PENDING` |
 | 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
-| 12 Activity semantics | `FIXED` — one chronological projection over separate Notification/Inbox sources; no primary tabs or panel Inbox CTA | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — authenticated Admin verifies one feed with real system and `Pesan BFG` items; Customer/mobile recheck remains open | `RECHECK_PENDING` |
+| 12 Activity semantics + responsive geometry | `FIXED` — one chronological projection over separate Notification/Inbox sources; viewport-safe panel, wrapping, and no panel/feed/item horizontal overflow | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — unit and rendered matrix pass at 375/390/430/768/834/1024/1280/1440 | `RECHECK_PENDING` — the current Production screenshot is the pre-fix evidence; deploy and authenticated Admin/Customer recheck remain required | `RECHECK_PENDING` |
 | 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — mobile/tablet authenticated render unavailable | `RECHECK_PENDING` |
 | 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_BY_DATA` — authenticated form renders, but no approved real store/payment values were supplied for a safe save/refresh test | `RECHECK_PENDING` |
 | 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — latest screenshot proves frame | `FROZEN_GREEN` |
@@ -224,16 +224,16 @@ eligible Production record is available for mutation; no record is fabricated.
 - **Finding:** The Activity information architecture was unclear.
 - **Classification:** PRODUCT_CLARITY.
 - **Source:** Latest Client UAT; Activity decision; Notifications and Inbox contracts.
-- **Current Production Evidence:** The latest real recording reopened this item: the desktop panel overflowed and exposed a competing Inbox destination. The corrected local build is not yet Production-accepted.
+- **Current Production Evidence:** The latest real recording reopened this item: the desktop panel overflowed and exposed a competing Inbox destination. The corrected build is locally green but has not yet been rechecked in the new Production deployment.
 - **Expected Behavior:** `Aktivitas` is one newest-first feed; `Sistem` describes automatic system/state events; `Pesan BFG` describes persistent operational messages. Users do not choose a category before reading activity.
-- **Root Cause:** The prior composition preserved the backend distinction too literally in the primary UI, with a constrained panel and a redundant `Buka Kotak Masuk` CTA.
+- **Root Cause:** A combination of an intrinsic implicit grid track in the nested `.content-stack`, missing `min-width: 0` on shrinkable descendants, and anchor-only positioning that did not measure right-side collision. A narrow fixed panel could also inherit an unsafe containing block from the header's visual effects. The old `overflow-x: hidden` rule masked the child/card width instead of fixing it.
 - **Affected Route:** Customer/Admin shell Activity entry and activity surfaces.
 - **Affected Domain:** Notifications and Inbox remain separate.
 - **State Machine Impact:** None; event/message ownership and read semantics remain separate.
-- **Fix:** Project both canonical sources into one deterministic newest-first feed, combine unread counts without duplicating records, keep only clicked-item read behavior, remove the panel Inbox CTA, and use a bounded desktop panel/full-width narrow surface.
-- **Regression:** Activity projection/domain tests, component tests, viewport overflow checks, and authenticated Production surface check.
-- **Production Evidence:** Local deterministic and component evidence is green; authenticated Production acceptance remains pending after deployment.
-- **Status:** `REOPENED — PRODUCTION ACCEPTANCE PENDING`.
+- **Fix:** Keep the unified projection and read semantics; calculate panel width/position/max-height from the actual visual viewport on open, resize, scroll, viewport change, and anchor resize. Use a bounded 380px panel with safe gutters, collision shifting, internal vertical scroll, `minmax(0, 1fr)`, `min-width: 0`, and normal safe wrapping. No Activity copy, item, reference, or action was removed.
+- **Regression:** Activity projection/domain tests, component geometry tests, an eight-viewport populated rendered matrix, and an authenticated Production panel/focus regression for when the Clerk QA session is available.
+- **Production Evidence:** Local deterministic evidence is green; authenticated Production acceptance remains pending after deployment.
+- **Status:** `FIXED LOCALLY — PRODUCTION ACCEPTANCE PENDING`.
 
 ## 13 — Responsive Admin navigation
 

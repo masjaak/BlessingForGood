@@ -18,6 +18,23 @@ test.describe("BFG Clerk authenticated Production", () => {
     await page.goto("/account", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Semua yang perlu kamu ikuti, dalam satu tempat." })).toBeVisible();
     await expect(page.locator(".loading-region")).toHaveCount(0);
+    const customerViewportWidth = page.viewportSize()?.width ?? 1440;
+    if (customerViewportWidth <= 800) {
+      await expect(page.locator(".customer-shell .site-auth")).toBeHidden();
+      await expect(page.getByRole("navigation", { name: "Navigasi pelanggan" }).getByRole("link")).toHaveText([
+        "Beranda",
+        "Katalog",
+        "Buku Saya",
+        "Tagihan",
+        "Akun",
+      ]);
+    }
+    await page.getByRole("link", { name: "Buka Aktivitas" }).click();
+    await expect(page).toHaveURL(/\/account\/notifications$/);
+    await expect(page.getByRole("heading", { name: "Aktivitas" })).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => Math.max(document.body.scrollWidth, document.documentElement.scrollWidth)))
+      .toBeLessThanOrEqual(customerViewportWidth + 1);
     await page.goto("/account/orders", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Ikuti langkah berikutnya dengan mudah." })).toBeVisible();
     await expect(page.locator(".loading-region")).toHaveCount(0);
@@ -65,6 +82,35 @@ test.describe("BFG Clerk authenticated Production", () => {
     await expect(page).toHaveURL(/\/$/);
 
     await page.goto("/admin/books", { waitUntil: "networkidle" });
+    const activityTrigger = page.getByRole("button", { name: /Aktivitas/ });
+    await activityTrigger.click();
+    const activityPanel = page.getByRole("dialog", { name: "Aktivitas" });
+    await expect(activityPanel).toBeVisible();
+    const activityGeometry = await activityPanel.evaluate((panel) => {
+      const panelRect = panel.getBoundingClientRect();
+      const cards = [...panel.querySelectorAll<HTMLElement>(".activity-card")];
+      return {
+        left: panelRect.left,
+        right: panelRect.right,
+        bodyScrollWidth: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth),
+        viewportWidth: window.innerWidth,
+        cards: cards.map((card) => {
+          const rect = card.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, scrollWidth: card.scrollWidth, clientWidth: card.clientWidth };
+        }),
+      };
+    });
+    expect(activityGeometry.left).toBeGreaterThanOrEqual(0);
+    expect(activityGeometry.right).toBeLessThanOrEqual(activityGeometry.viewportWidth + 1);
+    expect(activityGeometry.bodyScrollWidth).toBeLessThanOrEqual(activityGeometry.viewportWidth + 1);
+    for (const card of activityGeometry.cards) {
+      expect(card.left).toBeGreaterThanOrEqual(activityGeometry.left);
+      expect(card.right).toBeLessThanOrEqual(activityGeometry.right + 1);
+      expect(card.scrollWidth).toBe(card.clientWidth);
+    }
+    await page.keyboard.press("Escape");
+    await expect(activityPanel).toHaveCount(0);
+    await expect(activityTrigger).toBeFocused();
     const adminNav = page.getByRole("navigation", { name: "Navigasi admin" });
     await adminNav.evaluate((element) => {
       element.scrollTop = element.scrollHeight;

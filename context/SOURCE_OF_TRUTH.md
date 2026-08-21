@@ -38,7 +38,7 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `eca8310` — Activity/Product Media completion pass                         |
+| Phase 08 implementation commit | `eca8310` — Activity/Product Media completion pass; Activity geometry closure follows from `26309a8` |
 | `origin/main`                  | current `main` after final context reconciliation                           |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
@@ -50,15 +50,15 @@ Current exact regression baseline:
 
 | Gate        | Result                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vitest      | `229 / 229`                                                                                                                                                                               |
+| Vitest      | `232 / 232`                                                                                                                                                                               |
 | Convex      | `110 / 110` (included in Vitest)                                                                                                                                                          |
-| Playwright  | `201 / 201` route smoke/rendered checks, including `24 / 24` rendered client UAT checks; one environmental retry recovered                                                                 |
+| Playwright  | `202 / 202` route smoke/rendered checks, including `24 / 24` rendered client UAT checks and the eight-viewport Activity geometry matrix |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
 | Build       | PASS                                                                                                                                                                                      |
 | Rendered QA | local production-server route/viewport checks pass; Homepage rhythm and shared visual checks are green; authenticated Admin Books/invoice spacing baseline is preserved at 1440px |
-| Real UAT    | Authenticated Admin Production evidence now verifies unified Activity, system/message projection, BFGSelect anchoring, Batch/Settings/Master Buku surfaces, and Product Media rendering on Maisy's Funfair; Customer acceptance, safe media mutation, editable Batch, approved Settings values, narrow Admin geometry, and Bulk Import pilot remain open |
+| Real UAT    | Existing authenticated Admin evidence remains green; the Activity clipping fix is locally rendered and regression-tested, while Production recheck and Customer acceptance remain open |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.
@@ -139,6 +139,13 @@ canonical publisher/book/variant/audit/auth boundaries, adds no schema or
 dependency, and does not start another Phase 08 candidate. Activity is one
 unified presentation over separate Notification and Inbox sources. Product
 Media V1 is Book Master-owned and uses the existing Convex storage boundary.
+
+The Activity responsive closure fixes the shared root cause: the prior nested
+implicit grid track preserved intrinsic long-content width, while the anchored
+panel did not measure right-side collision and the narrow fixed surface could
+inherit an unsafe containing block. The canonical fix uses `minmax(0, 1fr)`,
+`min-width: 0`, normal wrapping, measured viewport-safe width/position/height,
+and internal vertical scrolling without hiding or deleting content.
 
 ## Canonical Business Rules
 
@@ -397,13 +404,37 @@ mobile bottom navigation.
   scrollable, and never horizontally scrollable.
 - Admin desktop: one-row operational header with no wrapping at supported
   widths; `Lihat sisi pelanggan` remains one line and Activity/Avatar remain in
-  the same action cluster. Narrow Admin widths use a bounded sheet/full-width
-  surface rather than an escaping popover.
+  the same action cluster. Activity uses one viewport-measured, bounded
+  anchored panel; narrow Admin widths use the same safe bounded panel rather
+  than an escaping popover.
 - Book Detail: `COVER BUKU` uses a real aspect-ratio preview and
   `CoverUploadField` custom trigger over an accessible visually-hidden native
   file input. The canonical storage/upload consequence is unchanged.
 - Skeletons preserve ready-state page geometry and use page-aware anatomy.
 - Touch targets and readable empty/loading/error/success states are required.
+
+### Activity responsive geometry contract — Phase 08
+
+`Aktivitas` is one unified chronological feed. Notification and Inbox remain
+separate backend sources, projected as `Sistem` and `Pesan BFG` metadata in the
+same newest-first presentation.
+
+- Desktop uses a viewport-bounded anchored panel. Its preferred width is 380px,
+  clamped to the actual visual viewport with 12px safe gutters; the whole
+  panel shifts left when the trigger is near the right edge.
+- Tablet keeps the bounded anchored panel while it fits; the same measured
+  geometry supplies a safe bounded mode when the trigger/window has less room.
+- Mobile customer Activity is a full-width surface reached through
+  `Akun` → `Buka Aktivitas`; the customer top header remains logo-only and the
+  five-item bottom navigation remains visible.
+- The open panel recalculates on open, resize, visual-viewport changes, scroll,
+  and anchor-size changes. Its height is capped by the real viewport and its
+  feed scrolls vertically inside the panel.
+- Activity content is never removed, clipped, or shortened to fit. Panel,
+  content grid, item cards, flex children, descriptions, references, and action
+  buttons use shrinkable tracks, normal wrapping, and safe reference wrapping.
+- Activity, its feed, its item cards, and the page must have zero horizontal
+  overflow because their geometry fits; `overflow-x: hidden` is not the fix.
 
 ## Official Brand Assets
 

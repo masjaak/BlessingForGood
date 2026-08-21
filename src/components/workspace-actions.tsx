@@ -2,11 +2,64 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { api } from "../../convex/_generated/api";
 import { ActivityCenter } from "@/components/activity-center";
 
 export type WorkspaceActivityCounts = { activity?: number };
+
+export type ActivityPanelGeometry = {
+  left: number;
+  top: number;
+  width: number;
+  maxHeight: number;
+  mode: "anchored" | "bounded" | "mobile";
+};
+
+export function calculateActivityPanelGeometry(
+  viewport: { left?: number; top?: number; width: number; height: number },
+  anchor: { top: number; bottom: number; right: number },
+): ActivityPanelGeometry {
+  const viewportLeft = viewport.left ?? 0;
+  const viewportTop = viewport.top ?? 0;
+  const gutter = 12;
+  const gap = 8;
+  const preferredWidth = 380;
+  const mobileBottomReserve = 84;
+  const isMobile = viewport.width <= 480;
+  const width = Math.max(1, Math.min(preferredWidth, viewport.width - gutter * 2));
+  const left = Math.min(
+    Math.max(anchor.right - width, viewportLeft + gutter),
+    viewportLeft + viewport.width - gutter - width,
+  );
+  const preferredTop = anchor.bottom + gap;
+  const safeBottom = viewportTop + viewport.height - (isMobile ? mobileBottomReserve : gutter);
+  const spaceBelow = safeBottom - preferredTop;
+  const spaceAbove = anchor.top - gap - (viewportTop + gutter);
+  const opensAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+  const availableHeight = Math.max(1, opensAbove ? spaceAbove : spaceBelow);
+  const maxHeight = Math.min(560, availableHeight);
+  const preferredPanelTop = opensAbove ? anchor.top - gap - maxHeight : preferredTop;
+  const minTop = viewportTop + gutter;
+  const maxTop = Math.max(minTop, safeBottom - maxHeight);
+
+  return {
+    left,
+    top: Math.min(Math.max(minTop, preferredPanelTop), maxTop),
+    width,
+    maxHeight,
+    mode: isMobile ? "mobile" : viewport.width <= 900 ? "bounded" : "anchored",
+  };
+}
 
 export const WorkspaceActivityContext = createContext<WorkspaceActivityCounts>({});
 
@@ -58,7 +111,9 @@ function ActivityTrigger({
 
 function ActivityPopover({ workspace, activity }: { workspace: "admin" | "customer"; activity?: number }) {
   const [open, setOpen] = useState(false);
+  const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const activityRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   function closePanel() {
     setOpen(false);
@@ -86,8 +141,67 @@ function ActivityPopover({ workspace, activity }: { workspace: "admin" | "custom
     };
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open) return;
+    const observedTrigger = triggerRef.current;
+    const observedRoot = activityRef.current;
+    if (!observedTrigger || !observedRoot) return;
+
+    function updatePanelGeometry() {
+      const trigger = triggerRef.current;
+      const activityRoot = activityRef.current;
+      if (!trigger || !activityRoot) return;
+      const viewport = window.visualViewport;
+      const geometry = calculateActivityPanelGeometry(
+        {
+          left: viewport?.offsetLeft,
+          top: viewport?.offsetTop,
+          width: viewport?.width ?? window.innerWidth,
+          height: viewport?.height ?? window.innerHeight,
+        },
+        trigger.getBoundingClientRect(),
+      );
+      const rootRect = activityRoot.getBoundingClientRect();
+      const nextStyle: CSSProperties = {
+        top: geometry.top - rootRect.top,
+        left: geometry.left - rootRect.left,
+        width: geometry.width,
+        maxHeight: geometry.maxHeight,
+        right: "auto",
+        bottom: "auto",
+      };
+      setPanelStyle((current) =>
+        current.top === nextStyle.top &&
+        current.left === nextStyle.left &&
+        current.width === nextStyle.width &&
+        current.maxHeight === nextStyle.maxHeight
+          ? current
+          : nextStyle,
+      );
+    }
+
+    updatePanelGeometry();
+    document.addEventListener("scroll", updatePanelGeometry, true);
+    window.addEventListener("resize", updatePanelGeometry);
+    window.visualViewport?.addEventListener("resize", updatePanelGeometry);
+    window.visualViewport?.addEventListener("scroll", updatePanelGeometry);
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updatePanelGeometry);
+    if (resizeObserver) {
+      resizeObserver.observe(observedTrigger);
+      resizeObserver.observe(observedRoot);
+    }
+
+    return () => {
+      document.removeEventListener("scroll", updatePanelGeometry, true);
+      window.removeEventListener("resize", updatePanelGeometry);
+      window.visualViewport?.removeEventListener("resize", updatePanelGeometry);
+      window.visualViewport?.removeEventListener("scroll", updatePanelGeometry);
+      resizeObserver?.disconnect();
+    };
+  }, [open]);
+
   return (
-    <div className="workspace-activity">
+    <div className="workspace-activity" ref={activityRef}>
       <ActivityTrigger
         activity={activity}
         onClick={() => setOpen((current) => !current)}
@@ -95,7 +209,13 @@ function ActivityPopover({ workspace, activity }: { workspace: "admin" | "custom
         triggerRef={triggerRef}
       />
       {open ? (
-        <div aria-label="Aktivitas" className="workspace-activity-panel" ref={panelRef} role="dialog">
+        <div
+          aria-label="Aktivitas"
+          className="workspace-activity-panel"
+          ref={panelRef}
+          role="dialog"
+          style={panelStyle}
+        >
           <ActivityCenter compact onClose={closePanel} workspace={workspace} />
         </div>
       ) : null}

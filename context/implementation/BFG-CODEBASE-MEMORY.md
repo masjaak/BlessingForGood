@@ -209,3 +209,48 @@ Current evidence boundary: the supplied real Production screenshot proved the
 pre-fix Catalog action rhythm was wrong. The public post-fix Production render
 is green; authenticated private-flow render and real-business UAT remain
 `BLOCKED_EXTERNAL`, not green.
+
+## Post-diff Memory — Phase 08 Activity Responsive Closure
+
+Changed application reach:
+
+- `src/components/workspace-actions.tsx`: the shared Admin/Customer Activity
+  trigger now uses one viewport geometry helper. On open it measures the
+  visual viewport and anchor, shifts left when the right edge would collide,
+  caps height to a safe bottom boundary, and recalculates on resize, scroll,
+  visual-viewport changes, and anchor/root resize. Escape, outside close, and
+  trigger focus return remain in the same component.
+- `src/app/globals.css`: Activity panel/content/card tracks now use explicit
+  shrinkable columns, `min-width: 0`, `max-width: 100%`, and normal wrapping.
+  The previous horizontal clipping rule and unsafe narrow fixed-surface mode
+  were removed; vertical panel scrolling remains.
+- `tests/components/workspace-actions.test.tsx`: geometry unit coverage checks
+  right collision, narrow mobile width/bottom reserve, and upward opening.
+- `tests/e2e/activity-responsive.spec.ts`: populated rendered coverage checks
+  the full Activity surface at 375, 390, 430, 768, 834, 1024, 1280, and 1440
+  widths with long explanation, titles, references, cards, and actions.
+- `tests/e2e/clerk-auth.spec.ts`: when the user-controlled Clerk QA session
+  exists, the real panel checks containment, card width, Escape, focus return,
+  customer logo-only mobile header, bottom nav, and Account → Activity.
+
+Root-cause verdict: the clipped cards were caused by the nested content stack's
+intrinsic grid track and missing shrink constraints, amplified by anchor-only
+panel positioning and the narrow fixed panel's containing block. `overflow-x:
+hidden` had masked the symptom. No Convex schema/function, authorization,
+financial, inventory, catalog, Product Media, or Bulk Import path changed.
+
+Blast-radius verdict:
+
+| Reach | Result |
+|---|---|
+| Admin Activity trigger/panel | changed shared geometry only; feed projection and actions preserved |
+| Customer Activity page | unchanged presentation contract; shared feed and shell navigation preserved |
+| Notification/Inbox backend | unchanged; separate ownership, unread, read, and destination semantics preserved |
+| Customer header/bottom nav | unchanged behavior; authenticated mobile regression added |
+| Convex/auth/RBAC/finance/inventory | unchanged |
+
+Memory reindex after this diff: `3403` nodes / `9176` edges, zero skipped
+files, and three existing parse-partial files (`src/app/account/orders/page.tsx`,
+`src/app/account/page.tsx`, and `src/app/admin/page.tsx`). The repository index
+is best-effort; those flagged ranges remain covered by direct source inspection
+and the frontend gates.
