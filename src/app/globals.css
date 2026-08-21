@@ -4690,6 +4690,9 @@ p {
   --form-field-field-gap: 16px;
   --toolbar-content-gap: 16px;
   --button-group-gap: 8px;
+  --space-content-to-actions: var(--space-lg);
+  --space-action-stack: var(--space-sm);
+  --space-action-support: var(--space-sm);
   --space-divider-to-actions: var(--space-md);
   --homepage-section-gap-mobile: 32px;
   --homepage-section-gap-tablet: 40px;
@@ -5202,6 +5205,30 @@ p {
 .admin-shell .summary-line + .button,
 .admin-shell .summary-line + a.button {
   margin-top: var(--space-divider-to-actions);
+}
+
+.admin-shell .action-region {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-action-support);
+}
+
+.admin-shell .action-region-separated {
+  margin-top: var(--space-content-to-actions);
+}
+
+.admin-shell .action-region > .form-actions {
+  width: 100%;
+}
+
+.admin-shell .action-stack {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-action-stack);
+}
+
+.admin-shell .action-support {
+  margin: 0;
 }
 
 .admin-shell .summary-line .button,

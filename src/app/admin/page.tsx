@@ -65,10 +65,12 @@ function AdminOverview() {
           <StatusBadge tone={count ? "warning" : "positive"}>{count ? "Perlu tindakan" : "Bersih"}</StatusBadge>
         </div>
         <strong className="metric-value">{count}</strong>
-        <p>{description}</p>
-        <LinkButton href={href} variant="quiet">
-          {href === "/admin/join-requests" ? "Review" : `Buka ${label.toLowerCase()} →`}
-        </LinkButton>
+        <div className="action-region">
+          <p className="action-support">{description}</p>
+          <LinkButton href={href} variant="quiet">
+            {href === "/admin/join-requests" ? "Review" : `Buka ${label.toLowerCase()} →`}
+          </LinkButton>
+        </div>
       </Card>
     ));
 

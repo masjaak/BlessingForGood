@@ -5,37 +5,32 @@
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
-**Phase 08:** `ACTIVE` — `BFG_PHASE_08_CLIENT_UAT_STABILIZED`.
+**Phase 08:** `ACTIVE` — `BFG_PHASE_08_REAL_CLIENT_UAT_REOPENED`.
 
-The original Client UAT findings 01–17 are reconciled in one matrix with
-`RED=0`, `YELLOW=0`, and `UNKNOWN=0`. Bulk Import V1 remains implemented and
-Production-deployed, but its legitimate Production pilot is **DEFERRED BY
-USER**. Product Media implementation remains **ON HOLD** while Gallery
-ownership and External Preview policy remain open.
+The previous generic `RED=0`, `YELLOW=0`, and `UNKNOWN=0` closure is superseded
+by a real Production screenshot showing Catalog action spacing was still wrong.
+The correction pass uses explicit `GREEN_REAL_PRODUCTION`,
+`GREEN_DETERMINISTIC`, `BLOCKED_BY_DATA`, and `BLOCKED_EXTERNAL` evidence. Bulk
+Import V1 remains implemented and Production-deployed, but its legitimate
+Production pilot is **DEFERRED BY USER**. Product Media implementation remains
+**ON HOLD** while Gallery ownership and External Preview policy remain open.
 
-Starting commit for this closure pass: `195bc4d`.
-Final closure commit: recorded in the closure report for the delivered `HEAD`.
+Starting commit for this correction pass: `cb609ab`.
+Final correction commit: recorded in the delivery report for the delivered
+`HEAD`.
 `origin/main`: delivered `HEAD` after this pass.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production: latest Git-triggered `READY` deployment for `origin/main`.
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current regression baseline: Vitest `225/225`, Convex `108/108` (included in
-Vitest), Playwright `195/195` route smoke/rendered checks, including `18/18`
-rendered client-UAT checks, TypeScript PASS, ESLint PASS, Format PASS, Build
-PASS, and `git diff --check` PASS. The canonical
-URL returned HTTP 200 in safe read-only verification and the apex redirects to
-`www` with HTTP 308. The public Production route matrix is green at customer
-375/390/430/768/1280/1440. Convex Production and Vercel Production are green.
-Authenticated Chrome evidence covers Admin Content, Settings, Orders,
-Invoices, Batch, Books, `/admin/import`, and the customer-facing Ready Stock
-cover. The spacing recheck now covers `/admin/books` and a real invoice detail
-at 1440px: owner visible, divider-to-action spacing intentional, settled
-cancellation disabled, and no horizontal overflow. The fresh local production
-server browser pass covers all 195 public and protected-route smoke/rendered
-checks at the configured widths. No dummy Production business records were
-created.
+Current regression baseline before this correction remains Vitest `225/225`,
+Convex `108/108` (included in Vitest), Playwright `195/195`, rendered `18/18`,
+TypeScript PASS, ESLint PASS, Format PASS, Build PASS, and `git diff --check`
+PASS. The current pass adds focused tests; final counts must be rerun. Public
+Production is reachable, but the current environment has no authenticated
+browser session and Vercel API access is unauthorized. No dummy Production
+business records were created.
 
 The Phase 08 Vercel Production build hook pushed the client-UAT changes and
 new order/settings functions to `clean-eel-522`; build logs confirm schema

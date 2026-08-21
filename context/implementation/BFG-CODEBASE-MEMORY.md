@@ -1,7 +1,7 @@
 # BFG CODEBASE MEMORY
 
-Pre-flight map captured at HEAD `45362dd6d0fa753ce5efad70fe9d04857ebf0c1c` on
-2026-08-15. This is structural memory, not product requirement authority.
+Pre-flight map captured at HEAD `cb609ab` on 2026-08-21. This is structural
+memory, not product requirement authority.
 
 ## Major Domain Modules
 
@@ -165,3 +165,46 @@ Blast-radius verdict:
 
 Codebase Memory post-diff conclusion: no unexpected backend, authorization,
 financial, inventory, Secret Catalog, or Bulk Import blast radius was found.
+
+## Post-diff Memory — Phase 08 Real UAT Reopen / Admin Action Rhythm
+
+Changed application reach:
+
+- `src/app/globals.css`: added three semantic Admin spacing roles derived from
+  the existing scale: content-to-actions 24px, action-stack 12px, and
+  action-support 12px. The rules are scoped under `.admin-shell`; no base
+  spacing variable or Customer Homepage rhythm changed.
+- `src/app/admin/catalogs/page.tsx`: primary/danger Catalog actions now share
+  one action region and stacked grammar. Draft/closed/archived helper copy is
+  explicitly supporting copy. The intrinsic left creation frame was not
+  touched.
+- `src/app/admin/batches/[batchId]/page.tsx` and
+  `src/app/admin/invoices/[invoiceId]/page.tsx`: existing operational action
+  groups now carry their helper/status copy through the same semantic region.
+- `src/app/admin/page.tsx` and `src/components/admin-bulk-import.tsx`:
+  existing queue/import explanations are grouped with their actions without
+  changing domain behavior.
+- `tests/components/admin-catalog-discoverability.test.tsx` and
+  `tests/components/bfg-select.test.tsx`: focused regressions cover Catalog
+  action composition and genuine lower-viewport dropdown collision.
+
+Blast-radius verdict:
+
+| Reach | Result |
+|---|---|
+| Admin action regions | changed only at shared CSS plus five existing compositions; authenticated rendered verification still required |
+| Catalog left frame | unchanged and explicitly frozen |
+| Customer Homepage | unchanged; no shared base or Homepage token changed |
+| Settings | unchanged; existing consumed fields and persistence preserved |
+| BFGSelect algorithm | unchanged; only a collision regression was added |
+| Admin navigation | unchanged; one existing scroll source preserved |
+| Convex schema/functions | unchanged; no backend deploy required |
+| Auth/RBAC | unchanged |
+| Financial/inventory/Secret Catalog state machines | unchanged |
+| Product Media | unchanged; implementation remains on hold |
+| Bulk Import | unchanged; legitimate Production pilot remains deferred by user |
+
+Current evidence boundary: the supplied real Production screenshot proves the
+pre-fix Catalog action rhythm was wrong. The current environment has no
+authenticated browser session and Vercel API access is unauthorized, so the
+post-fix Production render is recorded as `BLOCKED_EXTERNAL`, not green.

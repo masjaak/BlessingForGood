@@ -44,6 +44,47 @@ beforeEach(() => {
 });
 
 describe("Secret Catalog operational discoverability", () => {
+  it("keeps stacked actions and supporting copy in semantic action regions", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      state: {
+        catalogs: [
+          {
+            id: "catalog-open",
+            name: "Open",
+            accessCodeHash: "hash-open",
+            status: "open",
+            closingAt: null,
+            books: [],
+            titleCount: 0,
+            createdAt: "2026-08-21T00:00:00.000Z",
+          },
+          {
+            id: "catalog-draft",
+            name: "Draft",
+            accessCodeHash: "hash-draft",
+            status: "draft",
+            closingAt: null,
+            books: [],
+            titleCount: 0,
+            createdAt: "2026-08-21T00:00:00.000Z",
+          },
+        ],
+      },
+      catalogsLoading: false,
+      closeCatalog: vi.fn(),
+    } as never);
+
+    render(<AdminCatalogsPage />);
+
+    const openCard = screen.getByRole("heading", { name: "Open" }).closest(".card");
+    expect(openCard?.querySelector(".action-region")).toBeTruthy();
+    expect(openCard?.querySelector(".action-stack")?.querySelectorAll(".button")).toHaveLength(2);
+
+    const draftCard = screen.getByRole("heading", { name: "Draft" }).closest(".card");
+    expect(draftCard?.querySelector(".action-stack")?.querySelectorAll(".button")).toHaveLength(1);
+    expect(draftCard?.querySelector(".action-support")?.textContent).toMatch(/Draf/);
+  });
+
   it("points the empty catalog state to the create form and explains the next step", () => {
     render(<AdminCatalogsPage />);
 

@@ -1,4 +1,8 @@
-# BFG Client UAT Stabilization — 2026-08-19
+# BFG Client UAT Stabilization — 2026-08-19 (Historical Pass)
+
+> Superseded for current status by the 2026-08-21 real Production reopen. The
+> latest Catalog screenshot contradicted the prior spacing closure; see
+> `BFG-CLIENT-UAT-FIX-MATRIX.md` and `BFG-ADMIN-SPACING-AUDIT.md`.
 
 ## Objective
 
@@ -50,7 +54,7 @@ legitimate records. A manual login checkpoint may be requested without asking
 for passwords, OTPs, cookies, JWTs, or secrets. Bulk Import requires a real
 client CSV and an authenticated Admin checkpoint.
 
-## Current status
+## Historical status at the end of the 2026-08-19 pass
 
 Focused implementation, local gates, `origin/main`, Convex Production, Vercel
 Production, public rendered rechecks, and authenticated Admin Chrome evidence

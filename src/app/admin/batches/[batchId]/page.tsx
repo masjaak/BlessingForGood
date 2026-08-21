@@ -144,49 +144,51 @@ function AdminBatchDetail() {
               </div>
               <StatusBadge>{currentBatch.isArchived ? "Diarsipkan" : "Aktif"}</StatusBadge>
             </div>
-            <div className="form-actions">
-              <Button
-                type="button"
-                pending={pendingAction === "shipment"}
-                pendingLabel="Memperbarui…"
-                onClick={() => void advance()}
-                disabled={currentBatch.isArchived || !nextStage}
-              >
-                Lanjut ke {nextStage ? shipmentStageLabels[nextStage] : "selesai"}
-              </Button>
-              <label className="field">
-                <span className="field-label">Lewati/koreksi eksplisit</span>
-                <BFGSelect
-                  aria-label="Pilihan tahap pengiriman"
-                  className="select"
-                  value=""
-                  disabled={currentBatch.isArchived || pendingAction !== null}
-                  onChange={(event) => void chooseStage(event.target.value)}
+            <div className="action-region">
+              <div className="form-actions">
+                <Button
+                  type="button"
+                  pending={pendingAction === "shipment"}
+                  pendingLabel="Memperbarui…"
+                  onClick={() => void advance()}
+                  disabled={currentBatch.isArchived || !nextStage}
                 >
-                  <option value="">Pilih tahap berikutnya…</option>
-                  {shipmentStages.slice(currentIndex + 2).map((stage) => (
-                    <option value={stage} key={stage}>
-                      {shipmentStageLabels[stage]}
-                    </option>
-                  ))}
-                </BFGSelect>
-              </label>
-              <Button
-                type="button"
-                variant="danger"
-                pending={pendingAction === "archive"}
-                pendingLabel="Mengarsipkan…"
-                onClick={() => void run(() => archiveBatch(batchId), "Batch diarsipkan.", "archive")}
-                disabled={currentBatch.isArchived}
-              >
-                Arsipkan batch
-              </Button>
+                  Lanjut ke {nextStage ? shipmentStageLabels[nextStage] : "selesai"}
+                </Button>
+                <label className="field">
+                  <span className="field-label">Lewati/koreksi eksplisit</span>
+                  <BFGSelect
+                    aria-label="Pilihan tahap pengiriman"
+                    className="select"
+                    value=""
+                    disabled={currentBatch.isArchived || pendingAction !== null}
+                    onChange={(event) => void chooseStage(event.target.value)}
+                  >
+                    <option value="">Pilih tahap berikutnya…</option>
+                    {shipmentStages.slice(currentIndex + 2).map((stage) => (
+                      <option value={stage} key={stage}>
+                        {shipmentStageLabels[stage]}
+                      </option>
+                    ))}
+                  </BFGSelect>
+                </label>
+                <Button
+                  type="button"
+                  variant="danger"
+                  pending={pendingAction === "archive"}
+                  pendingLabel="Mengarsipkan…"
+                  onClick={() => void run(() => archiveBatch(batchId), "Batch diarsipkan.", "archive")}
+                  disabled={currentBatch.isArchived}
+                >
+                  Arsipkan batch
+                </Button>
+              </div>
+              <p className="subtle action-support">
+                {rosterLocked
+                  ? "Roster dikunci pada tahap pengiriman pertama; penugasan dan tautan katalog hanya dapat dibaca."
+                  : "Roster dapat diubah sampai PO ditutup."}
+              </p>
             </div>
-            <p className="subtle">
-              {rosterLocked
-                ? "Roster dikunci pada tahap pengiriman pertama; penugasan dan tautan katalog hanya dapat dibaca."
-                : "Roster dapat diubah sampai PO ditutup."}
-            </p>
           </Card>
 
           <Card>

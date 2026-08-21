@@ -83,4 +83,30 @@ describe("BFGSelect", () => {
     expect(menu.getAttribute("style")).toContain("top: 346px");
     if (originalHeight) Object.defineProperty(window, "innerHeight", originalHeight);
   });
+
+  it("flips above a trigger only when the lower viewport space collides", () => {
+    const originalHeight = Object.getOwnPropertyDescriptor(window, "innerHeight");
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 600 });
+
+    try {
+      render(
+        <BFGSelect defaultValue="draft">
+          <option value="draft">Draf</option>
+          <option value="published">Terbit</option>
+          <option value="archived">Diarsipkan</option>
+        </BFGSelect>,
+      );
+      const trigger = screen.getByRole("combobox");
+      Object.defineProperty(trigger, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({ top: 500, bottom: 540, left: 100, width: 200 }),
+      });
+
+      fireEvent.click(trigger);
+
+      expect(screen.getByRole("listbox").getAttribute("style")).toContain("top: 174px");
+    } finally {
+      if (originalHeight) Object.defineProperty(window, "innerHeight", originalHeight);
+    }
+  });
 });

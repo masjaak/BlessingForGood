@@ -1,7 +1,7 @@
 # BFG SPACING SYSTEM
 
 Status: `ACTIVE — PHASE 08 SPACING STABILIZATION`
-Reconciled: 2026-08-20 (Asia/Jakarta)
+Reconciled: 2026-08-21 (Asia/Jakarta)
 
 This document defines relationships, not page-specific pixel patches. Existing
 global tokens remain the implementation source; new work must use these
@@ -42,6 +42,27 @@ the form/card rhythm, not an individual button margin hack.
 Content-to-actions uses `--space-lg` (24px) where the action group is a
 separate region; inline or table actions use the compact control gap. Action
 groups should be a flex/grid region, not scattered per-button margins.
+
+The Admin action grammar is now explicit in `globals.css`:
+
+```text
+.action-region
+  gap: --space-action-support (12px)
+
+.action-region-separated
+  margin-top: --space-content-to-actions (24px)
+
+.action-stack
+  gap: --space-action-stack (12px)
+
+.action-support
+  margin: 0
+```
+
+Use `.action-stack` for semantically distinct stacked actions such as primary
+plus danger. Use `.action-support` for helper/status copy that follows an
+action. Use `.action-region-separated` only when the region follows a complete
+summary/content block; do not add route-specific button margins.
 
 ## Divider → Action
 
@@ -101,6 +122,10 @@ chapter. Footer/bottom-nav clearance remains shell-owned.
 Tables, row summaries, filters, and compact operational controls may use the
 compact scale. They still need visible separation from row dividers and card
 borders. Dense does not mean touching.
+
+The Catalog left creation frame remains intrinsic-height and is frozen. The
+spacing correction changes only the shared Admin action relationships; it does
+not change the frame height architecture or any Customer Homepage token.
 
 ## Optical Exceptions
 

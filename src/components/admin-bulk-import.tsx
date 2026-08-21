@@ -148,13 +148,15 @@ function Confirmation({ preview, onConfirm, pending }: { preview: Preview; onCon
         {preview.summary.newBooks} buku baru, {preview.summary.newPublishers} penerbit baru,{" "}
         {preview.summary.newVariants} varian baru, dan {preview.summary.noOpRows} baris tanpa perubahan.
       </p>
-      <p className="subtle">
-        Import tidak mengubah stok, katalog, media, pesanan, atau data keuangan. Buku baru tetap berstatus draf dan
-        varian baru tidak aktif.
-      </p>
-      <Button type="button" onClick={onConfirm} pending={pending} pendingLabel="Mengimpor buku…">
-        Import buku
-      </Button>
+      <div className="action-region">
+        <p className="subtle action-support">
+          Import tidak mengubah stok, katalog, media, pesanan, atau data keuangan. Buku baru tetap berstatus draf dan
+          varian baru tidak aktif.
+        </p>
+        <Button type="button" onClick={onConfirm} pending={pending} pendingLabel="Mengimpor buku…">
+          Import buku
+        </Button>
+      </div>
     </Card>
   );
 }

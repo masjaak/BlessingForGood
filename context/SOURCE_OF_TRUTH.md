@@ -4,8 +4,13 @@ Reconciled: 2026-08-21 (Asia/Jakarta)
 Applies to the current `main` after the Phase 08 Client UAT closure pass; the canonical Production deployment is
 the latest Git-triggered `READY` deployment with Convex `clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
-Phase 08: **ACTIVE**. The original Client UAT matrix is stabilized with no
-red, yellow, or unknown findings;
+Phase 08: **ACTIVE — REAL CLIENT UAT REOPENED**. The previous generic
+no-red/yellow/unknown closure is superseded by a real Production screenshot
+showing Admin Catalog action spacing was still incorrect. Current evidence is
+classified as `GREEN_REAL_PRODUCTION`, `GREEN_DETERMINISTIC`,
+`BLOCKED_BY_DATA`, or `BLOCKED_EXTERNAL`; the original Client UAT matrix is
+not closed until the reopened operator journeys and post-fix authenticated
+rendering are rechecked.
 the Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED BY USER**. Final Bulk Import Production acceptance is not
 claimed. The current milestone is the stabilized Client UAT matrix; Product

@@ -1,13 +1,47 @@
-# BFG Client UAT Fix Matrix — Phase 08 Closure
+# BFG Client UAT Fix Matrix — Phase 08 Real Reopen
 
 This is the canonical reconciliation of the original Client UAT findings. It
-uses the user-supplied 01–17 grouping, keeps previously green behavior frozen,
-and records implementation evidence separately from Production evidence.
+uses the user-supplied 01–17 grouping, keeps previously proven green behavior
+frozen, and records implementation evidence separately from deterministic,
+authenticated Production, and client-recheck evidence.
 
-Status vocabulary is intentionally narrow: `GREEN`, `RED`, `YELLOW`,
-`UNKNOWN`, or `BLOCKED_EXTERNAL`. A finding is closed only with deterministic
-state-machine coverage plus a safe authenticated Production surface check
-when a safe live business record is not available.
+The 2026-08-21 real Production screenshot supersedes the previous generic
+`RED=0 / YELLOW=0 / UNKNOWN=0` closure for Admin action spacing. The historical
+finding narratives below remain useful evidence, but the correction-pass table
+below is authoritative for current status.
+
+Status vocabulary for this pass is intentionally explicit:
+`GREEN_REAL_PRODUCTION`, `GREEN_DETERMINISTIC`, `BLOCKED_BY_DATA`, and
+`BLOCKED_EXTERNAL`. A finding is not client-closed merely because its tests or
+CSS inspection pass.
+
+## Correction-pass evidence matrix — 2026-08-21
+
+| Finding | Implementation | Deterministic | Authenticated Production | Client Recheck |
+|---|---|---|---|---|
+| 01 Content purpose | `PRESERVED` | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — no authenticated browser session available | `RECHECK_PENDING` |
+| 02 Cover full visibility | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
+| 03 Catalog count | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
+| 04 Invoice cancellation | `GREEN` — server/UI guard preserved | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` for settled denial; `BLOCKED_BY_DATA` for eligible live cancellation | `RECHECK_PENDING` |
+| 05 Deposit allocation | `GREEN` — bounded form/mutation preserved | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` for zero-balance denial; `BLOCKED_BY_DATA` for eligible live allocation | `RECHECK_PENDING` |
+| 06 Invoice owner | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
+| 07 Batch ↔ Catalog | `GREEN` — existing relation controls preserved | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — exact operator journey not re-run | `RECHECK_PENDING` |
+| 08 Slide background | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied rendered evidence | `FROZEN_GREEN` |
+| 09 BFGSelect anchor | `PRESERVED` + collision regression | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — authenticated Admin contexts not available | `RECHECK_PENDING` |
+| 10 Batch targeting/assignment/Summary | `PRESERVED` — existing controls and derived summary traced | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — exact operator journey not re-run | `RECHECK_PENDING` |
+| 11 Human-facing order reference | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied authenticated evidence | `FROZEN_GREEN` |
+| 12 Activity semantics | `PRESERVED` | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — no authenticated browser session available | `RECHECK_PENDING` |
+| 13 Responsive Admin navigation | `PRESERVED` — one scroll container/source | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — mobile/tablet authenticated render unavailable | `RECHECK_PENDING` |
+| 14 Settings expansion | `PRESERVED` — consumed fields already exist | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — edit/save/refresh journey not re-run | `RECHECK_PENDING` |
+| 15 Catalog left frame | `PRESERVED` — intrinsic height frozen | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — latest screenshot proves frame | `FROZEN_GREEN` |
+| 16 Admin action spacing | `FIXED` — shared semantic action region/stack/support tokens | `GREEN_DETERMINISTIC` — component composition + CSS source | `BLOCKED_EXTERNAL` — latest supplied screenshot was pre-fix; post-deploy render pending | `RECHECK_PENDING` |
+| 17 Master Buku alignment | `PRESERVED` — CoverUploadField unchanged | `GREEN_DETERMINISTIC` | `BLOCKED_EXTERNAL` — authenticated Book Detail render unavailable | `RECHECK_PENDING` |
+| Homepage section rhythm | `PRESERVED` | `GREEN_DETERMINISTIC` | `GREEN_REAL_PRODUCTION` — previously supplied rendered evidence | `FROZEN_GREEN` |
+
+`BLOCKED_EXTERNAL` here means the current environment has no authenticated
+browser session or deploy verification authority. It is not a product failure.
+`BLOCKED_BY_DATA` means the safe state exists in tests/guards but no legitimate
+eligible Production record is available for mutation; no record is fabricated.
 
 ## 01 — Admin Konten purpose / clarity
 

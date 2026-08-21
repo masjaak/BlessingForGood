@@ -165,33 +165,35 @@ function AdminInvoiceDetail() {
                 {formatIdr(currentAdminInvoice.verifiedPaymentAmount)}
               </strong>
             </div>
-            <LinkButton href="/admin/payments" variant="secondary">
-              Tinjau konfirmasi pembayaran
-            </LinkButton>
-            <div className="form-actions">
-              {currentAdminInvoice.status === "draft" ? (
-                <Button
-                  type="button"
-                  pending={pendingAction === "issue"}
-                  pendingLabel="Menerbitkan…"
-                  onClick={() => void run(() => issueInvoice(invoiceId), "Invoice diterbitkan.", "issue")}
-                >
-                  Terbitkan invoice
-                </Button>
-              ) : null}
-              {currentAdminInvoice.status !== "void" ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  pending={pendingAction === "void"}
-                  pendingLabel="Membatalkan…"
-                  onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
-                  disabled={voidBlockReason !== null || pendingAction !== null}
-                >
-                  Batalkan invoice
-                </Button>
-              ) : null}
-              {voidBlockReason ? <span className="subtle">{voidBlockReason}</span> : null}
+            <div className="action-region action-region-separated">
+              <LinkButton href="/admin/payments" variant="secondary">
+                Tinjau konfirmasi pembayaran
+              </LinkButton>
+              <div className="form-actions">
+                {currentAdminInvoice.status === "draft" ? (
+                  <Button
+                    type="button"
+                    pending={pendingAction === "issue"}
+                    pendingLabel="Menerbitkan…"
+                    onClick={() => void run(() => issueInvoice(invoiceId), "Invoice diterbitkan.", "issue")}
+                  >
+                    Terbitkan invoice
+                  </Button>
+                ) : null}
+                {currentAdminInvoice.status !== "void" ? (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    pending={pendingAction === "void"}
+                    pendingLabel="Membatalkan…"
+                    onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
+                    disabled={voidBlockReason !== null || pendingAction !== null}
+                  >
+                    Batalkan invoice
+                  </Button>
+                ) : null}
+              </div>
+              {voidBlockReason ? <span className="subtle action-support">{voidBlockReason}</span> : null}
             </div>
           </Card>
 

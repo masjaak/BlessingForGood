@@ -152,25 +152,30 @@ function CatalogList() {
               <span>{firstBook ? `${firstBook.variants.length} format` : "Buka detail untuk kurasi"}</span>
             </div>
             {error ? <p className="error-text">{error}</p> : null}
-            <div className="actions">
-              <LinkButton href={`/admin/catalogs/${catalog.id}`}>Kelola katalog</LinkButton>
+            <div className="action-region action-region-separated">
+              <div className="action-stack">
+                <LinkButton href={`/admin/catalogs/${catalog.id}`}>Kelola katalog</LinkButton>
+                {catalog.status === "open" ? (
+                  <Button
+                    variant="danger"
+                    pending={pendingAction === catalog.id}
+                    pendingLabel="Menutup…"
+                    onClick={() => void close(catalog.id)}
+                  >
+                    Tutup katalog
+                  </Button>
+                ) : null}
+              </div>
+              {catalog.status === "draft" ? (
+                <span className="subtle action-support">
+                  Draf — buka detail untuk kurasi produk dan mengelola akses.
+                </span>
+              ) : catalog.status === "closed" ? (
+                <span className="subtle action-support">Katalog tertutup tidak menerima pesanan baru.</span>
+              ) : catalog.status === "archived" ? (
+                <span className="subtle action-support">Katalog yang diarsipkan tidak lagi beroperasi.</span>
+              ) : null}
             </div>
-            {catalog.status === "open" ? (
-              <Button
-                variant="danger"
-                pending={pendingAction === catalog.id}
-                pendingLabel="Menutup…"
-                onClick={() => void close(catalog.id)}
-              >
-                Tutup katalog
-              </Button>
-            ) : catalog.status === "draft" ? (
-              <span className="subtle">Draf — buka detail untuk kurasi produk dan mengelola akses.</span>
-            ) : catalog.status === "closed" ? (
-              <span className="subtle">Katalog tertutup tidak menerima pesanan baru.</span>
-            ) : (
-              <span className="subtle">Katalog yang diarsipkan tidak lagi beroperasi.</span>
-            )}
           </Card>
         );
       })}
