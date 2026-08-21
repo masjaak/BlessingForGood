@@ -495,26 +495,43 @@ function BookEditor({ book }: { book: AdminBook }) {
                     <h2>Tambahkan tautan aman</h2>
                   </div>
                 </div>
-                <div className="form-grid">
-                  <Field label="Label tautan">
-                    <input
-                      className="input"
-                      maxLength={120}
-                      placeholder="Mis. Preview Amazon"
-                      value={previewLabel}
-                      onChange={(event) => setPreviewLabel(event.target.value)}
-                    />
-                  </Field>
-                  <Field label="URL HTTPS" hint="BFG tidak mengambil, menyematkan, atau meng-hotlink isi tautan.">
-                    <input
-                      className="input"
-                      inputMode="url"
-                      placeholder="https://..."
-                      type="url"
-                      value={previewUrl}
-                      onChange={(event) => setPreviewUrl(event.target.value)}
-                    />
-                  </Field>
+                <div className="form-grid external-preview-field-grid">
+                  <label className="field-label external-preview-label-field" htmlFor="external-preview-label">
+                    Label tautan
+                  </label>
+                  <label className="field-label external-preview-url-field" htmlFor="external-preview-url">
+                    URL HTTPS
+                  </label>
+                  <input
+                    className="input external-preview-label-control"
+                    id="external-preview-label"
+                    maxLength={120}
+                    placeholder="Mis. Preview Amazon"
+                    value={previewLabel}
+                    onChange={(event) => setPreviewLabel(event.target.value)}
+                  />
+                  <input
+                    aria-describedby={
+                      previewError ? "external-preview-url-help external-preview-error" : "external-preview-url-help"
+                    }
+                    className="input external-preview-url-control"
+                    id="external-preview-url"
+                    inputMode="url"
+                    placeholder="https://..."
+                    type="url"
+                    value={previewUrl}
+                    onChange={(event) => setPreviewUrl(event.target.value)}
+                  />
+                  <div className="external-preview-support">
+                    <span className="field-hint" id="external-preview-url-help">
+                      BFG tidak mengambil, menyematkan, atau meng-hotlink isi tautan.
+                    </span>
+                    {previewError ? (
+                      <span className="error-text" id="external-preview-error" role="alert">
+                        {previewError}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="form-actions">
                   <Button
@@ -532,7 +549,6 @@ function BookEditor({ book }: { book: AdminBook }) {
                     </a>
                   ) : null}
                 </div>
-                {previewError ? <p className="error-text">{previewError}</p> : null}
                 {previewMessage ? (
                   <p className="subtle" role="status">
                     {previewMessage}

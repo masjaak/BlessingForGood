@@ -6640,6 +6640,54 @@ p {
   overflow-wrap: anywhere;
 }
 
+.external-preview-field-grid {
+  grid-template-areas:
+    "label-label label-url"
+    "control-label control-url"
+    ". support-url";
+  align-items: start;
+  column-gap: var(--form-field-field-gap);
+  row-gap: var(--form-label-field-gap);
+}
+
+.external-preview-label-field {
+  grid-area: label-label;
+}
+
+.external-preview-url-field {
+  grid-area: label-url;
+}
+
+.external-preview-label-control {
+  grid-area: control-label;
+}
+
+.external-preview-url-control {
+  grid-area: control-url;
+}
+
+.external-preview-support {
+  display: grid;
+  grid-area: support-url;
+  gap: var(--space-xs);
+}
+
+.external-preview-support .error-text {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .external-preview-field-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "label-label"
+      "control-label"
+      "label-url"
+      "control-url"
+      "support-url";
+  }
+}
+
 .customer-shell .how-to-order-page > .communication-card {
   display: grid;
   gap: var(--title-description-gap);
