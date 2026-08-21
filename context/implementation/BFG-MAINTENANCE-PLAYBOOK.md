@@ -1,16 +1,23 @@
 # BFG MAINTENANCE PLAYBOOK
 
-Status: `ACTIVE — RE-ENTERED AFTER PHASE 08 POST-CLOSURE VISUAL STABILIZATION`
+Status: `ACTIVE — SUPPORTING VISUAL / OPERATIONAL APPENDIX`
 Owner: BFG Owner/Admin with engineering support
 Cadence: monthly, plus incident-driven review
 
-Closure entry: 2026-08-21, visual stabilization commit `b80f2e7`, Vercel
-Production source deployment `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` (`READY`),
-Convex Production `clean-eel-522`, live targeted visual suite `18/18`,
-homepage/How To Order smoke `12/12`, and Ready Stock smoke `6/6`. The current
-public seed has no stored cover, so cover mutation remains a
+Canonical Phase 09 operating model:
+[`BFG-PHASE-09-OPERATIONS.md`](BFG-PHASE-09-OPERATIONS.md). This playbook
+retains the detailed visual contracts and remains subordinate to the canonical
+security checklist, recovery playbook, technical-debt register, and monthly
+report.
+
+Historical closure entry: 2026-08-21, visual stabilization commit `b80f2e7`,
+Vercel deployment `dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx` (`READY`), Convex
+Production `clean-eel-522`, and targeted visual suite evidence. The current
+Phase 09 baseline is recorded in the canonical operations/report documents;
+the public seed still has no stored cover, so cover mutation remains a
 `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` check with no fabricated asset or write.
-This playbook is not a new feature backlog and does not authorize Phase 09.
+This playbook is not a new feature backlog and does not authorize new Product
+behavior.
 
 ## Permanent visual contracts
 

@@ -1,11 +1,12 @@
 # BFG Project Status
 
-## Current Anchored Summary — 2026-08-21
+## Current Anchored Summary — 2026-08-22
 
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`
 **Baseline reconciliation:** `BFG_PHASE_07_1_BASELINE_RECONCILED`
 **Agent system:** `BFG_AGENT_DEVELOPMENT_SYSTEM_V2_ACTIVE`
 **Phase 08:** `PHASE_08_COMPLETE` — External Preview form alignment closed.
+**Phase 09:** `ACTIVE — OPERATIONS & MAINTENANCE`.
 **Current product:** `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE`.
 **Production:** `BFG_PRODUCTION_STABLE`.
 **Product mode:** `MAINTENANCE`.
@@ -27,7 +28,8 @@ Starting commit for this targeted pass: `db4f628`.
 Implementation commit: `e04f3cd`.
 Final delivery: current `main` after the targeted-pass context anchor.
 Current verified source deployment: latest `READY` Production deployment.
-`origin/main`: current `main` after the source and targeted context commits.
+`origin/main`: `85908d9` at the Phase 09 review start; Phase 09 context changes
+are currently in the working tree pending the normal repository handoff.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production source deployment: latest `READY` Production deployment (canonical aliases).
@@ -37,10 +39,11 @@ Current local regression is Vitest `241/241`, Convex `111/111`, local
 Playwright `264/264`, focused local media/file-picker checks `6/6`, rendered QA
 at 375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format
 PASS, Build PASS, and `git diff --check` PASS. Live signed-out Admin protection
-passed `3/3`; the live public visual suite recorded `40/48`, with eight
-identical pre-existing cover-geometry assertion failures outside this diff.
-No dummy business record, cover asset, credential, or unapproved business
-value was created.
+passed `3/3`; public HTTP routes are healthy. The previous eight identical
+cover-geometry assertions are reconciled as `ENVIRONMENT_ONLY / DATA-LIMITED`:
+the live public seed had no stored cover, while current deterministic geometry
+checks pass at all configured widths. No dummy business record, cover asset,
+credential, or unapproved business value was created.
 
 The known Production baseline is Convex `clean-eel-522`; the configured
 Production hook completed the Convex `--prod` step before the Next build.
@@ -48,7 +51,26 @@ The live public recheck is complete for the touched boundary. The supplied real
 authenticated Admin Book Detail screenshot is the private-surface evidence;
 the correction is deployed without a media mutation. Auth, financial,
 inventory, Secret Catalog, and Bulk Import policy remain within their locked
-boundaries. No Phase 09 is started.
+boundaries. Phase 09 is active maintenance; no new Product behavior was added.
+
+### Phase 09 initial baseline
+
+- Status: `PHASE_09_OPERATIONS_BASELINE_READY`.
+- Security critical findings: `0`; known active P0/P1/P2: `0`.
+- Canonical domain: public routes healthy; signed-out `/admin` redirects to
+  Clerk sign-in with a safe redirect target.
+- Vercel: deployment `dpl_8tZaUD7jxYxg96N6NhYZzCjmUwtU`, `READY`, source
+  commit `85908d9`.
+- Convex: Development `content-snake-214`, Production `clean-eel-522`, local
+  tests `111/111`; CLI health check is `NOT VERIFIED` because the selected
+  project was inaccessible in the non-interactive environment.
+- Recovery: playbook ready; platform backup/restore and Storage recovery are
+  explicitly `NOT VERIFIED`.
+- Dependency review: transitive `nanoid` patched to `3.3.18` in the lockfile;
+  Production rollout was not performed in this documentation pass.
+
+The canonical Phase 09 artifacts are linked from
+[`BFG-PHASE-09-OPERATIONS.md`](implementation/BFG-PHASE-09-OPERATIONS.md).
 
 The canonical reconciliation artifacts are:
 
@@ -73,6 +95,11 @@ The canonical reconciliation artifacts are:
 - `context/implementation/BFG-PHASE-08-PRODUCT-MEDIA-TRACEABILITY.md`
 - `context/implementation/BFG-FINAL-PRODUCT-COMPLETION-MATRIX.md`
 - `context/implementation/BFG-MAINTENANCE-PLAYBOOK.md`
+- `context/implementation/BFG-PHASE-09-OPERATIONS.md`
+- `context/implementation/BFG-MONTHLY-SECURITY-CHECKLIST.md`
+- `context/implementation/BFG-RECOVERY-PLAYBOOK.md`
+- `context/implementation/BFG-TECHNICAL-DEBT.md`
+- `context/maintenance/2026-08-BFG-MAINTENANCE-REPORT.md`
 
 ### Current reconciliation result
 
@@ -102,8 +129,8 @@ Monthly security, dependency, auth, permission, ownership, financial, media,
 Vercel, Convex, responsive, and critical-flow smoke reviews follow
 `context/implementation/BFG-MAINTENANCE-PLAYBOOK.md`. The only safe Production
 Batch is locked, Settings has no approved values to edit, and no approved
-gallery asset or preview URL is available. Do not start Phase 09. Bulk Import
-remains unchanged and its real pilot remains deferred by user data.
+gallery asset or preview URL is available. Phase 09 is active maintenance;
+Bulk Import remains unchanged and its real pilot remains deferred by user data.
 
 ### Phase 08 Bulk Import V1 implementation evidence — 2026-08-16
 
@@ -193,7 +220,8 @@ Production evidence:
   customer projection are covered deterministically.
 
 Permanent visual contracts are also recorded in `SOURCE_OF_TRUTH.md`, the final
-completion matrix, and the maintenance playbook. Do not start Phase 09.
+completion matrix, and the maintenance playbook. Phase 09 now owns the ongoing
+operations baseline; the visual contracts remain unchanged.
 
 ## Historical Status Archive
 

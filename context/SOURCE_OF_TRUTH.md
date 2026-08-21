@@ -1,9 +1,9 @@
 # BFG SOURCE OF TRUTH
 
-Reconciled: 2026-08-21 (Asia/Jakarta)
-Applies to the current `main` after the Phase 08 External Preview form
-alignment closure; the canonical domain serves the latest READY Production
-deployment with Convex `clean-eel-522`.
+Reconciled: 2026-08-22 (Asia/Jakarta)
+Applies to the current `main` and the Phase 09 initial operations baseline; the
+canonical domain serves the latest READY Production deployment with Convex
+`clean-eel-522`.
 Phase 07.1 is **CLOSED + RECONCILED** at the current application baseline.
 Phase 08: **COMPLETE — EXTERNAL PREVIEW FORM ALIGNMENT CLOSED**. The latest
 real authenticated Production screenshot established the reachable Admin Book
@@ -14,7 +14,9 @@ unchanged. No credential, dummy record, or Production media mutation was
 fabricated or performed.
 Current product status is `PHASE_08_COMPLETE`,
 `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE`, `BFG_PRODUCTION_STABLE`, and
-`PRODUCT_MODE: MAINTENANCE`. No Phase 09 is started.
+`PRODUCT_MODE: MAINTENANCE`. Phase 09 is now **ACTIVE — OPERATIONS &
+MAINTENANCE**; feature development is paused unless an approved requirement
+exists.
 The Bulk Import V1 implementation is deployed but its legitimate Production
 pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are now locked and the
 bounded implementation is deployed through the canonical Production hook;
@@ -23,6 +25,29 @@ media mutation remains blocked only by approved data. Cover presentation is
 additive metadata over the original storage object and is projected through all
 customer cover consumers. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
+
+## Phase 09 Initial Operations Baseline — 2026-08-22
+
+Phase 09 is an ongoing operating mode, not a feature phase. The canonical
+operations, security, recovery, and technical-debt documents are:
+
+- [`BFG-PHASE-09-OPERATIONS.md`](implementation/BFG-PHASE-09-OPERATIONS.md)
+- [`BFG-MONTHLY-SECURITY-CHECKLIST.md`](implementation/BFG-MONTHLY-SECURITY-CHECKLIST.md)
+- [`BFG-RECOVERY-PLAYBOOK.md`](implementation/BFG-RECOVERY-PLAYBOOK.md)
+- [`BFG-TECHNICAL-DEBT.md`](implementation/BFG-TECHNICAL-DEBT.md)
+- [`2026-08-BFG-MAINTENANCE-REPORT.md`](maintenance/2026-08-BFG-MAINTENANCE-REPORT.md)
+
+Initial evidence is local Vitest `241/241`, Convex `111/111`, Playwright
+`264/264`, TypeScript/ESLint/Format/Build PASS, and `git diff --check` PASS.
+The canonical domain returned healthy public responses and the expected
+signed-out Admin boundary. No Production business data was mutated.
+
+The baseline has no known active P0/P1/P2 issue. Convex CLI health access and
+platform backup/restore capabilities are explicitly `NOT VERIFIED`; populated
+media, safe financial UAT, editable Batch, and the Bulk Import pilot remain
+legitimate-data-limited observations. This is a
+`PHASE_09_OPERATIONS_BASELINE_READY` baseline with operational `WATCH` items,
+not a claim that every external platform capability has been proven.
 
 This document is the canonical product contract. It records requirements and
 decisions first, then points to implementation and evidence. Code, screenshots,
@@ -45,8 +70,8 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 | Item                           | Canonical value                                                          |
 | ------------------------------ | ------------------------------------------------------------------------ |
 | Phase 08 implementation commit | `e04f3cd` — align External Preview label/control/support rows |
-| Closure context commit         | current `main` after this targeted-pass context anchor                        |
-| `origin/main`                  | current `main`; source and targeted context are pushed together                |
+| Phase 09 baseline source       | `85908d9` — current reviewed `main` |
+| `origin/main`                  | `85908d9` at review start |
 | Convex Development             | `content-snake-214`                                                      |
 | Convex Production              | `clean-eel-522`                                                          |
 | Vercel Production deployment   | Latest `READY` Production deployment, aliased to canonical domains |
@@ -59,7 +84,7 @@ Current exact regression baseline:
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Vitest      | `241 / 241`                                                                                                                                                                               |
 | Convex      | `111 / 111` (included in Vitest)                                                                                                                                                          |
-| Playwright  | local full suite `264 / 264`; focused local media/file-picker checks `6 / 6`; live signed-out Admin boundary `3 / 3`; live public surface `40 / 48` with eight identical pre-existing cover-geometry failures outside this diff |
+| Playwright  | local full suite `264 / 264`; Convex deterministic suite `111 / 111`; live public HTTP and signed-out Admin boundary healthy; previous eight cover assertions reconciled as `ENVIRONMENT_ONLY / DATA-LIMITED` |
 | TypeScript  | PASS                                                                                                                                                                                      |
 | ESLint      | PASS                                                                                                                                                                                      |
 | Format      | PASS                                                                                                                                                                                      |
@@ -85,9 +110,12 @@ The shared `Field` primitive, Gallery, custom BFG file picker, file-upload
 backend, URL validation, Book schema, Auth, Orders, Batch, Finance, Activity,
 Homepage, How To Order, and Button system were not reopened. The implementation
 commit is `e04f3cd`; the canonical domain serves the latest `READY` Production
-deployment. The live public visual suite recorded eight
-identical cover-geometry assertion failures outside this diff; that unrelated
-baseline remains out of scope.
+deployment. The historical eight identical cover assertions are reconciled by
+the Phase 09 baseline: the public seed had no stored cover, while the
+assertion required an image element. Current local cover geometry passes at
+every configured viewport. This is `ENVIRONMENT_ONLY / DATA-LIMITED`, not a
+browser or Product regression; no test was weakened and no Production asset was
+made.
 
 ## Source Inventory
 
@@ -162,6 +190,8 @@ When sources conflict, use this order:
 - Phase 07: Admin operational UI/UX and customer visual surface.
 - Phase 07.1: source-of-truth, product-surface, visual, deployment, and real-flow stabilization.
 - Phase 08: reports/integrations/settings backlog as originally named, now reclassified below.
+- Phase 09: Production Operations & Maintenance — active ongoing maintenance;
+  not a product feature-development phase.
 
 ## Completed Phases
 
@@ -172,10 +202,10 @@ linked invariant/matrix documents.
 
 ## Current Phase
 
-`BFG_PHASE_08_TARGETED_VISUAL_STABILIZATION_RECLOSED` — Phase 07.1 remains
-CLOSED + RECONCILED; the four verified visual findings were fixed through
-shared primitives, deployed, and rechecked on the canonical Production domain.
-Data and operational deferrals remain explicit.
+`BFG_PHASE_09_OPERATIONS_ACTIVE` — Phase 08 remains COMPLETE; the current
+product is in permanent Production operations and maintenance. The initial
+security, regression, health, recovery, and technical-debt baseline is ready;
+data and platform-verification limits remain explicit.
 
 ## Phase 08 Status
 
@@ -671,10 +701,11 @@ This file plus the linked matrices and invariant indexes.
 
 ### Current Production
 
-Phase 08 final product scope is stable on the canonical domain after the
-targeted visual stabilization; safe public smoke and the four-finding live
-visual recheck are verified. The source deployment was
-`dpl_AJo6wHk3tQzFTdmqu6716cTDwYxx`; Convex Production is `clean-eel-522`.
+Phase 08 final product scope remains stable on the canonical domain after the
+targeted visual stabilization. Phase 09 initial read-only public smoke is
+verified on Vercel deployment `dpl_8tZaUD7jxYxg96N6NhYZzCjmUwtU` (`READY`),
+with Convex Production `clean-eel-522`. The current full local Playwright
+matrix is `264/264`; direct Convex CLI health access remains `NOT VERIFIED`.
 
 ### Final Decisions
 
@@ -709,14 +740,15 @@ limits remain explicitly classified and do not block current-product stability.
 
 ### Test Baseline
 
-Vitest `232/232`; Convex `110/110`; Playwright `202/202`; rendered `24/24`
-plus the Activity matrix; TypeScript, ESLint, Format, Build, and
+Vitest `241/241`; Convex `111/111`; Playwright `264/264`; responsive widths
+`375/390/430/768/834/1024/1280/1440`; TypeScript, ESLint, Format, Build, and
 `git diff --check` PASS. No dummy Production records were created.
 
 ### Next Milestone
 
-Monthly maintenance review and client-driven defect handling only. Do not
-create Phase 09 without a genuine new business requirement.
+Monthly maintenance review and client-driven defect handling only. Phase 09 is
+active maintenance; do not open a new feature phase without a genuine approved
+business requirement.
 
 ## Phase 08 Post-Closure Visual Stabilization — 2026-08-21
 
