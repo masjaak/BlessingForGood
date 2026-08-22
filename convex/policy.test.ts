@@ -48,7 +48,7 @@ async function invoiceAndPayment(
     depositRequirementMode: "none",
   });
   const issued = await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
-  const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+  const confirmation = await customer.action(api.paymentConfirmations.submit, {
     invoiceId: issued.invoiceId,
     amount: 125000,
     paymentMethod: "Bank transfer",

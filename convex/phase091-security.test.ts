@@ -30,7 +30,7 @@ describe("Phase 09.1 adversarial authorization", () => {
       depositRequirementMode: "none",
     });
     await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
-    const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       amount: 1,
       paymentMethod: "bank_transfer",
@@ -75,7 +75,7 @@ describe("Phase 09.1 adversarial authorization", () => {
       secondCustomer.query(api.paymentConfirmations.listMineForInvoice, { invoiceId: invoice.invoiceId }),
     ).rejects.toThrow("PAYMENT_CONFIRMATION_ACCESS_DENIED");
     await expect(
-      secondCustomer.mutation(api.paymentConfirmations.submit, {
+      secondCustomer.action(api.paymentConfirmations.submit, {
         invoiceId: invoice.invoiceId,
         amount: 1,
         paymentMethod: "bank_transfer",

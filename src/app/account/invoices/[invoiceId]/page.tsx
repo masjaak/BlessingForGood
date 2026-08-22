@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
@@ -29,6 +30,7 @@ import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
+import { uploadBfgFile } from "@/lib/upload-file";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = useProduct();
@@ -245,6 +247,8 @@ function PaymentConfirmationForm({
       paidAt: number;
       proofReference?: string;
       proofStorageId?: Id<"_storage">;
+      proofFileName?: string;
+      proofMimeType?: string;
       customerNote?: string;
     },
   ) => Promise<unknown>;
@@ -258,8 +262,8 @@ function PaymentConfirmationForm({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const generateProofUploadUrl = useMutation(api.paymentConfirmations.generateProofUploadUrl);
   const paymentSettings = useQuery(api.settings.getForCustomer, {});
+  const { getToken } = useAuth();
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -274,20 +278,15 @@ function PaymentConfirmationForm({
         proofFile.size > 5_000_000
       )
         throw new Error("Bukti pembayaran tidak valid.");
-      const uploadUrl = await generateProofUploadUrl({});
-      const upload = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": proofFile.type },
-        body: proofFile,
-      });
-      if (!upload.ok) throw new Error("Upload bukti gagal.");
-      const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> };
+      const storageId = await uploadBfgFile(proofFile, "payment-proof", getToken);
       await submitPaymentConfirmation(invoiceId, {
         amount: Number(amount),
         paymentMethod,
         transferReference: transferReference || undefined,
         paidAt: paidAtTimestamp,
         proofStorageId: storageId,
+        proofFileName: proofFile.name,
+        proofMimeType: proofFile.type,
         customerNote: customerNote || undefined,
       });
       setAmount("");

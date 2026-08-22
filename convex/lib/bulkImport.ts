@@ -248,6 +248,22 @@ export function validateBulkImportFile(metadata: BulkImportFileMetadata): BulkIm
 }
 
 export function parseBulkImportCsv(csv: string): ParsedBulkImportCsv {
+  if (csv.includes("\u0000")) {
+    return {
+      headersValid: false,
+      rows: [],
+      errors: [
+        error(
+          1,
+          "file",
+          "binary content",
+          "BINARY_CONTENT",
+          "CSV contains binary content",
+          "save the source as UTF-8 CSV without binary or NUL data",
+        ),
+      ],
+    };
+  }
   if (utf8ByteLength(csv) > BULK_IMPORT_LIMITS.maxBytes) {
     return {
       headersValid: false,

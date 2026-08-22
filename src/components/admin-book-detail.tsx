@@ -1,7 +1,8 @@
 "use client";
 
 import type { FunctionReturnType } from "convex/server";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -22,6 +23,7 @@ import { useProduct } from "@/domain/prototype/store";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import type { CoverPresentation } from "@/components/book-cover";
 import { ProductGallery } from "@/components/product-gallery";
+import { uploadBfgFile } from "@/lib/upload-file";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
@@ -111,11 +113,9 @@ function BookEditor({ book }: { book: AdminBook }) {
   const publishers = useQuery(api.publishers.list, { paginationOpts: { numItems: 100, cursor: null } });
   const updateBook = useMutation(api.books.update);
   const createVariant = useMutation(api.bookVariants.create);
-  const generateCoverUploadUrl = useMutation(api.books.generateCoverUploadUrl);
-  const attachCover = useMutation(api.books.attachCover);
+  const attachCover = useAction(api.books.attachCover);
   const updateCoverPresentation = useMutation(api.books.updateCoverPresentation);
-  const generateGalleryUploadUrl = useMutation(api.books.generateGalleryUploadUrl);
-  const attachGalleryImage = useMutation(api.books.attachGalleryImage);
+  const attachGalleryImage = useAction(api.books.attachGalleryImage);
   const removeGalleryImage = useMutation(api.books.removeGalleryImage);
   const moveGalleryImage = useMutation(api.books.moveGalleryImage);
   const updateExternalPreview = useMutation(api.books.updateExternalPreview);
@@ -144,6 +144,7 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [previewMessage, setPreviewMessage] = useState("");
   const [previewError, setPreviewError] = useState("");
   const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | "gallery" | "preview" | null>(null);
+  const { getToken } = useAuth();
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -179,15 +180,14 @@ function BookEditor({ book }: { book: AdminBook }) {
           setCoverError(validationError);
           return;
         }
-        const uploadUrl = await generateCoverUploadUrl({});
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": coverFile.type },
-          body: coverFile,
+        const storageId = await uploadBfgFile(coverFile, "book-cover", getToken);
+        await attachCover({
+          bookId: book._id,
+          storageId,
+          fileName: coverFile.name,
+          mimeType: coverFile.type,
+          presentation,
         });
-        if (!response.ok) throw new Error("unggah gagal");
-        const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
-        await attachCover({ bookId: book._id, storageId, presentation });
         setCoverFile(null);
         setCoverMessage("Cover dan tampilannya tersimpan.");
       } else {
@@ -212,15 +212,14 @@ function BookEditor({ book }: { book: AdminBook }) {
         setGalleryError(validationError.replace("Cover", "Gambar galeri"));
         return;
       }
-      const uploadUrl = await generateGalleryUploadUrl({});
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": galleryFile.type },
-        body: galleryFile,
+      const storageId = await uploadBfgFile(galleryFile, "book-gallery", getToken);
+      await attachGalleryImage({
+        bookId: book._id,
+        storageId,
+        fileName: galleryFile.name,
+        mimeType: galleryFile.type,
+        altText: galleryAltText,
       });
-      if (!response.ok) throw new Error("unggah gagal");
-      const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
-      await attachGalleryImage({ bookId: book._id, storageId, altText: galleryAltText });
       setGalleryFile(null);
       setGalleryMessage("Gambar galeri tersimpan.");
     } catch {

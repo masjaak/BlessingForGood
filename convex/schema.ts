@@ -31,6 +31,12 @@ const role = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer
 const userStatus = v.union(v.literal("active"), v.literal("suspended"));
 const catalogStatus = v.union(v.literal("draft"), v.literal("open"), v.literal("closed"), v.literal("archived"));
 const orderStatus = v.union(v.literal("submitted"), v.literal("cancelled"), v.literal("completed"));
+const uploadPurpose = v.union(
+  v.literal("book-cover"),
+  v.literal("book-gallery"),
+  v.literal("payment-proof"),
+  v.literal("deposit-proof"),
+);
 
 export default defineSchema({
   // Retained only for isolated legacy tests/local fallback. Active Preview never reads or writes this table.
@@ -65,6 +71,15 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_role_and_status", ["role", "status"])
     .index("by_created_at", ["createdAt"]),
+
+  uploadClaims: defineTable({
+    storageId: v.id("_storage"),
+    ownerUserId: v.id("appUsers"),
+    purpose: uploadPurpose,
+    createdAt: v.number(),
+  })
+    .index("by_storage_id", ["storageId"])
+    .index("by_owner_and_created_at", ["ownerUserId", "createdAt"]),
 
   staffInvitations: defineTable({
     email: v.string(),

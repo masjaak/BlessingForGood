@@ -47,9 +47,9 @@ describe("BFG invoice persistence", () => {
       depositRequirementMode: "fixed",
       depositRequirementValue: 50000,
     });
-    await expect(admin.mutation(api.invoices.create, { orderId: order.orderId, depositRequirementMode: "none" })).rejects.toThrow(
-      "INVOICE_ALREADY_EXISTS",
-    );
+    await expect(
+      admin.mutation(api.invoices.create, { orderId: order.orderId, depositRequirementMode: "none" }),
+    ).rejects.toThrow("INVOICE_ALREADY_EXISTS");
     await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
     await expect(admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId })).rejects.toThrow(
       "INVOICE_ALREADY_ISSUED",
@@ -108,7 +108,9 @@ describe("BFG invoice persistence", () => {
     );
     await admin.mutation(api.invoiceDepositAllocations.release, { allocationId: allocation.allocationId });
     await admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId });
-    await expect(admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow("INVOICE_VOID");
+    await expect(admin.mutation(api.invoices.voidInvoice, { invoiceId: issued.invoiceId })).rejects.toThrow(
+      "INVOICE_VOID",
+    );
   });
 
   it("denies cancellation while a payment confirmation is unresolved", async () => {
@@ -119,7 +121,7 @@ describe("BFG invoice persistence", () => {
       depositRequirementMode: "none",
     });
     const issued = await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
-    await customer.mutation(api.paymentConfirmations.submit, {
+    await customer.action(api.paymentConfirmations.submit, {
       invoiceId: issued.invoiceId,
       amount: 100000,
       paymentMethod: "Bank transfer",

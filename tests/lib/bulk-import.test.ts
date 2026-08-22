@@ -75,6 +75,13 @@ describe("bulk import parser and contract", () => {
     expect(safe.rows[0]?.fields.title).toBe("=SUM(A1:A2)");
   });
 
+  it("rejects NUL content before parsing records", () => {
+    const result = parseBulkImportCsv(
+      `${BULK_IMPORT_HEADERS.join(",")}\nWalker Books,Title,\u0000,,PB,0306406152,305000`,
+    );
+    expect(result.errors[0]).toMatchObject({ code: "BINARY_CONTENT", field: "file" });
+  });
+
   it("enforces file, row, and Unicode cell limits", () => {
     expect(validateBulkImportFile({ name: "books.xlsx", size: 10, type: "text/csv" })[0]?.code).toBe(
       "UNSUPPORTED_FILE",

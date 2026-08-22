@@ -1,16 +1,18 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { invoiceProjection } from "./lib/invoiceProjection";
 import { paymentConfirmationStatusValidator } from "./validators";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
-import { validateStoredFile } from "./lib/storage";
+import { PROOF_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
 import { enforceRateLimit } from "./lib/rateLimit";
+import { consumeClaim } from "./uploads";
 
 type DataCtx = QueryCtx | MutationCtx;
 type PaymentConfirmationStatus = "submitted" | "under_review" | "approved" | "rejected";
@@ -102,23 +104,61 @@ async function currentPaymentStatus(ctx: DataCtx, invoice: Doc<"invoices">) {
   return (await invoiceProjection(ctx, invoice)).paymentStatus;
 }
 
-export const submit = mutation({
-  args: {
-    invoiceId: v.id("invoices"),
-    amount: v.number(),
-    paymentMethod: v.string(),
-    transferReference: v.optional(v.string()),
-    paidAt: v.number(),
-    proofReference: v.optional(v.string()),
-    proofStorageId: v.optional(v.id("_storage")),
-    customerNote: v.optional(v.string()),
+const submitArgs = {
+  invoiceId: v.id("invoices"),
+  amount: v.number(),
+  paymentMethod: v.string(),
+  transferReference: v.optional(v.string()),
+  paidAt: v.number(),
+  proofReference: v.optional(v.string()),
+  proofStorageId: v.optional(v.id("_storage")),
+  proofFileName: v.optional(v.string()),
+  proofMimeType: v.optional(v.string()),
+  customerNote: v.optional(v.string()),
+};
+
+export const assertProofUploadAccess = internalQuery({
+  args: { invoiceId: v.id("invoices") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "invoices.read.own");
+    const invoice = await ctx.db.get(args.invoiceId);
+    if (!invoice) fail("INVOICE_NOT_FOUND");
+    if (invoice.customerUserId !== user._id) fail("PAYMENT_CONFIRMATION_ACCESS_DENIED");
+    return null;
   },
+});
+
+export const submit = action({
+  args: submitArgs,
+  handler: async (ctx, args): Promise<Awaited<ReturnType<typeof confirmationView>>> => {
+    await ctx.runQuery(internal.paymentConfirmations.assertProofUploadAccess, { invoiceId: args.invoiceId });
+    if (args.proofStorageId) {
+      if (!args.proofFileName || !args.proofMimeType) {
+        fail("VALIDATION_FAILED", "payment proof file metadata is required");
+      }
+      await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.proofStorageId, purpose: "payment-proof" });
+      await validateUploadedFile(
+        ctx,
+        args.proofStorageId,
+        args.proofFileName,
+        args.proofMimeType,
+        PROOF_CONTENT_TYPES,
+        "payment proof must be a valid JPG, PNG, WebP, or PDF file up to 5 MB",
+      );
+    }
+    return ctx.runMutation(internal.paymentConfirmations.submitValidated, args);
+  },
+});
+
+export const submitValidated = internalMutation({
+  args: submitArgs,
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "invoices.read.own");
     await enforceRateLimit(ctx, "paymentSubmitUser", String(user._id));
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     if (invoice.customerUserId !== user._id) fail("PAYMENT_CONFIRMATION_ACCESS_DENIED");
+    if (args.proofStorageId) await consumeClaim(ctx, args.proofStorageId, "payment-proof", user._id);
     eligibleInvoice(invoice);
     validateAmount(args.amount);
     validatePaidAt(args.paidAt);
@@ -127,7 +167,7 @@ export const submit = mutation({
       ? await validateStoredFile(
           ctx,
           args.proofStorageId,
-          new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
+          PROOF_CONTENT_TYPES,
           "payment proof must be JPG, PNG, WebP, or PDF up to 5 MB",
         )
       : undefined;
@@ -180,7 +220,7 @@ export const generateProofUploadUrl = mutation({
   handler: async (ctx) => {
     const user = await requirePermission(ctx, "invoices.read.own");
     await enforceRateLimit(ctx, "proofUploadUser", String(user._id));
-    return ctx.storage.generateUploadUrl();
+    fail("VALIDATION_FAILED", "use the validated upload endpoint");
   },
 });
 

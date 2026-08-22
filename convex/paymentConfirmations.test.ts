@@ -37,7 +37,7 @@ describe("BFG payment confirmation workflow", () => {
   it("lets a customer submit only their own eligible invoice and prevents duplicate pending attempts", async () => {
     const t = testConvex();
     const { customer, secondCustomer, admin, invoice } = await createIssuedInvoice(t);
-    const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(100000),
     });
@@ -50,10 +50,10 @@ describe("BFG payment confirmation workflow", () => {
       await customer.query(api.paymentConfirmations.listMineForInvoice, { invoiceId: invoice.invoiceId }),
     ).toHaveLength(1);
     await expect(
-      customer.mutation(api.paymentConfirmations.submit, { invoiceId: invoice.invoiceId, ...paymentInput(100000) }),
+      customer.action(api.paymentConfirmations.submit, { invoiceId: invoice.invoiceId, ...paymentInput(100000) }),
     ).rejects.toThrow("PAYMENT_CONFIRMATION_DUPLICATE_PENDING");
     await expect(
-      secondCustomer.mutation(api.paymentConfirmations.submit, {
+      secondCustomer.action(api.paymentConfirmations.submit, {
         invoiceId: invoice.invoiceId,
         ...paymentInput(100000),
       }),
@@ -73,7 +73,7 @@ describe("BFG payment confirmation workflow", () => {
   it("reviews and approves atomically, updates invoice payment state, and records audit history", async () => {
     const t = testConvex();
     const { customer, admin, invoice } = await createIssuedInvoice(t);
-    const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(100000),
     });
@@ -115,7 +115,7 @@ describe("BFG payment confirmation workflow", () => {
   it("preserves rejected attempts and permits a later resubmission", async () => {
     const t = testConvex();
     const { customer, admin, invoice } = await createIssuedInvoice(t);
-    const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(50000),
     });
@@ -133,7 +133,7 @@ describe("BFG payment confirmation workflow", () => {
     expect((await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).paymentStatus).toBe(
       "unpaid",
     );
-    const resubmitted = await customer.mutation(api.paymentConfirmations.submit, {
+    const resubmitted = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(50000),
     });
@@ -152,7 +152,7 @@ describe("BFG payment confirmation workflow", () => {
       "partially_paid",
     );
 
-    const first = await customer.mutation(api.paymentConfirmations.submit, {
+    const first = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(100000),
     });
@@ -164,9 +164,9 @@ describe("BFG payment confirmation workflow", () => {
       paymentStatus: "partially_paid",
     });
     await expect(
-      customer.mutation(api.paymentConfirmations.submit, { invoiceId: invoice.invoiceId, ...paymentInput(70001) }),
+      customer.action(api.paymentConfirmations.submit, { invoiceId: invoice.invoiceId, ...paymentInput(70001) }),
     ).rejects.toThrow("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
-    const final = await customer.mutation(api.paymentConfirmations.submit, {
+    const final = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(70000),
     });
@@ -182,7 +182,7 @@ describe("BFG payment confirmation workflow", () => {
   it("rejects a stale approval when a later deposit allocation reduces the outstanding amount", async () => {
     const t = testConvex();
     const { customer, admin, invoice } = await createIssuedInvoice(t);
-    const stale = await customer.mutation(api.paymentConfirmations.submit, {
+    const stale = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(200000),
     });
@@ -205,7 +205,7 @@ describe("BFG payment confirmation workflow", () => {
     const customerUser = await customer.mutation(api.users.ensureCurrentUser, {});
     await owner.mutation(api.users.suspend, { userId: customerUser.appUserId });
     await expect(
-      customer.mutation(api.paymentConfirmations.submit, { invoiceId: invoice.invoiceId, ...paymentInput(100000) }),
+      customer.action(api.paymentConfirmations.submit, { invoiceId: invoice.invoiceId, ...paymentInput(100000) }),
     ).rejects.toThrow("USER_SUSPENDED");
     await expect(
       customer.query(api.paymentConfirmations.listMine, { paginationOpts: { numItems: 10, cursor: null } }),

@@ -1,5 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { applyLedgerDeltas, getOrCreateDepositAccount } from "./depositAccounts";
 import { appendDepositTransaction } from "./depositTransactions";
 import { requirePermission } from "./lib/auth";
@@ -7,12 +9,11 @@ import { recordAudit } from "./lib/audit";
 import { ledgerDeltas } from "./lib/depositLedger";
 import { fail } from "./lib/errors";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
-import { validateStoredFile } from "./lib/storage";
+import { PROOF_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
 import { enforceRateLimit } from "./lib/rateLimit";
+import { consumeClaim } from "./uploads";
 
 const status = v.union(v.literal("submitted"), v.literal("under_review"), v.literal("approved"), v.literal("rejected"));
-const proofTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
-
 function text(value: string | undefined, max = 500) {
   const result = value?.trim();
   if (result && result.length > max) fail("VALIDATION_FAILED");
@@ -24,25 +25,55 @@ export const generateUploadUrl = mutation({
   handler: async (ctx) => {
     const user = await requirePermission(ctx, "deposits.read.own");
     await enforceRateLimit(ctx, "depositUploadUser", String(user._id));
-    return ctx.storage.generateUploadUrl();
+    fail("VALIDATION_FAILED", "use the validated upload endpoint");
   },
 });
 
-export const submit = mutation({
-  args: {
-    amount: v.number(),
-    storageId: v.id("_storage"),
-    bankReference: v.optional(v.string()),
-    customerNote: v.optional(v.string()),
+const submitArgs = {
+  amount: v.number(),
+  storageId: v.id("_storage"),
+  fileName: v.string(),
+  mimeType: v.string(),
+  bankReference: v.optional(v.string()),
+  customerNote: v.optional(v.string()),
+};
+
+export const assertUploadAccess = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "deposits.read.own");
+    return null;
   },
+});
+
+export const submit = action({
+  args: submitArgs,
+  handler: async (ctx, args): Promise<{ topUpId: Id<"depositTopUps">; status: "submitted" }> => {
+    await ctx.runQuery(internal.depositTopUps.assertUploadAccess, {});
+    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "deposit-proof" });
+    await validateUploadedFile(
+      ctx,
+      args.storageId,
+      args.fileName,
+      args.mimeType,
+      PROOF_CONTENT_TYPES,
+      "proof must be a valid JPG, PNG, WebP, or PDF file up to 5 MB",
+    );
+    return ctx.runMutation(internal.depositTopUps.submitValidated, args);
+  },
+});
+
+export const submitValidated = internalMutation({
+  args: submitArgs,
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "deposits.read.own");
     await enforceRateLimit(ctx, "depositSubmitUser", String(user._id));
     if (!Number.isSafeInteger(args.amount) || args.amount <= 0) fail("DEPOSIT_AMOUNT_INVALID");
+    await consumeClaim(ctx, args.storageId, "deposit-proof", user._id);
     const contentType = await validateStoredFile(
       ctx,
       args.storageId,
-      proofTypes,
+      PROOF_CONTENT_TYPES,
       "proof must be JPG, PNG, WebP, or PDF up to 5 MB",
     );
     const now = Date.now();

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { ProductAccessGuard } from "@/components/product-access-guard";
+import { uploadBfgFile } from "@/lib/upload-file";
 import { SiteShell } from "@/components/site-shell";
 import {
   Button,
@@ -23,8 +24,8 @@ function DepositPage() {
   const account = useQuery(api.depositAccounts.getMine, {});
   const transactions = useQuery(api.depositTransactions.listMine, { paginationOpts: { numItems: 100, cursor: null } });
   const topUps = useQuery(api.depositTopUps.listMine, {});
-  const generateUploadUrl = useMutation(api.depositTopUps.generateUploadUrl);
-  const submit = useMutation(api.depositTopUps.submit);
+  const submit = useAction(api.depositTopUps.submit);
+  const { getToken } = useAuth();
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -42,14 +43,13 @@ function DepositPage() {
         file.size > 5_000_000
       )
         throw new Error();
-      const uploadUrl = await generateUploadUrl({});
-      const response = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": file.type }, body: file });
-      if (!response.ok) throw new Error();
-      const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+      const storageId = await uploadBfgFile(file, "deposit-proof", getToken);
       await submit({
         amount: Number(amount),
         bankReference: reference || undefined,
         storageId,
+        fileName: file.name,
+        mimeType: file.type,
       });
       setAmount("");
       setReference("");

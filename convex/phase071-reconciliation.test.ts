@@ -205,30 +205,69 @@ describe("Phase 07.1 reconciliation", () => {
   it("attaches an authorized validated image upload to Book Master", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
+    const adminUser = await admin.query(api.users.current, {});
+    if (!adminUser) throw new Error("admin fixture missing");
     const publisherId = await admin.mutation(api.publishers.create, { name: "Cover Publisher" });
     const bookId = await admin.mutation(api.books.create, { publisherId, title: "Cover Book" });
     const storageId = await t.run(async (ctx) => {
-      const id = await ctx.storage.store(new Blob(["cover"], { type: "image/webp" }));
+      const id = await ctx.storage.store(
+        new Blob(
+          [
+            new Uint8Array([
+              0x52, 0x49, 0x46, 0x46, 0x22, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20, 0x18,
+              0x00, 0x00, 0x00, 0x30, 0x01, 0x00, 0x9d, 0x01, 0x2a, 0x01, 0x00, 0x01, 0x00, 0x0e, 0xc0, 0xfe, 0x25,
+              0xa4, 0x00, 0x03, 0x70, 0x00, 0xfe, 0xfb, 0x94, 0x00, 0x00,
+            ]),
+          ],
+          { type: "image/webp" },
+        ),
+      );
       // convex-test omits Blob.type from its synthetic _storage metadata.
       await ctx.db.patch(id as never, { contentType: "image/webp" } as never);
+      await ctx.db.insert("uploadClaims", {
+        storageId: id,
+        ownerUserId: adminUser.appUserId,
+        purpose: "book-cover",
+        createdAt: Date.now(),
+      });
       return id;
     });
-    await expect(customer.mutation(api.books.attachCover, { bookId, storageId })).rejects.toThrow("PERMISSION_DENIED");
-    await admin.mutation(api.books.attachCover, { bookId, storageId });
+    await expect(
+      customer.action(api.books.attachCover, { bookId, storageId, fileName: "cover.webp", mimeType: "image/webp" }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await admin.action(api.books.attachCover, { bookId, storageId, fileName: "cover.webp", mimeType: "image/webp" });
     expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({ coverStorageId: storageId });
   });
 
   it("runs an owned deposit top-up proof through Admin verification into the ledger", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
     const storageId = await t.run(async (ctx) => {
-      const id = await ctx.storage.store(new Blob(["proof"], { type: "application/pdf" }));
+      const id = await ctx.storage.store(new Blob(["%PDF-1.7\n"], { type: "application/pdf" }));
       await ctx.db.patch(id as never, { contentType: "application/pdf" } as never);
+      await ctx.db.insert("uploadClaims", {
+        storageId: id,
+        ownerUserId: customerUser.appUserId,
+        purpose: "deposit-proof",
+        createdAt: Date.now(),
+      });
       return id;
     });
-    const request = await customer.mutation(api.depositTopUps.submit, {
+    await expect(
+      secondCustomer.action(api.depositTopUps.submit, {
+        amount: 250000,
+        storageId,
+        fileName: "proof.pdf",
+        mimeType: "application/pdf",
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+    const request = await customer.action(api.depositTopUps.submit, {
       amount: 250000,
       storageId,
+      fileName: "proof.pdf",
+      mimeType: "application/pdf",
       bankReference: "TRX-971",
     });
     expect(await secondCustomer.query(api.depositTopUps.listMine, {})).toEqual([]);
@@ -256,6 +295,8 @@ describe("Phase 07.1 reconciliation", () => {
   it("persists a private payment-proof upload for the Admin review queue", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
     const bundle = await createOpenCatalog(admin, "Payment Proof", "97107", "payment-proof-code");
     const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: "payment-proof-code" });
     if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
@@ -270,16 +311,35 @@ describe("Phase 07.1 reconciliation", () => {
     });
     await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
     const proofStorageId = await t.run(async (ctx) => {
-      const id = await ctx.storage.store(new Blob(["proof"], { type: "image/png" }));
+      const id = await ctx.storage.store(
+        new Blob(
+          [
+            new Uint8Array([
+              0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00,
+              0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+              0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+            ]),
+          ],
+          { type: "image/png" },
+        ),
+      );
       await ctx.db.patch(id as never, { contentType: "image/png" } as never);
+      await ctx.db.insert("uploadClaims", {
+        storageId: id,
+        ownerUserId: customerUser.appUserId,
+        purpose: "payment-proof",
+        createdAt: Date.now(),
+      });
       return id;
     });
-    await customer.mutation(api.paymentConfirmations.submit, {
+    await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       amount: 125000,
       paymentMethod: "Bank transfer",
       paidAt: Date.now(),
       proofStorageId,
+      proofFileName: "proof.png",
+      proofMimeType: "image/png",
     });
     const queue = await admin.query(api.paymentConfirmations.listPendingForAdmin, {});
     expect(queue[0].proofUrl).toContain("convex.cloud");

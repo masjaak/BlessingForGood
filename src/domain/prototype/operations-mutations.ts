@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useCallback, useMemo } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -29,7 +29,7 @@ export function useOperationsMutations() {
   const releaseAllocationMutation = useMutation(api.invoiceDepositAllocations.release);
   const reverseAllocationMutation = useMutation(api.invoiceDepositAllocations.reverse);
   const reverseTransactionMutation = useMutation(api.depositTransactions.reverse);
-  const submitPaymentConfirmationMutation = useMutation(api.paymentConfirmations.submit);
+  const submitPaymentConfirmationMutation = useAction(api.paymentConfirmations.submit);
   const startPaymentReviewMutation = useMutation(api.paymentConfirmations.startReview);
   const approvePaymentConfirmationMutation = useMutation(api.paymentConfirmations.approve);
   const rejectPaymentConfirmationMutation = useMutation(api.paymentConfirmations.reject);

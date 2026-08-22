@@ -1,17 +1,19 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
-import { validateStoredFile } from "./lib/storage";
+import { IMAGE_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
 import { bookPublicationStatusValidator } from "./validators";
 import { insertBook } from "./lib/productDomain";
 import { enforceRateLimit } from "./lib/rateLimit";
+import { consumeClaim } from "./uploads";
 
 const galleryLimit = 8;
-const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const coverPresentationValidator = v.object({ zoom: v.number(), x: v.number(), y: v.number() });
 
 function normalizeCoverPresentation(presentation?: { zoom: number; x: number; y: number }) {
@@ -144,7 +146,7 @@ export const generateCoverUploadUrl = mutation({
   handler: async (ctx) => {
     const user = await requirePermission(ctx, "books.manage");
     await enforceRateLimit(ctx, "bookUploadUser", String(user._id));
-    return ctx.storage.generateUploadUrl();
+    fail("VALIDATION_FAILED", "use the validated upload endpoint");
   },
 });
 
@@ -153,20 +155,58 @@ export const generateGalleryUploadUrl = mutation({
   handler: async (ctx) => {
     const user = await requirePermission(ctx, "books.manage");
     await enforceRateLimit(ctx, "bookUploadUser", String(user._id));
-    return ctx.storage.generateUploadUrl();
+    fail("VALIDATION_FAILED", "use the validated upload endpoint");
   },
 });
 
-export const attachCover = mutation({
+export const assertBookUploadAccess = internalQuery({
+  args: { bookId: v.id("books") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "books.manage");
+    const book = await ctx.db.get(args.bookId);
+    if (!book) fail("BOOK_NOT_FOUND");
+    return null;
+  },
+});
+
+export const attachCover = action({
+  args: {
+    bookId: v.id("books"),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    mimeType: v.string(),
+    presentation: v.optional(coverPresentationValidator),
+  },
+  handler: async (ctx, args): Promise<{ storageId: Id<"_storage"> }> => {
+    await ctx.runQuery(internal.books.assertBookUploadAccess, { bookId: args.bookId });
+    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
+    await validateUploadedFile(
+      ctx,
+      args.storageId,
+      args.fileName,
+      args.mimeType,
+      IMAGE_CONTENT_TYPES,
+      "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
+    );
+    return ctx.runMutation(internal.books.attachCoverValidated, {
+      bookId: args.bookId,
+      storageId: args.storageId,
+      presentation: args.presentation,
+    });
+  },
+});
+
+export const attachCoverValidated = internalMutation({
   args: { bookId: v.id("books"), storageId: v.id("_storage"), presentation: v.optional(coverPresentationValidator) },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
     if (!book) fail("BOOK_NOT_FOUND");
+    await consumeClaim(ctx, args.storageId, "book-cover", user._id);
     await validateStoredFile(
       ctx,
       args.storageId,
-      new Set(["image/jpeg", "image/png", "image/webp"]),
+      IMAGE_CONTENT_TYPES,
       "cover must be a JPG, PNG, or WebP image up to 5 MB",
     );
     const coverPresentation = normalizeCoverPresentation(args.presentation);
@@ -197,12 +237,40 @@ export const updateCoverPresentation = mutation({
   },
 });
 
-export const attachGalleryImage = mutation({
+export const attachGalleryImage = action({
+  args: {
+    bookId: v.id("books"),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    mimeType: v.string(),
+    altText: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<Id<"bookMedia">> => {
+    await ctx.runQuery(internal.books.assertBookUploadAccess, { bookId: args.bookId });
+    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-gallery" });
+    await validateUploadedFile(
+      ctx,
+      args.storageId,
+      args.fileName,
+      args.mimeType,
+      IMAGE_CONTENT_TYPES,
+      "gallery image must be a valid JPG, PNG, or WebP image up to 5 MB",
+    );
+    return ctx.runMutation(internal.books.attachGalleryImageValidated, {
+      bookId: args.bookId,
+      storageId: args.storageId,
+      altText: args.altText,
+    });
+  },
+});
+
+export const attachGalleryImageValidated = internalMutation({
   args: { bookId: v.id("books"), storageId: v.id("_storage"), altText: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
     if (!book) fail("BOOK_NOT_FOUND");
+    await consumeClaim(ctx, args.storageId, "book-gallery", user._id);
     if (book.publicationStatus === "archived") fail("VALIDATION_FAILED", "archived books cannot change media");
     const gallery = await ctx.db
       .query("bookMedia")
@@ -210,7 +278,12 @@ export const attachGalleryImage = mutation({
       .order("asc")
       .take(galleryLimit + 1);
     if (gallery.length >= galleryLimit) fail("VALIDATION_FAILED", "a book can have at most 8 gallery images");
-    await validateStoredFile(ctx, args.storageId, imageTypes, "gallery image must be JPG, PNG, or WebP up to 5 MB");
+    await validateStoredFile(
+      ctx,
+      args.storageId,
+      IMAGE_CONTENT_TYPES,
+      "gallery image must be JPG, PNG, or WebP up to 5 MB",
+    );
     const [sameStorage, coverStorage] = await Promise.all([
       ctx.db
         .query("bookMedia")

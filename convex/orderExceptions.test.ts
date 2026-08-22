@@ -203,7 +203,7 @@ describe("BFG order exception workflow", () => {
     const t = testConvex();
     const { admin, customer, order } = await createOrder(t);
     const invoice = await issuedInvoice(t, order.orderId);
-    const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(125000),
     });
@@ -271,7 +271,7 @@ describe("BFG order exception workflow", () => {
       invoiceId: invoice.invoiceId,
       amount: 80000,
     });
-    const confirmation = await customer.mutation(api.paymentConfirmations.submit, {
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,
       ...paymentInput(45000),
     });

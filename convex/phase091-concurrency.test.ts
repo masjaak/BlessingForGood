@@ -75,7 +75,7 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
 
     const attempts = await Promise.allSettled(
       ["CONCURRENT-PAYMENT-A", "CONCURRENT-PAYMENT-B"].map((transferReference) =>
-        customer.mutation(api.paymentConfirmations.submit, {
+        customer.action(api.paymentConfirmations.submit, {
           invoiceId: invoice.invoiceId,
           amount: 1,
           paymentMethod: "bank_transfer",

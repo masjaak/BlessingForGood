@@ -42,6 +42,8 @@ export type PaymentConfirmationInput = {
   paidAt: number;
   proofReference?: string;
   proofStorageId?: Id<"_storage">;
+  proofFileName?: string;
+  proofMimeType?: string;
   customerNote?: string;
 };
 
