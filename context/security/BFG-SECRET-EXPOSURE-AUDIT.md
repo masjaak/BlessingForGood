@@ -96,7 +96,7 @@ is removed after this evidence pass.
 ### Gitleaks
 
 ```text
-GIT HISTORY: PASS — 175 commits scanned; 0 findings
+GIT HISTORY: PASS — 177 commits scanned; 0 findings
 CURRENT FILESYSTEM: 7 findings; exit 1 as expected for findings
 ```
 
