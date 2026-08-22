@@ -320,7 +320,7 @@ function ConvexAssistedOrderForm() {
             <span className="subtle">
               Harga server: {selectedVariant ? `IDR ${selectedVariant.price.toLocaleString("id-ID")}` : "pilih varian"}
             </span>
-            <Button type="submit" pending={submitting} pendingLabel="Mencatat…">
+            <Button type="submit" loading={submitting} loadingLabel="Mencatat…">
               Catat pesanan berbantuan
             </Button>
           </div>
@@ -410,9 +410,9 @@ function BackfillOrderReferences() {
     <span className="form-actions">
       <Button
         type="button"
-        variant="quiet"
-        pending={pending}
-        pendingLabel="Melengkapi…"
+        variant="tertiary"
+        loading={pending}
+        loadingLabel="Melengkapi…"
         onClick={async () => {
           setPending(true);
           setMessage("");

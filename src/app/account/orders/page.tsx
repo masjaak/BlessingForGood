@@ -79,7 +79,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
             />
           </Field>
         ))}
-        <Button type="submit" pending={isSaving} pendingLabel="Menyimpan…">
+        <Button type="submit" loading={isSaving} loadingLabel="Menyimpan…">
           Simpan perubahan
         </Button>
         {message ? (

@@ -1,64 +1,151 @@
 import Link from "next/link";
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { forwardRef } from "react";
+import type { ButtonHTMLAttributes, ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { BrandMascot, type BrandMascotVariant } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 
-export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
-export type ButtonSize = "default" | "compact" | "icon";
+export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger";
+export type ButtonSize = "compact" | "default" | "large";
 export type FrameVariant = "operational" | "form" | "table" | "list" | "summary" | "detail" | "empty" | "attention";
 
-export function Button({
-  variant = "primary",
-  size = "default",
-  className = "",
-  pending = false,
-  pendingLabel = "Memproses…",
-  children,
-  disabled,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonContentProps = {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  pending?: boolean;
-  pendingLabel?: string;
-}) {
+  loading?: boolean;
+  loadingLabel?: string;
+  className?: string;
+  children?: ReactNode;
+};
+
+export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & ButtonContentProps;
+
+function buttonClassName(variant: ButtonVariant, size: ButtonSize, className: string) {
+  return ["button", `button-${variant}`, `button-size-${size}`, className].filter(Boolean).join(" ");
+}
+
+function ButtonContents({
+  children,
+  loading,
+  loadingLabel,
+}: Pick<ButtonContentProps, "children" | "loading" | "loadingLabel">) {
   return (
-    <button
-      className={`button button-${variant} button-size-${size} ${className}`.trim()}
-      disabled={pending || disabled}
-      aria-busy={pending || undefined}
-      {...props}
-    >
-      {pending ? pendingLabel : children}
-    </button>
+    <>
+      {loading ? <span className="button-spinner" aria-hidden="true" /> : null}
+      {loading && loadingLabel ? (
+        <span className="button-label-stack">
+          <span className="button-label button-label-hidden" aria-hidden="true">
+            {children}
+          </span>
+          <span className="button-label button-label-visible" aria-live="polite">
+            {loadingLabel}
+          </span>
+        </span>
+      ) : (
+        <span className="button-label" aria-live={loading ? "polite" : undefined}>
+          {children}
+        </span>
+      )}
+    </>
   );
 }
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = "primary",
+    size = "default",
+    loading = false,
+    loadingLabel,
+    className = "",
+    children,
+    disabled,
+    ...props
+  },
+  ref,
+) {
+  return (
+    <button
+      {...props}
+      ref={ref}
+      className={buttonClassName(variant, size, className)}
+      data-loading={loading ? "true" : undefined}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
+    >
+      <ButtonContents loading={loading} loadingLabel={loadingLabel}>
+        {children}
+      </ButtonContents>
+    </button>
+  );
+});
+
+export type LinkButtonProps = Omit<ComponentProps<typeof Link>, "className" | "children" | "onClick"> &
+  ButtonContentProps & {
+    disabled?: boolean;
+    onClick?: ComponentProps<typeof Link>["onClick"];
+  };
 
 export function LinkButton({
   href,
   variant = "primary",
   size = "default",
+  loading = false,
+  loadingLabel,
   className = "",
   disabled = false,
   children,
-}: {
-  href: string;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  className?: string;
-  disabled?: boolean;
-  children: ReactNode;
-}) {
+  ...props
+}: LinkButtonProps) {
+  const classes = buttonClassName(variant, size, className);
+  if (disabled || loading) {
+    return (
+      <span
+        className={classes}
+        data-loading={loading ? "true" : undefined}
+        aria-busy={loading || undefined}
+        aria-disabled="true"
+      >
+        <ButtonContents loading={loading} loadingLabel={loadingLabel}>
+          {children}
+        </ButtonContents>
+      </span>
+    );
+  }
+
   return (
-    <Link
-      aria-disabled={disabled || undefined}
-      className={`button button-${variant} button-size-${size} ${className}`.trim()}
-      href={href}
-      tabIndex={disabled ? -1 : undefined}
-    >
-      {children}
+    <Link {...props} href={href} className={classes}>
+      <ButtonContents>{children}</ButtonContents>
     </Link>
   );
+}
+
+export type IconButtonProps = Omit<ButtonProps, "children"> & { children: ReactNode; "aria-label": string };
+
+export function IconButton({ className = "", ...props }: IconButtonProps) {
+  return <Button {...props} className={`button-icon ${className}`.trim()} />;
+}
+
+export type LinkIconButtonProps = Omit<LinkButtonProps, "children"> & { children: ReactNode; "aria-label": string };
+
+export function LinkIconButton({ className = "", ...props }: LinkIconButtonProps) {
+  return <LinkButton {...props} className={`button-icon ${className}`.trim()} />;
+}
+
+export type ToggleButtonProps = Omit<ButtonProps, "aria-pressed"> & { pressed: boolean };
+
+export function ToggleButton({ pressed, ...props }: ToggleButtonProps) {
+  return <Button {...props} aria-pressed={pressed} data-pressed={pressed ? "true" : undefined} />;
+}
+
+export function ActionGroup({
+  children,
+  orientation = "horizontal",
+  className = "",
+}: {
+  children: ReactNode;
+  orientation?: "horizontal" | "vertical";
+  className?: string;
+}) {
+  return <div className={`action-group action-group-${orientation} ${className}`.trim()}>{children}</div>;
 }
 
 export function Card({
@@ -166,7 +253,7 @@ export function PageHeader({
         <h1>{title}</h1>
         {description ? <p className="lede">{description}</p> : null}
       </div>
-      {actions ? <div className="page-header-actions">{actions}</div> : null}
+      {actions ? <ActionGroup className="page-header-actions">{actions}</ActionGroup> : null}
     </header>
   );
 }
@@ -205,10 +292,10 @@ export function EmptyState({
       <h2>{title}</h2>
       <p>{description}</p>
       {action || primaryAction || secondaryAction ? (
-        <div className="empty-actions">
+        <ActionGroup className="empty-actions">
           {action || primaryAction}
           {secondaryAction}
-        </div>
+        </ActionGroup>
       ) : null}
     </div>
   );
@@ -220,7 +307,7 @@ export function ErrorState({ title, description, action }: { title: string; desc
       <span className="eyebrow">Terjadi kendala</span>
       <h2>{title}</h2>
       <p>{description}</p>
-      {action ? <div className="empty-actions">{action}</div> : null}
+      {action ? <ActionGroup className="empty-actions">{action}</ActionGroup> : null}
     </div>
   );
 }

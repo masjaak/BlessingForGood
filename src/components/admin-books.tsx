@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -116,7 +115,7 @@ function ConnectedAdminBooks() {
                   required
                 />
               </Field>
-              <Button type="submit" variant="secondary" pending={pendingAction === "publisher"} pendingLabel="Membuat…">
+              <Button type="submit" variant="secondary" loading={pendingAction === "publisher"} loadingLabel="Membuat…">
                 Tambah penerbit
               </Button>
             </form>
@@ -142,7 +141,7 @@ function ConnectedAdminBooks() {
               <Field label="Penulis">
                 <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
               </Field>
-              <Button type="submit" pending={pendingAction === "book"} pendingLabel="Membuat…">
+              <Button type="submit" loading={pendingAction === "book"} loadingLabel="Membuat…">
                 Buat draf buku
               </Button>
             </form>
@@ -203,7 +202,7 @@ function ConnectedAdminBooks() {
                 />
               </Field>
               <InlineBooleanField checked={managedPublisherActive} label="Aktif" onChange={setManagedPublisherActive} />
-              <Button variant="secondary" pending={pendingAction === "publisher"} pendingLabel="Menyimpan…">
+              <Button variant="secondary" loading={pendingAction === "publisher"} loadingLabel="Menyimpan…">
                 Simpan penerbit
               </Button>
             </form>
@@ -278,9 +277,9 @@ function ConnectedAdminBooks() {
                       </td>
                       <td>{book.isListed ? book.stockQuantity : "Belum dicatat"}</td>
                       <td>
-                        <Link className="button button-secondary" href={`/admin/books/${book._id}`}>
+                        <LinkButton href={`/admin/books/${book._id}`} variant="secondary">
                           Edit
-                        </Link>
+                        </LinkButton>
                       </td>
                     </tr>
                   ))}

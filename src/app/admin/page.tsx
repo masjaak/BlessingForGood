@@ -67,7 +67,7 @@ function AdminOverview() {
         <strong className="metric-value">{count}</strong>
         <div className="action-region">
           <p className="action-support">{description}</p>
-          <LinkButton href={href} variant="quiet">
+          <LinkButton href={href} variant="tertiary">
             {href === "/admin/join-requests" ? "Review" : `Buka ${label.toLowerCase()} →`}
           </LinkButton>
         </div>

@@ -49,16 +49,19 @@ The current token source is the beginning of `src/app/globals.css`:
 
 ## Button Variants
 
-`src/components/ui.tsx` owns `Button` and `LinkButton` variants:
+`src/components/ui.tsx` owns the canonical `Button`, `LinkButton`,
+`IconButton`, `LinkIconButton`, `ToggleButton`, and `ActionGroup` family:
 
 - `primary`: canonical action;
 - `secondary`: alternate action;
-- `quiet`: low-emphasis navigation/support;
+- `tertiary`: low-emphasis navigation/support where interaction is already clear;
 - `danger`: destructive/reversal action;
-- sizes: default, compact, icon.
+- sizes: compact (40px desktop density), default (44px), large (48px), and
+  icon (44×44px through `IconButton`).
 
-Pending state disables the control and renders a clear Indonesian pending
-label. Errors and success are visible in the same action surface.
+Loading state disables the control, preserves geometry, and renders a clear
+`loadingLabel`. Errors and success remain visible in the surrounding action
+surface; the button is not the only outcome signal.
 
 ## Frame Variants
 
@@ -160,8 +163,10 @@ form, and journey-rhythm correction. This does not reopen business domains or
 start Phase 09.
 
 - `Button` and `LinkButton` share the semantic variants `primary`, `secondary`,
-  `quiet`, and `danger`. Each genuinely clickable control has visible default,
-  hover, active/pressed, focus-visible, and disabled states. Secondary and quiet
+  `tertiary`, and `danger`. `IconButton` and `LinkIconButton` require an
+  accessible name; `ToggleButton` is reserved for selected/unselected controls.
+  Each genuinely clickable control has visible default,
+  hover, active/pressed, focus-visible, and disabled states. Secondary and tertiary
   surfaces must remain visibly distinct from cream, white, and light-green
   frames; danger never inherits a positive-action hover treatment.
 - Interaction timing is restrained and shared. Pointer hover is additive on

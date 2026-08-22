@@ -227,8 +227,8 @@ function AdminOrderDetail() {
             <div className="form-actions">
               <Button
                 type="button"
-                pending={pendingAction === "fulfillment"}
-                pendingLabel="Memperbarui…"
+                loading={pendingAction === "fulfillment"}
+                loadingLabel="Memperbarui…"
                 onClick={() =>
                   nextStage &&
                   void run(
@@ -318,7 +318,7 @@ function AssignForm({
         onChange={(event) => setQuantity(event.target.value)}
         required
       />
-      <Button type="submit" pending={isSubmitting} pendingLabel="Menugaskan…">
+      <Button type="submit" loading={isSubmitting} loadingLabel="Menugaskan…">
         Tugaskan
       </Button>
       {error ? (

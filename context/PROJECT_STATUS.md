@@ -11,6 +11,14 @@
 **Production:** `BFG_PRODUCTION_STABLE`.
 **Product mode:** `MAINTENANCE`.
 
+**Global Button System:** source consolidation implemented on the current
+`origin/main` tree with canonical semantics, variants, sizes, states, spacing,
+and conditional-action coverage. Deterministic/source QA is complete;
+authenticated rendered QA remains a release gate because the local
+Clerk/Convex harness has no production data/session configuration. No
+business/server authority changed and no Convex deployment is required for
+this visual migration.
+
 **Phase 09.1:** `PRODUCTION ASSURANCE EVIDENCE COMPLETE WITH QUALIFICATIONS` —
 security hardening, adversarial authorization verification, abuse controls,
 header hardening, bounded load evidence, and recovery verification were

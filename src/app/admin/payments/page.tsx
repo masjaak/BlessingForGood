@@ -88,9 +88,9 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
         </div>
       ) : null}
       {confirmation.proofUrl ? (
-        <a className="button button-secondary" href={confirmation.proofUrl} target="_blank" rel="noreferrer">
+        <LinkButton variant="secondary" href={confirmation.proofUrl} target="_blank" rel="noreferrer">
           Lihat bukti transfer
-        </a>
+        </LinkButton>
       ) : null}
       {confirmation.customerNote ? <p className="subtle">Catatan pelanggan: {confirmation.customerNote}</p> : null}
       <p className="subtle">Dikirim {new Date(confirmation.submittedAt).toLocaleString("id-ID")}</p>
@@ -98,8 +98,8 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
         <Button
           type="button"
           variant="secondary"
-          pending={pendingAction === "Masuk tahap tinjauan."}
-          pendingLabel="Memulai…"
+          loading={pendingAction === "Masuk tahap tinjauan."}
+          loadingLabel="Memulai…"
           onClick={() => void run(() => startPaymentReview(confirmation.confirmationId), "Masuk tahap tinjauan.")}
         >
           Mulai tinjauan
@@ -113,8 +113,8 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
           <div className="form-actions">
             <Button
               type="button"
-              pending={pendingAction === "Pembayaran disetujui."}
-              pendingLabel="Menyetujui…"
+              loading={pendingAction === "Pembayaran disetujui."}
+              loadingLabel="Menyetujui…"
               onClick={() =>
                 void run(
                   () => approvePaymentConfirmation(confirmation.confirmationId, reviewNote || undefined),
@@ -127,8 +127,8 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
             <Button
               type="button"
               variant="danger"
-              pending={pendingAction === "Pembayaran ditolak."}
-              pendingLabel="Menolak…"
+              loading={pendingAction === "Pembayaran ditolak."}
+              loadingLabel="Menolak…"
               onClick={() =>
                 void run(
                   () =>

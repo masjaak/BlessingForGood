@@ -8,6 +8,7 @@ import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { bfgClerkAppearance } from "@/config/clerk";
 import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
+import { LinkButton } from "@/components/ui";
 import { ProductContext } from "@/domain/prototype/context";
 
 const customerLinks = [
@@ -182,9 +183,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
           )}
           <div className="site-auth" aria-label="Akses akun">
             {!signedIn ? (
-              <Link className="site-auth-link" href="/sign-in">
+              <LinkButton href="/sign-in" variant="secondary">
                 Masuk
-              </Link>
+              </LinkButton>
             ) : (
               <>
                 <AdminShellLink />

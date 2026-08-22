@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "convex/react";
 import {
   createContext,
@@ -14,6 +13,7 @@ import {
 } from "react";
 import { api } from "../../convex/_generated/api";
 import { ActivityCenter } from "@/components/activity-center";
+import { Button, LinkButton } from "@/components/ui";
 
 export type WorkspaceActivityCounts = { activity?: number };
 
@@ -93,7 +93,7 @@ function ActivityTrigger({
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
-    <button
+    <Button
       aria-expanded={open}
       aria-haspopup="dialog"
       aria-label={`Aktivitas${activity ? `, ${activity} belum dibaca` : ""}`}
@@ -101,11 +101,12 @@ function ActivityTrigger({
       onClick={onClick}
       ref={triggerRef}
       type="button"
+      variant="secondary"
     >
       <ActivityIcon />
       <span>Aktivitas</span>
       {activity ? <span className="workspace-action-badge">{activity > 99 ? "99+" : activity}</span> : null}
-    </button>
+    </Button>
   );
 }
 
@@ -231,13 +232,14 @@ function ConnectedActions({ workspace }: { workspace: "admin" | "customer" }) {
 export function WorkspaceActions({ workspace, enabled }: { workspace: "admin" | "customer"; enabled: boolean }) {
   if (enabled) return <ConnectedActions workspace={workspace} />;
   return (
-    <Link
+    <LinkButton
       aria-label="Aktivitas"
-      className="workspace-activity-trigger workspace-activity-link"
+      className="workspace-activity-trigger"
       href={`${workspace === "admin" ? "/admin" : "/account"}/notifications`}
+      variant="secondary"
     >
       <ActivityIcon />
       <span>Aktivitas</span>
-    </Link>
+    </LinkButton>
   );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
-import { Card, EmptyState, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { Card, EmptyState, IconButton, LinkButton, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 
 export function ActivityCenter({
   workspace,
@@ -35,13 +35,13 @@ export function ActivityCenter({
             </div>
             <h2>{item.title}</h2>
             <p>{item.description}</p>
-            <Link
-              className="button button-secondary"
+            <LinkButton
+              variant="secondary"
               href={item.destination}
               onClick={() => void markRead({ notificationId: item.sourceId })}
             >
               Buka detail
-            </Link>
+            </LinkButton>
           </Card>
         ))}
       </div>
@@ -61,9 +61,15 @@ export function ActivityCenter({
             <span className="subtle">Pembaruan terbaru</span>
           </div>
           {onClose ? (
-            <button aria-label="Tutup Aktivitas" className="activity-panel-close" onClick={onClose} type="button">
+            <IconButton
+              aria-label="Tutup Aktivitas"
+              className="activity-panel-close"
+              onClick={onClose}
+              type="button"
+              variant="tertiary"
+            >
               ×
-            </button>
+            </IconButton>
           ) : null}
         </div>
         <p className="activity-explanation">

@@ -2,11 +2,33 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-15
+last_updated: 2026-08-22
 source: conversation
 ---
 
 # Changelog
+
+## [global-button-system-consolidation] — 2026-08-22
+
+### Changed
+
+- Consolidated `Button`, `LinkButton`, `IconButton`, `LinkIconButton`,
+  `ToggleButton`, and `ActionGroup` into one customer/Admin interaction family.
+- Replaced `quiet` with semantic `tertiary`, locked 40/44/48px sizes, visible
+  sage Secondary treatment, danger states, focus/loading/disabled geometry, and
+  shared action spacing.
+- Migrated current-tree navigation links, icon controls, disclosure styling,
+  upload controls, and async callsites without changing server/business logic.
+- Added `BFG-BUTTON-SYSTEM.md`, `BFG-BUTTON-AUDIT.md`, a test-only specimen, and
+  a source guard for raw/button-like anti-patterns.
+
+### QA boundary
+
+- Component/source QA is covered. A representative customer-375 Playwright
+  run reached the browser but remained non-green (16/19) because the local
+  run used a placeholder Convex deployment and Clerk/RSC network requests;
+  authenticated Admin/Customer and Production screenshots remain a release
+  gate. No Production or Convex deployment was made.
 
 ## [phase-07.1-responsive-cover-closure] — 2026-08-15
 

@@ -93,7 +93,7 @@ function SettingsEditor() {
               required
             />
           </Field>
-          <Button pending={pending} pendingLabel="Menyimpan…">
+          <Button loading={pending} loadingLabel="Menyimpan…">
             Simpan pengaturan
           </Button>
         </form>

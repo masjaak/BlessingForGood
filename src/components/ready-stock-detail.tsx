@@ -69,14 +69,9 @@ function ConnectedDetail({ slug }: { slug: string }) {
           {book.categories.length ? <p className="subtle">{book.categories.join(" · ")}</p> : null}
           {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}
           {book.externalPreview ? (
-            <a
-              className="button button-secondary"
-              href={book.externalPreview.url}
-              rel="noreferrer noopener"
-              target="_blank"
-            >
+            <LinkButton variant="secondary" href={book.externalPreview.url} rel="noreferrer noopener" target="_blank">
               {book.externalPreview.label} ↗
-            </a>
+            </LinkButton>
           ) : null}
           <div className="content-stack">
             {book.variants.map((variant) => (
@@ -162,7 +157,7 @@ function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
         />
       </Field>
       <div className="form-actions">
-        <Button type="submit" pending={pending} pendingLabel="Mengamankan stok…">
+        <Button type="submit" loading={pending} loadingLabel="Mengamankan stok…">
           Pesan Ready Stock
         </Button>
         {orderId ? (

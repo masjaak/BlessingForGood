@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconButton, ToggleButton } from "@/components/ui";
 
 export type ProductGalleryImage = {
   mediaId: string;
@@ -24,39 +25,42 @@ export function ProductGallery({ title, images }: { title: string; images: Produ
       </div>
       {images.length > 1 ? (
         <div className="product-gallery-controls">
-          <button
+          <IconButton
             aria-label="Gambar galeri sebelumnya"
-            className="button button-secondary button-size-compact"
+            variant="secondary"
+            size="compact"
             disabled={currentIndex === 0}
             onClick={() => setActiveIndex((index) => Math.max(0, index - 1))}
             type="button"
           >
             ←
-          </button>
+          </IconButton>
           <div className="product-gallery-thumbnails" role="list" aria-label="Pilih gambar galeri">
             {images.map((image, index) => (
-              <button
+              <ToggleButton
                 aria-label={`Tampilkan gambar ${index + 1}`}
-                aria-pressed={index === currentIndex}
                 className={`product-gallery-thumbnail${index === currentIndex ? " is-active" : ""}`}
                 key={image.mediaId}
                 onClick={() => setActiveIndex(index)}
+                pressed={index === currentIndex}
                 type="button"
+                variant="secondary"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image.url} alt="" role="presentation" />
-              </button>
+              </ToggleButton>
             ))}
           </div>
-          <button
+          <IconButton
             aria-label="Gambar galeri berikutnya"
-            className="button button-secondary button-size-compact"
+            variant="secondary"
+            size="compact"
             disabled={currentIndex === images.length - 1}
             onClick={() => setActiveIndex((index) => Math.min(images.length - 1, index + 1))}
             type="button"
           >
             →
-          </button>
+          </IconButton>
         </div>
       ) : null}
     </section>

@@ -13,6 +13,7 @@ import {
   Button,
   Card,
   Field,
+  IconButton,
   InlineBooleanField,
   LoadingRegion,
   PageHeader,
@@ -97,7 +98,7 @@ function VariantRow({ variant }: { variant: Variant }) {
         />
       </Field>
       <InlineBooleanField checked={enabled} label="Aktif" onChange={setEnabled} />
-      <Button type="submit" variant="secondary" pending={isSaving} pendingLabel="Menyimpan…">
+      <Button type="submit" variant="secondary" loading={isSaving} loadingLabel="Menyimpan…">
         Simpan
       </Button>
       {message ? (
@@ -383,7 +384,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                 message={coverMessage}
                 onFileChange={handleCoverFileChange}
                 onUpload={(presentation) => void saveCover(presentation)}
-                pending={pendingAction === "cover"}
+                loading={pendingAction === "cover"}
                 publisher={book.publisher?.name || "BFG"}
                 title={book.title}
               />
@@ -414,26 +415,24 @@ function BookEditor({ book }: { book: AdminBook }) {
                         <small>{media.altText}</small>
                       </span>
                       <span className="form-actions">
-                        <Button
+                        <IconButton
                           aria-label={`Naikkan gambar ${index + 1}`}
                           disabled={index === 0 || galleryPendingMediaId === media.mediaId}
                           onClick={() => void moveGallery(media, "up")}
-                          size="compact"
                           type="button"
-                          variant="quiet"
+                          variant="tertiary"
                         >
                           ↑
-                        </Button>
-                        <Button
+                        </IconButton>
+                        <IconButton
                           aria-label={`Turunkan gambar ${index + 1}`}
                           disabled={index === book.gallery.length - 1 || galleryPendingMediaId === media.mediaId}
                           onClick={() => void moveGallery(media, "down")}
-                          size="compact"
                           type="button"
-                          variant="quiet"
+                          variant="tertiary"
                         >
                           ↓
-                        </Button>
+                        </IconButton>
                         <Button
                           disabled={galleryPendingMediaId === media.mediaId}
                           onClick={() => void removeGallery(media)}
@@ -475,8 +474,8 @@ function BookEditor({ book }: { book: AdminBook }) {
                   <Button
                     disabled={!galleryFile || book.gallery.length >= 8}
                     onClick={() => void uploadGalleryImage()}
-                    pending={pendingAction === "gallery"}
-                    pendingLabel="Mengunggah…"
+                    loading={pendingAction === "gallery"}
+                    loadingLabel="Mengunggah…"
                     type="button"
                     variant="secondary"
                   >
@@ -535,8 +534,8 @@ function BookEditor({ book }: { book: AdminBook }) {
                 <div className="form-actions">
                   <Button
                     onClick={() => void saveExternalPreview()}
-                    pending={pendingAction === "preview"}
-                    pendingLabel="Menyimpan…"
+                    loading={pendingAction === "preview"}
+                    loadingLabel="Menyimpan…"
                     type="button"
                     variant="secondary"
                   >
@@ -569,7 +568,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                   />
                 </Field>
               </section>
-              <Button type="submit" pending={pendingAction === "book"} pendingLabel="Menyimpan…">
+              <Button type="submit" loading={pendingAction === "book"} loadingLabel="Menyimpan…">
                 Simpan Master Buku
               </Button>
               {bookMessage ? (
@@ -621,8 +620,8 @@ function BookEditor({ book }: { book: AdminBook }) {
               <Button
                 type="submit"
                 variant="secondary"
-                pending={pendingAction === "variant"}
-                pendingLabel="Menambahkan…"
+                loading={pendingAction === "variant"}
+                loadingLabel="Menambahkan…"
               >
                 Tambah format
               </Button>

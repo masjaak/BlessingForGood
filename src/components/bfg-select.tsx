@@ -15,6 +15,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+import { Button } from "@/components/ui";
 
 type OptionProps = { value?: string | number; disabled?: boolean; children?: ReactNode };
 
@@ -263,7 +264,7 @@ export function BFGSelect({
 
   return (
     <>
-      <button
+      <Button
         {...buttonProps}
         aria-activedescendant={open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
         aria-controls={listboxId}
@@ -279,10 +280,11 @@ export function BFGSelect({
         ref={triggerRef}
         role="combobox"
         type="button"
+        variant="secondary"
       >
         <span className="bfg-select-value">{selectedOption?.label ?? selectedValue}</span>
         <span className="bfg-select-chevron" aria-hidden="true" />
-      </button>
+      </Button>
       {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
       {menu}
     </>

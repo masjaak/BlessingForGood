@@ -2,7 +2,6 @@
 
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import Link from "next/link";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
@@ -91,9 +90,9 @@ function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
                     <strong>{number(row.availableQuantity)}</strong>
                   </td>
                   <td>
-                    <Link className="button button-secondary" href={`/admin/books/${row.bookId}`}>
+                    <LinkButton href={`/admin/books/${row.bookId}`} variant="secondary">
                       Edit stok
-                    </Link>
+                    </LinkButton>
                   </td>
                 </tr>
               ))}

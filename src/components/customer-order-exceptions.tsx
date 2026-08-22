@@ -74,10 +74,10 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
         <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} required />
       </Field>
       <div className="form-actions">
-        <Button type="submit" pending={isSubmitting} pendingLabel="Mengirim…">
+        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…">
           Kirim permintaan
         </Button>
-        <Button type="button" variant="quiet" onClick={() => setOpen(false)}>
+        <Button type="button" variant="tertiary" onClick={() => setOpen(false)}>
           Tutup
         </Button>
         {message ? (

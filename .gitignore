@@ -13,3 +13,6 @@ test-results/
 playwright-report/
 artifacts/browser-qa/
 artifacts/visual-convergence/
+
+# clerk configuration (can include secrets)
+/.clerk/
