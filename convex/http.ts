@@ -71,17 +71,17 @@ http.route({
       if (body.size !== contentLength || body.size > MAX_STORED_FILE_BYTES) {
         return json(origin, { error: "file upload rejected" }, 413);
       }
-      const header = new Uint8Array(await body.slice(0, 64).arrayBuffer());
+      const bytes = new Uint8Array(await body.arrayBuffer());
       validateUploadedContent(
         fileName,
         declaredMimeType,
         declaredMimeType,
         body.size,
-        header,
+        bytes,
         purposeContracts[purpose],
         "file upload rejected",
       );
-      const storageId = await ctx.storage.store(new Blob([await body.arrayBuffer()], { type: declaredMimeType }));
+      const storageId = await ctx.storage.store(new Blob([bytes.buffer], { type: declaredMimeType }));
       try {
         await ctx.runMutation(internal.uploads.register, { storageId, purpose });
       } catch {

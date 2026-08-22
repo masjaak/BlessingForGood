@@ -22,6 +22,7 @@ import type * as customerProfiles from "../customerProfiles.js";
 import type * as depositAccounts from "../depositAccounts.js";
 import type * as depositTopUps from "../depositTopUps.js";
 import type * as depositTransactions from "../depositTransactions.js";
+import type * as http from "../http.js";
 import type * as invoiceDepositAllocations from "../invoiceDepositAllocations.js";
 import type * as invoices from "../invoices.js";
 import type * as joinRequests from "../joinRequests.js";
@@ -45,6 +46,7 @@ import type * as lib_orderExceptionState from "../lib/orderExceptionState.js";
 import type * as lib_orderExceptionViews from "../lib/orderExceptionViews.js";
 import type * as lib_previewCapability from "../lib/previewCapability.js";
 import type * as lib_productDomain from "../lib/productDomain.js";
+import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_readyStockReservations from "../lib/readyStockReservations.js";
 import type * as lib_sessions from "../lib/sessions.js";
 import type * as lib_shipmentTransitions from "../lib/shipmentTransitions.js";
@@ -62,8 +64,8 @@ import type * as refunds from "../refunds.js";
 import type * as reports from "../reports.js";
 import type * as secretCatalogs from "../secretCatalogs.js";
 import type * as settings from "../settings.js";
-import type * as users from "../users.js";
 import type * as uploads from "../uploads.js";
+import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 
 import type {
@@ -87,6 +89,7 @@ declare const fullApi: ApiFromModules<{
   depositAccounts: typeof depositAccounts;
   depositTopUps: typeof depositTopUps;
   depositTransactions: typeof depositTransactions;
+  http: typeof http;
   invoiceDepositAllocations: typeof invoiceDepositAllocations;
   invoices: typeof invoices;
   joinRequests: typeof joinRequests;
@@ -110,6 +113,7 @@ declare const fullApi: ApiFromModules<{
   "lib/orderExceptionViews": typeof lib_orderExceptionViews;
   "lib/previewCapability": typeof lib_previewCapability;
   "lib/productDomain": typeof lib_productDomain;
+  "lib/rateLimit": typeof lib_rateLimit;
   "lib/readyStockReservations": typeof lib_readyStockReservations;
   "lib/sessions": typeof lib_sessions;
   "lib/shipmentTransitions": typeof lib_shipmentTransitions;
@@ -127,8 +131,8 @@ declare const fullApi: ApiFromModules<{
   reports: typeof reports;
   secretCatalogs: typeof secretCatalogs;
   settings: typeof settings;
-  users: typeof users;
   uploads: typeof uploads;
+  users: typeof users;
   validators: typeof validators;
 }>;
 
@@ -158,4 +162,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};
