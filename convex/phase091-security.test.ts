@@ -98,6 +98,13 @@ describe("Phase 09.1 adversarial authorization", () => {
     await expect(
       secondCustomer.query(api.catalogAccess.getUnlocked, { catalogId: catalog.catalogId }),
     ).resolves.toBeNull();
+
+    const customerUser = await customer.query(api.users.current, {});
+    const adminCatalog = await admin.query(api.catalogAccess.listForAdmin, { catalogId: catalog.catalogId });
+    const customerGrant = adminCatalog.grants.find((grant) => grant.appUserId === customerUser?.appUserId);
+    if (!customerGrant) throw new Error("customer grant fixture missing");
+    await admin.mutation(api.catalogAccess.revokeGrant, { grantId: customerGrant.grantId });
+    await expect(customer.query(api.catalogAccess.getUnlocked, { catalogId: catalog.catalogId })).resolves.toBeNull();
   });
 
   it("denies direct privileged calls, owner boundaries, and suspended access", async () => {
