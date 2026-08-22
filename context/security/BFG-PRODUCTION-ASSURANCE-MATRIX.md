@@ -1,6 +1,6 @@
 # BFG PRODUCTION ASSURANCE MATRIX
 
-Status: `PHASE_09_2_TARGETED_ASSURANCE_ACTIVE` · evidence date 2026-08-22.
+Status: `PHASE_09_2_FINAL_CLOSURE_IN_PROGRESS` · evidence date 2026-08-22.
 This matrix separates source/test evidence, safe Production observations, and
 platform/account blockers.
 
@@ -14,10 +14,10 @@ platform/account blockers.
 | Revoked Catalog                    | `GREEN_EVIDENCE`                    | Wrong/revoked code, grant, and old scoped session denied; no stale private projection                                                                        | Anonymous gateway remains intentionally public-scoped                                                     |
 | IDOR/BOLA                          | `GREEN_EVIDENCE`                    | 0 successful unauthorized reads; 0 successful writes                                                                                                         | Human references remain non-authoritative by contract                                                     |
 | Client secret exposure             | `GREEN_EVIDENCE`                    | Local build + 17 Production browser chunks: no secret values                                                                                                 | SDK label false positive documented                                                                       |
-| Admin/deploy key exposure          | `GREEN_EVIDENCE`                    | No `CONVEX_DEPLOY_KEY`, Clerk secret, Owner secret, or private key in browser/source values                                                                  | Provider rotation age not verified                                                                        |
+| Admin/deploy key exposure          | `GREEN_EVIDENCE`                    | No `CONVEX_DEPLOY_KEY`, Clerk secret, Owner secret, or private key in browser/source values; provider rotation/update evidence recorded                     | Repeat after credential changes                                                                            |
 | Hardcoded privileged identity      | `GREEN_EVIDENCE`                    | No hardcoded email/Gmail/Clerk ID/privileged allowlist; Owner is server env                                                                                  | Protect Owner env in platform controls                                                                    |
 | Git history active secret          | `GREEN_EVIDENCE`                    | Gitleaks v8.30.1 scanned 177 reachable commits with 0 findings; TruffleHog v3.96.0 found 0 verified secrets and one deterministic test URI                   | Keep the dedicated history scan in release assurance                                                      |
-| Current filesystem secret review   | `BLOCKED_PENDING_ROTATION`          | Dedicated scanners found only ignored local env-file candidates; no raw values were retained in evidence                                                     | Owner/provider review and rotation/revocation, then rerun both scanners                                   |
+| Current filesystem secret review   | `GREEN_EVIDENCE`                    | Local candidates moved outside Git; provider rotation/update completed; final Gitleaks/TruffleHog scans found no privileged secret                           | Keep restricted operator storage and rescan after credential changes                                      |
 | Stored XSS / unsafe HTML           | `GREEN_EVIDENCE`                    | No production HTML injection sink; inert payload tests; React escaping                                                                                       | Image decode and decompression-bomb defenses remain bounded residual risks                                |
 | Unsafe external URL fetch / SSRF   | `GREEN_EVIDENCE`                    | External Preview validates safe HTTPS metadata; no backend fetch/iframe/remote image fetch                                                                   | Recheck if integrations add server fetch                                                                  |
 | Upload auth bypass                 | `GREEN_EVIDENCE_LOCAL`              | Shared server upload endpoint, purpose-bound storage claims, existing role/ownership/rate-limit checks, and deterministic unauthorized/reuse tests pass      | Not deployed; canonical Convex access required before release                                             |
@@ -34,12 +34,12 @@ platform/account blockers.
 | Authenticated realtime scale       | `BLOCKED_BY_SAFE_DATA`              | No 1,000 Production identities; deterministic tests only                                                                                                     | Requires safe synthetic identity strategy and platform telemetry                                          |
 | Mutation correctness               | `GREEN_EVIDENCE`                    | Stock/payment/deposit concurrency suite passes in deterministic Convex fixtures                                                                              | Throughput not claimed                                                                                    |
 | Vercel capacity telemetry          | `PLATFORM_LIMIT`                    | Hobby plan observed; metrics query returned `payment_required`                                                                                               | Upgrade/authorized observability access needed to isolate 750 boundary                                    |
-| Convex tier/usage                  | `BLOCKED_BY_ACCOUNT_ACCESS`         | Current CLI session has no access to selected BFG project                                                                                                    | Owner/platform account access required                                                                    |
-| Cost guardrails                    | `BLOCKED_BY_ACCOUNT_ACCESS`         | No Convex limit/spend configuration read; no changes made                                                                                                    | Verify in authorized control plane                                                                        |
-| Database backup                    | `BLOCKED_BY_ACCOUNT_ACCESS`         | Current CLI identity cannot inspect the canonical BFG team/project; no manual backup was run                                                                 | Owner access checkpoint; verify plan, completion, cadence, retention, and size                            |
-| Storage recovery                   | `BLOCKED_BY_ACCOUNT_ACCESS`         | File Storage inclusion and restore were not directly verifiable; no backup or restore was attempted                                                          | Owner access checkpoint; verify Storage inclusion and isolated restore                                    |
-| RPO                                | `BLOCKED_BY_ACCOUNT_ACCESS`         | No actual backup cadence or completed backup evidence                                                                                                        | Set only after Owner-approved backup verification                                                         |
-| RTO                                | `BLOCKED_BY_ACCOUNT_ACCESS`         | No isolated restore drill elapsed time                                                                                                                       | Set only after Owner-approved drill                                                                       |
+| Convex tier/usage                  | `PARTIAL_EVIDENCE`                  | Canonical access is green; project metadata did not expose a plan label, while the real export/import path completed                                        | Recheck plan/usage in the canonical dashboard during maintenance                                         |
+| Cost guardrails                    | `NOT_VERIFIED`                      | No spending-limit mutation was made and no billing change was authorized                                                                                     | Verify before enabling automated backups                                                                   |
+| Database backup                    | `GREEN_EVIDENCE`                    | Production snapshot export completed from `clean-eel-522`, was readable, and imported into an isolated target                                                | Manual export cadence is not automatic/guaranteed                                                        |
+| Storage recovery                   | `GREEN_EVIDENCE`                    | Export used `--include-file-storage`; `_storage` and five Storage files imported and references resolved                                                     | Repeat after provider/storage policy changes                                                             |
+| RPO                                | `MANUAL_NOT_GUARANTEED`             | One completed manual snapshot is evidenced; no automatic cadence was evidenced                                                                              | Tighten only after periodic backups are enabled and verified                                            |
+| RTO                                | `GREEN_EVIDENCE`                    | Isolated import took 19 seconds; operational target includes detection, validation, configuration recovery, deploy/alias, and smoke margin                | Re-measure after material data/plan changes                                                             |
 
 ## Required Numeric Result
 
@@ -52,13 +52,13 @@ SUSPENDED ACCESS: 0
 REVOKED SECRET CATALOG ACCESS: 0
 ACTIVE BROWSER SECRET: 0 found in inspected bundle/HTML
 ACTIVE ADMIN/DEPLOY SECRET IN GIT HISTORY: 0 found
-CURRENT FILESYSTEM SECRET REVIEW: REQUIRED for ignored local env material
+CURRENT FILESYSTEM SECRET REVIEW: 0 unknown privileged findings
 STORED XSS: 0
 UNSAFE EXTERNAL FETCH: 0
 UPLOAD AUTH BYPASS: 0
 ```
 
-## Deployment Evidence
+## Historical Deployment Evidence
 
 Code correction commit `ea724bc2e5503f9bf35b9963bc29ccbcc865b288` was pushed to
 `origin/main` and deployed to Vercel Production as
@@ -68,15 +68,12 @@ post-deployment read-only load run caused no business mutation. The follow-up
 documentation commit records this evidence; no confirmed security fix remains
 only in the working tree.
 
-## Phase 09.2 Release Boundary
+## Historical Phase 09.2 Release Boundary
 
-The upload hardening commit is local and tested, but it has not been pushed or
-deployed. Convex access remains blocked, so the required Convex deployment and
-the dependent Vercel release were intentionally not attempted. The current
-Production deployment therefore remains the previously verified Phase 09.1
-application, not this Phase 09.2 upload implementation.
+The preceding section records the pre-closure state. It is retained as
+historical evidence; the final release evidence follows.
 
-Dedicated scanner evidence is split by scope:
+Historical scanner evidence before provider closure was split by scope:
 
 ```text
 GITLEAKS GIT HISTORY: PASS
@@ -105,8 +102,9 @@ Admin, Catalog, Order, financial, or Product Media workflow.
 ### Server validation contract
 
 The shared validator applies authorization and existing rate limits, checks the
-declared size before reading content, reads only a bounded header, detects
-JPEG/PNG/WebP/PDF signatures, and rejects unknown or inconsistent content. The
+declared size before reading content, validates the complete bounded body,
+detects JPEG/PNG/WebP/PDF signatures, checks image dimensions/pixel bounds, and
+rejects unknown or inconsistent content. The
 declared MIME type, filename extension, and detected type must agree. Browser
 `File.type` is treated as a declaration, not proof. SVG is not an approved
 format and is rejected.
@@ -126,9 +124,9 @@ payloads. Safe rejection messages do not expose parser stack traces.
 Deterministic local fixtures cover valid JPEG/PNG/WebP, MIME/extension
 mismatches, text/random/truncated files, oversized files, unsupported SVG,
 CSV NUL, binary CSV masquerade, unauthorized users, cross-owner storage IDs,
-and existing upload rate-limit paths. Full image decoding and pixel-dimension
-limits were not added because the current runtime has no required image
-decoder; bounded signatures and structural checks are the current ceiling.
+dimension-bomb headers, and existing upload rate-limit paths. A general image
+processing stack was not added; the byte-level dimension and pixel bounds are
+the current runtime-compatible ceiling.
 
 ### Malware scanning decision
 

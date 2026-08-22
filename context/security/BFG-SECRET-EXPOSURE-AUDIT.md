@@ -1,6 +1,6 @@
 # BFG SECRET EXPOSURE AUDIT
 
-Status: `REMEDIATION_REQUIRED / HISTORY_GREEN_FILESYSTEM_BLOCKED`;
+Status: `PHASE_09_2_FINAL_ASSURANCE / GREEN_EVIDENCE`;
 reviewed 2026-08-22. No secret values are reproduced here.
 
 ## Classification
@@ -161,7 +161,7 @@ filesystem.
 | Convex logs               | No raw log export available to current local account                                                            | `BLOCKED_BY_ACCOUNT_ACCESS`; do not claim fully verified |
 | Browser console/network   | Safe Production HTML/bundle inspection; no secret values                                                        | no user auth session was created                         |
 
-## Required Final Result
+## Historical Phase 09.2 Result
 
 ```text
 ACTIVE SECRET EXPOSURES: 0 confirmed; ignored local env rotation review pending
@@ -172,8 +172,50 @@ RAW CATALOG CODE IN AUDIT/LOG CONTRACT: 0
 CURRENT FILESYSTEM HIGH-CONFIDENCE UNKNOWN: 2 secret categories pending Owner review
 ```
 
-Final status is `BLOCKED_PENDING_SECRET_ROTATION_REVIEW`: Git history and
-browser/build surfaces are green, but the current filesystem contains ignored
-local secret material whose provider state is not proven. P3 is not closed
-until the Owner completes the rotation/revocation review and the scanners are
-rerun.
+The preceding result was the pre-rotation checkpoint. It is retained as
+historical evidence; the final closure evidence follows.
+
+## Phase 09.2 Final Credential Evidence — 2026-08-22
+
+### Provider review and rotation
+
+- Clerk rotation was completed by the operator. The retained local development
+  files were moved out of the repository into a mode-700 restricted directory;
+  no values are stored in Git or this report.
+- Read-only Clerk provider checks against the current and local backup
+  development values returned HTTP 200. The two local values were identical,
+  so no second distinct local Clerk credential remained to revoke.
+- Vercel environment metadata was rechecked after the operator update. The
+  expected Production/Preview names remain scoped to the canonical project;
+  sensitive values were not pulled or printed.
+- A replacement Convex deploy key was created for `prod:clean-eel-522` and
+  written to Vercel Production. The public Convex client URL was not changed.
+  Preview remains a separate scope and does not use the Production key.
+
+### Final scanner results
+
+```text
+Gitleaks v8.30.1 / full Git history: 0 findings
+Gitleaks v8.30.1 / repository filesystem copy: 0 findings
+TruffleHog v3.96.0 / full Git history: 0 verified; 1 unverified URI fixture
+TruffleHog v3.96.0 / repository filesystem copy: 0 verified; 1 unverified URI fixture
+fixture classification: deterministic adversarial product-media test input
+active privileged secrets in Git history: 0
+unknown high-confidence privileged findings: 0
+```
+
+The TruffleHog URI result is the known deterministic test fixture, not a
+credential. Scanner reports and environment files remain outside the
+repository. The filesystem scan excluded only `.git`, `node_modules`, `.next`,
+and the pre-existing `artifacts/` directory; generated/vendor content was not
+part of the release source.
+
+### Final secret verdict
+
+```text
+ACTIVE PRIVILEGED SECRET EXPOSURE IN GIT: 0
+ACTIVE PRIVILEGED SECRET EXPOSURE IN BROWSER BUNDLE: 0
+UNKNOWN HIGH-CONFIDENCE PRIVILEGED FINDINGS: 0
+PUBLIC PUBLISHABLE KEYS: allowed by design
+P3: GREEN_EVIDENCE
+```

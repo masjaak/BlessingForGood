@@ -1,6 +1,6 @@
 # BFG RECOVERY PLAYBOOK
 
-Status: `PHASE_09_2_TARGETED_ASSURANCE_ACTIVE; P1 BLOCKED_BY_ACCOUNT_ACCESS`
+Status: `PHASE_09_2_FINAL_ASSURANCE; P1 GREEN_EVIDENCE`
 Owner: BFG Owner/Admin
 Canonical services: Vercel `masjaaks-projects/blessing-for-good`; Convex
 Development `content-snake-214`; Convex Production `clean-eel-522`
@@ -22,9 +22,9 @@ Development `content-snake-214`; Convex Production `clean-eel-522`
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
 | Git                     | Source and context are protected by the canonical Git repository and `main`.                                                                           | READY            |
 | Vercel                  | Production deployment history and aliases are observable through the authenticated CLI; prior deployment can be identified for rollback.               | READY            |
-| Convex functions/schema | Canonical Production is `clean-eel-522`; local deterministic tests pass, but the non-interactive `convex:check` could not access the selected project. | BLOCKED          |
-| Convex tables           | Business data is hosted in Convex application tables. Data restore capability is not independently verified.                                           | BLOCKED          |
-| Convex Storage          | Covers, gallery, and proof references may point to Convex Storage. Asset recovery/export capability is not independently verified.                     | BLOCKED          |
+| Convex functions/schema | Canonical Production is `clean-eel-522`; canonical team access and `npm run convex:check` pass.                                                         | READY            |
+| Convex tables           | Production snapshot export completed and imported into an isolated same-project deployment; structural/reference checks passed.                         | READY            |
+| Convex Storage          | Production export included `_storage`; five Storage entries imported into the isolated target and storage references resolved.                         | READY            |
 | Secrets                 | Environment values are not stored in context. Rotation/revocation must follow the provider’s operational controls.                                     | READY TO RESPOND |
 
 No backup, restore, plan, cadence, retention, or Storage-inclusion capability
@@ -244,7 +244,7 @@ safe non-Production restore drill measures data validation and elapsed time.
 The Phase 09.1 load test did not create data and does not alter this recovery
 status.
 
-## Phase 09.2 Targeted Recovery Evidence — 2026-08-22
+## Phase 09.2 Historical Recovery Blocker — 2026-08-22
 
 Status: `BLOCKED_BY_ACCOUNT_ACCESS`.
 
@@ -346,6 +346,98 @@ STORAGE RTO: NOT VERIFIED
 RPO EVIDENCE: no actual backup cadence or completed backup
 RTO EVIDENCE: no safe isolated restore drill
 ```
+
+The historical operator checkpoint was closed in the final evidence below.
+
+## Phase 09.2 Final Recovery Evidence — 2026-08-22
+
+Status: `GREEN_EVIDENCE`.
+
+### Canonical access
+
+```text
+team: palevvi
+project: blessingforgood
+development: content-snake-214
+production: clean-eel-522
+convex login status: palevvi's team (palevvi)
+npm run convex:check: PASS
+```
+
+No alternate project or database was selected. The temporary restore target
+below was created inside the same canonical project and was never connected to
+Vercel Production, Production aliases, external webhooks, or business-message
+side effects.
+
+### Production backup
+
+```text
+operation: npx convex export --prod --include-file-storage
+snapshot reference: 1787375681469492251
+source: clean-eel-522
+download verified: 2026-08-22T05:14:45Z
+archive size: 2,266,456 bytes
+archive SHA-256: 894cec92abec57dd06efac1ccf214bab9aabb9df5e13a216a012980408324ce1
+archive test: PASS
+database tables: included
+File Storage: included (_storage present)
+```
+
+The archive was inspected structurally outside Git. Customer rows and file
+contents were not copied into this playbook. The Convex CLI/project metadata
+endpoint exposed the canonical project and deployments but did not expose a
+plan label or automatic-backup schedule; this evidence therefore claims the
+manual export capability actually exercised, not an unverified subscription
+feature.
+
+### Isolated restore drill
+
+```text
+target: dev/bfg-recovery-drill-20260822
+deployment: proper-goose-378
+same canonical project: yes
+target lifetime: disposable, one day
+production affected: no
+restore start: 2026-08-22T05:28:29Z
+restore complete: 2026-08-22T05:28:48Z
+elapsed import: 19 seconds
+restore errors: 0
+documents written: 264
+Storage files imported: 5
+referential integrity: 0 missing references
+target function smoke: PASS
+```
+
+The target had no environment variables before import. Only the non-secret
+issuer setting needed for safe function compilation was added; no Production
+alias, canonical Development alias, external webhook, email, payment action,
+or customer mutation was enabled. Read-only table counts covered users, books,
+catalog, orders, invoices, payments, deposits, audit, and Storage metadata.
+The disposable target is not a source of truth and is scheduled for deletion
+by platform expiry.
+
+### RPO / RTO
+
+```text
+automatic backup cadence: not evidenced
+RPO: MANUAL / NOT GUARANTEED
+restore/import measurement: 19 seconds
+operational RTO target: 30 minutes
+```
+
+The 30-minute RTO is an operational target, not a claim that restore alone is
+the full incident duration. It includes incident detection, backup selection,
+restore, validation, environment/configuration recovery, deployment/alias
+switch if required, and smoke testing. A future periodic-backup policy may
+tighten RPO only after it is enabled and evidenced in the canonical account.
+
+### Recovery configuration inventory
+
+Recovery also requires restoring or verifying Git `main`, the canonical Vercel
+project and domain/DNS, environment-variable names (values from the restricted
+secret store only), Clerk configuration, Convex deployment configuration,
+Storage, application code, and scheduled jobs. The backup does not restore
+these control-plane items.
 
 The operator checkpoint to close P1 is:
 
