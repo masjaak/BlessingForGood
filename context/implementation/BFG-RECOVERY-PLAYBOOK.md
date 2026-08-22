@@ -1,6 +1,6 @@
 # BFG RECOVERY PLAYBOOK
 
-Status: `READY FOR OPERATIONS; PLATFORM CAPABILITIES NOT VERIFIED`
+Status: `PHASE_09_2_TARGETED_ASSURANCE_ACTIVE; P1 BLOCKED_BY_ACCOUNT_ACCESS`
 Owner: BFG Owner/Admin
 Canonical services: Vercel `masjaaks-projects/blessing-for-good`; Convex
 Development `content-snake-214`; Convex Production `clean-eel-522`
@@ -22,12 +22,13 @@ Development `content-snake-214`; Convex Production `clean-eel-522`
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
 | Git                     | Source and context are protected by the canonical Git repository and `main`.                                                                           | READY            |
 | Vercel                  | Production deployment history and aliases are observable through the authenticated CLI; prior deployment can be identified for rollback.               | READY            |
-| Convex functions/schema | Canonical Production is `clean-eel-522`; local deterministic tests pass, but the non-interactive `convex:check` could not access the selected project. | WATCH            |
-| Convex tables           | Business data is hosted in Convex application tables. Data restore capability is not independently verified.                                           | NOT VERIFIED     |
-| Convex Storage          | Covers, gallery, and proof references may point to Convex Storage. Asset recovery/export capability is not independently verified.                     | NOT VERIFIED     |
+| Convex functions/schema | Canonical Production is `clean-eel-522`; local deterministic tests pass, but the non-interactive `convex:check` could not access the selected project. | BLOCKED          |
+| Convex tables           | Business data is hosted in Convex application tables. Data restore capability is not independently verified.                                           | BLOCKED          |
+| Convex Storage          | Covers, gallery, and proof references may point to Convex Storage. Asset recovery/export capability is not independently verified.                     | BLOCKED          |
 | Secrets                 | Environment values are not stored in context. Rotation/revocation must follow the provider’s operational controls.                                     | READY TO RESPOND |
 
-No Backup/Restore Admin UI is part of Phase 09.
+No backup, restore, plan, cadence, retention, or Storage-inclusion capability
+is claimed until the canonical Convex account can be inspected directly.
 
 ## Severity Definitions
 
@@ -242,3 +243,121 @@ safe non-Production restore drill measures data validation and elapsed time.
 
 The Phase 09.1 load test did not create data and does not alter this recovery
 status.
+
+## Phase 09.2 Targeted Recovery Evidence — 2026-08-22
+
+Status: `BLOCKED_BY_ACCOUNT_ACCESS`.
+
+### Access checkpoint
+
+The canonical BFG identifiers remain:
+
+```text
+team: palevvi
+project: blessingforgood
+development: content-snake-214
+production: clean-eel-522
+```
+
+The current non-interactive CLI session reports only `Reza Pahlevi's team
+(reza-pahlevi)`. `npm run convex:check` fails before project inspection with
+the equivalent of “You don't have access to the selected project”. An official
+device-login flow was initiated without sharing credentials, but its code
+expired before authorization completed. The access acceptance condition is
+therefore not met: the legitimate owning account/team cannot yet be shown to
+see the canonical project and both deployments.
+
+No project selector was changed, no alternate Convex project was created, and
+no Production deployment was changed.
+
+### Backup capability and operation
+
+```text
+CURRENT PLAN: NOT VERIFIED
+MANUAL BACKUP: NOT RUN
+FILE STORAGE INCLUDED: NOT VERIFIED
+EXISTING BACKUPS: NOT VERIFIED
+RETENTION: NOT VERIFIED
+PERIODIC BACKUPS: NOT VERIFIED
+BACKUP IDENTIFIER: NONE
+BACKUP SIZE: NONE
+PRODUCTION DATA MUTATION: NONE
+```
+
+Documentation is not being used as proof of the actual BFG account capability.
+There is no backup completion evidence, so no RPO can be calculated.
+
+### Restore drill
+
+```text
+RESTORE_DRILL: BLOCKED_BY_PLATFORM_SAFETY
+ISOLATED TARGET: NOT CREATED
+RESTORE START/FINISH: NOT APPLICABLE
+DATABASE VALIDATION: NOT APPLICABLE
+STORAGE VALIDATION: NOT APPLICABLE
+APPLICATION SMOKE: NOT APPLICABLE
+PRODUCTION RESTORE: FORBIDDEN AND NOT ATTEMPTED
+CLEANUP: NOT APPLICABLE
+```
+
+An isolated same-project recovery target cannot be proven safe without access
+to the owning team and the platform's target/deployment semantics. The safe
+next step is an Owner-authorized access checkpoint, not a restore attempt.
+
+### Recovery scope inventory
+
+| Recovery source                                            | Recovers                                                   | Does not by itself recover                                          |
+| ---------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------- |
+| Git `main` and release commits                             | Application source, tests, schema/function source, context | Convex rows, Convex Storage, provider state, secret values          |
+| Vercel project/deployment history                          | Next.js/web deployment and aliases                         | Convex rows/Storage, Clerk configuration, secret values             |
+| Convex backup/export, if enabled for the canonical account | Only the data and files included by the selected operation | Code, environment values, Clerk configuration, DNS, scheduled jobs  |
+| Operator environment inventory                             | Names and provider locations for required values           | The values themselves; they must be restored from provider controls |
+
+Required environment variable names (values intentionally excluded from this
+repository and this playbook):
+
+```text
+CLERK_SECRET_KEY
+CLERK_JWT_ISSUER_DOMAIN
+BFG_OWNER_CLERK_USER_ID
+BFG_CATALOG_CODE_PEPPER
+BFG_JOIN_WHATSAPP_GROUP_URL
+CONVEX_DEPLOY_KEY
+CONVEX_DEPLOYMENT
+NEXT_PUBLIC_CONVEX_URL
+NEXT_PUBLIC_CONVEX_SITE_URL
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE
+VERCEL_OIDC_TOKEN
+```
+
+Restore/reconfigure them from the Vercel project environment, Convex
+deployment configuration, Clerk dashboard, and the restricted Owner/operator
+secret store as applicable. Never copy their values into Git, tickets, logs,
+or this playbook.
+
+### Evidence-based recovery targets
+
+```text
+DATABASE RPO: NOT VERIFIED
+STORAGE RPO: NOT VERIFIED
+DATABASE RTO: NOT VERIFIED
+STORAGE RTO: NOT VERIFIED
+RPO EVIDENCE: no actual backup cadence or completed backup
+RTO EVIDENCE: no safe isolated restore drill
+```
+
+The operator checkpoint to close P1 is:
+
+```text
+CONVEX ACCESS CHECKPOINT REQUIRED
+
+Sign in to the Convex account/team that owns:
+blessingforgood
+
+Confirm visibility of:
+content-snake-214
+clean-eel-522
+
+Do not provide a password, API key, deploy key, or session cookie in chat.
+```

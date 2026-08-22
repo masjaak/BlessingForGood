@@ -1,6 +1,6 @@
 # BFG SECRET EXPOSURE AUDIT
 
-Status: `GREEN_EVIDENCE` for inspected source/build/Production bundle;
+Status: `REMEDIATION_REQUIRED / HISTORY_GREEN_FILESYSTEM_BLOCKED`;
 reviewed 2026-08-22. No secret values are reproduced here.
 
 ## Classification
@@ -76,6 +76,66 @@ No unexpected public-prefixed admin/deploy/private token was found. Stale-key
 revocation and provider-side secret age cannot be proven from names alone;
 credential rotation remains an Owner/platform hygiene responsibility.
 
+## Dedicated Secret Scanners
+
+Official release binaries were used outside application dependencies. The
+downloaded artifacts were checksum-verified before execution:
+
+| Scanner    | Version   | SHA-256                                                            | Installation result |
+| ---------- | --------- | ------------------------------------------------------------------ | ------------------- |
+| Gitleaks   | `v8.30.1` | `dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709` | PASS                |
+| TruffleHog | `v3.96.0` | `a30d8f1095e031a81a668e1582f2ed479c3b50476cef86317e0fb74210c33617` | PASS                |
+
+The scans ran against the full reachable Git history and a repository-only
+filesystem view containing source, tests, docs, config, lockfiles, and ignored
+environment files. Only generated dependency/build/test output and the
+pre-existing untracked `artifacts/` directory were excluded from the
+filesystem view. Scanner temporary output was kept outside the repository and
+is removed after this evidence pass.
+
+### Gitleaks
+
+```text
+GIT HISTORY: PASS — 175 commits scanned; 0 findings
+CURRENT FILESYSTEM: 7 findings; exit 1 as expected for findings
+```
+
+The seven filesystem matches are confined to ignored local environment files:
+three Vercel OIDC JWT matches, two public Clerk publishable-key matches, and
+two Clerk secret-key-shaped matches. An additional `CLERK_SECRET_KEY` and a
+`CONVEX_DEPLOY_KEY` name are present in another ignored preview environment
+file but were not detector findings; they remain in the manual operator review
+because provider state is not proven. Values were not copied into this report.
+
+### TruffleHog
+
+```text
+GIT HISTORY: 0 verified; 1 unverified deterministic test URI
+CURRENT FILESYSTEM: 0 verified; 4 unverified candidates
+```
+
+The filesystem candidates are three locally expired Vercel OIDC JWTs and the
+same deterministic URI test fixture found in Git. TruffleHog emitted a
+non-fatal macOS sandbox cleanup warning after each scan; the scans completed
+with the counts above and exit code 0. No verified credential was reported.
+
+### Finding classification and remediation
+
+| Finding                                                             | Classification            | Evidence / action                                                                                                                                       |
+| ------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel OIDC token-shaped values in ignored local env files          | `TRUE_REVOKED_SECRET`     | Local metadata check shows expired; remove local cache through the operator's normal Vercel workflow and do not reuse                                   |
+| `CLERK_SECRET_KEY` material in ignored local env files              | `UNKNOWN_REQUIRES_REVIEW` | Some local values have test-key format; provider active/revoked state is not proven. Owner must revoke/rotate in Clerk and update affected environments |
+| `CONVEX_DEPLOY_KEY` material in ignored Vercel preview env metadata | `UNKNOWN_REQUIRES_REVIEW` | Not present in Git history; provider active/revoked state is not proven. Owner must revoke/rotate in Convex and Vercel if this is an active key         |
+| Clerk publishable-key-shaped values                                 | `PUBLIC_KEY_BY_DESIGN`    | Public client configuration; no privileged capability by design                                                                                         |
+| Deterministic `javascript:` / credential-shaped URL test case       | `TEST_FIXTURE`            | Existing adversarial test input in `convex/product-media.test.ts`; not a credential                                                                     |
+
+The local filesystem findings are not Git-history exposure: tracked history
+contains no active secret and no history rewrite is authorized or required on
+this evidence. The unknown provider-side state is still a release blocker.
+Do not paste any value into chat. After Owner/provider rotation or explicit
+revocation review, rerun both scanners against history and the current
+filesystem.
+
 ## Git History
 
 - Tracked env-like paths: `.env.example` only; no tracked `.env`, private-key
@@ -84,12 +144,12 @@ credential rotation remains an Owner/platform hygiene responsibility.
   commits, not secret-bearing `.env` files.
 - Regex scans across current tracked history found documentation examples,
   placeholders, and variable names; no active secret value was found.
-- `gitleaks` and `trufflehog` binaries were not installed, so a third-party
-  scanner result is `NOT AVAILABLE`; the repository/history checks above are
-  the evidence used for this pass.
-- No incident/rotation was required. If a live value is ever found, revoke or
-  rotate first, update the provider environment, redeploy, verify the old
-  credential, and rescan; deleting a string is not remediation.
+- Gitleaks and TruffleHog were run over full reachable history after the
+  Phase 09.2 upload commit; no active secret was found in history.
+- No history rewrite is authorized or required. If provider review confirms an
+  active value in an ignored local environment file, revoke or rotate first,
+  update the provider environment, redeploy if required, verify the old value
+  is invalid, and rescan; deleting a string is not remediation.
 
 ## Logs / Error Payloads / Audit
 
@@ -104,12 +164,16 @@ credential rotation remains an Owner/platform hygiene responsibility.
 ## Required Final Result
 
 ```text
-ACTIVE SECRET EXPOSURES: 0 found
+ACTIVE SECRET EXPOSURES: 0 confirmed; ignored local env rotation review pending
 BROWSER-EXPOSED ADMIN/DEPLOY KEY: 0
 HARDCODED PRIVILEGED IDENTITY: 0
-GIT HISTORY ACTIVE SECRET: 0 found / scanner binary unavailable
+GIT HISTORY ACTIVE SECRET: 0 found / Gitleaks + TruffleHog passed
 RAW CATALOG CODE IN AUDIT/LOG CONTRACT: 0
+CURRENT FILESYSTEM HIGH-CONFIDENCE UNKNOWN: 2 secret categories pending Owner review
 ```
 
-Status is `GREEN_EVIDENCE` for the inspected artifacts with the explicit
-`BLOCKED_BY_ACCOUNT_ACCESS` limitation for Convex log/config inspection.
+Final status is `BLOCKED_PENDING_SECRET_ROTATION_REVIEW`: Git history and
+browser/build surfaces are green, but the current filesystem contains ignored
+local secret material whose provider state is not proven. P3 is not closed
+until the Owner completes the rotation/revocation review and the scanners are
+rerun.
