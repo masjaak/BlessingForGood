@@ -42,10 +42,10 @@ cover framing uses additive metadata and keeps the original source.
 Phase 09.1 starting commit: `0c5d409c1abffa63be88ee80cc971d8c2253f5ae`.
 Phase 09.1 code commit: `ea724bc2e5503f9bf35b9963bc29ccbcc865b288`.
 Phase 09.1 documentation anchor: `460e5a03e94bdd4b759310743f5f745a58b9da9a`.
-Current verified source deployment:
-`blessing-for-good-253ndu515-masjaaks-projects.vercel.app`, `READY`, canonical
-Production aliases.
-`origin/main`: `460e5a03e94bdd4b759310743f5f745a58b9da9a`.
+Phase 09.1 final regression anchor: `f6c5e0b4ff1967a6febfc9feff573e81d82286e8`.
+Current verified source deployment: latest `READY` Production deployment for
+the final `origin/main`, with canonical Production aliases.
+`origin/main`: `f6c5e0b4ff1967a6febfc9feff573e81d82286e8`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production source deployment: latest `READY` Production deployment (canonical aliases).
