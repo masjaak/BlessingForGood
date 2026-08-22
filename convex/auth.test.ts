@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import { convexTest } from "convex-test";
+import { register as registerRateLimiter } from "@convex-dev/rate-limiter/test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
@@ -20,7 +21,9 @@ const secondCustomerIdentity = {
 };
 
 function testConvex() {
-  return convexTest(schema, modules);
+  const t = convexTest(schema, modules);
+  registerRateLimiter(t);
+  return t;
 }
 
 describe("Clerk identity and BFG authorization", () => {

@@ -11,6 +11,18 @@
 **Production:** `BFG_PRODUCTION_STABLE`.
 **Product mode:** `MAINTENANCE`.
 
+**Phase 09.1:** `PRODUCTION ASSURANCE ACTIVE` — security hardening, adversarial
+authorization verification, abuse controls, header hardening, load evidence,
+and recovery verification are in progress. This is an assurance pass, not a
+new product-feature phase; functional completion remains unchanged.
+
+Phase 09.1 current evidence includes 247/247 deterministic tests, 264/264
+Playwright cases ultimately passing with one transient retry, a passing local
+Production build/header check, and safe Production Profile A read capacity
+validated through 500 before the 750 stop threshold. Convex tier/usage/backup
+and recovery values remain explicitly `BLOCKED_BY_ACCOUNT_ACCESS` until the
+authorized BFG platform account is available.
+
 The latest authenticated Production screenshot established the real Admin Book
 Detail surface and exposed the final External Preview geometry defect. The
 paired fields now render as explicit label/control/support rows, so both input

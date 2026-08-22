@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { register as registerRateLimiter } from "@convex-dev/rate-limiter/test";
 import { api } from "../convex/_generated/api";
 import schema from "../convex/schema";
 
@@ -10,7 +11,9 @@ export const SECOND_CUSTOMER_SUBJECT = "phase041-second-customer-test";
 export type TestConvex = ReturnType<typeof convexTest>;
 
 export function testConvex() {
-  return convexTest(schema, import.meta.glob("../convex/**/*.ts"));
+  const t = convexTest(schema, import.meta.glob("../convex/**/*.ts"));
+  registerRateLimiter(t);
+  return t;
 }
 
 export function asUser(t: TestConvex, subject: string) {

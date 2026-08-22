@@ -17,6 +17,7 @@ import { requireConfiguredSecret } from "./lib/previewCapability";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { requiredText } from "./lib/validation";
 import { notifyUser } from "./lib/notifications";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 const FAILED_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = 5;
@@ -312,6 +313,8 @@ export const unlock = mutation({
     const identity = await ctx.auth.getUserIdentity();
     const member = identity ? await findCurrentUser(ctx, identity) : null;
     const memberCanReceiveGrant = Boolean(member && member.status === "active");
+    await enforceRateLimit(ctx, "catalogUnlockGlobal");
+    if (memberCanReceiveGrant) await enforceRateLimit(ctx, "catalogUnlockUser", String(member!._id));
     const attemptKey = memberCanReceiveGrant ? undefined : anonymousAttemptKey(args);
     if (attemptKey && (await anonymousAccessIsLocked(ctx, attemptKey))) {
       return { errorCode: "ACCESS_CODE_RATE_LIMITED" as const };

@@ -184,3 +184,61 @@ Follow-up owner and due date
 
 Never include raw secrets, access codes, payment evidence, or unnecessary
 customer-identifying data.
+
+## Phase 09.1 Recovery Assurance Addendum — 2026-08-22
+
+Status: `DOCUMENTED_NOT_DRILLED / BLOCKED_BY_ACCOUNT_ACCESS`.
+
+The official Convex backup/restore documentation was reviewed during Phase
+09.1. It describes consistent manual backups/export, optional inclusion of
+files, retention behavior, and restore/import procedures that vary by current
+plan. It also makes clear that code/configuration/environment values and
+scheduled jobs are not restored as application data. The current local Convex
+CLI session is authenticated to a different team and cannot access BFG
+Production `clean-eel-522`, so the actual plan, backup cadence, retention,
+usage limits, and configured backup inventory remain **NOT VERIFIED**. No
+Production restore was attempted.
+
+Official references:
+
+- [Convex backup and restore](https://docs.convex.dev/database/backup-restore)
+- [Convex production limits](https://docs.convex.dev/production/state/limits)
+- [Convex usage limits](https://docs.convex.dev/production/usage-limits)
+
+### What Each Rollback Restores
+
+| Mechanism                              | Restores                                                                       | Does not restore                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Git revert / known-good commit         | Application source and context                                                 | Convex table rows, Convex Storage files, external provider state          |
+| Vercel deployment rollback             | Next.js/web deployment and aliases                                             | Convex data, Storage files, financial consequences, provider sessions     |
+| Convex function/schema deploy rollback | Function/schema code according to the supported deployment path                | Already-written business data, Storage objects, external side effects     |
+| Convex backup/export restore           | Only the data/files included by the selected supported backup/export procedure | Code/config/env/scheduled jobs; exact scope requires account verification |
+
+### RPO / RTO
+
+```text
+DATABASE RPO: NOT VERIFIED
+STORAGE RPO: NOT VERIFIED
+DATABASE RTO: NOT VERIFIED
+STORAGE RTO: NOT VERIFIED
+DRILL: DOCUMENTED_NOT_DRILLED
+```
+
+Do not state `RPO=0` or a minute-level RTO. A supported numeric target can be
+set only after Owner-authorized access confirms backup cadence/retention and a
+safe non-Production restore drill measures data validation and elapsed time.
+
+### Required Safe Drill
+
+1. Confirm the authorized BFG Convex team/project and current tier.
+2. Create or select an approved non-Production target; do not overwrite live
+   Production.
+3. Take/export a consistent snapshot with approved file scope.
+4. Restore/import to the non-Production target.
+5. Validate schema, representative non-sensitive invariants, references, and
+   file availability without copying customer data into reports.
+6. Record elapsed time, gaps, retention, operator steps, and rollback limits.
+7. Set RPO/RTO only from that evidence and update this playbook.
+
+The Phase 09.1 load test did not create data and does not alter this recovery
+status.

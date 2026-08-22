@@ -8,6 +8,7 @@ import { ledgerDeltas } from "./lib/depositLedger";
 import { fail } from "./lib/errors";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { validateStoredFile } from "./lib/storage";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 const status = v.union(v.literal("submitted"), v.literal("under_review"), v.literal("approved"), v.literal("rejected"));
 const proofTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
@@ -21,7 +22,8 @@ function text(value: string | undefined, max = 500) {
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    await requirePermission(ctx, "deposits.read.own");
+    const user = await requirePermission(ctx, "deposits.read.own");
+    await enforceRateLimit(ctx, "depositUploadUser", String(user._id));
     return ctx.storage.generateUploadUrl();
   },
 });
@@ -35,6 +37,7 @@ export const submit = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "deposits.read.own");
+    await enforceRateLimit(ctx, "depositSubmitUser", String(user._id));
     if (!Number.isSafeInteger(args.amount) || args.amount <= 0) fail("DEPOSIT_AMOUNT_INVALID");
     const contentType = await validateStoredFile(
       ctx,

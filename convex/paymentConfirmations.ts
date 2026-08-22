@@ -10,6 +10,7 @@ import { invoiceProjection } from "./lib/invoiceProjection";
 import { paymentConfirmationStatusValidator } from "./validators";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { validateStoredFile } from "./lib/storage";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 type DataCtx = QueryCtx | MutationCtx;
 type PaymentConfirmationStatus = "submitted" | "under_review" | "approved" | "rejected";
@@ -114,6 +115,7 @@ export const submit = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "invoices.read.own");
+    await enforceRateLimit(ctx, "paymentSubmitUser", String(user._id));
     const invoice = await ctx.db.get(args.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     if (invoice.customerUserId !== user._id) fail("PAYMENT_CONFIRMATION_ACCESS_DENIED");
@@ -176,7 +178,8 @@ export const submit = mutation({
 export const generateProofUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    await requirePermission(ctx, "invoices.read.own");
+    const user = await requirePermission(ctx, "invoices.read.own");
+    await enforceRateLimit(ctx, "proofUploadUser", String(user._id));
     return ctx.storage.generateUploadUrl();
   },
 });

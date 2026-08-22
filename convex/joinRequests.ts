@@ -9,6 +9,7 @@ import { admitApprovedJoinRequest } from "./users";
 import { joinRequestStatusValidator } from "./validators";
 import { joinRequestBookInterestValidator } from "./validators";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 type JoinRequestAdmissionStatus = "pending" | "invitation_pending" | "active" | "rejected";
@@ -150,6 +151,8 @@ export const submit = mutation({
     ) {
       fail("JOIN_REQUEST_DUPLICATE");
     }
+    await enforceRateLimit(ctx, "joinSubmitGlobal");
+    if (identity) await enforceRateLimit(ctx, "joinSubmitUser", identity.subject);
     const now = Date.now();
     const joinRequestId = await ctx.db.insert("joinRequests", {
       name,

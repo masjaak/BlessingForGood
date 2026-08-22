@@ -8,6 +8,7 @@ import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
 import { bookPublicationStatusValidator } from "./validators";
 import { insertBook } from "./lib/productDomain";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 const galleryLimit = 8;
 const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -141,7 +142,8 @@ export const getForAdmin = query({
 export const generateCoverUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    await requirePermission(ctx, "books.manage");
+    const user = await requirePermission(ctx, "books.manage");
+    await enforceRateLimit(ctx, "bookUploadUser", String(user._id));
     return ctx.storage.generateUploadUrl();
   },
 });
@@ -149,7 +151,8 @@ export const generateCoverUploadUrl = mutation({
 export const generateGalleryUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    await requirePermission(ctx, "books.manage");
+    const user = await requirePermission(ctx, "books.manage");
+    await enforceRateLimit(ctx, "bookUploadUser", String(user._id));
     return ctx.storage.generateUploadUrl();
   },
 });

@@ -26,6 +26,30 @@ additive metadata over the original storage object and is projected through all
 customer cover consumers. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
 
+## Phase 09.1 Production Assurance — 2026-08-22
+
+Phase 09.1 is **ACTIVE — ASSURANCE / MAINTENANCE**, not a feature phase. The
+non-functional contract and evidence artifacts are:
+
+- [`PRD-NON-FUNCTIONAL-ASSURANCE-2026-08.md`](product/PRD-NON-FUNCTIONAL-ASSURANCE-2026-08.md)
+- [`BFG-THREAT-MODEL.md`](security/BFG-THREAT-MODEL.md)
+- [`BFG-ATTACK-SURFACE.md`](security/BFG-ATTACK-SURFACE.md)
+- [`BFG-RBAC-MATRIX.md`](security/BFG-RBAC-MATRIX.md)
+- [`BFG-AUTHORIZATION-TEST-MATRIX.md`](security/BFG-AUTHORIZATION-TEST-MATRIX.md)
+- [`BFG-RATE-LIMIT-MATRIX.md`](security/BFG-RATE-LIMIT-MATRIX.md)
+- [`BFG-SECRET-EXPOSURE-AUDIT.md`](security/BFG-SECRET-EXPOSURE-AUDIT.md)
+- [`BFG-PRODUCTION-ASSURANCE-MATRIX.md`](security/BFG-PRODUCTION-ASSURANCE-MATRIX.md)
+- [`BFG-SCALABILITY-CONTRACT.md`](performance/BFG-SCALABILITY-CONTRACT.md)
+- [`BFG-LOAD-TEST-REPORT.md`](performance/BFG-LOAD-TEST-REPORT.md)
+
+The pass adds no customer/Admin product feature. Current safe evidence is
+247/247 deterministic tests, 264/264 Playwright cases ultimately passing with
+one transient retry, source/build/browser secret scans with zero active
+credential values, server-side cross-customer/role/suspension denial, and
+Profile A public read capacity through 500 users. The 750 level crossed the
+stop threshold; 1,000 is not validated. Convex plan/usage/backup and RPO/RTO
+remain `BLOCKED_BY_ACCOUNT_ACCESS` / `DOCUMENTED_NOT_DRILLED`.
+
 ## Phase 09 Initial Operations Baseline — 2026-08-22
 
 Phase 09 is an ongoing operating mode, not a feature phase. The canonical

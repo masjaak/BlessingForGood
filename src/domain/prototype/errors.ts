@@ -7,6 +7,7 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Kode belum cocok, katalog sudah ditutup, atau akses belum tersedia.";
   }
   if (message.includes("ACCESS_CODE_RATE_LIMITED")) return "Terlalu banyak percobaan. Coba lagi dalam beberapa menit.";
+  if (message.includes("RATE_LIMITED")) return "Terlalu banyak permintaan. Coba lagi sebentar.";
   if (message.includes("CATALOG_NOT_OPEN") || message.includes("CATALOG_CLOSED")) {
     return "Katalog ini sudah ditutup.";
   }

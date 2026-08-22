@@ -7,6 +7,7 @@ import { recordAudit } from "./lib/audit";
 import { findCurrentUser, requireOwner } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { roleValidator, userStatusValidator } from "./validators";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 function appUserView(user: Doc<"appUsers">) {
   return {
@@ -174,6 +175,7 @@ export const inviteStaff = mutation({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     const owner = await requireOwner(ctx);
+    await enforceRateLimit(ctx, "staffInviteOwner", String(owner._id));
     const email = normalizedInviteEmail(args.email);
     const invitations = await ctx.db
       .query("staffInvitations")

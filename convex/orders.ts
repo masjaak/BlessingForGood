@@ -13,6 +13,7 @@ import { hasUnresolvedException } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
@@ -168,6 +169,7 @@ export const submit = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "orders.read.own");
+    await enforceRateLimit(ctx, "orderSubmitUser", String(user._id));
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     if (!(await catalogIsOpen(ctx, args.catalogId))) fail("CATALOG_NOT_OPEN");
@@ -232,6 +234,7 @@ export const createReadyStock = mutation({
   handler: async (ctx, args) => {
     const user = await requireActiveUser(ctx);
     if (user.role !== "customer") fail("CUSTOMER_REQUIRED");
+    await enforceRateLimit(ctx, "readyStockOrderUser", String(user._id));
     const item = await resolveReadyStockItem(ctx, args.variantId, args.quantity);
     const profile = await ctx.db
       .query("customerProfiles")
@@ -405,7 +408,11 @@ export const backfillOrderCodes = mutation({
       await recordAudit(ctx, user._id, "order.reference_backfilled", "order", order._id, { orderCode });
       updated += 1;
     }
-    return { updated, scanned: orders.length, hasMore: orders.some((order) => !order.orderCode) && missing.length === limit };
+    return {
+      updated,
+      scanned: orders.length,
+      hasMore: orders.some((order) => !order.orderCode) && missing.length === limit,
+    };
   },
 });
 

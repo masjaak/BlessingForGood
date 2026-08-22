@@ -18,6 +18,7 @@ import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { insertBook, insertPublisher, insertVariant } from "./lib/productDomain";
+import { enforceRateLimit } from "./lib/rateLimit";
 
 const importArgs = {
   csv: v.string(),
@@ -707,6 +708,7 @@ export const confirm = mutation({
   args: importArgs,
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
+    await enforceRateLimit(ctx, "bulkImportConfirmUser", String(user._id));
     const plan = await buildPlan(ctx, args.csv, args.fileName, args.mimeType || "");
     assertImportable(plan);
     return applyPlan(ctx, user._id, plan);
