@@ -46,9 +46,10 @@ The pass adds no customer/Admin product feature. Current safe evidence is
 247/247 deterministic tests, 264/264 Playwright cases ultimately passing with
 one transient retry, source/build/browser secret scans with zero active
 credential values, server-side cross-customer/role/suspension denial, and
-Profile A public read capacity through 500 users. The 750 level crossed the
-stop threshold; 1,000 is not validated. Convex plan/usage/backup and RPO/RTO
-remain `BLOCKED_BY_ACCOUNT_ACCESS` / `DOCUMENTED_NOT_DRILLED`.
+Profile A public read capacity through 500 users. The post-deployment 750
+level returned no request errors or 5xx but crossed the p95 latency target;
+1,000 is not validated. Convex plan/usage/backup and RPO/RTO remain
+`BLOCKED_BY_ACCOUNT_ACCESS` / `DOCUMENTED_NOT_DRILLED`.
 
 ## Phase 09 Initial Operations Baseline — 2026-08-22
 

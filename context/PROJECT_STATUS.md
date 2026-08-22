@@ -11,17 +11,20 @@
 **Production:** `BFG_PRODUCTION_STABLE`.
 **Product mode:** `MAINTENANCE`.
 
-**Phase 09.1:** `PRODUCTION ASSURANCE ACTIVE` — security hardening, adversarial
-authorization verification, abuse controls, header hardening, load evidence,
-and recovery verification are in progress. This is an assurance pass, not a
-new product-feature phase; functional completion remains unchanged.
+**Phase 09.1:** `PRODUCTION ASSURANCE EVIDENCE COMPLETE WITH QUALIFICATIONS` —
+security hardening, adversarial authorization verification, abuse controls,
+header hardening, bounded load evidence, and recovery verification were
+executed. This was an assurance pass, not a new product-feature phase;
+functional completion remains unchanged.
 
 Phase 09.1 current evidence includes 247/247 deterministic tests, 264/264
 Playwright cases ultimately passing with one transient retry, a passing local
 Production build/header check, and safe Production Profile A read capacity
-validated through 500 before the 750 stop threshold. Convex tier/usage/backup
-and recovery values remain explicitly `BLOCKED_BY_ACCOUNT_ACCESS` until the
-authorized BFG platform account is available.
+validated through 500. At 750 the post-deployment run returned no request
+errors or 5xx but breached the p95 latency target; 1,000 was not run. Convex
+tier/usage/backup and recovery values remain explicitly
+`BLOCKED_BY_ACCOUNT_ACCESS` until the authorized BFG platform account is
+available.
 
 The latest authenticated Production screenshot established the real Admin Book
 Detail surface and exposed the final External Preview geometry defect. The
@@ -36,18 +39,19 @@ Production pilot is **DEFERRED_BY_USER_DATA**. Product Media decisions are
 locked and populated Gallery/Preview UAT remains blocked only by approved data;
 cover framing uses additive metadata and keeps the original source.
 
-Starting commit for this targeted pass: `db4f628`.
-Implementation commit: `e04f3cd`.
-Final delivery: current `main` after the targeted-pass context anchor.
-Current verified source deployment: latest `READY` Production deployment.
-`origin/main`: `85908d9` at the Phase 09 review start; Phase 09 context changes
-are currently in the working tree pending the normal repository handoff.
+Phase 09.1 starting commit: `0c5d409c1abffa63be88ee80cc971d8c2253f5ae`.
+Phase 09.1 code commit: `ea724bc2e5503f9bf35b9963bc29ccbcc865b288`.
+Phase 09.1 documentation anchor: `460e5a03e94bdd4b759310743f5f745a58b9da9a`.
+Current verified source deployment:
+`blessing-for-good-253ndu515-masjaaks-projects.vercel.app`, `READY`, canonical
+Production aliases.
+`origin/main`: `460e5a03e94bdd4b759310743f5f745a58b9da9a`.
 Convex Development: `content-snake-214`.
 Convex Production: `clean-eel-522`.
 Vercel Production source deployment: latest `READY` Production deployment (canonical aliases).
 Canonical Production: `https://www.blessingforgood.com`.
 
-Current local regression is Vitest `241/241`, Convex `111/111`, local
+Current local regression is Vitest `247/247`, Convex `111/111`, local
 Playwright `264/264`, focused local media/file-picker checks `6/6`, rendered QA
 at 375/390/430/768/834/1024/1280/1440, TypeScript PASS, ESLint PASS, Format
 PASS, Build PASS, and `git diff --check` PASS. Live signed-out Admin protection
