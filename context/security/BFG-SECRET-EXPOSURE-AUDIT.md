@@ -210,6 +210,11 @@ repository. The filesystem scan excluded only `.git`, `node_modules`, `.next`,
 and the pre-existing `artifacts/` directory; generated/vendor content was not
 part of the release source.
 
+The canonical Production HTML and 16 browser JavaScript assets were rescanned
+after deployment. Exact Clerk server-key and Convex deploy-key matches were
+both `0`; server-key-shaped values and privileged environment-name matches were
+both `0`.
+
 ### Final secret verdict
 
 ```text

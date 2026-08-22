@@ -1,6 +1,6 @@
 # BFG PRODUCTION ASSURANCE MATRIX
 
-Status: `PHASE_09_2_FINAL_CLOSURE_IN_PROGRESS` · evidence date 2026-08-22.
+Status: `PHASE_09_2_FINAL_ASSURANCE` · evidence date 2026-08-22.
 This matrix separates source/test evidence, safe Production observations, and
 platform/account blockers.
 
@@ -20,16 +20,16 @@ platform/account blockers.
 | Current filesystem secret review   | `GREEN_EVIDENCE`                    | Local candidates moved outside Git; provider rotation/update completed; final Gitleaks/TruffleHog scans found no privileged secret                           | Keep restricted operator storage and rescan after credential changes                                      |
 | Stored XSS / unsafe HTML           | `GREEN_EVIDENCE`                    | No production HTML injection sink; inert payload tests; React escaping                                                                                       | Image decode and decompression-bomb defenses remain bounded residual risks                                |
 | Unsafe external URL fetch / SSRF   | `GREEN_EVIDENCE`                    | External Preview validates safe HTTPS metadata; no backend fetch/iframe/remote image fetch                                                                   | Recheck if integrations add server fetch                                                                  |
-| Upload auth bypass                 | `GREEN_EVIDENCE_LOCAL`              | Shared server upload endpoint, purpose-bound storage claims, existing role/ownership/rate-limit checks, and deterministic unauthorized/reuse tests pass      | Not deployed; canonical Convex access required before release                                             |
-| Upload content integrity           | `GREEN_EVIDENCE_LOCAL`              | JPEG/PNG/WebP/PDF signatures, declared MIME/extension consistency, bounded headers, structural checks, corrupt-file rejection, and safe error responses pass | Full image decode/dimension-bomb defense remains residual risk                                            |
-| CSV binary masquerade              | `GREEN_EVIDENCE_LOCAL`              | Server parser rejects NUL payloads while preserving UTF-8/BOM, 2 MiB, 200-row, 5,000-character-cell, and exact-header contracts                              | Not deployed; canonical Convex access required before release                                             |
-| Upload storage ownership           | `GREEN_EVIDENCE_LOCAL`              | A storage ID requires a server-created purpose/owner claim and is consumed by the attach/submit mutation                                                     | Existing legacy unattached blobs need lifecycle review                                                    |
+| Upload auth bypass                 | `GREEN_EVIDENCE_PRODUCTION`        | Shared server upload endpoint, purpose-bound storage claims, existing role/ownership/rate-limit checks, deterministic tests, and canonical Convex deploy pass | No unsafe fixture was uploaded to Production; live mutation remains intentionally data-safe              |
+| Upload content integrity           | `GREEN_EVIDENCE_PRODUCTION`        | JPEG/PNG/WebP/PDF signatures, MIME/extension consistency, full bounded body, dimension/pixel bounds, structural/corrupt rejection, and production build pass | General image-processing stack remains out of scope                                                     |
+| CSV binary masquerade              | `GREEN_EVIDENCE_PRODUCTION`        | Server parser rejects NUL/binary masquerade while preserving UTF-8/BOM, 2 MiB, 200-row, 5,000-character-cell, and exact-header contracts                    | No fake Production import was created                                                                      |
+| Upload storage ownership           | `GREEN_EVIDENCE_PRODUCTION`        | Storage claims are server-created, purpose/owner-bound, consumed atomically, and deployed to `clean-eel-522`                                                  | Existing legacy unattached blobs need lifecycle review                                                    |
 | Dedicated malware scanning         | `NOT_REQUIRED_CURRENT_THREAT_MODEL` | Authenticated controlled uploads and sensitive proof privacy were evaluated; no public malware-analysis service was used                                     | Reconsider for anonymous uploads, higher volume, document expansion, observed abuse, or compliance demand |
 | Bulk Import                        | `GREEN_EVIDENCE`                    | Parser bounds, atomic confirm, formula-safe export, Admin guard                                                                                              | Preview remains bounded query rather than rate-limited mutation                                           |
 | Rate limiting                      | `REMEDIATED_GREEN`                  | Shared component covers catalog, join, order, stock, payment, deposit, uploads, import, invitation                                                           | Admin low-volume financial mutations are documented candidates, not blanket-limited                       |
 | Input validation / mass assignment | `GREEN_EVIDENCE`                    | Explicit validators/patch fields, bounded strings/arrays/amounts/CSV                                                                                         | Broad-validator review remains maintenance work where not high risk                                       |
 | Security headers                   | `GREEN_EVIDENCE`                    | Canonical Production emits CSP, HSTS, nosniff, Referrer-Policy, Permissions-Policy, XFO, and COOP; Admin redirect smoke is safe                              | CSP uses the documented `unsafe-inline` compatibility exception; no production `unsafe-eval`              |
-| Dependencies                       | `GREEN_EVIDENCE`                    | `npm audit --omit=dev` returned 0 vulnerabilities after the Phase 09.1 code commit                                                                           | No runtime scanner dependency added except required Convex limiter component                              |
+| Dependencies                       | `GREEN_EVIDENCE`                    | Clean release `npm audit --omit=dev` returned 0 vulnerabilities; Vercel Production build completed                                                           | No runtime scanner dependency added except required Convex limiter component                              |
 | Public HTTP scale                  | `VALIDATED_TO_CAPACITY_500`         | Post-deployment Profile A passes 10/50/100/300/500; 750 reached with 0 errors but p95 2,552 ms exceeded the 2,000-ms target                                  | 750 latency stop; 1,000 not run                                                                           |
 | Authenticated realtime scale       | `BLOCKED_BY_SAFE_DATA`              | No 1,000 Production identities; deterministic tests only                                                                                                     | Requires safe synthetic identity strategy and platform telemetry                                          |
 | Mutation correctness               | `GREEN_EVIDENCE`                    | Stock/payment/deposit concurrency suite passes in deterministic Convex fixtures                                                                              | Throughput not claimed                                                                                    |
@@ -143,3 +143,68 @@ Reconsider private scanning if anonymous uploads, materially higher volume,
 PDF/document expansion, external contributors, an observed malicious upload,
 enterprise compliance, or public file sharing becomes part of the threat
 model.
+
+## Phase 09.2 Final Release Evidence — 2026-08-22
+
+### Release anchor
+
+```text
+final security source commit: 3f39bbc18bd4f1ce93f566f6386042c1bef51412
+security implementation commit: 91634b4530ff58cfeee1f43bb92e8d5de8987075
+origin/main: 3f39bbc18bd4f1ce93f566f6386042c1bef51412
+working tree: unrelated user maintenance changes preserved and excluded
+```
+
+The release was built from a detached clean worktree containing only the
+committed security/docs snapshot. The shared working tree was never reset or
+stashed.
+
+### Production deployment
+
+```text
+Convex: clean-eel-522, canonical team palevvi, deployed successfully
+Vercel: dpl_HNK9pUeocNNq271UJ2vCECjrPgfr
+Vercel state: READY
+Vercel target: production
+Vercel URL: blessing-for-good-q6jlhpdrj-masjaaks-projects.vercel.app
+canonical aliases: www.blessingforgood.com, blessingforgood.com
+Vercel build: production Next build passed; Convex deploy step passed
+```
+
+### Live route and security smoke
+
+```text
+/: 200
+/how-to-order: 200
+/catalog: 200
+/ready-stock: 200
+/sign-in: 200
+/admin: 307 signed-out boundary
+```
+
+The canonical response included CSP, HSTS, X-Content-Type-Options `nosniff`,
+Referrer-Policy, Permissions-Policy, X-Frame-Options, and COOP. Vercel
+error-level logs for the new deployment over the verification window returned
+zero records.
+
+The Production HTML and 16 browser JavaScript assets were scanned without
+printing contents: exact Clerk server-key match `0`, exact Convex deploy-key
+match `0`, server-key-shaped values `0`, and privileged environment-name
+matches `0`. A legitimate upload mutation was not invented for this gate;
+Production upload regression is therefore `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA`
+with deployment and live route/header evidence above.
+
+### Final matrix
+
+```text
+P1 recovery: GREEN_EVIDENCE
+P3 credentials: GREEN_EVIDENCE
+P4 upload hardening: GREEN_EVIDENCE_PRODUCTION
+authentication/RBAC/ownership: GREEN_EVIDENCE
+successful IDOR/BOLA attacks: 0
+client/server privileged secret exposure: 0 confirmed
+upload authorization bypass: 0
+known runtime dependency vulnerabilities: 0
+high-risk rate limits: GREEN
+security headers: GREEN
+```
