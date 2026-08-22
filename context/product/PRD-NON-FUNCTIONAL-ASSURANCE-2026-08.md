@@ -138,9 +138,10 @@ number.
 ## Availability
 
 Production load testing is non-destructive and progressive. The public
-read-heavy HTTP profile passed 10, 50, 100, 300, and 500 virtual users for the
-bounded run; the 750-user level crossed the stop threshold with connection
-failures and no 5xx responses, so 1,000 was not launched. Convex realtime and
+read-heavy HTTP profile passed 10, 50, 100, 300, and 500 virtual users after
+the security deployment. The 750-user level returned no request errors or 5xx,
+but crossed the p95 latency target, so 1,000 was not launched. An earlier
+pre-deployment run also showed connection failures. Convex realtime and
 authenticated session capacity were not substituted with a homepage-only
 claim.
 
@@ -165,8 +166,9 @@ not as application correctness failure.
 
 Acceptance requires a representative workload, progressive ramp, latency and
 error evidence, and no unexpected authorization or financial consequence. The
-current result is: read-heavy public HTTP validated through 500; 750 stopped;
-1,000 not validated. See the scalability contract for the exact verdict.
+current result is: read-heavy public HTTP validated through 500; 750 reached
+but stopped on p95 latency; 1,000 not validated. See the scalability contract
+for the exact verdict.
 
 ## Cost Guardrails
 

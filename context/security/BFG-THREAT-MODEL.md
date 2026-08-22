@@ -96,9 +96,9 @@ the enforcement boundary.
 1. Convex plan/usage/backup configuration is `BLOCKED_BY_ACCOUNT_ACCESS`; the
    application cannot claim an operational recovery guarantee without that
    evidence.
-2. Profile A public HTTP load stopped at 750 due connection failures and
-   latency; Convex realtime/authenticated capacity and queue depth were not
-   observable with the current platform access.
+2. Profile A public HTTP load passed through 500 and stopped at 750 on the p95
+   latency target after deployment; Convex realtime/authenticated capacity and
+   queue depth were not observable with the current platform access.
 3. Upload validation uses Convex Storage metadata and limits; a dedicated
    malware/byte-sniffing pipeline is not part of the current product.
 4. The Secret Catalog public gateway intentionally allows anonymous scoped
