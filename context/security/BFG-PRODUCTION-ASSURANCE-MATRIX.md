@@ -149,9 +149,9 @@ model.
 ### Release anchor
 
 ```text
-final security source commit: 3f39bbc18bd4f1ce93f566f6386042c1bef51412
+final security source commit: 96f01a5c7bb4a7b605af060c8a39a0f57bb5d576
 security implementation commit: 91634b4530ff58cfeee1f43bb92e8d5de8987075
-origin/main: 3f39bbc18bd4f1ce93f566f6386042c1bef51412
+origin/main: 96f01a5c7bb4a7b605af060c8a39a0f57bb5d576
 working tree: unrelated user maintenance changes preserved and excluded
 ```
 
@@ -163,10 +163,10 @@ stashed.
 
 ```text
 Convex: clean-eel-522, canonical team palevvi, deployed successfully
-Vercel: dpl_HNK9pUeocNNq271UJ2vCECjrPgfr
+Vercel: dpl_BCnHvsXbs6v4wWrEeaUg1YrZA2Jt
 Vercel state: READY
 Vercel target: production
-Vercel URL: blessing-for-good-q6jlhpdrj-masjaaks-projects.vercel.app
+Vercel URL: blessing-for-good-3mpcznwaq-masjaaks-projects.vercel.app
 canonical aliases: www.blessingforgood.com, blessingforgood.com
 Vercel build: production Next build passed; Convex deploy step passed
 ```
