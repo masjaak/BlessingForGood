@@ -4,29 +4,30 @@ Date: 2026-08-24 (Asia/Jakarta)
 
 ## Status
 
-`IMPLEMENTED — PRODUCTION CLOSURE BLOCKED BY EXTERNAL AUTH/DEPLOYMENT AND
-APPROVED-DATA ACCESS`
+`IMPLEMENTED — DEPLOYED; LIVE UAT REMAINS OPEN FOR AUTHORIZED DATA/DEVICES`
 
-All requested code changes that can be verified without changing Production
-business data are implemented. This report does not convert deterministic green
-into Production green: authenticated Android/iOS, populated upload, Ready Stock,
-Activity, Button, Customer/Admin sync, and Clerk CAPTCHA journeys still require
-authorized live credentials and approved records.
+All requested code changes are implemented and deployed to the canonical
+Convex/Vercel targets. Deterministic and public production evidence is green;
+authenticated Android/iOS, populated upload, Ready Stock, Activity, Button, and
+Customer/Admin sync journeys still require authorized live credentials and
+approved records.
 
 ## Starting Commit / Canonical Baseline
 
 | Item | Evidence |
 | --- | --- |
-| User-stated starting commit | `fce35bee1d9e79f3050d0481d8823eebddacccc0` — not present in this checkout |
-| Actual starting HEAD | `1e155205` on `main` |
-| Actual starting `origin/main` | `88ec873` |
+| User-stated starting commit | `fce35bee1d9e79f3050d0481d8823eebddacccc0` (`fce35be`) |
+| Actual initial local HEAD | `1e155205` on `main` (stale when this turn began) |
+| Actual initial `origin/main` | `88ec873` |
+| Fetched canonical reconciliation | `fce35be`, merged without force/reset |
 | Canonical Convex Development | `content-snake-214` |
 | Canonical Convex Production | `clean-eel-522` |
 | Canonical URL | `https://www.blessingforgood.com` |
-| Final commit | Recorded after the final verification commit |
+| Final implementation commit | `155fc87` |
 
-The user-provided `fce35bee` baseline was not recreated, reset, or substituted.
-No old parallel branch was reopened and no duplicate V2 system was added.
+The user-provided `fce35bee` baseline was fetched from `origin/main` and merged
+into the final implementation. No old parallel branch was reopened, no force
+push/reset was used, and no duplicate V2 system was added.
 
 ## Green Preservation
 
@@ -63,8 +64,10 @@ similar to `81vi9d-A1dL._SL1500_ (1).jpg` and
 `IMG-20260819-WA0166.jpg`, plus PNG/WebP and mismatch rejection. The existing
 claim → attach → persisted query → customer projection path is unchanged.
 
-Production cover/gallery Save and hard-refresh verification: `BLOCKED_BY_APPROVED_DATA`
-until an authorized Admin session and approved real asset are available.
+Production cover/gallery Save and hard-refresh verification:
+`BLOCKED_BY_APPROVED_DATA` until an authorized Admin session and approved real
+asset are available. The deployed server path is the tested path; no fake media
+was written.
 
 ### Ready Stock
 
@@ -81,7 +84,8 @@ product error boundary.
 
 Deterministic coverage verifies `available=3, quantity=1`, reservation, Admin
 visibility path, activity/audit consequence, and no oversell path. Production
-success plus Customer/Admin refresh is `BLOCKED_BY_OPERATIONAL_DATA`.
+success plus Customer/Admin refresh is `BLOCKED_BY_OPERATIONAL_DATA` because no
+approved live stock fixture/session was available.
 
 ### Clerk CAPTCHA / CSP
 
@@ -90,10 +94,11 @@ surfaces in `script-src`, `connect-src`, and `frame-src`, keeps `worker-src
 'self' blob:`, and retains the existing secure defaults. No global wildcard,
 CAPTCHA disablement, or native browser bypass was added.
 
-Deterministic CSP assertions pass. Android Chrome, desktop Chrome with a live
-signup, and iOS Safari are `BLOCKED_BY_EXTERNAL_AUTH_ACCESS` in this checkout;
-the local browser only has development/keyless Clerk configuration and cannot
-prove the Production challenge chain.
+Deterministic CSP assertions pass, and the canonical Production response was
+checked for the deployed challenge directives. Android Chrome, desktop Chrome
+with a live signup, and iOS Safari are `BLOCKED_BY_EXTERNAL_AUTH_ACCESS` in
+this environment; the local browser only has development/keyless Clerk
+configuration and cannot prove the Production challenge chain.
 
 ### Activity / Inbox
 
@@ -257,8 +262,8 @@ five-item bottom navigation `Beranda`, `Katalog`, `Buku Saya`, `Tagihan`,
 | Gate | Result |
 | --- | --- |
 | Focused critical tests | 74/74 |
-| Full Vitest suite | 277/277 after final additive order/invoice member-code view assertions |
-| Convex deterministic suite | Included in full suite; final codegen/typecheck green |
+| Full Vitest suite | 279/279, serial integrated run |
+| Convex deterministic suite | 143/143, serial integrated run; codegen/typecheck green |
 | TypeScript | PASS |
 | ESLint | PASS |
 | Format | PASS |
@@ -266,25 +271,26 @@ five-item bottom navigation `Beranda`, `Katalog`, `Buku Saya`, `Tagihan`,
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | `convex:check` | PASS against canonical Development deployment |
 | `git diff --check` | PASS at last check |
-| Playwright | Public/local run not green in this environment: Clerk keyless/JWK mismatch/RSC noise and blocked authenticated data; no false Production green claim |
+| Playwright | Production launch blocked before test execution by managed macOS Chromium Mach-port permission; prior local run also had keyless Clerk/JWK/RSC noise. No false browser green claim. |
 
 ## Production
 
 | Gate | Result |
 | --- | --- |
-| Convex | Development validation completed; Production deploy key not available locally |
-| Vercel | CLI account is authenticated; Production deploy/build hook not yet accepted |
-| Canonical URL | Public endpoint exists; changed code not yet proven live |
-| Runtime errors | No changed-code Production claim made |
+| Convex | `clean-eel-522` accepted the final schema/functions deployment |
+| Vercel | `READY`; deployment `dpl_47ov7KZgMF5ZeWkKKGmVTGwwCfUa` |
+| Canonical URL | `https://www.blessingforgood.com` returned HTTP 200 after deploy |
+| CSP/header evidence | Live response includes Clerk protection, Cloudflare challenge, worker, HSTS, nosniff, frame, and referrer policies |
+| Runtime errors | No authenticated business-flow claim; no live runtime error log evidence collected |
 | Android Chrome | BLOCKED_BY_EXTERNAL_AUTH_ACCESS |
 | Desktop Chrome authenticated | BLOCKED_BY_EXTERNAL_AUTH_ACCESS |
 | iOS Safari | Not available in this environment |
 
 ## Final Verdict
 
-`NOT CLOSED`. The code and deterministic regression gates are green, but the
-user’s absolute acceptance rule requires real Production journeys and
+`NOT CLOSED`. The code is deployed and deterministic/public gates are green, but
+the user’s absolute acceptance rule still requires real Production journeys and
 representative devices for uploads, Ready Stock, CAPTCHA, Activity, and
-authenticated Button states. Closure requires an authorized deployment to
-canonical Convex/Vercel plus live Admin/Customer fixtures or an approved
-fixture plan, followed by post-deploy hard-refresh and device verification.
+authenticated Button states. Closure requires authorized Admin/Customer
+fixtures and Android/Desktop (plus iOS where available) post-deploy
+hard-refresh verification.
