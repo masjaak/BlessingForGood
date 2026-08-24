@@ -18,6 +18,7 @@ describe("BFG Clerk configuration", () => {
 
   it("localizes the unregistered-account guidance", () => {
     expect(bfgClerkLocalization.formFieldLabel__emailAddress_username).toBe("Email atau username");
+    expect(bfgClerkLocalization.formFieldInputPlaceholder__emailAddress_username).toBe("Email atau username");
     expect(bfgClerkLocalization.formFieldAction__forgotPassword).toBe("Lupa password?");
     expect(bfgClerkLocalization.unstable__errors.external_account_not_found).toContain(
       "Akun ini belum terdaftar sebagai Blessfriend.",

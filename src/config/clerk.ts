@@ -42,6 +42,7 @@ export const bfgClerkLocalization = {
   },
   formFieldLabel__emailAddress: "Email",
   formFieldLabel__emailAddress_username: "Email atau username",
+  formFieldInputPlaceholder__emailAddress_username: "Email atau username",
   formFieldAction__forgotPassword: "Lupa password?",
   formButtonPrimary: "Lanjutkan",
   socialButtonsBlockButton: "Masuk dengan {{provider}}",
