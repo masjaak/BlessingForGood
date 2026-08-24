@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { IconButton } from "@/components/ui";
 
 export function BackButton({ fallback = "/", publicOnly = false }: { fallback?: string; publicOnly?: boolean }) {
   const router = useRouter();
@@ -30,11 +31,11 @@ export function BackButton({ fallback = "/", publicOnly = false }: { fallback?: 
   }, [fallback, publicOnly]);
 
   return (
-    <button
+    <IconButton
       className="back-button"
-      type="button"
       aria-label="Kembali"
       onClick={() => (hasInternalHistory ? router.back() : router.push(fallback))}
+      variant="secondary"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
@@ -46,6 +47,6 @@ export function BackButton({ fallback = "/", publicOnly = false }: { fallback?: 
           strokeWidth="1.8"
         />
       </svg>
-    </button>
+    </IconButton>
   );
 }

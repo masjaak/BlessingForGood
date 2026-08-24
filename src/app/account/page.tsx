@@ -151,7 +151,7 @@ function AccountDashboard() {
               "Belum ada akun deposit."
             )}
           </p>
-          <LinkButton href="/account/deposit" variant="quiet">
+          <LinkButton href="/account/deposit" variant="tertiary">
             Top-up & riwayat →
           </LinkButton>
         </Card>
@@ -171,7 +171,7 @@ function AccountDashboard() {
               <span className="card-kicker">Batch PO</span>
               <h2>Perjalanan batch</h2>
             </div>
-            <LinkButton href="/account/batches" variant="quiet">
+            <LinkButton href="/account/batches" variant="tertiary">
               Lihat batch →
             </LinkButton>
           </div>
@@ -183,7 +183,7 @@ function AccountDashboard() {
               <span className="card-kicker">Pesanan & pengiriman</span>
               <h2>Perjalanan buku</h2>
             </div>
-            <LinkButton href="/account/orders" variant="quiet">
+            <LinkButton href="/account/orders" variant="tertiary">
               Lihat semua →
             </LinkButton>
           </div>
@@ -216,7 +216,7 @@ function AccountDashboard() {
               <span className="card-kicker">Invoice & pembayaran</span>
               <h2>Yang perlu diselesaikan</h2>
             </div>
-            <LinkButton href="/account/invoices" variant="quiet">
+            <LinkButton href="/account/invoices" variant="tertiary">
               Lihat semua →
             </LinkButton>
           </div>

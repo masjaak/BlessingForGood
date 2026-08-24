@@ -130,6 +130,29 @@ route and action matrices.
 No required active feature is backend-only without an identified route, and no
 active visible action is a known dead action under the current action audit.
 
+## Post-diff memory — Global Button System Consolidation (2026-08-22)
+
+- `src/components/ui.tsx` is the only application Button visual primitive:
+  `Button`, `LinkButton`, `IconButton`, `LinkIconButton`, `ToggleButton`, and
+  `ActionGroup`.
+- `src/app/globals.css` owns one final semantic Button token block. Customer
+  and Admin callers select semantic variants/sizes; they do not own button
+  colors, radii, hover rules, or individual button margins.
+- Navigation remains anchor/LinkButton semantics. State changes remain native
+  Button semantics. The only native `<button>` source implementation is the
+  shared primitive itself; BFGSelect, gallery, quantity, close, and back paths
+  consume the family.
+- Async callsites use `loading`/`loadingLabel`; business mutations and server
+  authorization were not changed. Conditional visibility remains role,
+  ownership, and state-machine controlled.
+- Test-only visual fixture: `tests/components/button-specimen.tsx`; source
+  anti-pattern guard: `tests/components/button-system-guard.test.tsx`.
+- Full authenticated rendered QA is still a release gate. The representative
+  customer-375 run reached the browser but was non-green (16/19) under a
+  placeholder Convex deployment, with Clerk/RSC network errors and no real
+  production data/session. Do not convert this source-level closure into a
+  Production visual-green claim without screenshots.
+
 ## Historical Reports That No Longer Describe HEAD
 
 Earlier reports with 166/166 or lower counts, old deployment IDs, blocked

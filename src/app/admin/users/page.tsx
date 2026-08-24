@@ -76,7 +76,7 @@ function UserManagement() {
                   required
                 />
               </Field>
-              <Button pending={pendingAction === "invite"} pendingLabel="Membuat…">
+              <Button loading={pendingAction === "invite"} loadingLabel="Membuat…">
                 Buat undangan
               </Button>
             </form>
@@ -163,16 +163,16 @@ function UserManagement() {
                         `role:${user.appUserId}`,
                       )
                     }
-                    pending={pendingAction === `role:${user.appUserId}`}
-                    pendingLabel="Memperbarui…"
+                    loading={pendingAction === `role:${user.appUserId}`}
+                    loadingLabel="Memperbarui…"
                   >
                     {user.role === "admin" ? "Turunkan ke pelanggan" : "Jadikan Admin"}
                   </Button>
                   {user.status === "active" ? (
                     <Button
                       variant="danger"
-                      pending={pendingAction === `suspend:${user.appUserId}`}
-                      pendingLabel="Menangguhkan…"
+                      loading={pendingAction === `suspend:${user.appUserId}`}
+                      loadingLabel="Menangguhkan…"
                       onClick={() =>
                         void run(suspend({ userId: user.appUserId as Id<"appUsers"> }), `suspend:${user.appUserId}`)
                       }
@@ -181,8 +181,8 @@ function UserManagement() {
                     </Button>
                   ) : (
                     <Button
-                      pending={pendingAction === `reactivate:${user.appUserId}`}
-                      pendingLabel="Mengaktifkan…"
+                      loading={pendingAction === `reactivate:${user.appUserId}`}
+                      loadingLabel="Mengaktifkan…"
                       onClick={() =>
                         void run(
                           reactivate({ userId: user.appUserId as Id<"appUsers"> }),

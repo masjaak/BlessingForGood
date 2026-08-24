@@ -171,8 +171,8 @@ function AdminBatchDetail() {
               <div className="form-actions">
                 <Button
                   type="button"
-                  pending={pendingAction === "shipment"}
-                  pendingLabel="Memperbarui…"
+                  loading={pendingAction === "shipment"}
+                  loadingLabel="Memperbarui…"
                   onClick={() => void advance()}
                   disabled={currentBatch.isArchived || !nextStage}
                 >
@@ -198,8 +198,8 @@ function AdminBatchDetail() {
                 <Button
                   type="button"
                   variant="danger"
-                  pending={pendingAction === "archive"}
-                  pendingLabel="Mengarsipkan…"
+                  loading={pendingAction === "archive"}
+                  loadingLabel="Mengarsipkan…"
                   onClick={() => void run(() => archiveBatch(batchId), "Batch diarsipkan.", "archive")}
                   disabled={currentBatch.isArchived}
                 >
@@ -230,9 +230,9 @@ function AdminBatchDetail() {
                 <span>{link.catalogName}</span>
                 <Button
                   type="button"
-                  variant="quiet"
-                  pending={pendingAction === `unlink-${link.catalogId}`}
-                  pendingLabel="Melepas tautan…"
+                  variant="tertiary"
+                  loading={pendingAction === `unlink-${link.catalogId}`}
+                  loadingLabel="Melepas tautan…"
                   onClick={() =>
                     void run(
                       () => unlinkCatalog(batchId, link.catalogId),
@@ -263,8 +263,8 @@ function AdminBatchDetail() {
                 </BFGSelect>
                 <Button
                   type="button"
-                  pending={pendingAction === "link"}
-                  pendingLabel="Menautkan…"
+                  loading={pendingAction === "link"}
+                  loadingLabel="Menautkan…"
                   onClick={() => {
                     if (catalogId) void run(() => linkCatalog(batchId, catalogId), "Katalog ditautkan.", "link");
                   }}
@@ -312,9 +312,9 @@ function AdminBatchDetail() {
                     <div className="form-actions">
                       <Button
                         type="button"
-                        variant="quiet"
-                        pending={pendingAction === `unassign-${assignment.assignmentId}`}
-                        pendingLabel="Menghapus…"
+                        variant="tertiary"
+                        loading={pendingAction === `unassign-${assignment.assignmentId}`}
+                        loadingLabel="Menghapus…"
                         onClick={() =>
                           void run(
                             () => unassignOrderItem(assignment.orderItemId, batchId),
@@ -459,8 +459,8 @@ function AdminBatchDetail() {
                     <Button
                       type="button"
                       variant="secondary"
-                      pending={pendingAction === `target-${target.customerUserId}`}
-                      pendingLabel="Menargetkan…"
+                      loading={pendingAction === `target-${target.customerUserId}`}
+                      loadingLabel="Menargetkan…"
                       disabled={rosterLocked || pendingAction !== null}
                       onClick={() =>
                         void run(
@@ -498,8 +498,8 @@ function AdminBatchDetail() {
                   <Button
                     type="button"
                     variant="secondary"
-                    pending={pendingAction === `assign-${item.orderItemId}`}
-                    pendingLabel="Menugaskan…"
+                    loading={pendingAction === `assign-${item.orderItemId}`}
+                    loadingLabel="Menugaskan…"
                     disabled={rosterLocked || pendingAction !== null}
                     onClick={() =>
                       void run(
@@ -593,7 +593,7 @@ function AssignmentQuantityForm({
           required
         />
       </label>
-      <Button type="submit" variant="quiet" pending={pending} pendingLabel="Menyimpan…">
+      <Button type="submit" variant="primary" loading={pending} loadingLabel="Menyimpan…">
         Simpan jumlah
       </Button>
       {error ? (

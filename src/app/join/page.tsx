@@ -63,9 +63,9 @@ function ConnectedJoinForm() {
         <h2>Permintaan terkirim 🎉</h2>
         <p>Satu langkah lagi untuk jadi Blessfriend.</p>
         {whatsappGroupUrl ? (
-          <a className="button button-primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
+          <LinkButton variant="primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
             Gabung WhatsApp Group
-          </a>
+          </LinkButton>
         ) : (
           <p className="success-banner" role="status">
             Request sudah kami terima. Link grup sedang disiapkan.
@@ -75,7 +75,7 @@ function ConnectedJoinForm() {
           <LinkButton href="/community" variant="secondary">
             Kenali komunitas BFG
           </LinkButton>
-          <LinkButton href="/" variant="quiet">
+          <LinkButton href="/" variant="tertiary">
             Kembali ke beranda
           </LinkButton>
         </div>
@@ -171,7 +171,7 @@ function ConnectedJoinForm() {
             {error}
           </p>
         ) : null}
-        <Button type="submit" pending={isSubmitting} pendingLabel="Mengirim…">
+        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…">
           Kirim permintaan
         </Button>
       </form>

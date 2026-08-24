@@ -6,7 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, EmptyState, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 import { BackButton } from "@/components/back-button";
 
 const emptyForm = {
@@ -100,7 +100,7 @@ function AddressForm() {
               onChange={(event) => update("isDefault", event.target.checked)}
             />
           </label>
-          <Button type="submit" pending={isSaving} pendingLabel="Menyimpan…">
+          <Button type="submit" loading={isSaving} loadingLabel="Menyimpan…">
             Tambah alamat
           </Button>
           {message ? (
@@ -131,8 +131,8 @@ function AddressForm() {
             <p className="subtle">{address.phone}</p>
             <Button
               variant="danger"
-              pending={deletingAddressId === address.addressId}
-              pendingLabel="Menghapus…"
+              loading={deletingAddressId === address.addressId}
+              loadingLabel="Menghapus…"
               onClick={async () => {
                 setDeletingAddressId(address.addressId);
                 try {
@@ -162,9 +162,9 @@ function SignedOutAddresses() {
         <span className="eyebrow">Akun Blessfriend</span>
         <h1>Masuk lewat Akun untuk mengatur alamat.</h1>
         <p>Masuk untuk melihat dan memperbarui alamat pengirimanmu.</p>
-        <a className="button button-primary" href="/account">
+        <LinkButton href="/account" variant="primary">
           Ke Akun
-        </a>
+        </LinkButton>
       </div>
     </div>
   );

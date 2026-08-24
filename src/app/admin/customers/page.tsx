@@ -46,7 +46,7 @@ function CustomerList() {
                       </td>
                       <td>{customer.email || "—"}</td>
                       <td>
-                        <LinkButton href={`/admin/customers/${customer.customerUserId}`} variant="quiet">
+                        <LinkButton href={`/admin/customers/${customer.customerUserId}`} variant="tertiary">
                           Lihat detail →
                         </LinkButton>
                       </td>

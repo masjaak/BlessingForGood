@@ -91,15 +91,15 @@ function ContentEditor() {
             <textarea className="textarea" name="body" defaultValue={block?.body || ""} required />
           </Field>
           <div className="form-actions">
-            <Button pending={pending === "save"} pendingLabel="Menyimpan…">
+            <Button variant="secondary" loading={pending === "save"} loadingLabel="Menyimpan…">
               Simpan draf
             </Button>
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               disabled={!block}
-              pending={pending === "publish"}
-              pendingLabel="Menerbitkan…"
+              loading={pending === "publish"}
+              loadingLabel="Menerbitkan…"
               onClick={() => void run("publish", () => publish({ key }), "Konten dipublikasikan.")}
             >
               Terbitkan

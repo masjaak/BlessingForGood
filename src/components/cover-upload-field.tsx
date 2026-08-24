@@ -24,7 +24,7 @@ export function CoverUploadField({
   message,
   onFileChange,
   onUpload,
-  pending = false,
+  loading = false,
   publisher,
   title,
 }: {
@@ -35,7 +35,7 @@ export function CoverUploadField({
   message?: string;
   onFileChange: (file: File | null) => void;
   onUpload: (presentation: CoverPresentation) => void;
-  pending?: boolean;
+  loading?: boolean;
   publisher: string;
   title: string;
   currentPresentation?: CoverPresentation | null;
@@ -120,7 +120,7 @@ export function CoverUploadField({
             </label>
             <Button
               type="button"
-              variant="quiet"
+              variant="tertiary"
               size="compact"
               onClick={() => setPresentation(defaultCoverPresentation)}
             >
@@ -143,14 +143,14 @@ export function CoverUploadField({
             onFileChange(nextFile);
           }}
           onValidationError={setSelectionError}
-          pending={pending}
+          loading={loading}
           validateFile={validateCoverFile}
         />
         <div className="cover-upload-actions">
           <Button
             disabled={!displaySrc || Boolean(blockingError)}
-            pending={pending}
-            pendingLabel="Menyimpan…"
+            loading={loading}
+            loadingLabel="Menyimpan…"
             type="button"
             onClick={() => onUpload(presentation)}
           >

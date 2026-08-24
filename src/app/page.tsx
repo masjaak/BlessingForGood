@@ -18,7 +18,9 @@ export default function HomePage() {
               baik—sedikit demi sedikit.
             </p>
             <div className="home-hero-actions" aria-label="Akses buku">
-              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
+              <LinkButton href="/ready-stock" size="large">
+                Lihat Ready Stock
+              </LinkButton>
               <LinkButton href="/catalog" variant="secondary">
                 Buka Secret Catalog <span aria-hidden="true">→</span>
               </LinkButton>
@@ -123,7 +125,7 @@ export default function HomePage() {
           <HowToOrderSteps preview />
           <div className="home-order-footer">
             <span>Butuh detail dari akses sampai buku tiba?</span>
-            <LinkButton href="/how-to-order" variant="quiet">
+            <LinkButton href="/how-to-order" variant="tertiary">
               Lihat cara memesan <span aria-hidden="true">→</span>
             </LinkButton>
           </div>
@@ -153,7 +155,7 @@ export default function HomePage() {
                 Madina, Angelina, Hany, Ayun, dan Minca ikut menjaga kurasi, pesanan, dan perjalanan setiap batch agar
                 lebih mudah untuk Blessfriends.
               </p>
-              <LinkButton href="/community" variant="quiet">
+              <LinkButton href="/community" variant="tertiary">
                 Kenali komunitas →
               </LinkButton>
             </article>

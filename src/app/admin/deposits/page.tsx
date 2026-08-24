@@ -9,7 +9,7 @@ import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, EmptyState, Field, Money, StatusBadge } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
 
 function DepositOperations() {
   const requestedCustomerId = useSearchParams().get("customerId") || "";
@@ -55,13 +55,13 @@ function DepositOperations() {
                 <Money amount={row.amount} /> · {row.bankReference || "tanpa referensi"}
               </span>
               <span className="form-actions">
-                <a className="button button-secondary" href={row.proofUrl || "#"} target="_blank" rel="noreferrer">
+                <LinkButton variant="secondary" href={row.proofUrl || "#"} target="_blank" rel="noreferrer">
                   Lihat bukti
-                </a>
+                </LinkButton>
                 <StatusBadge>{row.status}</StatusBadge>
                 {row.status === "submitted" ? (
                   <Button
-                    pending={pending === `start-${row.topUpId}`}
+                    loading={pending === `start-${row.topUpId}`}
                     onClick={() =>
                       void run(`start-${row.topUpId}`, () => startReview({ topUpId: row.topUpId }), "Tinjauan dimulai.")
                     }
@@ -72,7 +72,7 @@ function DepositOperations() {
                 {row.status === "under_review" ? (
                   <>
                     <Button
-                      pending={pending === `approve-${row.topUpId}`}
+                      loading={pending === `approve-${row.topUpId}`}
                       onClick={() =>
                         void run(
                           `approve-${row.topUpId}`,
@@ -85,7 +85,7 @@ function DepositOperations() {
                     </Button>
                     <Button
                       variant="danger"
-                      pending={pending === `reject-${row.topUpId}`}
+                      loading={pending === `reject-${row.topUpId}`}
                       onClick={() =>
                         void run(
                           `reject-${row.topUpId}`,
@@ -160,7 +160,7 @@ function DepositOperations() {
           <Field label="Alasan">
             <textarea className="textarea" value={note} onChange={(event) => setNote(event.target.value)} required />
           </Field>
-          <Button pending={pending === "adjust"} pendingLabel="Mencatat…">
+          <Button loading={pending === "adjust"} loadingLabel="Mencatat…">
             Catat penyesuaian
           </Button>
         </form>

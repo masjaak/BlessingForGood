@@ -95,8 +95,8 @@ describe("public UI foundation", () => {
     );
 
     expect(screen.getByRole("button", { name: "Disabled action" })).toHaveProperty("disabled", true);
-    expect(screen.getByRole("link", { name: "Disabled link" }).getAttribute("aria-disabled")).toBe("true");
-    expect(screen.getByRole("link", { name: "Disabled link" }).getAttribute("tabindex")).toBe("-1");
+    expect(screen.queryByRole("link", { name: "Disabled link" })).toBeNull();
+    expect(screen.getByText("Disabled link").closest(".button")?.getAttribute("aria-disabled")).toBe("true");
     expect(globalsCss).toContain(".button:focus-visible");
     expect(globalsCss).toContain(".button:active:not(:disabled)");
     expect(globalsCss).toContain(".button:disabled");

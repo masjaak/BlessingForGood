@@ -15,8 +15,8 @@ export function BFGFilePicker({
   inputClassName = "",
   onFileChange,
   onValidationError,
-  pending = false,
-  pendingLabel = "Memproses…",
+  loading = false,
+  loadingLabel = "Memproses…",
   required = false,
   validateFile,
   label,
@@ -33,8 +33,8 @@ export function BFGFilePicker({
   label?: string;
   onFileChange: (file: File | null) => void;
   onValidationError?: (error: string) => void;
-  pending?: boolean;
-  pendingLabel?: string;
+  loading?: boolean;
+  loadingLabel?: string;
   required?: boolean;
   validateFile?: (file: File) => string | null;
 }) {
@@ -73,18 +73,18 @@ export function BFGFilePicker({
         aria-invalid={blockingError ? true : undefined}
         aria-label={ariaLabel}
         className={`bfg-file-picker-input ${inputClassName}`.trim()}
-        disabled={disabled || pending}
+        disabled={disabled || loading}
         id={`${inputId}-input`}
         onChange={handleFileChange}
         required={required}
         tabIndex={-1}
         type="file"
       />
-      <div className="bfg-file-picker-control" aria-busy={pending || undefined}>
+      <div className="bfg-file-picker-control" aria-busy={loading || undefined}>
         <Button
-          disabled={disabled || pending}
-          pending={pending}
-          pendingLabel={pendingLabel}
+          disabled={disabled || loading}
+          loading={loading}
+          loadingLabel={loadingLabel}
           type="button"
           variant="secondary"
           onClick={() => {

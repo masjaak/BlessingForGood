@@ -179,8 +179,8 @@ function AdminInvoiceDetail() {
                 {currentAdminInvoice.status === "draft" ? (
                   <Button
                     type="button"
-                    pending={pendingAction === "issue"}
-                    pendingLabel="Menerbitkan…"
+                    loading={pendingAction === "issue"}
+                    loadingLabel="Menerbitkan…"
                     onClick={() => void run(() => issueInvoice(invoiceId), "Invoice diterbitkan.", "issue")}
                   >
                     Terbitkan invoice
@@ -190,8 +190,8 @@ function AdminInvoiceDetail() {
                   <Button
                     type="button"
                     variant="danger"
-                    pending={pendingAction === "void"}
-                    pendingLabel="Membatalkan…"
+                    loading={pendingAction === "void"}
+                    loadingLabel="Membatalkan…"
                     onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
                     disabled={voidBlockReason !== null || pendingAction !== null}
                   >
@@ -255,9 +255,9 @@ function AdminInvoiceDetail() {
                       <>
                         <Button
                           type="button"
-                          variant="quiet"
-                          pending={pendingAction === `release-${allocation.allocationId}`}
-                          pendingLabel="Melepaskan…"
+                          variant="tertiary"
+                          loading={pendingAction === `release-${allocation.allocationId}`}
+                          loadingLabel="Melepaskan…"
                           onClick={() =>
                             void run(
                               () => releaseAllocation(allocation.allocationId),
@@ -270,9 +270,9 @@ function AdminInvoiceDetail() {
                         </Button>
                         <Button
                           type="button"
-                          variant="quiet"
-                          pending={pendingAction === `reverse-${allocation.allocationId}`}
-                          pendingLabel="Membalikkan…"
+                          variant="tertiary"
+                          loading={pendingAction === `reverse-${allocation.allocationId}`}
+                          loadingLabel="Membalikkan…"
                           onClick={() =>
                             void run(
                               () => reverseAllocation(allocation.allocationId),
@@ -315,9 +315,9 @@ function AdminInvoiceDetail() {
                     {transaction.type !== "reversal" && !transaction.reversedByTransactionId ? (
                       <Button
                         type="button"
-                        variant="quiet"
-                        pending={pendingAction === `transaction-${transaction.transactionId}`}
-                        pendingLabel="Reversing…"
+                        variant="tertiary"
+                        loading={pendingAction === `transaction-${transaction.transactionId}`}
+                        loadingLabel="Membalikkan…"
                         onClick={() => {
                           if (window.confirm("Catat transaksi pembalikan untuk baris ini?"))
                             void run(
@@ -389,7 +389,7 @@ function CreditForm({
       <Field label="Catatan (opsional)">
         <input className="input" value={note} onChange={(event) => setNote(event.target.value)} />
       </Field>
-      <Button type="submit" pending={isSubmitting} pendingLabel="Mencatat…">
+      <Button type="submit" loading={isSubmitting} loadingLabel="Mencatat…">
         Catat kredit
       </Button>
       {error ? (
@@ -453,8 +453,8 @@ export function AllocationForm({
       </Field>
       <Button
         type="submit"
-        pending={isSubmitting}
-        pendingLabel="Mengalokasikan…"
+        loading={isSubmitting}
+        loadingLabel="Mengalokasikan…"
         disabled={disabled || maxAllocatable < 1}
       >
         Alokasikan sisa deposit

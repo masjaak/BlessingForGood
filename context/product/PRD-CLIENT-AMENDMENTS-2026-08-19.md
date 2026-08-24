@@ -4,6 +4,36 @@ This document is additive product-contract evidence. The original PRD remains
 the historical contract; this file records the latest client UAT decisions
 that clarify the current product intent.
 
+## Reconciled implementation contract — 2026-08-24
+
+The maintenance corrections are integrated and deployed without changing the
+product contract or creating a second flow:
+
+- Order detail exposes `Terbitkan invoice` only when the existing Finance
+  state allows it; an existing invoice shows its canonical human reference,
+  status, outstanding amount, and `Buka invoice`.
+- Activity remains one `ActivityCenter` presentation over separate Notification
+  and Inbox domains. Unread state uses surface tint, accent, dot, `Baru`, and
+  semantic copy rather than border color alone.
+- `ActionGroup` is one global primitive. Pages choose legitimate actions and
+  semantic hierarchy; the Button system owns style, size, state, gap, and
+  responsive stacking.
+- Invoice references use `BFG-INV-YYMMDD-XXXX`; internal Convex IDs remain
+  unchanged. Legacy backfill is bounded, previewable, idempotent, and limited
+  to the human reference field.
+- Master Book `Simpan` persists and reports success/error without publishing a
+  Draft. `Terbitkan buku` is explicit.
+- Ready Stock is direct stock-backed purchase; Secret Catalog is private
+  multi-Publisher/multi-title PO/preorder; Batch is a multi-Publisher,
+  multi-title operational PO window grouped by shared close date. Customer
+  Batch projections still require Secret Catalog authorization and own-order
+  rights.
+
+These rules are deployed on the canonical Convex/Vercel targets. Deterministic
+QA is green. Authenticated business-record Production recheck remains
+qualified when no authorized Clerk session or safe real record is available;
+no data is fabricated.
+
 ## Active amendments
 
 1. **Admin Content has a bounded publishing purpose.** Content controls the

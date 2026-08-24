@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { Button, Card, Field, LinkButton, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 import { BackButton } from "@/components/back-button";
 
 function ProfileForm() {
@@ -65,7 +65,7 @@ function ProfileForm() {
         <Field label="WhatsApp">
           <input className="input" value={whatsappNumber} onChange={(event) => setWhatsappNumber(event.target.value)} />
         </Field>
-        <Button type="submit" pending={isSaving} pendingLabel="Menyimpan…">
+        <Button type="submit" loading={isSaving} loadingLabel="Menyimpan…">
           Simpan profil
         </Button>
         {message ? (
@@ -86,9 +86,9 @@ function SignedOutProfile() {
         <span className="eyebrow">Akun Blessfriend</span>
         <h1>Masuk lewat Akun untuk mengubah profil.</h1>
         <p>Masuk untuk melihat dan memperbarui informasi profilmu.</p>
-        <a className="button button-primary" href="/account">
+        <LinkButton href="/account" variant="primary">
           Ke Akun
-        </a>
+        </LinkButton>
       </div>
     </div>
   );

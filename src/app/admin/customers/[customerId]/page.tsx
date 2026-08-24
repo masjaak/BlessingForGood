@@ -75,7 +75,7 @@ function CustomerDetail() {
             <LinkButton href={`/admin/deposits?customerId=${customerId}`} variant="secondary">
               Kelola deposit
             </LinkButton>
-            <LinkButton href="/admin/customers" variant="quiet">
+            <LinkButton href="/admin/customers" variant="tertiary">
               Kembali
             </LinkButton>
           </span>
@@ -114,7 +114,7 @@ function CustomerDetail() {
                 return (
                   <div className="summary-line" key={order.id}>
                     <span>
-                      <LinkButton href={`/admin/orders/${order.id}`} variant="quiet">
+                      <LinkButton href={`/admin/orders/${order.id}`} variant="tertiary">
                         {orderReference(order)}
                       </LinkButton>
                       <br />
@@ -123,7 +123,7 @@ function CustomerDetail() {
                     <span className="form-actions">
                       <Money amount={order.total} />
                       {orderInvoice ? (
-                        <LinkButton href={`/admin/invoices/${orderInvoice.invoiceId}`} variant="quiet">
+                        <LinkButton href={`/admin/invoices/${orderInvoice.invoiceId}`} variant="tertiary">
                           Buka invoice
                         </LinkButton>
                       ) : (
@@ -148,7 +148,7 @@ function CustomerDetail() {
               invoices.map((invoice) => (
                 <div className="summary-line" key={invoice.invoiceId}>
                   <span>
-                    <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="quiet">
+                    <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="tertiary">
                       {invoiceReference(invoice.invoiceNumber)}
                     </LinkButton>
                     <br />

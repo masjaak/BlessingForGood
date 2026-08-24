@@ -14,6 +14,7 @@ import {
   Card,
   EmptyState,
   Field,
+  IconButton,
   LinkButton,
   LoadingRegion,
   Money,
@@ -100,14 +101,9 @@ export function CustomerCatalog() {
             Total {formatIdr(submittedOrder.total)} · {submittedOrder.items.length} pilihan buku
           </p>
           <div className="actions">
-            <a
-              className="button button-primary"
-              href={`https://wa.me/?text=${whatsappText}`}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <LinkButton variant="primary" href={`https://wa.me/?text=${whatsappText}`} target="_blank" rel="noreferrer">
               Lanjut ke WhatsApp ↗
-            </a>
+            </LinkButton>
             <LinkButton href="/account/orders" variant="secondary">
               Lihat status pesanan
             </LinkButton>
@@ -150,7 +146,7 @@ export function CustomerCatalog() {
                 {accessError}
               </p>
             ) : null}
-            <Button type="submit" pending={isUnlocking} pendingLabel="Memeriksa…">
+            <Button type="submit" loading={isUnlocking} loadingLabel="Memeriksa…">
               Buka katalog
             </Button>
           </form>
@@ -160,7 +156,7 @@ export function CustomerCatalog() {
           <span className="card-kicker">Katalog privat</span>
           <h2>Kode akses ada di undanganmu.</h2>
           <p>Jika belum memiliki kode atau katalog tidak terbuka, hubungi admin BFG untuk bantuan.</p>
-          <LinkButton href="/help" variant="quiet">
+          <LinkButton href="/help" variant="tertiary">
             Buka bantuan →
           </LinkButton>
         </Card>
@@ -246,9 +242,10 @@ export function CustomerCatalog() {
                     <div className="quantity-row">
                       <span>Jumlah</span>
                       <div className="quantity-control">
-                        <button
-                          type="button"
+                        <IconButton
+                          variant="secondary"
                           aria-label={`Kurangi jumlah ${book.title}`}
+                          disabled={!selectedVariantId || selectedQuantity === 0}
                           onClick={() =>
                             selectedVariantId &&
                             setQuantities((current) => ({
@@ -258,10 +255,10 @@ export function CustomerCatalog() {
                           }
                         >
                           −
-                        </button>
+                        </IconButton>
                         <output aria-label={`Jumlah ${book.title}`}>{selectedQuantity}</output>
-                        <button
-                          type="button"
+                        <IconButton
+                          variant="secondary"
                           aria-label={`Tambah jumlah ${book.title}`}
                           onClick={() =>
                             selectedVariantId &&
@@ -269,7 +266,7 @@ export function CustomerCatalog() {
                           }
                         >
                           +
-                        </button>
+                        </IconButton>
                       </div>
                     </div>
                   </div>
@@ -316,8 +313,8 @@ export function CustomerCatalog() {
               ) : null}
               <Button
                 type="submit"
-                pending={isSubmitting}
-                pendingLabel="Mencatat…"
+                loading={isSubmitting}
+                loadingLabel="Mencatat…"
                 disabled={selectedItems.length === 0}
               >
                 Catat preorder

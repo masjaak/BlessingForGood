@@ -71,8 +71,8 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
             />
           </Field>
           <Button
-            pending={pending === "generate"}
-            pendingLabel="Membuat…"
+            loading={pending === "generate"}
+            loadingLabel="Membuat…"
             onClick={() =>
               void run(
                 "generate",
@@ -87,8 +87,8 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
           </Button>
           <Button
             variant="danger"
-            pending={pending === "revoke-code"}
-            pendingLabel="Mencabut…"
+            loading={pending === "revoke-code"}
+            loadingLabel="Mencabut…"
             onClick={() => void run("revoke-code", () => revokeCode({ catalogId: id }), "Kode aktif dicabut.")}
           >
             Cabut kode aktif
@@ -163,7 +163,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
               required
             />
           </Field>
-          <Button pending={pending === "grant"} pendingLabel="Memberi akses…">
+          <Button loading={pending === "grant"} loadingLabel="Memberi akses…">
             Berikan akses
           </Button>
         </form>
@@ -185,7 +185,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
                   {item.status === "active" ? (
                     <Button
                       variant="danger"
-                      pending={pending === `grant-${item.grantId}`}
+                      loading={pending === `grant-${item.grantId}`}
                       onClick={() =>
                         void run(
                           `grant-${item.grantId}`,

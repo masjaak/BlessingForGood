@@ -135,7 +135,7 @@ function PreviewTable({ preview }: { preview: Preview }) {
   );
 }
 
-function Confirmation({ preview, onConfirm, pending }: { preview: Preview; onConfirm: () => void; pending: boolean }) {
+function Confirmation({ preview, onConfirm, loading }: { preview: Preview; onConfirm: () => void; loading: boolean }) {
   return (
     <Card frame="attention" className="bulk-import-confirmation">
       <div className="split-heading">
@@ -154,7 +154,7 @@ function Confirmation({ preview, onConfirm, pending }: { preview: Preview; onCon
           Import tidak mengubah stok, katalog, media, pesanan, atau data keuangan. Buku baru tetap berstatus draf dan
           varian baru tidak aktif.
         </p>
-        <Button type="button" onClick={onConfirm} pending={pending} pendingLabel="Mengimpor buku…">
+        <Button type="button" onClick={onConfirm} loading={loading} loadingLabel="Mengimpor buku…">
           Import buku
         </Button>
       </div>
@@ -185,7 +185,7 @@ function Result({ result, onReset }: { result: ImportResult; onReset: () => void
         <LinkButton href="/admin/books" variant="secondary">
           Lihat Buku
         </LinkButton>
-        <Button type="button" variant="quiet" onClick={onReset}>
+        <Button type="button" variant="tertiary" onClick={onReset}>
           Import file lain
         </Button>
       </div>
@@ -294,13 +294,13 @@ export function AdminBulkImport() {
       title="Import Buku"
       description="Tambahkan beberapa buku sekaligus dari template CSV tanpa menjadikan spreadsheet sebagai sumber data utama."
       actions={
-        <a
-          className="button button-secondary"
+        <LinkButton
+          variant="secondary"
           download="template-import-buku.csv"
           href={`data:text/csv;charset=utf-8,${encodeURIComponent(templateCsv)}`}
         >
           Unduh template CSV
-        </a>
+        </LinkButton>
       }
     >
       {visibleState === "IDLE" ||
@@ -333,7 +333,7 @@ export function AdminBulkImport() {
               </span>
             ) : null}
             {file ? (
-              <Button type="button" variant="quiet" onClick={reset}>
+              <Button type="button" variant="tertiary" onClick={reset}>
                 Hapus pilihan
               </Button>
             ) : null}
@@ -370,7 +370,7 @@ export function AdminBulkImport() {
           <PreviewTable preview={preview} />
           {preview.errors.length ? <ErrorList errors={preview.errors} /> : null}
           {visibleState === "READY_FOR_REVIEW" ? (
-            <Confirmation preview={preview} onConfirm={() => void runConfirm()} pending={false} />
+            <Confirmation preview={preview} onConfirm={() => void runConfirm()} loading={false} />
           ) : null}
         </>
       ) : null}

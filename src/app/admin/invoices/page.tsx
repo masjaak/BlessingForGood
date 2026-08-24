@@ -102,24 +102,25 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
       <ActionGroup variant="responsive">
         <Button
           type="submit"
-          pending={pendingAction === "draft"}
+          variant="secondary"
+          loading={pendingAction === "draft"}
           disabled={pendingAction !== null}
-          pendingLabel="Menyimpan…"
+          loadingLabel="Menyimpan…"
         >
           Simpan draf
         </Button>
         <Button
           type="button"
-          variant="secondary"
-          pending={pendingAction === "issue"}
+          variant="primary"
+          loading={pendingAction === "issue"}
           disabled={pendingAction !== null}
-          pendingLabel="Menerbitkan…"
+          loadingLabel="Menerbitkan…"
           onClick={() => void saveInvoice(true)}
         >
           Terbitkan invoice
         </Button>
         {createdInvoiceId ? (
-          <LinkButton href={`/admin/invoices/${createdInvoiceId}`} variant="quiet">
+          <LinkButton href={`/admin/invoices/${createdInvoiceId}`} variant="tertiary">
             Buka operasi invoice
           </LinkButton>
         ) : null}
@@ -155,9 +156,9 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
     <ActionGroup variant="responsive">
       <Button
         type="button"
-        variant="secondary"
-        pending={isIssuing}
-        pendingLabel="Menerbitkan…"
+        variant="primary"
+        loading={isIssuing}
+        loadingLabel="Menerbitkan…"
         onClick={() => void issue()}
       >
         Terbitkan invoice

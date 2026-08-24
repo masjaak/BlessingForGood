@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Card, EmptyState, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
+import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 
 function CustomerBatches() {
@@ -44,9 +43,9 @@ function CustomerBatches() {
                 <p className="subtle">Deadline PO: {new Date(batch.poDeadlineAt).toLocaleString("id-ID")}</p>
               ) : null}
               <p className="subtle">Estimasi tiba: {formatCargoEta(batch.etaCargoMonth)}</p>
-              <Link className="button button-secondary" href={`/account/batches/${batch.batchId}`}>
+              <LinkButton href={`/account/batches/${batch.batchId}`} variant="secondary">
                 Lihat detail batch
-              </Link>
+              </LinkButton>
             </Card>
           ))}
         </div>

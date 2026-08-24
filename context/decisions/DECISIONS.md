@@ -18,6 +18,21 @@
   optional integer pence at the Book Variant level and Customer price remains
   integer IDR.
 
+## Global Button System — 2026-08-22
+
+- `src/components/ui.tsx` is the single application button family:
+  `Button`, `LinkButton`, `IconButton`, `LinkIconButton`, `ToggleButton`, and
+  `ActionGroup`.
+- The locked variants are `primary`, `secondary`, `tertiary`, and `danger`;
+  `quiet` is retired. Navigation semantics stay links and mutations stay
+  buttons.
+- Shared button tokens own 40px compact desktop density, 44px default/icon
+  touch targets, 48px large CTAs, complete interaction states, loading
+  announcements, and action spacing. Page CSS cannot introduce button colors,
+  radii, hover rules, or individual button margins.
+- This is a visual/interaction contract only. RBAC, ownership, state-machine
+  validation, rate limits, idempotency, and server authority remain unchanged.
+
 ## Canonical Convex backend correction
 
 - The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and

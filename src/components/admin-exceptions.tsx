@@ -98,7 +98,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
 
   return (
     <details className="admin-operations-disclosure">
-      <summary className="button button-primary">Catat masalah</summary>
+      <summary className="details-summary">Catat masalah</summary>
       <Card>
         <span className="card-kicker">Operasi admin</span>
         <h2>Buka masalah pesanan</h2>
@@ -181,7 +181,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
             </Field>
           </div>
           <div className="form-actions">
-            <Button type="submit" pending={isSubmitting} pendingLabel="Membuka…">
+            <Button type="submit" loading={isSubmitting} loadingLabel="Membuka…">
               Buka masalah
             </Button>
             {message ? (
@@ -290,8 +290,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
         <div className="form-actions">
           <Button
             type="button"
-            pending={pendingAction === "Tinjauan dimulai."}
-            pendingLabel="Memulai…"
+            loading={pendingAction === "Tinjauan dimulai."}
+            loadingLabel="Memulai…"
             onClick={() => void run(() => startReview({ exceptionId: exception.exceptionId }), "Tinjauan dimulai.")}
           >
             Mulai tinjauan
@@ -336,8 +336,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </div>
           <Button
             type="button"
-            pending={pendingAction === "Resolusi dipilih."}
-            pendingLabel="Menyimpan…"
+            loading={pendingAction === "Resolusi dipilih."}
+            loadingLabel="Menyimpan…"
             onClick={() =>
               void run(
                 () =>
@@ -366,8 +366,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </span>
           <Button
             type="button"
-            pending={pendingAction === "Masalah diselesaikan."}
-            pendingLabel="Menyelesaikan…"
+            loading={pendingAction === "Masalah diselesaikan."}
+            loadingLabel="Menyelesaikan…"
             onClick={() => {
               if (!window.confirm("Selesaikan masalah ini dan terapkan konsekuensi finansialnya?")) return;
               void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan.");
@@ -389,8 +389,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           <Button
             type="button"
             variant="danger"
-            pending={pendingAction === "Masalah ditolak."}
-            pendingLabel="Menolak…"
+            loading={pendingAction === "Masalah ditolak."}
+            loadingLabel="Menolak…"
             onClick={() =>
               window.confirm("Tolak masalah ini?")
                 ? void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak.")

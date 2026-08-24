@@ -28,8 +28,10 @@ Icon-to-label and tightly related inline content use `--space-xxs` to
 
 ## Control Groups
 
-Related buttons and controls use `--button-group-gap` (8px), with aligned
-baselines and shared control heights. Dense table actions may stay compact.
+Related buttons and controls use `--button-inline-gap` (8px), with aligned
+baselines and shared control heights. Stacked actions use
+`--button-stack-gap` (12px); dense desktop Admin actions may use the 40px
+compact size but never reduce the mobile target.
 
 ## Form Groups
 
@@ -39,9 +41,9 @@ the form/card rhythm, not an individual button margin hack.
 
 ## Action Groups
 
-Content-to-actions uses `--space-lg` (24px) where the action group is a
-separate region; inline or table actions use the compact control gap. Action
-groups should be a flex/grid region, not scattered per-button margins.
+Content-to-actions uses `--button-section-gap` (24px) where the action group is
+a separate region; inline or table actions use the inline gap. Action groups
+should be a flex/grid region, not scattered per-button margins.
 
 The Admin action grammar is now explicit in `globals.css`:
 
@@ -63,6 +65,10 @@ Use `.action-stack` for semantically distinct stacked actions such as primary
 plus danger. Use `.action-support` for helper/status copy that follows an
 action. Use `.action-region-separated` only when the region follows a complete
 summary/content block; do not add route-specific button margins.
+
+The Button primitive owns internal height, horizontal padding, icon gap, and
+radius. Callers select `compact`, `default`, or `large`; callers do not repeat
+button padding or color in route CSS.
 
 ## Divider → Action
 

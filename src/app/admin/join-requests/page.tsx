@@ -93,8 +93,8 @@ function JoinRequestCard({
         <Button
           type="button"
           variant="secondary"
-          pending={pendingAction === "Tinjauan dimulai."}
-          pendingLabel="Memulai…"
+          loading={pendingAction === "Tinjauan dimulai."}
+          loadingLabel="Memulai…"
           onClick={() => void run(() => startReview(requestId), "Tinjauan dimulai.")}
         >
           Tinjau
@@ -116,8 +116,8 @@ function JoinRequestCard({
           <div className="form-actions">
             <Button
               type="button"
-              pending={pendingAction === "Disetujui; proses admission dimulai."}
-              pendingLabel="Menyetujui…"
+              loading={pendingAction === "Disetujui; proses admission dimulai."}
+              loadingLabel="Menyetujui…"
               onClick={() =>
                 void run(() => approve(requestId, reviewNote || undefined), "Disetujui; proses admission dimulai.")
               }
@@ -128,8 +128,8 @@ function JoinRequestCard({
               type="button"
               variant="danger"
               disabled={!rejectionReason.trim()}
-              pending={pendingAction === "Permintaan ditolak."}
-              pendingLabel="Menolak…"
+              loading={pendingAction === "Permintaan ditolak."}
+              loadingLabel="Menolak…"
               onClick={() =>
                 void run(() => reject(requestId, rejectionReason, reviewNote || undefined), "Permintaan ditolak.")
               }
@@ -154,8 +154,8 @@ function JoinRequestCard({
               <Button
                 type="button"
                 variant="secondary"
-                pending={pendingAction === "Proses admission dicoba kembali."}
-                pendingLabel="Mencoba lagi…"
+                loading={pendingAction === "Proses admission dicoba kembali."}
+                loadingLabel="Mencoba lagi…"
                 onClick={() => void run(() => retryAdmission(requestId), "Proses admission dicoba kembali.")}
               >
                 Coba lagi

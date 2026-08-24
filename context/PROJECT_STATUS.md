@@ -2,13 +2,14 @@
 
 ## Client UAT Round 2 — 2026-08-24
 
-The current checkout is the canonical `main` line at local HEAD `1e155205`;
-the user-supplied `fce35bee` reconciliation commit is not present locally and
-was not recreated. This maintenance pass implements the Round 2 upload MIME
-regression fix, Ready Stock reservation/error normalization, narrow Clerk CSP
-challenge allowances, stronger shared Activity unread semantics, shared Button
-token calibration, Batch ETA Cargo, stable Customer `memberCode`, grouped
-Publisher purchase export, and canonical Admin-assisted Ready Stock orders.
+The initial local checkout was stale at `1e155205`; the user-supplied
+`fce35bee` reconciliation tip arrived on `origin/main` during this pass and is
+now merged into local `main`. This maintenance pass implements the Round 2
+upload MIME regression fix, Ready Stock reservation/error normalization,
+narrow Clerk CSP challenge allowances, stronger shared Activity unread
+semantics, shared Button token calibration, Batch ETA Cargo, stable Customer
+`memberCode`, grouped Publisher purchase export, and canonical Admin-assisted
+Ready Stock orders.
 
 Deterministic gates are green: focused 74/74, full 277/277 after the final
 additive order/invoice member-code view assertions, TypeScript, ESLint, Format,
@@ -17,6 +18,47 @@ authenticated device acceptance are not claimed: local Production credentials,
 approved populated business data, and Android/iOS access are not available.
 The detailed status is in
 [`BFG-CLIENT-UAT-ROUND-2-FINAL-REPORT.md`](implementation/BFG-CLIENT-UAT-ROUND-2-FINAL-REPORT.md).
+## Final parallel-workstream reconciliation — 2026-08-24
+
+Status: `CANONICAL_INTEGRATION_DEPLOYED; AUTHENTICATED_UAT_QUALIFIED`.
+
+Git forensics established that Button `5c9abeec`, Security `88ec8737`, and
+Product Logic `1e155205` were parallel descendants of the shared history. They
+were reconciled into `f0eddc82`; local `main`, `origin/main`, and the clean
+worktree now agree on the canonical release. No reset, force push, worktree
+deletion, or unknown-delta discard was used.
+
+The integrated release preserves upload magic-byte/MIME/dimension hardening,
+storage ownership, rate limits, security headers, Clerk/RBAC/ownership guards,
+the canonical Button/LinkButton/IconButton family, one ActionGroup, the
+state-driven Order → Invoice path, ActivityCenter read-state semantics,
+canonical invoice references, explicit Book Save versus Publish, Ready Stock,
+Secret Catalog, and shared-close-date multi-Publisher Batch rules.
+
+Evidence:
+
+- Vitest `269/269`; Convex `136/136`; lint, TypeScript, format, build,
+  `npm audit --omit=dev` (`0` vulnerabilities), `npm run convex:check`, and
+  `git diff --check` pass.
+- Convex Production `clean-eel-522` deployed successfully.
+- The latest Vercel Production deployment is `READY` on
+  `https://www.blessingforgood.com`; no Vercel logs were returned for the
+  last-hour warning/error query.
+- Read-only Production browser checks passed `58/58` serial checks across
+  customer `375/430/768/1440` and Admin `1024/1440`; Activity fixture geometry
+  passed all eight supported viewport sizes.
+
+Authenticated business-record QA is qualified, not claimed: this worktree has
+no authorized Clerk session. The Production legacy-invoice preview correctly
+returned `IDENTITY_REQUIRED`; no backfill, invoice issue, Book save/publish,
+upload, stock reservation, Batch mutation, or other financial/business data
+mutation was attempted.
+
+Security remains `BFG_APPLICATION_SECURITY: CLIENT_READY` and
+`BFG_SECURITY_ASSURANCE: GREEN_EVIDENCE_WITH_PRECISE_QUALIFICATIONS`.
+`BFG_GLOBAL_BUTTON_SYSTEM` and `BFG_PRODUCT_LOGIC_UAT` are deployed with
+deterministic and signed-out/public render evidence, while authenticated
+state-specific Production QA remains the explicit qualified gate.
 
 ## Current maintenance correction pass — 2026-08-22
 
@@ -33,9 +75,10 @@ many publishers/titles; Batch PO is multi-publisher and groups by shared close
 date; Publisher is not Batch identity; customer Batch projection remains
 access-controlled.
 
-Production deployment, legacy invoice backfill, and authenticated live
-recheck are not claimed in this pass because no verified canonical Convex
-account/deployment credentials are configured in the current local state.
+The initial snapshot did not have canonical deployment credentials. The
+reconciled release is now deployed to the canonical targets; legacy invoice
+backfill and authenticated live recheck remain qualified because no authorized
+operator session is available in the current local state.
 
 ## Current Anchored Summary — 2026-08-22
 
@@ -47,6 +90,14 @@ account/deployment credentials are configured in the current local state.
 **Current product:** `BFG_CURRENT_PRODUCT_SCOPE_COMPLETE`.
 **Production:** `BFG_PRODUCTION_STABLE`.
 **Product mode:** `MAINTENANCE`.
+
+**Global Button System:** source consolidation implemented on the current
+`origin/main` tree with canonical semantics, variants, sizes, states, spacing,
+and conditional-action coverage. Deterministic/source QA is complete;
+authenticated rendered QA remains a release gate because the local
+Clerk/Convex harness has no production data/session configuration. No
+business/server authority changed and no Convex deployment is required for
+this visual migration.
 
 **Phase 09.1:** `PRODUCTION ASSURANCE EVIDENCE COMPLETE WITH QUALIFICATIONS` —
 security hardening, adversarial authorization verification, abuse controls,

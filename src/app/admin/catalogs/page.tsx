@@ -85,7 +85,7 @@ function CatalogForm() {
             {error}
           </p>
         ) : null}
-        <Button type="submit" pending={isSubmitting} pendingLabel="Membuat…">
+        <Button type="submit" loading={isSubmitting} loadingLabel="Membuat…">
           Buat draf katalog
         </Button>
       </form>
@@ -158,8 +158,8 @@ function CatalogList() {
                 {catalog.status === "open" ? (
                   <Button
                     variant="danger"
-                    pending={pendingAction === catalog.id}
-                    pendingLabel="Menutup…"
+                    loading={pendingAction === catalog.id}
+                    loadingLabel="Menutup…"
                     onClick={() => void close(catalog.id)}
                   >
                     Tutup katalog

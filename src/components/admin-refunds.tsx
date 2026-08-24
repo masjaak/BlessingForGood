@@ -82,8 +82,8 @@ function RefundCard({ refund }: { refund: Refund }) {
           <div className="form-actions">
             <Button
               type="button"
-              pending={pending}
-              pendingLabel="Membuat payout…"
+              loading={pending}
+              loadingLabel="Membuat payout…"
               disabled={refund.availablePayoutAmount < 1}
               onClick={() => {
                 if (!window.confirm(`Buat payout ${amount} IDR untuk kewajiban ini?`)) return;
@@ -113,8 +113,8 @@ function RefundCard({ refund }: { refund: Refund }) {
             {payout.status === "pending" ? (
               <Button
                 type="button"
-                pending={pending}
-                pendingLabel="Memulai…"
+                loading={pending}
+                loadingLabel="Memulai…"
                 onClick={() => {
                   if (!window.confirm("Mulai proses payout ini?")) return;
                   void run(
@@ -135,8 +135,8 @@ function RefundCard({ refund }: { refund: Refund }) {
               <>
                 <Button
                   type="button"
-                  pending={pending}
-                  pendingLabel="Mencatat…"
+                  loading={pending}
+                  loadingLabel="Mencatat…"
                   onClick={() => {
                     if (!window.confirm("Catat payout ini sebagai sudah terkirim?")) return;
                     void run(
@@ -163,8 +163,8 @@ function RefundCard({ refund }: { refund: Refund }) {
                 <Button
                   type="button"
                   variant="danger"
-                  pending={pending}
-                  pendingLabel="Mencatat…"
+                  loading={pending}
+                  loadingLabel="Mencatat…"
                   onClick={() => {
                     if (!window.confirm("Catat payout ini sebagai gagal?")) return;
                     void run(

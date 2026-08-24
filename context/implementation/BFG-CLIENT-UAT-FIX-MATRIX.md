@@ -17,6 +17,24 @@ Final status vocabulary is limited to `GREEN_REAL_PRODUCTION`,
 `GREEN_DETERMINISTIC` test label; the Client Recheck column uses only the final
 classifications. No implementation defect remains open.
 
+## Maintenance correction recheck — 2026-08-24
+
+The current integrated release is `f0eddc82`, deployed to Convex Production
+`clean-eel-522` and Vercel Production. The five maintenance corrections and
+commerce contract have deterministic coverage; the read-only Production shell
+and signed-out Admin boundary passed serial browser checks. No authorized
+Clerk session or safe live business record was available for authenticated
+mutation/recheck, so the qualified classifications below are intentional.
+
+| Contract | Implementation / deterministic evidence | Current Production classification |
+| --- | --- | --- |
+| Order → Invoice | State-driven CTA, existing Finance path, issue guard, and idempotency tests pass. | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — deployed; no legitimate authenticated no-invoice order was available. |
+| Activity unread/read | One ActivityCenter with semantic unread marker and responsive geometry; populated fixture passes all eight viewports. | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — signed-out route and geometry pass; real populated authenticated feed not rechecked. |
+| Conditional actions / ActionGroup | One shared ActionGroup owns spacing, hierarchy layout, loading, and responsive behavior; source audit has zero raw buttons outside the primitive. | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — deployed; authenticated state matrix remains qualified. |
+| Human invoice references | `BFG-INV-YYMMDD-XXXX`, concurrency, state guard, preview, bounded backfill, financial-field preservation, and idempotent rerun tests pass. | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — deployed; Production preview returned `IDENTITY_REQUIRED`; backfill not run. |
+| Master Book Save / Publish | Save persistence, success/error feedback, Draft preservation, and explicit Publish tests pass. | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — deployed; no safe authenticated Draft mutation was available. |
+| Ready Stock / Secret Catalog / Batch | Direct stock reservation, private multi-Publisher Catalog, shared-close-date Batch, assignment/Summary/lock, and access-isolation tests pass. | `GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA` — no real mutation or fabricated data. |
+
 ## Correction-pass evidence matrix — 2026-08-21
 
 | Finding | Implementation | Deterministic | Authenticated Production | Client Recheck |
@@ -339,22 +357,24 @@ HTTPS metadata-only source contract; empty state and implementation are green,
 while populated Gallery/Preview UAT is `BLOCKED_BY_APPROVED_DATA`. Bulk Import
 V1 remains deployed and unchanged; its Production pilot remains
 `DEFERRED_BY_USER_DATA` and does not justify fabricating Products or business
-records. Phase 08 is closed and the product is in Maintenance.
+records. Phase 08 is closed and the product is in Maintenance. The current
+canonical deployment is recorded in the 2026-08-24 reconciliation above.
 
 ## Maintenance/UAT correction pass — 2026-08-22
 
 The latest real authenticated Admin evidence is authoritative and supersedes
 the earlier green labels for these five findings. The implementation rows are
-local code/test evidence; Production rows are intentionally not promoted
-without a verified canonical deployment and operator.
+local code/test evidence; the canonical deployment is verified, while
+authenticated record-specific rows remain qualified without an operator
+session or safe live record.
 
 | Finding | Root-cause fix | Local deterministic evidence | Production status |
 | --- | --- | --- | --- |
-| New Order → Invoice CTA | Order detail projects the canonical invoice query and links the existing Finance create/issue flow when no invoice exists. | `getForOrderAdmin`, invoice queue component test, full Convex suite. | `NOT_RECHECKED — canonical access required` |
-| Activity unread clarity | Shared `ActivityCenter` adds soft BFG tint, accent treatment, dot, `Baru`, stronger title, and `Belum dibaca`; read state remains backend `readAt`. | Shared component test and notification projection trace. | `NOT_RECHECKED — authenticated Admin + Customer evidence required` |
-| Conditional button affordance | Shared `ActionGroup` owns gap, wrapping, responsive stack, and support-text spacing for conditional finance/book actions. | TypeScript, ESLint, Prettier, rendered/component coverage path. | `NOT_RECHECKED — authenticated viewport evidence required` |
-| Human invoice references | Server counter generator emits `BFG-INV-YYMMDD-XXXX`; exact Admin search and bounded idempotent backfill preserve `_id` and financial fields. | Canonical generation, concurrency, preview/backfill/idempotency tests. | `NOT DEPLOYED / BACKFILL NOT RUN` |
-| Master Book Save / Publish | Canonical `books.update` persists edits; visible success/error feedback survives reactive refresh; Publish is an explicit action and Save remains Draft. | Query-after-save, Draft→Published, permission, and full regression tests. | `NOT_RECHECKED — safe legitimate Draft required` |
+| New Order → Invoice CTA | Order detail projects the canonical invoice query and links the existing Finance create/issue flow when no invoice exists. | `getForOrderAdmin`, invoice queue component test, full Convex suite. | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — no authenticated no-invoice order available` |
+| Activity unread clarity | Shared `ActivityCenter` adds soft BFG tint, accent treatment, dot, `Baru`, stronger title, and `Belum dibaca`; read state remains backend `readAt`. | Shared component test, notification projection trace, and eight-viewport populated geometry fixture. | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — authenticated feed not rechecked` |
+| Conditional button affordance | Shared `ActionGroup` owns gap, wrapping, responsive stack, and support-text spacing for conditional finance/book actions. | TypeScript, ESLint, Prettier, rendered/component coverage path, and source audit. | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — authenticated state evidence qualified` |
+| Human invoice references | Server counter generator emits `BFG-INV-YYMMDD-XXXX`; exact Admin search and bounded idempotent backfill preserve `_id` and financial fields. | Canonical generation, concurrency, preview/backfill/idempotency tests. | `DEPLOYED; Production preview returned IDENTITY_REQUIRED; backfill not run` |
+| Master Book Save / Publish | Canonical `books.update` persists edits; visible success/error feedback survives reactive refresh; Publish is an explicit action and Save remains Draft. | Query-after-save, Draft→Published, permission, and full regression tests. | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — safe legitimate Draft required` |
 
 ### Commerce contract verification
 

@@ -111,14 +111,14 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             />
           </Field>
           <div className="form-actions">
-            <Button pending={pending === "save"} pendingLabel="Menyimpan…">
+            <Button loading={pending === "save"} loadingLabel="Menyimpan…">
               Simpan
             </Button>
             {catalog.status === "draft" ? (
               <Button
                 type="button"
                 variant="secondary"
-                pending={pending === "open"}
+                loading={pending === "open"}
                 onClick={() => void run("open", () => open({ catalogId: id }), "Katalog dibuka.")}
               >
                 Buka katalog
@@ -128,7 +128,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
               <Button
                 type="button"
                 variant="danger"
-                pending={pending === "close"}
+                loading={pending === "close"}
                 onClick={() => void run("close", () => close({ catalogId: id }), "Katalog ditutup.")}
               >
                 Tutup katalog
@@ -171,7 +171,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
               ))}
             </BFGSelect>
           </Field>
-          <Button pending={pending === "add"} pendingLabel="Menambahkan…">
+          <Button loading={pending === "add"} loadingLabel="Menambahkan…">
             Tambah produk
           </Button>
         </form>
@@ -189,7 +189,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 <Button
                   type="button"
                   variant="danger"
-                  pending={pending === `remove-${item._id}`}
+                  loading={pending === `remove-${item._id}`}
                   onClick={() =>
                     void run(
                       `remove-${item._id}`,

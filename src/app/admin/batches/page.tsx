@@ -86,7 +86,7 @@ function CreateBatchForm() {
           <textarea className="textarea" value={description} onChange={(event) => setDescription(event.target.value)} />
         </Field>
         <div className="form-actions">
-          <Button type="submit" pending={isSubmitting} pendingLabel="Membuat…">
+          <Button type="submit" loading={isSubmitting} loadingLabel="Membuat…">
             Buat batch
           </Button>
           {message ? (

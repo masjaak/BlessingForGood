@@ -133,7 +133,7 @@ function DepositPage() {
                   onFileChange={setFile}
                   required
                 />
-                <Button pending={pending} pendingLabel="Mengunggah…">
+                <Button loading={pending} loadingLabel="Mengunggah…">
                   Kirim top-up
                 </Button>
               </form>

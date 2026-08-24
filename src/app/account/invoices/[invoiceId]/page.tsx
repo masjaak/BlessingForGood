@@ -385,7 +385,7 @@ function PaymentConfirmationForm({
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>
       <div className="form-actions">
-        <Button type="submit" pending={isSubmitting} pendingLabel="Mengirim…">
+        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…">
           Kirim konfirmasi
         </Button>
         {message ? (

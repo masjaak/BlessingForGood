@@ -36,9 +36,9 @@ export function ProductAccessGuard({
           <span className="eyebrow">Akun Blessfriend</span>
           <h1>Masuk lewat Akun untuk melihat bagian ini.</h1>
           <p>Pesanan, invoice, dan aktivitasmu hanya tampil setelah kamu masuk.</p>
-          <a className="button button-primary" href="/account">
+          <LinkButton href="/account" variant="primary">
             Ke Akun
-          </a>
+          </LinkButton>
         </div>
       )
     );

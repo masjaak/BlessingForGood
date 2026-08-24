@@ -64,9 +64,10 @@ change meaning and color, not the baseline box model.
 | Size | Height | Horizontal padding | Radius | Use |
 | --- | --- | --- | --- | --- |
 | `default` | `44px` | `16px` | `10px` | primary, secondary, destructive actions |
-| `compact` | `36px` | `12px` | `10px` | table-row and dense operational actions |
-| `icon` | `40px` | `0` | `10px` | icon-only control with a labeled accessible name |
-| quiet / tertiary | `36px` | `8px` | transparent | low-emphasis navigation or inline action |
+| `compact` | `40px` | `12px` | `10px` | desktop-only dense operational actions |
+| `large` | `48px` | `20px` | `10px` | hero, mobile, and major conversion actions |
+| `icon` | `44px` | `0` | `10px` | icon-only control with a labeled accessible name |
+| `tertiary` | `44px` | `12px` | transparent | low-emphasis navigation or inline action |
 
 ## Frames
 
