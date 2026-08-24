@@ -108,6 +108,25 @@ export const create = mutation({
   },
 });
 
+export const updateEtaCargoMonth = mutation({
+  args: {
+    batchId: v.id("batches"),
+    etaCargoMonth: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "batches.manage");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch) fail("BATCH_NOT_FOUND");
+    if (batch.isArchived) fail("BATCH_ARCHIVED");
+    const etaCargoMonth = normalizedEtaCargoMonth(args.etaCargoMonth);
+    await ctx.db.patch(args.batchId, { etaCargoMonth, updatedAt: Date.now() });
+    await recordAudit(ctx, user._id, "batch.eta_updated", "batch", args.batchId, {
+      etaCargoMonth: etaCargoMonth || "",
+    });
+    return getBatchSummary(ctx, args.batchId);
+  },
+});
+
 export const listForAdmin = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {

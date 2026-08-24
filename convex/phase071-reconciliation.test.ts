@@ -201,6 +201,12 @@ describe("Phase 07.1 reconciliation", () => {
       etaCargoMonth: "2026-10",
     });
     expect(created).toMatchObject({ poDeadlineAt: deadline, etaCargoMonth: "2026-10" });
+    await expect(
+      admin.mutation(api.batches.updateEtaCargoMonth, { batchId: created.batchId, etaCargoMonth: "2026-11" }),
+    ).resolves.toMatchObject({ etaCargoMonth: "2026-11" });
+    await expect(
+      admin.mutation(api.batches.updateEtaCargoMonth, { batchId: created.batchId, etaCargoMonth: "Oktober 2026" }),
+    ).rejects.toThrow("VALIDATION_FAILED");
     await expect(admin.mutation(api.batches.create, { name: "Invalid ETA", etaCargoMonth: "Oktober 2026" })).rejects.toThrow(
       "VALIDATION_FAILED",
     );

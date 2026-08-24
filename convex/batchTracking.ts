@@ -604,17 +604,25 @@ export const getForAdmin = query({
       ...summary,
       assignments: assignedItems,
       customerRoster: [...customerGroups.values()],
-      purchaseSummary: [...purchaseGroups.values()].map((purchase) => ({
-        bookVariantId: purchase.bookVariantId,
-        bookTitle: purchase.bookTitle,
-        format: purchase.format,
-        isbn: purchase.isbn,
-        publisherName: purchase.publisherName,
-        unitPriceAmount: purchase.unitPriceAmount,
-        supplierPriceGbpMinor: purchase.supplierPriceGbpMinor,
-        quantity: purchase.quantity,
-        customerCount: purchase.customers.size,
-      })),
+      purchaseSummary: [...purchaseGroups.values()]
+        .sort(
+          (left, right) =>
+            left.publisherName.localeCompare(right.publisherName) ||
+            left.bookTitle.localeCompare(right.bookTitle) ||
+            left.format.localeCompare(right.format) ||
+            left.isbn.localeCompare(right.isbn),
+        )
+        .map((purchase) => ({
+          bookVariantId: purchase.bookVariantId,
+          bookTitle: purchase.bookTitle,
+          format: purchase.format,
+          isbn: purchase.isbn,
+          publisherName: purchase.publisherName,
+          unitPriceAmount: purchase.unitPriceAmount,
+          supplierPriceGbpMinor: purchase.supplierPriceGbpMinor,
+          quantity: purchase.quantity,
+          customerCount: purchase.customers.size,
+        })),
       history: await historyView(ctx, args.batchId, true),
     };
   },

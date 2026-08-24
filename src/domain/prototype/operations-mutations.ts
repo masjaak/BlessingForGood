@@ -13,6 +13,7 @@ import type {
 
 export function useOperationsMutations() {
   const createBatchMutation = useMutation(api.batches.create);
+  const updateEtaCargoMonthMutation = useMutation(api.batches.updateEtaCargoMonth);
   const linkCatalogMutation = useMutation(api.batches.linkCatalog);
   const unlinkCatalogMutation = useMutation(api.batches.unlinkCatalog);
   const archiveBatchMutation = useMutation(api.batches.archive);
@@ -43,6 +44,14 @@ export function useOperationsMutations() {
       etaCargoMonth?: string;
     }) => createBatchMutation(input),
     [createBatchMutation],
+  );
+  const updateEtaCargoMonth = useCallback(
+    (id: string, etaCargoMonth?: string) =>
+      updateEtaCargoMonthMutation({
+        batchId: id as Id<"batches">,
+        etaCargoMonth: etaCargoMonth || undefined,
+      }),
+    [updateEtaCargoMonthMutation],
   );
   const linkCatalog = useCallback(
     (id: string, catalogId: string) =>
@@ -196,6 +205,7 @@ export function useOperationsMutations() {
   return useMemo(
     () => ({
       createBatch,
+      updateEtaCargoMonth,
       linkCatalog,
       unlinkCatalog,
       archiveBatch,
@@ -224,6 +234,7 @@ export function useOperationsMutations() {
       unassignOrderItem,
       moveOrderItem,
       createBatch,
+      updateEtaCargoMonth,
       createInvoice,
       issueInvoice,
       linkCatalog,

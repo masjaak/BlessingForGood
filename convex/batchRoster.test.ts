@@ -243,6 +243,7 @@ describe("BFG batch roster and assisted orders", () => {
     const batch = await admin.mutation(api.batches.create, {
       name: "Shared Deadline Batch",
       poDeadlineAt: deadline,
+      etaCargoMonth: "2026-10",
     });
     expect(batch.referenceCode).toMatch(/^BFG-BAT-\d{6}-[0-9A-Z]{4}$/);
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
@@ -256,9 +257,15 @@ describe("BFG batch roster and assisted orders", () => {
 
     const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
     expect(detail.purchaseSummary).toHaveLength(3);
+    expect(detail.purchaseSummary.map((item) => item.publisherName)).toEqual([
+      "Publisher A",
+      "Publisher B",
+      "Publisher C",
+    ]);
     const customerBatch = await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId });
     expect(customerBatch).toMatchObject({
       batchId: batch.batchId,
+      etaCargoMonth: "2026-10",
       items: expect.arrayContaining([expect.objectContaining({ title: "Book A" })]),
     });
     expect(customerBatch?.availableItems).toHaveLength(3);
@@ -268,6 +275,16 @@ describe("BFG batch roster and assisted orders", () => {
     await expect(secondCustomer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId })).resolves.toBeNull();
 
     await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
+    await admin.mutation(api.batches.updateEtaCargoMonth, {
+      batchId: batch.batchId,
+      etaCargoMonth: "2026-11",
+    });
+    await expect(admin.query(api.batches.getForAdmin, { batchId: batch.batchId })).resolves.toMatchObject({
+      etaCargoMonth: "2026-11",
+    });
+    await expect(customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId })).resolves.toMatchObject({
+      etaCargoMonth: "2026-11",
+    });
     await expect(
       admin.mutation(api.batchTracking.assignOrderItem, {
         orderItemId: order.items[0]._id,

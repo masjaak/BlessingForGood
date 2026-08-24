@@ -78,6 +78,7 @@ export interface OperationsContextValue {
     poDeadlineAt?: number;
     etaCargoMonth?: string;
   }) => Promise<BatchSummary>;
+  updateEtaCargoMonth: (batchId: string, etaCargoMonth?: string) => Promise<BatchSummary>;
   linkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   archiveBatch: (batchId: string) => Promise<BatchSummary>;
@@ -307,6 +308,7 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
       adminPaymentHistory: undefined,
       customerExceptionList: undefined,
       createBatch: unavailable,
+      updateEtaCargoMonth: unavailable,
       linkCatalog: unavailable,
       unlinkCatalog: unavailable,
       archiveBatch: unavailable,

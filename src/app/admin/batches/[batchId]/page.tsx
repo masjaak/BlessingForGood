@@ -46,6 +46,7 @@ function AdminBatchDetail() {
     linkCatalog,
     unlinkCatalog,
     archiveBatch,
+    updateEtaCargoMonth,
     assignOrderItem,
     unassignOrderItem,
     moveOrderItem,
@@ -212,6 +213,24 @@ function AdminBatchDetail() {
                   : "Roster dapat diubah sampai PO ditutup."}
               </p>
             </div>
+          </Card>
+
+          <Card>
+            <div className="split-heading">
+              <div>
+                <span className="card-kicker">Estimasi cargo</span>
+                <h2>ETA Cargo</h2>
+              </div>
+            </div>
+            <p className="subtle">Simpan bulan dan tahun estimasi; ini bukan tanggal kedatangan yang dijamin.</p>
+            <EtaCargoForm
+              key={currentBatch.etaCargoMonth || "empty"}
+              batchId={batchId}
+              etaCargoMonth={currentBatch.etaCargoMonth}
+              updateEtaCargoMonth={updateEtaCargoMonth}
+              disabled={currentBatch.isArchived}
+              onDone={() => setMessage("ETA Cargo diperbarui.")}
+            />
           </Card>
 
           <Card>
@@ -547,6 +566,62 @@ function AdminBatchDetail() {
         </div>
       </div>
     </div>
+  );
+}
+
+function EtaCargoForm({
+  batchId,
+  etaCargoMonth,
+  updateEtaCargoMonth,
+  disabled,
+  onDone,
+}: {
+  batchId: string;
+  etaCargoMonth: string | null;
+  updateEtaCargoMonth: (batchId: string, etaCargoMonth?: string) => Promise<unknown>;
+  disabled: boolean;
+  onDone: () => void;
+}) {
+  const [value, setValue] = useState(etaCargoMonth || "");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setPending(true);
+    try {
+      await updateEtaCargoMonth(batchId, value || undefined);
+      onDone();
+    } catch (reason) {
+      setError(productErrorMessage(reason, "ETA Cargo belum dapat diperbarui."));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form className="form-actions" onSubmit={submit}>
+      <label className="field">
+        <span className="field-label">Bulan ETA Cargo</span>
+        <input
+          aria-label="Bulan ETA Cargo"
+          className="input"
+          type="month"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          disabled={disabled || pending}
+        />
+      </label>
+      <Button type="submit" loading={pending} loadingLabel="Menyimpan…" disabled={disabled}>
+        Simpan ETA Cargo
+      </Button>
+      {error ? (
+        <span className="error-text" role="alert">
+          {error}
+        </span>
+      ) : null}
+    </form>
   );
 }
 
