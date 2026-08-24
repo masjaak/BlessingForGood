@@ -13,7 +13,12 @@ import type { UploadPurpose } from "./uploads";
 const http = httpRouter();
 
 function corsHeaders(origin: string | null): HeadersInit {
-  const allowed = new Set(["https://www.blessingforgood.com", "https://blessingforgood.com", "http://localhost:3000"]);
+  const allowed = new Set([
+    "https://www.blessingforgood.com",
+    "https://blessingforgood.com",
+    "http://localhost:3000",
+    "http://localhost:3100",
+  ]);
   return {
     "Access-Control-Allow-Headers": "Authorization, Content-Type, X-BFG-File-Size",
     "Access-Control-Allow-Methods": "POST, OPTIONS",

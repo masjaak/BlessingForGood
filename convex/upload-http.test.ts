@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
 
 const progressiveExifJpeg = new Uint8Array([
@@ -59,6 +61,24 @@ const validWebp = new Uint8Array([
 describe("BFG owned upload HTTP boundary", () => {
   beforeEach(configureTestEnvironment);
 
+  it("allows the local browser origin used by the Development Playwright server", async () => {
+    const t = testConvex();
+    const response = await t.fetch("/bfg/upload", {
+      method: "OPTIONS",
+      headers: { Origin: "http://localhost:3100" },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:3100");
+
+    const denied = await t.fetch("/bfg/upload", {
+      method: "OPTIONS",
+      headers: { Origin: "https://not-blessing-for-good.example" },
+    });
+    expect(denied.status).toBe(204);
+    expect(denied.headers.get("Access-Control-Allow-Origin")).toBe("null");
+  });
+
   it("stores only validated files and records the authenticated owner claim", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
@@ -117,31 +137,110 @@ describe("BFG owned upload HTTP boundary", () => {
     expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toEqual([]);
   });
 
-  it("accepts real-world JPEG metadata and preserves the canonical content type", async () => {
+  it("runs the real JPEG upload, attach, reload, and customer projection path", async () => {
     const t = testConvex();
-    const { admin } = await setupUsers(t);
-    const response = await admin.fetch(
-      `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent("81vi9d-A1dL._SL1500_ (1).jpg")}`,
+    const { admin, customer } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Upload Journey Publisher" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Upload Journey Book" });
+    const variantId = await admin.mutation(api.bookVariants.create, {
+      bookId,
+      format: "PB",
+      isbn: "9780000041091",
+      priceAmount: 125000,
+    });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 3 });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+
+    const coverResponse = await admin.fetch(
+      `/bfg/upload?purpose=book-cover&fileName=${encodeURIComponent("81vi9d-A1dL._SL1500_ (1).jpg")}`,
       {
         method: "POST",
         headers: {
-          Origin: "http://localhost:3000",
+          Origin: "http://localhost:3100",
           "Content-Type": "image/pjpeg; charset=binary",
           "X-BFG-File-Size": String(progressiveExifJpeg.byteLength),
         },
         body: progressiveExifJpeg,
       },
     );
-    expect(response.status).toBe(200);
-    const { storageId } = (await response.json()) as { storageId: string };
-    expect(storageId).toBeTruthy();
+    expect(coverResponse.status).toBe(200);
+    const { storageId: coverStorageId } = (await coverResponse.json()) as { storageId: string };
+    const galleryResponse = await admin.fetch(
+      `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent("cover.final.v2.JPG")}`,
+      {
+        method: "POST",
+        headers: {
+          Origin: "http://localhost:3100",
+          "Content-Type": "image/jpg; charset=binary",
+          "X-BFG-File-Size": String(progressiveExifJpeg.byteLength),
+        },
+        body: progressiveExifJpeg,
+      },
+    );
+    expect(galleryResponse.status).toBe(200);
+    const { storageId: galleryStorageId } = (await galleryResponse.json()) as { storageId: string };
+
+    // convex-test does not retain Blob.type in synthetic storage metadata; real Convex Storage does.
+    await t.run(async (ctx) => {
+      for (const storageId of [coverStorageId, galleryStorageId]) {
+        await ctx.db.patch(storageId as never, { contentType: "image/jpeg" } as never);
+      }
+    });
+    expect(
+      await t.run(async (ctx) => {
+        const metadata = await ctx.db.system.get("_storage", coverStorageId as Id<"_storage">);
+        const blob = await ctx.storage.get(coverStorageId as Id<"_storage">);
+        return { contentType: metadata?.contentType, size: metadata?.size, bodySize: blob?.size };
+      }),
+    ).toEqual({
+      contentType: "image/jpeg",
+      size: progressiveExifJpeg.byteLength,
+      bodySize: progressiveExifJpeg.byteLength,
+    });
+
+    await admin.action(api.books.attachCover, {
+      bookId,
+      storageId: coverStorageId as Id<"_storage">,
+      fileName: "81vi9d-A1dL._SL1500_ (1).jpg",
+      mimeType: "image/pjpeg; charset=binary",
+    });
+    await admin.action(api.books.attachGalleryImage, {
+      bookId,
+      storageId: galleryStorageId as Id<"_storage">,
+      fileName: "cover.final.v2.JPG",
+      mimeType: "image/jpg; charset=binary",
+      altText: "Upload journey gallery",
+    });
+
+    const persistedAdminBook = await admin.query(api.books.getForAdmin, { bookId });
+    expect(persistedAdminBook).toMatchObject({
+      coverStorageId: coverStorageId,
+      gallery: [{ storageId: galleryStorageId, altText: "Upload journey gallery" }],
+    });
+    const persistedCustomerBook = await customer.query(api.readyStock.getBySlug, { slug: "upload-journey-book" });
+    expect(persistedCustomerBook?.coverImageUrl).toBeTruthy();
+    expect(persistedCustomerBook?.gallery).toEqual([
+      expect.objectContaining({ altText: "Upload journey gallery", url: expect.any(String) }),
+    ]);
+    expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({
+      coverStorageId: coverStorageId,
+      gallery: [{ storageId: galleryStorageId }],
+    });
     expect(
       await t.run(async (ctx) =>
         ctx.db
           .query("uploadClaims")
-          .withIndex("by_storage_id", (index) => index.eq("storageId", storageId as never))
-          .unique(),
+          .withIndex("by_storage_id", (index) => index.eq("storageId", coverStorageId as never))
+          .first(),
       ),
-    ).toMatchObject({ purpose: "book-gallery" });
+    ).toBeNull();
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("uploadClaims")
+          .withIndex("by_storage_id", (index) => index.eq("storageId", galleryStorageId as never))
+          .first(),
+      ),
+    ).toBeNull();
   });
 });

@@ -201,8 +201,9 @@ describe("BFG Ready Stock and Book Master", () => {
   it("lets Admin create a Ready Stock order for an existing customer through the same reservation path", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
+    const adminUser = await admin.query(api.users.current, {});
     const customerUser = await customer.query(api.users.current, {});
-    if (!customerUser) throw new Error("customer fixture missing");
+    if (!adminUser || !customerUser) throw new Error("assisted order fixture missing");
     const publisherId = await admin.mutation(api.publishers.create, { name: "Assisted Stock House" });
     const bookId = await admin.mutation(api.books.create, { publisherId, title: "Assisted Stock Book" });
     const variantId = await admin.mutation(api.bookVariants.create, {
@@ -226,6 +227,16 @@ describe("BFG Ready Stock and Book Master", () => {
       customerMemberCode: customerUser.memberCode,
       totalAmount: 125000,
     });
+    expect(await customer.query(api.orders.getMine, { orderId: order.orderId })).toMatchObject({
+      orderId: order.orderId,
+      source: "ready_stock",
+      customerUserId: customerUser.appUserId,
+    });
+    expect(await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).toMatchObject({
+      orderId: order.orderId,
+      source: "ready_stock",
+      customerMemberCode: customerUser.memberCode,
+    });
     expect(
       await t.run(async (ctx) =>
         ctx.db
@@ -238,6 +249,66 @@ describe("BFG Ready Stock and Book Master", () => {
       await t.run(async (ctx) =>
         (await ctx.db.query("auditEvents").collect()).find((event) => event.targetId === String(order.orderId)),
       ),
-    ).toMatchObject({ actorUserId: expect.anything(), action: "order.admin_assisted_created" });
+    ).toMatchObject({ actorUserId: adminUser.appUserId, action: "order.admin_assisted_created" });
+  });
+
+  it("runs the Customer available=3 quantity=1 journey through every canonical projection", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Customer Stock House" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Customer Stock Book" });
+    const variantId = await admin.mutation(api.bookVariants.create, {
+      bookId,
+      format: "PB",
+      isbn: "9780000041092",
+      priceAmount: 125000,
+    });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 3 });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+
+    expect(await admin.query(api.readyStock.listForAdmin, {})).toEqual([
+      expect.objectContaining({ variantId, onHandQuantity: 3, reservedQuantity: 0, availableQuantity: 3 }),
+    ]);
+
+    const order = await customer.mutation(api.orders.createReadyStock, { variantId, quantity: 1 });
+    expect(order).toMatchObject({
+      source: "ready_stock",
+      orderCode: expect.stringMatching(/^BFG-ORD-/),
+      totalAmount: 125000,
+    });
+    expect(await customer.query(api.orders.getMine, { orderId: order.orderId })).toMatchObject({
+      orderId: order.orderId,
+      source: "ready_stock",
+    });
+    expect(
+      (await customer.query(api.orders.listMine, { paginationOpts: { numItems: 10, cursor: null } })).page,
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ orderId: order.orderId, source: "ready_stock" })]));
+    expect(
+      (await admin.query(api.orders.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } })).page,
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ orderId: order.orderId, source: "ready_stock" })]));
+    expect(await admin.query(api.notifications.listMine, { surface: "notification" })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ eventType: "order.ready_stock_created" })]),
+    );
+    expect(await admin.query(api.notifications.listActivity, {})).toEqual(
+      expect.arrayContaining([expect.objectContaining({ title: "Order Ready Stock baru", type: "system" })]),
+    );
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("readyStockInventory")
+          .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variantId))
+          .unique(),
+      ),
+    ).toMatchObject({ quantity: 3, reservedQuantity: 1 });
+    expect((await admin.query(api.readyStock.listForAdmin, {}))[0].availableQuantity).toBe(2);
+    expect(
+      (await customer.query(api.readyStock.getBySlug, { slug: "customer-stock-book" }))?.variants[0],
+    ).toMatchObject({
+      id: variantId,
+      stockQuantity: 2,
+    });
+    await expect(secondCustomer.query(api.orders.getMine, { orderId: order.orderId })).rejects.toThrow(
+      "ORDER_ACCESS_DENIED",
+    );
   });
 });

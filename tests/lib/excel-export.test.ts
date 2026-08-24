@@ -14,33 +14,39 @@ describe("Excel-compatible export", () => {
 
 describe("publisher purchase export", () => {
   it("groups derived purchase rows by publisher and keeps GBP in integer pence", () => {
-    expect(
-      purchaseSummaryCsvRows([
-        {
-          publisherName: "Publisher B",
-          isbn: "9782",
-          bookTitle: "Zebra",
-          format: "PB",
-          quantity: 2,
-          supplierPriceGbpMinor: 1299,
-          unitPriceAmount: 210000,
-        },
-        {
-          publisherName: "Publisher A",
-          isbn: "9781",
-          bookTitle: "Alpha",
-          format: "HB",
-          quantity: 1,
-          supplierPriceGbpMinor: null,
-          unitPriceAmount: 180000,
-        },
-      ]),
-    ).toEqual([
+    const items = [
+      {
+        publisherName: "Publisher B",
+        isbn: "9782",
+        bookTitle: "Zebra",
+        format: "PB",
+        quantity: 2,
+        supplierPriceGbpMinor: 1299,
+        unitPriceAmount: 210000,
+      },
+      {
+        publisherName: "Publisher A",
+        isbn: "9781",
+        bookTitle: "Alpha",
+        format: "HB",
+        quantity: 1,
+        supplierPriceGbpMinor: null,
+        unitPriceAmount: 180000,
+      },
+    ];
+    expect(purchaseSummaryCsvRows(items)).toEqual([
       ["Publisher", "ISBN", "Judul", "Format", "Qty", "Harga GBP", "Harga IDR"],
       ["Publisher A", "", "", "", "", "", ""],
       ["Publisher A", "9781", "Alpha", "HB", 1, "", 180000],
       ["Publisher B", "", "", "", "", "", ""],
       ["Publisher B", "9782", "Zebra", "PB", 2, 1299, 210000],
+    ]);
+    expect(toExcelCsv(purchaseSummaryCsvRows(items)).slice(1).split("\r\n")).toEqual([
+      "Publisher,ISBN,Judul,Format,Qty,Harga GBP,Harga IDR",
+      "Publisher A,,,,,,",
+      "Publisher A,9781,Alpha,HB,1,,180000",
+      "Publisher B,,,,,,",
+      "Publisher B,9782,Zebra,PB,2,1299,210000",
     ]);
   });
 });

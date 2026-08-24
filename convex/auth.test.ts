@@ -53,6 +53,63 @@ describe("Clerk identity and BFG authorization", () => {
     });
   });
 
+  it("keeps same-name customers distinct and member codes stable across profile refresh", async () => {
+    const t = testConvex();
+    const owner = t.withIdentity(ownerIdentity);
+    await owner.mutation(api.users.ensureCurrentUser, {});
+    const sameNameIdentities = [
+      {
+        subject: "same-name-customer-one",
+        tokenIdentifier: "clerk|same-name-customer-one",
+        email: "same-name-customer-one@example.com",
+        name: "Undo",
+      },
+      {
+        subject: "same-name-customer-two",
+        tokenIdentifier: "clerk|same-name-customer-two",
+        email: "same-name-customer-two@example.com",
+        name: "Undo",
+      },
+    ] as const;
+    for (const identity of sameNameIdentities) await seedApprovedJoinRequest(t, identity.email);
+
+    const first = t.withIdentity(sameNameIdentities[0]);
+    const second = t.withIdentity(sameNameIdentities[1]);
+    const firstUser = await first.mutation(api.users.ensureCurrentUser, {});
+    const secondUser = await second.mutation(api.users.ensureCurrentUser, {});
+    expect(firstUser.displayNameSnapshot).toBe("Undo");
+    expect(secondUser.displayNameSnapshot).toBe("Undo");
+    expect(firstUser.memberCode).toMatch(/^undo-\d{4}$/);
+    expect(secondUser.memberCode).toMatch(/^undo-\d{4}$/);
+    expect(secondUser.memberCode).not.toBe(firstUser.memberCode);
+
+    const eligible = await owner.query(api.orders.listEligibleCustomers, {});
+    expect(eligible).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          customerUserId: firstUser.appUserId,
+          displayName: "Undo",
+          memberCode: firstUser.memberCode,
+        }),
+        expect.objectContaining({
+          customerUserId: secondUser.appUserId,
+          displayName: "Undo",
+          memberCode: secondUser.memberCode,
+        }),
+      ]),
+    );
+
+    const renamed = t.withIdentity({ ...sameNameIdentities[0], name: "Undo Updated" });
+    await expect(renamed.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      appUserId: firstUser.appUserId,
+      displayNameSnapshot: "Undo Updated",
+      memberCode: firstUser.memberCode,
+    });
+    await expect(second.query(api.users.getForAdmin, { userId: firstUser.appUserId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+  });
+
   it("does not provision an uninvited identity", async () => {
     const t = testConvex();
     const visitor = t.withIdentity({

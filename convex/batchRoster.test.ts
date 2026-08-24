@@ -151,10 +151,15 @@ describe("BFG batch roster and assisted orders", () => {
     const t = testConvex();
     const { owner, admin, customer } = await setupUsers(t);
     const catalog = await createOpenCatalog(admin, "Assisted Catalog", "2003", "assisted-code");
+    const adminUser = await admin.query(api.users.current, {});
     const customerUser = await customer.query(api.users.current, {});
-    if (!customerUser) throw new Error("customer user missing");
+    if (!adminUser || !customerUser) throw new Error("assisted order users missing");
     const eligible = await admin.query(api.orders.listEligibleCustomers, {});
-    expect(eligible.map((item) => item.customerUserId)).toContain(customerUser.appUserId);
+    expect(eligible).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ customerUserId: customerUser.appUserId, memberCode: customerUser.memberCode }),
+      ]),
+    );
     await expect(customer.query(api.orders.listEligibleCustomers, {})).rejects.toThrow("PERMISSION_DENIED");
     const order = await admin.mutation(api.orders.createAssisted, {
       customerUserId: customerUser.appUserId,
@@ -182,6 +187,11 @@ describe("BFG batch roster and assisted orders", () => {
     expect(
       (await customer.query(api.orders.listMine, { paginationOpts: { numItems: 10, cursor: null } })).page,
     ).toEqual(expect.arrayContaining([expect.objectContaining({ orderId: order.orderId, source: "admin_assisted" })]));
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("auditEvents").collect()).find((event) => event.targetId === String(order.orderId)),
+      ),
+    ).toMatchObject({ actorUserId: adminUser.appUserId, action: "order.admin_assisted_created" });
     await expect(
       customer.mutation(api.orders.createAssisted, {
         customerUserId: customerUser.appUserId,
@@ -217,10 +227,14 @@ describe("BFG batch roster and assisted orders", () => {
       accessCode: "shared-deadline-code",
       variants: [{ format: "PB", isbn: "97800009921", priceAmount: 110000 }],
     });
-    for (const [publisherName, title, isbn] of [
-      ["Publisher B", "Book B", "97800009922"],
-      ["Publisher C", "Book C", "97800009923"],
-    ]) {
+    await admin.mutation(api.bookVariants.update, {
+      bookVariantId: catalog.variantIds[0],
+      supplierPriceGbpMinor: 1299,
+    });
+    for (const [publisherName, title, isbn, supplierPriceGbpMinor] of [
+      ["Publisher B", "Book B", "97800009922", 1599],
+      ["Publisher C", "Book C", "97800009923", undefined],
+    ] as const) {
       const publisherId = await admin.mutation(api.publishers.create, { name: publisherName });
       const bookId = await admin.mutation(api.books.create, { publisherId, title });
       await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
@@ -229,16 +243,23 @@ describe("BFG batch roster and assisted orders", () => {
         format: "PB",
         isbn,
         priceAmount: 115000,
+        ...(supplierPriceGbpMinor === undefined ? {} : { supplierPriceGbpMinor }),
       });
       await admin.mutation(api.catalogItems.add, { catalogId: catalog.catalogId, bookVariantId: variantId });
       catalog.variantIds.push(variantId);
     }
     await admin.mutation(api.secretCatalogs.open, { catalogId: catalog.catalogId });
     await customer.mutation(api.catalogAccess.unlock, { accessCode: "shared-deadline-code" });
+    await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "shared-deadline-code" });
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Shared Deadline Customer",
-      items: catalog.variantIds.map((variantId) => ({ variantId, quantity: 1 })),
+      items: catalog.variantIds.map((variantId, index) => ({ variantId, quantity: index === 0 ? 2 : 1 })),
+    });
+    const secondOrder = await secondCustomer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Shared Deadline Customer Two",
+      items: catalog.variantIds.map((variantId, index) => ({ variantId, quantity: index === 1 ? 2 : 1 })),
     });
     const batch = await admin.mutation(api.batches.create, {
       name: "Shared Deadline Batch",
@@ -251,16 +272,57 @@ describe("BFG batch roster and assisted orders", () => {
       await admin.mutation(api.batchTracking.assignOrderItem, {
         orderItemId: item._id,
         batchId: batch.batchId,
-        assignedQuantity: 1,
+        assignedQuantity: item.quantity,
+      });
+    }
+    for (const item of secondOrder.items) {
+      await admin.mutation(api.batchTracking.assignOrderItem, {
+        orderItemId: item._id,
+        batchId: batch.batchId,
+        assignedQuantity: item.quantity,
       });
     }
 
     const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
     expect(detail.purchaseSummary).toHaveLength(3);
-    expect(detail.purchaseSummary.map((item) => item.publisherName)).toEqual([
-      "Publisher A",
-      "Publisher B",
-      "Publisher C",
+    expect(
+      detail.purchaseSummary.map((item) => ({
+        publisherName: item.publisherName,
+        isbn: item.isbn,
+        bookTitle: item.bookTitle,
+        format: item.format,
+        quantity: item.quantity,
+        supplierPriceGbpMinor: item.supplierPriceGbpMinor,
+        unitPriceAmount: item.unitPriceAmount,
+      })),
+    ).toEqual([
+      {
+        publisherName: "Publisher A",
+        isbn: "97800009921",
+        bookTitle: "Book A",
+        format: "PB",
+        quantity: 3,
+        supplierPriceGbpMinor: 1299,
+        unitPriceAmount: 110000,
+      },
+      {
+        publisherName: "Publisher B",
+        isbn: "97800009922",
+        bookTitle: "Book B",
+        format: "PB",
+        quantity: 3,
+        supplierPriceGbpMinor: 1599,
+        unitPriceAmount: 115000,
+      },
+      {
+        publisherName: "Publisher C",
+        isbn: "97800009923",
+        bookTitle: "Book C",
+        format: "PB",
+        quantity: 2,
+        supplierPriceGbpMinor: null,
+        unitPriceAmount: 115000,
+      },
     ]);
     const customerBatch = await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId });
     expect(customerBatch).toMatchObject({
@@ -272,7 +334,13 @@ describe("BFG batch roster and assisted orders", () => {
     expect(new Set(customerBatch?.availableItems.map((item) => item.publisher))).toEqual(
       new Set(["Publisher A", "Publisher B", "Publisher C"]),
     );
-    await expect(secondCustomer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId })).resolves.toBeNull();
+    await expect(
+      secondCustomer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId }),
+    ).resolves.toMatchObject({
+      batchId: batch.batchId,
+      etaCargoMonth: "2026-10",
+      items: expect.arrayContaining([expect.objectContaining({ title: "Book B", quantity: 2 })]),
+    });
 
     await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
     await admin.mutation(api.batches.updateEtaCargoMonth, {
