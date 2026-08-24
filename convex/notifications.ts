@@ -2,14 +2,17 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { requireActiveUser } from "./lib/auth";
+import { requireActiveUser, requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { projectActivity } from "./lib/notifications";
 
 const surface = v.union(v.literal("notification"), v.literal("inbox"));
 const workspace = v.union(v.literal("admin"), v.literal("customer"));
 
-function belongsToWorkspace(notice: { audience?: "admin" | "customer"; destination: string }, currentWorkspace: "admin" | "customer") {
+function belongsToWorkspace(
+  notice: { audience?: "admin" | "customer"; destination: string },
+  currentWorkspace: "admin" | "customer",
+) {
   const audience = notice.audience ?? (notice.destination.startsWith("/admin") ? "admin" : "customer");
   return audience === currentWorkspace;
 }
@@ -107,5 +110,36 @@ export const markRead = mutation({
     if (!notice || notice.recipientUserId !== user._id) fail("NOTIFICATION_ACCESS_DENIED");
     if (!notice.readAt) await ctx.db.patch(notice._id, { readAt: Date.now() });
     return { read: true };
+  },
+});
+
+export const markReadByContext = mutation({
+  args: { destination: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "customers.read");
+    if (args.destination !== "/admin" && !args.destination.startsWith("/admin/")) {
+      fail("VALIDATION_FAILED", "admin destination is invalid");
+    }
+    const unreadBySurface = await Promise.all(
+      (["notification", "inbox"] as const).map((currentSurface) =>
+        ctx.db
+          .query("notifications")
+          .withIndex("by_recipient_surface_read_at", (index) =>
+            index.eq("recipientUserId", user._id).eq("surface", currentSurface).eq("readAt", undefined),
+          )
+          // ponytail: cap each surface scan at 200; add pagination only if this ceiling is reached in production.
+          .take(200),
+      ),
+    );
+    const matching = unreadBySurface
+      .flat()
+      .filter(
+        (notice) =>
+          notice.destination === args.destination &&
+          (notice.audience === "admin" || (!notice.audience && notice.destination.startsWith("/admin"))),
+      );
+    const readAt = Date.now();
+    await Promise.all(matching.map((notice) => ctx.db.patch(notice._id, { readAt })));
+    return { read: matching.length };
   },
 });

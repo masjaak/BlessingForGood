@@ -52,15 +52,9 @@ async function activeEmailDuplicateStatus(ctx: MutationCtx, normalizedEmail: str
     .query("joinRequests")
     .withIndex("by_normalized_email", (index) => index.eq("normalizedEmail", normalizedEmail))
     .take(50);
-  return matches.find((request) => duplicateStatuses.has(request.status))?.status ?? null;
-}
-
-async function activeContactDuplicateStatus(ctx: MutationCtx, normalizedContact: string): Promise<JoinRequestStatus | null> {
-  const matches = await ctx.db
-    .query("joinRequests")
-    .withIndex("by_normalized_contact", (index) => index.eq("normalizedContact", normalizedContact))
-    .take(50);
-  return matches.find((request) => duplicateStatuses.has(request.status))?.status ?? null;
+  const statuses = matches.filter((request) => duplicateStatuses.has(request.status)).map((request) => request.status);
+  if (statuses.includes("approved")) return "approved";
+  return statuses[0] ?? null;
 }
 
 async function activeApplicantDuplicateStatus(ctx: MutationCtx, applicantClerkUserId: string): Promise<JoinRequestStatus | null> {
@@ -146,7 +140,6 @@ export const submit = mutation({
     const applicantClerkUserId = identity?.subject;
     const duplicateStatusesFound = await Promise.all([
       activeEmailDuplicateStatus(ctx, email),
-      activeContactDuplicateStatus(ctx, normalizedContact),
       applicantClerkUserId ? activeApplicantDuplicateStatus(ctx, applicantClerkUserId) : Promise.resolve(null),
     ]);
     if (duplicateStatusesFound.includes("approved")) fail("JOIN_REQUEST_ALREADY_APPROVED");

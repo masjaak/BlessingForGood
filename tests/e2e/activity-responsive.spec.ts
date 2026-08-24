@@ -29,7 +29,7 @@ async function mountActivityFixture(page: Page) {
         <button aria-expanded="true" class="workspace-activity-trigger" type="button">
           <span>Aktivitas</span>
         </button>
-        <div aria-label="Aktivitas" class="workspace-activity-panel" role="dialog" style="top: 48px; left: ${panelLeft}px; right: auto; width: ${panelWidth}px; max-height: min(560px, calc(100dvh - 72px));">
+        <div aria-label="Aktivitas" class="workspace-activity-panel" role="dialog" style="top: 48px; left: ${panelLeft}px; right: auto; width: ${panelWidth}px;">
               <div class="activity-panel-content">
                 <div class="activity-panel-heading">
                   <div><strong>Aktivitas</strong><span class="subtle">Pembaruan terbaru</span></div>
@@ -43,8 +43,6 @@ async function mountActivityFixture(page: Page) {
                     <section class="card activity-card">
                       <div class="activity-card-topline"><span class="activity-type">${index === 1 ? "Pesan BFG" : "Sistem"}</span><time>21/08/2026, 12:34:56</time></div>
                       <h2>${index === 0 ? "Konfirmasi pembayaran baru" : `Pembaruan ${longReference}`}</h2>
-                      <p>${index === 0 ? `Konfirmasi pembayaran untuk ${longReference} memerlukan pemeriksaan.` : `${longExplanation} Referensi ${longReference} tetap terkait dengan akunmu.`}</p>
-                      <a class="button button-secondary" href="#">Buka detail</a>
                     </section>
                   `,
                   ).join("")}
@@ -110,6 +108,9 @@ test.describe("@activity Activity responsive geometry", () => {
       expect(geometry.panel.bottom, `${viewport.width}px panel bottom`).toBeLessThanOrEqual(viewport.height + 1);
       expect(geometry.panel.scrollWidth, `${viewport.width}px panel horizontal scroll`).toBe(
         geometry.panel.clientWidth,
+      );
+      expect(geometry.panel.scrollHeight, `${viewport.width}px panel vertical scroll`).toBe(
+        geometry.panel.clientHeight,
       );
       expect(geometry.content.left, `${viewport.width}px content left`).toBeGreaterThanOrEqual(geometry.panel.left);
       expect(geometry.content.right, `${viewport.width}px content right`).toBeLessThanOrEqual(geometry.panel.right + 1);

@@ -80,9 +80,7 @@ describe("Join Blessfriends admission entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "Kirim permintaan" }));
 
     await waitFor(() =>
-      expect(screen.getByRole("alert").textContent).toContain(
-        "Permintaan untuk email atau nomor ini masih menunggu tinjauan.",
-      ),
+      expect(screen.getByRole("alert").textContent).toContain("Permintaan untuk email ini masih menunggu tinjauan."),
     );
   });
 });

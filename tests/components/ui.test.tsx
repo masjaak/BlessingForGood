@@ -22,6 +22,7 @@ vi.mock("@clerk/nextjs", () => ({
 }));
 
 vi.mock("convex/react", () => ({
+  useMutation: vi.fn(() => vi.fn()),
   useQuery: vi.fn(() => 0),
 }));
 

@@ -126,6 +126,28 @@ async function verifyRoute(route: string, page: Page, project: string) {
     await expect(page.getByText(/khusus Blessfriends/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("[data-clerk-component]")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/sign up|buat akun/i)).toBeHidden();
+    const authGeometry = await page.locator(".auth-shell").evaluate((stack) => {
+      const read = (selector: string) => {
+        const element = stack.querySelector<HTMLElement>(selector);
+        if (!element) throw new Error(`Missing auth geometry: ${selector}`);
+        const rect = element.getBoundingClientRect();
+        return { center: rect.left + rect.width / 2, width: rect.width };
+      };
+      return {
+        logo: read(".brand-logo"),
+        copy: read(".auth-invite-note"),
+        card: read(".bfg-clerk-card"),
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(authGeometry.logo.width).toBeGreaterThanOrEqual(
+      page.viewportSize()?.width && page.viewportSize()!.width <= 430 ? 260 : 290,
+    );
+    expect(Math.abs(authGeometry.logo.center - authGeometry.copy.center)).toBeLessThanOrEqual(1);
+    expect(Math.abs(authGeometry.logo.center - authGeometry.card.center)).toBeLessThanOrEqual(1);
+    expect(authGeometry.card.width).toBeLessThanOrEqual(440);
+    expect(authGeometry.documentWidth).toBeLessThanOrEqual(authGeometry.viewportWidth + 1);
   } else {
     if (protectedRoutes.has(route)) {
       await expect(page).toHaveURL(/\/sign-in/);

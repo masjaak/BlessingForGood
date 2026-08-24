@@ -7,7 +7,7 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Email ini sudah pernah disetujui. Jika sudah menerima undangan, masuk dengan akun tersebut.";
   }
   if (code === "JOIN_REQUEST_DUPLICATE" || message.includes("JOIN_REQUEST_DUPLICATE")) {
-    return "Permintaan untuk email atau nomor ini masih menunggu tinjauan.";
+    return "Permintaan untuk email ini masih menunggu tinjauan.";
   }
   if (code === "JOIN_REQUEST_INVALID_STATE" || message.includes("JOIN_REQUEST_INVALID_STATE")) {
     return "Akun BFG-mu sudah terdaftar. Masuk untuk melanjutkan.";
@@ -26,7 +26,7 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Kode belum cocok, katalog sudah ditutup, atau akses belum tersedia.";
   }
   if (message.includes("ACCESS_CODE_RATE_LIMITED")) return "Terlalu banyak percobaan. Coba lagi dalam beberapa menit.";
-  if (message.includes("RATE_LIMITED")) return "Terlalu banyak permintaan. Coba lagi sebentar.";
+  if (message.includes("RATE_LIMITED")) return "Terlalu banyak percobaan. Coba lagi beberapa saat.";
   if (message.includes("CATALOG_NOT_OPEN") || message.includes("CATALOG_CLOSED")) {
     return "Katalog ini sudah ditutup.";
   }

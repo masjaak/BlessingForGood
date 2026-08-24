@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery } from "convex/react";
-import { useContext } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { useContext, useEffect } from "react";
 import { api } from "../../convex/_generated/api";
 import { AdminShellContext } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
@@ -206,6 +206,11 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
   const sessionRole = product?.sessionRole;
   const canReadAdminNav = product?.dataSource === "convex" && roleCanAccess(sessionRole || null, "admin");
   const pendingJoinRequests = useQuery(api.joinRequests.pendingCount, canReadAdminNav ? {} : "skip");
+  const markReadByContext = useMutation(api.notifications.markReadByContext);
+  useEffect(() => {
+    if (!canReadAdminNav || product?.authState !== "authenticated") return;
+    void markReadByContext({ destination: pathname }).catch(() => undefined);
+  }, [canReadAdminNav, markReadByContext, pathname, product?.authState]);
   const visibleGroups: AdminNavGroup[] =
     preview || roleCanAccess(sessionRole || null, "owner")
       ? [

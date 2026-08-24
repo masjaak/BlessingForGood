@@ -69,20 +69,60 @@ describe("BFG join request workflow", () => {
     });
   });
 
-  it("blocks duplicate active contact details without exposing a public list", async () => {
+  it("uses email as admission identity while keeping contact metadata reusable", async () => {
     const t = testConvex();
-    const submitted = await t.mutation(api.joinRequests.submit, requestInput());
-    await expect(t.mutation(api.joinRequests.submit, requestInput({ email: "other@example.com" }))).rejects.toThrow(
-      "JOIN_REQUEST_DUPLICATE",
+    const { admin } = await setupUsers(t);
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert("joinRequests", {
+        name: "Reza",
+        email: "old@example.com",
+        normalizedEmail: "old@example.com",
+        contact: "081285864059",
+        normalizedContact: "+628128864059",
+        city: "Jakarta",
+        bookInterest: "Children Books",
+        source: "test",
+        acknowledged: true,
+        status: "approved",
+        invitationStatus: "ready",
+        submittedAt: now,
+        reviewedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const submitted = await t.mutation(
+      api.joinRequests.submit,
+      requestInput({ name: "New Reader", email: "new@example.com", contact: "081285864059" }),
     );
+    expect(await admin.query(api.joinRequests.listForAdmin, {})).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          joinRequestId: submitted.joinRequestId,
+          email: "new@example.com",
+          contact: "081285864059",
+          status: "submitted",
+        }),
+      ]),
+    );
+
     await expect(
-      t.mutation(api.joinRequests.submit, requestInput({ contact: "+62 812 3456 7890", email: "other@example.com" })),
+      t.mutation(
+        api.joinRequests.submit,
+        requestInput({ email: "NEW@example.com", contact: "+62 811 2222 3333" }),
+      ),
     ).rejects.toThrow("JOIN_REQUEST_DUPLICATE");
+
+    await admin.mutation(api.joinRequests.startReview, { joinRequestId: submitted.joinRequestId });
+    await admin.mutation(api.joinRequests.approve, { joinRequestId: submitted.joinRequestId });
     await expect(
-      t.mutation(api.joinRequests.submit, requestInput({ contact: "081234567890", email: "another@example.com" })),
-    ).rejects.toThrow("JOIN_REQUEST_DUPLICATE");
-    await expect(t.query(api.joinRequests.listForAdmin, {})).rejects.toThrow("IDENTITY_REQUIRED");
-    expect(submitted.joinRequestId).toBeDefined();
+      t.mutation(
+        api.joinRequests.submit,
+        requestInput({ email: "new@example.com", contact: "+62 811 2222 3334" }),
+      ),
+    ).rejects.toThrow("JOIN_REQUEST_ALREADY_APPROVED");
   });
 
   it("accepts an expanded book interest and distinguishes approved duplicates", async () => {

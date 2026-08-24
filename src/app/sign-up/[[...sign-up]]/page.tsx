@@ -18,9 +18,11 @@ export default async function SignUpPage({
   return (
     <main className="auth-page">
       <BackButton fallback="/" />
-      <BrandLogo linkToHome={false} />
-      <p className="auth-invite-note">Pembuatan akun hanya tersedia melalui undangan BFG yang masih berlaku.</p>
-      <ClerkAuthForm mode="sign-up" redirectUrl={redirectUrl} />
+      <div className="auth-shell">
+        <BrandLogo linkToHome={false} />
+        <p className="auth-invite-note">Pembuatan akun hanya tersedia melalui undangan BFG yang masih berlaku.</p>
+        <ClerkAuthForm mode="sign-up" redirectUrl={redirectUrl} />
+      </div>
     </main>
   );
 }

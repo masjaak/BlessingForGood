@@ -156,6 +156,58 @@ describe("Phase 07.1 reconciliation", () => {
     expect(await customer.query(api.notifications.unreadCount, { surface: "notification" })).toBe(0);
   });
 
+  it("marks only matching Admin context notifications read and keeps their history", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const notificationIds = await t.run(async (ctx) => {
+      const adminUser = await ctx.db
+        .query("appUsers")
+        .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", "phase041-admin-test"))
+        .unique();
+      if (!adminUser) throw new Error("admin fixture missing");
+      const notices = [
+        { destination: "/admin/join-requests", relatedEntityType: "joinRequest", relatedEntityId: "join-1" },
+        { destination: "/admin/join-requests", relatedEntityType: "joinRequest", relatedEntityId: "join-2" },
+        { destination: "/admin/orders/order-1", relatedEntityType: "order", relatedEntityId: "order-1" },
+        { destination: "/admin/orders", relatedEntityType: "order", relatedEntityId: "order-2" },
+      ];
+      return Promise.all(
+        notices.map((notice, index) =>
+          ctx.db.insert("notifications", {
+            recipientUserId: adminUser._id,
+            surface: index % 2 ? "notification" : "inbox",
+            audience: "admin",
+            eventType: "test.context",
+            title: `Context ${index}`,
+            body: "Context test notification.",
+            ...notice,
+            createdAt: index + 1,
+          }),
+        ),
+      );
+    });
+
+    await expect(
+      customer.mutation(api.notifications.markReadByContext, { destination: "/admin/join-requests" }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await admin.mutation(api.notifications.markReadByContext, { destination: "/admin/join-requests" });
+    const afterSection = await admin.query(api.notifications.listActivity, { workspace: "admin" });
+    expect(afterSection.filter((item) => notificationIds.slice(0, 2).includes(item.sourceId))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ readAt: expect.any(Number) })]),
+    );
+    expect(afterSection.find((item) => item.sourceId === notificationIds[2])).toMatchObject({ readAt: null });
+    expect(await admin.query(api.notifications.unreadActivityCount, { workspace: "admin" })).toBe(2);
+
+    await admin.mutation(api.notifications.markReadByContext, { destination: "/admin/orders/order-1" });
+    const afterDetail = await admin.query(api.notifications.listActivity, { workspace: "admin" });
+    expect(afterDetail.find((item) => item.sourceId === notificationIds[2])).toMatchObject({
+      readAt: expect.any(Number),
+    });
+    expect(afterDetail.find((item) => item.sourceId === notificationIds[3])).toMatchObject({ readAt: null });
+    expect(await admin.query(api.notifications.unreadActivityCount, { workspace: "admin" })).toBe(1);
+    expect(afterDetail).toHaveLength(4);
+  });
+
   it("returns authorized period reports and immutable audit activity", async () => {
     const t = testConvex();
     const { owner, admin, customer } = await setupUsers(t);

@@ -17,15 +17,16 @@ export function ActivityCenter({
 }) {
   const activity = useQuery(api.notifications.listActivity, { workspace });
   const markRead = useMutation(api.notifications.markRead);
+  const visibleActivity = compact ? activity?.slice(0, 3) : activity;
   const content =
     activity === undefined ? (
       <LoadingRegion label="Memuat aktivitas">
         <SkeletonCard />
         <SkeletonCard />
       </LoadingRegion>
-    ) : activity.length ? (
+    ) : visibleActivity?.length ? (
       <div className="content-stack">
-        {activity.map((item) => (
+        {visibleActivity.map((item) => (
           <Card
             className={item.readAt ? "activity-card is-read" : "activity-card is-unread"}
             data-read-state={item.readAt ? "read" : "unread"}
@@ -46,14 +47,16 @@ export function ActivityCenter({
               </time>
             </div>
             <h2 className={!item.readAt ? "activity-title-unread" : undefined}>{item.title}</h2>
-            <p>{item.description}</p>
-            <LinkButton
-              variant="secondary"
-              href={item.destination}
-              onClick={() => void markRead({ notificationId: item.sourceId })}
-            >
-              Buka detail
-            </LinkButton>
+            {!compact ? <p>{item.description}</p> : null}
+            {!compact ? (
+              <LinkButton
+                variant="secondary"
+                href={item.destination}
+                onClick={() => void markRead({ notificationId: item.sourceId })}
+              >
+                Buka detail
+              </LinkButton>
+            ) : null}
           </Card>
         ))}
       </div>

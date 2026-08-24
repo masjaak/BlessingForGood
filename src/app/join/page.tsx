@@ -71,7 +71,7 @@ function ConnectedJoinForm() {
       setWhatsappGroupUrl(result.whatsappGroupUrl);
       setSubmitted(true);
     } catch (reason) {
-      setError(productErrorMessage(reason, "Permintaan belum dapat dikirim. Coba lagi sebentar."));
+      setError(productErrorMessage(reason, "Permintaan belum berhasil dikirim. Silakan coba lagi."));
     } finally {
       setIsSubmitting(false);
     }
