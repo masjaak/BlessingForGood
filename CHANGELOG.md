@@ -28,7 +28,9 @@ source: conversation
   Convex Development check, `git diff --check`, and `npm audit --omit=dev`
   (`0`) pass.
 - Local rendered browser QA is blocked by the intentionally missing Clerk
-  publishable key; no fake credential or Production business record was used.
+  publishable key; managed-key Production public smoke passed `40/40`, the
+  Activity matrix passed `8/8`, and no fake credential or Production business
+  record was used.
 
 ## [client-uat-round-2-maintenance] — 2026-08-24
 

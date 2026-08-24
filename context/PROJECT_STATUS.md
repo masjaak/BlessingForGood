@@ -9,11 +9,16 @@ The deterministic suite is green: Vitest `287/287`, TypeScript, ESLint,
 Prettier, production build, Convex Development check, `npm audit --omit=dev`
 (`0` vulnerabilities), and `git diff --check`.
 
-Rendered local browser execution is qualified rather than claimed because this
-checkout has no `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; Next/Clerk correctly fails
-closed with a missing-key 500 before sign-in/join pages can render. No fake
-Clerk key or Production business data was introduced. Production deployment
-remains a credentialed release action after the canonical commit is pushed.
+Local rendered browser execution is qualified because this checkout has no
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; Next/Clerk correctly fails closed with a
+missing-key 500 before sign-in/join pages can render. The canonical Production
+deployment nevertheless completed with its managed keys: Convex
+`clean-eel-522`, Vercel `dpl_CJf3ccaSe6Qx2pHH9bZbAjY9jsJF` (`READY`), and the
+public smoke passed `40/40` at customer `390` and Admin `1024`; Activity
+responsive geometry passed `8/8` supported viewports. No fake Clerk key or
+Production business data was introduced. Authenticated member, unregistered
+Google, signed-out Production submission, and Admin-review mutations remain
+account-backed UAT actions rather than fabricated evidence.
 
 ## Client UAT Round 2 — 2026-08-24
 
