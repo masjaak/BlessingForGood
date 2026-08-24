@@ -175,15 +175,11 @@ function ActivityPopover({ workspace, activity }: { workspace: "admin" | "custom
         top: geometry.top - rootRect.top,
         left: geometry.left - rootRect.left,
         width: geometry.width,
-        maxHeight: geometry.maxHeight,
         right: "auto",
         bottom: "auto",
       };
       setPanelStyle((current) =>
-        current.top === nextStyle.top &&
-        current.left === nextStyle.left &&
-        current.width === nextStyle.width &&
-        current.maxHeight === nextStyle.maxHeight
+        current.top === nextStyle.top && current.left === nextStyle.left && current.width === nextStyle.width
           ? current
           : nextStyle,
       );

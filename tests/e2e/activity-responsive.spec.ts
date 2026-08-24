@@ -125,6 +125,11 @@ test.describe("@activity Activity responsive geometry", () => {
         geometry.panel.clientHeight,
       );
       expect(
+        await page
+          .locator(".activity-qa-fixture .workspace-activity-panel")
+          .evaluate((panel) => getComputedStyle(panel).maxHeight),
+      ).toBe("none");
+      expect(
         await page.locator(".activity-qa-fixture .content-stack").evaluate((list) => getComputedStyle(list).overflowY),
       ).not.toMatch(/auto|scroll/);
       expect(geometry.content.left, `${viewport.width}px content left`).toBeGreaterThanOrEqual(geometry.panel.left);
