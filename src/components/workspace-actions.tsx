@@ -63,8 +63,16 @@ export function calculateActivityPanelGeometry(
 
 export const WorkspaceActivityContext = createContext<WorkspaceActivityCounts>({});
 
-export function WorkspaceActivityProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  const activity = useQuery(api.notifications.unreadActivityCount, enabled ? {} : "skip");
+export function WorkspaceActivityProvider({
+  enabled,
+  workspace,
+  children,
+}: {
+  enabled: boolean;
+  workspace: "admin" | "customer";
+  children: ReactNode;
+}) {
+  const activity = useQuery(api.notifications.unreadActivityCount, enabled ? { workspace } : "skip");
 
   return <WorkspaceActivityContext.Provider value={{ activity }}>{children}</WorkspaceActivityContext.Provider>;
 }

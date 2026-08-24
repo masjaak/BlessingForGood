@@ -289,7 +289,7 @@ describe("BFG Ready Stock and Book Master", () => {
     expect(await admin.query(api.notifications.listMine, { surface: "notification" })).toEqual(
       expect.arrayContaining([expect.objectContaining({ eventType: "order.ready_stock_created" })]),
     );
-    expect(await admin.query(api.notifications.listActivity, {})).toEqual(
+    expect(await admin.query(api.notifications.listActivity, { workspace: "admin" })).toEqual(
       expect.arrayContaining([expect.objectContaining({ title: "Order Ready Stock baru", type: "system" })]),
     );
     expect(

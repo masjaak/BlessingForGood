@@ -41,7 +41,13 @@ export const bfgClerkLocalization = {
     },
   },
   formFieldLabel__emailAddress: "Email",
+  formFieldLabel__emailAddress_username: "Email atau username",
+  formFieldAction__forgotPassword: "Lupa password?",
   formButtonPrimary: "Lanjutkan",
   socialButtonsBlockButton: "Masuk dengan {{provider}}",
   dividerText: "atau",
+  unstable__errors: {
+    external_account_not_found:
+      "Akun ini belum terdaftar sebagai Blessfriend. Ajukan permintaan bergabung terlebih dahulu.",
+  },
 } as const;

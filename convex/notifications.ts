@@ -7,8 +7,14 @@ import { fail } from "./lib/errors";
 import { projectActivity } from "./lib/notifications";
 
 const surface = v.union(v.literal("notification"), v.literal("inbox"));
+const workspace = v.union(v.literal("admin"), v.literal("customer"));
 
-async function mineBySurface(ctx: QueryCtx, recipientUserId: Id<"appUsers">) {
+function belongsToWorkspace(notice: { audience?: "admin" | "customer"; destination: string }, currentWorkspace: "admin" | "customer") {
+  const audience = notice.audience ?? (notice.destination.startsWith("/admin") ? "admin" : "customer");
+  return audience === currentWorkspace;
+}
+
+async function mineBySurface(ctx: QueryCtx, recipientUserId: Id<"appUsers">, currentWorkspace: "admin" | "customer") {
   return Promise.all(
     (["notification", "inbox"] as const).map((currentSurface) =>
       ctx.db
@@ -17,24 +23,25 @@ async function mineBySurface(ctx: QueryCtx, recipientUserId: Id<"appUsers">) {
           index.eq("recipientUserId", recipientUserId).eq("surface", currentSurface),
         )
         .order("desc")
-        .take(100),
+        .take(100)
+        .then((notices) => notices.filter((notice) => belongsToWorkspace(notice, currentWorkspace))),
     ),
   );
 }
 
 export const listActivity = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { workspace },
+  handler: async (ctx, args) => {
     const user = await requireActiveUser(ctx);
-    const [notifications, inbox] = await mineBySurface(ctx, user._id);
+    const [notifications, inbox] = await mineBySurface(ctx, user._id, args.workspace);
     // ponytail: two bounded source reads, enough for the visible feed; add cursor pagination only when activity volume warrants it.
     return projectActivity([...notifications, ...inbox]);
   },
 });
 
 export const unreadActivityCount = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { workspace },
+  handler: async (ctx, args) => {
     const user = await requireActiveUser(ctx);
     const counts = await Promise.all(
       (["notification", "inbox"] as const).map((currentSurface) =>
@@ -43,7 +50,8 @@ export const unreadActivityCount = query({
           .withIndex("by_recipient_surface_read_at", (index) =>
             index.eq("recipientUserId", user._id).eq("surface", currentSurface).eq("readAt", undefined),
           )
-          .take(100),
+          .take(100)
+          .then((notices) => notices.filter((notice) => belongsToWorkspace(notice, args.workspace))),
       ),
     );
     // ponytail: badge caps at 200 unread rows; the UI already renders 99+.

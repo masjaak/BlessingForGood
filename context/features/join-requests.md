@@ -56,7 +56,11 @@ Visitors provide name, email, WhatsApp/phone, optional city, optional note, and
 an acknowledgement that submission does not create an account. The public
 mutation validates and normalizes server-side, blocks an existing submitted,
 under-review, or approved email/contact match, and returns only a safe request
-identifier/status response. Public queries cannot list or read requests.
+identifier/status response. A pending duplicate receives retry/review guidance;
+an approved duplicate receives invitation/login guidance. Public queries
+cannot list or read requests. The primary `bookInterest` value accepts the
+current practical taxonomy plus legacy `Children Books`, `Collector Books`, and
+`Novel` values without invalidating existing requests.
 
 Authenticated users see an already-a-member state instead of the form.
 

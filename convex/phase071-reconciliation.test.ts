@@ -72,6 +72,12 @@ describe("Phase 07.1 reconciliation", () => {
     });
     const adminInbox = await admin.query(api.notifications.listMine, { surface: "inbox" });
     expect(adminInbox[0]).toMatchObject({ eventType: "join_request.submitted", readAt: null });
+    expect(await admin.query(api.notifications.listActivity, { workspace: "admin" })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ title: "Permintaan bergabung baru", type: "message" })]),
+    );
+    expect(await admin.query(api.notifications.listActivity, { workspace: "customer" })).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ title: "Permintaan bergabung baru" })]),
+    );
 
     const bundle = await createOpenCatalog(admin, "Invoice Notice", "97103", "invoice-notice-code");
     const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: "invoice-notice-code" });
@@ -91,15 +97,16 @@ describe("Phase 07.1 reconciliation", () => {
     expect(notifications[0]).toMatchObject({ eventType: "invoice.issued", readAt: null });
     expect(await customer.query(api.notifications.unreadCount, { surface: "notification" })).toBe(1);
 
-    await t.run(async (ctx) => {
+    const messageId = await t.run(async (ctx) => {
       const customerUser = await ctx.db
         .query("appUsers")
         .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", CUSTOMER_SUBJECT))
         .unique();
       if (!customerUser) throw new Error("customer fixture missing");
-      await ctx.db.insert("notifications", {
+      const messageId = await ctx.db.insert("notifications", {
         recipientUserId: customerUser._id,
         surface: "inbox",
+        audience: "customer",
         eventType: "message.test",
         title: "Pesan operasional",
         body: "Pesan yang lebih baru.",
@@ -109,6 +116,7 @@ describe("Phase 07.1 reconciliation", () => {
       await ctx.db.insert("notifications", {
         recipientUserId: customerUser._id,
         surface: "notification",
+        audience: "customer",
         eventType: "system.test",
         title: "Sistem test",
         body: "Tie-break sistem.",
@@ -116,20 +124,33 @@ describe("Phase 07.1 reconciliation", () => {
         createdAt: 2_000,
         readAt: 1,
       });
+      return messageId;
     });
 
-    const activity = await customer.query(api.notifications.listActivity, {});
+    const activity = await customer.query(api.notifications.listActivity, { workspace: "customer" });
     const messageIndex = activity.findIndex((item) => item.title === "Pesan operasional");
     const systemIndex = activity.findIndex((item) => item.title === "Sistem test");
     expect(activity[messageIndex]).toMatchObject({ type: "message", source: "inbox", destination: "/" });
     expect(activity[systemIndex]).toMatchObject({ type: "system", source: "notification" });
     expect(systemIndex).toBeLessThan(messageIndex);
-    expect(await customer.query(api.notifications.unreadActivityCount, {})).toBe(2);
-    expect(await secondCustomer.query(api.notifications.listActivity, {})).toEqual([]);
+    expect(await customer.query(api.notifications.unreadActivityCount, { workspace: "customer" })).toBe(2);
+    expect(await secondCustomer.query(api.notifications.listActivity, { workspace: "customer" })).toEqual([]);
 
     await expect(
       secondCustomer.mutation(api.notifications.markRead, { notificationId: notifications[0].notificationId }),
     ).rejects.toThrow("NOTIFICATION_ACCESS_DENIED");
+    const customerMessage = activity.find((item) => item.title === "Pesan operasional");
+    expect(customerMessage?.readAt).toBeNull();
+    await expect(
+      secondCustomer.mutation(api.notifications.markRead, { notificationId: messageId }),
+    ).rejects.toThrow("NOTIFICATION_ACCESS_DENIED");
+    await customer.mutation(api.notifications.markRead, { notificationId: messageId });
+    expect(await customer.query(api.notifications.unreadActivityCount, { workspace: "customer" })).toBe(1);
+    expect(
+      (await customer.query(api.notifications.listActivity, { workspace: "customer" })).find(
+        (item) => item.title === "Pesan operasional",
+      ),
+    ).toMatchObject({ readAt: expect.any(Number) });
     await customer.mutation(api.notifications.markRead, { notificationId: notifications[0].notificationId });
     await customer.mutation(api.notifications.markRead, { notificationId: notifications[0].notificationId });
     expect(await customer.query(api.notifications.unreadCount, { surface: "notification" })).toBe(0);

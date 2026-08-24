@@ -171,6 +171,7 @@ export default defineSchema({
   notifications: defineTable({
     recipientUserId: v.id("appUsers"),
     surface: v.union(v.literal("notification"), v.literal("inbox")),
+    audience: v.optional(v.union(v.literal("admin"), v.literal("customer"))),
     eventType: v.string(),
     title: v.string(),
     body: v.string(),

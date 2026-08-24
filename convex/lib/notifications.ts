@@ -3,6 +3,7 @@ import type { MutationCtx } from "../_generated/server";
 
 type Notice = {
   surface: "notification" | "inbox";
+  audience?: "admin" | "customer";
   eventType: string;
   title: string;
   body: string;
@@ -51,7 +52,12 @@ export function projectActivity(notices: Doc<"notifications">[]): ActivityItem[]
 }
 
 export function notifyUser(ctx: MutationCtx, recipientUserId: Id<"appUsers">, notice: Notice) {
-  return ctx.db.insert("notifications", { recipientUserId, ...notice, createdAt: Date.now() });
+  return ctx.db.insert("notifications", {
+    recipientUserId,
+    ...notice,
+    audience: notice.audience ?? "customer",
+    createdAt: Date.now(),
+  });
 }
 
 export async function notifyAdmins(ctx: MutationCtx, notice: Notice) {
@@ -65,5 +71,5 @@ export async function notifyAdmins(ctx: MutationCtx, notice: Notice) {
       ),
     )
   ).flat();
-  await Promise.all(recipients.map((recipient) => notifyUser(ctx, recipient._id, notice)));
+  await Promise.all(recipients.map((recipient) => notifyUser(ctx, recipient._id, { ...notice, audience: "admin" })));
 }

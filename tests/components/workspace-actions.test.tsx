@@ -15,7 +15,7 @@ vi.mock("convex/react", () => ({
 describe("authenticated workspace actions", () => {
   it("exposes one combined activity trigger for Admin", () => {
     render(
-      <WorkspaceActivityProvider enabled>
+      <WorkspaceActivityProvider enabled workspace="admin">
         <WorkspaceActions workspace="admin" enabled />
       </WorkspaceActivityProvider>,
     );
@@ -26,7 +26,7 @@ describe("authenticated workspace actions", () => {
 
   it("exposes one combined activity trigger for Customer", () => {
     render(
-      <WorkspaceActivityProvider enabled>
+      <WorkspaceActivityProvider enabled workspace="customer">
         <WorkspaceActions workspace="customer" enabled />
       </WorkspaceActivityProvider>,
     );

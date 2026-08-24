@@ -3,6 +3,25 @@ import { getConvexErrorCode } from "@/domain/prototype/context";
 export function productErrorMessage(reason: unknown, fallback: string): string {
   const message = reason instanceof Error ? reason.message : "";
   const code = getConvexErrorCode(reason);
+  if (code === "JOIN_REQUEST_ALREADY_APPROVED" || message.includes("JOIN_REQUEST_ALREADY_APPROVED")) {
+    return "Email ini sudah pernah disetujui. Jika sudah menerima undangan, masuk dengan akun tersebut.";
+  }
+  if (code === "JOIN_REQUEST_DUPLICATE" || message.includes("JOIN_REQUEST_DUPLICATE")) {
+    return "Permintaan untuk email atau nomor ini masih menunggu tinjauan.";
+  }
+  if (code === "JOIN_REQUEST_INVALID_STATE" || message.includes("JOIN_REQUEST_INVALID_STATE")) {
+    return "Akun BFG-mu sudah terdaftar. Masuk untuk melanjutkan.";
+  }
+  if (code === "JOIN_REQUEST_ACKNOWLEDGEMENT_REQUIRED" || message.includes("JOIN_REQUEST_ACKNOWLEDGEMENT_REQUIRED")) {
+    return "Centang persetujuan sebelum mengirim permintaan.";
+  }
+  if (code === "JOIN_REQUEST_EMAIL_INVALID" || message.includes("JOIN_REQUEST_EMAIL_INVALID")) {
+    return "Masukkan alamat email yang valid.";
+  }
+  if (message.includes("contact is invalid")) return "Masukkan nomor WhatsApp atau telepon yang valid.";
+  if (message.includes("name is invalid")) return "Masukkan nama yang valid.";
+  if (message.includes("area is invalid")) return "Masukkan area domisili yang valid.";
+  if (message.includes("note is invalid")) return "Catatan terlalu panjang.";
   if (message.includes("ACCESS_CODE_INVALID") || message.includes("ACCESS_CODE_EXPIRED")) {
     return "Kode belum cocok, katalog sudah ditutup, atau akses belum tersedia.";
   }

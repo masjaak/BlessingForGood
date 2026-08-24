@@ -1,5 +1,25 @@
 # BFG SOURCE OF TRUTH
 
+## Client UAT Round 3 override — 2026-08-25
+
+Blessing For Goods remains invitation-only. Clerk sign-in rejects an unknown
+Google identity without opaque sign-up transfer and presents Indonesian BFG
+guidance with a public `/join` next step. `/join` is a signed-out admission
+boundary: it validates, rate-limits, deduplicates, and persists a request but
+never creates an active `appUsers` record or Secret Catalog access.
+
+`Aktivitas` remains one UI feed. Notification and Inbox records carry an
+admin/customer audience projection so an elevated Admin viewing the customer
+surface cannot see Admin operational entries. Unread/read presentation and
+`readAt` semantics remain shared. Join-request book interest is one primary
+value with the expanded practical taxonomy; the three legacy values remain
+valid and readable.
+
+Authenticated Production and rendered browser evidence remain separate from
+local deterministic evidence. Missing local Clerk publishable configuration
+must fail closed; no fake credentials or Production business records are
+created to bypass that gate.
+
 ## Client UAT Round 2 maintenance override — 2026-08-24
 
 The initial maintenance checkout was stale at `1e155205`; `origin/main` now

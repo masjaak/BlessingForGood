@@ -10,7 +10,8 @@ catalog authority, patches the order, and records the edit event in one
 mutation. It rejects edits after catalog close or the editable deadline.
 
 `joinRequests.submit` validates and normalizes anonymous fields, checks indexed
-active duplicates, and inserts one request atomically. Review mutations validate
+active duplicates, distinguishes approved from pending duplicates without
+exposing request records, and inserts one request atomically. Review mutations validate
 the current status, patch reviewer/timestamp/state/invitation handoff, and
 record the audit event in the same transaction. Rejected history remains; no
 transition reopens a request or creates an `appUser`.

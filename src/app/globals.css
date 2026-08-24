@@ -4938,6 +4938,52 @@ p {
   transform: translateY(var(--logo-optical-y, 0px)) scale(2.15);
 }
 
+.auth-page .auth-shell {
+  display: grid;
+  width: min(100%, 430px);
+  justify-items: center;
+  gap: 14px;
+}
+
+.auth-page .auth-shell > .brand-logo-frame {
+  display: flex;
+  width: 220px;
+  height: 220px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.auth-page .auth-shell > .brand-logo-frame .brand-logo {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  object-position: center;
+  transform: none;
+}
+
+.auth-page .auth-shell .auth-invite-note,
+.auth-page .auth-shell .bfg-clerk-root,
+.auth-page .auth-secondary-actions {
+  width: 100%;
+}
+
+.auth-page .auth-secondary-actions {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: var(--bfg-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.auth-page .auth-secondary-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
 @media (max-width: 640px) {
   .admin-shell .admin-page.page,
   .customer-shell .page {

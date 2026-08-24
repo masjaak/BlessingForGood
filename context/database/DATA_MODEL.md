@@ -40,6 +40,12 @@ identity or ownership. One `appUsers` document exists per Clerk subject.
 Customer reads use indexed server queries; React does not fetch all rows and
 filter ownership locally.
 
+Activity is one presentation over Notification and Inbox records. Each notice
+has an optional `audience` projection (`admin` or `customer`); older rows infer
+the audience from their safe destination. Customer Activity queries enforce
+that projection server-side even when an elevated Admin is viewing the
+customer shell.
+
 ## Operational actors
 
 Creation and change fields reference `appUsers`:

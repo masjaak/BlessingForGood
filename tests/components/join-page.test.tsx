@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
@@ -39,5 +39,50 @@ describe("Join Blessfriends admission entry", () => {
     expect(screen.getByRole("heading", { name: "Permintaanmu sedang ditinjau." })).toBeTruthy();
     expect(screen.getByText("Tim BFG akan mengabari setelah proses peninjauan selesai.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
+  });
+
+  it("submits the public form while signed out and accepts expanded interests", async () => {
+    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
+    const submit = vi.fn().mockResolvedValue({ whatsappGroupUrl: null });
+    vi.mocked(useMutation).mockReturnValue(submit as never);
+
+    render(<JoinPage />);
+    const textboxes = screen.getAllByRole("textbox");
+    fireEvent.change(textboxes[0], { target: { value: "Signed Out Reader" } });
+    fireEvent.change(textboxes[1], { target: { value: "signed-out@example.com" } });
+    fireEvent.change(textboxes[2], { target: { value: "+62 811 2222 3333" } });
+    fireEvent.change(textboxes[3], { target: { value: "Jakarta" } });
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: "Photography" }));
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Kirim permintaan" }));
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Permintaanmu sudah dikirim." })).toBeTruthy());
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "signed-out@example.com",
+        bookInterest: "Photography",
+        acknowledged: true,
+      }),
+    );
+  });
+
+  it("shows a precise duplicate state instead of the generic join error", async () => {
+    const submit = vi.fn().mockRejectedValue(new Error("JOIN_REQUEST_DUPLICATE"));
+    vi.mocked(useMutation).mockReturnValue(submit as never);
+    render(<JoinPage />);
+    const textboxes = screen.getAllByRole("textbox");
+    fireEvent.change(textboxes[0], { target: { value: "Pending Reader" } });
+    fireEvent.change(textboxes[1], { target: { value: "pending@example.com" } });
+    fireEvent.change(textboxes[2], { target: { value: "+62 811 2222 3334" } });
+    fireEvent.change(textboxes[3], { target: { value: "Jakarta" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Kirim permintaan" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Permintaan untuk email atau nomor ini masih menunggu tinjauan.",
+      ),
+    );
   });
 });

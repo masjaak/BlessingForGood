@@ -126,7 +126,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
 
   return (
-    <WorkspaceActivityProvider enabled={activityEnabled}>
+    <WorkspaceActivityProvider enabled={activityEnabled} workspace="admin">
       <div className="site-shell admin-shell">
         <header className="admin-topbar">
           <BrandLogo variant="admin" />
@@ -160,7 +160,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   if (isAdmin) return inPersistentAdminShell ? <>{children}</> : <AdminShell>{children}</AdminShell>;
 
   return (
-    <WorkspaceActivityProvider enabled={activityEnabled}>
+    <WorkspaceActivityProvider enabled={activityEnabled} workspace="customer">
       <div className={`site-shell customer-shell${signedIn ? " customer-shell-signed-in" : ""}`}>
         <header className="site-header">
           <BrandLogo />

@@ -47,28 +47,28 @@ function normalizeContact(value: string): string {
   return contact;
 }
 
-async function hasActiveEmailDuplicate(ctx: MutationCtx, normalizedEmail: string): Promise<boolean> {
+async function activeEmailDuplicateStatus(ctx: MutationCtx, normalizedEmail: string): Promise<JoinRequestStatus | null> {
   const matches = await ctx.db
     .query("joinRequests")
     .withIndex("by_normalized_email", (index) => index.eq("normalizedEmail", normalizedEmail))
     .take(50);
-  return matches.some((request) => duplicateStatuses.has(request.status));
+  return matches.find((request) => duplicateStatuses.has(request.status))?.status ?? null;
 }
 
-async function hasActiveContactDuplicate(ctx: MutationCtx, normalizedContact: string): Promise<boolean> {
+async function activeContactDuplicateStatus(ctx: MutationCtx, normalizedContact: string): Promise<JoinRequestStatus | null> {
   const matches = await ctx.db
     .query("joinRequests")
     .withIndex("by_normalized_contact", (index) => index.eq("normalizedContact", normalizedContact))
     .take(50);
-  return matches.some((request) => duplicateStatuses.has(request.status));
+  return matches.find((request) => duplicateStatuses.has(request.status))?.status ?? null;
 }
 
-async function hasActiveApplicantDuplicate(ctx: MutationCtx, applicantClerkUserId: string): Promise<boolean> {
+async function activeApplicantDuplicateStatus(ctx: MutationCtx, applicantClerkUserId: string): Promise<JoinRequestStatus | null> {
   const matches = await ctx.db
     .query("joinRequests")
     .withIndex("by_applicant_clerk_user_id", (index) => index.eq("applicantClerkUserId", applicantClerkUserId))
     .take(50);
-  return matches.some((request) => duplicateStatuses.has(request.status));
+  return matches.find((request) => duplicateStatuses.has(request.status))?.status ?? null;
 }
 
 async function admissionStatus(
@@ -144,11 +144,13 @@ export const submit = mutation({
     const normalizedContact = normalizeContact(contact);
     const city = requiredText(args.city, "area", 120);
     const applicantClerkUserId = identity?.subject;
-    if (
-      (await hasActiveEmailDuplicate(ctx, email)) ||
-      (await hasActiveContactDuplicate(ctx, normalizedContact)) ||
-      (applicantClerkUserId ? await hasActiveApplicantDuplicate(ctx, applicantClerkUserId) : false)
-    ) {
+    const duplicateStatusesFound = await Promise.all([
+      activeEmailDuplicateStatus(ctx, email),
+      activeContactDuplicateStatus(ctx, normalizedContact),
+      applicantClerkUserId ? activeApplicantDuplicateStatus(ctx, applicantClerkUserId) : Promise.resolve(null),
+    ]);
+    if (duplicateStatusesFound.includes("approved")) fail("JOIN_REQUEST_ALREADY_APPROVED");
+    if (duplicateStatusesFound.some(Boolean)) {
       fail("JOIN_REQUEST_DUPLICATE");
     }
     await enforceRateLimit(ctx, "joinSubmitGlobal");

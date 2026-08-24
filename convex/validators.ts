@@ -44,6 +44,21 @@ export const joinRequestStatusValidator = v.union(
 );
 export const joinRequestInvitationStatusValidator = v.union(v.literal("not_ready"), v.literal("ready"));
 export const joinRequestBookInterestValidator = v.union(
+  v.literal("Children & Picture Books"),
+  v.literal("Middle Grade"),
+  v.literal("Young Adult"),
+  v.literal("Fiction & Novel"),
+  v.literal("Non-fiction"),
+  v.literal("Art & Design"),
+  v.literal("Architecture & Interiors"),
+  v.literal("Photography"),
+  v.literal("Fashion"),
+  v.literal("Food & Cookbooks"),
+  v.literal("Travel"),
+  v.literal("Biography & Memoir"),
+  v.literal("Comics & Graphic Novels"),
+  v.literal("Collector & Special Editions"),
+  v.literal("Other"),
   v.literal("Children Books"),
   v.literal("Collector Books"),
   v.literal("Novel"),

@@ -1,5 +1,20 @@
 # Decisions
 
+## Client UAT Round 3 — 2026-08-25
+
+- Unknown Google identities never transfer into opaque Clerk sign-up. The
+  existing Clerk invite-only path uses supported `transferable=false`; BFG
+  supplies localized rejection copy and `/join`/alternate-account actions.
+- `joinRequests.submit` is intentionally public and remains separate from
+  Clerk identity, `appUsers`, Customer activation, and Secret Catalog access.
+  Known duplicate states may be explained precisely without exposing request
+  lists or internal errors.
+- Activity keeps one shared presentation and adds only an additive audience
+  projection (`admin` or `customer`) to prevent role elevation from widening
+  the customer feed. Legacy rows infer audience from their safe destination.
+- Book interest remains one value. New taxonomy labels are additive; `Children
+  Books`, `Collector Books`, and `Novel` remain valid legacy values.
+
 ## Client UAT Round 2 maintenance decisions — 2026-08-24
 
 - Upload security remains authoritative. `image/jpg`, `image/pjpeg`, and MIME

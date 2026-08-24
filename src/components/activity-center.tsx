@@ -15,7 +15,7 @@ export function ActivityCenter({
   compact?: boolean;
   onClose?: () => void;
 }) {
-  const activity = useQuery(api.notifications.listActivity, {});
+  const activity = useQuery(api.notifications.listActivity, { workspace });
   const markRead = useMutation(api.notifications.markRead);
   const content =
     activity === undefined ? (

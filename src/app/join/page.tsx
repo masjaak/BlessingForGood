@@ -8,7 +8,29 @@ import { BrandMascot } from "@/components/brand";
 import { BFGSelect } from "@/components/bfg-select";
 import { Button, Card, ErrorState, Field, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
+
+const bookInterestOptions = [
+  "Children & Picture Books",
+  "Middle Grade",
+  "Young Adult",
+  "Fiction & Novel",
+  "Non-fiction",
+  "Art & Design",
+  "Architecture & Interiors",
+  "Photography",
+  "Fashion",
+  "Food & Cookbooks",
+  "Travel",
+  "Biography & Memoir",
+  "Comics & Graphic Novels",
+  "Collector & Special Editions",
+  "Other",
+  "Children Books",
+  "Collector Books",
+  "Novel",
+] as const;
 
 const initialForm = {
   name: "",
@@ -48,8 +70,8 @@ function ConnectedJoinForm() {
       });
       setWhatsappGroupUrl(result.whatsappGroupUrl);
       setSubmitted(true);
-    } catch {
-      setError("Permintaan belum dapat dikirim. Periksa kembali datamu lalu coba lagi.");
+    } catch (reason) {
+      setError(productErrorMessage(reason, "Permintaan belum dapat dikirim. Coba lagi sebentar."));
     } finally {
       setIsSubmitting(false);
     }
@@ -60,15 +82,17 @@ function ConnectedJoinForm() {
       <Card className="success-card join-success-card">
         <BrandMascot variant="success" className="success-mascot" />
         <span className="card-kicker">Permintaan diterima</span>
-        <h2>Permintaan terkirim 🎉</h2>
-        <p>Satu langkah lagi untuk jadi Blessfriend.</p>
+        <h2>Permintaanmu sudah dikirim.</h2>
+        <p>
+          Tim BFG akan meninjaunya terlebih dahulu. Jika disetujui, undangan akan dikirim ke email yang kamu gunakan.
+        </p>
         {whatsappGroupUrl ? (
           <LinkButton variant="primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
             Gabung WhatsApp Group
           </LinkButton>
         ) : (
           <p className="success-banner" role="status">
-            Request sudah kami terima. Link grup sedang disiapkan.
+            Permintaanmu sudah kami terima. Link grup sedang disiapkan.
           </p>
         )}
         <div className="actions">
@@ -142,9 +166,9 @@ function ConnectedJoinForm() {
               onChange={(event) => update("bookInterest", event.target.value)}
               required
             >
-              <option>Children Books</option>
-              <option>Collector Books</option>
-              <option>Novel</option>
+              {bookInterestOptions.map((interest) => (
+                <option key={interest}>{interest}</option>
+              ))}
             </BFGSelect>
           </Field>
         </div>

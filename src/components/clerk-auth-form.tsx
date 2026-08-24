@@ -30,6 +30,7 @@ export function ClerkAuthForm({
       routing="path"
       fallbackRedirectUrl={redirectUrl}
       withSignUp={false}
+      transferable={false}
       appearance={bfgClerkAppearance}
     />
   ) : (

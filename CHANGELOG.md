@@ -8,6 +8,28 @@ source: conversation
 
 # Changelog
 
+## [client-uat-round-3] — 2026-08-25
+
+### Changed
+
+- Preserved invite-only Clerk Google sign-in with supported opaque-sign-up
+  prevention, Indonesian unregistered-account guidance, and a single aligned
+  auth shell with Join/alternate-account actions.
+- Kept Join Request submission public for signed-out visitors, mapped known
+  duplicate/validation/rate-limit states to safe copy, and expanded Book
+  Interest while retaining legacy values.
+- Added an additive Activity audience projection so the shared Admin/Customer
+  feed preserves unread/read parity without leaking Admin notices into the
+  customer surface.
+
+### QA
+
+- Full Vitest: `287/287`; TypeScript, ESLint, Prettier, production build,
+  Convex Development check, `git diff --check`, and `npm audit --omit=dev`
+  (`0`) pass.
+- Local rendered browser QA is blocked by the intentionally missing Clerk
+  publishable key; no fake credential or Production business record was used.
+
 ## [client-uat-round-2-maintenance] — 2026-08-24
 
 ### Changed

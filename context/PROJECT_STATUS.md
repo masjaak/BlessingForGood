@@ -1,5 +1,20 @@
 # BFG Project Status
 
+## Client UAT Round 3 — 2026-08-25
+
+Round 3 implementation is complete locally for the four new findings:
+invite-only Google rejection UX, signed-out Join Request submission states,
+Admin/Customer Activity audience isolation, and expanded Book Interest options.
+The deterministic suite is green: Vitest `287/287`, TypeScript, ESLint,
+Prettier, production build, Convex Development check, `npm audit --omit=dev`
+(`0` vulnerabilities), and `git diff --check`.
+
+Rendered local browser execution is qualified rather than claimed because this
+checkout has no `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; Next/Clerk correctly fails
+closed with a missing-key 500 before sign-in/join pages can render. No fake
+Clerk key or Production business data was introduced. Production deployment
+remains a credentialed release action after the canonical commit is pushed.
+
 ## Client UAT Round 2 — 2026-08-24
 
 The initial local checkout was stale at `1e155205`; the user-supplied

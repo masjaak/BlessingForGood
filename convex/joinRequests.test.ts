@@ -9,7 +9,25 @@ type RequestInput = {
   email: string;
   contact: string;
   city: string;
-  bookInterest: "Children Books" | "Collector Books" | "Novel";
+  bookInterest:
+    | "Children & Picture Books"
+    | "Middle Grade"
+    | "Young Adult"
+    | "Fiction & Novel"
+    | "Non-fiction"
+    | "Art & Design"
+    | "Architecture & Interiors"
+    | "Photography"
+    | "Fashion"
+    | "Food & Cookbooks"
+    | "Travel"
+    | "Biography & Memoir"
+    | "Comics & Graphic Novels"
+    | "Collector & Special Editions"
+    | "Other"
+    | "Children Books"
+    | "Collector Books"
+    | "Novel";
   note?: string;
   acknowledged: boolean;
 };
@@ -65,6 +83,17 @@ describe("BFG join request workflow", () => {
     ).rejects.toThrow("JOIN_REQUEST_DUPLICATE");
     await expect(t.query(api.joinRequests.listForAdmin, {})).rejects.toThrow("IDENTITY_REQUIRED");
     expect(submitted.joinRequestId).toBeDefined();
+  });
+
+  it("accepts an expanded book interest and distinguishes approved duplicates", async () => {
+    const t = testConvex();
+    const submitted = await t.mutation(api.joinRequests.submit, requestInput({ bookInterest: "Photography" }));
+    expect((await t.run(async (ctx) => ctx.db.get(submitted.joinRequestId)))?.bookInterest).toBe("Photography");
+    await t.run(async (ctx) => ctx.db.patch(submitted.joinRequestId, { status: "approved", updatedAt: Date.now() }));
+
+    await expect(t.mutation(api.joinRequests.submit, requestInput({ contact: "+62 811-2222-3333" }))).rejects.toThrow(
+      "JOIN_REQUEST_ALREADY_APPROVED",
+    );
   });
 
   it("connects an existing Clerk identity to one approved Blessfriend admission", async () => {
