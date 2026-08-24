@@ -3,13 +3,14 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { BookCover, type CoverPresentation } from "@/components/book-cover";
+import { normalizeUploadMimeType } from "@/lib/upload-file";
 import { Button } from "@/components/ui";
 
 const acceptedCoverTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const defaultCoverPresentation: CoverPresentation = { zoom: 1, x: 0, y: 0 };
 
 export function validateCoverFile(file: File) {
-  if (!acceptedCoverTypes.has(file.type)) return "Cover harus berupa JPG, PNG, atau WebP.";
+  if (!acceptedCoverTypes.has(normalizeUploadMimeType(file.type))) return "Cover harus berupa JPG, PNG, atau WebP.";
   if (file.size > 5_000_000) return "Ukuran cover maksimal 5 MB.";
   return null;
 }

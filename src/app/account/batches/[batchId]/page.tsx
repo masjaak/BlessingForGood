@@ -7,7 +7,7 @@ import type { Id } from "../../../../../convex/_generated/dataModel";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
-import { shipmentStageLabels } from "@/domain/prototype/operations";
+import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 
 function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
   const batch = useQuery(api.batchTracking.getBatchMine, { batchId });
@@ -40,6 +40,11 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
           </StatusBadge>
         }
       />
+      <Card>
+        <span className="card-kicker">Estimasi cargo</span>
+        <h2>Estimasi tiba</h2>
+        <p className="subtle">{formatCargoEta(batch.etaCargoMonth)} · Bukan tanggal kedatangan yang dijamin.</p>
+      </Card>
       <Card>
         <span className="card-kicker">Buku milikmu</span>
         <h2>Roster pelanggan</h2>

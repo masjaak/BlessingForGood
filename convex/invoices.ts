@@ -32,18 +32,22 @@ function backfillLimit(value: number | undefined): number {
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
-  const order = await ctx.db.get(invoice.orderId);
-  const items = await ctx.db
-    .query("invoiceItems")
-    .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
-    .order("asc")
-    .take(200);
+  const [order, customer, items] = await Promise.all([
+    ctx.db.get(invoice.orderId),
+    ctx.db.get(invoice.customerUserId),
+    ctx.db
+      .query("invoiceItems")
+      .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
+      .order("asc")
+      .take(200),
+  ]);
   return {
     invoiceId: invoice._id,
     id: invoice._id,
     customerUserId: invoice.customerUserId,
     customerName: order?.customerName || "Pelanggan BFG",
     customerEmail: order?.customerEmail || null,
+    customerMemberCode: customer?.memberCode ?? null,
     orderId: invoice.orderId,
     orderCode: order?.orderCode || null,
     invoiceNumber: invoice.invoiceNumber,
@@ -317,11 +321,7 @@ export const previewLegacyReferences = query({
   handler: async (ctx, args) => {
     await requirePermission(ctx, "invoices.manage");
     const limit = backfillLimit(args.limit);
-    const invoices = await ctx.db
-      .query("invoices")
-      .withIndex("by_created_at")
-      .order("asc")
-      .take(MAX_BACKFILL_SCAN);
+    const invoices = await ctx.db.query("invoices").withIndex("by_created_at").order("asc").take(MAX_BACKFILL_SCAN);
     const canonical = invoices.filter((invoice) => isCanonicalInvoiceNumber(invoice.invoiceNumber));
     const legacyInvoices = invoices.filter((invoice) => legacyInvoiceNumber(invoice.invoiceNumber));
     const legacy = legacyInvoices.slice(0, limit);
@@ -359,11 +359,7 @@ export const backfillLegacyReferences = mutation({
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "invoices.manage");
     const limit = backfillLimit(args.limit);
-    const invoices = await ctx.db
-      .query("invoices")
-      .withIndex("by_created_at")
-      .order("asc")
-      .take(MAX_BACKFILL_SCAN);
+    const invoices = await ctx.db.query("invoices").withIndex("by_created_at").order("asc").take(MAX_BACKFILL_SCAN);
     const legacyInvoices = invoices.filter((invoice) => legacyInvoiceNumber(invoice.invoiceNumber));
     const legacy = legacyInvoices.slice(0, limit);
     let updated = 0;

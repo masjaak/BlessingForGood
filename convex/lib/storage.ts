@@ -17,6 +17,13 @@ export const PROOF_CONTENT_TYPES: ReadonlySet<string> = new Set([
   "application/pdf",
 ]);
 
+export function normalizeContentType(value: string | null | undefined): string | null {
+  const normalized = value?.split(";", 1)[0]?.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === "image/jpg" || normalized === "image/pjpeg") return "image/jpeg";
+  return normalized;
+}
+
 const extensionTypes: ReadonlyMap<string, string> = new Map([
   ["jpg", "image/jpeg"],
   ["jpeg", "image/jpeg"],
@@ -78,8 +85,8 @@ export function validateUploadedContent(
   allowedTypes: ReadonlySet<string>,
   errorMessage: string,
 ): string {
-  const declaredType = declaredMimeType.trim().toLowerCase();
-  const storedType = storedMimeType?.trim().toLowerCase();
+  const declaredType = normalizeContentType(declaredMimeType);
+  const storedType = normalizeContentType(storedMimeType);
   if (
     !Number.isSafeInteger(fileSize) ||
     fileSize < 0 ||
@@ -231,7 +238,7 @@ export async function validateStoredFile(
 ) {
   const metadata = await ctx.db.system.get("_storage", storageId);
   if (!metadata) fail("VALIDATION_FAILED", errorMessage);
-  const contentType = metadata?.contentType?.trim().toLowerCase();
+  const contentType = normalizeContentType(metadata?.contentType);
   if (!contentType || !allowedTypes.has(contentType) || metadata.size > MAX_STORED_FILE_BYTES) {
     fail("VALIDATION_FAILED", errorMessage);
   }

@@ -106,7 +106,7 @@ function AdminInvoiceDetail() {
       <PageHeader
         eyebrow="Operasi invoice"
         title={invoiceReference(currentAdminInvoice.invoiceNumber)}
-        description={`${currentAdminInvoice.customerName} · ${currentAdminInvoice.orderCode || `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}`}
+        description={`${currentAdminInvoice.customerName} · ID Blessfriend: ${currentAdminInvoice.customerMemberCode || "belum tersedia"} · ${currentAdminInvoice.orderCode || `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}`}
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
             Kembali ke invoice
@@ -132,6 +132,10 @@ function AdminInvoiceDetail() {
             <div className="summary-line">
               <span>Pelanggan</span>
               <strong>{currentAdminInvoice.customerName}</strong>
+            </div>
+            <div className="summary-line">
+              <span>ID Blessfriend</span>
+              <strong>{currentAdminInvoice.customerMemberCode || "Belum tersedia"}</strong>
             </div>
             <div className="summary-line">
               <span>Referensi pesanan</span>

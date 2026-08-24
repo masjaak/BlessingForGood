@@ -1,5 +1,23 @@
 # Decisions
 
+## Client UAT Round 2 maintenance decisions — 2026-08-24
+
+- Upload security remains authoritative. `image/jpg`, `image/pjpeg`, and MIME
+  parameters are normalized to canonical `image/jpeg`; binary signature,
+  extension, dimensions, size, ownership, claim, and rate-limit checks remain
+  required.
+- Ready Stock self-service and Admin-assisted orders share the existing
+  canonical `orders.source=ready_stock` reservation path. Admin assistance may
+  target only an existing active BFG Customer and never creates a ghost user.
+- `batches.etaCargoMonth` stores `YYYY-MM`; the UI may localize month/year, but
+  it must not promise a guaranteed arrival date.
+- `appUsers.memberCode` is a stable display/search identifier with uniqueness
+  retry. It is not an authentication token, authorization input, or secret.
+- Publisher purchase export remains derived from roster assignments. The
+  existing Excel-compatible CSV stack is retained; GBP supplier cost is
+  optional integer pence at the Book Variant level and Customer price remains
+  integer IDR.
+
 ## Canonical Convex backend correction
 
 - The canonical Convex account is `palevvi@gmail.com`, team is `palevvi`, and

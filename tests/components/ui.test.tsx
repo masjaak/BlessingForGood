@@ -101,6 +101,9 @@ describe("public UI foundation", () => {
     expect(globalsCss).toContain(".button:active:not(:disabled)");
     expect(globalsCss).toContain(".button:disabled");
     expect(globalsCss).toContain("--color-button-secondary-surface");
+    expect(globalsCss).toContain("--color-button-secondary-border: #9bb99f");
+    expect(globalsCss).toContain(".activity-card.is-unread");
+    expect(globalsCss).toContain(".activity-card.is-read");
   });
 
   it("keeps boolean fields in the shared field row grammar", () => {

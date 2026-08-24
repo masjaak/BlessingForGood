@@ -52,7 +52,8 @@ describe("Admin customer detail actions", () => {
     } as never);
     vi.mocked(useOperations).mockReturnValue({ adminInvoiceList: { page: [] } } as never);
     vi.mocked(useQuery)
-      .mockReturnValueOnce({ displayName: "A Customer" } as never)
+      .mockReturnValueOnce({ displayNameSnapshot: "A Customer", memberCode: "a-customer-1234" } as never)
+      .mockReturnValueOnce([] as never)
       .mockReturnValueOnce([] as never)
       .mockReturnValueOnce([] as never);
 

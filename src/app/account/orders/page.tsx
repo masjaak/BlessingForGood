@@ -18,6 +18,7 @@ import { useProduct } from "@/domain/prototype/store";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 function EditOrderForm({ orderId }: { orderId: string }) {
   const { state, editOrder } = useProduct();
@@ -49,7 +50,7 @@ function EditOrderForm({ orderId }: { orderId: string }) {
       });
       setMessage(`Pesanan ${orderReference(updated)} diperbarui.`);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Preorder belum dapat diperbarui");
+      setMessage(productErrorMessage(reason, "Preorder belum dapat diperbarui"));
     } finally {
       setIsSaving(false);
     }

@@ -1,6 +1,6 @@
 # BFG Mockup Coverage Matrix
 
-Date: 2026-08-12
+Date: 2026-08-24
 Sources: the 8 customer and 10 admin images under `public/mockups`, current
 Production code, and selected visual patterns from
 `origin/qa/ux-refinement-v0.1`. Sample mockup data is never seeded.
@@ -14,6 +14,34 @@ maintained in `CUSTOMER-MOCKUP-COVERAGE.md`.
 `EXTENDED` means current capability exceeds the original mockup while retaining
 its visual language. `PASS` requires rendered evidence; source inspection alone
 cannot earn it.
+
+## Client UAT Round 2 mobile trace
+
+The eight supplied files under `public/mockups/mobile/` were opened directly on
+2026-08-24. The verdict below is structural and visual; it does not treat
+mockup sample data as production data. `MATCH` means the current route keeps the
+same information order, shell, and primary action. `PARTIAL` means the route is
+canonical but intentionally differs in composition or is missing an approved
+fixture for rendered authenticated evidence. No route was fabricated to force a
+match.
+
+| Mockup | Route/state | Verdict | Evidence / remaining gap |
+| --- | --- | --- | --- |
+| 1 | `/catalog` access + `/sign-in` | PARTIAL | Private access and dedicated invite-only auth are present; the mockup combines credentials and monthly-code entry in one screen, while BFG keeps those security boundaries separate. |
+| 2 | `/catalog` list | PARTIAL | Catalog list, publisher/format choices, quantity, price, and five-item mobile nav are present; Ready Stock is a separate canonical route and no cart or unapproved sample cargo is fabricated. |
+| 3 | `/catalog` selection | PARTIAL | Variant selection, ISBN, price, cover, quantity, and canonical preorder action are present; the current route uses a list/summary composition rather than a separate mockup-style detail screen. |
+| 4 | `/ready-stock/[slug]` | PARTIAL | Shared gallery, cover, availability, price, and stock-backed order path are present; populated authenticated render evidence requires an approved real product. |
+| 5 | `/account/orders` | PARTIAL | Owned order list, status, quantity, price, and tracking links are present; the current list does not reproduce every mockup filter/tab and no customer fixture is seeded. |
+| 6 | `/account/orders/[orderId]` | PARTIAL | Canonical order detail, invoice context, exceptions, fulfillment, and tracking are present; the mockup’s exact six-step populated timeline needs an approved order fixture for rendered comparison. |
+| 7 | `/account/invoices` + `/account/deposit` | PARTIAL | Invoice, deposit, payment, adjustment, and refund projections are canonical; BFG keeps invoice and deposit as separate routes instead of merging financial navigation into one screen. |
+| 8 | `/account` | PARTIAL | Account identity, catalog access, history, support, and Activity entry are present; the mockup’s full menu is a visual reference and not every sample support destination is an approved product route. |
+
+This round’s rendered browser evidence remains signed-out/local unless the
+canonical Clerk Production credentials and approved business fixtures are
+available. The deterministic viewport matrix covers 375, 390, 430, 768, 834,
+1024, 1280, and 1440; authenticated Production screenshot claims remain
+blocked by external access rather than hidden behind a generic “responsive
+passed” label.
 
 ## Customer mockups
 

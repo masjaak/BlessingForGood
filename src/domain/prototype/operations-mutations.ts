@@ -35,8 +35,13 @@ export function useOperationsMutations() {
   const rejectPaymentConfirmationMutation = useMutation(api.paymentConfirmations.reject);
 
   const createBatch = useCallback(
-    (input: { name: string; referenceCode?: string; description?: string; poDeadlineAt?: number }) =>
-      createBatchMutation(input),
+    (input: {
+      name: string;
+      referenceCode?: string;
+      description?: string;
+      poDeadlineAt?: number;
+      etaCargoMonth?: string;
+    }) => createBatchMutation(input),
     [createBatchMutation],
   );
   const linkCatalog = useCallback(

@@ -169,6 +169,7 @@ export const listForAdmin = query({
               variantId: variant._id,
               format: variant.format,
               isbn: variant.isbn,
+              priceAmount: variant.priceAmount,
               isAvailable: variant.isAvailable,
               onHandQuantity,
               reservedQuantity,

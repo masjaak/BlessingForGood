@@ -74,6 +74,7 @@ export async function insertVariant(
     format: "BB" | "PB" | "HB";
     isbn: string;
     priceAmount: number;
+    supplierPriceGbpMinor?: number;
     isAvailable?: boolean;
   },
 ) {
@@ -96,6 +97,7 @@ export async function insertVariant(
     format: input.format,
     isbn,
     priceAmount: positiveMoney(input.priceAmount),
+    supplierPriceGbpMinor: input.supplierPriceGbpMinor,
     currency: "IDR",
     isAvailable: input.isAvailable ?? true,
     createdAt: now,

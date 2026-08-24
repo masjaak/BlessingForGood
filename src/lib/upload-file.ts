@@ -3,6 +3,11 @@ import type { Id } from "../../convex/_generated/dataModel";
 export type BfgUploadPurpose = "book-cover" | "book-gallery" | "payment-proof" | "deposit-proof";
 type ConvexToken = (options: { template: "convex" }) => Promise<string | null>;
 
+export function normalizeUploadMimeType(value: string): string {
+  const normalized = value.split(";", 1)[0]?.trim().toLowerCase() || "";
+  return normalized === "image/jpg" || normalized === "image/pjpeg" ? "image/jpeg" : normalized;
+}
+
 export async function uploadBfgFile(
   file: File,
   purpose: BfgUploadPurpose,
@@ -19,7 +24,7 @@ export async function uploadBfgFile(
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": file.type,
+      "Content-Type": normalizeUploadMimeType(file.type),
       "X-BFG-File-Size": String(file.size),
     },
     body: file,

@@ -4,10 +4,10 @@
   --color-brand-primary-strong: #123d2d;
   --color-brand-primary-hover: #0f452f;
   --color-brand-secondary: #dfeadf;
-  --color-button-secondary-surface: #edf5ed;
-  --color-button-secondary-hover: #dfeadf;
-  --color-button-secondary-active: #cfe0d1;
-  --color-button-secondary-border: #b8cfbc;
+  --color-button-secondary-surface: #e2eee3;
+  --color-button-secondary-hover: #d4e5d6;
+  --color-button-secondary-active: #c5dac8;
+  --color-button-secondary-border: #9fbea5;
   --color-button-quiet-surface: rgb(223 234 223 / 48%);
   --color-button-quiet-border: #c9dacb;
   --color-brand-peach: #e8b7a4;
@@ -640,13 +640,19 @@ p {
   line-height: 14px;
   text-align: center;
 }
+.activity-card.is-read {
+  border-color: var(--line);
+  background: var(--surface);
+  box-shadow: none;
+}
 .activity-card.is-unread {
   border-color: var(--color-button-secondary-border);
   background: var(--color-button-secondary-surface);
-  box-shadow: inset 4px 0 var(--color-brand-primary);
+  box-shadow: inset 6px 0 var(--color-brand-primary);
 }
 .activity-card.is-unread .activity-title-unread {
   font-weight: 800;
+  color: var(--color-brand-primary-strong);
 }
 .activity-type-group {
   display: inline-flex;
@@ -658,17 +664,21 @@ p {
 .activity-unread-marker {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  padding: 4px 8px;
   color: var(--color-brand-primary-strong);
-  font-size: 0.68rem;
+  border: 1px solid var(--color-button-secondary-border);
+  border-radius: 999px;
+  background: var(--color-brand-secondary);
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: none;
 }
 .activity-unread-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
   border-radius: 50%;
   background: var(--color-brand-primary);
 }
@@ -2403,10 +2413,10 @@ p {
   --color-brand-primary-strong: var(--bfg-green-strong);
   --color-brand-primary-hover: #0f402f;
   --color-brand-secondary: var(--bfg-green-soft);
-  --color-button-secondary-surface: #eef5eb;
-  --color-button-secondary-hover: var(--bfg-green-soft);
-  --color-button-secondary-active: #d4e4d0;
-  --color-button-secondary-border: #c9dac4;
+  --color-button-secondary-surface: #dfeadf;
+  --color-button-secondary-hover: #d0e2d2;
+  --color-button-secondary-active: #c2d8c6;
+  --color-button-secondary-border: #9bb99f;
   --color-button-quiet-surface: rgb(231 239 228 / 64%);
   --color-button-quiet-border: #c9dac4;
   --color-brand-peach: var(--bfg-peach);

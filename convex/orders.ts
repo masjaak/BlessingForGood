@@ -30,16 +30,19 @@ async function activeGrant(ctx: DataCtx, appUserId: Id<"appUsers">, catalogId: I
 async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
   const order = await ctx.db.get(orderId);
   if (!order) fail("ORDER_NOT_FOUND");
-  const items = await ctx.db
-    .query("orderItems")
-    .withIndex("by_order", (query) => query.eq("orderId", orderId))
-    .order("asc")
-    .take(200);
-  const history = await ctx.db
-    .query("orderStatusHistory")
-    .withIndex("by_order_and_changed_at", (query) => query.eq("orderId", orderId))
-    .order("asc")
-    .take(100);
+  const [customer, items, history] = await Promise.all([
+    ctx.db.get(order.customerUserId),
+    ctx.db
+      .query("orderItems")
+      .withIndex("by_order", (query) => query.eq("orderId", orderId))
+      .order("asc")
+      .take(200),
+    ctx.db
+      .query("orderStatusHistory")
+      .withIndex("by_order_and_changed_at", (query) => query.eq("orderId", orderId))
+      .order("asc")
+      .take(100),
+  ]);
   return {
     orderId: order._id,
     id: order._id,
@@ -47,6 +50,7 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
     catalogId: order.catalogId ?? null,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
+    customerMemberCode: customer?.memberCode ?? null,
     orderCode: order.orderCode || null,
     source: order.source ?? "customer_self_service",
     status: order.status,
@@ -219,14 +223,99 @@ async function resolveReadyStockItem(ctx: MutationCtx, variantId: Id<"bookVarian
     !book.isActive ||
     book.publicationStatus !== "published" ||
     !publisher?.isActive ||
-    !inventory ||
-    available < quantity
+    !inventory
   ) {
-    fail("READY_STOCK_UNAVAILABLE");
+    fail("READY_STOCK_UNAVAILABLE", "Stok baru saja habis.");
+  }
+  if (available < quantity) {
+    fail("READY_STOCK_UNAVAILABLE", available > 0 ? "Jumlah melebihi stok." : "Stok baru saja habis.");
   }
   const subtotalAmount = variant.priceAmount * quantity;
   if (!Number.isSafeInteger(subtotalAmount)) fail("INVOICE_TOTAL_INVALID");
   return { variant, book, publisher, quantity, subtotalAmount };
+}
+
+async function createReadyStockOrder(
+  ctx: MutationCtx,
+  input: {
+    actorUserId: Id<"appUsers">;
+    customerUserId: Id<"appUsers">;
+    variantId: Id<"bookVariants">;
+    quantity: number;
+    submissionKey?: string;
+    assisted: boolean;
+  },
+) {
+  const item = await resolveReadyStockItem(ctx, input.variantId, input.quantity);
+  const customer = await ctx.db.get(input.customerUserId);
+  if (!customer || customer.role !== "customer" || customer.status !== "active") fail("CUSTOMER_REQUIRED");
+  const profile = await ctx.db
+    .query("customerProfiles")
+    .withIndex("by_user_id", (index) => index.eq("userId", input.customerUserId))
+    .unique();
+  const customerName = profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
+  const now = Date.now();
+  const orderCode = await nextOrderCode(ctx, now);
+  const orderId = await ctx.db.insert("orders", {
+    customerUserId: input.customerUserId,
+    source: "ready_stock",
+    assistedSubmissionKey: input.submissionKey,
+    orderCode,
+    customerName,
+    customerEmail: customer.emailSnapshot,
+    status: "submitted",
+    currency: "IDR",
+    subtotalAmount: item.subtotalAmount,
+    totalAmount: item.subtotalAmount,
+    createdAt: now,
+    updatedAt: now,
+    submittedAt: now,
+    editableUntil: now,
+  });
+  const orderItemId = await ctx.db.insert("orderItems", {
+    orderId,
+    bookId: item.book._id,
+    bookVariantId: item.variant._id,
+    bookTitleSnapshot: item.book.title,
+    publisherNameSnapshot: item.publisher.name,
+    formatSnapshot: item.variant.format,
+    isbnSnapshot: item.variant.isbn,
+    unitPriceAmountSnapshot: item.variant.priceAmount,
+    currencySnapshot: "IDR",
+    quantity: item.quantity,
+    subtotalAmount: item.subtotalAmount,
+    createdAt: now,
+  });
+  await reserveReadyStock(
+    ctx,
+    { orderId, orderItemId, bookVariantId: item.variant._id, quantity: item.quantity },
+    input.actorUserId,
+  );
+  await ctx.db.insert("orderStatusHistory", {
+    orderId,
+    toStatus: "submitted",
+    changedAt: now,
+    changedByUserId: input.actorUserId,
+    note: input.assisted ? "Admin-assisted Ready Stock order" : "Ready Stock order created",
+  });
+  await recordAudit(
+    ctx,
+    input.actorUserId,
+    input.assisted ? "order.admin_assisted_created" : "order.ready_stock_created",
+    "order",
+    orderId,
+    { source: "ready_stock", forCustomerUserId: String(input.customerUserId), quantity: String(item.quantity) },
+  );
+  await notifyAdmins(ctx, {
+    surface: "notification",
+    eventType: "order.ready_stock_created",
+    title: "Order Ready Stock baru",
+    body: customerName + " membuat order Ready Stock.",
+    destination: "/admin/orders/" + orderId,
+    relatedEntityType: "order",
+    relatedEntityId: String(orderId),
+  });
+  return orderView(ctx, orderId);
 }
 
 export const createReadyStock = mutation({
@@ -235,69 +324,13 @@ export const createReadyStock = mutation({
     const user = await requireActiveUser(ctx);
     if (user.role !== "customer") fail("CUSTOMER_REQUIRED");
     await enforceRateLimit(ctx, "readyStockOrderUser", String(user._id));
-    const item = await resolveReadyStockItem(ctx, args.variantId, args.quantity);
-    const profile = await ctx.db
-      .query("customerProfiles")
-      .withIndex("by_user_id", (index) => index.eq("userId", user._id))
-      .unique();
-    const customerName = profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer";
-    const now = Date.now();
-    const orderCode = await nextOrderCode(ctx, now);
-    const orderId = await ctx.db.insert("orders", {
+    return createReadyStockOrder(ctx, {
+      actorUserId: user._id,
       customerUserId: user._id,
-      source: "ready_stock",
-      orderCode,
-      customerName,
-      customerEmail: user.emailSnapshot,
-      status: "submitted",
-      currency: "IDR",
-      subtotalAmount: item.subtotalAmount,
-      totalAmount: item.subtotalAmount,
-      createdAt: now,
-      updatedAt: now,
-      submittedAt: now,
-      editableUntil: now,
+      variantId: args.variantId,
+      quantity: args.quantity,
+      assisted: false,
     });
-    const orderItemId = await ctx.db.insert("orderItems", {
-      orderId,
-      bookId: item.book._id,
-      bookVariantId: item.variant._id,
-      bookTitleSnapshot: item.book.title,
-      publisherNameSnapshot: item.publisher.name,
-      formatSnapshot: item.variant.format,
-      isbnSnapshot: item.variant.isbn,
-      unitPriceAmountSnapshot: item.variant.priceAmount,
-      currencySnapshot: "IDR",
-      quantity: item.quantity,
-      subtotalAmount: item.subtotalAmount,
-      createdAt: now,
-    });
-    await reserveReadyStock(
-      ctx,
-      { orderId, orderItemId, bookVariantId: item.variant._id, quantity: item.quantity },
-      user._id,
-    );
-    await ctx.db.insert("orderStatusHistory", {
-      orderId,
-      toStatus: "submitted",
-      changedAt: now,
-      changedByUserId: user._id,
-      note: "Ready Stock order created",
-    });
-    await recordAudit(ctx, user._id, "order.ready_stock_created", "order", orderId, {
-      source: "ready_stock",
-      quantity: String(item.quantity),
-    });
-    await notifyAdmins(ctx, {
-      surface: "notification",
-      eventType: "order.ready_stock_created",
-      title: "Order Ready Stock baru",
-      body: `${customerName} membuat order Ready Stock.`,
-      destination: `/admin/orders/${orderId}`,
-      relatedEntityType: "order",
-      relatedEntityId: String(orderId),
-    });
-    return orderView(ctx, orderId);
   },
 });
 
@@ -315,6 +348,7 @@ export const listEligibleCustomers = query({
       customerUserId: user._id,
       displayName: user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
       email: user.emailSnapshot || null,
+      memberCode: user.memberCode || null,
     }));
   },
 });
@@ -322,7 +356,8 @@ export const listEligibleCustomers = query({
 export const createAssisted = mutation({
   args: {
     customerUserId: v.id("appUsers"),
-    catalogId: v.id("secretCatalogs"),
+    catalogId: v.optional(v.id("secretCatalogs")),
+    source: v.optional(v.union(v.literal("preorder"), v.literal("ready_stock"))),
     submissionKey: v.string(),
     items: v.array(orderItemInput),
   },
@@ -339,6 +374,20 @@ export const createAssisted = mutation({
     if (!customer || customer.role !== "customer" || customer.status !== "active") {
       fail("CUSTOMER_REQUIRED");
     }
+    if (args.source === "ready_stock") {
+      if (args.catalogId || args.items.length !== 1) {
+        fail("VALIDATION_FAILED", "Ready Stock needs one variant without a catalog");
+      }
+      return createReadyStockOrder(ctx, {
+        actorUserId: actor._id,
+        customerUserId: customer._id,
+        variantId: args.items[0].variantId,
+        quantity: args.items[0].quantity,
+        submissionKey,
+        assisted: true,
+      });
+    }
+    if (!args.catalogId) fail("CATALOG_NOT_FOUND");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     if (!(await catalogIsOpen(ctx, args.catalogId))) fail("CATALOG_NOT_OPEN");

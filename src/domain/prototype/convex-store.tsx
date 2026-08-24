@@ -68,6 +68,7 @@ type OrderRecord = {
   catalogId: string | null;
   customerName: string;
   customerEmail?: string;
+  customerMemberCode?: string | null;
   orderCode?: string | null;
   source?: "customer_self_service" | "admin_assisted" | "ready_stock";
   status: OrderStatus;
@@ -115,6 +116,7 @@ function asOrder(value: OrderView | null | undefined): Order | undefined {
     catalogId: record.catalogId,
     customerName: record.customerName,
     customerEmail: record.customerEmail || null,
+    customerMemberCode: record.customerMemberCode || null,
     source:
       record.source === "admin_assisted"
         ? "admin_assisted"

@@ -53,6 +53,8 @@ type AdminAssignment = {
   orderCode: string | null;
   customerUserId: Id<"appUsers">;
   customerName: string;
+  customerMemberCode: string | null;
+  publisherName: string;
   catalogId: Id<"secretCatalogs">;
   catalogName: string;
   orderItemId: Id<"orderItems">;
@@ -61,6 +63,7 @@ type AdminAssignment = {
   format: Doc<"orderItems">["formatSnapshot"];
   isbn: string;
   unitPriceAmount: number;
+  supplierPriceGbpMinor: number | null;
   assignedQuantity: number;
   orderedQuantity: number;
 };
@@ -73,10 +76,14 @@ type RosterItem = Pick<
 type CustomerRoster = {
   customerUserId: Id<"appUsers">;
   customerName: string;
+  customerMemberCode: string | null;
   items: RosterItem[];
 };
 
-type PurchaseSummary = Pick<AdminAssignment, "bookVariantId" | "bookTitle" | "format" | "isbn" | "unitPriceAmount"> & {
+type PurchaseSummary = Pick<
+  AdminAssignment,
+  "bookVariantId" | "bookTitle" | "format" | "isbn" | "unitPriceAmount" | "publisherName" | "supplierPriceGbpMinor"
+> & {
   quantity: number;
   customerCount: number;
 };
@@ -340,6 +347,7 @@ export const getMine = query({
           referenceCode: batch.referenceCode || null,
           currentShipmentStage: batch.currentShipmentStage || null,
           poDeadlineAt: batch.poDeadlineAt ?? null,
+          etaCargoMonth: batch.etaCargoMonth ?? null,
           updatedAt: new Date(batch.updatedAt).toISOString(),
           assignments: section.assignments,
           history: await historyView(ctx, batch._id),
@@ -411,6 +419,7 @@ async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"
     referenceCode: batch.referenceCode ?? null,
     description: batch.description ?? null,
     poDeadlineAt: batch.poDeadlineAt ?? null,
+    etaCargoMonth: batch.etaCargoMonth ?? null,
     currentShipmentStage: batch.currentShipmentStage ?? null,
     updatedAt: batch.updatedAt,
     items: owned,
@@ -483,6 +492,7 @@ export const getForOrderAdmin = query({
                   batchId: assignment.batchId,
                   batchName: batch?.name || "Unknown batch",
                   currentShipmentStage: batch?.currentShipmentStage || null,
+                  etaCargoMonth: batch?.etaCargoMonth || null,
                   assignedQuantity: assignment.assignedQuantity,
                 };
               }),
@@ -520,6 +530,12 @@ export const getForAdmin = query({
     const catalogNames = new Map(
       catalogIds.map((catalogId, index) => [catalogId, catalogs[index]?.name || "Unknown catalog"]),
     );
+    const customerIds = [...new Set(loaded.map(({ order }) => order.customerUserId))];
+    const customers = await Promise.all(customerIds.map((customerId) => ctx.db.get(customerId)));
+    const customerCodes = new Map(customerIds.map((customerId, index) => [customerId, customers[index]?.memberCode || null]));
+    const variantIds = [...new Set(loaded.map(({ orderItem }) => orderItem.bookVariantId))];
+    const variants = await Promise.all(variantIds.map((variantId) => ctx.db.get(variantId)));
+    const variantById = new Map(variantIds.map((variantId, index) => [variantId, variants[index]]));
     const assignedItems: AdminAssignment[] = loaded.flatMap(({ assignment, orderItem, order }) => {
       if (!order.catalogId || order.source === "ready_stock") return [];
       return [
@@ -529,6 +545,8 @@ export const getForAdmin = query({
           orderCode: order.orderCode || null,
           customerUserId: order.customerUserId,
           customerName: order.customerName,
+          customerMemberCode: customerCodes.get(order.customerUserId) || null,
+          publisherName: orderItem.publisherNameSnapshot,
           catalogId: order.catalogId,
           catalogName: catalogNames.get(order.catalogId) || "Unknown catalog",
           orderItemId: orderItem._id,
@@ -537,6 +555,7 @@ export const getForAdmin = query({
           format: orderItem.formatSnapshot,
           isbn: orderItem.isbnSnapshot,
           unitPriceAmount: orderItem.unitPriceAmountSnapshot,
+          supplierPriceGbpMinor: variantById.get(orderItem.bookVariantId)?.supplierPriceGbpMinor ?? null,
           assignedQuantity: assignment.assignedQuantity,
           orderedQuantity: orderItem.quantity,
         },
@@ -549,6 +568,7 @@ export const getForAdmin = query({
       const customer = customerGroups.get(customerKey) || {
         customerUserId: item.customerUserId,
         customerName: item.customerName,
+        customerMemberCode: item.customerMemberCode,
         items: [],
       };
       customer.items.push({
@@ -568,7 +588,9 @@ export const getForAdmin = query({
         bookTitle: item.bookTitle,
         format: item.format,
         isbn: item.isbn,
+        publisherName: item.publisherName,
         unitPriceAmount: item.unitPriceAmount,
+        supplierPriceGbpMinor: item.supplierPriceGbpMinor,
         quantity: 0,
         customerCount: 0,
         customers: new Set<string>(),
@@ -587,7 +609,9 @@ export const getForAdmin = query({
         bookTitle: purchase.bookTitle,
         format: purchase.format,
         isbn: purchase.isbn,
+        publisherName: purchase.publisherName,
         unitPriceAmount: purchase.unitPriceAmount,
+        supplierPriceGbpMinor: purchase.supplierPriceGbpMinor,
         quantity: purchase.quantity,
         customerCount: purchase.customers.size,
       })),

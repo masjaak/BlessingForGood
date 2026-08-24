@@ -26,14 +26,18 @@ export function ActivityCenter({
     ) : activity.length ? (
       <div className="content-stack">
         {activity.map((item) => (
-          <Card className={item.readAt ? "activity-card" : "activity-card is-unread"} key={item.sourceId}>
+          <Card
+            className={item.readAt ? "activity-card is-read" : "activity-card is-unread"}
+            data-read-state={item.readAt ? "read" : "unread"}
+            key={item.sourceId}
+          >
             <div className="activity-card-topline">
               <span className="activity-type-group">
                 <span className="activity-type">{item.type === "system" ? "Sistem" : "Pesan BFG"}</span>
                 {!item.readAt ? (
                   <span className="activity-unread-marker" role="status" aria-label="Belum dibaca">
                     <span className="activity-unread-dot" aria-hidden="true" />
-                    <span>Baru</span>
+                    <span>Baru · Belum dibaca</span>
                   </span>
                 ) : null}
               </span>

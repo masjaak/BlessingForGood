@@ -130,7 +130,7 @@ function DepositOperations() {
                 <option value="">Pilih pelanggan</option>
                 {customers?.map((customer) => (
                   <option key={customer.customerUserId} value={customer.customerUserId}>
-                    {customer.displayName} · {customer.email || "—"}
+                    {customer.displayName} · {customer.memberCode || "tanpa kode"} · {customer.email || "—"}
                   </option>
                 ))}
               </BFGSelect>

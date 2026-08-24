@@ -76,6 +76,7 @@ export interface OperationsContextValue {
     referenceCode?: string;
     description?: string;
     poDeadlineAt?: number;
+    etaCargoMonth?: string;
   }) => Promise<BatchSummary>;
   linkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;

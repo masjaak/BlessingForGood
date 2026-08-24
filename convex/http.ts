@@ -5,6 +5,7 @@ import {
   IMAGE_CONTENT_TYPES,
   MAX_STORED_FILE_BYTES,
   PROOF_CONTENT_TYPES,
+  normalizeContentType,
   validateUploadedContent,
 } from "./lib/storage";
 import type { UploadPurpose } from "./uploads";
@@ -55,7 +56,7 @@ http.route({
     const params = new URL(request.url).searchParams;
     const purpose = params.get("purpose");
     const fileName = params.get("fileName");
-    const declaredMimeType = request.headers.get("Content-Type");
+    const declaredMimeType = normalizeContentType(request.headers.get("Content-Type"));
     if (!isUploadPurpose(purpose) || !fileName || !declaredMimeType) {
       return json(origin, { error: "file upload rejected" }, 400);
     }

@@ -1,5 +1,20 @@
 # BFG SOURCE OF TRUTH
 
+## Client UAT Round 2 maintenance override — 2026-08-24
+
+The current maintenance source is the local `main` checkout at `1e155205`.
+The requested `fce35bee` commit is not present in this checkout and must not be
+invented. Round 2 adds only additive schema/view fields and fixes existing
+canonical paths: strict upload MIME normalization, reservation-backed Ready
+Stock error handling and Admin assistance, Clerk challenge CSP allowances,
+Activity unread presentation, shared Button tokens, Batch `etaCargoMonth`,
+Customer `memberCode`, and derived Publisher-grouped purchase export.
+
+The full report and evidence classification are maintained in
+[`BFG-CLIENT-UAT-ROUND-2-FINAL-REPORT.md`](implementation/BFG-CLIENT-UAT-ROUND-2-FINAL-REPORT.md).
+Deterministic green is not Production green; live authenticated/device gates
+remain separate and require authorized credentials plus approved business data.
+
 Reconciled: 2026-08-22 (Asia/Jakarta)
 Applies to the current `main` and the Phase 09 initial operations baseline; the
 canonical domain serves the latest READY Production deployment with Convex

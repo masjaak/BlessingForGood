@@ -197,4 +197,47 @@ describe("BFG Ready Stock and Book Master", () => {
     }
     expect(await t.query(api.readyStock.getBySlug, { slug: "missing" })).toBeNull();
   });
+
+  it("lets Admin create a Ready Stock order for an existing customer through the same reservation path", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Assisted Stock House" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Assisted Stock Book" });
+    const variantId = await admin.mutation(api.bookVariants.create, {
+      bookId,
+      format: "PB",
+      isbn: "9780000041084",
+      priceAmount: 125000,
+    });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 3 });
+
+    const order = await admin.mutation(api.orders.createAssisted, {
+      customerUserId: customerUser.appUserId,
+      source: "ready_stock",
+      submissionKey: "assisted-ready-stock-1",
+      items: [{ variantId, quantity: 1 }],
+    });
+    expect(order).toMatchObject({
+      source: "ready_stock",
+      customerUserId: customerUser.appUserId,
+      customerMemberCode: customerUser.memberCode,
+      totalAmount: 125000,
+    });
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("readyStockInventory")
+          .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variantId))
+          .unique(),
+      ),
+    ).toMatchObject({ quantity: 3, reservedQuantity: 1 });
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("auditEvents").collect()).find((event) => event.targetId === String(order.orderId)),
+      ),
+    ).toMatchObject({ actorUserId: expect.anything(), action: "order.admin_assisted_created" });
+  });
 });

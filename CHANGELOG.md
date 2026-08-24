@@ -8,6 +8,31 @@ source: conversation
 
 # Changelog
 
+## [client-uat-round-2-maintenance] — 2026-08-24
+
+### Changed
+
+- Normalized legitimate JPEG MIME aliases across the existing secure Cover and
+  Gallery upload pipeline without weakening byte, extension, dimension,
+  ownership, claim, or rate-limit validation.
+- Kept Ready Stock atomic reservation canonical while adding safe customer error
+  copy and exposing the existing Admin-assisted order path for active BFG
+  Customers.
+- Added narrow Clerk/Cloudflare challenge CSP origins, clearer shared Activity
+  unread/read semantics, and stronger BFG Secondary button tokens.
+- Added normalized Batch ETA Cargo month, stable Customer `memberCode`,
+  Publisher-grouped derived purchase CSV, and optional variant supplier GBP
+  minor price.
+
+### QA
+
+- Focused regression suites: 74/74.
+- Full suite: 277/277 after the final additive member-code view assertion.
+- TypeScript, ESLint, Prettier, production build, Convex Development check, and
+  `npm audit --omit=dev` pass.
+- Production/device closure remains blocked by authorized Clerk/Convex/Vercel
+  access, approved business data, and Android/iOS availability.
+
 ## [maintenance-product-logic-uat-correction] — 2026-08-22
 
 ### Changed

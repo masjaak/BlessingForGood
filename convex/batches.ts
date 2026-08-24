@@ -17,6 +17,14 @@ export function assertBatchCatalogDeadline(batch: Doc<"batches">, catalog: Doc<"
   }
 }
 
+function normalizedEtaCargoMonth(value: string | undefined): string | undefined {
+  const month = value?.trim() || undefined;
+  if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    fail("VALIDATION_FAILED", "ETA Cargo harus berupa bulan YYYY-MM");
+  }
+  return month;
+}
+
 export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
   const batch = await ctx.db.get(batchId);
   if (!batch) fail("BATCH_NOT_FOUND");
@@ -44,6 +52,7 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     referenceCode: batch.referenceCode || null,
     description: batch.description || null,
     poDeadlineAt: batch.poDeadlineAt ?? null,
+    etaCargoMonth: batch.etaCargoMonth ?? null,
     currentShipmentStage: batch.currentShipmentStage || null,
     rosterLocked: batch.currentShipmentStage !== undefined,
     isArchived: batch.isArchived,
@@ -66,11 +75,13 @@ export const create = mutation({
     referenceCode: v.optional(v.string()),
     description: v.optional(v.string()),
     poDeadlineAt: v.optional(v.number()),
+    etaCargoMonth: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "batches.manage");
     const name = requiredText(args.name, "batch name");
     const requestedReferenceCode = args.referenceCode?.trim() || undefined;
+    const etaCargoMonth = normalizedEtaCargoMonth(args.etaCargoMonth);
     if (args.poDeadlineAt !== undefined && args.poDeadlineAt <= Date.now()) {
       fail("VALIDATION_FAILED", "PO deadline must be in the future");
     }
@@ -86,6 +97,7 @@ export const create = mutation({
       referenceCode,
       description: args.description?.trim() || undefined,
       poDeadlineAt: args.poDeadlineAt,
+      etaCargoMonth,
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,

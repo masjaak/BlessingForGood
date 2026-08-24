@@ -81,6 +81,7 @@ export interface Order {
   catalogId: string | null;
   customerName: string;
   customerEmail: string | null;
+  customerMemberCode?: string | null;
   source: OrderSource;
   items: OrderItem[];
   total: number;

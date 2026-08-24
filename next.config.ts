@@ -1,14 +1,14 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
-const contentSecurityPolicy = [
+export const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://clerk.blessingforgood.com https://*.clerk.accounts.dev https://*.clerk.com`,
+  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://clerk.blessingforgood.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://*.protect.clerk.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
+  "img-src 'self' data: blob: https: https://img.clerk.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.convex.site wss://*.convex.site https://clerk.blessingforgood.com https://*.clerk.accounts.dev https://*.clerk.com",
-  "frame-src 'self' https://clerk.blessingforgood.com https://*.clerk.accounts.dev https://*.clerk.com",
+  "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.convex.site wss://*.convex.site https://clerk.blessingforgood.com https://*.clerk.accounts.dev https://*.clerk.com https://*.protect.clerk.com:* https://challenges.cloudflare.com",
+  "frame-src 'self' https://clerk.blessingforgood.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://*.protect.clerk.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

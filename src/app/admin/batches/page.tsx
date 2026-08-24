@@ -14,7 +14,7 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
-import { shipmentStageLabels } from "@/domain/prototype/operations";
+import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
@@ -25,6 +25,7 @@ function CreateBatchForm() {
   const [referenceCode, setReferenceCode] = useState("");
   const [description, setDescription] = useState("");
   const [poDeadlineAt, setPoDeadlineAt] = useState("");
+  const [etaCargoMonth, setEtaCargoMonth] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -37,11 +38,13 @@ function CreateBatchForm() {
         referenceCode: referenceCode || undefined,
         description: description || undefined,
         poDeadlineAt: Date.parse(poDeadlineAt),
+        etaCargoMonth: etaCargoMonth || undefined,
       });
       setName("");
       setReferenceCode("");
       setDescription("");
       setPoDeadlineAt("");
+      setEtaCargoMonth("");
       setMessage("Batch berhasil dibuat.");
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Batch belum dapat dibuat");
@@ -68,6 +71,14 @@ function CreateBatchForm() {
               value={poDeadlineAt}
               onChange={(event) => setPoDeadlineAt(event.target.value)}
               required
+            />
+          </Field>
+          <Field label="ETA Cargo" hint="Bulan dan tahun estimasi tiba">
+            <input
+              className="input"
+              type="month"
+              value={etaCargoMonth}
+              onChange={(event) => setEtaCargoMonth(event.target.value)}
             />
           </Field>
         </div>
@@ -133,6 +144,10 @@ function AdminBatches() {
                   <strong>
                     {batch.poDeadlineAt ? new Date(batch.poDeadlineAt).toLocaleString("id-ID") : "Belum ditentukan"}
                   </strong>
+                </div>
+                <div className="summary-line">
+                  <span>ETA Cargo</span>
+                  <strong>{formatCargoEta(batch.etaCargoMonth)}</strong>
                 </div>
                 <div className="summary-line">
                   <span>Katalog terhubung</span>

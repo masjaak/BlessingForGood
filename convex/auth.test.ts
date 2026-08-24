@@ -42,6 +42,7 @@ describe("Clerk identity and BFG authorization", () => {
     const secondOwner = await owner.mutation(api.users.ensureCurrentUser, {});
     expect(firstOwner).toMatchObject({ role: "owner", status: "active" });
     expect(secondOwner.appUserId).toBe(firstOwner.appUserId);
+    expect(secondOwner.memberCode).toBe(firstOwner.memberCode);
 
     const customer = t.withIdentity(customerIdentity);
     await seedApprovedJoinRequest(t, customerIdentity.email);

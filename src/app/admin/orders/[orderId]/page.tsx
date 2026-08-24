@@ -99,7 +99,7 @@ function AdminOrderDetail() {
       <PageHeader
         eyebrow="Operasi pesanan"
         title={order.customerName}
-        description={orderReference(order)}
+        description={`${orderReference(order)} · ID Blessfriend: ${order.customerMemberCode || "belum tersedia"}`}
         actions={
           <LinkButton href="/admin/orders" variant="secondary">
             Kembali ke pesanan

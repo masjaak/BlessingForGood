@@ -44,6 +44,9 @@ function VariantRow({ variant }: { variant: Variant }) {
   const setQuantity = useMutation(api.readyStock.setQuantity);
   const [isbn, setIsbn] = useState(variant.isbn);
   const [price, setPrice] = useState(String(variant.priceAmount));
+  const [supplierPriceGbp, setSupplierPriceGbp] = useState(
+    variant.supplierPriceGbpMinor === undefined ? "" : String(variant.supplierPriceGbpMinor),
+  );
   const [quantity, setStock] = useState(String(variant.stockQuantity));
   const [enabled, setEnabled] = useState(variant.isAvailable);
   const [message, setMessage] = useState("");
@@ -58,6 +61,7 @@ function VariantRow({ variant }: { variant: Variant }) {
         bookVariantId: variant._id,
         isbn,
         priceAmount: Number(price),
+        supplierPriceGbpMinor: supplierPriceGbp.trim() ? Number(supplierPriceGbp) : undefined,
         isAvailable: enabled,
       });
       await setQuantity({ bookVariantId: variant._id, quantity: Number(quantity) });
@@ -97,6 +101,16 @@ function VariantRow({ variant }: { variant: Variant }) {
           required
         />
       </Field>
+      <Field label="Harga GBP (pence)" hint="Harga pemasok; kosong bila belum tersedia">
+        <input
+          className="input"
+          type="number"
+          min="0"
+          step="1"
+          value={supplierPriceGbp}
+          onChange={(event) => setSupplierPriceGbp(event.target.value)}
+        />
+      </Field>
       <InlineBooleanField checked={enabled} label="Aktif" onChange={setEnabled} />
       <Button type="submit" variant="secondary" pending={isSaving} pendingLabel="Menyimpan…">
         Simpan
@@ -131,6 +145,7 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [format, setFormat] = useState<BookFormat>("PB");
   const [isbn, setIsbn] = useState("");
   const [price, setPrice] = useState("");
+  const [supplierPriceGbp, setSupplierPriceGbp] = useState("");
   const [bookMessage, setBookMessage] = useState("");
   const [bookError, setBookError] = useState("");
   const [variantMessage, setVariantMessage] = useState("");
@@ -172,9 +187,7 @@ function BookEditor({ book }: { book: AdminBook }) {
       await updateBook(bookInput(publicationStatus === "published" ? undefined : publicationStatus));
       const savedStatus = publicationStatus === "published" ? book.publicationStatus : publicationStatus;
       setBookMessage(
-        savedStatus === "draft"
-          ? "✓ Perubahan tersimpan. Tersimpan sebagai draf."
-          : "✓ Perubahan tersimpan.",
+        savedStatus === "draft" ? "✓ Perubahan tersimpan. Tersimpan sebagai draf." : "✓ Perubahan tersimpan.",
       );
     } catch {
       setBookError("Perubahan belum tersimpan. Periksa isian lalu coba lagi.");
@@ -308,9 +321,16 @@ function BookEditor({ book }: { book: AdminBook }) {
     setVariantMessage("");
     setPendingAction("variant");
     try {
-      await createVariant({ bookId: book._id, format, isbn, priceAmount: Number(price) });
+      await createVariant({
+        bookId: book._id,
+        format,
+        isbn,
+        priceAmount: Number(price),
+        supplierPriceGbpMinor: supplierPriceGbp.trim() ? Number(supplierPriceGbp) : undefined,
+      });
       setIsbn("");
       setPrice("");
+      setSupplierPriceGbp("");
       setVariantMessage("Format ditambahkan.");
     } catch {
       setVariantMessage("Format ditolak. Periksa ISBN, harga, dan format unik.");
@@ -669,6 +689,16 @@ function BookEditor({ book }: { book: AdminBook }) {
                   value={price}
                   onChange={(event) => setPrice(event.target.value)}
                   required
+                />
+              </Field>
+              <Field label="Harga GBP (pence)">
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={supplierPriceGbp}
+                  onChange={(event) => setSupplierPriceGbp(event.target.value)}
                 />
               </Field>
               <Button

@@ -22,6 +22,7 @@ import {
 import { nextOrderStatuses, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
 import { orderReference } from "@/domain/prototype/order-reference";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
@@ -120,6 +121,8 @@ function OrderTable() {
                       <br />
                       <span className="subtle">{order.customerEmail || "Tidak ada email"}</span>
                       <br />
+                      <span className="subtle">ID Blessfriend: {order.customerMemberCode || "belum tersedia"}</span>
+                      <br />
                       <span className="subtle">{reference}</span>
                       <br />
                       <LinkButton href={`/admin/orders/${order.id}`} variant="secondary">
@@ -197,7 +200,9 @@ function OrderTable() {
 function ConvexAssistedOrderForm() {
   const { state } = useProduct();
   const customers = useQuery(api.orders.listEligibleCustomers, {});
+  const readyStockRows = useQuery(api.readyStock.listForAdmin, {});
   const createAssisted = useMutation(api.orders.createAssisted);
+  const [source, setSource] = useState<"preorder" | "ready_stock">("preorder");
   const [customerId, setCustomerId] = useState("");
   const [catalogId, setCatalogId] = useState("");
   const [variantId, setVariantId] = useState("");
@@ -207,8 +212,19 @@ function ConvexAssistedOrderForm() {
   const submissionKeyRef = useRef<string | null>(null);
   const catalogs = state.catalogs.filter((candidate) => candidate.status === "open");
   const catalog = catalogs.find((candidate) => candidate.id === catalogId);
-  const variants =
+  const preorderVariants =
     catalog?.books.flatMap((book) => book.variants.map((variant) => ({ ...variant, bookTitle: book.title }))) || [];
+  const readyStockVariants =
+    readyStockRows
+      ?.filter((row) => row.isAvailable && row.availableQuantity > 0)
+      .map((row) => ({
+        id: row.variantId,
+        bookTitle: row.title,
+        format: row.format,
+        isbn: row.isbn,
+        price: row.priceAmount,
+      })) || [];
+  const variants = source === "ready_stock" ? readyStockVariants : preorderVariants;
   const selectedVariant = variants.find((variant) => variant.id === variantId);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -221,18 +237,20 @@ function ConvexAssistedOrderForm() {
       submissionKeyRef.current = submissionKey;
       await createAssisted({
         customerUserId: customerId as Id<"appUsers">,
-        catalogId: catalogId as Id<"secretCatalogs">,
+        catalogId: source === "preorder" ? (catalogId as Id<"secretCatalogs">) : undefined,
+        source,
         submissionKey,
         items: [{ variantId: variantId as Id<"bookVariants">, quantity: Number(quantity) }],
       });
       setCustomerId("");
       setCatalogId("");
       setVariantId("");
+      setSource("preorder");
       setQuantity("1");
       submissionKeyRef.current = null;
       setMessage("Pesanan berbantuan Admin tercatat di alur pesanan kanonik.");
-    } catch {
-      setMessage("Pesanan berbantuan tidak dapat dicatat.");
+    } catch (reason) {
+      setMessage(productErrorMessage(reason, "Pesanan berbantuan tidak dapat dicatat."));
     } finally {
       setSubmitting(false);
     }
@@ -246,7 +264,11 @@ function ConvexAssistedOrderForm() {
         Pilih pelanggan BFG aktif yang sudah ada. Server menentukan snapshot pelanggan dan harga.
       </p>
       {customers === undefined ? <div className="state-panel">Memuat pelanggan yang memenuhi syarat…</div> : null}
-      {customers && customers.length > 0 && catalogs.length > 0 ? (
+      {customers &&
+      customers.length > 0 &&
+      (source === "preorder"
+        ? catalogs.length > 0
+        : Boolean(readyStockRows?.some((row) => row.isAvailable && row.availableQuantity > 0))) ? (
         <form className="form-card" onSubmit={submit}>
           <div className="form-grid">
             <label className="field">
@@ -260,30 +282,47 @@ function ConvexAssistedOrderForm() {
                 <option value="">Pilih pelanggan…</option>
                 {customers.map((customer) => (
                   <option value={customer.customerUserId} key={customer.customerUserId}>
-                    {customer.displayName}
+                    {customer.displayName} · {customer.memberCode || "tanpa kode"}
                   </option>
                 ))}
               </BFGSelect>
             </label>
             <label className="field">
-              <span className="field-label">Katalog</span>
+              <span className="field-label">Sumber</span>
               <BFGSelect
                 className="select"
-                value={catalogId}
+                value={source}
                 onChange={(event) => {
-                  setCatalogId(event.target.value);
+                  setSource(event.target.value as "preorder" | "ready_stock");
+                  setCatalogId("");
                   setVariantId("");
                 }}
-                required
               >
-                <option value="">Pilih katalog terbuka…</option>
-                {catalogs.map((catalogOption) => (
-                  <option value={catalogOption.id} key={catalogOption.id}>
-                    {catalogOption.name}
-                  </option>
-                ))}
+                <option value="preorder">Secret Catalog / preorder</option>
+                <option value="ready_stock">Ready Stock</option>
               </BFGSelect>
             </label>
+            {source === "preorder" ? (
+              <label className="field">
+                <span className="field-label">Katalog</span>
+                <BFGSelect
+                  className="select"
+                  value={catalogId}
+                  onChange={(event) => {
+                    setCatalogId(event.target.value);
+                    setVariantId("");
+                  }}
+                  required
+                >
+                  <option value="">Pilih katalog terbuka…</option>
+                  {catalogs.map((catalogOption) => (
+                    <option value={catalogOption.id} key={catalogOption.id}>
+                      {catalogOption.name}
+                    </option>
+                  ))}
+                </BFGSelect>
+              </label>
+            ) : null}
           </div>
           <div className="form-grid">
             <label className="field">
@@ -331,7 +370,7 @@ function ConvexAssistedOrderForm() {
           ) : null}
         </form>
       ) : customers !== undefined ? (
-        <p className="subtle">Pelanggan aktif dan katalog terbuka diperlukan.</p>
+        <p className="subtle">Pelanggan aktif dan sumber produk yang tersedia diperlukan.</p>
       ) : null}
     </Card>
   );

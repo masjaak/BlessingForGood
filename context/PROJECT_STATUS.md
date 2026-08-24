@@ -1,5 +1,23 @@
 # BFG Project Status
 
+## Client UAT Round 2 — 2026-08-24
+
+The current checkout is the canonical `main` line at local HEAD `1e155205`;
+the user-supplied `fce35bee` reconciliation commit is not present locally and
+was not recreated. This maintenance pass implements the Round 2 upload MIME
+regression fix, Ready Stock reservation/error normalization, narrow Clerk CSP
+challenge allowances, stronger shared Activity unread semantics, shared Button
+token calibration, Batch ETA Cargo, stable Customer `memberCode`, grouped
+Publisher purchase export, and canonical Admin-assisted Ready Stock orders.
+
+Deterministic gates are green: focused 74/74, full 277/277 after the final
+additive order/invoice member-code view assertions, TypeScript, ESLint, Format,
+Build, `npm audit --omit=dev` (0), and Convex Development check. Production and
+authenticated device acceptance are not claimed: local Production credentials,
+approved populated business data, and Android/iOS access are not available.
+The detailed status is in
+[`BFG-CLIENT-UAT-ROUND-2-FINAL-REPORT.md`](implementation/BFG-CLIENT-UAT-ROUND-2-FINAL-REPORT.md).
+
 ## Current maintenance correction pass — 2026-08-22
 
 The latest authenticated Admin evidence supersedes prior green snapshots for

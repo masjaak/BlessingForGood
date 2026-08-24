@@ -6,6 +6,7 @@ import { BFGSelect } from "@/components/bfg-select";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
+  ActionGroup,
   Button,
   Card,
   EmptyState,
@@ -20,6 +21,19 @@ import { useOperations, type BatchDetail } from "@/domain/prototype/operations-c
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
+
+function downloadPurchaseSummary(batch: BatchDetail) {
+  const blob = new Blob([toExcelCsv(purchaseSummaryCsvRows(batch.purchaseSummary))], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = (batch.referenceCode || batch.name) + "-purchase-summary.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
 function AdminBatchDetail() {
   const params = useParams<{ batchId: string }>();
@@ -119,9 +133,18 @@ function AdminBatchDetail() {
         title={currentBatch.name}
         description={currentBatch.referenceCode || currentBatch.batchId}
         actions={
-          <LinkButton href="/admin/batches" variant="secondary">
-            Kembali ke batch
-          </LinkButton>
+          <ActionGroup>
+            <Button
+              type="button"
+              variant={currentBatch.rosterLocked ? "primary" : "secondary"}
+              onClick={() => downloadPurchaseSummary(currentBatch)}
+            >
+              {currentBatch.rosterLocked ? "Unduh purchase CSV" : "Unduh preview CSV"}
+            </Button>
+            <LinkButton href="/admin/batches" variant="secondary">
+              Kembali ke batch
+            </LinkButton>
+          </ActionGroup>
         }
       />
       <div className="admin-workspace">
@@ -350,7 +373,9 @@ function AdminBatchDetail() {
             {currentBatch.customerRoster.length ? (
               currentBatch.customerRoster.map((customer) => (
                 <div className="content-stack" key={customer.customerUserId}>
-                  <strong>{customer.customerName}</strong>
+                  <strong>
+                    {customer.customerName} · {customer.customerMemberCode || "tanpa kode"}
+                  </strong>
                   {customer.items.map((item) => (
                     <div className="summary-line" key={item.assignmentId}>
                       <span>
@@ -382,6 +407,7 @@ function AdminBatchDetail() {
                   <caption className="sr-only">Ringkasan pembelian batch</caption>
                   <thead>
                     <tr>
+                      <th>Publisher</th>
                       <th>Buku / varian</th>
                       <th>ISBN</th>
                       <th>Jumlah</th>
@@ -391,10 +417,14 @@ function AdminBatchDetail() {
                   <tbody>
                     {currentBatch.purchaseSummary.map((item) => (
                       <tr key={item.bookVariantId}>
+                        <td>{item.publisherName}</td>
                         <td>
                           {item.bookTitle} · {item.format}
                           <br />
-                          <span className="subtle">IDR {item.unitPriceAmount.toLocaleString("id-ID")}</span>
+                          <span className="subtle">
+                            GBP {item.supplierPriceGbpMinor ?? "—"} pence · IDR{" "}
+                            {item.unitPriceAmount.toLocaleString("id-ID")}
+                          </span>
                         </td>
                         <td>{item.isbn}</td>
                         <td>{item.quantity}</td>

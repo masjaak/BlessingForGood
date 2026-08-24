@@ -4,10 +4,11 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
-import { findCurrentUser, requireOwner } from "./lib/auth";
+import { findCurrentUser, requireOwner, requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { roleValidator, userStatusValidator } from "./validators";
 import { enforceRateLimit } from "./lib/rateLimit";
+import { nextMemberCode } from "./lib/memberCodes";
 
 function appUserView(user: Doc<"appUsers">) {
   return {
@@ -17,6 +18,7 @@ function appUserView(user: Doc<"appUsers">) {
     emailSnapshot: user.emailSnapshot ?? null,
     displayNameSnapshot: user.displayNameSnapshot ?? null,
     imageUrlSnapshot: user.imageUrlSnapshot ?? null,
+    memberCode: user.memberCode ?? null,
     createdAt: new Date(user.createdAt).toISOString(),
     updatedAt: new Date(user.updatedAt).toISOString(),
     lastSeenAt: new Date(user.lastSeenAt).toISOString(),
@@ -50,12 +52,14 @@ export async function admitApprovedJoinRequest(
   }
 
   const now = Date.now();
+  const memberCode = await nextMemberCode(ctx, request.name);
   const appUserId = await ctx.db.insert("appUsers", {
     clerkUserId,
     role: "customer",
     status: "active",
     emailSnapshot: request.applicantEmailSnapshot,
     displayNameSnapshot: request.name,
+    memberCode,
     createdAt: now,
     updatedAt: now,
     lastSeenAt: now,
@@ -82,6 +86,7 @@ export const ensureCurrentUser = mutation({
     emailSnapshot: v.union(v.string(), v.null()),
     displayNameSnapshot: v.union(v.string(), v.null()),
     imageUrlSnapshot: v.union(v.string(), v.null()),
+    memberCode: v.union(v.string(), v.null()),
     createdAt: v.string(),
     updatedAt: v.string(),
     lastSeenAt: v.string(),
@@ -95,10 +100,14 @@ export const ensureCurrentUser = mutation({
     const now = Date.now();
     const existing = await findCurrentUser(ctx, identity);
     if (existing) {
+      const memberCode =
+        existing.memberCode ||
+        (await nextMemberCode(ctx, identity.name || existing.displayNameSnapshot || identity.email || undefined));
       await ctx.db.patch(existing._id, {
         emailSnapshot: identity.email || existing.emailSnapshot,
         displayNameSnapshot: identity.name || existing.displayNameSnapshot,
         imageUrlSnapshot: identity.pictureUrl || existing.imageUrlSnapshot,
+        memberCode,
         updatedAt: now,
         lastSeenAt: now,
       });
@@ -136,6 +145,7 @@ export const ensureCurrentUser = mutation({
       emailSnapshot: identity.email,
       displayNameSnapshot: identity.name,
       imageUrlSnapshot: identity.pictureUrl,
+      memberCode: await nextMemberCode(ctx, identity.name || identity.email || undefined),
       createdAt: now,
       updatedAt: now,
       lastSeenAt: now,
@@ -240,6 +250,7 @@ export const current = query({
       emailSnapshot: v.union(v.string(), v.null()),
       displayNameSnapshot: v.union(v.string(), v.null()),
       imageUrlSnapshot: v.union(v.string(), v.null()),
+      memberCode: v.union(v.string(), v.null()),
       createdAt: v.string(),
       updatedAt: v.string(),
       lastSeenAt: v.string(),
@@ -289,6 +300,15 @@ export const list = query({
     }
     const page = await ctx.db.query("appUsers").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: page.page.map(appUserView) };
+  },
+});
+
+export const getForAdmin = query({
+  args: { userId: v.id("appUsers") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "customers.read");
+    const user = await targetUser(ctx, args.userId);
+    return appUserView(user);
   },
 });
 

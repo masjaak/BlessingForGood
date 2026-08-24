@@ -1,5 +1,54 @@
 import { describe, expect, it } from "vitest";
-import { detectUploadedContentType, IMAGE_CONTENT_TYPES, validateUploadedContent } from "./storage";
+import { detectUploadedContentType, IMAGE_CONTENT_TYPES, normalizeContentType, validateUploadedContent } from "./storage";
+
+const progressiveExifJpeg = new Uint8Array([
+  0xff,
+  0xd8,
+  0xff,
+  0xe1,
+  0x00,
+  0x10,
+  0x45,
+  0x78,
+  0x69,
+  0x66,
+  0x00,
+  0x00,
+  0x4d,
+  0x4d,
+  0x00,
+  0x2a,
+  0x00,
+  0x00,
+  0x00,
+  0x08,
+  0xff,
+  0xc2,
+  0x00,
+  0x0b,
+  0x08,
+  0x04,
+  0x00,
+  0x06,
+  0x00,
+  0x06,
+  0x01,
+  0x01,
+  0x11,
+  0x00,
+  0xff,
+  0xda,
+  0x00,
+  0x08,
+  0x01,
+  0x01,
+  0x00,
+  0x00,
+  0x3f,
+  0x00,
+  0xff,
+  0xd9,
+]);
 
 describe("uploaded content signatures", () => {
   it.each([
@@ -48,5 +97,29 @@ describe("uploaded content signatures", () => {
         "rejected",
       ),
     ).toBe("image/jpeg");
+  });
+
+  it.each([
+    "81vi9d-A1dL._SL1500_ (1).jpg",
+    "IMG-20260819-WA0166.jpg",
+    "downloaded.book.cover.jpeg",
+  ])("accepts a realistic progressive EXIF JPEG named %s", (fileName) => {
+    expect(
+      validateUploadedContent(
+        fileName,
+        "image/pjpeg; charset=binary",
+        "image/jpeg",
+        progressiveExifJpeg.length,
+        progressiveExifJpeg,
+        IMAGE_CONTENT_TYPES,
+        "rejected",
+      ),
+    ).toBe("image/jpeg");
+  });
+
+  it("canonicalizes browser JPEG aliases without broadening the allowed set", () => {
+    expect(normalizeContentType("image/jpg; charset=binary")).toBe("image/jpeg");
+    expect(normalizeContentType("image/pjpeg")).toBe("image/jpeg");
+    expect(normalizeContentType("image/gif")).toBe("image/gif");
   });
 });

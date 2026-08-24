@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Button, Card, Field, LoadingRegion, Money, SkeletonText, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 type CustomerException = Awaited<FunctionReturnType<typeof api.orderExceptions.listMineForOrder>>[number];
 type CustomerRefund = Awaited<FunctionReturnType<typeof api.refunds.listMine>>[number];
@@ -64,7 +65,7 @@ function CancellationAction({ item, enabled }: { item: Item; enabled: boolean })
           setMessage("Permintaan pembatalan sudah dikirim untuk ditinjau.");
           setReason("");
         } catch (error) {
-          setMessage(error instanceof Error ? error.message : "Permintaan belum dapat dikirim.");
+          setMessage(productErrorMessage(error, "Permintaan belum dapat dikirim."));
         } finally {
           setIsSubmitting(false);
         }

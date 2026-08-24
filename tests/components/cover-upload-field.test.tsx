@@ -62,6 +62,7 @@ describe("CoverUploadField", () => {
 
   it("rejects unsupported types and files over the server limit early", () => {
     expect(validateCoverFile(new File(["gif"], "cover.gif", { type: "image/gif" }))).toMatch(/JPG, PNG, atau WebP/);
+    expect(validateCoverFile(new File(["jpg"], "IMG-20260819-WA0166.jpg", { type: "image/pjpeg" }))).toBeNull();
     expect(validateCoverFile(new File(["large"], "cover.png", { type: "image/png" }))).toBeNull();
 
     const oversized = new File(["cover"], "cover.png", { type: "image/png" });

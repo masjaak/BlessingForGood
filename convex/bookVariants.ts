@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
-import { positiveMoney, requiredText } from "./lib/validation";
+import { nonNegativeMoney, positiveMoney, requiredText } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 import { insertVariant } from "./lib/productDomain";
 
@@ -19,7 +19,13 @@ export const listForBook = query({
 });
 
 export const create = mutation({
-  args: { bookId: v.id("books"), format: bookFormatValidator, isbn: v.string(), priceAmount: v.number() },
+  args: {
+    bookId: v.id("books"),
+    format: bookFormatValidator,
+    isbn: v.string(),
+    priceAmount: v.number(),
+    supplierPriceGbpMinor: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     return insertVariant(ctx, user._id, {
@@ -27,6 +33,7 @@ export const create = mutation({
       format: args.format,
       isbn: args.isbn,
       priceAmount: args.priceAmount,
+      supplierPriceGbpMinor: args.supplierPriceGbpMinor === undefined ? undefined : nonNegativeMoney(args.supplierPriceGbpMinor),
       isAvailable: true,
     });
   },
@@ -38,6 +45,7 @@ export const update = mutation({
     format: v.optional(bookFormatValidator),
     isbn: v.optional(v.string()),
     priceAmount: v.optional(v.number()),
+    supplierPriceGbpMinor: v.optional(v.number()),
     isAvailable: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -60,6 +68,10 @@ export const update = mutation({
       format,
       isbn,
       priceAmount: args.priceAmount === undefined ? variant.priceAmount : positiveMoney(args.priceAmount),
+      supplierPriceGbpMinor:
+        args.supplierPriceGbpMinor === undefined
+          ? variant.supplierPriceGbpMinor
+          : nonNegativeMoney(args.supplierPriceGbpMinor),
       isAvailable: args.isAvailable ?? variant.isAvailable,
       updatedAt: Date.now(),
     });

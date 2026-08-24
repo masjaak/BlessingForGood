@@ -33,11 +33,14 @@ describe("compact ActivityCenter", () => {
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByText("Sistem")).toBeTruthy();
     expect(screen.getByText("Pesan BFG")).toBeTruthy();
-    expect(screen.getByText("Baru")).toBeTruthy();
+    expect(screen.getByText("Baru · Belum dibaca")).toBeTruthy();
     expect(screen.getByLabelText("Belum dibaca")).toBeTruthy();
     const cards = container.querySelectorAll(".activity-card");
     expect(cards[0]?.querySelector(".activity-unread-marker")).toBeTruthy();
     expect(cards[1]?.querySelector(".activity-unread-marker")).toBeNull();
+    expect(cards[0]?.getAttribute("data-read-state")).toBe("unread");
+    expect(cards[1]?.getAttribute("data-read-state")).toBe("read");
+    expect(screen.getByText("Baru · Belum dibaca")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Lihat semua aktivitas" }).getAttribute("href")).toBe(
       "/account/notifications",
     );

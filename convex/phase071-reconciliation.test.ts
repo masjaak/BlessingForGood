@@ -195,8 +195,15 @@ describe("Phase 07.1 reconciliation", () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
     const deadline = Date.now() + 86_400_000;
-    const created = await admin.mutation(api.batches.create, { name: "Deadline Batch", poDeadlineAt: deadline });
-    expect(created).toMatchObject({ poDeadlineAt: deadline });
+    const created = await admin.mutation(api.batches.create, {
+      name: "Deadline Batch",
+      poDeadlineAt: deadline,
+      etaCargoMonth: "2026-10",
+    });
+    expect(created).toMatchObject({ poDeadlineAt: deadline, etaCargoMonth: "2026-10" });
+    await expect(admin.mutation(api.batches.create, { name: "Invalid ETA", etaCargoMonth: "Oktober 2026" })).rejects.toThrow(
+      "VALIDATION_FAILED",
+    );
     await expect(
       admin.mutation(api.batches.create, { name: "Past Batch", poDeadlineAt: Date.now() - 1 }),
     ).rejects.toThrow("VALIDATION_FAILED");

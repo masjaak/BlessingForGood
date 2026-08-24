@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 type ReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
 
@@ -133,7 +134,7 @@ function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
       setOrderId(order.orderId);
       setMessage("Ready Stock berhasil dicatat dan stok sudah diamankan.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Stok belum dapat dipesan.");
+      setMessage(productErrorMessage(error, "Pesanan belum berhasil dibuat. Silakan coba lagi."));
     } finally {
       setPending(false);
     }

@@ -60,6 +60,7 @@ export default defineSchema({
     emailSnapshot: v.optional(v.string()),
     displayNameSnapshot: v.optional(v.string()),
     imageUrlSnapshot: v.optional(v.string()),
+    memberCode: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     lastSeenAt: v.number(),
@@ -70,6 +71,7 @@ export default defineSchema({
     .index("by_role", ["role"])
     .index("by_status", ["status"])
     .index("by_role_and_status", ["role", "status"])
+    .index("by_member_code", ["memberCode"])
     .index("by_created_at", ["createdAt"]),
 
   uploadClaims: defineTable({
@@ -266,6 +268,7 @@ export default defineSchema({
     format: bookFormat,
     isbn: v.string(),
     priceAmount: v.number(),
+    supplierPriceGbpMinor: v.optional(v.number()),
     currency: v.literal("IDR"),
     isAvailable: v.boolean(),
     createdAt: v.number(),
@@ -537,6 +540,7 @@ export default defineSchema({
     referenceCode: v.optional(v.string()),
     description: v.optional(v.string()),
     poDeadlineAt: v.optional(v.number()),
+    etaCargoMonth: v.optional(v.string()),
     currentShipmentStage: v.optional(shipmentStageValidator),
     createdAt: v.number(),
     updatedAt: v.number(),

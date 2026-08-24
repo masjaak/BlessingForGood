@@ -25,6 +25,14 @@ export const fulfillmentStageLabels: Record<FulfillmentStage, string> = {
 export const shipmentStages = Object.keys(shipmentStageLabels) as ShipmentStage[];
 export const fulfillmentStages = Object.keys(fulfillmentStageLabels) as FulfillmentStage[];
 
+export function formatCargoEta(month: string | null | undefined): string {
+  if (!month) return "Belum ditentukan";
+  const date = new Date(month + "-01T00:00:00.000Z");
+  return Number.isNaN(date.getTime())
+    ? "Belum ditentukan"
+    : new Intl.DateTimeFormat("id-ID", { month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
 export function invoiceStatusLabel(status: "draft" | "issued" | "void"): string {
   return { draft: "Draf", issued: "Terbit", void: "Dibatalkan" }[status];
 }

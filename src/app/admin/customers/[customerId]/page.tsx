@@ -28,6 +28,10 @@ function CustomerDetail() {
   const customerId = String(useParams<{ customerId: string }>().customerId);
   const { state, dataSource } = useProduct();
   const { adminInvoiceList } = useOperations();
+  const user = useQuery(
+    api.users.getForAdmin,
+    dataSource === "convex" ? { userId: customerId as Id<"appUsers"> } : "skip",
+  );
   const profile = useQuery(
     api.customerProfiles.getForAdmin,
     dataSource === "convex" ? { userId: customerId as Id<"appUsers"> } : "skip",
@@ -41,7 +45,13 @@ function CustomerDetail() {
   const invoices = (adminInvoiceList?.page || []).filter((invoice) => String(invoice.customerUserId) === customerId);
   const customerExceptions = exceptions?.filter((exception) => String(exception.customerUserId) === customerId) || [];
 
-  if (profile === undefined || addresses === undefined || !adminInvoiceList || exceptions === undefined) {
+  if (
+    profile === undefined ||
+    user === undefined ||
+    addresses === undefined ||
+    !adminInvoiceList ||
+    exceptions === undefined
+  ) {
     return (
       <LoadingRegion label="Memuat detail pelanggan">
         <SkeletonCard />
@@ -50,7 +60,7 @@ function CustomerDetail() {
       </LoadingRegion>
     );
   }
-  const name = profile?.displayName || orders[0]?.customerName || "Pelanggan BFG";
+  const name = profile?.displayName || user.displayNameSnapshot || orders[0]?.customerName || "Pelanggan BFG";
   return (
     <div className="page admin-page">
       <PageHeader
@@ -78,6 +88,7 @@ function CustomerDetail() {
             <Card>
               <span className="card-kicker">Kontak</span>
               <h2>{name}</h2>
+              <p className="subtle">ID Blessfriend: {user.memberCode || "Belum tersedia"}</p>
               <p>
                 {profile?.phone || "Telepon belum diisi"}
                 <br />

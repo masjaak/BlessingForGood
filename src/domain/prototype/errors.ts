@@ -12,6 +12,10 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Katalog ini sudah ditutup.";
   }
   if (message.includes("BOOK_VARIANT_UNAVAILABLE")) return "Format yang dipilih sudah tidak tersedia.";
+  if (code === "READY_STOCK_UNAVAILABLE" || message.includes("READY_STOCK_UNAVAILABLE")) {
+    if (message.includes("Jumlah melebihi stok")) return "Jumlah melebihi stok.";
+    return "Stok baru saja habis.";
+  }
   if (message.includes("ORDER_LOCKED")) return "Pesanan sudah terkunci setelah katalog ditutup.";
   if (message.includes("ORDER_EMPTY")) return "Pilih minimal satu buku sebelum mengirim preorder.";
   if (code === "INVOICE_INVALID_STATE" || message.includes("INVOICE_INVALID_STATE")) {
@@ -33,5 +37,5 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Masukkan nominal deposit IDR yang valid.";
   }
   if (message.includes("SESSION")) return "Sesi tidak tersedia. Muat ulang halaman dan coba lagi.";
-  return message && !message.includes("[CONVEX") ? message : fallback;
+  return fallback;
 }

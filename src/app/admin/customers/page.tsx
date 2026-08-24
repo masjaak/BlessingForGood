@@ -41,6 +41,8 @@ function CustomerList() {
                     <tr key={customer.customerUserId}>
                       <td>
                         <strong>{customer.displayName}</strong>
+                        <br />
+                        <span className="subtle">{customer.memberCode || "Kode belum tersedia"}</span>
                       </td>
                       <td>{customer.email || "—"}</td>
                       <td>

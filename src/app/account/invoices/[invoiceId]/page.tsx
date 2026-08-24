@@ -30,8 +30,9 @@ import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
-import { uploadBfgFile } from "@/lib/upload-file";
+import { normalizeUploadMimeType, uploadBfgFile } from "@/lib/upload-file";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = useProduct();
@@ -275,7 +276,9 @@ function PaymentConfirmationForm({
     try {
       if (
         !proofFile ||
-        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(proofFile.type) ||
+        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
+          normalizeUploadMimeType(proofFile.type),
+        ) ||
         proofFile.size > 5_000_000
       )
         throw new Error("Bukti pembayaran tidak valid.");
@@ -287,7 +290,7 @@ function PaymentConfirmationForm({
         paidAt: paidAtTimestamp,
         proofStorageId: storageId,
         proofFileName: proofFile.name,
-        proofMimeType: proofFile.type,
+        proofMimeType: normalizeUploadMimeType(proofFile.type),
         customerNote: customerNote || undefined,
       });
       setAmount("");
@@ -296,7 +299,7 @@ function PaymentConfirmationForm({
       setCustomerNote("");
       setMessage("Konfirmasi pembayaran dikirim untuk ditinjau.");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Konfirmasi pembayaran belum dapat dikirim");
+      setError(productErrorMessage(reason, "Konfirmasi pembayaran belum dapat dikirim"));
     } finally {
       setIsSubmitting(false);
     }
