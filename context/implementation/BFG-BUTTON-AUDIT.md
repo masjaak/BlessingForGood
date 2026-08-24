@@ -1,8 +1,17 @@
 # BFG Global Button Audit
 
-Status: SOURCE + DETERMINISTIC QA COMPLETE; rendered authenticated QA remains
-an explicit release gate. Audited against the current fetched `origin/main`
-tree on 2026-08-22.
+Status: SOURCE + DETERMINISTIC QA COMPLETE; public/signed-out Production
+render QA complete; authenticated state-specific QA remains an explicit
+qualified gate. Audited against integrated source `f0eddc82` on 2026-08-24.
+
+## Production render evidence — 2026-08-24
+
+Vercel deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY` and canonical.
+Serial read-only browser checks passed `58/58` across representative customer
+`375/430/768/1440` and Admin `1024/1440` viewports, with no route/browser
+errors. The eight-viewport Activity fixture also passed. These checks prove the
+deployed shell and signed-out boundaries; they do not substitute for a real
+authenticated Admin/Customer record-state session.
 
 ## Inventory
 
@@ -65,7 +74,7 @@ family for these states:
 Actions remain conditionally visible by role, ownership, and server state; the
 visual audit does not broaden authority.
 
-## Known rendered-QA boundary
+## Historical local rendered-QA boundary
 
 The source and component contract are covered. A representative `customer-375`
 Playwright run reached the browser with a generated Clerk keyless development

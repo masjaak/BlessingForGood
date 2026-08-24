@@ -1,6 +1,6 @@
 # BFG SOURCE OF TRUTH
 
-Reconciled: 2026-08-22 (Asia/Jakarta)
+Reconciled: 2026-08-24 (Asia/Jakarta)
 Applies to the current `main` and the Phase 09 initial operations baseline; the
 canonical domain serves the latest READY Production deployment with Convex
 `clean-eel-522`.
@@ -25,6 +25,51 @@ media mutation remains blocked only by approved data. Cover presentation is
 additive metadata over the original storage object and is projected through all
 customer cover consumers. The entry gate is defined in
 [`BFG-PHASE-08-ENTRY-GATE.md`](implementation/BFG-PHASE-08-ENTRY-GATE.md).
+
+## Parallel-workstream reconciliation closure — 2026-08-24
+
+Git ancestry, not the parallel report snapshots, is the authority for this
+closure. The canonical tree was reconciled from button commit `5c9abeec`,
+security commit `88ec8737`, and Product Logic commit `1e155205`. The integrated
+source commit is `f0eddc82` with one shared `Button` family and one
+`ActionGroup`; Product Logic supplies business eligibility and action meaning,
+while security remains the server authority.
+
+Current release evidence:
+
+- `HEAD`, local `main`, and `origin/main` point to the integrated release; the
+  worktree is clean.
+- Full deterministic QA is green: Vitest `269/269`, Convex `136/136`, lint,
+  TypeScript, format, build, `npm audit --omit=dev` (`0` vulnerabilities),
+  `npm run convex:check` on the canonical deployment, and `git diff --check`.
+- Convex Production `clean-eel-522` accepted the integrated functions/schema.
+- Vercel deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY` and aliased
+  to `https://www.blessingforgood.com`; the last-hour warning/error log query
+  returned no logs.
+- Canonical Production emits CSP, HSTS, nosniff, Referrer-Policy,
+  Permissions-Policy, X-Frame-Options, and COOP. Serial read-only Playwright
+  checks passed `58/58` across representative customer `375/430/768/1440`
+  and Admin `1024/1440` surfaces. The populated Activity geometry fixture
+  passed all `375/390/430/768/834/1024/1280/1440` viewports.
+- No authorized authenticated Production session was available in this
+  worktree. Therefore Admin/Customer record-specific states, a real populated
+  Activity feed, a real no-invoice order, and Draft Book persistence remain
+  qualified rather than fabricated. Production invoice preview was attempted
+  read-only and returned `IDENTITY_REQUIRED`; legacy backfill was not run.
+
+Final status for this integration is therefore:
+
+```text
+BFG_APPLICATION_SECURITY: CLIENT_READY
+BFG_SECURITY_ASSURANCE: GREEN_EVIDENCE_WITH_PRECISE_QUALIFICATIONS
+BFG_GLOBAL_BUTTON_SYSTEM: DEPLOYED; AUTHENTICATED_RENDERED QA QUALIFIED
+BFG_PRODUCT_LOGIC_UAT: DEPLOYED; DETERMINISTIC GREEN; AUTHENTICATED UAT QUALIFIED
+```
+
+Recovery evidence is carried forward without strengthening the claim:
+manual Production backup, isolated restore, and File Storage restore are
+verified; operational RTO target is 30 minutes; RPO is manual/not guaranteed;
+automatic backup cadence is not evidenced.
 
 ## Phase 09.1 Production Assurance — 2026-08-22
 
@@ -106,10 +151,10 @@ short `BFG-INV-YYMMDD-XXXX` family without changing Convex identity; and Master
 Book Save must persist and report success/error while remaining separate from
 explicit Publish.
 
-Production deployment, legacy-reference backfill, and authenticated live
-recheck remain separate evidence gates until the canonical Convex account and
-authorized Production operator are verified. No Production data is fabricated
-for this pass.
+Production deployment is now complete on the canonical Convex/Vercel targets.
+Legacy-reference backfill and authenticated live recheck remain separate
+qualified gates because the current operator session cannot authorize them.
+No Production data is fabricated for this pass.
 
 ## Product Purpose
 

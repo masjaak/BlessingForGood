@@ -1,8 +1,36 @@
 # BFG PRODUCTION ASSURANCE MATRIX
 
-Status: `PHASE_09_2_FINAL_ASSURANCE` · evidence date 2026-08-22.
+Status: `PHASE_09_2_FINAL_ASSURANCE` · reconciled evidence date 2026-08-24.
 This matrix separates source/test evidence, safe Production observations, and
 platform/account blockers.
+
+## Reconciliation closure evidence — 2026-08-24
+
+Security is preserved through integrated source `f0eddc82`, which is descended
+through the Product Logic merge from the verified Security closure and retains
+upload magic-byte/MIME/dimension validation, storage ownership, rate limits,
+security headers, Clerk/RBAC/ownership isolation, Secret Catalog protections,
+and credential-safe environment handling.
+
+Convex Production `clean-eel-522` accepted the integrated functions/schema.
+Vercel deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY` on the
+canonical aliases. A canonical header probe returned CSP, HSTS, nosniff,
+Referrer-Policy, Permissions-Policy, X-Frame-Options, and COOP. The serial
+read-only Production browser matrix passed `58/58`; Vercel's last-hour
+warning/error query returned no logs.
+
+The final security labels remain:
+
+```text
+BFG_APPLICATION_SECURITY: CLIENT_READY
+BFG_SECURITY_ASSURANCE: GREEN_EVIDENCE_WITH_PRECISE_QUALIFICATIONS
+```
+
+The live invoice-reference preview was read-only and returned
+`IDENTITY_REQUIRED`; no financial backfill was run. Recovery remains precisely
+qualified: manual backup, isolated restore, and File Storage restore verified;
+RTO target 30 minutes; RPO manual/not guaranteed; automatic backup not
+evidenced.
 
 | Category                           | Result                              | Evidence                                                                                                                                                     | Residual / next action                                                                                    |
 | ---------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |

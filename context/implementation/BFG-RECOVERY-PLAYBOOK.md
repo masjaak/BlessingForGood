@@ -5,6 +5,15 @@ Owner: BFG Owner/Admin
 Canonical services: Vercel `masjaaks-projects/blessing-for-good`; Convex
 Development `content-snake-214`; Convex Production `clean-eel-522`
 
+## Reconciled carry-forward — 2026-08-24
+
+The UI/business integration does not reopen or rerun the verified recovery
+drill. Carry forward the exact evidence: manual Production backup verified,
+isolated restore verified, File Storage restore verified, operational RTO
+target 30 minutes, and `RPO: MANUAL / NOT GUARANTEED`. Automatic backup cadence
+is not evidenced. No restore or Production data mutation was attempted during
+this reconciliation.
+
 ## Recovery Principles
 
 - Protect people and data before restoring availability.

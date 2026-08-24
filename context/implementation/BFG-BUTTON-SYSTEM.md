@@ -1,6 +1,8 @@
 # BFG Button Design System
 
-Status: ACTIVE — canonical customer + admin interaction contract, 2026-08-22.
+Status: DEPLOYED — canonical customer + admin interaction contract; source and
+deterministic QA green, public/signed-out Production render green, and
+authenticated state-specific Production QA qualified, 2026-08-24.
 
 Source of truth:
 
@@ -8,6 +10,19 @@ Source of truth:
 - Visual tokens and states: the final `BFG global button system` block in
   `src/app/globals.css`
 - Source inventory and route matrix: `BFG-BUTTON-AUDIT.md`
+
+## Reconciliation evidence — 2026-08-24
+
+The integrated source is `f0eddc82`. It contains one Button family, one
+ActionGroup implementation, zero raw buttons outside the primitive, and zero
+legacy `quiet` variants. Convex `clean-eel-522` and Vercel Production are
+deployed. Serial read-only Production checks passed `58/58` across customer
+`375/430/768/1440` and Admin `1024/1440` surfaces; the Activity populated
+geometry fixture passed all eight supported viewport sizes.
+
+This does not claim authenticated Admin/Customer record-state screenshots:
+the current worktree has no authorized Clerk session. The required states
+remain a qualified gate for a supported authenticated Production session.
 
 ## Principles
 

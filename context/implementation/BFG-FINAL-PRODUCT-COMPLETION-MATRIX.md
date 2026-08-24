@@ -12,6 +12,15 @@ The post-closure visual stabilization addendum is intentionally limited to the
 four verified Production findings. Existing green domains and the homepage
 section order remain unchanged.
 
+## Parallel-workstream maintenance closure — 2026-08-24
+
+Source `f0eddc82` is the canonical integration of Security, the global Button
+system, and Product Logic. Convex `clean-eel-522` and Vercel Production are
+deployed; deterministic regression is green; serial read-only Production
+surface checks are green. The maintenance rows below remain qualified where a
+real authenticated record or operator session was unavailable. No financial,
+inventory, catalog, Batch, upload, or Book mutation was fabricated.
+
 | Requirement / capability | Classification | Current evidence / remaining gate |
 | --- | --- | --- |
 | 01 Content purpose | `GREEN_REAL_PRODUCTION` | Existing authenticated Production evidence; preserve bounded Content scope. |
@@ -95,14 +104,15 @@ it does not reopen Phase 08 or create a new feature phase.
 
 | Contract | Local status | Production status |
 | --- | --- | --- |
-| New Order → Invoice next action | `GREEN_DETERMINISTIC` — state-driven Order detail CTA reuses Finance flow | `NOT_RECHECKED` |
-| Shared Activity unread/read presentation | `GREEN_DETERMINISTIC` — one component, semantic marker, responsive CSS | `NOT_RECHECKED` |
-| Conditional button spacing/affordance | `GREEN_DETERMINISTIC` — shared ActionGroup | `NOT_RECHECKED` |
-| Human invoice references | `GREEN_DETERMINISTIC` — server generator, search, safe idempotent backfill | `NOT DEPLOYED / BACKFILL NOT RUN` |
-| Master Book Save persistence/feedback | `GREEN_DETERMINISTIC` — query-after-save, Draft preservation, explicit Publish | `NOT_RECHECKED` |
-| Ready Stock direct flow | `GREEN_DETERMINISTIC` — atomic reservation and no Batch path | `PRESERVED; no new Production mutation` |
-| Secret Catalog multi-Publisher/multi-title PO | `GREEN_DETERMINISTIC` — scoped customer access and preorder | `NOT RECHECKED` |
-| Multi-Publisher Batch/shared deadline | `GREEN_DETERMINISTIC` — roster/Summary/lock and mismatch rejection | `NOT RECHECKED` |
+| New Order → Invoice next action | `GREEN_DETERMINISTIC` — state-driven Order detail CTA reuses Finance flow | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — no authenticated no-invoice order available` |
+| Shared Activity unread/read presentation | `GREEN_DETERMINISTIC` — one component, semantic marker, responsive CSS | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — signed-out route and eight-viewport fixture pass; populated feed not rechecked` |
+| Conditional button spacing/affordance | `GREEN_DETERMINISTIC` — shared ActionGroup | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — authenticated state matrix qualified` |
+| Human invoice references | `GREEN_DETERMINISTIC` — server generator, search, safe idempotent backfill | `DEPLOYED; preview returned IDENTITY_REQUIRED; backfill not run` |
+| Master Book Save persistence/feedback | `GREEN_DETERMINISTIC` — query-after-save, Draft preservation, explicit Publish | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — no safe authenticated Draft available` |
+| Ready Stock direct flow | `GREEN_DETERMINISTIC` — atomic reservation and no Batch path | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — no new Production mutation` |
+| Secret Catalog multi-Publisher/multi-title PO | `GREEN_DETERMINISTIC` — scoped customer access and preorder | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — no safe real data mutation` |
+| Multi-Publisher Batch/shared deadline | `GREEN_DETERMINISTIC` — roster/Summary/lock and mismatch rejection | `DEPLOYED; GREEN_DETERMINISTIC_NO_SAFE_REAL_DATA — no safe editable Batch available` |
 
-The current overall status is therefore **LOCAL MAINTENANCE GREEN; PRODUCTION
-RECHECK PENDING VERIFIED CANONICAL ACCESS**, not a fabricated Production green.
+The current overall status is therefore **CANONICAL DEPLOYED; DETERMINISTIC
+MAINTENANCE GREEN; AUTHENTICATED PRODUCTION DATA UAT QUALIFIED**, not a
+fabricated Production green.
