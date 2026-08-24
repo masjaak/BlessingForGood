@@ -23,8 +23,8 @@ Evidence:
   `npm audit --omit=dev` (`0` vulnerabilities), `npm run convex:check`, and
   `git diff --check` pass.
 - Convex Production `clean-eel-522` deployed successfully.
-- Vercel Production deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY`
-  on `https://www.blessingforgood.com`; no Vercel logs were returned for the
+- The latest Vercel Production deployment is `READY` on
+  `https://www.blessingforgood.com`; no Vercel logs were returned for the
   last-hour warning/error query.
 - Read-only Production browser checks passed `58/58` serial checks across
   customer `375/430/768/1440` and Admin `1024/1440`; Activity fixture geometry

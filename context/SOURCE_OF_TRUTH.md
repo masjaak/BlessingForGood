@@ -43,8 +43,8 @@ Current release evidence:
   TypeScript, format, build, `npm audit --omit=dev` (`0` vulnerabilities),
   `npm run convex:check` on the canonical deployment, and `git diff --check`.
 - Convex Production `clean-eel-522` accepted the integrated functions/schema.
-- Vercel deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY` and aliased
-  to `https://www.blessingforgood.com`; the last-hour warning/error log query
+- The latest Vercel Production deployment is `READY` and aliased to
+  `https://www.blessingforgood.com`; its last-hour warning/error log query
   returned no logs.
 - Canonical Production emits CSP, HSTS, nosniff, Referrer-Policy,
   Permissions-Policy, X-Frame-Options, and COOP. Serial read-only Playwright

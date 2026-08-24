@@ -13,8 +13,8 @@ security headers, Clerk/RBAC/ownership isolation, Secret Catalog protections,
 and credential-safe environment handling.
 
 Convex Production `clean-eel-522` accepted the integrated functions/schema.
-Vercel deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY` on the
-canonical aliases. A canonical header probe returned CSP, HSTS, nosniff,
+The latest Vercel Production deployment is `READY` on the canonical aliases.
+A canonical header probe returned CSP, HSTS, nosniff,
 Referrer-Policy, Permissions-Policy, X-Frame-Options, and COOP. The serial
 read-only Production browser matrix passed `58/58`; Vercel's last-hour
 warning/error query returned no logs.

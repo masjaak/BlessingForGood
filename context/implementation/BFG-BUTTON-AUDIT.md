@@ -6,7 +6,7 @@ qualified gate. Audited against integrated source `f0eddc82` on 2026-08-24.
 
 ## Production render evidence — 2026-08-24
 
-Vercel deployment `dpl_ErxJko7DFMLEj8aEGmeVRiLY6f7i` is `READY` and canonical.
+The latest Vercel Production deployment is `READY` and canonical.
 Serial read-only browser checks passed `58/58` across representative customer
 `375/430/768/1440` and Admin `1024/1440` viewports, with no route/browser
 errors. The eight-viewport Activity fixture also passed. These checks prove the
