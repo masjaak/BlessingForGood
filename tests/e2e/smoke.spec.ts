@@ -165,7 +165,7 @@ test.describe("@customer BFG customer route smoke", () => {
   }
 
   test("signed-out navigation shows customer states before authentication", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     const links = await page
       .getByRole("navigation", {
         name: (page.viewportSize()?.width || 0) <= 800 ? "Navigasi pelanggan" : "Navigasi utama",
@@ -224,7 +224,7 @@ test.describe("@customer BFG customer route smoke", () => {
   });
 
   test("blocks public sign-up while keeping the route available for invitations", async ({ page }) => {
-    await page.goto("/sign-up", { waitUntil: "networkidle" });
+    await page.goto("/sign-up", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByText(/create account|buat akun|sign up/i)).toHaveCount(0);
   });
