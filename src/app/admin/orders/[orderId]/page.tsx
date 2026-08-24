@@ -9,6 +9,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
+  ActionGroup,
   Button,
   Card,
   EmptyState,
@@ -25,6 +26,8 @@ import { orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
+import { invoiceStatusLabel } from "@/domain/prototype/operations";
 
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
@@ -34,14 +37,12 @@ function AdminOrderDetail() {
     api.orderExceptions.listForOrderAdmin,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
   );
-  const {
-    batchList,
-    currentAdminOrderTracking,
-    currentAdminFulfillment,
-    adminInvoiceList,
-    assignOrderItem,
-    updateFulfillmentStage,
-  } = useOperations();
+  const { batchList, currentAdminOrderTracking, currentAdminFulfillment, assignOrderItem, updateFulfillmentStage } =
+    useOperations();
+  const adminOrderInvoice = useQuery(
+    api.invoices.getForOrderAdmin,
+    dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
+  );
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const order = state.orders.find((candidate) => candidate.id === orderId);
@@ -51,7 +52,8 @@ function AdminOrderDetail() {
     adminExceptions === undefined ||
     currentAdminOrderTracking === undefined ||
     currentAdminFulfillment === undefined ||
-    batchList === undefined
+    batchList === undefined ||
+    adminOrderInvoice === undefined
   ) {
     return (
       <LoadingRegion label="Memuat operasi pesanan">
@@ -73,7 +75,7 @@ function AdminOrderDetail() {
     (batch) =>
       !batch.isArchived && !batch.rosterLocked && batch.catalogLinks.some((link) => link.catalogId === order.catalogId),
   );
-  const invoice = adminInvoiceList?.page.find((candidate) => candidate.orderId === orderId);
+  const invoice = adminOrderInvoice;
   const currentIndex = currentAdminFulfillment.currentStage
     ? fulfillmentStages.indexOf(currentAdminFulfillment.currentStage)
     : -1;
@@ -131,11 +133,30 @@ function AdminOrderDetail() {
               </div>
             ))}
             {invoice ? (
-              <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
-                Buka {invoice.invoiceNumber}
-              </LinkButton>
+              <>
+                <div className="summary-line">
+                  <span>Status invoice</span>
+                  <strong>{invoiceStatusLabel(invoice.status)}</strong>
+                </div>
+                <div className="summary-line">
+                  <span>Sisa tagihan</span>
+                  <Money amount={invoice.outstandingAmount} />
+                </div>
+                <ActionGroup>
+                  <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
+                    Buka {invoiceReference(invoice.invoiceNumber)}
+                  </LinkButton>
+                </ActionGroup>
+              </>
             ) : (
-              <p className="subtle">Belum ada invoice untuk pesanan ini.</p>
+              <div className="action-region">
+                <p className="subtle">Belum ada invoice untuk pesanan ini.</p>
+                <ActionGroup>
+                  <LinkButton href={`/admin/invoices?orderId=${orderId}`} variant="primary">
+                    Terbitkan invoice
+                  </LinkButton>
+                </ActionGroup>
+              </div>
             )}
           </Card>
 

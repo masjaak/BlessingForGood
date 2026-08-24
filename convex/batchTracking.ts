@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { getBatchSummary } from "./batches";
+import { assertBatchCatalogDeadline, getBatchSummary } from "./batches";
 import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { canTransitionShipment } from "./lib/shipmentTransitions";
@@ -10,6 +10,7 @@ import { fail } from "./lib/errors";
 import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { positiveQuantity } from "./lib/validation";
 import { notifyUser } from "./lib/notifications";
+import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -97,6 +98,9 @@ export const assignOrderItem = mutation({
     requireEditableBatch(batch);
     if (order.status !== "submitted") fail("BATCH_ASSIGNMENT_INVALID", "only submitted orders can join a roster");
     if (!(await linkedCatalog(ctx, order.catalogId, args.batchId))) fail("BATCH_CATALOG_MISMATCH");
+    const catalog = await ctx.db.get(order.catalogId);
+    if (!catalog) fail("BATCH_CATALOG_MISMATCH");
+    assertBatchCatalogDeadline(batch, catalog);
     const assignments = await ctx.db
       .query("orderItemBatchAssignments")
       .withIndex("by_order_item", (index) => index.eq("orderItemId", args.orderItemId))
@@ -190,6 +194,10 @@ export const moveOrderItem = mutation({
     ) {
       fail("BATCH_CATALOG_MISMATCH");
     }
+    const catalog = await ctx.db.get(order.catalogId);
+    if (!catalog) fail("BATCH_CATALOG_MISMATCH");
+    assertBatchCatalogDeadline(fromBatch, catalog);
+    assertBatchCatalogDeadline(toBatch, catalog);
     const source = await assignmentForBatch(ctx, args.orderItemId, args.fromBatchId);
     if (!source) fail("BATCH_ASSIGNMENT_NOT_FOUND");
     if (await assignmentForBatch(ctx, args.orderItemId, args.toBatchId)) {
@@ -345,6 +353,37 @@ export const getMine = query({
 async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"appUsers">) {
   const batch = await ctx.db.get(batchId);
   if (!batch) return null;
+  const links = await ctx.db
+    .query("catalogBatchLinks")
+    .withIndex("by_batch", (index) => index.eq("batchId", batchId))
+    .take(200);
+  const availableItems = [];
+  for (const link of links) {
+    const grants = await ctx.db
+      .query("catalogAccessGrants")
+      .withIndex("by_app_user_id_and_catalog_id", (index) =>
+        index.eq("appUserId", userId).eq("catalogId", link.catalogId),
+      )
+      .take(50);
+    const grant = grants.find((candidate) => !candidate.revokedAt && candidate.expiresAt > Date.now());
+    if (!grant || !(await catalogIsOpen(ctx, link.catalogId))) {
+      continue;
+    }
+    const catalog = await getCatalogView(ctx, link.catalogId);
+    for (const book of catalog.books) {
+      availableItems.push({
+        catalogId: catalog.id,
+        catalogName: catalog.name,
+        bookId: book.id,
+        title: book.title,
+        publisher: book.publisher,
+        variants: book.variants.map((variant) => ({
+          format: variant.format,
+          price: variant.price,
+        })),
+      });
+    }
+  }
   const assignments = await ctx.db
     .query("orderItemBatchAssignments")
     .withIndex("by_batch", (index) => index.eq("batchId", batchId))
@@ -365,7 +404,7 @@ async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"
       }),
     )
   ).filter((item) => item !== null);
-  if (!owned.length) return null;
+  if (!owned.length && !availableItems.length) return null;
   return {
     batchId: batch._id,
     name: batch.name,
@@ -375,6 +414,7 @@ async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"
     currentShipmentStage: batch.currentShipmentStage ?? null,
     updatedAt: batch.updatedAt,
     items: owned,
+    availableItems,
     history: await historyView(ctx, batch._id),
   };
 }
@@ -384,8 +424,20 @@ export const listMine = query({
   handler: async (ctx) => {
     const user = await requireActiveUser(ctx);
     const assignments = await ctx.db.query("orderItemBatchAssignments").take(500);
-    const batchIds = [...new Set(assignments.map((item) => item.batchId))];
-    return (await Promise.all(batchIds.map((batchId) => batchMineView(ctx, batchId, user._id)))).filter(
+    const batchIds = new Set(assignments.map((item) => item.batchId));
+    const grants = await ctx.db
+      .query("catalogAccessGrants")
+      .withIndex("by_app_user_id", (index) => index.eq("appUserId", user._id))
+      .take(200);
+    for (const grant of grants) {
+      if (grant.revokedAt || grant.expiresAt <= Date.now() || !(await catalogIsOpen(ctx, grant.catalogId))) continue;
+      const links = await ctx.db
+        .query("catalogBatchLinks")
+        .withIndex("by_catalog", (index) => index.eq("catalogId", grant.catalogId))
+        .take(200);
+      for (const link of links) batchIds.add(link.batchId);
+    }
+    return (await Promise.all([...batchIds].map((batchId) => batchMineView(ctx, batchId, user._id)))).filter(
       (batch) => batch !== null,
     );
   },

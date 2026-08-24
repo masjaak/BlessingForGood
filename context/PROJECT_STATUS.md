@@ -1,5 +1,24 @@
 # BFG Project Status
 
+## Current maintenance correction pass — 2026-08-22
+
+The latest authenticated Admin evidence supersedes prior green snapshots for
+five operational defects: Order → Invoice guidance, unread Activity clarity,
+conditional action spacing/affordance, long human invoice references, and
+Master Book save persistence/feedback. The current local implementation is
+being verified from `91634b4` plus an uncommitted maintenance diff; no reset,
+checkout, rebase, or security-work discard is permitted.
+
+The current client commerce contract is also locked: Ready Stock is direct
+stock-backed purchase; Secret Catalog is private PO/preorder and may contain
+many publishers/titles; Batch PO is multi-publisher and groups by shared close
+date; Publisher is not Batch identity; customer Batch projection remains
+access-controlled.
+
+Production deployment, legacy invoice backfill, and authenticated live
+recheck are not claimed in this pass because no verified canonical Convex
+account/deployment credentials are configured in the current local state.
+
 ## Current Anchored Summary — 2026-08-22
 
 **Phase 07.1:** `BFG_PHASE_07_1_PRODUCT_SURFACE_STABILIZED` — `CLOSED + RECONCILED`

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
@@ -51,7 +52,7 @@ function PersistentCustomerInvoices() {
             <Card key={invoice.invoiceId}>
               <div className="split-heading">
                 <div>
-                  <span className="card-kicker">{invoice.invoiceNumber}</span>
+                  <span className="card-kicker">{invoiceReference(invoice.invoiceNumber)}</span>
                   <h2>{formatIdr(invoice.totalAmount)}</h2>
                   <span className="subtle">{invoice.customerName}</span>
                 </div>

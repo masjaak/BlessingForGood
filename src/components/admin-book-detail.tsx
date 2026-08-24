@@ -10,6 +10,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
 import {
+  ActionGroup,
   Button,
   Card,
   Field,
@@ -132,6 +133,7 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [isbn, setIsbn] = useState("");
   const [price, setPrice] = useState("");
   const [bookMessage, setBookMessage] = useState("");
+  const [bookError, setBookError] = useState("");
   const [variantMessage, setVariantMessage] = useState("");
   const [coverMessage, setCoverMessage] = useState("");
   const [coverError, setCoverError] = useState("");
@@ -144,27 +146,52 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [previewUrl, setPreviewUrl] = useState(book.externalPreviewUrl || "");
   const [previewMessage, setPreviewMessage] = useState("");
   const [previewError, setPreviewError] = useState("");
-  const [pendingAction, setPendingAction] = useState<"book" | "variant" | "cover" | "gallery" | "preview" | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "book" | "publish" | "variant" | "cover" | "gallery" | "preview" | null
+  >(null);
   const { getToken } = useAuth();
+
+  function bookInput(nextPublicationStatus?: PublicationStatus) {
+    return {
+      bookId: book._id,
+      publisherId,
+      title,
+      slug,
+      author,
+      description,
+      categories: categories.split(","),
+      publicationStatus: nextPublicationStatus,
+    };
+  }
 
   async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBookMessage("");
+    setBookError("");
     setPendingAction("book");
     try {
-      await updateBook({
-        bookId: book._id,
-        publisherId,
-        title,
-        slug,
-        author,
-        description,
-        categories: categories.split(","),
-        publicationStatus,
-      });
-      setBookMessage("Master Buku tersimpan.");
+      await updateBook(bookInput(publicationStatus === "published" ? undefined : publicationStatus));
+      const savedStatus = publicationStatus === "published" ? book.publicationStatus : publicationStatus;
+      setBookMessage(
+        savedStatus === "draft" ? "✓ Perubahan tersimpan. Tersimpan sebagai draf." : "✓ Perubahan tersimpan.",
+      );
     } catch {
-      setBookMessage("Master Buku tidak dapat disimpan.");
+      setBookError("Perubahan belum tersimpan. Periksa isian lalu coba lagi.");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function publishBook() {
+    setBookMessage("");
+    setBookError("");
+    setPendingAction("publish");
+    try {
+      await updateBook(bookInput("published"));
+      setPublicationStatus("published");
+      setBookMessage("✓ Buku diterbitkan.");
+    } catch {
+      setBookError("Buku belum diterbitkan. Periksa isian wajib lalu coba lagi.");
     } finally {
       setPendingAction(null);
     }
@@ -367,8 +394,8 @@ function BookEditor({ book }: { book: AdminBook }) {
                       value={publicationStatus}
                       onChange={(event) => setPublicationStatus(event.target.value as PublicationStatus)}
                     >
+                      {book.publicationStatus === "published" ? <option value="published">Terbit</option> : null}
                       <option value="draft">Draf</option>
-                      <option value="published">Terbit</option>
                       <option value="special">Khusus / privat</option>
                       <option value="archived">Diarsipkan</option>
                     </BFGSelect>
@@ -568,11 +595,35 @@ function BookEditor({ book }: { book: AdminBook }) {
                   />
                 </Field>
               </section>
-              <Button type="submit" loading={pendingAction === "book"} loadingLabel="Menyimpan…">
-                Simpan Master Buku
-              </Button>
+              <ActionGroup variant="responsive">
+                <Button
+                  type="submit"
+                  loading={pendingAction === "book"}
+                  disabled={pendingAction !== null}
+                  loadingLabel="Menyimpan…"
+                >
+                  Simpan Master Buku
+                </Button>
+                {book.publicationStatus !== "published" && book.publicationStatus !== "archived" ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={pendingAction === "publish"}
+                    disabled={pendingAction !== null}
+                    loadingLabel="Menerbitkan…"
+                    onClick={() => void publishBook()}
+                  >
+                    Terbitkan buku
+                  </Button>
+                ) : null}
+              </ActionGroup>
+              {bookError ? (
+                <p className="error-text" role="alert">
+                  {bookError}
+                </p>
+              ) : null}
               {bookMessage ? (
-                <p className="subtle" role="status">
+                <p className="success-banner" role="status">
                   {bookMessage}
                 </p>
               ) : null}
@@ -649,7 +700,7 @@ function ConnectedAdminBookDetail({ bookId }: { bookId: Id<"books"> }) {
     );
   }
   if (!book) return <div className="state-panel">Buku tidak ditemukan.</div>;
-  return <BookEditor book={book} key={book.updatedAt} />;
+  return <BookEditor book={book} />;
 }
 
 export function AdminBookDetail({ bookId }: { bookId: string }) {

@@ -639,8 +639,36 @@ p {
   text-align: center;
 }
 .activity-card.is-unread {
-  border-color: var(--color-brand-peach);
+  border-color: var(--color-button-secondary-border);
+  background: var(--color-button-secondary-surface);
   box-shadow: inset 4px 0 var(--color-brand-primary);
+}
+.activity-card.is-unread .activity-title-unread {
+  font-weight: 800;
+}
+.activity-type-group {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.activity-unread-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-brand-primary-strong);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.activity-unread-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--color-brand-primary);
 }
 .admin-cover-editor {
   display: grid;
@@ -6424,13 +6452,14 @@ p {
   gap: var(--button-inline-gap);
 }
 
-.action-group-vertical {
-  align-items: stretch;
-  flex-direction: column;
+.action-group-stacked {
+  display: grid;
+  justify-items: start;
+  gap: var(--button-stack-gap);
 }
 
-.action-group-vertical > .button {
-  width: 100%;
+.action-group > .action-support {
+  margin: 0;
 }
 
 .action-group + .subtle,
@@ -6533,6 +6562,16 @@ p {
     min-height: var(--button-height-default);
   }
 
+  .action-group-responsive {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .action-group-responsive > .button,
+  .action-group-responsive > a.button {
+    width: 100%;
+  }
+
   .action-group,
   .actions,
   .form-actions,
@@ -6541,7 +6580,7 @@ p {
     gap: var(--button-stack-gap);
   }
 
-  .action-group:not(.action-group-vertical) > .button,
+  .action-group:not(.action-group-stacked) > .button,
   .actions > .button,
   .form-actions > .button,
   .page-header-actions > .button,

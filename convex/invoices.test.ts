@@ -21,7 +21,7 @@ describe("BFG invoice persistence", () => {
 
   it("creates exact invoice snapshots", async () => {
     const t = testConvex();
-    const { admin, order } = await createOrder(t);
+    const { admin, customer, order } = await createOrder(t);
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,
       depositRequirementMode: "percentage",
@@ -29,7 +29,7 @@ describe("BFG invoice persistence", () => {
     });
     expect(invoice).toMatchObject({
       status: "draft",
-      invoiceNumber: expect.stringMatching(/^BFG-\d{6}-.+$/),
+      invoiceNumber: expect.stringMatching(/^BFG-INV-\d{6}-[0-9A-Z]{4}$/),
       totalAmount: 250000,
       depositRequiredAmount: 83325,
       allocatedDepositAmount: 0,
@@ -37,6 +37,20 @@ describe("BFG invoice persistence", () => {
     });
     expect(invoice.items[0]).toMatchObject({ quantity: 2, subtotalAmount: 250000 });
     expect(invoice.items[0]).not.toHaveProperty("orderItemId");
+    expect(await admin.query(api.invoices.getForOrderAdmin, { orderId: order.orderId })).toMatchObject({
+      invoiceId: invoice.invoiceId,
+      invoiceNumber: invoice.invoiceNumber,
+    });
+    expect(await admin.query(api.invoices.getByInvoiceNumberForAdmin, { invoiceNumber: invoice.invoiceNumber })).toMatchObject({
+      invoiceId: invoice.invoiceId,
+      invoiceNumber: invoice.invoiceNumber,
+    });
+    await expect(
+      customer.query(api.invoices.getByInvoiceNumberForAdmin, { invoiceNumber: invoice.invoiceNumber }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(customer.query(api.invoices.getForOrderAdmin, { orderId: order.orderId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
   });
 
   it("rejects duplicate active invoices, issues, voids, and preserves records", async () => {
@@ -63,6 +77,59 @@ describe("BFG invoice persistence", () => {
     expect(replacement.invoiceId).not.toBe(invoice.invoiceId);
     const all = await admin.query(api.invoices.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } });
     expect(all.page).toHaveLength(2);
+  });
+
+  it("keeps concurrent invoice creation to one non-void record", async () => {
+    const t = testConvex();
+    const { admin, order } = await createOrder(t);
+    const attempts = await Promise.allSettled(
+      ["none", "none"].map(() =>
+        admin.mutation(api.invoices.create, { orderId: order.orderId, depositRequirementMode: "none" }),
+      ),
+    );
+    expect(attempts.filter((attempt) => attempt.status === "fulfilled")).toHaveLength(1);
+    const invoices = await t.run((ctx) =>
+      ctx.db
+        .query("invoices")
+        .withIndex("by_order", (index) => index.eq("orderId", order.orderId))
+        .collect(),
+    );
+    expect(invoices.filter((invoice) => invoice.status !== "void")).toHaveLength(1);
+  });
+
+  it("backfills legacy invoice references without changing invoice identity or money", async () => {
+    const t = testConvex();
+    const { admin, order } = await createOrder(t);
+    const invoice = await admin.mutation(api.invoices.create, {
+      orderId: order.orderId,
+      depositRequirementMode: "none",
+    });
+    const before = await t.run((ctx) => ctx.db.get(invoice.invoiceId));
+    if (!before) throw new Error("invoice fixture missing");
+    await t.run((ctx) =>
+      ctx.db.patch(invoice.invoiceId, {
+        invoiceNumber: "BFG-202608-M57DDNVBVGBFGNQQANT68X3B018CYTE5",
+      }),
+    );
+
+    const preview = await admin.query(api.invoices.previewLegacyReferences, { limit: 10 });
+    expect(preview.legacyCount).toBe(1);
+    expect(preview.canonicalCount).toBe(0);
+    expect(preview.collisions).toBe(0);
+
+    const result = await admin.mutation(api.invoices.backfillLegacyReferences, { limit: 10 });
+    expect(result.updated).toBe(1);
+    const migrated = await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId });
+    expect(migrated.invoiceNumber).toMatch(/^BFG-INV-\d{6}-[0-9A-Z]{4}$/);
+    expect(migrated.invoiceId).toBe(invoice.invoiceId);
+    expect(migrated.totalAmount).toBe(before.totalAmount);
+    expect(migrated.status).toBe(before.status);
+
+    const rerun = await admin.mutation(api.invoices.backfillLegacyReferences, { limit: 10 });
+    expect(rerun.updated).toBe(0);
+    expect((await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).invoiceNumber).toBe(
+      migrated.invoiceNumber,
+    );
   });
 
   it("validates requirement bounds and protects customer invoices", async () => {

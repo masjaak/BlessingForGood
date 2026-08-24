@@ -79,6 +79,12 @@ describe("BFG Phase 06.7 business policy closure", () => {
     expect([first.status, second.status].filter((status) => status === "fulfilled")).toHaveLength(1);
     const order = first.status === "fulfilled" ? first.value : second.status === "fulfilled" ? second.value : null;
     expect(order).toMatchObject({ source: "ready_stock", catalogId: null, totalAmount: 125000 });
+    const invoice = await admin.mutation(api.invoices.create, {
+      orderId: order!.orderId,
+      depositRequirementMode: "none",
+    });
+    expect(invoice.invoiceNumber).toMatch(/^BFG-INV-\d{6}-[0-9A-Z]{4}$/);
+    await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
     expect((await t.query(api.readyStock.list, {})).items).toEqual([]);
     const reservations = await t.run((ctx) => ctx.db.query("readyStockReservations").collect());
     expect(reservations).toHaveLength(1);

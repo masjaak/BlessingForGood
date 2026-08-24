@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
+  ActionGroup,
   Button,
   Card,
   EmptyState,
@@ -23,6 +24,7 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 export function invoiceVoidBlockReason({
   allocatedDepositAmount,
@@ -103,7 +105,7 @@ function AdminInvoiceDetail() {
     <div className="page admin-page">
       <PageHeader
         eyebrow="Operasi invoice"
-        title={currentAdminInvoice.invoiceNumber}
+        title={invoiceReference(currentAdminInvoice.invoiceNumber)}
         description={`${currentAdminInvoice.customerName} · ${currentAdminInvoice.orderCode || `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}`}
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
@@ -169,7 +171,7 @@ function AdminInvoiceDetail() {
               <LinkButton href="/admin/payments" variant="secondary">
                 Tinjau konfirmasi pembayaran
               </LinkButton>
-              <div className="form-actions">
+              <ActionGroup variant="responsive">
                 {currentAdminInvoice.status === "draft" ? (
                   <Button
                     type="button"
@@ -192,7 +194,7 @@ function AdminInvoiceDetail() {
                     Batalkan invoice
                   </Button>
                 ) : null}
-              </div>
+              </ActionGroup>
               {voidBlockReason ? <span className="subtle action-support">{voidBlockReason}</span> : null}
             </div>
           </Card>

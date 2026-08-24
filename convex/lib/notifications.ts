@@ -26,6 +26,10 @@ function safeDestination(destination: string) {
   return destination.startsWith("/") && !destination.startsWith("//") ? destination : "/";
 }
 
+function safeActivityDescription(body: string): string {
+  return body.replace(/BFG-\d{6}-[A-Z0-9]{16,}/gi, "referensi invoice lama");
+}
+
 export function projectActivity(notices: Doc<"notifications">[]): ActivityItem[] {
   return notices
     .map((notice) => ({
@@ -33,7 +37,7 @@ export function projectActivity(notices: Doc<"notifications">[]): ActivityItem[]
       type: (notice.surface === "notification" ? "system" : "message") as ActivityItem["type"],
       timestamp: notice.createdAt,
       title: notice.title,
-      description: notice.body,
+      description: safeActivityDescription(notice.body),
       readAt: notice.readAt ?? null,
       destination: safeDestination(notice.destination),
       sourceId: notice._id,

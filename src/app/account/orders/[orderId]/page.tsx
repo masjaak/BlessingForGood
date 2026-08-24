@@ -20,6 +20,7 @@ import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
 import { orderReference } from "@/domain/prototype/order-reference";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function Timeline({
   history,
@@ -103,7 +104,7 @@ function CustomerOrderDetail() {
           ))}
           {invoice ? (
             <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">
-              Lihat {invoice.invoiceNumber}
+              Lihat {invoiceReference(invoice.invoiceNumber)}
             </LinkButton>
           ) : (
             <p className="subtle">Invoice belum diterbitkan.</p>

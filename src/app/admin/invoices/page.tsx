@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
+  ActionGroup,
   Button,
   Card,
   EmptyState,
@@ -23,6 +26,7 @@ import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototyp
 import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 export function PersistentRequirementForm({ orderId }: { orderId: string }) {
   const { createInvoice, issueInvoice } = useOperations();
@@ -95,35 +99,37 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
           />
         </Field>
       ) : null}
-      <Button
-        type="submit"
-        variant="secondary"
-        loading={pendingAction === "draft"}
-        disabled={pendingAction !== null}
-        loadingLabel="Menyimpan…"
-      >
-        Simpan draf
-      </Button>
-      <Button
-        type="button"
-        variant="primary"
-        loading={pendingAction === "issue"}
-        disabled={pendingAction !== null}
-        loadingLabel="Menerbitkan…"
-        onClick={() => void saveInvoice(true)}
-      >
-        Terbitkan invoice
-      </Button>
-      {createdInvoiceId ? (
-        <LinkButton href={`/admin/invoices/${createdInvoiceId}`} variant="tertiary">
-          Buka operasi invoice
-        </LinkButton>
-      ) : null}
-      {message ? (
-        <span className="subtle" role="status">
-          {message}
-        </span>
-      ) : null}
+      <ActionGroup variant="responsive">
+        <Button
+          type="submit"
+          variant="secondary"
+          loading={pendingAction === "draft"}
+          disabled={pendingAction !== null}
+          loadingLabel="Menyimpan…"
+        >
+          Simpan draf
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          loading={pendingAction === "issue"}
+          disabled={pendingAction !== null}
+          loadingLabel="Menerbitkan…"
+          onClick={() => void saveInvoice(true)}
+        >
+          Terbitkan invoice
+        </Button>
+        {createdInvoiceId ? (
+          <LinkButton href={`/admin/invoices/${createdInvoiceId}`} variant="tertiary">
+            Buka operasi invoice
+          </LinkButton>
+        ) : null}
+        {message ? (
+          <span className="subtle action-support" role="status">
+            {message}
+          </span>
+        ) : null}
+      </ActionGroup>
     </form>
   );
 }
@@ -147,7 +153,7 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
   }
 
   return (
-    <span className="form-actions">
+    <ActionGroup variant="responsive">
       <Button
         type="button"
         variant="primary"
@@ -158,11 +164,11 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
         Terbitkan invoice
       </Button>
       {message ? (
-        <span className="subtle" role="status">
+        <span className="subtle action-support" role="status">
           {message}
         </span>
       ) : null}
-    </span>
+    </ActionGroup>
   );
 }
 
@@ -172,6 +178,11 @@ function PersistentAdminInvoices() {
   const searchParams = useSearchParams();
   const requestedOrderId = searchParams.get("orderId");
   const requestedCustomerId = searchParams.get("customerId");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const searchedInvoice = useQuery(
+    api.invoices.getByInvoiceNumberForAdmin,
+    invoiceSearch.trim() ? { invoiceNumber: invoiceSearch.trim() } : "skip",
+  );
   const invoices = adminInvoiceList?.page || [];
   if (!adminInvoiceList) {
     return (
@@ -187,6 +198,7 @@ function PersistentAdminInvoices() {
       (!requestedCustomerId || order.customerUserId === requestedCustomerId) &&
       !invoices.some((invoice) => invoice.orderId === order.id && invoice.status !== "void"),
   );
+  const visibleInvoices = invoiceSearch.trim() ? (searchedInvoice ? [searchedInvoice] : []) : invoices;
   return (
     <div className="page admin-page">
       <PageHeader
@@ -197,6 +209,27 @@ function PersistentAdminInvoices() {
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
+          <Card>
+            <Field label="Cari referensi invoice">
+              <input
+                className="input"
+                value={invoiceSearch}
+                onChange={(event) => setInvoiceSearch(event.target.value)}
+                placeholder="BFG-INV-YYMMDD-XXXX"
+                inputMode="search"
+              />
+            </Field>
+            {invoiceSearch.trim() && searchedInvoice === undefined ? (
+              <p className="subtle" role="status">
+                Mencari invoice…
+              </p>
+            ) : null}
+            {invoiceSearch.trim() && searchedInvoice === null ? (
+              <p className="subtle" role="status">
+                Invoice dengan referensi tersebut tidak ditemukan.
+              </p>
+            ) : null}
+          </Card>
           {ordersWithoutInvoices.length ? (
             <Card>
               <span className="card-kicker">Pesanan yang membutuhkan invoice</span>
@@ -214,13 +247,13 @@ function PersistentAdminInvoices() {
               ))}
             </Card>
           ) : null}
-          {invoices.length ? (
+          {visibleInvoices.length ? (
             <div className="content-stack">
-              {invoices.map((invoice) => (
+              {visibleInvoices.map((invoice) => (
                 <Card key={invoice.invoiceId}>
                   <div className="split-heading">
                     <div>
-                      <span className="card-kicker">{invoice.invoiceNumber}</span>
+                      <span className="card-kicker">{invoiceReference(invoice.invoiceNumber)}</span>
                       <h2>{formatIdr(invoice.totalAmount)}</h2>
                     </div>
                     <StatusBadge>{invoiceStatusLabel(invoice.status)}</StatusBadge>
@@ -241,10 +274,12 @@ function PersistentAdminInvoices() {
                     <span>Status pembayaran</span>
                     <strong>{invoicePaymentStatusLabel(invoice.paymentStatus)}</strong>
                   </div>
-                  <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
-                    Buka operasi invoice
-                  </LinkButton>
-                  {invoice.status === "draft" ? <IssueInvoiceButton invoiceId={invoice.invoiceId} /> : null}
+                  <ActionGroup variant="responsive">
+                    <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="secondary">
+                      Buka operasi invoice
+                    </LinkButton>
+                    {invoice.status === "draft" ? <IssueInvoiceButton invoiceId={invoice.invoiceId} /> : null}
+                  </ActionGroup>
                 </Card>
               ))}
             </div>

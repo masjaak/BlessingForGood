@@ -377,3 +377,19 @@ Vercel CSS contains the new grid selectors; signed-out `/admin/books` passes
 is the real Book Detail evidence. The live public suite's eight identical
 cover-geometry failures are outside this diff and remain intentionally out of
 scope.
+
+## Post-diff memory — Maintenance UAT correction — 2026-08-22
+
+| Domain | Canonical source | Current invariant |
+| --- | --- | --- |
+| Order → Invoice | `convex/invoices.ts`, `src/app/admin/orders/[orderId]/page.tsx`, `src/app/admin/invoices/page.tsx` | Order detail reads one non-void invoice projection and links the existing Finance mutation flow; no second issue mutation exists. Existing pre-invoice exception financial snapshots remain legal. |
+| Invoice references | `convex/lib/invoiceNumbers.ts`, `invoiceReferenceCounters`, `invoices.ts` | New references are server-generated `BFG-INV-YYMMDD-XXXX`; `_id`, snapshots, amounts, state, and relationships do not change. Preview/backfill is bounded, audited, and idempotent. |
+| Activity | `convex/lib/notifications.ts`, `convex/notifications.ts`, `src/components/activity-center.tsx` | Notification/Inbox remain separate backend sources; `projectActivity` is one chronological projection carrying `readAt`; unread presentation is shared by Admin and Customer. |
+| Action spacing | `src/components/ui.tsx`, `src/app/globals.css` | `ActionGroup` owns related-action gaps, wrapping, support text, and responsive stacking; conditional actions must not add route-local margins. |
+| Master Book | `convex/books.ts`, `src/components/admin-book-detail.tsx` | `books.update` is the save/publish server mutation; Save persists without publishing, explicit Publish sets `published`, and feedback remains visible across reactive updates. |
+| Ready Stock | `orders.ts`, `readyStock.ts`, `lib/readyStockReservations.ts` | `source=ready_stock`, atomic reservation, release/fulfill consequence, and no Batch assignment. |
+| Secret Catalog / Batch | `secretCatalogs.ts`, `catalogItems`, `batches.ts`, `batchTracking.ts`, `catalogView.ts` | Catalogs may contain many Publishers/titles; Batch is multi-Publisher and links only when Catalog close date equals Batch PO deadline; customer projection checks active grant/open Catalog or own assignment. |
+
+Known ceilings remain bounded reads of 200/500/2,000 records already marked in
+the source. Production deployment/backfill is not part of this local memory
+refresh because the canonical Convex target is not configured.

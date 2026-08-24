@@ -87,3 +87,22 @@ passed for Customer Production at 375/390/430/768/1440 with no defect reported.
   eligible Production record; never fabricate financial history.
 - Bulk Import pilot: use only a legitimate user-provided 3–5-book CSV; current
   state is `DEFERRED_BY_USER_DATA`.
+
+## Maintenance correction addendum — 2026-08-22
+
+This addendum is the current closure ledger for the latest real UAT findings;
+it does not reopen Phase 08 or create a new feature phase.
+
+| Contract | Local status | Production status |
+| --- | --- | --- |
+| New Order → Invoice next action | `GREEN_DETERMINISTIC` — state-driven Order detail CTA reuses Finance flow | `NOT_RECHECKED` |
+| Shared Activity unread/read presentation | `GREEN_DETERMINISTIC` — one component, semantic marker, responsive CSS | `NOT_RECHECKED` |
+| Conditional button spacing/affordance | `GREEN_DETERMINISTIC` — shared ActionGroup | `NOT_RECHECKED` |
+| Human invoice references | `GREEN_DETERMINISTIC` — server generator, search, safe idempotent backfill | `NOT DEPLOYED / BACKFILL NOT RUN` |
+| Master Book Save persistence/feedback | `GREEN_DETERMINISTIC` — query-after-save, Draft preservation, explicit Publish | `NOT_RECHECKED` |
+| Ready Stock direct flow | `GREEN_DETERMINISTIC` — atomic reservation and no Batch path | `PRESERVED; no new Production mutation` |
+| Secret Catalog multi-Publisher/multi-title PO | `GREEN_DETERMINISTIC` — scoped customer access and preorder | `NOT RECHECKED` |
+| Multi-Publisher Batch/shared deadline | `GREEN_DETERMINISTIC` — roster/Summary/lock and mismatch rejection | `NOT RECHECKED` |
+
+The current overall status is therefore **LOCAL MAINTENANCE GREEN; PRODUCTION
+RECHECK PENDING VERIFIED CANONICAL ACCESS**, not a fabricated Production green.

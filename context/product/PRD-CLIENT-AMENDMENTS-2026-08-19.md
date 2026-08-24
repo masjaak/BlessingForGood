@@ -50,3 +50,21 @@ matrix, not in the product contract.
 Bulk Import V1 remains locked to its existing CSV, validation, draft/inactive,
 atomic-write, audit, no-stock, no-Catalog, no-media, and no-customer-leakage
 contract.
+
+## Active amendment — maintenance commerce contract — 2026-08-22
+
+This additive amendment records the latest client clarification without
+rewriting the historical original PRD:
+
+- **Ready Stock** is direct, stock-backed purchase while available stock is
+  greater than zero. It does not require a supplier Batch PO.
+- **Secret Catalog** is a private PO/preorder model. One Secret Catalog may
+  contain many publishers, Book Masters, and titles.
+- **Batch PO** is not publisher-bound. A Batch may contain items from many
+  publishers and titles when they share the same operational close date/
+  deadline.
+- **Publisher** is a Book/Catalog-item attribute, not the identity of a Batch.
+- **Customer Batch projection** may show only legitimately accessible,
+  orderable Catalog items plus the Customer's own resulting order,
+  assignment, and status information. A Batch is not a Secret Catalog access
+  bypass.

@@ -13,7 +13,7 @@ transition helpers, mutations, and tests are canonical.
 | Order | `submitted`, `cancelled`, `completed` | submit, cancel via exception resolution, complete | no direct cancellation shortcut; completed requires no unresolved exception; Ready Stock completion fulfills reservations | `convex/orders.ts`, `convex/orderExceptions.ts` | order/policy tests |
 | Batch PO | editable/unset, six shipment stages, archived | create/link/assign, stage update, archive | forward state helper; stage locks catalog/roster edits; archived terminal | `convex/batches.ts`, `convex/batchTracking.ts`, `convex/lib/shipmentTransitions.ts` | batch/state tests |
 | Shipment tracking | `po_closed`, `ordered_to_supplier`, `shipped_internationally`, `customs`, `to_indonesia_warehouse`, `at_store` | update stage | no backward transition; no skip unless explicit `allowSkip` path | `convex/lib/shipmentTransitions.ts`, `batchTracking.ts` | transition tests |
-| Fulfillment tracking | `awaiting_payment`, `awaiting_address`, `packing`, `shipped`, `completed` | update stage | sequential helper; payment/address/exception guards; completion triggers Ready Stock consume | `convex/lib/fulfillmentTransitions.ts`, `orderFulfillment.ts` | fulfillment/policy tests |
+| Fulfillment tracking | `awaiting_payment`, `awaiting_address`, `packing`, `shipped`, `completed` | update stage | sequential helper and exception guard; this phase has no payment-settlement guard; completion triggers Ready Stock consume | `convex/lib/fulfillmentTransitions.ts`, `orderFulfillment.ts` | fulfillment/policy tests |
 | Secret Catalog | `draft`, `open`, `closed`, `archived` | create/open/close/archive behavior | closed/archived cannot reopen; effective close time denies access | `convex/secretCatalogs.ts`, `convex/lib/catalogView.ts` | catalog tests |
 | Catalog access code | active, revoked, expired/invalid | generate, redeem, revoke, expiry | digest/pepper; no plaintext persistence; rate limit; catalog scope | `convex/catalogAccess.ts`, `convex/lib/accessCodes.ts` | security/access tests |
 | Catalog access session | active, expired, revoked | issue on unlock, validate per query | session digest/expiry/revocation; no cross-catalog use | `convex/catalogAccess.ts`, `convex/lib/sessions.ts` | access/session tests |
@@ -38,3 +38,17 @@ transition helpers, mutations, and tests are canonical.
 Every stateful mutation must name its source state, target state, guard, side
 effect, audit consequence, customer projection, and invalid-transition test in
 [`BFG-BUSINESS-CONSEQUENCE-MATRIX.md`](BFG-BUSINESS-CONSEQUENCE-MATRIX.md).
+
+## Maintenance guard clarifications — 2026-08-22
+
+No new lifecycle states were added. The current guards are:
+
+- Invoice creation/issue continues to use the existing eligible-order
+  financial flow, including the pre-invoice exception-adjustment path; the
+  Order detail CTA reflects actual invoice presence rather than a duplicate
+  state machine.
+- Batch linking and item movement require the linked Secret Catalog's
+  `closesAt` to equal the Batch `poDeadlineAt` (including both being unset).
+- Book Save remains an editable `draft` update; publication is an explicit
+  `books.update(..., publicationStatus: "published")` action, with the same
+  Admin/Owner authorization and audit boundary.

@@ -340,3 +340,28 @@ while populated Gallery/Preview UAT is `BLOCKED_BY_APPROVED_DATA`. Bulk Import
 V1 remains deployed and unchanged; its Production pilot remains
 `DEFERRED_BY_USER_DATA` and does not justify fabricating Products or business
 records. Phase 08 is closed and the product is in Maintenance.
+
+## Maintenance/UAT correction pass — 2026-08-22
+
+The latest real authenticated Admin evidence is authoritative and supersedes
+the earlier green labels for these five findings. The implementation rows are
+local code/test evidence; Production rows are intentionally not promoted
+without a verified canonical deployment and operator.
+
+| Finding | Root-cause fix | Local deterministic evidence | Production status |
+| --- | --- | --- | --- |
+| New Order → Invoice CTA | Order detail projects the canonical invoice query and links the existing Finance create/issue flow when no invoice exists. | `getForOrderAdmin`, invoice queue component test, full Convex suite. | `NOT_RECHECKED — canonical access required` |
+| Activity unread clarity | Shared `ActivityCenter` adds soft BFG tint, accent treatment, dot, `Baru`, stronger title, and `Belum dibaca`; read state remains backend `readAt`. | Shared component test and notification projection trace. | `NOT_RECHECKED — authenticated Admin + Customer evidence required` |
+| Conditional button affordance | Shared `ActionGroup` owns gap, wrapping, responsive stack, and support-text spacing for conditional finance/book actions. | TypeScript, ESLint, Prettier, rendered/component coverage path. | `NOT_RECHECKED — authenticated viewport evidence required` |
+| Human invoice references | Server counter generator emits `BFG-INV-YYMMDD-XXXX`; exact Admin search and bounded idempotent backfill preserve `_id` and financial fields. | Canonical generation, concurrency, preview/backfill/idempotency tests. | `NOT DEPLOYED / BACKFILL NOT RUN` |
+| Master Book Save / Publish | Canonical `books.update` persists edits; visible success/error feedback survives reactive refresh; Publish is an explicit action and Save remains Draft. | Query-after-save, Draft→Published, permission, and full regression tests. | `NOT_RECHECKED — safe legitimate Draft required` |
+
+### Commerce contract verification
+
+| Contract | Local evidence | Status |
+| --- | --- | --- |
+| Ready Stock direct purchase/reservation, no Batch | Ready Stock policy flow covers atomic reservation, invoice, fulfillment reservation behavior, and Batch denial. | `GREEN_DETERMINISTIC` |
+| Secret Catalog PO/preorder, many Publishers/titles | Catalog projection/order test covers three Publishers and three titles in one Catalog. | `GREEN_DETERMINISTIC` |
+| Multi-Publisher Batch with shared close date | Batch roster test creates one Batch for three Publishers, assigns items, derives Summary, projects authorized customer items, and locks. | `GREEN_DETERMINISTIC` |
+| Different close dates cannot share a Batch | Server link guard rejects mismatched Catalog/Batch deadlines. | `GREEN_DETERMINISTIC` |
+| Batch access isolation | Customer projection requires active Catalog grant/open Catalog or own assignment; unauthorized customer receives no protected Batch projection. | `GREEN_DETERMINISTIC` |

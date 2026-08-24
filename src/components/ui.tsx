@@ -7,6 +7,7 @@ import { formatIdr } from "@/domain/prototype/logic";
 export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger";
 export type ButtonSize = "compact" | "default" | "large";
 export type FrameVariant = "operational" | "form" | "table" | "list" | "summary" | "detail" | "empty" | "attention";
+export type ActionGroupVariant = "inline" | "stacked" | "responsive";
 
 type ButtonContentProps = {
   variant?: ButtonVariant;
@@ -138,14 +139,15 @@ export function ToggleButton({ pressed, ...props }: ToggleButtonProps) {
 
 export function ActionGroup({
   children,
-  orientation = "horizontal",
+  variant = "inline",
   className = "",
-}: {
-  children: ReactNode;
-  orientation?: "horizontal" | "vertical";
-  className?: string;
-}) {
-  return <div className={`action-group action-group-${orientation} ${className}`.trim()}>{children}</div>;
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { children: ReactNode; variant?: ActionGroupVariant }) {
+  return (
+    <div className={`action-group action-group-${variant} ${className}`.trim()} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function Card({

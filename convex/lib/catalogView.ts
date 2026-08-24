@@ -32,7 +32,14 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
       publisher: string;
       coverImageUrl: string | null;
       coverPresentation: { zoom: number; x: number; y: number } | null;
-      variants: unknown[];
+      variants: Array<{
+        id: string;
+        format: string;
+        isbn: string;
+        price: number;
+        currency: "IDR";
+        availability: "available";
+      }>;
     }
   >();
 

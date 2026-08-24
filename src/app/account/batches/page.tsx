@@ -34,7 +34,11 @@ function CustomerBatches() {
                   {batch.currentShipmentStage ? shipmentStageLabels[batch.currentShipmentStage] : "PO terbuka"}
                 </StatusBadge>
               </div>
-              <p>{batch.items.reduce((total, item) => total + item.quantity, 0)} buku dalam batch ini.</p>
+              <p>
+                {batch.items.length
+                  ? `${batch.items.reduce((total, item) => total + item.quantity, 0)} buku di pesananmu.`
+                  : `${batch.availableItems.length} item tersedia melalui akses katalog.`}
+              </p>
               {batch.poDeadlineAt ? (
                 <p className="subtle">Deadline PO: {new Date(batch.poDeadlineAt).toLocaleString("id-ID")}</p>
               ) : null}

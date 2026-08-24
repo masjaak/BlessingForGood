@@ -22,6 +22,7 @@ import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function CustomerDetail() {
   const customerId = String(useParams<{ customerId: string }>().customerId);
@@ -137,7 +138,7 @@ function CustomerDetail() {
                 <div className="summary-line" key={invoice.invoiceId}>
                   <span>
                     <LinkButton href={`/admin/invoices/${invoice.invoiceId}`} variant="tertiary">
-                      {invoice.invoiceNumber}
+                      {invoiceReference(invoice.invoiceNumber)}
                     </LinkButton>
                     <br />
                     <small>{invoicePaymentStatusLabel(invoice.paymentStatus)}</small>
