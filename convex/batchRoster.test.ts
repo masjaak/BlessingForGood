@@ -324,6 +324,20 @@ describe("BFG batch roster and assisted orders", () => {
         unitPriceAmount: 115000,
       },
     ]);
+    await admin.mutation(api.batches.updateEtaCargoMonth, {
+      batchId: batch.batchId,
+      etaCargoMonth: undefined,
+    });
+    await expect(admin.query(api.batches.getForAdmin, { batchId: batch.batchId })).resolves.toMatchObject({
+      etaCargoMonth: null,
+    });
+    await expect(customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId })).resolves.toMatchObject({
+      etaCargoMonth: null,
+    });
+    await admin.mutation(api.batches.updateEtaCargoMonth, {
+      batchId: batch.batchId,
+      etaCargoMonth: "2026-10",
+    });
     const customerBatch = await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId });
     expect(customerBatch).toMatchObject({
       batchId: batch.batchId,
