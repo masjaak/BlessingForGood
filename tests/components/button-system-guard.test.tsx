@@ -33,6 +33,8 @@ describe("global BFG button system", () => {
   it("keeps source callsites on the canonical family", () => {
     const source = sourceFiles(join(process.cwd(), "src"))
       .filter((path) => !path.endsWith("/components/ui.tsx"))
+      // BFGSelect owns a native button element only as its accessible combobox trigger.
+      .filter((path) => !path.endsWith("/components/bfg-select.tsx"))
       .map((path) => readFileSync(path, "utf8"))
       .join("\n");
 

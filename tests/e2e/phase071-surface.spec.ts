@@ -151,6 +151,31 @@ test.describe("@customer Phase 07.1 shared surface", () => {
 
     await expect(page.locator("select")).toHaveCount(0);
     await expect(trigger).toBeVisible();
+    const controlGeometry = await trigger.evaluate((element) => {
+      const value = element.querySelector<HTMLElement>(".bfg-select-value");
+      const trailing = element.querySelector<HTMLElement>(".bfg-select-trailing");
+      if (!value || !trailing) throw new Error("BFGSelect form-control anatomy is incomplete");
+      const triggerRect = element.getBoundingClientRect();
+      const valueRect = value.getBoundingClientRect();
+      const trailingRect = trailing.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        display: style.display,
+        backgroundColor: style.backgroundColor,
+        gridTemplateColumns: style.gridTemplateColumns,
+        triggerRight: triggerRect.right,
+        valueRight: valueRect.right,
+        trailingLeft: trailingRect.left,
+        trailingRight: trailingRect.right,
+        trailingWidth: trailingRect.width,
+      };
+    });
+    expect(controlGeometry.display).toBe("grid");
+    expect(controlGeometry.backgroundColor).not.toBe("rgb(229, 240, 231)");
+    expect(controlGeometry.gridTemplateColumns).toContain("32px");
+    expect(controlGeometry.trailingWidth).toBeGreaterThanOrEqual(32);
+    expect(controlGeometry.valueRight).toBeLessThanOrEqual(controlGeometry.trailingLeft + 1);
+    expect(controlGeometry.triggerRight - controlGeometry.trailingRight).toBeLessThanOrEqual(18);
     await trigger.click();
     await expect(page.locator(".bfg-select-menu")).toBeVisible();
     await expect(page.getByRole("listbox")).toBeVisible();
@@ -162,6 +187,56 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     await expect(page.locator('input[type="hidden"][name="sort"]')).toHaveValue("title");
     await trigger.press("Escape");
     await expect(page.locator(".bfg-select-menu")).toBeHidden();
+  });
+
+  test("shared action groups keep generated results and dividers separated", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      const mount = document.createElement("div");
+      mount.className = "admin-shell ui-system-qa-fixture";
+      mount.innerHTML = `
+        <div class="catalog-access-code-section">
+          <div class="form-actions">
+            <label class="field"><span class="field-label">Kode berakhir</span><input class="input" /></label>
+            <div class="action-group action-group-responsive">
+              <button class="button button-primary">Buat kode akses</button>
+              <button class="button button-danger">Cabut kode aktif</button>
+            </div>
+          </div>
+          <div class="catalog-code-result"><strong>Kode baru</strong><code>BFG-ONE-TIME</code><button class="button button-secondary">Salin kode</button></div>
+        </div>
+        <div class="summary-line"><span>Status</span><strong>Draft</strong></div>
+        <div class="action-group"><button class="button button-secondary">Buka operasi invoice</button></div>
+      `;
+      document.body.append(mount);
+    });
+
+    const geometry = await page.locator(".ui-system-qa-fixture").evaluate((fixture) => {
+      const actionRow = fixture.querySelector<HTMLElement>(".catalog-access-code-section > .form-actions");
+      const result = fixture.querySelector<HTMLElement>(".catalog-code-result");
+      const summary = fixture.querySelector<HTMLElement>(".summary-line");
+      const invoiceActions = fixture.querySelectorAll<HTMLElement>(".action-group")[1];
+      const buttons = fixture.querySelectorAll<HTMLElement>(".catalog-access-code-section .action-group .button");
+      if (!actionRow || !result || !summary || !invoiceActions || buttons.length !== 2) {
+        throw new Error("Action geometry fixture did not render");
+      }
+      const rect = (element: HTMLElement) => element.getBoundingClientRect();
+      return {
+        resultGap: rect(result).top - rect(actionRow).bottom,
+        dividerGap: rect(invoiceActions).top - rect(summary).bottom,
+        buttonGap: rect(buttons[1]).top - rect(buttons[0]).bottom,
+        inlineButtonGap: rect(buttons[1]).left - rect(buttons[0]).right,
+        viewport: window.innerWidth,
+      };
+    });
+
+    expect(geometry.resultGap).toBeGreaterThanOrEqual(23);
+    expect(geometry.dividerGap).toBeGreaterThanOrEqual(15);
+    if (geometry.viewport <= 640) {
+      expect(geometry.buttonGap).toBeGreaterThanOrEqual(11);
+    } else {
+      expect(geometry.inlineButtonGap).toBeGreaterThanOrEqual(7);
+    }
   });
 
   test("Activity stays one bounded feed without horizontal overflow", async ({ page }) => {

@@ -117,6 +117,10 @@ describe("public UI foundation", () => {
     expect(globalsCss).toContain("appearance: none");
     expect(globalsCss).toContain("-webkit-appearance: none");
     expect(globalsCss).toContain("padding-right: 40px");
+    expect(globalsCss).toContain("--control-surface:");
+    expect(globalsCss).toContain("grid-template-columns: minmax(0, 1fr) var(--control-trailing-width)");
+    expect(globalsCss).toContain(".summary-line + .action-group");
+    expect(globalsCss).toContain(".catalog-access-code-section");
     expect(globalsCss).toContain("--type-page-title-size: clamp(1.8rem, 2.4vw, 2.4rem)");
   });
 

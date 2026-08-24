@@ -23,9 +23,13 @@ describe("BFGSelect", () => {
 
     expect(document.querySelector("select")).toBeNull();
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(trigger.className).toBe("select bfg-select-trigger");
+    expect(trigger.getAttribute("data-state")).toBe("closed");
+    expect(trigger.querySelector(".bfg-select-trailing .bfg-select-chevron")).toBeTruthy();
 
     fireEvent.keyDown(trigger, { key: "ArrowDown" });
     expect(screen.getByRole("listbox")).toBeTruthy();
+    expect(trigger.getAttribute("data-state")).toBe("open");
     expect(screen.getByRole("option", { name: "Draf" }).getAttribute("aria-selected")).toBe("true");
 
     fireEvent.keyDown(trigger, { key: "ArrowDown" });

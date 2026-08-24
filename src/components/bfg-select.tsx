@@ -15,7 +15,6 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Button } from "@/components/ui";
 
 type OptionProps = { value?: string | number; disabled?: boolean; children?: ReactNode };
 
@@ -264,7 +263,7 @@ export function BFGSelect({
 
   return (
     <>
-      <Button
+      <button
         {...buttonProps}
         aria-activedescendant={open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
         aria-controls={listboxId}
@@ -273,6 +272,7 @@ export function BFGSelect({
         aria-haspopup="listbox"
         aria-required={required || undefined}
         className={`select bfg-select-trigger ${className}`.trim()}
+        data-state={open ? "open" : "closed"}
         disabled={disabled}
         id={triggerId}
         onClick={() => (open ? close() : openMenu())}
@@ -280,11 +280,12 @@ export function BFGSelect({
         ref={triggerRef}
         role="combobox"
         type="button"
-        variant="secondary"
       >
         <span className="bfg-select-value">{selectedOption?.label ?? selectedValue}</span>
-        <span className="bfg-select-chevron" aria-hidden="true" />
-      </Button>
+        <span className="bfg-select-trailing" aria-hidden="true">
+          <span className="bfg-select-chevron" />
+        </span>
+      </button>
       {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
       {menu}
     </>

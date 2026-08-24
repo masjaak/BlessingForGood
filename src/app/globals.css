@@ -644,9 +644,12 @@ p {
   box-shadow: none;
 }
 .activity-card.is-unread {
-  border-color: var(--color-button-secondary-border);
-  background: var(--color-button-secondary-surface);
-  box-shadow: inset 6px 0 var(--color-brand-primary);
+  border: 2px solid var(--color-button-secondary-border);
+  background: #edf7ed;
+  box-shadow: inset 8px 0 var(--color-brand-primary);
+}
+.activity-card.is-read .activity-type {
+  color: var(--ink-muted);
 }
 .activity-card.is-unread .activity-title-unread {
   font-weight: 800;
@@ -1134,16 +1137,16 @@ p {
 .textarea {
   width: 100%;
   padding: 12px 13px;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: #fff;
+  color: var(--control-text, var(--ink));
+  border: 1px solid var(--control-border, var(--line));
+  border-radius: var(--control-radius, var(--radius-sm));
+  background: var(--control-surface, #fff);
 }
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--accent);
-  box-shadow: var(--focus);
+  border-color: var(--control-border-focus, var(--accent));
+  box-shadow: var(--control-focus, var(--focus));
   outline: none;
 }
 .textarea {
@@ -1426,7 +1429,8 @@ p {
 }
 .summary-line + .form-actions,
 .summary-line + .button,
-.summary-line + a.button {
+.summary-line + a.button,
+.summary-line + .action-group {
   margin-top: var(--space-xs);
 }
 .summary-total {
@@ -2190,6 +2194,10 @@ p {
   border: 1px solid var(--color-brand-gold);
   border-radius: var(--radius-sm);
   background: #fffaf0;
+}
+.catalog-access-code-section {
+  display: grid;
+  gap: var(--button-section-gap);
 }
 .catalog-code-result code {
   width: fit-content;
@@ -5013,7 +5021,8 @@ p {
 
 .admin-shell .summary-line + .form-actions,
 .admin-shell .summary-line + .button,
-.admin-shell .summary-line + a.button {
+.admin-shell .summary-line + a.button,
+.admin-shell .summary-line + .action-group {
   margin-top: var(--space-divider-to-actions);
 }
 
@@ -5198,44 +5207,12 @@ p {
   }
 }
 
-/* Phase 07.1 final controls: the expanded menu belongs to BFG, not the OS. */
-.bfg-select-trigger {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  overflow: hidden;
-  text-align: left;
-  background-image: none;
-}
-
-.bfg-select-trigger:disabled {
-  cursor: not-allowed;
-}
-
-.bfg-select-value {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bfg-select-chevron {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 8px;
-  margin-right: 2px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: translateY(-2px) rotate(45deg);
-}
-
 .bfg-select-menu {
   position: fixed;
   z-index: 80;
   display: grid;
   width: max-content;
+  max-width: calc(100vw - 24px);
   overflow-y: auto;
   padding: 6px;
   border: 1px solid var(--line);
@@ -6251,6 +6228,21 @@ p {
   --button-disabled-border: #d3dad4;
   --button-focus: var(--color-brand-gold);
   --button-motion: 160ms ease;
+  --control-height-default: var(--button-height-default);
+  --control-surface: var(--color-surface);
+  --control-surface-hover: #fbfaf6;
+  --control-surface-open: #f7fbf7;
+  --control-text: var(--color-text-primary);
+  --control-placeholder: var(--color-text-secondary);
+  --control-border: var(--color-border);
+  --control-border-hover: #b7ab9a;
+  --control-border-focus: var(--color-brand-primary);
+  --control-surface-disabled: #f1eee8;
+  --control-text-disabled: #8a877f;
+  --control-border-disabled: #ddd8cf;
+  --control-radius: var(--radius-sm);
+  --control-trailing-width: 32px;
+  --control-focus: var(--focus);
 }
 
 .button {
@@ -6561,10 +6553,78 @@ p {
   box-shadow: 0 0 0 2px var(--mint);
 }
 
+/* BFG form controls: a closed select remains neutral and reserves its trailing icon zone. */
 .bfg-select-trigger {
-  justify-content: space-between;
-  padding-right: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--control-trailing-width);
+  min-height: var(--control-height-default);
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: 0 var(--space-md);
+  color: var(--control-text);
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background: var(--control-surface);
+  background-image: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: inherit;
+  font-weight: var(--font-weight-regular);
+  line-height: 20px;
+  overflow: hidden;
   text-align: left;
+  transition:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+.bfg-select-trigger:hover:not(:disabled) {
+  border-color: var(--control-border-hover);
+  background: var(--control-surface-hover);
+}
+
+.bfg-select-trigger:focus-visible,
+.bfg-select-trigger[data-state="open"] {
+  border-color: var(--control-border-focus);
+  background: var(--control-surface-open);
+  box-shadow: var(--control-focus);
+  outline: none;
+}
+
+.bfg-select-trigger:disabled {
+  color: var(--control-text-disabled);
+  border-color: var(--control-border-disabled);
+  background: var(--control-surface-disabled);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.bfg-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bfg-select-trailing {
+  display: inline-flex;
+  width: var(--control-trailing-width);
+  min-width: var(--control-trailing-width);
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.bfg-select-chevron {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  margin: 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
 }
 
 @media (max-width: 640px) {

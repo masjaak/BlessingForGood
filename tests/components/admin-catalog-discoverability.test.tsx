@@ -133,5 +133,9 @@ describe("Secret Catalog operational discoverability", () => {
 
     expect(screen.getByRole("button", { name: "Buat kode akses" })).toBeTruthy();
     expect(screen.getByText("Belum ada kode akses")).toBeTruthy();
+    expect(document.querySelector(".catalog-access-code-section")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Buat kode akses" }).closest(".action-group")?.querySelectorAll(".button"),
+    ).toHaveLength(2);
   });
 });
