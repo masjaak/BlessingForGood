@@ -6768,10 +6768,16 @@ p {
   margin: 0 auto var(--space-md);
 }
 
+.auth-page .auth-shell .bfg-clerk-card-box {
+  width: 100% !important;
+  max-width: 440px !important;
+  margin-inline: auto !important;
+}
+
 .auth-page .auth-shell .bfg-clerk-card {
-  width: 100%;
-  max-width: 440px;
-  margin-inline: auto;
+  width: 100% !important;
+  max-width: 440px !important;
+  margin-inline: auto !important;
 }
 
 .auth-page .auth-shell .auth-secondary-actions {

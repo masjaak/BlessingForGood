@@ -13,6 +13,7 @@ export const bfgClerkAppearance = {
   },
   elements: {
     rootBox: "bfg-clerk-root",
+    cardBox: "bfg-clerk-card-box",
     card: "bfg-clerk-card",
     headerTitle: "bfg-clerk-title",
     headerSubtitle: "bfg-clerk-subtitle",
