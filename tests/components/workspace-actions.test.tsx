@@ -70,6 +70,16 @@ describe("Activity panel geometry", () => {
     expect(geometry.left + geometry.width).toBeLessThanOrEqual(1012);
   });
 
+  it("uses the shared desktop preview width before viewport clamping", () => {
+    const geometry = calculateActivityPanelGeometry(
+      { width: 1440, height: 900 },
+      { top: 64, bottom: 104, right: 1400 },
+    );
+
+    expect(geometry.width).toBe(410);
+    expect(geometry.left + geometry.width).toBeLessThanOrEqual(1428);
+  });
+
   it("bounds narrow width and reserves mobile bottom space", () => {
     const geometry = calculateActivityPanelGeometry({ width: 390, height: 844 }, { top: 64, bottom: 104, right: 378 });
 

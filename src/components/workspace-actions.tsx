@@ -33,7 +33,7 @@ export function calculateActivityPanelGeometry(
   const viewportTop = viewport.top ?? 0;
   const gutter = 12;
   const gap = 8;
-  const preferredWidth = 380;
+  const preferredWidth = 410;
   const mobileBottomReserve = 84;
   const isMobile = viewport.width <= 480;
   const width = Math.max(1, Math.min(preferredWidth, viewport.width - gutter * 2));
@@ -225,7 +225,7 @@ function ActivityPopover({ workspace, activity }: { workspace: "admin" | "custom
           role="dialog"
           style={panelStyle}
         >
-          <ActivityCenter compact onClose={closePanel} workspace={workspace} />
+          <ActivityCenter compact onClose={closePanel} unreadCount={activity} workspace={workspace} />
         </div>
       ) : null}
     </div>

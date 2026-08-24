@@ -639,7 +639,7 @@ p {
   text-align: center;
 }
 .activity-card.is-read {
-  border-color: var(--line);
+  border: 2px solid var(--line);
   background: var(--surface);
   box-shadow: none;
 }
@@ -5082,6 +5082,10 @@ p {
   margin-top: var(--space-content-to-actions);
 }
 
+.admin-shell .action-region-feedback {
+  margin-top: var(--space-divider-to-actions);
+}
+
 .admin-shell .action-region > .form-actions {
   width: 100%;
 }
@@ -5351,7 +5355,7 @@ p {
   top: calc(100% + 10px);
   right: 0;
   box-sizing: border-box;
-  width: min(380px, calc(100vw - 28px));
+  width: min(410px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   min-width: 0;
   border: 1px solid var(--line);
@@ -5389,13 +5393,6 @@ p {
   font-size: 1.25rem;
 }
 
-.activity-explanation {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: var(--font-size-caption);
-  overflow-wrap: anywhere;
-}
-
 .workspace-activity-panel .content-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -5422,9 +5419,10 @@ p {
 }
 
 .activity-card-topline {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
-  align-items: baseline;
+  align-items: start;
   justify-content: space-between;
   gap: var(--space-sm);
   margin-bottom: 8px;
@@ -5445,8 +5443,10 @@ p {
 
 .activity-card-topline time {
   min-width: 0;
+  max-width: 100%;
   color: var(--ink-muted);
   font-size: var(--font-size-caption);
+  white-space: normal;
   overflow-wrap: anywhere;
   text-align: right;
 }
@@ -5462,9 +5462,12 @@ p {
 
 .workspace-activity-panel .activity-card p {
   min-width: 0;
+  margin-top: 0;
   margin-bottom: var(--space-sm);
   font-size: 0.82rem;
+  white-space: normal;
   overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .workspace-activity-panel .activity-card .button {
@@ -5497,8 +5500,16 @@ p {
 
 @media (max-width: 480px) {
   .workspace-activity-panel {
-    width: min(380px, calc(100vw - 24px));
+    width: min(410px, calc(100vw - 24px));
     max-width: calc(100vw - 24px);
+  }
+
+  .activity-card-topline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .activity-card-topline time {
+    text-align: left;
   }
 }
 
@@ -6789,17 +6800,14 @@ p {
 .workspace-activity-panel .content-stack,
 .workspace-activity-panel .activity-card {
   min-width: 0;
-  overflow-x: clip;
-}
-
-.workspace-activity-panel .activity-card-topline {
-  flex-wrap: wrap;
 }
 
 .workspace-activity-panel .activity-card h2,
 .workspace-activity-panel .activity-card p,
 .workspace-activity-panel .activity-panel-footer {
+  white-space: normal;
   overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 @media (max-width: 640px) {

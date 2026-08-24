@@ -10,14 +10,17 @@ export function ActivityCenter({
   workspace,
   compact = false,
   onClose,
+  unreadCount,
 }: {
   workspace: "admin" | "customer";
   compact?: boolean;
   onClose?: () => void;
+  unreadCount?: number;
 }) {
   const activity = useQuery(api.notifications.listActivity, { workspace });
   const markRead = useMutation(api.notifications.markRead);
   const visibleActivity = compact ? activity?.slice(0, 3) : activity;
+  const previewUnreadCount = unreadCount ?? activity?.filter((item) => !item.readAt).length;
   const content =
     activity === undefined ? (
       <LoadingRegion label="Memuat aktivitas">
@@ -47,7 +50,7 @@ export function ActivityCenter({
               </time>
             </div>
             <h2 className={!item.readAt ? "activity-title-unread" : undefined}>{item.title}</h2>
-            {!compact ? <p>{item.description}</p> : null}
+            <p>{item.description}</p>
             {!compact ? (
               <LinkButton
                 variant="secondary"
@@ -73,7 +76,9 @@ export function ActivityCenter({
         <div className="activity-panel-heading">
           <div>
             <strong>Aktivitas</strong>
-            <span className="subtle">Pembaruan terbaru</span>
+            <span className="subtle">
+              {previewUnreadCount === undefined ? "Memuat…" : `${previewUnreadCount} belum dibaca`}
+            </span>
           </div>
           {onClose ? (
             <IconButton
@@ -87,9 +92,6 @@ export function ActivityCenter({
             </IconButton>
           ) : null}
         </div>
-        <p className="activity-explanation">
-          Sistem dan pesan BFG tampil dalam satu urutan waktu. Makna dan riwayat sumbernya tetap terjaga.
-        </p>
         {content}
         <Link className="activity-panel-footer" href={`${workspace === "admin" ? "/admin" : "/account"}/notifications`}>
           Lihat semua aktivitas

@@ -8,7 +8,17 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
+import {
+  ActionGroup,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LoadingRegion,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -67,7 +77,7 @@ function JoinRequestCard({
   }
 
   return (
-    <Card>
+    <Card className="join-request-card">
       <div className="split-heading">
         <div>
           <span className="card-kicker">{request.city || "Lokasi belum diisi"}</span>
@@ -90,15 +100,17 @@ function JoinRequestCard({
       </div>
       {request.note ? <p className="subtle">Catatan pendaftar: {request.note}</p> : null}
       {request.status === "submitted" ? (
-        <Button
-          type="button"
-          variant="secondary"
-          loading={pendingAction === "Tinjauan dimulai."}
-          loadingLabel="Memulai…"
-          onClick={() => void run(() => startReview(requestId), "Tinjauan dimulai.")}
-        >
-          Tinjau
-        </Button>
+        <ActionGroup variant="responsive">
+          <Button
+            type="button"
+            variant="secondary"
+            loading={pendingAction === "Tinjauan dimulai."}
+            loadingLabel="Memulai…"
+            onClick={() => void run(() => startReview(requestId), "Tinjauan dimulai.")}
+          >
+            Tinjau
+          </Button>
+        </ActionGroup>
       ) : null}
       {request.status === "under_review" ? (
         <div className="content-stack">
@@ -113,7 +125,7 @@ function JoinRequestCard({
               maxLength={500}
             />
           </Field>
-          <div className="form-actions">
+          <ActionGroup variant="responsive">
             <Button
               type="button"
               loading={pendingAction === "Disetujui; proses admission dimulai."}
@@ -136,7 +148,7 @@ function JoinRequestCard({
             >
               Tolak
             </Button>
-          </div>
+          </ActionGroup>
         </div>
       ) : null}
       {request.status === "approved" ? (
@@ -149,8 +161,8 @@ function JoinRequestCard({
                 : "Disetujui, tetapi admission masih perlu diselesaikan."}
           </p>
           {request.admissionError ? (
-            <div className="form-actions">
-              <span className="error-text">Proses penerimaan anggota perlu dicoba lagi.</span>
+            <ActionGroup variant="responsive">
+              <span className="error-text action-support">Proses penerimaan anggota perlu dicoba lagi.</span>
               <Button
                 type="button"
                 variant="secondary"
@@ -160,7 +172,7 @@ function JoinRequestCard({
               >
                 Coba lagi
               </Button>
-            </div>
+            </ActionGroup>
           ) : null}
         </div>
       ) : null}
@@ -168,15 +180,19 @@ function JoinRequestCard({
       {request.reviewedAt ? (
         <p className="subtle">Ditinjau {new Date(request.reviewedAt).toLocaleString("id-ID")}</p>
       ) : null}
-      {message ? (
-        <p className="success-banner" role="status">
-          {message}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="error-text" role="alert">
-          {error}
-        </p>
+      {message || error ? (
+        <div className="action-region action-region-feedback">
+          {message ? (
+            <p className="success-banner" role="status">
+              {message}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </Card>
   );

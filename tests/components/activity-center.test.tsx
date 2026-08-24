@@ -43,6 +43,8 @@ describe("compact ActivityCenter", () => {
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getAllByText("Sistem").length).toBeGreaterThan(0);
     expect(screen.getByText("Pesan BFG")).toBeTruthy();
+    expect(screen.getByText("1 belum dibaca")).toBeTruthy();
+    expect(screen.getByText("Status pesananmu berubah.")).toBeTruthy();
     expect(screen.getByText("Baru · Belum dibaca")).toBeTruthy();
     expect(screen.getByLabelText("Belum dibaca")).toBeTruthy();
     const cards = container.querySelectorAll(".activity-card");
@@ -57,6 +59,7 @@ describe("compact ActivityCenter", () => {
     );
     expect(screen.queryByRole("link", { name: "Buka Kotak Masuk" })).toBeNull();
     expect(screen.getByRole("button", { name: "Tutup Aktivitas" })).toBeTruthy();
+    expect(screen.queryByText("Sistem dan pesan BFG tampil dalam satu urutan waktu.")).toBeNull();
   });
 
   it("keeps the full Activity page history and detail actions", () => {
@@ -74,5 +77,26 @@ describe("compact ActivityCenter", () => {
     expect(screen.getByText("Belum ada aktivitas")).toBeTruthy();
     expect(container.querySelectorAll(".activity-card")).toHaveLength(0);
     expect(screen.getByRole("link", { name: "Lihat semua aktivitas" })).toBeTruthy();
+  });
+
+  it("keeps complete notification copy in the compact preview", () => {
+    vi.mocked(useQuery).mockReturnValueOnce([
+      {
+        sourceId: "long-notice",
+        timestamp: Date.parse("2026-08-17T00:00:00.000Z"),
+        type: "system",
+        title: "Pesanan siap diproses",
+        description: "Angelina Cynthia mengirim permintaan bergabung dengan catatan operasional yang lengkap.",
+        destination: "/admin/join-requests",
+        readAt: null,
+      },
+    ]);
+
+    render(<ActivityCenter compact workspace="admin" />);
+
+    expect(
+      screen.getByText("Angelina Cynthia mengirim permintaan bergabung dengan catatan operasional yang lengkap."),
+    ).toBeTruthy();
+    expect(screen.getByText("1 belum dibaca")).toBeTruthy();
   });
 });
