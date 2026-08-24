@@ -124,4 +124,65 @@ describe("BFG product publishing projections", () => {
     expect(view.titleCount).toBe(2);
     expect(view.books).toHaveLength(2);
   });
+
+  it("supports multiple publishers and titles in one Secret Catalog preorder", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Multi Publisher Catalog", "9910", "multi-publisher-code");
+    const extraVariants = [];
+    for (const [publisherName, title, isbn] of [
+      ["Publisher B", "Book B", "97800009911"],
+      ["Publisher C", "Book C", "97800009912"],
+    ]) {
+      const publisherId = await admin.mutation(api.publishers.create, { name: publisherName });
+      const bookId = await admin.mutation(api.books.create, { publisherId, title });
+      await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+      const variantId = await admin.mutation(api.bookVariants.create, {
+        bookId,
+        format: "PB",
+        isbn,
+        priceAmount: 135000,
+      });
+      await admin.mutation(api.catalogItems.add, { catalogId: catalog.catalogId, bookVariantId: variantId });
+      extraVariants.push(variantId);
+    }
+
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-publisher-code" });
+    const view = await customer.query(api.catalogAccess.getUnlocked, { catalogId: catalog.catalogId });
+    expect(view?.books).toHaveLength(3);
+    expect(new Set(view?.books.map((book) => book.publisher))).toEqual(
+      new Set(["Multi Publisher Catalog Publisher", "Publisher B", "Publisher C"]),
+    );
+
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Multi Publisher Customer",
+      items: [
+        { variantId: catalog.variantIds[0], quantity: 1 },
+        { variantId: extraVariants[0], quantity: 2 },
+        { variantId: extraVariants[1], quantity: 1 },
+      ],
+    });
+    expect(order.items).toHaveLength(3);
+    expect(new Set(order.items.map((item) => item.publisherNameSnapshot))).toHaveLength(3);
+  });
+
+  it("persists Master Book edits as Draft until explicit publication", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Draft Publisher" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Draft Book" });
+
+    await admin.mutation(api.books.update, { bookId, description: "Saved draft description" });
+    expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({
+      description: "Saved draft description",
+      publicationStatus: "draft",
+    });
+    await expect(
+      customer.mutation(api.books.update, { bookId, description: "Customer attempt" }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+    expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({ publicationStatus: "published" });
+  });
 });

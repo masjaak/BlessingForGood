@@ -1,14 +1,21 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { requiredText } from "./lib/validation";
+import { nextBatchReference } from "./lib/batchNumbers";
 
 type DataCtx = QueryCtx | MutationCtx;
+
+export function assertBatchCatalogDeadline(batch: Doc<"batches">, catalog: Doc<"secretCatalogs">): void {
+  if ((batch.poDeadlineAt ?? null) !== (catalog.closesAt ?? null)) {
+    fail("BATCH_DEADLINE_MISMATCH", "Batch dan Secret Catalog harus memiliki deadline PO yang sama");
+  }
+}
 
 export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
   const batch = await ctx.db.get(batchId);
@@ -63,18 +70,17 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "batches.manage");
     const name = requiredText(args.name, "batch name");
-    const referenceCode = args.referenceCode?.trim() || undefined;
+    const requestedReferenceCode = args.referenceCode?.trim() || undefined;
     if (args.poDeadlineAt !== undefined && args.poDeadlineAt <= Date.now()) {
       fail("VALIDATION_FAILED", "PO deadline must be in the future");
     }
-    if (referenceCode) {
-      const duplicate = await ctx.db
-        .query("batches")
-        .withIndex("by_reference_code", (index) => index.eq("referenceCode", referenceCode))
-        .unique();
-      if (duplicate) fail("VALIDATION_FAILED", "batch reference code is already in use");
-    }
     const now = Date.now();
+    const referenceCode = requestedReferenceCode || (await nextBatchReference(ctx, now));
+    const duplicate = await ctx.db
+      .query("batches")
+      .withIndex("by_reference_code", (index) => index.eq("referenceCode", referenceCode))
+      .unique();
+    if (duplicate) fail("VALIDATION_FAILED", "batch reference code is already in use");
     const batchId = await ctx.db.insert("batches", {
       name,
       referenceCode,
@@ -117,6 +123,7 @@ export const linkCatalog = mutation({
     if (batch.isArchived) fail("BATCH_ARCHIVED");
     if (batch.currentShipmentStage) fail("BATCH_LOCKED");
     if (!catalog) fail("CATALOG_NOT_FOUND");
+    assertBatchCatalogDeadline(batch, catalog);
     const duplicate = await ctx.db
       .query("catalogBatchLinks")
       .withIndex("by_catalog_and_batch", (index) => index.eq("catalogId", args.catalogId).eq("batchId", args.batchId))

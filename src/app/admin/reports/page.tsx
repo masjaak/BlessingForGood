@@ -11,6 +11,7 @@ import { toExcelCsv } from "@/lib/excel-export";
 import { orderStatusLabels } from "@/domain/prototype/logic";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceStatusLabel, shipmentStageLabels } from "@/domain/prototype/operations";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function dayValue(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -47,7 +48,7 @@ function Reports() {
       [],
       ["Nomor invoice", "Status", "Total IDR", "Sisa IDR", "Dibuat pada"],
       ...report.invoices.map((row) => [
-        row.invoiceNumber,
+        invoiceReference(row.invoiceNumber),
         invoiceStatusLabel(row.status),
         row.totalAmount,
         row.outstandingAmount,

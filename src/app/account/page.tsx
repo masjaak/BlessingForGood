@@ -10,6 +10,7 @@ import { customerActivity, outstandingRefundObligation } from "@/domain/customer
 import { orderStatusLabels } from "@/domain/prototype/logic";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
 import { ActivityIcon, useWorkspaceActivity } from "@/components/workspace-actions";
@@ -224,7 +225,7 @@ function AccountDashboard() {
               {openInvoices.slice(0, 4).map((invoice) => (
                 <Link className="dashboard-row" href={`/account/invoices/${invoice.invoiceId}`} key={invoice.invoiceId}>
                   <span>
-                    <strong>{invoice.invoiceNumber}</strong>
+                    <strong>{invoiceReference(invoice.invoiceNumber)}</strong>
                     <small>
                       Sisa <Money amount={invoice.outstandingAmount} />
                     </small>

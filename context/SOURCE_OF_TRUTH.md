@@ -78,6 +78,39 @@ This document is the canonical product contract. It records requirements and
 decisions first, then points to implementation and evidence. Code, screenshots,
 tests, and completion reports are evidence; they are not requirement authority.
 
+## Current maintenance contract — 2026-08-22
+
+The latest client decisions are authoritative for the current maintenance pass:
+
+### Commerce
+
+- Ready Stock is the direct purchase model while physical available stock
+  exists. Its order source is `ready_stock`; reservation is atomic and no
+  supplier Batch is required.
+- Secret Catalog is a private PO/preorder model. A single Catalog may contain
+  many Publishers, Book Masters, and titles.
+- Batch PO is not Publisher-bound. Items from multiple Publishers may share a
+  Batch only when they use the same operational close date/deadline. Publisher
+  remains a Book/Catalog-item attribute.
+- Customer Batch views must be filtered by legitimate active Catalog access,
+  while preserving a Customer's own assigned/order/status projection. Batch
+  visibility must never bypass Secret Catalog authorization.
+
+### Maintenance UAT authority
+
+The five latest real findings supersede older green snapshots for the affected
+surfaces: a no-invoice Order must provide the next valid Admin action; unread
+Activity must use shared, non-color-only cues; conditional actions must use the
+shared ActionGroup spacing/hierarchy; human invoice references must use the
+short `BFG-INV-YYMMDD-XXXX` family without changing Convex identity; and Master
+Book Save must persist and report success/error while remaining separate from
+explicit Publish.
+
+Production deployment, legacy-reference backfill, and authenticated live
+recheck remain separate evidence gates until the canonical Convex account and
+authorized Production operator are verified. No Production data is fabricated
+for this pass.
+
 ## Product Purpose
 
 Blessing For Goods (BFG) is a community-led imported-book experience for

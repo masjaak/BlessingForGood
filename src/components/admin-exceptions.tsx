@@ -20,6 +20,7 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { orderReference } from "@/domain/prototype/order-reference";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 type AdminException = Awaited<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>[number];
 type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForAdmin>>;
@@ -263,8 +264,8 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
         <div className="summary-line">
           <span>Dampak invoice</span>
           <span>
-            {exception.invoice.invoiceNumber} · {exception.invoice.adjustedTotalAmount.toLocaleString("id-ID")} IDR
-            current
+            {invoiceReference(exception.invoice.invoiceNumber)} ·{" "}
+            {exception.invoice.adjustedTotalAmount.toLocaleString("id-ID")} IDR current
           </span>
         </div>
       ) : null}

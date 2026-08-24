@@ -8,6 +8,33 @@ source: conversation
 
 # Changelog
 
+## [maintenance-product-logic-uat-correction] — 2026-08-22
+
+### Changed
+
+- Added a state-driven Admin Order → Invoice CTA that reuses the existing
+  Finance create/issue path.
+- Made shared Activity unread state visible with a BFG tint, accent, dot,
+  `Baru`, stronger title, and accessible `Belum dibaca` text while preserving
+  backend read semantics.
+- Added shared `ActionGroup` spacing/wrapping for conditional actions.
+- Replaced new human invoice identifiers with server-generated
+  `BFG-INV-YYMMDD-XXXX`, plus a bounded audited legacy-reference preview and
+  idempotent backfill mutation that preserves internal identity and money.
+- Made Master Book Save report data-backed success/error, persist after query
+  refresh, and remain separate from explicit Publish.
+- Locked the current commerce clarification in source docs and verified
+  multi-Publisher Secret Catalog/Batch behavior with shared close-date guards
+  and access-safe Customer projection.
+
+### QA
+
+- Focused maintenance suites: `30/30`.
+- Full Vitest/Convex suite: `267/267`.
+- TypeScript, ESLint, and Prettier checks pass after the correction.
+- Production deployment/backfill/live authenticated recheck were not run
+  without a verified canonical Convex account and authorized operator.
+
 ## [phase-07.1-responsive-cover-closure] — 2026-08-15
 
 ### Changed

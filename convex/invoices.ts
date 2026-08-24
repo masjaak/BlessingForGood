@@ -7,12 +7,27 @@ import { requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { calculateDepositRequired } from "./lib/invoiceCalculations";
 import { effectiveInvoiceTotal, invoiceProjection } from "./lib/invoiceProjection";
-import { invoiceNumberForId } from "./lib/invoiceNumbers";
+import {
+  invoiceDatePart,
+  invoiceNumberForSequence,
+  isCanonicalInvoiceNumber,
+  nextInvoiceNumber,
+} from "./lib/invoiceNumbers";
 import { fail } from "./lib/errors";
 import { depositRequirementModeValidator } from "./validators";
 import { notifyUser } from "./lib/notifications";
 
 type DataCtx = QueryCtx | MutationCtx;
+
+const MAX_BACKFILL_SCAN = 2000;
+
+function legacyInvoiceNumber(value: string): boolean {
+  return !isCanonicalInvoiceNumber(value);
+}
+
+function backfillLimit(value: number | undefined): number {
+  return Math.min(Math.max(Math.floor(value || 200), 1), MAX_BACKFILL_SCAN);
+}
 
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
@@ -146,10 +161,11 @@ export const create = mutation({
     const requirementValue = args.depositRequirementMode === "none" ? undefined : args.depositRequirementValue;
     const depositRequiredAmount = requiredAmount(snapshot.total, args.depositRequirementMode, requirementValue);
     const now = Date.now();
+    const invoiceNumber = await nextInvoiceNumber(ctx, now);
     const invoiceId = await ctx.db.insert("invoices", {
       orderId: order._id,
       customerUserId: order.customerUserId,
-      invoiceNumber: "pending",
+      invoiceNumber,
       status: "draft",
       currency: "IDR",
       subtotalAmount: snapshot.total,
@@ -170,7 +186,6 @@ export const create = mutation({
       updatedAt: now,
       createdByUserId: user._id,
     });
-    await ctx.db.patch(invoiceId, { invoiceNumber: invoiceNumberForId(invoiceId, now) });
     for (const item of snapshot.items) {
       await ctx.db.insert("invoiceItems", {
         invoiceId,
@@ -265,6 +280,108 @@ export const listForAdmin = query({
     await requirePermission(ctx, "invoices.read.all");
     const page = await ctx.db.query("invoices").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((invoice) => invoiceView(ctx, invoice._id))) };
+  },
+});
+
+export const getByInvoiceNumberForAdmin = query({
+  args: { invoiceNumber: v.string() },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "invoices.read.all");
+    const invoiceNumber = args.invoiceNumber.trim().toUpperCase();
+    if (!invoiceNumber) return null;
+    const invoice = await ctx.db
+      .query("invoices")
+      .withIndex("by_invoice_number", (index) => index.eq("invoiceNumber", invoiceNumber))
+      .first();
+    return invoice ? invoiceView(ctx, invoice._id) : null;
+  },
+});
+
+export const getForOrderAdmin = query({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "invoices.read.all");
+    if (!(await ctx.db.get(args.orderId))) fail("ORDER_NOT_FOUND");
+    const invoice = (
+      await ctx.db
+        .query("invoices")
+        .withIndex("by_order", (index) => index.eq("orderId", args.orderId))
+        .take(50)
+    ).find((candidate) => candidate.status !== "void");
+    return invoice ? invoiceView(ctx, invoice._id) : null;
+  },
+});
+
+export const previewLegacyReferences = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "invoices.manage");
+    const limit = backfillLimit(args.limit);
+    const invoices = await ctx.db
+      .query("invoices")
+      .withIndex("by_created_at")
+      .order("asc")
+      .take(MAX_BACKFILL_SCAN);
+    const canonical = invoices.filter((invoice) => isCanonicalInvoiceNumber(invoice.invoiceNumber));
+    const legacyInvoices = invoices.filter((invoice) => legacyInvoiceNumber(invoice.invoiceNumber));
+    const legacy = legacyInvoices.slice(0, limit);
+    const counters = new Map<string, number>();
+    const used = new Set(canonical.map((invoice) => invoice.invoiceNumber));
+    const existingCounters = await ctx.db.query("invoiceReferenceCounters").take(MAX_BACKFILL_SCAN);
+    for (const counter of existingCounters) counters.set(counter.datePart, counter.nextNumber);
+    let collisions = 0;
+    const planned = legacy.map((invoice) => {
+      const datePart = invoiceDatePart(invoice.createdAt);
+      let sequence = counters.get(datePart) || 1;
+      let reference = invoiceNumberForSequence(datePart, sequence);
+      while (used.has(reference)) {
+        collisions += 1;
+        sequence += 1;
+        reference = invoiceNumberForSequence(datePart, sequence);
+      }
+      counters.set(datePart, sequence + 1);
+      used.add(reference);
+      return { invoiceId: invoice._id, oldReference: invoice.invoiceNumber, newReference: reference };
+    });
+    return {
+      scanned: invoices.length,
+      canonicalCount: canonical.length,
+      legacyCount: legacyInvoices.length,
+      collisions,
+      hasMore: legacyInvoices.length > legacy.length,
+      planned,
+    };
+  },
+});
+
+export const backfillLegacyReferences = mutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "invoices.manage");
+    const limit = backfillLimit(args.limit);
+    const invoices = await ctx.db
+      .query("invoices")
+      .withIndex("by_created_at")
+      .order("asc")
+      .take(MAX_BACKFILL_SCAN);
+    const legacyInvoices = invoices.filter((invoice) => legacyInvoiceNumber(invoice.invoiceNumber));
+    const legacy = legacyInvoices.slice(0, limit);
+    let updated = 0;
+    for (const invoice of legacy) {
+      const invoiceNumber = await nextInvoiceNumber(ctx, invoice.createdAt);
+      await ctx.db.patch(invoice._id, { invoiceNumber });
+      await recordAudit(ctx, user._id, "invoice.reference_backfilled", "invoice", invoice._id, {
+        oldReference: invoice.invoiceNumber,
+        invoiceNumber,
+      });
+      updated += 1;
+    }
+    return {
+      updated,
+      scanned: invoices.length,
+      legacyCount: legacyInvoices.length,
+      hasMore: legacyInvoices.length > legacy.length,
+    };
   },
 });
 

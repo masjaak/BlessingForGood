@@ -28,11 +28,16 @@ vi.mock("convex/react", () => ({
 
 describe("compact ActivityCenter", () => {
   it("renders system and message records in one chronological feed", () => {
-    render(<ActivityCenter compact onClose={vi.fn()} workspace="customer" />);
+    const { container } = render(<ActivityCenter compact onClose={vi.fn()} workspace="customer" />);
 
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByText("Sistem")).toBeTruthy();
     expect(screen.getByText("Pesan BFG")).toBeTruthy();
+    expect(screen.getByText("Baru")).toBeTruthy();
+    expect(screen.getByLabelText("Belum dibaca")).toBeTruthy();
+    const cards = container.querySelectorAll(".activity-card");
+    expect(cards[0]?.querySelector(".activity-unread-marker")).toBeTruthy();
+    expect(cards[1]?.querySelector(".activity-unread-marker")).toBeNull();
     expect(screen.getByRole("link", { name: "Lihat semua aktivitas" }).getAttribute("href")).toBe(
       "/account/notifications",
     );

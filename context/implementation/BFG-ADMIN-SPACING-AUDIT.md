@@ -70,3 +70,20 @@ Kelola katalog → 12px → Draft helper copy
 
 The same rule applies to every `AUTH_REQUIRED` row above. No row is closed by
 class names, source inspection, or deterministic tests alone.
+
+## Maintenance conditional-action audit — 2026-08-22
+
+The latest evidence specifically covered state-dependent combinations that the
+earlier always-visible audit did not close:
+
+| State combination | Shared primitive | Result |
+| --- | --- | --- |
+| Order without invoice | `ActionGroup` around the primary `Terbitkan invoice` CTA and helper copy | Clear next action with no touching controls. |
+| Invoice draft | `ActionGroup` around `Buka operasi invoice` and conditional issue action | Primary/secondary hierarchy and shared gap. |
+| Invoice issued/void | Same group with issue action absent when ineligible | No dead issue control. |
+| Book Draft | Responsive `ActionGroup` around Save and explicit Publish | Save remains primary; Publish is distinct and state-dependent. |
+| Batch/payment conditional actions | Existing shared action/form tokens remain the contract | No route-local margin patch introduced. |
+
+The conditional audit is locally green by source, component tests, TypeScript,
+ESLint, Prettier, and full deterministic regression. Authenticated viewport
+evidence is still a separate Production gate.

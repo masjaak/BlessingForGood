@@ -204,4 +204,97 @@ describe("BFG batch roster and assisted orders", () => {
     );
     expect(actions).toContain("order.admin_assisted_created");
   });
+
+  it("allows multi-publisher Batch items with one shared close date and protects the customer projection", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const deadline = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const catalog = await admin.mutation(api.secretCatalogs.createBundle, {
+      name: "Shared Deadline Catalog",
+      publisherName: "Publisher A",
+      bookTitle: "Book A",
+      closesAt: deadline,
+      accessCode: "shared-deadline-code",
+      variants: [{ format: "PB", isbn: "97800009921", priceAmount: 110000 }],
+    });
+    for (const [publisherName, title, isbn] of [
+      ["Publisher B", "Book B", "97800009922"],
+      ["Publisher C", "Book C", "97800009923"],
+    ]) {
+      const publisherId = await admin.mutation(api.publishers.create, { name: publisherName });
+      const bookId = await admin.mutation(api.books.create, { publisherId, title });
+      await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+      const variantId = await admin.mutation(api.bookVariants.create, {
+        bookId,
+        format: "PB",
+        isbn,
+        priceAmount: 115000,
+      });
+      await admin.mutation(api.catalogItems.add, { catalogId: catalog.catalogId, bookVariantId: variantId });
+      catalog.variantIds.push(variantId);
+    }
+    await admin.mutation(api.secretCatalogs.open, { catalogId: catalog.catalogId });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "shared-deadline-code" });
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Shared Deadline Customer",
+      items: catalog.variantIds.map((variantId) => ({ variantId, quantity: 1 })),
+    });
+    const batch = await admin.mutation(api.batches.create, {
+      name: "Shared Deadline Batch",
+      poDeadlineAt: deadline,
+    });
+    expect(batch.referenceCode).toMatch(/^BFG-BAT-\d{6}-[0-9A-Z]{4}$/);
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    for (const item of order.items) {
+      await admin.mutation(api.batchTracking.assignOrderItem, {
+        orderItemId: item._id,
+        batchId: batch.batchId,
+        assignedQuantity: 1,
+      });
+    }
+
+    const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
+    expect(detail.purchaseSummary).toHaveLength(3);
+    const customerBatch = await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId });
+    expect(customerBatch).toMatchObject({
+      batchId: batch.batchId,
+      items: expect.arrayContaining([expect.objectContaining({ title: "Book A" })]),
+    });
+    expect(customerBatch?.availableItems).toHaveLength(3);
+    expect(new Set(customerBatch?.availableItems.map((item) => item.publisher))).toEqual(
+      new Set(["Publisher A", "Publisher B", "Publisher C"]),
+    );
+    await expect(secondCustomer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId })).resolves.toBeNull();
+
+    await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
+    await expect(
+      admin.mutation(api.batchTracking.assignOrderItem, {
+        orderItemId: order.items[0]._id,
+        batchId: batch.batchId,
+        assignedQuantity: 1,
+      }),
+    ).rejects.toThrow("BATCH_LOCKED");
+  });
+
+  it("rejects a Batch whose close date differs from its Catalog close date", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const catalog = await admin.mutation(api.secretCatalogs.createBundle, {
+      name: "Deadline Mismatch Catalog",
+      publisherName: "Deadline Publisher",
+      bookTitle: "Deadline Book",
+      closesAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      accessCode: "deadline-mismatch-code",
+      variants: [{ format: "PB", isbn: "97800009931", priceAmount: 110000 }],
+    });
+    await admin.mutation(api.secretCatalogs.open, { catalogId: catalog.catalogId });
+    const batch = await admin.mutation(api.batches.create, {
+      name: "Mismatched Deadline Batch",
+      poDeadlineAt: Date.now() + 14 * 24 * 60 * 60 * 1000,
+    });
+    await expect(
+      admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId }),
+    ).rejects.toThrow("BATCH_DEADLINE_MISMATCH");
+  });
 });

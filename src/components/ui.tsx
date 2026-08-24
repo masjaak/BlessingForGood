@@ -6,6 +6,20 @@ import { formatIdr } from "@/domain/prototype/logic";
 export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
 export type ButtonSize = "default" | "compact" | "icon";
 export type FrameVariant = "operational" | "form" | "table" | "list" | "summary" | "detail" | "empty" | "attention";
+export type ActionGroupVariant = "inline" | "stacked" | "responsive";
+
+export function ActionGroup({
+  variant = "inline",
+  className = "",
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { variant?: ActionGroupVariant; children: ReactNode }) {
+  return (
+    <div className={`action-group action-group-${variant} ${className}`.trim()} {...props}>
+      {children}
+    </div>
+  );
+}
 
 export function Button({
   variant = "primary",

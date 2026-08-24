@@ -43,15 +43,37 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
       <Card>
         <span className="card-kicker">Buku milikmu</span>
         <h2>Roster pelanggan</h2>
-        {batch.items.map((item) => (
-          <div className="summary-line" key={item.assignmentId}>
-            <span>
-              {item.title} · {item.format}
-            </span>
-            <strong>{item.quantity}</strong>
-          </div>
-        ))}
+        {batch.items.length ? (
+          batch.items.map((item) => (
+            <div className="summary-line" key={item.assignmentId}>
+              <span>
+                {item.title} · {item.format}
+              </span>
+              <strong>{item.quantity}</strong>
+            </div>
+          ))
+        ) : (
+          <p className="subtle">Belum ada item yang ditugaskan ke pesananmu.</p>
+        )}
       </Card>
+      {batch.availableItems.length ? (
+        <Card>
+          <span className="card-kicker">Buku dalam Batch</span>
+          <h2>Item yang dapat dipesan</h2>
+          {batch.availableItems.map((item) => (
+            <div className="summary-line" key={`${item.catalogId}-${item.bookId}`}>
+              <span>
+                <strong>{item.title}</strong>
+                <br />
+                <span className="subtle">
+                  {item.publisher} · {item.catalogName} · {item.variants.map((variant) => variant.format).join(", ")}
+                </span>
+              </span>
+              <span className="subtle">Tersedia melalui katalog</span>
+            </div>
+          ))}
+        </Card>
+      ) : null}
       <Card>
         <span className="card-kicker">Pelacakan</span>
         <h2>Linimasa batch</h2>

@@ -69,3 +69,12 @@ the active decision index.
 An old decision cannot become active again merely because a historical report,
 legacy symbol, or hidden route still exists. A new decision must be explicit,
 source-backed, and added here before implementation.
+
+## Maintenance decisions — 2026-08-22
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-052 | 2026-08-22 / Maintenance UAT | Ready Stock and Secret Catalog could share one vague availability/order model. | `READY_STOCK_AND_SECRET_CATALOG_ARE_DISTINCT_ORDERING_MODELS`: Ready Stock is direct stock-backed purchase; Secret Catalog is private PO/preorder. | Latest explicit client clarification; current order/stock/catalog code | Prevents supplier-PO logic from leaking into direct stock purchase. | ACTIVE |
+| BFG-DEC-053 | 2026-08-22 / Maintenance UAT | A Batch could be interpreted as publisher-bound. | `MULTI_PUBLISHER_BATCH_ALLOWED`: one Batch may contain many publishers/titles when the Catalog/Batch close date is the same; Publisher remains a Book/Catalog-item attribute. | Latest explicit client clarification; Batch schema and deadline guard | Makes the operational grouping invariant the shared close date, not Publisher. | ACTIVE |
+| BFG-DEC-054 | 2026-08-22 / Maintenance UAT | Batch visibility could be treated as implicit Secret Catalog access. | Customer Batch projection exposes only active authorized Catalog items plus the Customer's own assignment/order/status projection. | Secret Catalog access contract; latest client clarification | Prevents cross-Catalog discovery leakage. | ACTIVE |
+| BFG-DEC-055 | 2026-08-22 / Maintenance UAT | Earlier green reports could close the five findings without current real evidence. | Current authenticated evidence reopens only the five named defects; shared state-driven fixes must be verified locally and separately rechecked in Production. | Latest real Admin evidence; Development System V2 | Treats operational guidance, read-state clarity, action hierarchy, traceability, and persistence trust as correctness issues. | ACTIVE |

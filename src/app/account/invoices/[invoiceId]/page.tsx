@@ -31,6 +31,7 @@ import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
 import { uploadBfgFile } from "@/lib/upload-file";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = useProduct();
@@ -66,7 +67,7 @@ function CustomerInvoiceDetail() {
     <div className="page narrow-page">
       <PageHeader
         eyebrow="Detail invoice"
-        title={currentCustomerInvoice.invoiceNumber}
+        title={invoiceReference(currentCustomerInvoice.invoiceNumber)}
         description={`${currentCustomerInvoice.customerName} · ${currentCustomerInvoice.orderCode || `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`}`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">

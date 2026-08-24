@@ -28,12 +28,20 @@ export function ActivityCenter({
         {activity.map((item) => (
           <Card className={item.readAt ? "activity-card" : "activity-card is-unread"} key={item.sourceId}>
             <div className="activity-card-topline">
-              <span className="activity-type">{item.type === "system" ? "Sistem" : "Pesan BFG"}</span>
+              <span className="activity-type-group">
+                <span className="activity-type">{item.type === "system" ? "Sistem" : "Pesan BFG"}</span>
+                {!item.readAt ? (
+                  <span className="activity-unread-marker" role="status" aria-label="Belum dibaca">
+                    <span className="activity-unread-dot" aria-hidden="true" />
+                    <span>Baru</span>
+                  </span>
+                ) : null}
+              </span>
               <time dateTime={new Date(item.timestamp).toISOString()}>
                 {new Date(item.timestamp).toLocaleString("id-ID")}
               </time>
             </div>
-            <h2>{item.title}</h2>
+            <h2 className={!item.readAt ? "activity-title-unread" : undefined}>{item.title}</h2>
             <p>{item.description}</p>
             <Link
               className="button button-secondary"

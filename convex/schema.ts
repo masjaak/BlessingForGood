@@ -418,6 +418,18 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
 
+  invoiceReferenceCounters: defineTable({
+    datePart: v.string(),
+    nextNumber: v.number(),
+    updatedAt: v.number(),
+  }).index("by_date_part", ["datePart"]),
+
+  batchReferenceCounters: defineTable({
+    datePart: v.string(),
+    nextNumber: v.number(),
+    updatedAt: v.number(),
+  }).index("by_date_part", ["datePart"]),
+
   orderItems: defineTable({
     orderId: v.id("orders"),
     catalogItemId: v.optional(v.id("catalogItems")),

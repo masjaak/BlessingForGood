@@ -2,6 +2,7 @@ import type { CustomerExceptionPage, InvoicePage, TransactionPage } from "@/doma
 import type { Order } from "@/domain/prototype/types";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { orderStatusLabels } from "@/domain/prototype/logic";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 export type CustomerActivity = {
   id: string;
@@ -39,7 +40,7 @@ export function customerActivity(
       id: `invoice-${invoice.invoiceId}-${invoice.updatedAt}`,
       at: invoice.updatedAt,
       title: invoicePaymentStatusLabel(invoice.paymentStatus),
-      detail: invoice.invoiceNumber,
+      detail: invoiceReference(invoice.invoiceNumber),
       href: `/account/invoices/${invoice.invoiceId}`,
     })),
     ...transactions.map((transaction) => ({

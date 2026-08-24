@@ -19,6 +19,7 @@ import { useOperations, type AdminPaymentQueue } from "@/domain/prototype/operat
 import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function statusTone(status: AdminPaymentQueue[number]["status"]): "neutral" | "positive" | "warning" {
   if (status === "approved") return "positive";
@@ -53,7 +54,9 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
     <Card>
       <div className="split-heading">
         <div>
-          <span className="card-kicker">{invoice?.invoiceNumber || confirmation.invoiceId}</span>
+          <span className="card-kicker">
+            {invoice ? invoiceReference(invoice.invoiceNumber) : "Referensi invoice tidak tersedia"}
+          </span>
           <h2>{invoice ? invoice.customerName : "Invoice tidak tersedia"}</h2>
           {invoice?.customerEmail ? <p className="subtle">{invoice.customerEmail}</p> : null}
         </div>
@@ -218,8 +221,10 @@ function AdminPayments() {
               {resolvedHistory.map((confirmation) => (
                 <div className="summary-line" key={confirmation.confirmationId}>
                   <span>
-                    {confirmation.invoice?.invoiceNumber || confirmation.invoiceId} ·{" "}
-                    {confirmation.invoice?.customerName || "Pelanggan tidak dikenal"}
+                    {confirmation.invoice
+                      ? invoiceReference(confirmation.invoice.invoiceNumber)
+                      : "Referensi invoice tidak tersedia"}{" "}
+                    · {confirmation.invoice?.customerName || "Pelanggan tidak dikenal"}
                     <br />
                     {paymentConfirmationStatusLabel(confirmation.status)} ·{" "}
                     {confirmation.reviewedAt
