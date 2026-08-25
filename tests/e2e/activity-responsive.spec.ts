@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const globalsCss = readFileSync("src/app/globals.css", "utf8");
+const successMascot = readFileSync("public/brand/mascot/Mascott-3.png").toString("base64");
 
 const viewportMatrix = [
   { width: 375, height: 812 },
@@ -194,6 +195,98 @@ test.describe("@activity Activity responsive geometry", () => {
         await page.screenshot({ path: testInfo.outputPath(`activity-${state}-${viewport.width}.png`) });
       }
     }
+  });
+
+  test("keeps the Join success mascot outside the success copy", async ({ page }, testInfo) => {
+    for (const viewport of viewportMatrix.filter((item) => [375, 390, 430, 768, 1024, 1440].includes(item.width))) {
+      await page.setViewportSize(viewport);
+      await page.setContent(`
+        <style>${globalsCss}</style>
+        <div class="customer-shell">
+          <main>
+            <div class="page narrow-page">
+              <section class="card success-card join-success-card">
+                <img class="brand-mascot success-mascot" src="data:image/png;base64,${successMascot}" alt="" />
+                <div class="join-success-content">
+                  <span class="card-kicker">Permintaan diterima</span>
+                  <h2>Permintaanmu sudah dikirim.</h2>
+                  <p>Tim BFG akan meninjaunya terlebih dahulu.</p>
+                  <p class="success-banner">Permintaanmu sudah kami terima.</p>
+                  <div class="actions"><a class="button button-secondary" href="#">Kembali</a></div>
+                </div>
+              </section>
+            </div>
+          </main>
+        </div>
+      `);
+
+      const geometry = await page.locator(".join-success-card").evaluate((card) => {
+        const mascot = card.querySelector<HTMLElement>(".success-mascot");
+        const headline = card.querySelector<HTMLElement>("h2");
+        const body = card.querySelector<HTMLElement>(".join-success-content > p");
+        if (!mascot || !headline || !body) throw new Error("Join success fixture did not render");
+        const box = (element: HTMLElement) => {
+          const { left, right, top, bottom } = element.getBoundingClientRect();
+          return { left, right, top, bottom };
+        };
+        return {
+          mascot: box(mascot),
+          headline: box(headline),
+          body: box(body),
+          contentScrollWidth: card.querySelector<HTMLElement>(".join-success-content")?.scrollWidth,
+          contentClientWidth: card.querySelector<HTMLElement>(".join-success-content")?.clientWidth,
+        };
+      });
+
+      const overlaps = (
+        left: { left: number; right: number; top: number; bottom: number },
+        right: { left: number; right: number; top: number; bottom: number },
+      ) => left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
+      expect(overlaps(geometry.mascot, geometry.headline), `${viewport.width}px mascot/headline overlap`).toBe(false);
+      expect(overlaps(geometry.mascot, geometry.body), `${viewport.width}px mascot/body overlap`).toBe(false);
+      expect(geometry.contentScrollWidth).toBe(geometry.contentClientWidth);
+      await expect(page.locator(".join-success-card h2")).toBeVisible();
+      await expect(page.locator(".join-success-card p").first()).toBeVisible();
+      if ([375, 390, 430, 1440].includes(viewport.width)) {
+        await page.screenshot({ path: testInfo.outputPath(`join-success-${viewport.width}.png`) });
+      }
+    }
+  });
+
+  test("gives approved feedback semantic top and bottom spacing", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.setContent(`
+      <style>${globalsCss}</style>
+      <div class="admin-shell">
+        <div class="admin-content approved-feedback-qa">
+          <section class="card join-request-card">
+            <div class="summary-line"><span>Dikirim</span><span>22/08/2026</span></div>
+            <div class="content-stack approved-feedback-section">
+              <p class="success-banner">Disetujui. Buat undangan Clerk secara manual untuk identitas baru.</p>
+            </div>
+            <p class="subtle review-metadata">Ditinjau 22/08/2026</p>
+          </section>
+        </div>
+      </div>
+    `);
+
+    const geometry = await page.locator(".approved-feedback-qa").evaluate((fixture) => {
+      const divider = fixture.querySelector<HTMLElement>(".summary-line");
+      const feedback = fixture.querySelector<HTMLElement>(".approved-feedback-section .success-banner");
+      const metadata = fixture.querySelector<HTMLElement>(".review-metadata");
+      if (!divider || !feedback || !metadata) throw new Error("Approved feedback fixture did not render");
+      const rect = (element: HTMLElement) => element.getBoundingClientRect();
+      return {
+        topGap: rect(feedback).top - rect(divider).bottom,
+        bottomGap: rect(metadata).top - rect(feedback).bottom,
+      };
+    });
+
+    expect(geometry.topGap).toBeGreaterThanOrEqual(16);
+    expect(geometry.topGap).toBeLessThanOrEqual(20);
+    expect(geometry.bottomGap).toBeGreaterThanOrEqual(16);
+    expect(geometry.bottomGap).toBeLessThanOrEqual(20);
+    await page.screenshot({ path: testInfo.outputPath("approved-feedback-1440.png") });
   });
 
   test("keeps Join Request actions separate from feedback and the next card", async ({ page }, testInfo) => {

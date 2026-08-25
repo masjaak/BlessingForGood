@@ -81,27 +81,29 @@ function ConnectedJoinForm() {
     return (
       <Card className="success-card join-success-card">
         <BrandMascot variant="success" className="success-mascot" />
-        <span className="card-kicker">Permintaan diterima</span>
-        <h2>Permintaanmu sudah dikirim.</h2>
-        <p>
-          Tim BFG akan meninjaunya terlebih dahulu. Jika disetujui, undangan akan dikirim ke email yang kamu gunakan.
-        </p>
-        {whatsappGroupUrl ? (
-          <LinkButton variant="primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
-            Gabung WhatsApp Group
-          </LinkButton>
-        ) : (
-          <p className="success-banner" role="status">
-            Permintaanmu sudah kami terima. Link grup sedang disiapkan.
+        <div className="join-success-content">
+          <span className="card-kicker">Permintaan diterima</span>
+          <h2>Permintaanmu sudah dikirim.</h2>
+          <p>
+            Tim BFG akan meninjaunya terlebih dahulu. Jika disetujui, undangan akan dikirim ke email yang kamu gunakan.
           </p>
-        )}
-        <div className="actions">
-          <LinkButton href="/community" variant="secondary">
-            Kenali komunitas BFG
-          </LinkButton>
-          <LinkButton href="/" variant="tertiary">
-            Kembali ke beranda
-          </LinkButton>
+          {whatsappGroupUrl ? (
+            <LinkButton variant="primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
+              Gabung WhatsApp Group
+            </LinkButton>
+          ) : (
+            <p className="success-banner" role="status">
+              Permintaanmu sudah kami terima. Link grup sedang disiapkan.
+            </p>
+          )}
+          <div className="actions">
+            <LinkButton href="/community" variant="secondary">
+              Kenali komunitas BFG
+            </LinkButton>
+            <LinkButton href="/" variant="tertiary">
+              Kembali ke beranda
+            </LinkButton>
+          </div>
         </div>
       </Card>
     );

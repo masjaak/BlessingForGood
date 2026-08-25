@@ -8,7 +8,9 @@ import { useProduct } from "@/domain/prototype/store";
 
 vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn() }));
 vi.mock("convex/react", () => ({ useMutation: vi.fn(), useQuery: vi.fn() }));
-vi.mock("@/components/brand", () => ({ BrandMascot: () => null }));
+vi.mock("@/components/brand", () => ({
+  BrandMascot: ({ className = "" }: { className?: string }) => <span className={className} aria-hidden="true" />,
+}));
 vi.mock("@/components/site-shell", () => ({ SiteShell: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 
@@ -58,6 +60,8 @@ describe("Join Blessfriends admission entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "Kirim permintaan" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Permintaanmu sudah dikirim." })).toBeTruthy());
+    expect(document.querySelector(".join-success-card > .success-mascot")).toBeTruthy();
+    expect(document.querySelector(".join-success-content h2")?.textContent).toBe("Permintaanmu sudah dikirim.");
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
         email: "signed-out@example.com",

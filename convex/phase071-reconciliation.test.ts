@@ -72,9 +72,17 @@ describe("Phase 07.1 reconciliation", () => {
     });
     const adminInbox = await admin.query(api.notifications.listMine, { surface: "inbox" });
     expect(adminInbox[0]).toMatchObject({ eventType: "join_request.submitted", readAt: null });
-    expect(await admin.query(api.notifications.listActivity, { workspace: "admin" })).toEqual(
-      expect.arrayContaining([expect.objectContaining({ title: "Permintaan bergabung baru", type: "message" })]),
-    );
+    const adminActivity = await admin.query(api.notifications.listActivity, { workspace: "admin" });
+    expect(adminActivity).toHaveLength(1);
+    expect(adminActivity[0]).toMatchObject({
+      title: "Permintaan bergabung baru",
+      description: "Inbox Applicant mengirim permintaan bergabung.",
+      source: "inbox",
+      type: "message",
+      readAt: null,
+    });
+    expect(adminActivity.some((item) => item.title === "Join Request baru")).toBe(false);
+    expect(await admin.query(api.notifications.unreadActivityCount, { workspace: "admin" })).toBe(1);
     expect(await admin.query(api.notifications.listActivity, { workspace: "customer" })).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ title: "Permintaan bergabung baru" })]),
     );

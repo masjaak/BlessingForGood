@@ -152,7 +152,7 @@ function JoinRequestCard({
         </div>
       ) : null}
       {request.status === "approved" ? (
-        <div className="content-stack">
+        <div className="content-stack approved-feedback-section">
           <p className="success-banner" role="status">
             {request.admissionStatus === "active"
               ? "Blessfriend aktif. Akses pelanggan sudah terbuka."

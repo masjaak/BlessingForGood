@@ -4547,6 +4547,46 @@ p {
   padding: var(--space-5);
 }
 
+.customer-shell .join-success-card {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: var(--space-lg);
+  padding: var(--frame-padding-operational);
+}
+
+.customer-shell .join-success-card > .success-mascot {
+  position: static;
+  width: 104px;
+  height: 104px;
+  margin: 0;
+  transform: none;
+}
+
+.join-success-content {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-md);
+  align-content: start;
+}
+
+.join-success-content .card-kicker,
+.join-success-content h2,
+.join-success-content p {
+  margin-bottom: 0;
+}
+
+.join-success-content .actions {
+  margin-top: 0;
+}
+
+.admin-shell .join-request-card > .approved-feedback-section {
+  margin-block: var(--space-md);
+}
+
+.admin-shell .join-request-card > .approved-feedback-section > .success-banner {
+  margin-bottom: 0;
+}
+
 /* Phase 07.1 visual contract: shared semantic geometry, not route patches. */
 :root {
   --layout-page-inline-admin: 24px;
@@ -6823,5 +6863,15 @@ p {
   .auth-page .auth-shell > .brand-logo-frame .brand-logo {
     width: 270px;
     height: 270px;
+  }
+
+  .customer-shell .join-success-card {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .join-success-card > .success-mascot {
+    width: 88px;
+    height: 88px;
+    margin-inline: auto;
   }
 }

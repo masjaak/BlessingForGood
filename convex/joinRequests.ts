@@ -177,15 +177,6 @@ export const submit = mutation({
       relatedEntityType: "joinRequest",
       relatedEntityId: String(joinRequestId),
     });
-    await notifyAdmins(ctx, {
-      surface: "notification",
-      eventType: "join_request.submitted",
-      title: "Join Request baru",
-      body: `${name} menunggu tinjauan Admin.`,
-      destination: "/admin/join-requests",
-      relatedEntityType: "joinRequest",
-      relatedEntityId: String(joinRequestId),
-    });
     const configuredGroupUrl = process.env.BFG_JOIN_WHATSAPP_GROUP_URL;
     let whatsappGroupUrl: string | null = null;
     if (configuredGroupUrl) {
