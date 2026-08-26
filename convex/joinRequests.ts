@@ -78,15 +78,18 @@ async function admissionStatus(
 ): Promise<JoinRequestAdmissionStatus> {
   if (request.status === "rejected") return "rejected";
   if (request.status !== "approved") return "pending";
-  if (request.invitationStatus === "failed" && !request.admittedAppUserId) return "invitation_failed";
-  if (!request.applicantClerkUserId && !request.admittedAppUserId) return "invitation_pending";
   const user = request.admittedAppUserId
     ? await ctx.db.get(request.admittedAppUserId)
-    : await ctx.db
-        .query("appUsers")
-        .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", request.applicantClerkUserId!))
-        .unique();
-  return user?.status === "active" ? "active" : "pending";
+    : request.applicantClerkUserId
+      ? await ctx.db
+          .query("appUsers")
+          .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", request.applicantClerkUserId!))
+          .unique()
+      : null;
+  if (user?.role === "customer" && user.status === "active") return "active";
+  if (request.invitationStatus === "failed" && !user) return "invitation_failed";
+  if (!user) return "invitation_pending";
+  return "pending";
 }
 
 async function requestView(ctx: QueryCtx | MutationCtx, request: Doc<"joinRequests">) {

@@ -86,7 +86,9 @@ function JoinRequestCard({
           <h2>{request.name}</h2>
           <p className="subtle">{request.email}</p>
         </div>
-        <StatusBadge tone={statusTone(request.status)}>{statusLabels[request.status]}</StatusBadge>
+        <StatusBadge tone={statusTone(request.status)}>
+          {request.admissionStatus === "active" ? "Aktif" : statusLabels[request.status]}
+        </StatusBadge>
       </div>
       <div className="summary-line">
         <span>WhatsApp / telepon</span>
@@ -157,7 +159,7 @@ function JoinRequestCard({
         <div className="content-stack approved-feedback-section">
           <p className="success-banner" role="status">
             {request.admissionStatus === "active"
-              ? "Blessfriend aktif. Akses pelanggan sudah terbuka."
+              ? "Customer sudah menjadi Blessfriend."
               : request.admissionStatus === "invitation_failed"
                 ? "Disetujui. Undangan belum berhasil dikirim."
                 : request.invitationStatus === "pending"
@@ -166,7 +168,8 @@ function JoinRequestCard({
                     ? "Disetujui. Undangan sudah dikirim dan masih menunggu diterima."
                     : "Disetujui. Undangan belum diproses."}
           </p>
-          {request.invitationStatus === "failed" || request.invitationStatus === "ready" ? (
+          {request.admissionStatus !== "active" &&
+          (request.invitationStatus === "failed" || request.invitationStatus === "ready") ? (
             <ActionGroup variant="responsive">
               <span className="error-text action-support">{request.invitationError || "Undangan belum dikirim."}</span>
               <Button
@@ -180,7 +183,7 @@ function JoinRequestCard({
               </Button>
             </ActionGroup>
           ) : null}
-          {request.admissionError ? (
+          {request.admissionStatus !== "active" && request.admissionError ? (
             <ActionGroup variant="responsive">
               <span className="error-text action-support">Proses penerimaan anggota perlu dicoba lagi.</span>
               <Button

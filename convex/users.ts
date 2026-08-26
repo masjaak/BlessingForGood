@@ -1,4 +1,4 @@
-import { paginationOptsValidator } from "convex/server";
+import { paginationOptsValidator, type UserIdentity } from "convex/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -9,6 +9,12 @@ import { fail } from "./lib/errors";
 import { roleValidator, userStatusValidator } from "./validators";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { nextMemberCode } from "./lib/memberCodes";
+
+function trustedIdentityEmail(identity: UserIdentity): string | null {
+  if (identity.emailVerified === false) return null;
+  const email = identity.email?.trim().toLowerCase();
+  return email || null;
+}
 
 function appUserView(user: Doc<"appUsers">) {
   return {
@@ -82,6 +88,36 @@ export async function admitApprovedJoinRequest(
   return admitted;
 }
 
+async function reconcileExistingCustomerAdmission(
+  ctx: MutationCtx,
+  identity: UserIdentity,
+  user: Doc<"appUsers">,
+  normalizedEmail: string | null,
+) {
+  if (user.role !== "customer" || user.status !== "active" || !normalizedEmail) return;
+  const request = await ctx.db
+    .query("joinRequests")
+    .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
+    .filter((query) => query.eq(query.field("status"), "approved"))
+    .filter((query) => query.neq(query.field("invitationStatus"), "not_ready"))
+    .first();
+  if (
+    !request ||
+    (request.applicantClerkUserId && request.applicantClerkUserId !== identity.subject) ||
+    (request.admittedAppUserId && request.admittedAppUserId !== user._id)
+  ) {
+    return;
+  }
+  await ctx.db.patch(request._id, {
+    applicantClerkUserId: identity.subject,
+    applicantEmailSnapshot: normalizedEmail,
+    updatedAt: Date.now(),
+  });
+  const updated = await ctx.db.get(request._id);
+  if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
+  await admitApprovedJoinRequest(ctx, updated, user._id);
+}
+
 export const ensureCurrentUser = mutation({
   args: {},
   returns: v.object({
@@ -103,7 +139,7 @@ export const ensureCurrentUser = mutation({
     const ownerClerkUserId = process.env.BFG_OWNER_CLERK_USER_ID;
     if (!ownerClerkUserId) fail("AUTH_CONFIGURATION_MISSING");
     const now = Date.now();
-    const normalizedIdentityEmail = identity.email?.trim().toLowerCase();
+    const normalizedIdentityEmail = trustedIdentityEmail(identity);
     const existing = await findCurrentUser(ctx, identity);
     if (existing) {
       const memberCode =
@@ -117,6 +153,7 @@ export const ensureCurrentUser = mutation({
         updatedAt: now,
         lastSeenAt: now,
       });
+      await reconcileExistingCustomerAdmission(ctx, identity, existing, normalizedIdentityEmail);
       const updated = await ctx.db.get(existing._id);
       if (!updated) fail("USER_NOT_FOUND");
       return appUserView(updated);
@@ -156,9 +193,11 @@ export const ensureCurrentUser = mutation({
       lastSeenAt: now,
     });
     if (approvedRequest) {
+      const applicantEmailSnapshot = normalizedIdentityEmail;
+      if (!applicantEmailSnapshot) fail("ADMISSION_REQUIRED");
       await ctx.db.patch(approvedRequest._id, {
         applicantClerkUserId: identity.subject,
-        applicantEmailSnapshot: normalizedIdentityEmail,
+        applicantEmailSnapshot,
         admittedAppUserId: userId,
         invitationStatus: "accepted",
         invitationError: undefined,

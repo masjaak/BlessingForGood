@@ -177,4 +177,152 @@ describe("automatic Clerk invitation reconciliation", () => {
       ),
     ).toHaveLength(1);
   });
+
+  it("does not activate a matching identity before Admin approval", async () => {
+    const t = testConvex();
+    const pendingEmail = "pending-reader@example.com";
+    await t.mutation(api.joinRequests.submit, requestInput({ email: pendingEmail }));
+    const pendingIdentity = t.withIdentity({
+      subject: "clerk_pending_reader",
+      email: pendingEmail,
+      emailVerified: true,
+    });
+
+    await expect(pendingIdentity.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("appUsers").collect()).filter((user) => user.clerkUserId === "clerk_pending_reader"),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("does not activate a rejected request or a wrong authenticated email", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const rejected = await t.mutation(api.joinRequests.submit, requestInput({ email: "rejected-reader@example.com" }));
+    await admin.mutation(api.joinRequests.startReview, { joinRequestId: rejected.joinRequestId });
+    await admin.mutation(api.joinRequests.reject, {
+      joinRequestId: rejected.joinRequestId,
+      rejectionReason: "Not approved for this test.",
+    });
+    const rejectedIdentity = t.withIdentity({
+      subject: "clerk_rejected_reader",
+      email: "rejected-reader@example.com",
+      emailVerified: true,
+    });
+    await expect(rejectedIdentity.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+
+    const approvedEmail = "approved-reader@example.com";
+    const approved = await submitForApproval(t, admin, requestInput({ email: approvedEmail }));
+    const wrongIdentity = t.withIdentity({
+      subject: "clerk_wrong_reader",
+      email: "wrong-reader@example.com",
+      emailVerified: true,
+    });
+    await expect(wrongIdentity.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      joinRequestId: approved.joinRequestId,
+      invitationStatus: "pending",
+      admissionStatus: "invitation_pending",
+    });
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("appUsers").collect()).filter((user) => user.clerkUserId === "clerk_wrong_reader"),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("requires a trusted email claim and keeps suspended customers suspended", async () => {
+    const t = testConvex();
+    const { owner, customer } = await setupUsers(t);
+    const unverifiedEmail = "unverified-reader@example.com";
+    const approved = await submitForApproval(t, owner, requestInput({ email: unverifiedEmail }));
+    const unverifiedIdentity = t.withIdentity({
+      subject: "clerk_unverified_reader",
+      email: unverifiedEmail,
+      emailVerified: false,
+    });
+    await expect(unverifiedIdentity.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    expect((await owner.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      joinRequestId: approved.joinRequestId,
+      admissionStatus: "invitation_pending",
+    });
+
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+    await owner.mutation(api.users.suspend, { userId: customerUser.appUserId });
+    await expect(customer.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "suspended",
+    });
+  });
+
+  it("does not convert an existing privileged appUser into a Customer", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const approved = await submitForApproval(
+      t,
+      admin,
+      requestInput({ email: "phase041-admin-test@example.com" }),
+    );
+
+    await expect(admin.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "admin",
+      status: "active",
+    });
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      joinRequestId: approved.joinRequestId,
+      invitationStatus: "pending",
+      admissionStatus: "invitation_pending",
+    });
+  });
+
+  it("reconciles an accepted identity when its active appUser already exists", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const staleEmail = "stale-reader@example.com";
+    const approved = await submitForApproval(t, admin, requestInput({ email: staleEmail }));
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert("appUsers", {
+        clerkUserId: "clerk_stale_reader",
+        role: "customer",
+        status: "active",
+        emailSnapshot: staleEmail,
+        displayNameSnapshot: "Stale Reader",
+        createdAt: now,
+        updatedAt: now,
+        lastSeenAt: now,
+      });
+    });
+
+    const acceptedIdentity = t.withIdentity({
+      subject: "clerk_stale_reader",
+      email: staleEmail,
+      emailVerified: true,
+    });
+    const first = await acceptedIdentity.mutation(api.users.ensureCurrentUser, {});
+    expect(first).toMatchObject({
+      role: "customer",
+      status: "active",
+    });
+    await expect(acceptedIdentity.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      appUserId: first.appUserId,
+      role: "customer",
+      status: "active",
+    });
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      joinRequestId: approved.joinRequestId,
+      invitationStatus: "accepted",
+      admissionStatus: "active",
+    });
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("auditEvents").collect()).filter(
+          (event) =>
+            event.action === "join_request.admission_succeeded" && event.targetId === String(approved.joinRequestId),
+        ),
+      ),
+    ).toHaveLength(1);
+  });
 });

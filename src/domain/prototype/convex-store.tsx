@@ -160,8 +160,9 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [provisionError, setProvisionError] = useState(false);
   const [admissionDenied, setAdmissionDenied] = useState(false);
   const provisioningRef = useRef(false);
+  const reconciledSessionRef = useRef<string | null>(null);
 
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, sessionId } = useAuth();
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
   const retryConvexAuth = useConvexRetry();
 
@@ -216,7 +217,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       !isSignedIn ||
       convexAuthLoading ||
       !isAuthenticated ||
-      me !== null ||
+      me === undefined ||
+      reconciledSessionRef.current === (sessionId || "signed-in") ||
       provisioningRef.current ||
       admissionDenied ||
       provisionError
@@ -225,10 +227,14 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
+      const sessionKey = sessionId || "signed-in";
       provisioningRef.current = true;
       setProvisioning(true);
       setProvisionError(false);
       void ensureCurrentUser({})
+        .then(() => {
+          reconciledSessionRef.current = sessionKey;
+        })
         .catch((reason) => {
           if (!active) return;
           if (getConvexErrorCode(reason) === "ADMISSION_REQUIRED" || String(reason).includes("ADMISSION_REQUIRED")) {
@@ -252,16 +258,16 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     isSignedIn,
     me,
     provisionError,
+    sessionId,
   ]);
 
   useEffect(() => {
-    if (!isSignedIn) {
-      queueMicrotask(() => {
-        setAdmissionDenied(false);
-        setProvisionError(false);
-      });
-    }
-  }, [isSignedIn]);
+    reconciledSessionRef.current = null;
+    queueMicrotask(() => {
+      setAdmissionDenied(false);
+      setProvisionError(false);
+    });
+  }, [isSignedIn, sessionId]);
 
   const catalogs = useMemo(
     () =>
