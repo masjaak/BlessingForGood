@@ -205,12 +205,26 @@ describe("BFG owned upload HTTP boundary", () => {
     );
     expect(galleryResponse.status).toBe(200);
     const { storageId: galleryStorageId } = (await galleryResponse.json()) as { storageId: string };
+    const secondGalleryResponse = await admin.fetch(
+      `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent("gallery-second.png")}`,
+      {
+        method: "POST",
+        headers: {
+          Origin: "http://localhost:3100",
+          "Content-Type": "image/png; charset=binary",
+          "X-BFG-File-Size": String(validPng.byteLength),
+        },
+        body: validPng,
+      },
+    );
+    expect(secondGalleryResponse.status).toBe(200);
+    const { storageId: secondGalleryStorageId } = (await secondGalleryResponse.json()) as { storageId: string };
 
     // convex-test does not retain Blob.type in synthetic storage metadata; real Convex Storage does.
     await t.run(async (ctx) => {
-      for (const storageId of [coverStorageId, galleryStorageId]) {
-        await ctx.db.patch(storageId as never, { contentType: "image/jpeg" } as never);
-      }
+      await ctx.db.patch(coverStorageId as never, { contentType: "image/jpeg" } as never);
+      await ctx.db.patch(galleryStorageId as never, { contentType: "image/jpeg" } as never);
+      await ctx.db.patch(secondGalleryStorageId as never, { contentType: "image/png" } as never);
     });
     expect(
       await t.run(async (ctx) => {
@@ -230,27 +244,39 @@ describe("BFG owned upload HTTP boundary", () => {
       fileName: "81vi9d-A1dL._SL1500_ (1).jpg",
       mimeType: "image/pjpeg; charset=binary",
     });
-    await admin.action(api.books.attachGalleryImage, {
+    const firstGalleryMediaId = await admin.action(api.books.attachGalleryImage, {
       bookId,
       storageId: galleryStorageId as Id<"_storage">,
       fileName: "cover.final.v2.JPG",
       mimeType: "image/jpg; charset=binary",
-      altText: "Upload journey gallery",
+      altText: "Upload journey gallery first",
     });
+    const secondGalleryMediaId = await admin.action(api.books.attachGalleryImage, {
+      bookId,
+      storageId: secondGalleryStorageId as Id<"_storage">,
+      fileName: "gallery-second.png",
+      mimeType: "image/png; charset=binary",
+      altText: "Upload journey gallery second",
+    });
+    await admin.mutation(api.books.moveGalleryImage, { mediaId: secondGalleryMediaId, direction: "up" });
 
     const persistedAdminBook = await admin.query(api.books.getForAdmin, { bookId });
     expect(persistedAdminBook).toMatchObject({
       coverStorageId: coverStorageId,
-      gallery: [{ storageId: galleryStorageId, altText: "Upload journey gallery" }],
+      gallery: [
+        { storageId: secondGalleryStorageId, altText: "Upload journey gallery second" },
+        { storageId: galleryStorageId, altText: "Upload journey gallery first" },
+      ],
     });
     const persistedCustomerBook = await customer.query(api.readyStock.getBySlug, { slug: "upload-journey-book" });
     expect(persistedCustomerBook?.coverImageUrl).toBeTruthy();
     expect(persistedCustomerBook?.gallery).toEqual([
-      expect.objectContaining({ altText: "Upload journey gallery", url: expect.any(String) }),
+      expect.objectContaining({ altText: "Upload journey gallery second", url: expect.any(String) }),
+      expect.objectContaining({ altText: "Upload journey gallery first", url: expect.any(String) }),
     ]);
     expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({
       coverStorageId: coverStorageId,
-      gallery: [{ storageId: galleryStorageId }],
+      gallery: [{ storageId: secondGalleryStorageId }, { storageId: galleryStorageId }],
     });
     expect(
       await t.run(async (ctx) =>
@@ -268,5 +294,14 @@ describe("BFG owned upload HTTP boundary", () => {
           .first(),
       ),
     ).toBeNull();
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("uploadClaims")
+          .withIndex("by_storage_id", (index) => index.eq("storageId", secondGalleryStorageId as never))
+          .first(),
+      ),
+    ).toBeNull();
+    expect(firstGalleryMediaId).toBeDefined();
   });
 });
