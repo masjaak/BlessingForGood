@@ -31,8 +31,27 @@ function safeActivityDescription(body: string): string {
   return body.replace(/BFG-\d{6}-[A-Z0-9]{16,}/gi, "referensi invoice lama");
 }
 
+function activityKey(notice: Doc<"notifications">): string {
+  if (notice.relatedEntityType && notice.relatedEntityId) {
+    return `${notice.eventType}:${notice.relatedEntityType}:${notice.relatedEntityId}`;
+  }
+  return String(notice._id);
+}
+
+function preferActivityNotice(candidate: Doc<"notifications">, current: Doc<"notifications">): boolean {
+  if (candidate.surface !== current.surface) return candidate.surface === "inbox";
+  return candidate.createdAt > current.createdAt;
+}
+
 export function projectActivity(notices: Doc<"notifications">[]): ActivityItem[] {
-  return notices
+  const canonical = new Map<string, Doc<"notifications">>();
+  for (const notice of notices) {
+    const key = activityKey(notice);
+    const current = canonical.get(key);
+    if (!current || preferActivityNotice(notice, current)) canonical.set(key, notice);
+  }
+
+  return [...canonical.values()]
     .map((notice) => ({
       source: notice.surface,
       type: (notice.surface === "notification" ? "system" : "message") as ActivityItem["type"],

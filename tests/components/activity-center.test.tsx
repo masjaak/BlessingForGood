@@ -47,16 +47,19 @@ describe("compact ActivityCenter", () => {
     expect(screen.getByText("Status pesananmu berubah.")).toBeTruthy();
     expect(screen.getByText("Baru · Belum dibaca")).toBeTruthy();
     expect(screen.getByLabelText("Belum dibaca")).toBeTruthy();
-    const cards = container.querySelectorAll(".activity-card");
-    expect(cards).toHaveLength(3);
-    expect(cards[0]?.querySelector(".activity-unread-marker")).toBeTruthy();
-    expect(cards[1]?.querySelector(".activity-unread-marker")).toBeNull();
-    expect(cards[0]?.getAttribute("data-read-state")).toBe("unread");
-    expect(cards[1]?.getAttribute("data-read-state")).toBe("read");
+    const rows = container.querySelectorAll(".activity-preview-row");
+    expect(rows).toHaveLength(3);
+    expect(container.querySelectorAll(".activity-card")).toHaveLength(0);
+    expect(rows[0]?.querySelector(".activity-preview-unread")).toBeTruthy();
+    expect(rows[1]?.querySelector(".activity-preview-unread")).toBeNull();
+    expect(rows[0]?.getAttribute("data-read-state")).toBe("unread");
+    expect(rows[1]?.getAttribute("data-read-state")).toBe("read");
+    expect(rows[0]?.getAttribute("href")).toBe("/account/orders");
     expect(screen.getByText("Baru · Belum dibaca")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Lihat semua aktivitas" }).getAttribute("href")).toBe(
       "/account/notifications",
     );
+    expect(screen.queryByRole("link", { name: "Buka detail" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Buka Kotak Masuk" })).toBeNull();
     expect(screen.getByRole("button", { name: "Tutup Aktivitas" })).toBeTruthy();
     expect(screen.queryByText("Sistem dan pesan BFG tampil dalam satu urutan waktu.")).toBeNull();

@@ -58,7 +58,7 @@ export const unreadActivityCount = query({
       ),
     );
     // ponytail: badge caps at 200 unread rows; the UI already renders 99+.
-    return counts[0].length + counts[1].length;
+    return projectActivity(counts.flat()).length;
   },
 });
 

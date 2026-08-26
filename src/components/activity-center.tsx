@@ -28,30 +28,60 @@ export function ActivityCenter({
         <SkeletonCard />
       </LoadingRegion>
     ) : visibleActivity?.length ? (
-      <div className="content-stack">
-        {visibleActivity.map((item) => (
-          <Card
-            className={item.readAt ? "activity-card is-read" : "activity-card is-unread"}
-            data-read-state={item.readAt ? "read" : "unread"}
-            key={item.sourceId}
-          >
-            <div className="activity-card-topline">
-              <span className="activity-type-group">
-                <span className="activity-type">{item.type === "system" ? "Sistem" : "Pesan BFG"}</span>
-                {!item.readAt ? (
-                  <span className="activity-unread-marker" role="status" aria-label="Belum dibaca">
-                    <span className="activity-unread-dot" aria-hidden="true" />
-                    <span>Baru · Belum dibaca</span>
+      compact ? (
+        <ul className="activity-preview-list" aria-label="Pesan terbaru">
+          {visibleActivity.map((item) => (
+            <li key={item.sourceId}>
+              <Link
+                className={`activity-preview-row ${item.readAt ? "is-read" : "is-unread"}`}
+                data-read-state={item.readAt ? "read" : "unread"}
+                href={item.destination}
+                onClick={() => void markRead({ notificationId: item.sourceId })}
+              >
+                <span className="activity-preview-row-meta">
+                  <span>
+                    <span className="activity-type">{item.type === "system" ? "Sistem" : "Pesan BFG"}</span>
+                    {!item.readAt ? (
+                      <span className="activity-preview-unread" role="status" aria-label="Belum dibaca">
+                        <span className="activity-unread-dot" aria-hidden="true" />
+                        <span>Baru · Belum dibaca</span>
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
-              </span>
-              <time dateTime={new Date(item.timestamp).toISOString()}>
-                {new Date(item.timestamp).toLocaleString("id-ID")}
-              </time>
-            </div>
-            <h2 className={!item.readAt ? "activity-title-unread" : undefined}>{item.title}</h2>
-            <p>{item.description}</p>
-            {!compact ? (
+                  <time dateTime={new Date(item.timestamp).toISOString()}>
+                    {new Date(item.timestamp).toLocaleString("id-ID")}
+                  </time>
+                </span>
+                <strong className="activity-preview-row-title">{item.title}</strong>
+                <span className="activity-preview-row-description">{item.description}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="content-stack">
+          {visibleActivity.map((item) => (
+            <Card
+              className={item.readAt ? "activity-card is-read" : "activity-card is-unread"}
+              data-read-state={item.readAt ? "read" : "unread"}
+              key={item.sourceId}
+            >
+              <div className="activity-card-topline">
+                <span className="activity-type-group">
+                  <span className="activity-type">{item.type === "system" ? "Sistem" : "Pesan BFG"}</span>
+                  {!item.readAt ? (
+                    <span className="activity-unread-marker" role="status" aria-label="Belum dibaca">
+                      <span className="activity-unread-dot" aria-hidden="true" />
+                      <span>Baru · Belum dibaca</span>
+                    </span>
+                  ) : null}
+                </span>
+                <time dateTime={new Date(item.timestamp).toISOString()}>
+                  {new Date(item.timestamp).toLocaleString("id-ID")}
+                </time>
+              </div>
+              <h2 className={!item.readAt ? "activity-title-unread" : undefined}>{item.title}</h2>
+              <p>{item.description}</p>
               <LinkButton
                 variant="secondary"
                 href={item.destination}
@@ -59,10 +89,10 @@ export function ActivityCenter({
               >
                 Buka detail
               </LinkButton>
-            ) : null}
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )
     ) : (
       <EmptyState
         title="Belum ada aktivitas"

@@ -21,10 +21,14 @@ const longMessage =
 
 type ActivityFixtureState = "empty" | "unread" | "read" | "mixed";
 
-async function mountActivityFixture(page: Page, state: ActivityFixtureState = "mixed") {
+async function mountActivityFixture(
+  page: Page,
+  state: ActivityFixtureState = "mixed",
+  workspace: "admin" | "customer" = "admin",
+) {
   await page.setContent(`<style>${globalsCss}</style><main></main>`);
   await page.evaluate(
-    ({ longMessage, longReference, state }) => {
+    ({ longMessage, longReference, state, workspace }) => {
       const panelWidth = Math.min(410, window.innerWidth - 24);
       const panelLeft = window.innerWidth - panelWidth - 12;
       const count = state === "empty" ? 0 : state === "mixed" ? 3 : 1;
@@ -33,15 +37,15 @@ async function mountActivityFixture(page: Page, state: ActivityFixtureState = "m
         const isUnread = state === "unread" || (state === "mixed" && index === 0);
         const hasLongReference = state === "mixed" && index === 1;
         return `
-                    <section class="card activity-card ${isUnread ? "is-unread" : "is-read"}" data-read-state="${isUnread ? "unread" : "read"}">
-                      <div class="activity-card-topline"><span class="activity-type-group"><span class="activity-type">${hasLongReference ? "Pesan BFG" : "Sistem"}</span>${isUnread ? '<span class="activity-unread-marker"><span class="activity-unread-dot"></span><span>Baru · Belum dibaca</span></span>' : ""}</span><time>21/08/2026, 12:34:56</time></div>
-                      <h2 class="${isUnread ? "activity-title-unread" : ""}">${isUnread ? "Konfirmasi pembayaran baru" : hasLongReference ? `Pembaruan ${longReference}` : "Pembaruan inventaris berhasil"}</h2>
-                      <p>${isUnread ? longMessage : hasLongReference ? `Pesan lengkap ${longReference} tetap dapat dibaca sampai selesai.` : "Pembaruan sistem berhasil diproses."}</p>
-                    </section>
+                    <li><a class="activity-preview-row ${isUnread ? "is-unread" : "is-read"}" data-read-state="${isUnread ? "unread" : "read"}" href="#">
+                      <span class="activity-preview-row-meta"><span><span class="activity-type">${hasLongReference ? "Pesan BFG" : "Sistem"}</span>${isUnread ? '<span class="activity-preview-unread"><span class="activity-unread-dot"></span><span>Baru · Belum dibaca</span></span>' : ""}</span><time>21/08/2026, 12:34:56</time></span>
+                      <strong class="activity-preview-row-title">${isUnread ? "Konfirmasi pembayaran baru" : hasLongReference ? `Pembaruan ${longReference}` : "Pembaruan inventaris berhasil"}</strong>
+                      <span class="activity-preview-row-description">${isUnread ? longMessage : hasLongReference ? `Pesan lengkap ${longReference} tetap dapat dibaca sampai selesai.` : "Pembaruan sistem berhasil diproses."}</span>
+                    </a></li>
                   `;
       }).join("");
       const mount = document.createElement("div");
-      mount.className = "admin-shell activity-qa-fixture";
+      mount.className = `${workspace}-shell activity-qa-fixture`;
       mount.style.cssText = "position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none;";
       mount.innerHTML = `
       <div class="workspace-activity" style="position: absolute; top: 12px; left: 0; width: 100%; height: 40px; pointer-events: auto;">
@@ -55,7 +59,7 @@ async function mountActivityFixture(page: Page, state: ActivityFixtureState = "m
                   <button aria-label="Tutup Aktivitas" class="activity-panel-close" type="button">×</button>
                 </div>
                 <div class="content-stack">
-                  ${rows || '<div class="empty-state"><strong>Belum ada aktivitas</strong><p>Pembaruan sistem dan pesan operasional BFG akan tampil di sini.</p></div>'}
+                  ${rows ? `<ul class="activity-preview-list">${rows}</ul>` : '<div class="empty-state"><strong>Belum ada aktivitas</strong><p>Pembaruan sistem dan pesan operasional BFG akan tampil di sini.</p></div>'}
                 </div>
                 <a class="activity-panel-footer" href="#">Lihat semua aktivitas</a>
               </div>
@@ -64,96 +68,114 @@ async function mountActivityFixture(page: Page, state: ActivityFixtureState = "m
     `;
       document.body.append(mount);
     },
-    { longMessage, longReference, state },
+    { longMessage, longReference, state, workspace },
   );
 }
 
 test.describe("@activity Activity responsive geometry", () => {
   test("keeps the populated Activity surface inside every supported viewport", async ({ page }, testInfo) => {
-    for (const viewport of viewportMatrix) {
-      await page.setViewportSize(viewport);
-      await mountActivityFixture(page);
+    for (const workspace of ["admin", "customer"] as const) {
+      for (const viewport of viewportMatrix) {
+        await page.setViewportSize(viewport);
+        await mountActivityFixture(page, "mixed", workspace);
 
-      const geometry = await page.locator(".activity-qa-fixture").evaluate((fixture) => {
-        const panel = fixture.querySelector<HTMLElement>(".workspace-activity-panel");
-        const content = fixture.querySelector<HTMLElement>(".activity-panel-content");
-        const cards = [...fixture.querySelectorAll<HTMLElement>(".activity-card")];
-        if (!panel || !content) throw new Error("Activity fixture did not render");
-        const panelRect = panel.getBoundingClientRect();
-        const contentRect = content.getBoundingClientRect();
-        return {
-          panel: {
-            left: panelRect.left,
-            right: panelRect.right,
-            top: panelRect.top,
-            bottom: panelRect.bottom,
-            clientWidth: panel.clientWidth,
-            scrollWidth: panel.scrollWidth,
-            scrollHeight: panel.scrollHeight,
-            clientHeight: panel.clientHeight,
-          },
-          content: { left: contentRect.left, right: contentRect.right },
-          cards: cards.map((card) => {
-            const rect = card.getBoundingClientRect();
-            const body = card.querySelector<HTMLElement>("p");
-            return {
-              left: rect.left,
-              right: rect.right,
-              width: rect.width,
-              clientWidth: card.clientWidth,
-              scrollWidth: card.scrollWidth,
-              clientHeight: card.clientHeight,
-              scrollHeight: card.scrollHeight,
-              bodyClientWidth: body?.clientWidth ?? 0,
-              bodyScrollWidth: body?.scrollWidth ?? 0,
-            };
-          }),
-          bodyScrollWidth: document.body.scrollWidth,
-          documentScrollWidth: document.documentElement.scrollWidth,
-          viewportWidth: window.innerWidth,
-          viewportHeight: window.innerHeight,
-        };
-      });
+        const geometry = await page.locator(".activity-qa-fixture").evaluate((fixture) => {
+          const panel = fixture.querySelector<HTMLElement>(".workspace-activity-panel");
+          const content = fixture.querySelector<HTMLElement>(".activity-panel-content");
+          const rows = [...fixture.querySelectorAll<HTMLElement>(".activity-preview-row")];
+          if (!panel || !content) throw new Error("Activity fixture did not render");
+          const panelRect = panel.getBoundingClientRect();
+          const contentRect = content.getBoundingClientRect();
+          return {
+            panel: {
+              left: panelRect.left,
+              right: panelRect.right,
+              top: panelRect.top,
+              bottom: panelRect.bottom,
+              clientWidth: panel.clientWidth,
+              scrollWidth: panel.scrollWidth,
+              scrollHeight: panel.scrollHeight,
+              clientHeight: panel.clientHeight,
+            },
+            content: { left: contentRect.left, right: contentRect.right },
+            rows: rows.map((row) => {
+              const rect = row.getBoundingClientRect();
+              const body = row.querySelector<HTMLElement>(".activity-preview-row-description");
+              return {
+                left: rect.left,
+                right: rect.right,
+                width: rect.width,
+                clientWidth: row.clientWidth,
+                scrollWidth: row.scrollWidth,
+                clientHeight: row.clientHeight,
+                scrollHeight: row.scrollHeight,
+                bodyClientWidth: body?.clientWidth ?? 0,
+                bodyScrollWidth: body?.scrollWidth ?? 0,
+              };
+            }),
+            bodyScrollWidth: document.body.scrollWidth,
+            documentScrollWidth: document.documentElement.scrollWidth,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+          };
+        });
 
-      expect(geometry.panel.left, `${viewport.width}px panel left`).toBeGreaterThanOrEqual(0);
-      expect(geometry.panel.right, `${viewport.width}px panel right`).toBeLessThanOrEqual(viewport.width + 1);
-      expect(geometry.panel.top, `${viewport.width}px panel top`).toBeGreaterThanOrEqual(0);
-      expect(geometry.panel.bottom, `${viewport.width}px panel bottom`).toBeLessThanOrEqual(viewport.height + 1);
-      expect(geometry.panel.scrollWidth, `${viewport.width}px panel horizontal scroll`).toBe(
-        geometry.panel.clientWidth,
-      );
-      expect(geometry.panel.scrollHeight, `${viewport.width}px panel vertical scroll`).toBe(
-        geometry.panel.clientHeight,
-      );
-      expect(
-        await page
-          .locator(".activity-qa-fixture .workspace-activity-panel")
-          .evaluate((panel) => getComputedStyle(panel).maxHeight),
-      ).toBe("none");
-      expect(
-        await page.locator(".activity-qa-fixture .content-stack").evaluate((list) => getComputedStyle(list).overflowY),
-      ).not.toMatch(/auto|scroll/);
-      expect(geometry.content.left, `${viewport.width}px content left`).toBeGreaterThanOrEqual(geometry.panel.left);
-      expect(geometry.content.right, `${viewport.width}px content right`).toBeLessThanOrEqual(geometry.panel.right + 1);
-      for (const card of geometry.cards) {
-        expect(card.left, `${viewport.width}px card left`).toBeGreaterThanOrEqual(geometry.panel.left);
-        expect(card.right, `${viewport.width}px card right`).toBeLessThanOrEqual(geometry.panel.right + 1);
-        expect(card.scrollWidth, `${viewport.width}px card horizontal scroll`).toBe(card.clientWidth);
-        expect(card.scrollHeight, `${viewport.width}px card vertical clipping`).toBe(card.clientHeight);
-        expect(card.bodyScrollWidth, `${viewport.width}px notification body horizontal overflow`).toBe(
-          card.bodyClientWidth,
+        expect(geometry.panel.left, `${workspace} ${viewport.width}px panel left`).toBeGreaterThanOrEqual(0);
+        expect(geometry.panel.right, `${workspace} ${viewport.width}px panel right`).toBeLessThanOrEqual(
+          viewport.width + 1,
         );
+        expect(geometry.panel.top, `${workspace} ${viewport.width}px panel top`).toBeGreaterThanOrEqual(0);
+        expect(geometry.panel.bottom, `${workspace} ${viewport.width}px panel bottom`).toBeLessThanOrEqual(
+          viewport.height + 1,
+        );
+        expect(geometry.panel.scrollWidth, `${workspace} ${viewport.width}px panel horizontal scroll`).toBe(
+          geometry.panel.clientWidth,
+        );
+        expect(geometry.panel.scrollHeight, `${workspace} ${viewport.width}px panel vertical scroll`).toBe(
+          geometry.panel.clientHeight,
+        );
+        expect(
+          await page
+            .locator(".activity-qa-fixture .workspace-activity-panel")
+            .evaluate((panel) => getComputedStyle(panel).maxHeight),
+        ).toBe("none");
+        expect(
+          await page
+            .locator(".activity-qa-fixture .content-stack")
+            .evaluate((list) => getComputedStyle(list).overflowY),
+        ).not.toMatch(/auto|scroll/);
+        expect(geometry.content.left, `${workspace} ${viewport.width}px content left`).toBeGreaterThanOrEqual(
+          geometry.panel.left,
+        );
+        expect(geometry.content.right, `${workspace} ${viewport.width}px content right`).toBeLessThanOrEqual(
+          geometry.panel.right + 1,
+        );
+        expect(await page.locator(".activity-qa-fixture .activity-card")).toHaveCount(0);
+        expect(await page.locator(".activity-qa-fixture .activity-preview-row")).toHaveCount(3);
+        for (const row of geometry.rows) {
+          expect(row.left, `${workspace} ${viewport.width}px row left`).toBeGreaterThanOrEqual(geometry.panel.left);
+          expect(row.right, `${workspace} ${viewport.width}px row right`).toBeLessThanOrEqual(geometry.panel.right + 1);
+          expect(row.scrollWidth, `${workspace} ${viewport.width}px row horizontal scroll`).toBe(row.clientWidth);
+          expect(row.scrollHeight, `${workspace} ${viewport.width}px row vertical clipping`).toBe(row.clientHeight);
+          expect(row.bodyScrollWidth, `${workspace} ${viewport.width}px notification body horizontal overflow`).toBe(
+            row.bodyClientWidth,
+          );
+        }
+        expect(geometry.bodyScrollWidth, `${workspace} ${viewport.width}px body overflow`).toBeLessThanOrEqual(
+          viewport.width + 1,
+        );
+        expect(geometry.documentScrollWidth, `${workspace} ${viewport.width}px document overflow`).toBeLessThanOrEqual(
+          viewport.width + 1,
+        );
+        await expect(page.locator(".activity-panel-heading .subtle")).toContainText("1 belum dibaca");
+        await expect(page.locator('[data-read-state="unread"]')).toHaveCount(1);
+        await expect(page.locator('[data-read-state="read"]')).toHaveCount(2);
+        await expect(page.locator(".activity-preview-row").first()).toContainText(longMessage);
+        await expect(page.locator(".activity-preview-row").nth(1)).toContainText(longReference);
+        if ([390, 1440].includes(viewport.width)) {
+          await page.screenshot({ path: testInfo.outputPath(`activity-${workspace}-${viewport.width}.png`) });
+        }
       }
-      expect(geometry.bodyScrollWidth, `${viewport.width}px body overflow`).toBeLessThanOrEqual(viewport.width + 1);
-      expect(geometry.documentScrollWidth, `${viewport.width}px document overflow`).toBeLessThanOrEqual(
-        viewport.width + 1,
-      );
-      await expect(page.locator(".activity-panel-heading .subtle")).toContainText("1 belum dibaca");
-      await expect(page.locator('[data-read-state="unread"]')).toHaveCount(1);
-      await expect(page.locator('[data-read-state="read"]')).toHaveCount(2);
-      await expect(page.locator(".activity-card").first()).toContainText(longMessage);
-      await expect(page.locator(".activity-card").nth(1)).toContainText(longReference);
-      await page.screenshot({ path: testInfo.outputPath(`activity-${viewport.width}.png`) });
     }
   });
 
@@ -224,15 +246,17 @@ test.describe("@activity Activity responsive geometry", () => {
         const mascot = card.querySelector<HTMLElement>(".success-mascot");
         const headline = card.querySelector<HTMLElement>("h2");
         const body = card.querySelector<HTMLElement>(".join-success-content > p");
-        if (!mascot || !headline || !body) throw new Error("Join success fixture did not render");
+        const actions = card.querySelector<HTMLElement>(".actions");
+        if (!mascot || !headline || !body || !actions) throw new Error("Join success fixture did not render");
         const box = (element: HTMLElement) => {
-          const { left, right, top, bottom } = element.getBoundingClientRect();
-          return { left, right, top, bottom };
+          const { left, right, top, bottom, width, height } = element.getBoundingClientRect();
+          return { left, right, top, bottom, width, height };
         };
         return {
           mascot: box(mascot),
           headline: box(headline),
           body: box(body),
+          actions: box(actions),
           contentScrollWidth: card.querySelector<HTMLElement>(".join-success-content")?.scrollWidth,
           contentClientWidth: card.querySelector<HTMLElement>(".join-success-content")?.clientWidth,
         };
@@ -244,6 +268,17 @@ test.describe("@activity Activity responsive geometry", () => {
       ) => left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
       expect(overlaps(geometry.mascot, geometry.headline), `${viewport.width}px mascot/headline overlap`).toBe(false);
       expect(overlaps(geometry.mascot, geometry.body), `${viewport.width}px mascot/body overlap`).toBe(false);
+      expect(overlaps(geometry.mascot, geometry.actions), `${viewport.width}px mascot/actions overlap`).toBe(false);
+      expect(geometry.mascot.width).toBeGreaterThanOrEqual(viewport.width <= 640 ? 132 : 168);
+      if (viewport.width <= 640) {
+        expect(geometry.mascot.top, `${viewport.width}px mascot lower art row`).toBeGreaterThan(
+          geometry.actions.bottom,
+        );
+      } else {
+        expect(geometry.mascot.bottom, `${viewport.width}px mascot reaches lower content rhythm`).toBeGreaterThan(
+          geometry.body.bottom,
+        );
+      }
       expect(geometry.contentScrollWidth).toBe(geometry.contentClientWidth);
       await expect(page.locator(".join-success-card h2")).toBeVisible();
       await expect(page.locator(".join-success-card p").first()).toBeVisible();

@@ -72,6 +72,27 @@ describe("Phase 07.1 reconciliation", () => {
     });
     const adminInbox = await admin.query(api.notifications.listMine, { surface: "inbox" });
     expect(adminInbox[0]).toMatchObject({ eventType: "join_request.submitted", readAt: null });
+    const joinRequestId = adminInbox[0]?.relatedEntityId;
+    if (!joinRequestId) throw new Error("join request notification missing entity id");
+    await t.run(async (ctx) => {
+      const adminUser = await ctx.db
+        .query("appUsers")
+        .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", "phase041-admin-test"))
+        .unique();
+      if (!adminUser) throw new Error("admin fixture missing");
+      await ctx.db.insert("notifications", {
+        recipientUserId: adminUser._id,
+        surface: "notification",
+        audience: "admin",
+        eventType: "join_request.submitted",
+        title: "Join Request baru",
+        body: "Inbox Applicant menunggu tinjauan Admin.",
+        destination: "/admin/join-requests",
+        relatedEntityType: "joinRequest",
+        relatedEntityId: joinRequestId,
+        createdAt: Date.now() + 1,
+      });
+    });
     const adminActivity = await admin.query(api.notifications.listActivity, { workspace: "admin" });
     expect(adminActivity).toHaveLength(1);
     expect(adminActivity[0]).toMatchObject({
