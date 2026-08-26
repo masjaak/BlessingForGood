@@ -237,6 +237,15 @@ describe("BFG Ready Stock and Book Master", () => {
       source: "ready_stock",
       customerMemberCode: customerUser.memberCode,
     });
+    expect(await customer.query(api.notifications.listActivity, { workspace: "customer" })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: "Pesanan Ready Stock tercatat",
+          type: "system",
+          destination: `/account/orders/${order.orderId}`,
+        }),
+      ]),
+    );
     expect(
       await t.run(async (ctx) =>
         ctx.db
@@ -291,6 +300,15 @@ describe("BFG Ready Stock and Book Master", () => {
     );
     expect(await admin.query(api.notifications.listActivity, { workspace: "admin" })).toEqual(
       expect.arrayContaining([expect.objectContaining({ title: "Order Ready Stock baru", type: "system" })]),
+    );
+    expect(await customer.query(api.notifications.listActivity, { workspace: "customer" })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: "Pesanan Ready Stock tercatat",
+          type: "system",
+          destination: `/account/orders/${order.orderId}`,
+        }),
+      ]),
     );
     expect(
       await t.run(async (ctx) =>

@@ -16,6 +16,10 @@ function corsHeaders(origin: string | null): HeadersInit {
   const allowed = new Set([
     "https://www.blessingforgood.com",
     "https://blessingforgood.com",
+    "https://blessingforgood.vercel.app",
+    "https://blessing-for-good.vercel.app",
+    "https://blessing-for-good-masjaaks-projects.vercel.app",
+    "https://blessing-for-good-git-main-masjaaks-projects.vercel.app",
     "http://localhost:3000",
     "http://localhost:3100",
   ]);

@@ -8,7 +8,7 @@ import { recordAudit } from "./lib/audit";
 import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
-import { notifyAdmins } from "./lib/notifications";
+import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { hasUnresolvedException } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { positiveQuantity, requiredText } from "./lib/validation";
@@ -312,6 +312,15 @@ async function createReadyStockOrder(
     title: "Order Ready Stock baru",
     body: customerName + " membuat order Ready Stock.",
     destination: "/admin/orders/" + orderId,
+    relatedEntityType: "order",
+    relatedEntityId: String(orderId),
+  });
+  await notifyUser(ctx, input.customerUserId, {
+    surface: "notification",
+    eventType: "order.ready_stock_created",
+    title: "Pesanan Ready Stock tercatat",
+    body: "Pesanan Ready Stock berhasil dicatat dan stok sudah diamankan.",
+    destination: "/account/orders/" + orderId,
     relatedEntityType: "order",
     relatedEntityId: String(orderId),
   });

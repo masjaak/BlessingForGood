@@ -4,52 +4,27 @@ import type { Id } from "./_generated/dataModel";
 import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
 
 const progressiveExifJpeg = new Uint8Array([
-  0xff,
-  0xd8,
-  0xff,
-  0xe1,
-  0x00,
-  0x10,
-  0x45,
-  0x78,
-  0x69,
-  0x66,
-  0x00,
-  0x00,
-  0x4d,
-  0x4d,
-  0x00,
-  0x2a,
-  0x00,
-  0x00,
-  0x00,
-  0x08,
-  0xff,
-  0xc2,
-  0x00,
-  0x0b,
-  0x08,
-  0x04,
-  0x00,
-  0x06,
-  0x00,
-  0x06,
-  0x01,
-  0x01,
-  0x11,
-  0x00,
-  0xff,
-  0xda,
-  0x00,
-  0x08,
-  0x01,
-  0x01,
-  0x00,
-  0x00,
-  0x3f,
-  0x00,
-  0xff,
-  0xd9,
+  0xff, 0xd8, 0xff, 0xe1, 0x00, 0x10, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00,
+  0x08, 0xff, 0xc2, 0x00, 0x0b, 0x08, 0x04, 0x00, 0x06, 0x00, 0x06, 0x01, 0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x08,
+  0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0xff, 0xd9,
+]);
+
+const baselineJpeg = new Uint8Array([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+  0x00, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x08, 0x01,
+  0x01, 0x00, 0x00, 0x3f, 0x00, 0xff, 0xd9,
+]);
+
+const exifJpeg = new Uint8Array([
+  0xff, 0xd8, 0xff, 0xe1, 0x00, 0x10, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00,
+  0x08, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x08, 0x01,
+  0x01, 0x00, 0x00, 0x3f, 0x00, 0xff, 0xd9,
+]);
+
+const validPng = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,
+  0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x49,
+  0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ]);
 
 const validWebp = new Uint8Array([
@@ -71,12 +46,31 @@ describe("BFG owned upload HTTP boundary", () => {
     expect(response.status).toBe(204);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:3100");
 
-    const denied = await t.fetch("/bfg/upload", {
-      method: "OPTIONS",
-      headers: { Origin: "https://not-blessing-for-good.example" },
-    });
-    expect(denied.status).toBe(204);
-    expect(denied.headers.get("Access-Control-Allow-Origin")).toBe("null");
+    for (const origin of [
+      "https://www.blessingforgood.com",
+      "https://blessingforgood.com",
+      "https://blessingforgood.vercel.app",
+      "https://blessing-for-good.vercel.app",
+      "https://blessing-for-good-masjaaks-projects.vercel.app",
+      "https://blessing-for-good-git-main-masjaaks-projects.vercel.app",
+    ]) {
+      const productionAlias = await t.fetch("/bfg/upload", {
+        method: "OPTIONS",
+        headers: { Origin: origin },
+      });
+      expect(productionAlias.status).toBe(204);
+      expect(productionAlias.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    }
+
+    for (const origin of [
+      "https://not-blessing-for-good.example",
+      "https://blessing-for-good-b61uabzb5-masjaaks-projects.vercel.app",
+      "https://preview-blessing-for-good.vercel.app",
+    ]) {
+      const denied = await t.fetch("/bfg/upload", { method: "OPTIONS", headers: { Origin: origin } });
+      expect(denied.status).toBe(204);
+      expect(denied.headers.get("Access-Control-Allow-Origin")).toBe("null");
+    }
   });
 
   it("stores only validated files and records the authenticated owner claim", async () => {
@@ -135,6 +129,39 @@ describe("BFG owned upload HTTP boundary", () => {
     });
     expect(response.status).toBe(400);
     expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toEqual([]);
+  });
+
+  it("accepts the client file matrix at the real HTTP upload boundary", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const files = [
+      { bytes: baselineJpeg, fileName: "IMG-20260819-WA0166.jpg", mimeType: "image/jpeg" },
+      { bytes: progressiveExifJpeg, fileName: "progressive.jpg", mimeType: "image/jpeg" },
+      { bytes: exifJpeg, fileName: "81vi9d-A1dL._SL1500_ (1).jpg", mimeType: "image/jpeg" },
+      { bytes: baselineJpeg, fileName: "alias-jpg.jpg", mimeType: "image/jpg" },
+      { bytes: baselineJpeg, fileName: "alias-pjpeg.jpg", mimeType: "image/pjpeg" },
+      { bytes: validPng, fileName: "book.png", mimeType: "image/png" },
+      { bytes: validWebp, fileName: "book.webp", mimeType: "image/webp" },
+    ];
+
+    for (const [index, file] of files.entries()) {
+      const response = await admin.fetch(
+        `/bfg/upload?purpose=${index === 0 ? "book-cover" : "book-gallery"}&fileName=${encodeURIComponent(file.fileName)}`,
+        {
+          method: "POST",
+          headers: {
+            Origin: "http://localhost:3100",
+            "Content-Type": `${file.mimeType}; charset=binary`,
+            "X-BFG-File-Size": String(file.bytes.byteLength),
+          },
+          body: file.bytes,
+        },
+      );
+      expect(response.status, file.fileName).toBe(200);
+      expect((await response.json()).storageId).toBeTruthy();
+    }
+
+    expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toHaveLength(files.length);
   });
 
   it("runs the real JPEG upload, attach, reload, and customer projection path", async () => {
