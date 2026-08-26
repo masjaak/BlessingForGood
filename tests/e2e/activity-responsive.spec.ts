@@ -297,7 +297,7 @@ test.describe("@activity Activity responsive geometry", () => {
           <section class="card join-request-card">
             <div class="summary-line"><span>Dikirim</span><span>22/08/2026</span></div>
             <div class="content-stack approved-feedback-section">
-              <p class="success-banner">Disetujui. Buat undangan Clerk secara manual untuk identitas baru.</p>
+              <p class="success-banner">Disetujui. Undangan sudah dikirim dan masih menunggu diterima.</p>
             </div>
             <p class="subtle review-metadata">Ditinjau 22/08/2026</p>
           </section>
