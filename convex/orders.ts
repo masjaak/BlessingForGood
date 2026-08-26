@@ -17,6 +17,54 @@ import { enforceRateLimit } from "./lib/rateLimit";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
+type ReadyStockStage =
+  | "auth"
+  | "customer"
+  | "rate_limit"
+  | "deduplication"
+  | "product"
+  | "stock"
+  | "availability"
+  | "reference"
+  | "order"
+  | "reservation"
+  | "audit"
+  | "activity"
+  | "complete";
+type ReadyStockDiagnosticValue = string | number | boolean | null;
+
+function readyStockCorrelationId() {
+  return globalThis.crypto.randomUUID();
+}
+
+function logReadyStockStage(
+  correlationId: string,
+  stage: ReadyStockStage,
+  fields: Record<string, ReadyStockDiagnosticValue> = {},
+) {
+  console.log("ready_stock_attempt_stage", { correlationId, stage, ...fields });
+}
+
+function readyStockErrorDetails(error: unknown) {
+  const data =
+    typeof error === "object" && error !== null && "data" in error ? (error as { data?: unknown }).data : undefined;
+  const errorCode =
+    typeof data === "object" && data !== null && "code" in data && typeof data.code === "string" ? data.code : null;
+  return { errorClass: error instanceof Error ? error.name : typeof error, errorCode };
+}
+
+function logReadyStockFailure(correlationId: string, stage: ReadyStockStage, source: string, error: unknown) {
+  console.error("ready_stock_attempt_failed", {
+    correlationId,
+    stage,
+    source,
+    ...readyStockErrorDetails(error),
+  });
+}
+
+function logReadyStockStarted(correlationId: string, source: string) {
+  console.log("ready_stock_attempt_started", { correlationId, stage: "auth", source });
+}
 
 async function activeGrant(ctx: DataCtx, appUserId: Id<"appUsers">, catalogId: Id<"secretCatalogs">) {
   const grant = await ctx.db
@@ -206,7 +254,12 @@ export const submit = mutation({
   },
 });
 
-async function resolveReadyStockItem(ctx: MutationCtx, variantId: Id<"bookVariants">, quantityInput: number) {
+async function resolveReadyStockItem(
+  ctx: MutationCtx,
+  variantId: Id<"bookVariants">,
+  quantityInput: number,
+  reportStage: (stage: ReadyStockStage, fields?: Record<string, ReadyStockDiagnosticValue>) => void,
+) {
   const quantity = positiveQuantity(quantityInput);
   const variant = await ctx.db.get(variantId);
   const book = variant && (await ctx.db.get(variant.bookId));
@@ -216,6 +269,22 @@ async function resolveReadyStockItem(ctx: MutationCtx, variantId: Id<"bookVarian
     .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variantId))
     .unique();
   const available = inventory ? inventory.quantity - (inventory.reservedQuantity ?? 0) : 0;
+  reportStage("product", {
+    variantRecordExists: Boolean(variant),
+    variantActive: variant?.isAvailable ?? false,
+    bookRecordExists: Boolean(book),
+    bookActive: book?.isActive ?? false,
+    bookPublished: book?.publicationStatus === "published",
+    publisherRecordExists: Boolean(publisher),
+    publisherActive: publisher?.isActive ?? false,
+  });
+  reportStage("stock", {
+    inventoryRecordExists: Boolean(inventory),
+    requestedQty: quantity,
+    onHand: inventory?.quantity ?? 0,
+    reserved: inventory?.reservedQuantity ?? 0,
+    available,
+  });
   if (
     !variant ||
     !variant.isAvailable ||
@@ -227,6 +296,12 @@ async function resolveReadyStockItem(ctx: MutationCtx, variantId: Id<"bookVarian
   ) {
     fail("READY_STOCK_UNAVAILABLE", "Stok baru saja habis.");
   }
+  reportStage("availability", {
+    requestedQty: quantity,
+    onHand: inventory.quantity,
+    reserved: inventory.reservedQuantity ?? 0,
+    available,
+  });
   if (available < quantity) {
     fail("READY_STOCK_UNAVAILABLE", available > 0 ? "Jumlah melebihi stok." : "Stok baru saja habis.");
   }
@@ -244,102 +319,145 @@ async function createReadyStockOrder(
     quantity: number;
     submissionKey?: string;
     assisted: boolean;
+    correlationId: string;
   },
 ) {
-  const item = await resolveReadyStockItem(ctx, input.variantId, input.quantity);
-  const customer = await ctx.db.get(input.customerUserId);
-  if (!customer || customer.role !== "customer" || customer.status !== "active") fail("CUSTOMER_REQUIRED");
-  const profile = await ctx.db
-    .query("customerProfiles")
-    .withIndex("by_user_id", (index) => index.eq("userId", input.customerUserId))
-    .unique();
-  const customerName = profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
-  const now = Date.now();
-  const orderCode = await nextOrderCode(ctx, now);
-  const orderId = await ctx.db.insert("orders", {
-    customerUserId: input.customerUserId,
-    source: "ready_stock",
-    assistedSubmissionKey: input.submissionKey,
-    orderCode,
-    customerName,
-    customerEmail: customer.emailSnapshot,
-    status: "submitted",
-    currency: "IDR",
-    subtotalAmount: item.subtotalAmount,
-    totalAmount: item.subtotalAmount,
-    createdAt: now,
-    updatedAt: now,
-    submittedAt: now,
-    editableUntil: now,
-  });
-  const orderItemId = await ctx.db.insert("orderItems", {
-    orderId,
-    bookId: item.book._id,
-    bookVariantId: item.variant._id,
-    bookTitleSnapshot: item.book.title,
-    publisherNameSnapshot: item.publisher.name,
-    formatSnapshot: item.variant.format,
-    isbnSnapshot: item.variant.isbn,
-    unitPriceAmountSnapshot: item.variant.priceAmount,
-    currencySnapshot: "IDR",
-    quantity: item.quantity,
-    subtotalAmount: item.subtotalAmount,
-    createdAt: now,
-  });
-  await reserveReadyStock(
-    ctx,
-    { orderId, orderItemId, bookVariantId: item.variant._id, quantity: item.quantity },
-    input.actorUserId,
-  );
-  await ctx.db.insert("orderStatusHistory", {
-    orderId,
-    toStatus: "submitted",
-    changedAt: now,
-    changedByUserId: input.actorUserId,
-    note: input.assisted ? "Admin-assisted Ready Stock order" : "Ready Stock order created",
-  });
-  await recordAudit(
-    ctx,
-    input.actorUserId,
-    input.assisted ? "order.admin_assisted_created" : "order.ready_stock_created",
-    "order",
-    orderId,
-    { source: "ready_stock", forCustomerUserId: String(input.customerUserId), quantity: String(item.quantity) },
-  );
-  await notifyAdmins(ctx, {
-    surface: "notification",
-    eventType: "order.ready_stock_created",
-    title: "Order Ready Stock baru",
-    body: customerName + " membuat order Ready Stock.",
-    destination: "/admin/orders/" + orderId,
-    relatedEntityType: "order",
-    relatedEntityId: String(orderId),
-  });
-  await notifyUser(ctx, input.customerUserId, {
-    surface: "notification",
-    eventType: "order.ready_stock_created",
-    title: "Pesanan Ready Stock tercatat",
-    body: "Pesanan Ready Stock berhasil dicatat dan stok sudah diamankan.",
-    destination: "/account/orders/" + orderId,
-    relatedEntityType: "order",
-    relatedEntityId: String(orderId),
-  });
-  return orderView(ctx, orderId);
+  let stage: ReadyStockStage = "product";
+  const reportStage = (nextStage: ReadyStockStage, fields: Record<string, ReadyStockDiagnosticValue> = {}) => {
+    stage = nextStage;
+    logReadyStockStage(input.correlationId, nextStage, fields);
+  };
+  try {
+    const item = await resolveReadyStockItem(ctx, input.variantId, input.quantity, reportStage);
+    reportStage("customer");
+    const customer = await ctx.db.get(input.customerUserId);
+    logReadyStockStage(input.correlationId, "customer", {
+      customerRecordExists: Boolean(customer),
+      customerIsCustomer: customer?.role === "customer",
+      customerIsActive: customer?.status === "active",
+    });
+    if (!customer || customer.role !== "customer" || customer.status !== "active") fail("CUSTOMER_REQUIRED");
+    const profile = await ctx.db
+      .query("customerProfiles")
+      .withIndex("by_user_id", (index) => index.eq("userId", input.customerUserId))
+      .unique();
+    const customerName =
+      profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
+    const now = Date.now();
+    reportStage("reference");
+    const orderCode = await nextOrderCode(ctx, now);
+    reportStage("order");
+    const orderId = await ctx.db.insert("orders", {
+      customerUserId: input.customerUserId,
+      source: "ready_stock",
+      assistedSubmissionKey: input.submissionKey,
+      orderCode,
+      customerName,
+      customerEmail: customer.emailSnapshot,
+      status: "submitted",
+      currency: "IDR",
+      subtotalAmount: item.subtotalAmount,
+      totalAmount: item.subtotalAmount,
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: now,
+      editableUntil: now,
+    });
+    const orderItemId = await ctx.db.insert("orderItems", {
+      orderId,
+      bookId: item.book._id,
+      bookVariantId: item.variant._id,
+      bookTitleSnapshot: item.book.title,
+      publisherNameSnapshot: item.publisher.name,
+      formatSnapshot: item.variant.format,
+      isbnSnapshot: item.variant.isbn,
+      unitPriceAmountSnapshot: item.variant.priceAmount,
+      currencySnapshot: "IDR",
+      quantity: item.quantity,
+      subtotalAmount: item.subtotalAmount,
+      createdAt: now,
+    });
+    reportStage("reservation");
+    await reserveReadyStock(
+      ctx,
+      { orderId, orderItemId, bookVariantId: item.variant._id, quantity: item.quantity },
+      input.actorUserId,
+    );
+    reportStage("audit");
+    await ctx.db.insert("orderStatusHistory", {
+      orderId,
+      toStatus: "submitted",
+      changedAt: now,
+      changedByUserId: input.actorUserId,
+      note: input.assisted ? "Admin-assisted Ready Stock order" : "Ready Stock order created",
+    });
+    await recordAudit(
+      ctx,
+      input.actorUserId,
+      input.assisted ? "order.admin_assisted_created" : "order.ready_stock_created",
+      "order",
+      orderId,
+      { source: "ready_stock", forCustomerUserId: String(input.customerUserId), quantity: String(item.quantity) },
+    );
+    reportStage("activity", { target: "admin" });
+    await notifyAdmins(ctx, {
+      surface: "notification",
+      eventType: "order.ready_stock_created",
+      title: "Order Ready Stock baru",
+      body: customerName + " membuat order Ready Stock.",
+      destination: "/admin/orders/" + orderId,
+      relatedEntityType: "order",
+      relatedEntityId: String(orderId),
+    });
+    reportStage("activity", { target: "customer" });
+    await notifyUser(ctx, input.customerUserId, {
+      surface: "notification",
+      eventType: "order.ready_stock_created",
+      title: "Pesanan Ready Stock tercatat",
+      body: "Pesanan Ready Stock berhasil dicatat dan stok sudah diamankan.",
+      destination: "/account/orders/" + orderId,
+      relatedEntityType: "order",
+      relatedEntityId: String(orderId),
+    });
+    reportStage("complete", { orderCreated: true, reservationCreated: true, activityCreated: true });
+    return orderView(ctx, orderId);
+  } catch (error) {
+    logReadyStockFailure(input.correlationId, stage, input.assisted ? "admin_assisted" : "customer", error);
+    throw error;
+  }
 }
 
 export const createReadyStock = mutation({
   args: { variantId: v.id("bookVariants"), quantity: v.number() },
   handler: async (ctx, args) => {
-    const user = await requireActiveUser(ctx);
-    if (user.role !== "customer") fail("CUSTOMER_REQUIRED");
-    await enforceRateLimit(ctx, "readyStockOrderUser", String(user._id));
-    return createReadyStockOrder(ctx, {
-      actorUserId: user._id,
-      customerUserId: user._id,
-      variantId: args.variantId,
-      quantity: args.quantity,
-      assisted: false,
-    });
+    const correlationId = readyStockCorrelationId();
+    let stage: ReadyStockStage = "auth";
+    logReadyStockStarted(correlationId, "customer");
+    try {
+      const user = await requireActiveUser(ctx);
+      stage = "customer";
+      logReadyStockStage(correlationId, stage, {
+        appUserExists: true,
+        customerRole: user.role === "customer",
+        customerActive: user.status === "active",
+      });
+      if (user.role !== "customer") fail("CUSTOMER_REQUIRED");
+      stage = "rate_limit";
+      logReadyStockStage(correlationId, stage);
+      await enforceRateLimit(ctx, "readyStockOrderUser", String(user._id));
+      stage = "product";
+      return createReadyStockOrder(ctx, {
+        actorUserId: user._id,
+        customerUserId: user._id,
+        variantId: args.variantId,
+        quantity: args.quantity,
+        assisted: false,
+        correlationId,
+      });
+    } catch (error) {
+      if (stage !== "product") logReadyStockFailure(correlationId, stage, "customer", error);
+      throw error;
+    }
   },
 });
 
@@ -371,61 +489,82 @@ export const createAssisted = mutation({
     items: v.array(orderItemInput),
   },
   handler: async (ctx, args) => {
-    const actor = await requirePermission(ctx, "orders.manage");
-    const submissionKey = requiredText(args.submissionKey, "submission key");
-    if (submissionKey.length > 120) fail("VALIDATION_FAILED", "submission key is too long");
-    const duplicate = await ctx.db
-      .query("orders")
-      .withIndex("by_assisted_submission_key", (index) => index.eq("assistedSubmissionKey", submissionKey))
-      .first();
-    if (duplicate) fail("ASSISTED_ORDER_DUPLICATE");
-    const customer = await ctx.db.get(args.customerUserId);
-    if (!customer || customer.role !== "customer" || customer.status !== "active") {
-      fail("CUSTOMER_REQUIRED");
-    }
-    if (args.source === "ready_stock") {
-      if (args.catalogId || args.items.length !== 1) {
-        fail("VALIDATION_FAILED", "Ready Stock needs one variant without a catalog");
+    const isReadyStock = args.source === "ready_stock";
+    const correlationId = isReadyStock ? readyStockCorrelationId() : null;
+    let stage: ReadyStockStage = "auth";
+    if (correlationId) logReadyStockStarted(correlationId, "admin_assisted");
+    try {
+      const actor = await requirePermission(ctx, "orders.manage");
+      const submissionKey = requiredText(args.submissionKey, "submission key");
+      stage = "deduplication";
+      if (correlationId) logReadyStockStage(correlationId, stage);
+      if (submissionKey.length > 120) fail("VALIDATION_FAILED", "submission key is too long");
+      const duplicate = await ctx.db
+        .query("orders")
+        .withIndex("by_assisted_submission_key", (index) => index.eq("assistedSubmissionKey", submissionKey))
+        .first();
+      if (duplicate) fail("ASSISTED_ORDER_DUPLICATE");
+      stage = "customer";
+      const customer = await ctx.db.get(args.customerUserId);
+      if (correlationId) {
+        logReadyStockStage(correlationId, stage, {
+          customerRecordExists: Boolean(customer),
+          customerIsCustomer: customer?.role === "customer",
+          customerIsActive: customer?.status === "active",
+        });
       }
-      return createReadyStockOrder(ctx, {
-        actorUserId: actor._id,
-        customerUserId: customer._id,
-        variantId: args.items[0].variantId,
-        quantity: args.items[0].quantity,
-        submissionKey,
-        assisted: true,
-      });
-    }
-    if (!args.catalogId) fail("CATALOG_NOT_FOUND");
-    const catalog = await ctx.db.get(args.catalogId);
-    if (!catalog) fail("CATALOG_NOT_FOUND");
-    if (!(await catalogIsOpen(ctx, args.catalogId))) fail("CATALOG_NOT_OPEN");
-    const profile = await ctx.db
-      .query("customerProfiles")
-      .withIndex("by_user_id", (index) => index.eq("userId", customer._id))
-      .unique();
-    const customerName =
-      profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
-    const resolved = await resolveItems(ctx, args.catalogId, args.items);
-    const order = await insertOrder(
-      ctx,
-      {
-        customerUserId: customer._id,
-        catalogId: args.catalogId,
-        customerName,
-        customerEmail: customer.emailSnapshot,
+      if (!customer || customer.role !== "customer" || customer.status !== "active") {
+        fail("CUSTOMER_REQUIRED");
+      }
+      if (args.source === "ready_stock") {
+        stage = "product";
+        if (args.catalogId || args.items.length !== 1) {
+          fail("VALIDATION_FAILED", "Ready Stock needs one variant without a catalog");
+        }
+        return createReadyStockOrder(ctx, {
+          actorUserId: actor._id,
+          customerUserId: customer._id,
+          variantId: args.items[0].variantId,
+          quantity: args.items[0].quantity,
+          submissionKey,
+          assisted: true,
+          correlationId: correlationId as string,
+        });
+      }
+      if (!args.catalogId) fail("CATALOG_NOT_FOUND");
+      const catalog = await ctx.db.get(args.catalogId);
+      if (!catalog) fail("CATALOG_NOT_FOUND");
+      if (!(await catalogIsOpen(ctx, args.catalogId))) fail("CATALOG_NOT_OPEN");
+      const profile = await ctx.db
+        .query("customerProfiles")
+        .withIndex("by_user_id", (index) => index.eq("userId", customer._id))
+        .unique();
+      const customerName =
+        profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
+      const resolved = await resolveItems(ctx, args.catalogId, args.items);
+      const order = await insertOrder(
+        ctx,
+        {
+          customerUserId: customer._id,
+          catalogId: args.catalogId,
+          customerName,
+          customerEmail: customer.emailSnapshot,
+          source: "admin_assisted",
+          actorUserId: actor._id,
+          assistedSubmissionKey: submissionKey,
+          note: "Admin-assisted order",
+        },
+        resolved,
+        catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
+      );
+      await recordAudit(ctx, actor._id, "order.admin_assisted_created", "order", order.orderId, {
         source: "admin_assisted",
-        actorUserId: actor._id,
-        assistedSubmissionKey: submissionKey,
-        note: "Admin-assisted order",
-      },
-      resolved,
-      catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
-    );
-    await recordAudit(ctx, actor._id, "order.admin_assisted_created", "order", order.orderId, {
-      source: "admin_assisted",
-    });
-    return order;
+      });
+      return order;
+    } catch (error) {
+      if (correlationId && stage !== "product") logReadyStockFailure(correlationId, stage, "admin_assisted", error);
+      throw error;
+    }
   },
 });
 
