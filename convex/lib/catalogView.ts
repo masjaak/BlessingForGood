@@ -24,14 +24,48 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
       book?.coverStorageId ? ctx.storage.getUrl(book.coverStorageId) : (book?.coverImageUrl ?? null),
     ),
   );
+  const uniqueBooks = Array.from(
+    new Map(
+      books.filter((book): book is NonNullable<typeof book> => Boolean(book)).map((book) => [book._id, book]),
+    ).values(),
+  );
+  const galleries = new Map(
+    await Promise.all(
+      uniqueBooks.map(
+        async (book) =>
+          [
+            book._id,
+            await ctx.db
+              .query("bookMedia")
+              .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
+              .order("asc")
+              .take(8)
+              .then((media) =>
+                Promise.all(
+                  media.map(async (item) => ({
+                    mediaId: item._id,
+                    displayOrder: item.displayOrder,
+                    altText: item.altText,
+                    url: await ctx.storage.getUrl(item.storageId),
+                  })),
+                ).then((items) => items.filter((item): item is typeof item & { url: string } => Boolean(item.url))),
+              ),
+          ] as const,
+      ),
+    ),
+  );
   const bookMap = new Map<
     string,
     {
       id: string;
       title: string;
       publisher: string;
+      author: string | null;
+      description: string | null;
       coverImageUrl: string | null;
       coverPresentation: { zoom: number; x: number; y: number } | null;
+      gallery: Array<{ mediaId: string; displayOrder: number; altText: string; url: string }>;
+      externalPreview: { label: string; url: string } | null;
       variants: Array<{
         id: string;
         format: string;
@@ -53,8 +87,15 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
       id: book._id,
       title: book.title,
       publisher: publisher.name,
+      author: book.author ?? null,
+      description: book.description ?? null,
       coverImageUrl: coverUrls[index],
       coverPresentation: book.coverPresentation ?? null,
+      gallery: (galleries.get(book._id) || []).filter((item) => Boolean(item.url)),
+      externalPreview:
+        book.externalPreviewUrl && book.externalPreviewLabel
+          ? { label: book.externalPreviewLabel, url: book.externalPreviewUrl }
+          : null,
       variants: [],
     };
     current.variants.push({

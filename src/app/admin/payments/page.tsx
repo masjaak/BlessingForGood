@@ -20,6 +20,7 @@ import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 function statusTone(status: AdminPaymentQueue[number]["status"]): "neutral" | "positive" | "warning" {
   if (status === "approved") return "positive";
@@ -44,7 +45,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
       await action();
       setMessage(success);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Tinjauan pembayaran gagal");
+      setError(productErrorMessage(reason, "Tinjauan pembayaran gagal."));
     } finally {
       setPendingAction(null);
     }

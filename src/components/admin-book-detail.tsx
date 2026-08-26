@@ -3,6 +3,7 @@
 import type { FunctionReturnType } from "convex/server";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -13,6 +14,7 @@ import {
   ActionGroup,
   Button,
   Card,
+  ConfirmationDialog,
   Field,
   IconButton,
   InlineBooleanField,
@@ -22,6 +24,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import type { CoverPresentation } from "@/components/book-cover";
 import { ProductGallery } from "@/components/product-gallery";
@@ -42,6 +45,7 @@ const publicationLabels: Record<PublicationStatus, string> = {
 
 function VariantRow({ variant }: { variant: Variant }) {
   const updateVariant = useMutation(api.bookVariants.update);
+  const removeVariant = useMutation(api.bookVariants.remove);
   const setQuantity = useMutation(api.readyStock.setQuantity);
   const [isbn, setIsbn] = useState(variant.isbn);
   const [price, setPrice] = useState(String(variant.priceAmount));
@@ -52,6 +56,8 @@ function VariantRow({ variant }: { variant: Variant }) {
   const [enabled, setEnabled] = useState(variant.isAvailable);
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,6 +77,20 @@ function VariantRow({ variant }: { variant: Variant }) {
       setMessage("Perubahan format atau stok ditolak.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function remove() {
+    setIsDeleting(true);
+    setMessage("");
+    try {
+      await removeVariant({ bookVariantId: variant._id });
+      setMessage("Format dihapus.");
+    } catch (reason) {
+      setMessage(productErrorMessage(reason, "Format belum dapat dihapus."));
+    } finally {
+      setIsDeleting(false);
+      setConfirmDelete(false);
     }
   }
 
@@ -116,18 +136,40 @@ function VariantRow({ variant }: { variant: Variant }) {
       <Button type="submit" variant="secondary" loading={isSaving} loadingLabel="Menyimpan…">
         Simpan
       </Button>
+      <Button
+        type="button"
+        variant="danger"
+        size="compact"
+        loading={isDeleting}
+        loadingLabel="Menghapus…"
+        disabled={isSaving}
+        onClick={() => setConfirmDelete(true)}
+      >
+        Hapus format
+      </Button>
       {message ? (
         <span className="subtle" role="status">
           {message}
         </span>
       ) : null}
+      <ConfirmationDialog
+        open={confirmDelete}
+        title="Hapus format ini?"
+        description="Format hanya dapat dihapus bila belum dipakai katalog, pesanan, atau riwayat stok."
+        confirmLabel="Hapus format"
+        danger
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => void remove()}
+      />
     </form>
   );
 }
 
 function BookEditor({ book }: { book: AdminBook }) {
+  const router = useRouter();
   const publishers = useQuery(api.publishers.list, { paginationOpts: { numItems: 100, cursor: null } });
   const updateBook = useMutation(api.books.update);
+  const removeBook = useMutation(api.books.remove);
   const createVariant = useMutation(api.bookVariants.create);
   const attachCover = useAction(api.books.attachCover);
   const updateCoverPresentation = useMutation(api.books.updateCoverPresentation);
@@ -157,12 +199,14 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [galleryMessage, setGalleryMessage] = useState("");
   const [galleryError, setGalleryError] = useState("");
   const [galleryPendingMediaId, setGalleryPendingMediaId] = useState<string | null>(null);
+  const [confirmGalleryMedia, setConfirmGalleryMedia] = useState<GalleryImage | null>(null);
+  const [confirmDeleteBook, setConfirmDeleteBook] = useState(false);
   const [previewLabel, setPreviewLabel] = useState(book.externalPreviewLabel || "");
   const [previewUrl, setPreviewUrl] = useState(book.externalPreviewUrl || "");
   const [previewMessage, setPreviewMessage] = useState("");
   const [previewError, setPreviewError] = useState("");
   const [pendingAction, setPendingAction] = useState<
-    "book" | "publish" | "variant" | "cover" | "gallery" | "preview" | null
+    "book" | "publish" | "variant" | "cover" | "gallery" | "preview" | "delete" | null
   >(null);
   const { getToken, sessionClaims } = useAuth();
 
@@ -283,6 +327,21 @@ function BookEditor({ book }: { book: AdminBook }) {
       setGalleryError("Gambar galeri belum dapat dihapus.");
     } finally {
       setGalleryPendingMediaId(null);
+    }
+  }
+
+  async function deleteBook() {
+    setBookMessage("");
+    setBookError("");
+    setPendingAction("delete");
+    try {
+      await removeBook({ bookId: book._id });
+      router.push("/admin/books");
+    } catch (reason) {
+      setBookError(productErrorMessage(reason, "Buku belum dapat dihapus."));
+    } finally {
+      setPendingAction(null);
+      setConfirmDeleteBook(false);
     }
   }
 
@@ -484,12 +543,12 @@ function BookEditor({ book }: { book: AdminBook }) {
                         </IconButton>
                         <Button
                           disabled={galleryPendingMediaId === media.mediaId}
-                          onClick={() => void removeGallery(media)}
+                          onClick={() => setConfirmGalleryMedia(media)}
                           size="compact"
                           type="button"
                           variant="danger"
                         >
-                          Hapus
+                          Hapus gambar
                         </Button>
                       </span>
                     </div>
@@ -638,6 +697,18 @@ function BookEditor({ book }: { book: AdminBook }) {
                     Terbitkan buku
                   </Button>
                 ) : null}
+                {book.publicationStatus === "draft" ? (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    loading={pendingAction === "delete"}
+                    disabled={pendingAction !== null}
+                    loadingLabel="Menghapus…"
+                    onClick={() => setConfirmDeleteBook(true)}
+                  >
+                    Hapus buku
+                  </Button>
+                ) : null}
               </ActionGroup>
               {bookError ? (
                 <p className="error-text" role="alert">
@@ -715,6 +786,28 @@ function BookEditor({ book }: { book: AdminBook }) {
               </p>
             ) : null}
           </Card>
+          <ConfirmationDialog
+            open={confirmGalleryMedia !== null}
+            title="Hapus gambar galeri?"
+            description="Gambar akan dilepas dari Book Master. Pastikan gambar ini tidak lagi diperlukan."
+            confirmLabel="Hapus gambar"
+            danger
+            onCancel={() => setConfirmGalleryMedia(null)}
+            onConfirm={() => {
+              const media = confirmGalleryMedia;
+              setConfirmGalleryMedia(null);
+              if (media) void removeGallery(media);
+            }}
+          />
+          <ConfirmationDialog
+            open={confirmDeleteBook}
+            title="Hapus buku ini?"
+            description="Hanya Book Master draf tanpa referensi bisnis yang dapat dihapus."
+            confirmLabel="Hapus buku"
+            danger
+            onCancel={() => setConfirmDeleteBook(false)}
+            onConfirm={() => void deleteBook()}
+          />
         </div>
       </div>
     </div>

@@ -82,6 +82,7 @@ export interface OperationsContextValue {
   linkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   unlinkCatalog: (batchId: string, catalogId: string) => Promise<BatchSummary>;
   archiveBatch: (batchId: string) => Promise<BatchSummary>;
+  removeBatch: (batchId: string) => Promise<{ removed: true }>;
   assignOrderItem: (orderItemId: string, batchId: string, assignedQuantity: number) => Promise<unknown>;
   unassignOrderItem: (orderItemId: string, batchId: string) => Promise<unknown>;
   moveOrderItem: (orderItemId: string, fromBatchId: string, toBatchId: string) => Promise<unknown>;
@@ -312,6 +313,7 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
       linkCatalog: unavailable,
       unlinkCatalog: unavailable,
       archiveBatch: unavailable,
+      removeBatch: unavailable,
       assignOrderItem: unavailable,
       unassignOrderItem: unavailable,
       moveOrderItem: unavailable,

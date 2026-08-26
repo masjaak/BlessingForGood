@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BFGSelect } from "@/components/bfg-select";
 import { AdminNav } from "@/components/admin-nav";
@@ -9,6 +10,7 @@ import {
   ActionGroup,
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   LinkButton,
   LoadingRegion,
@@ -22,6 +24,12 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
+
+function formatCatalogDeadline(value: number | null | undefined): string {
+  return value
+    ? new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+    : "Belum ditentukan";
+}
 
 function downloadPurchaseSummary(batch: BatchDetail) {
   const blob = new Blob([toExcelCsv(purchaseSummaryCsvRows(batch.purchaseSummary))], {
@@ -46,6 +54,7 @@ function AdminBatchDetail() {
     linkCatalog,
     unlinkCatalog,
     archiveBatch,
+    removeBatch,
     updateEtaCargoMonth,
     assignOrderItem,
     unassignOrderItem,
@@ -54,7 +63,12 @@ function AdminBatchDetail() {
   } = useOperations();
   const [catalogId, setCatalogId] = useState("");
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [pendingStage, setPendingStage] = useState<(typeof shipmentStages)[number] | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const router = useRouter();
   if (dataSource !== "convex") return <div className="state-panel">Data batch belum tersedia.</div>;
   if (currentBatch === undefined || currentBatchUnassigned === undefined) {
     return (
@@ -102,12 +116,14 @@ function AdminBatchDetail() {
 
   async function run(action: () => Promise<unknown>, success: string, actionId: string) {
     setMessage("");
+    setMessageIsError(false);
     setPendingAction(actionId);
     try {
       await action();
       setMessage(success);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Operasi gagal.");
+      setMessageIsError(true);
+      setMessage(productErrorMessage(reason, "Operasi Batch belum berhasil. Silakan coba lagi."));
     } finally {
       setPendingAction(null);
     }
@@ -123,7 +139,10 @@ function AdminBatchDetail() {
     const target = value as (typeof shipmentStages)[number];
     const targetIndex = shipmentStages.indexOf(target);
     const allowSkip = targetIndex > currentIndex + 1;
-    if (allowSkip && !window.confirm("Lewati ke depan dalam linimasa pengiriman?")) return;
+    if (allowSkip) {
+      setPendingStage(target);
+      return;
+    }
     await run(() => updateShipmentStage(batchId, target, allowSkip), "Tahap pengiriman diperbarui.", "shipment");
   }
 
@@ -151,8 +170,21 @@ function AdminBatchDetail() {
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
+          <ConfirmationDialog
+            open={pendingStage !== null}
+            title="Lewati tahap pengiriman?"
+            description="Tahap ini akan dicatat sebagai koreksi eksplisit pada linimasa Batch."
+            confirmLabel="Lewati tahap"
+            onCancel={() => setPendingStage(null)}
+            onConfirm={() => {
+              const target = pendingStage;
+              setPendingStage(null);
+              if (target)
+                void run(() => updateShipmentStage(batchId, target, true), "Tahap pengiriman diperbarui.", "shipment");
+            }}
+          />
           {message ? (
-            <p className="success-banner" role="status">
+            <p className={messageIsError ? "error-text" : "success-banner"} role={messageIsError ? "alert" : "status"}>
               {message}
             </p>
           ) : null}
@@ -198,14 +230,28 @@ function AdminBatchDetail() {
                 </label>
                 <Button
                   type="button"
-                  variant="danger"
+                  variant="tertiary"
                   loading={pendingAction === "archive"}
                   loadingLabel="Mengarsipkan…"
-                  onClick={() => void run(() => archiveBatch(batchId), "Batch diarsipkan.", "archive")}
+                  onClick={() => setConfirmArchive(true)}
                   disabled={currentBatch.isArchived}
                 >
                   Arsipkan batch
                 </Button>
+                {!currentBatch.isArchived &&
+                !currentBatch.currentShipmentStage &&
+                !currentBatch.catalogLinks.length &&
+                !currentBatch.assignmentCount ? (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    loading={pendingAction === "delete"}
+                    loadingLabel="Menghapus…"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    Hapus batch
+                  </Button>
+                ) : null}
               </div>
               <p className="subtle action-support">
                 {rosterLocked
@@ -241,28 +287,44 @@ function AdminBatchDetail() {
               </div>
             </div>
             <p className="subtle">
-              Satu Batch dapat terhubung ke beberapa Catalog. Melepas tautan hanya menghapus relasi; Catalog dan Batch
-              tetap ada. Relasi yang memiliki assignment aktif tetap dilindungi server.
+              Satu Batch dapat memuat beberapa Catalog dan publisher. Tautan menentukan sumber roster; item baru masuk
+              ke Batch setelah Admin melakukan assignment. Melepas tautan hanya menghapus relasi.
             </p>
             {currentBatch.catalogLinks.map((link) => (
-              <div className="summary-line" key={link.catalogId}>
-                <span>{link.catalogName}</span>
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  loading={pendingAction === `unlink-${link.catalogId}`}
-                  loadingLabel="Melepas tautan…"
-                  onClick={() =>
-                    void run(
-                      () => unlinkCatalog(batchId, link.catalogId),
-                      "Tautan katalog dilepas.",
-                      `unlink-${link.catalogId}`,
-                    )
-                  }
-                  disabled={rosterLocked}
-                >
-                  Lepas tautan
-                </Button>
+              <div className="content-stack" key={link.catalogId}>
+                <div className="summary-line">
+                  <strong>CATALOG TERHUBUNG · {link.catalogName}</strong>
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    loading={pendingAction === `unlink-${link.catalogId}`}
+                    loadingLabel="Melepas tautan…"
+                    onClick={() =>
+                      void run(
+                        () => unlinkCatalog(batchId, link.catalogId),
+                        "Tautan katalog dilepas.",
+                        `unlink-${link.catalogId}`,
+                      )
+                    }
+                    disabled={rosterLocked}
+                  >
+                    Lepas tautan
+                  </Button>
+                </div>
+                <div className="summary-line">
+                  <span>Batas pemesanan</span>
+                  <span>{formatCatalogDeadline(link.closingAt)}</span>
+                </div>
+                <div className="summary-line">
+                  <span>Eligible order items</span>
+                  <span>{link.eligibleOrderItemCount}</span>
+                </div>
+                <div className="summary-line">
+                  <span>Customers · Total qty · Publishers</span>
+                  <span>
+                    {link.eligibleCustomerCount} · {link.eligibleQuantity} · {link.publisherCount}
+                  </span>
+                </div>
               </div>
             ))}
             {availableCatalogs.length ? (
@@ -300,10 +362,13 @@ function AdminBatchDetail() {
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Item pesanan yang ditugaskan</span>
+                <span className="card-kicker">Assignment · item procurement</span>
                 <h2>{currentBatch.assignments.length} penugasan</h2>
               </div>
             </div>
+            <p className="subtle">
+              Assignment menentukan order item mana yang benar-benar ikut dalam procurement Batch ini.
+            </p>
             {currentBatch.assignments.length ? (
               currentBatch.assignments.map((assignment) => (
                 <div className="content-stack" key={assignment.assignmentId}>
@@ -381,13 +446,13 @@ function AdminBatchDetail() {
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Roster pelanggan</span>
+                <span className="card-kicker">Roster</span>
                 <h2>{currentBatch.customerRoster.length} pelanggan</h2>
               </div>
             </div>
             <p className="subtle">
-              Pelanggan masuk ke roster saat item pesanan mereka ditugaskan. Targetkan pelanggan dari item pesanan yang
-              tersedia di bawah ini; tidak ada pelanggan lain yang otomatis ikut.
+              Daftar item preorder Customer yang memenuhi syarat untuk dimasukkan ke Batch ini. Pelanggan masuk saat
+              item pesanan mereka ditugaskan; tidak ada pelanggan lain yang otomatis ikut.
             </p>
             {currentBatch.customerRoster.length ? (
               currentBatch.customerRoster.map((customer) => (
@@ -418,7 +483,8 @@ function AdminBatchDetail() {
               </div>
             </div>
             <p className="subtle">
-              Dihitung otomatis dari total assignment per varian buku; ringkasan ini tidak diedit terpisah.
+              Rekap final untuk melakukan pembelian ke Publisher, dihitung otomatis dari item yang sudah dimasukkan ke
+              Batch. Ringkasan ini tidak diedit terpisah.
             </p>
             {currentBatch.purchaseSummary.length ? (
               <div className="table-wrap">
@@ -427,9 +493,12 @@ function AdminBatchDetail() {
                   <thead>
                     <tr>
                       <th>Publisher</th>
-                      <th>Buku / varian</th>
+                      <th>Judul</th>
+                      <th>Format</th>
                       <th>ISBN</th>
-                      <th>Jumlah</th>
+                      <th>Qty</th>
+                      <th>Harga GBP</th>
+                      <th>Harga IDR</th>
                       <th>Pelanggan</th>
                     </tr>
                   </thead>
@@ -437,16 +506,12 @@ function AdminBatchDetail() {
                     {currentBatch.purchaseSummary.map((item) => (
                       <tr key={item.bookVariantId}>
                         <td>{item.publisherName}</td>
-                        <td>
-                          {item.bookTitle} · {item.format}
-                          <br />
-                          <span className="subtle">
-                            GBP {item.supplierPriceGbpMinor ?? "—"} pence · IDR{" "}
-                            {item.unitPriceAmount.toLocaleString("id-ID")}
-                          </span>
-                        </td>
+                        <td>{item.bookTitle}</td>
+                        <td>{item.format}</td>
                         <td>{item.isbn}</td>
                         <td>{item.quantity}</td>
+                        <td>{item.supplierPriceGbpMinor === null ? "—" : `${item.supplierPriceGbpMinor} pence`}</td>
+                        <td>{item.unitPriceAmount.toLocaleString("id-ID")}</td>
                         <td>{item.customerCount}</td>
                       </tr>
                     ))}
@@ -563,6 +628,36 @@ function AdminBatchDetail() {
             </ul>
             {!currentBatch.history.length ? <p className="subtle">Belum ada tahap yang terlihat pelanggan.</p> : null}
           </Card>
+          <ConfirmationDialog
+            open={confirmArchive}
+            title="Arsipkan batch ini?"
+            description="Batch berhenti beroperasi, tetapi tautan, assignment, dan riwayat tetap disimpan."
+            confirmLabel="Arsipkan batch"
+            onCancel={() => setConfirmArchive(false)}
+            onConfirm={() => {
+              setConfirmArchive(false);
+              void run(() => archiveBatch(batchId), "Batch diarsipkan.", "archive");
+            }}
+          />
+          <ConfirmationDialog
+            open={confirmDelete}
+            title="Hapus batch ini?"
+            description="Hanya Batch draf yang benar-benar kosong tanpa tautan, assignment, atau riwayat yang dapat dihapus."
+            confirmLabel="Hapus batch"
+            danger
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={() => {
+              setConfirmDelete(false);
+              void run(
+                async () => {
+                  await removeBatch(batchId);
+                  router.push("/admin/batches");
+                },
+                "Batch dihapus.",
+                "delete",
+              );
+            }}
+          />
         </div>
       </div>
     </div>

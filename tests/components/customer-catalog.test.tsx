@@ -48,4 +48,44 @@ describe("CustomerCatalog projection", () => {
       "convex.cloud/api/storage/cover-1",
     );
   });
+
+  it("routes Admin away from the Customer mutation", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-1",
+        name: "Admin Preview",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2026-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-1",
+            title: "Preview Book",
+            publisher: "Publisher",
+            variants: [
+              {
+                id: "variant-1",
+                format: "PB",
+                isbn: "978035235345347",
+                price: 305000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "admin",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    expect(screen.queryByRole("button", { name: "Catat preorder" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Buka Pesanan Admin" })).toBeTruthy();
+  });
 });

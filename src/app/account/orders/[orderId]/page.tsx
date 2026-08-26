@@ -13,7 +13,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { fulfillmentStageLabels, shipmentStageLabels } from "@/domain/prototype/operations";
+import { fulfillmentStageLabels, formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr, orderStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
@@ -127,7 +127,7 @@ function CustomerOrderDetail() {
             <div>
               <span className="card-kicker">Perjalanan batch</span>
               <h2>
-                {currentCustomerTracking.batches.length ? "Perjalanan buku dari luar negeri" : "Belum masuk batch"}
+                {currentCustomerTracking.batches.length ? "Perjalanan buku dari luar negeri" : "Belum masuk Batch"}
               </h2>
             </div>
           </div>
@@ -150,11 +150,15 @@ function CustomerOrderDetail() {
                   Tahap saat ini:{" "}
                   {batch.currentShipmentStage ? shipmentStageLabels[batch.currentShipmentStage] : "Belum dimulai"}
                 </p>
+                <p className="subtle">Estimasi tiba: {formatCargoEta(batch.etaCargoMonth)}</p>
                 <Timeline history={batch.history} labels={shipmentStageLabels} />
               </div>
             ))
           ) : (
-            <p className="subtle">Item pesanan ini belum dimasukkan ke batch.</p>
+            <p className="subtle">
+              Pesananmu sudah tercatat. Status perjalanan Batch akan muncul setelah Admin memasukkan item ini ke siklus
+              PO/cargo.
+            </p>
           )}
         </Card>
 

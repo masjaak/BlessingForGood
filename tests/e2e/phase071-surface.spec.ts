@@ -266,6 +266,54 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     }
   });
 
+  test("text actions keep their content inside the Button geometry", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      const mount = document.createElement("div");
+      mount.className = "admin-shell button-geometry-qa";
+      mount.innerHTML = `
+        <div class="admin-variant-create">
+          <button class="button button-secondary"><span class="button-label">Simpan</span></button>
+          <button class="button button-secondary"><span class="button-label">Tambah format</span></button>
+          <button class="button button-primary"><span class="button-label">Buka katalog</span></button>
+          <button class="button button-danger"><span class="button-label">Arsipkan batch</span></button>
+        </div>
+        <div class="action-group action-group-responsive">
+          <button class="button button-secondary"><span class="button-label">Masukkan ke Batch</span></button>
+          <button class="button button-primary"><span class="button-label">Unduh purchase CSV</span></button>
+          <button class="button button-danger"><span class="button-label">Hapus buku</span></button>
+        </div>
+      `;
+      document.body.append(mount);
+    });
+
+    const geometry = await page.locator(".button-geometry-qa .button").evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const label = button.querySelector<HTMLElement>(".button-label");
+        if (!label) throw new Error("Button label anatomy is incomplete");
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        const buttonRect = button.getBoundingClientRect();
+        const labelRect = label.getBoundingClientRect();
+        return {
+          textLeft: labelRect.left,
+          textRight: labelRect.right,
+          buttonLeft: buttonRect.left,
+          buttonRight: buttonRect.right,
+          clientWidth: button.clientWidth,
+          scrollWidth: button.scrollWidth,
+          lineCount: range.getClientRects().length,
+        };
+      }),
+    );
+    for (const item of geometry) {
+      expect(item.textLeft).toBeGreaterThanOrEqual(item.buttonLeft - 1);
+      expect(item.textRight).toBeLessThanOrEqual(item.buttonRight + 1);
+      expect(item.scrollWidth).toBeLessThanOrEqual(item.clientWidth);
+      expect(item.lineCount).toBe(1);
+    }
+  });
+
   test("Activity stays one bounded feed without horizontal overflow", async ({ page }) => {
     await page.goto("/account/notifications", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Aktivitas" })).toBeVisible({ timeout: 15_000 });

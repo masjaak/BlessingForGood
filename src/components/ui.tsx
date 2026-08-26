@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { forwardRef } from "react";
-import type { ButtonHTMLAttributes, ComponentProps, HTMLAttributes, ReactNode } from "react";
+import { type ButtonHTMLAttributes, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
 import { BrandMascot, type BrandMascotVariant } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 
@@ -149,6 +149,8 @@ export function ActionGroup({
     </div>
   );
 }
+
+export { ConfirmationDialog } from "./confirmation-dialog";
 
 export function Card({
   frame = "operational",

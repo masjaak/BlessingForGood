@@ -16,6 +16,7 @@ import {
 } from "@/components/ui";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
@@ -47,7 +48,7 @@ function CreateBatchForm() {
       setEtaCargoMonth("");
       setMessage("Batch berhasil dibuat.");
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Batch belum dapat dibuat");
+      setMessage(productErrorMessage(reason, "Batch belum dapat dibuat."));
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +65,7 @@ function CreateBatchForm() {
           <Field label="Kode referensi">
             <input className="input" value={referenceCode} onChange={(event) => setReferenceCode(event.target.value)} />
           </Field>
-          <Field label="Deadline PO">
+          <Field label="Deadline PO" hint="Batas finalisasi item dan jumlah pembelian untuk Batch ini.">
             <input
               className="input"
               type="datetime-local"

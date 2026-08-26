@@ -33,7 +33,8 @@ export const create = mutation({
       format: args.format,
       isbn: args.isbn,
       priceAmount: args.priceAmount,
-      supplierPriceGbpMinor: args.supplierPriceGbpMinor === undefined ? undefined : nonNegativeMoney(args.supplierPriceGbpMinor),
+      supplierPriceGbpMinor:
+        args.supplierPriceGbpMinor === undefined ? undefined : nonNegativeMoney(args.supplierPriceGbpMinor),
       isAvailable: true,
     });
   },
@@ -77,5 +78,40 @@ export const update = mutation({
     });
     await recordAudit(ctx, user._id, "book_variant.updated", "bookVariant", variant._id);
     return variant._id;
+  },
+});
+
+export const remove = mutation({
+  args: { bookVariantId: v.id("bookVariants") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const variant = await ctx.db.get(args.bookVariantId);
+    if (!variant) fail("BOOK_VARIANT_NOT_FOUND");
+    const [catalogItem, orderItem, reservation, inventory] = await Promise.all([
+      ctx.db
+        .query("catalogItems")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+        .first(),
+      ctx.db
+        .query("orderItems")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+        .first(),
+      ctx.db
+        .query("readyStockReservations")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+        .first(),
+      ctx.db
+        .query("readyStockInventory")
+        .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
+        .unique(),
+    ]);
+    if (catalogItem || orderItem || reservation) fail("ENTITY_IN_USE", "format has business history");
+    if (inventory && (inventory.quantity > 0 || (inventory.reservedQuantity ?? 0) > 0)) {
+      fail("ENTITY_IN_USE", "format has ready stock history");
+    }
+    if (inventory) await ctx.db.delete(inventory._id);
+    await ctx.db.delete(variant._id);
+    await recordAudit(ctx, user._id, "book_variant.deleted", "bookVariant", variant._id);
+    return { removed: true };
   },
 });

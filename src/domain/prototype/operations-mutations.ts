@@ -17,6 +17,7 @@ export function useOperationsMutations() {
   const linkCatalogMutation = useMutation(api.batches.linkCatalog);
   const unlinkCatalogMutation = useMutation(api.batches.unlinkCatalog);
   const archiveBatchMutation = useMutation(api.batches.archive);
+  const removeBatchMutation = useMutation(api.batches.remove);
   const assignOrderItemMutation = useMutation(api.batchTracking.assignOrderItem);
   const unassignOrderItemMutation = useMutation(api.batchTracking.unassignOrderItem);
   const moveOrderItemMutation = useMutation(api.batchTracking.moveOrderItem);
@@ -72,6 +73,10 @@ export function useOperationsMutations() {
   const archiveBatch = useCallback(
     (id: string) => archiveBatchMutation({ batchId: id as Id<"batches"> }),
     [archiveBatchMutation],
+  );
+  const removeBatch = useCallback(
+    (id: string) => removeBatchMutation({ batchId: id as Id<"batches"> }),
+    [removeBatchMutation],
   );
   const assignOrderItem = useCallback(
     (orderItemId: string, id: string, assignedQuantity: number) =>
@@ -209,6 +214,7 @@ export function useOperationsMutations() {
       linkCatalog,
       unlinkCatalog,
       archiveBatch,
+      removeBatch,
       assignOrderItem,
       unassignOrderItem,
       moveOrderItem,
@@ -230,6 +236,7 @@ export function useOperationsMutations() {
     [
       allocateDeposit,
       archiveBatch,
+      removeBatch,
       assignOrderItem,
       unassignOrderItem,
       moveOrderItem,

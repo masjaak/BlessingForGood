@@ -52,7 +52,12 @@ describe("BFG Book Master product media", () => {
     const adminUser = await admin.query(api.users.current, {});
     if (!adminUser) throw new Error("admin fixture missing");
     const publisherId = await admin.mutation(api.publishers.create, { name: "Media Publisher" });
-    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Media Book" });
+    const bookId = await admin.mutation(api.books.create, {
+      publisherId,
+      title: "Media Book",
+      author: "Media Author",
+      description: "Customer-safe description",
+    });
     const variantId = await admin.mutation(api.bookVariants.create, {
       bookId,
       format: "PB",
@@ -91,6 +96,28 @@ describe("BFG Book Master product media", () => {
       label: "Preview Amazon",
       url: "https://www.amazon.com/example-book",
     });
+
+    const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Media Secret Catalog" });
+    await admin.mutation(api.catalogItems.add, { catalogId, bookVariantId: variantId });
+    await admin.mutation(api.catalogAccess.setCode, { catalogId, accessCode: "media-secret-code" });
+    await admin.mutation(api.secretCatalogs.open, { catalogId });
+    const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: "media-secret-code" });
+    if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
+    const secretBook = (
+      await customer.query(api.catalogAccess.getUnlocked, {
+        catalogId,
+        sessionToken: unlocked.sessionToken,
+      })
+    )?.books[0];
+    expect(secretBook).toMatchObject({
+      title: "Media Book",
+      author: "Media Author",
+      description: "Customer-safe description",
+      gallery: [{ altText: "Halaman isi kedua" }, { altText: "Halaman isi pertama" }],
+      externalPreview: { label: "Preview Amazon", url: "https://www.amazon.com/example-book" },
+    });
+    expect(secretBook?.variants[0]).not.toHaveProperty("supplierPriceGbpMinor");
+    expect(await t.query(api.catalogAccess.getUnlocked, { catalogId, sessionToken: "invalid-session" })).toBeNull();
 
     const adminBook = await admin.query(api.books.getForAdmin, { bookId });
     expect(adminBook?.coverStorageId).toBe(cover);

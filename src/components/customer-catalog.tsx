@@ -6,7 +6,6 @@ import { BookCover } from "@/components/book-cover";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { formatIdr } from "@/domain/prototype/logic";
-import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
 import {
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui";
 
 export function CustomerCatalog() {
-  const { unlockedCatalog: catalog, catalogLoading, unlockCatalog, submitOrder, sessionRole } = useProduct();
+  const { unlockedCatalog: catalog, catalogLoading, unlockCatalog, submitOrder, sessionRole, authState } = useProduct();
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
@@ -192,7 +191,7 @@ export function CustomerCatalog() {
         title={catalog.name}
         description={
           catalog.closingAt
-            ? `Terbuka sampai ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(catalog.closingAt))}.`
+            ? `Batas pemesanan: ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(catalog.closingAt))}. Customer dapat melakukan preorder sampai tanggal ini.`
             : "Katalog ini sedang terbuka."
         }
       />
@@ -217,6 +216,9 @@ export function CustomerCatalog() {
                       <div>
                         <span className="card-kicker">{book.publisher}</span>
                         <h2>{book.title}</h2>
+                        <LinkButton href={`/catalog/${catalog.id}/${book.id}`} variant="tertiary" size="compact">
+                          Buka detail buku
+                        </LinkButton>
                       </div>
                       <span className="subtle">Pilih satu format</span>
                     </div>
@@ -288,7 +290,7 @@ export function CustomerCatalog() {
             <span>Total</span>
             <Money amount={total} />
           </div>
-          {roleCanAccess(sessionRole, "customer") ? (
+          {authState === "authenticated" && sessionRole === "customer" ? (
             <form onSubmit={handleSubmit} className="form-card">
               <Field label="Nama">
                 <input
@@ -320,6 +322,12 @@ export function CustomerCatalog() {
                 Catat preorder
               </Button>
             </form>
+          ) : sessionRole === "admin" || sessionRole === "owner" ? (
+            <div className="catalog-member-note">
+              <span className="card-kicker">Pesanan berbantuan</span>
+              <p>Pesanan pelanggan dibuat melalui ruang kerja Admin.</p>
+              <LinkButton href="/admin/orders">Buka Pesanan Admin</LinkButton>
+            </div>
           ) : (
             <div className="catalog-member-note">
               <span className="card-kicker">Sudah menemukan bukunya?</span>

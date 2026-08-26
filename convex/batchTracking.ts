@@ -256,6 +256,13 @@ export const updateShipmentStage = mutation({
     const batch = await ctx.db.get(args.batchId);
     if (!batch) fail("BATCH_NOT_FOUND");
     if (batch.isArchived) fail("BATCH_ARCHIVED");
+    const assignments = await ctx.db
+      .query("orderItemBatchAssignments")
+      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
+      .take(200);
+    if (args.toStage === "po_closed" && assignments.length === 0) {
+      fail("BATCH_ROSTER_REQUIRED");
+    }
     if (!canTransitionShipment(batch.currentShipmentStage, args.toStage, args.allowSkip === true)) {
       fail("INVALID_SHIPMENT_TRANSITION");
     }
@@ -269,10 +276,6 @@ export const updateShipmentStage = mutation({
       changedByUserId: user._id,
       note: args.note?.trim() || undefined,
     });
-    const assignments = await ctx.db
-      .query("orderItemBatchAssignments")
-      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
-      .take(200);
     const recipients = new Set<Id<"appUsers">>();
     for (const assignment of assignments) {
       const item = await ctx.db.get(assignment.orderItemId);
@@ -532,7 +535,9 @@ export const getForAdmin = query({
     );
     const customerIds = [...new Set(loaded.map(({ order }) => order.customerUserId))];
     const customers = await Promise.all(customerIds.map((customerId) => ctx.db.get(customerId)));
-    const customerCodes = new Map(customerIds.map((customerId, index) => [customerId, customers[index]?.memberCode || null]));
+    const customerCodes = new Map(
+      customerIds.map((customerId, index) => [customerId, customers[index]?.memberCode || null]),
+    );
     const variantIds = [...new Set(loaded.map(({ orderItem }) => orderItem.bookVariantId))];
     const variants = await Promise.all(variantIds.map((variantId) => ctx.db.get(variantId)));
     const variantById = new Map(variantIds.map((variantId, index) => [variantId, variants[index]]));

@@ -1179,6 +1179,25 @@ p {
   border-radius: var(--radius-sm);
   background: #eef9f3;
 }
+.bfg-confirm-dialog {
+  width: min(calc(100vw - 32px), 440px);
+  margin: auto;
+  padding: 24px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.bfg-confirm-dialog::backdrop {
+  background: rgb(28 35 31 / 42%);
+}
+.bfg-confirm-dialog h2 {
+  margin: 0;
+}
+.bfg-confirm-dialog p {
+  margin: 10px 0 20px;
+}
 .success-card {
   position: relative;
   min-height: 180px;
@@ -1632,6 +1651,14 @@ p {
   gap: 10px;
   align-items: end;
   margin-top: 22px;
+}
+.admin-variant-create > .button {
+  white-space: nowrap;
+}
+@media (min-width: 801px) {
+  .admin-variant-create > .button {
+    min-width: max-content;
+  }
 }
 .metric {
   min-height: 140px;

@@ -268,6 +268,17 @@ describe("BFG batch roster and assisted orders", () => {
     });
     expect(batch.referenceCode).toMatch(/^BFG-BAT-\d{6}-[0-9A-Z]{4}$/);
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    await expect(admin.query(api.batches.getForAdmin, { batchId: batch.batchId })).resolves.toMatchObject({
+      catalogLinks: [
+        expect.objectContaining({
+          catalogId: catalog.catalogId,
+          eligibleOrderItemCount: 6,
+          eligibleCustomerCount: 2,
+          eligibleQuantity: 8,
+          publisherCount: 3,
+        }),
+      ],
+    });
     for (const item of order.items) {
       await admin.mutation(api.batchTracking.assignOrderItem, {
         orderItemId: item._id,

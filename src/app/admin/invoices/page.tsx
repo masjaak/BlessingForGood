@@ -27,6 +27,7 @@ import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/o
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 export function PersistentRequirementForm({ orderId }: { orderId: string }) {
   const { createInvoice, issueInvoice } = useOperations();
@@ -56,9 +57,7 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
       setMessage(
         invoiceId
           ? "Draf tersimpan, tetapi invoice belum diterbitkan. Buka operasi invoice untuk mencoba lagi."
-          : reason instanceof Error
-            ? reason.message
-            : "Invoice tidak dapat dibuat.",
+          : productErrorMessage(reason, "Invoice tidak dapat dibuat."),
       );
     } finally {
       setPendingAction(null);
@@ -146,7 +145,7 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
       await issueInvoice(invoiceId);
       setMessage("Diterbitkan.");
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Invoice tidak dapat diterbitkan.");
+      setMessage(productErrorMessage(reason, "Invoice tidak dapat diterbitkan."));
     } finally {
       setIsIssuing(false);
     }

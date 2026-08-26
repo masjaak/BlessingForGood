@@ -1,5 +1,22 @@
 # BFG Project Status
 
+## Operational reconciliation — 2026-08-26
+
+The requested Batch PO, Secret Catalog, Ready Stock, error-safety, button
+geometry, and destructive-action corrections are implemented locally on the
+canonical `main` worktree. The implementation preserves the existing Clerk
+identity boundary, Customer-only Ready Stock mutation, Admin-assisted order
+path, canonical reservation/order/invoice/Activity projections, private
+catalog access, and Batch state machine.
+
+Added/updated coverage includes active Customer Ready Stock ordering, Admin
+checkout role guidance, guarded Catalog reopen, Catalog-to-Batch eligibility
+summary, non-empty-roster PO lock, safe Batch errors, authorized Secret Book
+Detail content projection, and server-side unused-versus-referenced deletion
+guards. Release status remains pending until the full local gates, commit/push,
+canonical Convex/Vercel Production deployment, and available smoke checks are
+completed. No fake identity or Production business record was created.
+
 ## Client UAT Round 3 — 2026-08-25
 
 Round 3 implementation is complete locally for the four new findings:

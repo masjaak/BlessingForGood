@@ -29,4 +29,16 @@ describe("prototype error boundary", () => {
       ),
     ).toBe("Pesanan belum berhasil dibuat.");
   });
+
+  it("maps Batch transition failures to safe operational copy", () => {
+    expect(
+      productErrorMessage(new Error("[CONVEX M(batchTracking:updateShipmentStage)] BATCH_ROSTER_REQUIRED"), "fallback"),
+    ).toBe("Roster belum siap untuk dikunci.");
+    expect(
+      productErrorMessage(
+        new Error("[CONVEX M(batchTracking:updateShipmentStage)] INVALID_SHIPMENT_TRANSITION"),
+        "fallback",
+      ),
+    ).toBe("Tahap berikutnya tidak valid.");
+  });
 });

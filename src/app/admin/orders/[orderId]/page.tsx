@@ -28,6 +28,7 @@ import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { invoiceStatusLabel } from "@/domain/prototype/operations";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
@@ -88,7 +89,7 @@ function AdminOrderDetail() {
       await action();
       setMessage(success);
     } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "Operasi gagal.");
+      setMessage(productErrorMessage(reason, "Operasi gagal."));
     } finally {
       setPendingAction(null);
     }
@@ -308,7 +309,7 @@ function AssignForm({
       await assignOrderItem(orderItemId, batchId, Number(quantity));
       onDone();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Penugasan gagal.");
+      setError(productErrorMessage(reason, "Penugasan gagal."));
     } finally {
       setIsSubmitting(false);
     }

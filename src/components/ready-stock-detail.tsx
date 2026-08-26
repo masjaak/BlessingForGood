@@ -19,7 +19,6 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
-import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 
@@ -99,7 +98,7 @@ function ConnectedDetail({ slug }: { slug: string }) {
   );
 }
 
-function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
+export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   const { authState, sessionRole } = useProduct();
   const createOrder = useMutation(api.orders.createReadyStock);
   const [variantId, setVariantId] = useState(book.variants[0]?.id || "");
@@ -109,11 +108,33 @@ function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   const [pending, setPending] = useState(false);
   const selected = book.variants.find((variant) => variant.id === variantId);
 
-  if (authState !== "authenticated" || !roleCanAccess(sessionRole, "customer")) {
+  if (authState === "authenticated" && sessionRole === "customer") {
+    // Keep this exact role boundary aligned with orders:createReadyStock.
+  } else if (sessionRole === "admin" || sessionRole === "owner") {
+    return (
+      <div className="catalog-member-note">
+        <p>Pesanan pelanggan dibuat melalui ruang kerja Admin.</p>
+        <LinkButton href="/admin/orders" variant="secondary">
+          Buka Pesanan Admin
+        </LinkButton>
+      </div>
+    );
+  } else if (authState === "suspended") {
+    return <p className="subtle">Akunmu sedang ditangguhkan. Hubungi admin BFG untuk bantuan.</p>;
+  } else if (authState !== "authenticated") {
     return (
       <div className="form-actions">
         <LinkButton href="/account" variant="secondary">
           Masuk untuk memesan
+        </LinkButton>
+      </div>
+    );
+  } else {
+    return (
+      <div className="catalog-member-note">
+        <p>Pesanan pelanggan dibuat melalui ruang kerja Admin.</p>
+        <LinkButton href="/admin/orders" variant="secondary">
+          Buka Pesanan Admin
         </LinkButton>
       </div>
     );

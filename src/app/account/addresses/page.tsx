@@ -6,7 +6,17 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import {
+  Button,
+  Card,
+  ConfirmationDialog,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  PageHeader,
+  SkeletonCard,
+} from "@/components/ui";
 import { BackButton } from "@/components/back-button";
 
 const emptyForm = {
@@ -40,6 +50,7 @@ function AddressForm() {
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
+  const [confirmDeleteAddressId, setConfirmDeleteAddressId] = useState<string | null>(null);
   const update = (key: keyof typeof emptyForm, value: string | boolean) =>
     setForm((current) => ({ ...current, [key]: value }));
 
@@ -133,23 +144,31 @@ function AddressForm() {
               variant="danger"
               loading={deletingAddressId === address.addressId}
               loadingLabel="Menghapus…"
-              onClick={async () => {
-                setDeletingAddressId(address.addressId);
-                try {
-                  await remove({ addressId: address.addressId as Id<"customerAddresses"> });
-                  setMessage("Alamat dihapus.");
-                } catch {
-                  setMessage("Alamat belum dapat dihapus.");
-                } finally {
-                  setDeletingAddressId(null);
-                }
-              }}
+              onClick={() => setConfirmDeleteAddressId(address.addressId)}
             >
-              Hapus
+              Hapus alamat
             </Button>
           </Card>
         ))}
       </div>
+      <ConfirmationDialog
+        open={confirmDeleteAddressId !== null}
+        title="Hapus alamat ini?"
+        description="Alamat akan dihapus dari akunmu. Snapshot alamat pada riwayat pesanan tidak berubah."
+        confirmLabel="Hapus alamat"
+        danger
+        onCancel={() => setConfirmDeleteAddressId(null)}
+        onConfirm={() => {
+          const addressId = confirmDeleteAddressId;
+          setConfirmDeleteAddressId(null);
+          if (!addressId) return;
+          setDeletingAddressId(addressId);
+          void remove({ addressId: addressId as Id<"customerAddresses"> })
+            .then(() => setMessage("Alamat dihapus."))
+            .catch(() => setMessage("Alamat belum dapat dihapus."))
+            .finally(() => setDeletingAddressId(null));
+        }}
+      />
     </div>
   );
 }

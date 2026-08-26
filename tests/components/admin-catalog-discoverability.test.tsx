@@ -92,7 +92,7 @@ describe("Secret Catalog operational discoverability", () => {
     expect(screen.getByRole("link", { name: "Buat katalog" }).getAttribute("href")).toBe("#create-catalog");
     expect(screen.getByText(/mengelola akses/)).toBeTruthy();
     expect(screen.getByText("Nama katalog")).toBeTruthy();
-    expect(screen.getByText("Tanggal tutup")).toBeTruthy();
+    expect(screen.getByText("Batas pemesanan")).toBeTruthy();
     expect(document.querySelectorAll("#create-catalog .field-hint")).toHaveLength(3);
   });
 

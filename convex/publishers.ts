@@ -55,3 +55,20 @@ export const update = mutation({
     return publisher._id;
   },
 });
+
+export const remove = mutation({
+  args: { publisherId: v.id("publishers") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const publisher = await ctx.db.get(args.publisherId);
+    if (!publisher) fail("VALIDATION_FAILED", "publisher does not exist");
+    // ponytail: bounded dependency scan; add a publisher index before the master exceeds 500 books.
+    const books = await ctx.db.query("books").take(501);
+    if (books.length > 500 || books.some((book) => book.publisherId === publisher._id)) {
+      fail("ENTITY_IN_USE", "publisher is referenced by a book");
+    }
+    await ctx.db.delete(publisher._id);
+    await recordAudit(ctx, user._id, "publisher.deleted", "publisher", publisher._id);
+    return { removed: true };
+  },
+});

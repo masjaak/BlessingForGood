@@ -127,6 +127,86 @@ export const close = mutation({
   },
 });
 
+export const reopen = mutation({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const catalog = await ctx.db.get(args.catalogId);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (catalog.status !== "closed") fail("CATALOG_CLOSED");
+    if (catalog.closesAt && catalog.closesAt <= Date.now()) fail("CATALOG_CLOSED");
+    const links = await ctx.db
+      .query("catalogBatchLinks")
+      .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
+      .take(200);
+    const linkedBatches = await Promise.all(links.map((link) => ctx.db.get(link.batchId)));
+    if (linkedBatches.some((batch) => !batch || batch.isArchived || batch.currentShipmentStage)) {
+      fail("CATALOG_REOPEN_BLOCKED");
+    }
+    const now = Date.now();
+    await ctx.db.patch(args.catalogId, { status: "open", opensAt: catalog.opensAt || now, updatedAt: now });
+    await recordAudit(ctx, user._id, "catalog.reopened", "catalog", args.catalogId);
+    return getCatalogView(ctx, args.catalogId);
+  },
+});
+
+export const archive = mutation({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const catalog = await ctx.db.get(args.catalogId);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (catalog.status === "archived") return getCatalogView(ctx, args.catalogId);
+    const now = Date.now();
+    await ctx.db.patch(catalog._id, { status: "archived", updatedAt: now });
+    await recordAudit(ctx, user._id, "catalog.archived", "catalog", catalog._id);
+    return getCatalogView(ctx, args.catalogId);
+  },
+});
+
+export const remove = mutation({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const catalog = await ctx.db.get(args.catalogId);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (catalog.status !== "draft") fail("ENTITY_DELETE_NOT_ALLOWED", "only draft catalogs may be deleted");
+    const [item, link, order] = await Promise.all([
+      ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+        .first(),
+      ctx.db
+        .query("catalogBatchLinks")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+        .first(),
+      ctx.db
+        .query("orders")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+        .first(),
+    ]);
+    if (item || link || order) fail("ENTITY_IN_USE", "catalog has product, batch, or order history");
+    const [code, grant, session] = await Promise.all([
+      ctx.db
+        .query("catalogAccessCodes")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+        .first(),
+      ctx.db
+        .query("catalogAccessGrants")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+        .first(),
+      ctx.db
+        .query("catalogAccessSessions")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+        .first(),
+    ]);
+    if (code || grant || session) fail("ENTITY_IN_USE", "catalog has access history");
+    await ctx.db.delete(catalog._id);
+    await recordAudit(ctx, user._id, "catalog.deleted", "catalog", catalog._id);
+    return { removed: true };
+  },
+});
+
 export const createBundle = mutation({
   args: {
     name: v.string(),

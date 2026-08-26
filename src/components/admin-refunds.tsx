@@ -6,8 +6,19 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
-import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonCard, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  ConfirmationDialog,
+  EmptyState,
+  Field,
+  LoadingRegion,
+  Money,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 type Refund = Awaited<FunctionReturnType<typeof api.refunds.listForAdmin>>[number];
 
@@ -29,6 +40,12 @@ function RefundCard({ refund }: { refund: Refund }) {
   const [failureReason, setFailureReason] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
 
   async function run(action: () => Promise<unknown>, success: string) {
     setPending(true);
@@ -37,7 +54,7 @@ function RefundCard({ refund }: { refund: Refund }) {
       await action();
       setMessage(success);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Refund belum dapat diproses.");
+      setMessage(productErrorMessage(error, "Refund belum dapat diproses."));
     } finally {
       setPending(false);
     }
@@ -85,19 +102,24 @@ function RefundCard({ refund }: { refund: Refund }) {
               loading={pending}
               loadingLabel="Membuat payout…"
               disabled={refund.availablePayoutAmount < 1}
-              onClick={() => {
-                if (!window.confirm(`Buat payout ${amount} IDR untuk kewajiban ini?`)) return;
-                void run(
-                  () =>
-                    createPayout({
-                      obligationId: refund.obligationId,
-                      amount: Number(amount),
-                      paymentMethod,
-                      referenceNote: referenceNote || undefined,
-                    }),
-                  "Payout dibuat.",
-                );
-              }}
+              onClick={() =>
+                setConfirmAction({
+                  title: "Buat payout ini?",
+                  description: `Payout sebesar ${amount} IDR akan dicatat untuk kewajiban refund ini.`,
+                  confirmLabel: "Buat payout",
+                  action: () =>
+                    void run(
+                      () =>
+                        createPayout({
+                          obligationId: refund.obligationId,
+                          amount: Number(amount),
+                          paymentMethod,
+                          referenceNote: referenceNote || undefined,
+                        }),
+                      "Payout dibuat.",
+                    ),
+                })
+              }
             >
               Buat payout
             </Button>
@@ -115,18 +137,23 @@ function RefundCard({ refund }: { refund: Refund }) {
                 type="button"
                 loading={pending}
                 loadingLabel="Memulai…"
-                onClick={() => {
-                  if (!window.confirm("Mulai proses payout ini?")) return;
-                  void run(
-                    () =>
-                      startPayout({
-                        payoutId: payout.payoutId as Id<"refundPayouts">,
-                        paymentMethod,
-                        referenceNote: referenceNote || undefined,
-                      }),
-                    "Payout sedang diproses.",
-                  );
-                }}
+                onClick={() =>
+                  setConfirmAction({
+                    title: "Mulai proses payout ini?",
+                    description: "Payout akan masuk proses pengiriman dan tetap tercatat di riwayat refund.",
+                    confirmLabel: "Mulai payout",
+                    action: () =>
+                      void run(
+                        () =>
+                          startPayout({
+                            payoutId: payout.payoutId as Id<"refundPayouts">,
+                            paymentMethod,
+                            referenceNote: referenceNote || undefined,
+                          }),
+                        "Payout sedang diproses.",
+                      ),
+                  })
+                }
               >
                 Mulai payout
               </Button>
@@ -137,19 +164,24 @@ function RefundCard({ refund }: { refund: Refund }) {
                   type="button"
                   loading={pending}
                   loadingLabel="Mencatat…"
-                  onClick={() => {
-                    if (!window.confirm("Catat payout ini sebagai sudah terkirim?")) return;
-                    void run(
-                      () =>
-                        recordPayout({
-                          payoutId: payout.payoutId as Id<"refundPayouts">,
-                          status: "paid",
-                          paymentMethod,
-                          referenceNote: referenceNote || undefined,
-                        }),
-                      "Payout ditandai terkirim.",
-                    );
-                  }}
+                  onClick={() =>
+                    setConfirmAction({
+                      title: "Catat payout sudah terkirim?",
+                      description: "Pastikan transfer sudah berhasil sebelum mencatat status terkirim.",
+                      confirmLabel: "Catat terkirim",
+                      action: () =>
+                        void run(
+                          () =>
+                            recordPayout({
+                              payoutId: payout.payoutId as Id<"refundPayouts">,
+                              status: "paid",
+                              paymentMethod,
+                              referenceNote: referenceNote || undefined,
+                            }),
+                          "Payout ditandai terkirim.",
+                        ),
+                    })
+                  }
                 >
                   Catat terkirim
                 </Button>
@@ -165,18 +197,23 @@ function RefundCard({ refund }: { refund: Refund }) {
                   variant="danger"
                   loading={pending}
                   loadingLabel="Mencatat…"
-                  onClick={() => {
-                    if (!window.confirm("Catat payout ini sebagai gagal?")) return;
-                    void run(
-                      () =>
-                        recordPayout({
-                          payoutId: payout.payoutId as Id<"refundPayouts">,
-                          status: "failed",
-                          failureReason,
-                        }),
-                      "Payout ditandai gagal.",
-                    );
-                  }}
+                  onClick={() =>
+                    setConfirmAction({
+                      title: "Catat payout gagal?",
+                      description: "Alasan kegagalan akan dicatat dan payout dapat diproses kembali sesuai kebijakan.",
+                      confirmLabel: "Catat gagal",
+                      action: () =>
+                        void run(
+                          () =>
+                            recordPayout({
+                              payoutId: payout.payoutId as Id<"refundPayouts">,
+                              status: "failed",
+                              failureReason,
+                            }),
+                          "Payout ditandai gagal.",
+                        ),
+                    })
+                  }
                 >
                   Catat gagal
                 </Button>
@@ -190,6 +227,18 @@ function RefundCard({ refund }: { refund: Refund }) {
           {message}
         </span>
       ) : null}
+      <ConfirmationDialog
+        open={confirmAction !== null}
+        title={confirmAction?.title || "Konfirmasi payout"}
+        description={confirmAction?.description || "Periksa kembali payout ini."}
+        confirmLabel={confirmAction?.confirmLabel || "Konfirmasi"}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          const action = confirmAction?.action;
+          setConfirmAction(null);
+          action?.();
+        }}
+      />
     </Card>
   );
 }

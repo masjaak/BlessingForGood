@@ -10,6 +10,7 @@ import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   LinkButton,
@@ -19,6 +20,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
@@ -90,7 +92,7 @@ function OpenExceptionForm({ orders }: { orders: AdminOrder[] }) {
       setInternalNote("");
       setMessage("Masalah berhasil dibuka.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Masalah belum dapat dibuka.");
+      setMessage(productErrorMessage(error, "Masalah belum dapat dibuka."));
     } finally {
       setIsSubmitting(false);
     }
@@ -207,6 +209,12 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
   const [rejectionReason, setRejectionReason] = useState("");
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage("");
@@ -215,7 +223,7 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
       await action();
       setMessage(success);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Operasi masalah gagal.");
+      setMessage(productErrorMessage(error, "Operasi masalah gagal."));
     } finally {
       setPendingAction(null);
     }
@@ -368,10 +376,14 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
             type="button"
             loading={pendingAction === "Masalah diselesaikan."}
             loadingLabel="Menyelesaikan…"
-            onClick={() => {
-              if (!window.confirm("Selesaikan masalah ini dan terapkan konsekuensi finansialnya?")) return;
-              void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan.");
-            }}
+            onClick={() =>
+              setConfirmAction({
+                title: "Selesaikan masalah ini?",
+                description: "Konsekuensi finansial yang dipilih akan diterapkan dan riwayat tetap tersimpan.",
+                confirmLabel: "Selesaikan masalah",
+                action: () => void run(() => resolve({ exceptionId: exception.exceptionId }), "Masalah diselesaikan."),
+              })
+            }
           >
             Selesaikan
           </Button>
@@ -392,9 +404,13 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
             loading={pendingAction === "Masalah ditolak."}
             loadingLabel="Menolak…"
             onClick={() =>
-              window.confirm("Tolak masalah ini?")
-                ? void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak.")
-                : undefined
+              setConfirmAction({
+                title: "Tolak masalah ini?",
+                description: "Masalah akan ditandai ditolak dan alasan penolakan akan dicatat.",
+                confirmLabel: "Tolak masalah",
+                action: () =>
+                  void run(() => reject({ exceptionId: exception.exceptionId, rejectionReason }), "Masalah ditolak."),
+              })
             }
           >
             Tolak
@@ -423,6 +439,18 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
           </li>
         ))}
       </ul>
+      <ConfirmationDialog
+        open={confirmAction !== null}
+        title={confirmAction?.title || "Konfirmasi operasi"}
+        description={confirmAction?.description || "Periksa kembali operasi ini."}
+        confirmLabel={confirmAction?.confirmLabel || "Konfirmasi"}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          const action = confirmAction?.action;
+          setConfirmAction(null);
+          action?.();
+        }}
+      />
     </Card>
   );
 }

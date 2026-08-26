@@ -111,6 +111,12 @@ export const remove = mutation({
     const user = await requirePermission(ctx, "catalog.manage");
     const item = await ctx.db.get(args.catalogItemId);
     if (!item) fail("VALIDATION_FAILED", "catalog item does not exist");
+    const orderItem = await ctx.db
+      .query("orderItems")
+      .withIndex("by_variant", (query) => query.eq("bookVariantId", item.bookVariantId))
+      .filter((query) => query.eq(query.field("catalogItemId"), item._id))
+      .first();
+    if (orderItem) fail("ENTITY_IN_USE", "catalog item has order history");
     await ctx.db.delete(item._id);
     await recordAudit(ctx, user._id, "catalog.item_removed", "catalog", item.catalogId, {
       variantId: String(item.bookVariantId),

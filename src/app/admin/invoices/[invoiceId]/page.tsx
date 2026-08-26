@@ -8,6 +8,7 @@ import {
   ActionGroup,
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   LinkButton,
@@ -63,6 +64,12 @@ function AdminInvoiceDetail() {
   } = useOperations();
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
   if (dataSource !== "convex") return <div className="state-panel">Data invoice belum tersedia.</div>;
   if (
     currentAdminInvoice === undefined ||
@@ -192,7 +199,14 @@ function AdminInvoiceDetail() {
                     variant="danger"
                     loading={pendingAction === "void"}
                     loadingLabel="Membatalkan…"
-                    onClick={() => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void")}
+                    onClick={() =>
+                      setConfirmAction({
+                        title: "Batalkan invoice ini?",
+                        description: "Invoice akan berstatus void. Riwayat pembayaran dan ledger tetap tersimpan.",
+                        confirmLabel: "Batalkan invoice",
+                        action: () => void run(() => voidInvoice(invoiceId), "Invoice dibatalkan.", "void"),
+                      })
+                    }
                     disabled={voidBlockReason !== null || pendingAction !== null}
                   >
                     Batalkan invoice
@@ -318,14 +332,19 @@ function AdminInvoiceDetail() {
                         variant="tertiary"
                         loading={pendingAction === `transaction-${transaction.transactionId}`}
                         loadingLabel="Membalikkan…"
-                        onClick={() => {
-                          if (window.confirm("Catat transaksi pembalikan untuk baris ini?"))
-                            void run(
-                              () => reverseTransaction(transaction.transactionId, "admin correction"),
-                              "Transaksi dibalikkan.",
-                              `transaction-${transaction.transactionId}`,
-                            );
-                        }}
+                        onClick={() =>
+                          setConfirmAction({
+                            title: "Catat transaksi pembalikan?",
+                            description: "Pembalikan akan ditambahkan ke ledger. Transaksi asal tidak dihapus.",
+                            confirmLabel: "Catat pembalikan",
+                            action: () =>
+                              void run(
+                                () => reverseTransaction(transaction.transactionId, "admin correction"),
+                                "Transaksi dibalikkan.",
+                                `transaction-${transaction.transactionId}`,
+                              ),
+                          })
+                        }
                       >
                         Balikkan
                       </Button>
@@ -339,6 +358,19 @@ function AdminInvoiceDetail() {
               <p className="subtle">Belum ada transaksi deposit yang tercatat.</p>
             )}
           </Card>
+          <ConfirmationDialog
+            open={confirmAction !== null}
+            title={confirmAction?.title || "Konfirmasi operasi"}
+            description={confirmAction?.description || "Periksa kembali operasi ini."}
+            confirmLabel={confirmAction?.confirmLabel || "Konfirmasi"}
+            danger
+            onCancel={() => setConfirmAction(null)}
+            onConfirm={() => {
+              const action = confirmAction?.action;
+              setConfirmAction(null);
+              action?.();
+            }}
+          />
         </div>
       </div>
     </div>

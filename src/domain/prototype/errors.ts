@@ -30,6 +30,33 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (message.includes("CATALOG_NOT_OPEN") || message.includes("CATALOG_CLOSED")) {
     return "Katalog ini sudah ditutup.";
   }
+  if (code === "CATALOG_REOPEN_BLOCKED" || message.includes("CATALOG_REOPEN_BLOCKED")) {
+    return "Katalog tidak dapat dibuka kembali karena sudah masuk proses PO yang dikunci.";
+  }
+  if (code === "CUSTOMER_REQUIRED" || message.includes("CUSTOMER_REQUIRED")) {
+    return "Pesanan pelanggan dibuat melalui ruang kerja Admin.";
+  }
+  if (code === "BATCH_ROSTER_REQUIRED" || message.includes("BATCH_ROSTER_REQUIRED")) {
+    return "Roster belum siap untuk dikunci.";
+  }
+  if (code === "INVALID_SHIPMENT_TRANSITION" || message.includes("INVALID_SHIPMENT_TRANSITION")) {
+    return "Tahap berikutnya tidak valid.";
+  }
+  if (code === "BATCH_LOCKED" || message.includes("BATCH_LOCKED")) {
+    return "Batch sudah dikunci dan tidak dapat diubah.";
+  }
+  if (code === "BATCH_ARCHIVED" || message.includes("BATCH_ARCHIVED")) {
+    return "Batch sudah diarsipkan.";
+  }
+  if (code === "BATCH_DEADLINE_MISMATCH" || message.includes("BATCH_DEADLINE_MISMATCH")) {
+    return "Deadline PO harus sama dengan batas pemesanan katalog.";
+  }
+  if (code === "ENTITY_IN_USE" || message.includes("ENTITY_IN_USE")) {
+    return "Data ini sudah dipakai dan tidak dapat dihapus.";
+  }
+  if (code === "ENTITY_DELETE_NOT_ALLOWED" || message.includes("ENTITY_DELETE_NOT_ALLOWED")) {
+    return "Hanya data draf yang belum dipakai yang dapat dihapus.";
+  }
   if (message.includes("BOOK_VARIANT_UNAVAILABLE")) return "Format yang dipilih sudah tidak tersedia.";
   if (code === "READY_STOCK_UNAVAILABLE" || message.includes("READY_STOCK_UNAVAILABLE")) {
     if (message.includes("Jumlah melebihi stok")) return "Jumlah melebihi stok.";

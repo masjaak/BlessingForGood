@@ -495,3 +495,87 @@ export const update = mutation({
     return book._id;
   },
 });
+
+export const remove = mutation({
+  args: { bookId: v.id("books") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const book = await ctx.db.get(args.bookId);
+    if (!book) fail("BOOK_NOT_FOUND");
+    if (book.publicationStatus !== "draft") fail("ENTITY_DELETE_NOT_ALLOWED", "only draft books may be deleted");
+    const [variants, media, orderItem] = await Promise.all([
+      ctx.db
+        .query("bookVariants")
+        .withIndex("by_book", (query) => query.eq("bookId", book._id))
+        .take(100),
+      ctx.db
+        .query("bookMedia")
+        .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
+        .take(8),
+      ctx.db
+        .query("orderItems")
+        .withIndex("by_book", (query) => query.eq("bookId", book._id))
+        .first(),
+    ]);
+    if (orderItem) fail("ENTITY_IN_USE", "book has order history");
+    for (const variant of variants) {
+      const [catalogItem, reservation] = await Promise.all([
+        ctx.db
+          .query("catalogItems")
+          .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+          .first(),
+        ctx.db
+          .query("readyStockReservations")
+          .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+          .first(),
+      ]);
+      if (catalogItem || reservation) fail("ENTITY_IN_USE", "book has catalog or stock history");
+      const inventory = await ctx.db
+        .query("readyStockInventory")
+        .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
+        .unique();
+      if (inventory && (inventory.quantity > 0 || (inventory.reservedQuantity ?? 0) > 0)) {
+        fail("ENTITY_IN_USE", "book has ready stock history");
+      }
+    }
+    const coverStorageId = book.coverStorageId;
+    for (const image of media) {
+      await ctx.db.delete(image._id);
+      const [otherMedia, otherCover] = await Promise.all([
+        ctx.db
+          .query("bookMedia")
+          .withIndex("by_storage_id", (query) => query.eq("storageId", image.storageId))
+          .first(),
+        ctx.db
+          .query("books")
+          .withIndex("by_cover_storage_id", (query) => query.eq("coverStorageId", image.storageId))
+          .first(),
+      ]);
+      if (!otherMedia && !otherCover && image.storageId !== coverStorageId) await ctx.storage.delete(image.storageId);
+    }
+    for (const variant of variants) {
+      const inventory = await ctx.db
+        .query("readyStockInventory")
+        .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
+        .unique();
+      if (inventory) await ctx.db.delete(inventory._id);
+      await ctx.db.delete(variant._id);
+    }
+    await ctx.db.delete(book._id);
+    if (coverStorageId) {
+      const [otherCover, otherMedia] = await Promise.all([
+        ctx.db
+          .query("books")
+          .withIndex("by_cover_storage_id", (query) => query.eq("coverStorageId", coverStorageId))
+          .first(),
+        ctx.db
+          .query("bookMedia")
+          .withIndex("by_storage_id", (query) => query.eq("storageId", coverStorageId))
+          .first(),
+      ]);
+      if (!otherCover && !otherMedia) await ctx.storage.delete(coverStorageId);
+    }
+    await recordAudit(ctx, user._id, "book.deleted", "book", book._id);
+    return { removed: true };
+  },
+});

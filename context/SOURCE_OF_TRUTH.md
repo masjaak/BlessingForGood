@@ -1,5 +1,33 @@
 # BFG SOURCE OF TRUTH
 
+## Operational reconciliation override — 2026-08-26
+
+The current maintenance correction preserves the canonical commerce model.
+Ready Stock is a direct Customer order with an atomic reservation and remains
+separate from Batch. `orders:createReadyStock` stays restricted to an active
+`role=customer` identity; Admin and Owner use the existing Admin-assisted
+mutation. Customer-facing checkout now makes that boundary explicit instead
+of presenting an unusable Customer form to elevated roles.
+
+Secret Catalog `closesAt` is the Customer-facing `Batas pemesanan`. A closed
+catalog can reopen only while every linked Batch remains unlocked; locked or
+missing downstream procurement blocks reopening without rewriting history.
+Catalog-to-Batch linking exposes derived eligible-order counts, while Roster,
+Assignment, Purchase Summary, and the existing Batch tracking state machine
+remain canonical. The first PO lock requires a non-empty assignment.
+
+Secret Catalog Book Detail reads the authorized catalog projection and reuses
+Book Master cover, gallery, description, preview, and selling variants. It
+does not expose supplier cost or other Admin-only data and cannot be reached
+without valid catalog-scoped access.
+
+Hard deletion is limited to unused draft/pristine records at server boundaries;
+operational, financial, customer-history, and audit records retain lifecycle
+actions. Shared BFG confirmation dialogs and safe product error messages are
+required for destructive/state-changing Admin actions. Existing Clerk, RBAC,
+ownership, Upload, reservation, order, invoice, payment, deposit, refund,
+Activity, and Button contracts remain unchanged.
+
 ## Client UAT Round 3 override — 2026-08-25
 
 Blessing For Goods remains invitation-only. Clerk sign-in rejects an unknown

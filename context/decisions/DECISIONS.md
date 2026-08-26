@@ -1,5 +1,24 @@
 # Decisions
 
+## Operational reconciliation — 2026-08-26
+
+- Customer checkout authority is exact, not visual: only an authenticated
+  active Customer may call `orders:createReadyStock` or the Customer preorder
+  mutation. Admin/Owner browse access does not grant Customer mutation rights;
+  their supported path is Admin-assisted order creation.
+- `secretCatalogs.reopen` is a guarded lifecycle action. A closed catalog may
+  reopen only when its close deadline is still valid and no linked Batch has a
+  locked shipment stage. Missing linked history also fails closed.
+- Batch Catalog links are source eligibility only. Derived counts summarize
+  submitted non-Ready-Stock order items; Assignment remains an explicit Admin
+  decision and Purchase Summary remains derived from assignments.
+- `po_closed` cannot be recorded for an empty Batch Roster. Existing shipment
+  stage names and transition rules remain the only Batch state machine.
+- Hard deletion is an exception for unused draft/pristine records. Referenced
+  or historical entities retain their lifecycle action, and financial/audit
+  history is never deleted. All user-triggered destructive/state changes use
+  the shared BFG confirmation primitive.
+
 ## Client UAT Round 3 — 2026-08-25
 
 - Unknown Google identities never transfer into opaque Clerk sign-up. The

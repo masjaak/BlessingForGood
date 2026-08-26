@@ -2,11 +2,34 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-22
+last_updated: 2026-08-26
 source: conversation
 ---
 
 # Changelog
+
+## [operational-reconciliation] — 2026-08-26
+
+### Changed
+
+- Kept Ready Stock Customer-only at the server and made Admin/Owner customer
+  surfaces route to the existing Admin-assisted order path.
+- Clarified Secret Catalog `Batas pemesanan`, added guarded reopen, authorized
+  Secret Book Detail media/content projection, and exposed derived linked
+  Catalog eligibility counts in Batch operations.
+- Added empty-Roster PO-lock protection, safe Batch error copy, and explicit
+  Roster/Assignment/Purchase Summary guidance without adding a second order or
+  tracking system.
+- Added server-guarded hard deletion only for unused draft/pristine product and
+  operational records; historical and financial records keep lifecycle actions.
+- Routed destructive/state-changing UI actions through the shared BFG
+  confirmation dialog and preserved content-aware shared Button geometry.
+
+### QA
+
+- Targeted Convex and component regression suites pass before the full release
+  gate. Final counts and deployment evidence are recorded after the complete
+  local and Production verification pass.
 
 ## [client-uat-round-3] — 2026-08-25
 

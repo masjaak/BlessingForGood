@@ -9,6 +9,7 @@ import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   LinkButton,
@@ -68,7 +69,7 @@ function CatalogForm() {
               required
             />
           </Field>
-          <Field label="Tanggal tutup" hint="Opsional untuk menutup katalog.">
+          <Field label="Batas pemesanan" hint="Customer dapat melakukan preorder sampai tanggal ini.">
             <input
               className="input"
               type="datetime-local"
@@ -97,6 +98,7 @@ function CatalogList() {
   const { state, closeCatalog, catalogsLoading } = useProduct();
   const [pendingAction, setPendingAction] = useState("");
   const [error, setError] = useState("");
+  const [confirmCatalogId, setConfirmCatalogId] = useState<string | null>(null);
 
   async function close(catalogId: string) {
     setError("");
@@ -144,8 +146,8 @@ function CatalogList() {
             </div>
             <p>
               {catalog.closingAt
-                ? `Tutup ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
-                : "Belum ada tanggal tutup."}
+                ? `Batas pemesanan ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
+                : "Belum ada batas pemesanan."}
             </p>
             <div className="summary-line">
               <span>{firstBook?.title || "Belum ada produk yang ditambahkan"}</span>
@@ -160,7 +162,7 @@ function CatalogList() {
                     variant="danger"
                     loading={pendingAction === catalog.id}
                     loadingLabel="Menutup…"
-                    onClick={() => void close(catalog.id)}
+                    onClick={() => setConfirmCatalogId(catalog.id)}
                   >
                     Tutup katalog
                   </Button>
@@ -179,6 +181,19 @@ function CatalogList() {
           </Card>
         );
       })}
+      <ConfirmationDialog
+        open={confirmCatalogId !== null}
+        title="Tutup katalog ini?"
+        description="Customer tidak dapat membuat preorder baru setelah katalog ditutup."
+        confirmLabel="Tutup katalog"
+        danger
+        onCancel={() => setConfirmCatalogId(null)}
+        onConfirm={() => {
+          const catalogId = confirmCatalogId;
+          setConfirmCatalogId(null);
+          if (catalogId) void close(catalogId);
+        }}
+      />
     </div>
   );
 }

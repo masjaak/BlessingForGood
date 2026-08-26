@@ -17,6 +17,37 @@ export function assertBatchCatalogDeadline(batch: Doc<"batches">, catalog: Doc<"
   }
 }
 
+async function catalogRosterSummary(ctx: DataCtx, catalogId: Id<"secretCatalogs">) {
+  const orders = await ctx.db
+    .query("orders")
+    .withIndex("by_catalog_and_status", (index) => index.eq("catalogId", catalogId).eq("status", "submitted"))
+    .take(200);
+  const customers = new Set<string>();
+  const publishers = new Set<string>();
+  let eligibleOrderItemCount = 0;
+  let eligibleQuantity = 0;
+  for (const order of orders) {
+    if (order.source === "ready_stock") continue;
+    customers.add(String(order.customerUserId));
+    const items = await ctx.db
+      .query("orderItems")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(200);
+    for (const item of items) {
+      if (item.quantity <= 0) continue;
+      eligibleOrderItemCount += 1;
+      eligibleQuantity += item.quantity;
+      publishers.add(item.publisherNameSnapshot);
+    }
+  }
+  return {
+    eligibleOrderItemCount,
+    eligibleCustomerCount: customers.size,
+    eligibleQuantity,
+    publisherCount: publishers.size,
+  };
+}
+
 function normalizedEtaCargoMonth(value: string | undefined): string | undefined {
   const month = value?.trim() || undefined;
   if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
@@ -45,6 +76,22 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
     if (order) customerIds.add(String(order.customerUserId));
   }
+  const catalogLinks = await Promise.all(
+    links.map(async (link, index) => ({
+      catalogId: link.catalogId,
+      catalogName: catalogs[index]?.name || "Unknown catalog",
+      closingAt: catalogs[index]?.closesAt ?? null,
+      createdAt: new Date(link.createdAt).toISOString(),
+      ...(catalogs[index]
+        ? await catalogRosterSummary(ctx, link.catalogId)
+        : {
+            eligibleOrderItemCount: 0,
+            eligibleCustomerCount: 0,
+            eligibleQuantity: 0,
+            publisherCount: 0,
+          }),
+    })),
+  );
   return {
     batchId: batch._id,
     id: batch._id,
@@ -61,11 +108,7 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     customerCount: customerIds.size,
     createdAt: new Date(batch.createdAt).toISOString(),
     updatedAt: new Date(batch.updatedAt).toISOString(),
-    catalogLinks: links.map((link, index) => ({
-      catalogId: link.catalogId,
-      catalogName: catalogs[index]?.name || "Unknown catalog",
-      createdAt: new Date(link.createdAt).toISOString(),
-    })),
+    catalogLinks,
   };
 }
 
@@ -208,5 +251,35 @@ export const archive = mutation({
     await ctx.db.patch(args.batchId, { isArchived: true, updatedAt: Date.now() });
     await recordAudit(ctx, user._id, "batch.archived", "batch", args.batchId);
     return getBatchSummary(ctx, args.batchId);
+  },
+});
+
+export const remove = mutation({
+  args: { batchId: v.id("batches") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "batches.manage");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch) fail("BATCH_NOT_FOUND");
+    if (batch.isArchived || batch.currentShipmentStage) {
+      fail("ENTITY_DELETE_NOT_ALLOWED", "operational batches may only be archived");
+    }
+    const [link, assignment, history] = await Promise.all([
+      ctx.db
+        .query("catalogBatchLinks")
+        .withIndex("by_batch", (query) => query.eq("batchId", batch._id))
+        .first(),
+      ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_batch", (query) => query.eq("batchId", batch._id))
+        .first(),
+      ctx.db
+        .query("batchStatusHistory")
+        .withIndex("by_batch", (query) => query.eq("batchId", batch._id))
+        .first(),
+    ]);
+    if (link || assignment || history) fail("ENTITY_IN_USE", "batch has operational history");
+    await ctx.db.delete(batch._id);
+    await recordAudit(ctx, user._id, "batch.deleted", "batch", batch._id);
+    return { removed: true as const };
   },
 });

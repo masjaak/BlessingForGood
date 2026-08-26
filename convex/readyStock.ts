@@ -235,3 +235,34 @@ export const setQuantity = mutation({
     return inventoryId;
   },
 });
+
+export const remove = mutation({
+  args: { bookVariantId: v.id("bookVariants") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const variant = await ctx.db.get(args.bookVariantId);
+    if (!variant) fail("BOOK_VARIANT_NOT_FOUND");
+    const inventory = await ctx.db
+      .query("readyStockInventory")
+      .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", args.bookVariantId))
+      .unique();
+    if (!inventory) return { removed: false as const };
+    if (inventory.quantity > 0 || (inventory.reservedQuantity ?? 0) > 0) {
+      fail("ENTITY_IN_USE", "ready stock has physical or reserved quantity");
+    }
+    const [orderItem, reservation] = await Promise.all([
+      ctx.db
+        .query("orderItems")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", args.bookVariantId))
+        .first(),
+      ctx.db
+        .query("readyStockReservations")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", args.bookVariantId))
+        .first(),
+    ]);
+    if (orderItem || reservation) fail("ENTITY_IN_USE", "ready stock has order history");
+    await ctx.db.delete(inventory._id);
+    await recordAudit(ctx, user._id, "ready_stock.removed", "readyStockInventory", inventory._id);
+    return { removed: true as const };
+  },
+});
