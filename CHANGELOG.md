@@ -23,6 +23,8 @@ source: conversation
   across portrait, landscape, tablet, and desktop widths.
 - Full deterministic Vitest, TypeScript, ESLint, Format, Build, Convex check,
   `npm audit --omit=dev`, and `git diff --check` pass.
+- Vercel Production deployment `dpl_8eCvpvaYy4MBRrsoNvLCBcv5tiQp` is READY;
+  public signed-out Account smoke passed `8/8` at 375, 390, 430, and 1440px.
 
 ## [final-yellow-unknown-closure] — 2026-08-26
 

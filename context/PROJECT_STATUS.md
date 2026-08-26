@@ -12,7 +12,9 @@ Local evidence: focused Account component coverage, the responsive geometry
 matrix at 375/390/430/667x375/844x390/768/1024/1440, and the full deterministic
 Vitest/typecheck/lint/build/audit/Convex checks pass. Production authenticated
 Customer acceptance remains dependent on an available legitimate Customer
-session; no identity or business data was fabricated.
+session; no identity or business data was fabricated. Vercel Production
+deployment `dpl_8eCvpvaYy4MBRrsoNvLCBcv5tiQp` is READY and aliased to
+`https://www.blessingforgood.com`; public signed-out Account smoke passed 8/8.
 
 ## Final yellow / unknown closure — 2026-08-26
 
