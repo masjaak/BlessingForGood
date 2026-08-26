@@ -1,13 +1,14 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AccountPage from "@/app/account/page";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
 
 vi.mock("@clerk/nextjs", () => ({
   UserButton: () => <button type="button" aria-label="User profile" />,
-  useAuth: vi.fn(() => ({ isLoaded: true, isSignedIn: true })),
+  useAuth: vi.fn(),
+  useClerk: vi.fn(),
 }));
 
 vi.mock("convex/react", () => ({
@@ -27,8 +28,12 @@ vi.mock("@/domain/prototype/operations-context", () => ({
 }));
 
 describe("customer account navigation", () => {
-  it("exposes profile and address routes from the account surface", () => {
-    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
+  const signOut = vi.fn();
+  const openUserProfile = vi.fn();
+
+  function renderAccount() {
+    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true, signOut } as never);
+    vi.mocked(useClerk).mockReturnValue({ openUserProfile } as never);
     vi.mocked(useProduct).mockReturnValue({
       hydrated: true,
       dataSource: "convex",
@@ -46,12 +51,38 @@ describe("customer account navigation", () => {
       customerExceptionList: { page: [] },
     } as never);
 
-    render(<AccountPage />);
+    return render(<AccountPage />);
+  }
 
-    expect(screen.getByRole("link", { name: /Profil/ }).getAttribute("href")).toBe("/account/profile");
-    expect(screen.getByRole("link", { name: /Alamat pengiriman/ }).getAttribute("href")).toBe("/account/addresses");
-    expect(screen.getByRole("link", { name: /Buka Aktivitas/ }).getAttribute("href")).toBe("/account/notifications");
+  it("exposes every essential Account action from the account surface", () => {
+    renderAccount();
+    const accountNavigation = document.querySelector<HTMLElement>(".account-navigation-card");
+    expect(accountNavigation).not.toBeNull();
+    const navigation = within(accountNavigation!);
+
+    expect(navigation.getByRole("link", { name: /Profil/ }).getAttribute("href")).toBe("/account/profile");
+    expect(navigation.getByRole("link", { name: /Alamat pengiriman/ }).getAttribute("href")).toBe("/account/addresses");
+    expect(navigation.getByRole("link", { name: /Buka Aktivitas/ }).getAttribute("href")).toBe(
+      "/account/notifications",
+    );
+    expect(navigation.getByRole("button", { name: /Keamanan akun/ })).toBeTruthy();
+    expect(navigation.getByRole("button", { name: /^Keluar/ })).toBeTruthy();
+    expect(
+      within(screen.getByRole("navigation", { name: "Navigasi pelanggan" }))
+        .getByRole("link", { name: "Akun" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
     expect(screen.queryByRole("link", { name: /Notifikasi/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /Kotak Masuk/ })).toBeNull();
+  });
+
+  it("uses Clerk for account management and sign-out", () => {
+    renderAccount();
+
+    fireEvent.click(screen.getByRole("button", { name: /Keamanan akun/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Keluar/ }));
+
+    expect(openUserProfile).toHaveBeenCalledOnce();
+    expect(signOut).toHaveBeenCalledWith({ redirectUrl: "/" });
   });
 });

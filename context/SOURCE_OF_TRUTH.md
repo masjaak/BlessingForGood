@@ -480,7 +480,9 @@ logo, primary nav, Aktivitas, and avatar. Mobile uses logo-only top header and
 bottom navigation: Beranda, Katalog, Buku Saya, Tagihan, Akun.
 
 Notification and Inbox live under Akun/Aktivitas on mobile. Unread indicators
-are subtle and data-backed.
+are subtle and data-backed. The mobile Account hub also exposes the existing
+Profile, Address, Activity, Clerk account-management, and Clerk sign-out
+actions in one stacked list; no essential action depends on orientation.
 
 ## Admin Workspace
 
@@ -686,9 +688,10 @@ mobile bottom navigation.
 ## Responsive Rules
 
 - Customer mobile: logo-only top header; bottom primary navigation; no desktop
-  header control return. The full-width Aktivitas surface is discoverable under
-  Akun, with a small data-backed unread dot on Akun when either source has
-  unread records.
+  header control return. The full-width Aktivitas surface and the Account hub
+  are discoverable under Akun, with a small data-backed unread dot on Akun when
+  either source has unread records. Account sign-out uses Clerk's supported
+  flow and the fixed bar receives page-bottom safe-area clearance.
 - Customer desktop: coherent one-row header with logo, primary nav, Aktivitas,
   and avatar; its anchored panel is bounded to the viewport, vertically
   scrollable, and never horizontally scrollable.

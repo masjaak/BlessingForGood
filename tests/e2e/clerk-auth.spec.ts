@@ -52,7 +52,9 @@ test.describe("BFG Clerk authenticated Production", () => {
     await expect(page.getByRole("heading", { name: "Halaman ini tidak tersedia untuk akunmu" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Navigasi utama" })).toHaveCount(1);
     await expect(page.getByRole("link", { name: "Buka ruang kerja Admin" })).toHaveCount(0);
-    await clerk.signOut({ page });
+    await page.goto("/account", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: /^Keluar/ }).click();
+    await expect(page).toHaveURL(/\/$/);
     await page.goto("/account/orders", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/sign-in/);
   });

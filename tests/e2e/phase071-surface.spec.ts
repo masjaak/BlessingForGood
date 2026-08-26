@@ -1,6 +1,118 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
+const globalsCss = readFileSync("src/app/globals.css", "utf8");
+
 test.describe("@customer Phase 07.1 shared surface", () => {
+  test("Account hub keeps the same essential actions across orientation and width", async ({ page }, testInfo) => {
+    if (testInfo.project.name !== "customer-390") test.skip(true, "Run the Account geometry matrix once.");
+
+    const viewports = [
+      { width: 375, height: 812 },
+      { width: 390, height: 844 },
+      { width: 430, height: 932 },
+      { width: 667, height: 375 },
+      { width: 844, height: 390 },
+      { width: 768, height: 1024 },
+      { width: 1024, height: 768 },
+      { width: 1440, height: 900 },
+    ];
+    let expectedActions: string[] | undefined;
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.setContent(`
+        <style>${globalsCss}</style>
+        <div class="customer-shell account-qa-shell">
+          <header class="site-header"><span> Blessing For Goods </span></header>
+          <main>
+            <div class="page account-dashboard">
+              <section class="account-metrics"><div class="card metric"><h2>Ringkasan akun</h2></div></section>
+              <div class="account-dashboard-grid">
+                <section class="card account-navigation-card">
+                  <div class="account-navigation-section">
+                    <span class="card-kicker">MENU AKUN</span>
+                    <h2>Kelola akunmu</h2>
+                    <div class="account-menu-list">
+                      <a class="account-menu-row" data-account-action="profile" href="/account/profile"><span class="account-menu-row-content"><span class="account-menu-row-main"><span class="account-menu-icon">⌁</span><span class="account-menu-row-copy"><strong>Profil</strong><small>Nama dan informasi kontak</small></span></span><span class="account-menu-row-arrow">→</span></span></a>
+                      <a class="account-menu-row" data-account-action="address" href="/account/addresses"><span class="account-menu-row-content"><span class="account-menu-row-main"><span class="account-menu-icon">⌁</span><span class="account-menu-row-copy"><strong>Alamat</strong><small>Kelola alamat pengiriman</small></span></span><span class="account-menu-row-arrow">→</span></span></a>
+                      <a class="account-menu-row" data-account-action="activity" href="/account/notifications"><span class="account-menu-row-content"><span class="account-menu-row-main"><span class="account-menu-icon">⌁</span><span class="account-menu-row-copy"><strong>Aktivitas</strong><small>Pesan dan pembaruan terbaru</small></span></span><span class="account-menu-row-arrow">→</span></span></a>
+                      <button class="button button-tertiary account-menu-row" data-account-action="security" type="button"><span class="button-label"><span class="account-menu-row-content"><span class="account-menu-row-main"><span class="account-menu-icon">⌁</span><span class="account-menu-row-copy"><strong>Keamanan akun</strong><small>Kelola akun melalui Clerk</small></span></span><span class="account-menu-row-arrow">→</span></span></span></button>
+                      <button class="button button-danger account-menu-row account-menu-row-danger" data-account-action="logout" type="button"><span class="button-label"><span class="account-menu-row-content"><span class="account-menu-row-main"><span class="account-menu-icon">⌁</span><span class="account-menu-row-copy"><strong>Keluar</strong><small>Keluar dari akun BFG</small></span></span></span></span></button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </main>
+          <nav class="customer-bottom-nav" aria-label="Navigasi pelanggan">
+            <a href="/"><span>Beranda</span></a><a href="/catalog"><span>Katalog</span></a><a href="/account/orders"><span>Buku Saya</span></a><a href="/account/invoices"><span>Tagihan</span></a><a href="/account" aria-current="page"><span>Akun</span></a>
+          </nav>
+        </div>
+      `);
+
+      const geometry = await page.locator(".account-qa-shell").evaluate((shell) => {
+        const card = shell.querySelector<HTMLElement>(".account-navigation-card");
+        const rows = [...shell.querySelectorAll<HTMLElement>("[data-account-action]")];
+        const bottomNav = shell.querySelector<HTMLElement>(".customer-bottom-nav");
+        const main = shell.querySelector<HTMLElement>("main");
+        if (!card || !bottomNav || !main || rows.length !== 5) throw new Error("Account fixture is incomplete");
+        const actions = rows.map((row) => row.dataset.accountAction || "");
+        return {
+          actions,
+          cardDisplay: getComputedStyle(card).display,
+          cardOrder: getComputedStyle(card).order,
+          mainPaddingBottom: Number.parseFloat(getComputedStyle(main).paddingBottom),
+          navDisplay: getComputedStyle(bottomNav).display,
+          navPosition: getComputedStyle(bottomNav).position,
+          navTop: bottomNav.getBoundingClientRect().top,
+          rows: rows.map((row) => {
+            const rect = row.getBoundingClientRect();
+            return {
+              bottom: rect.bottom,
+              height: rect.height,
+              left: rect.left,
+              right: rect.right,
+              scrollWidth: row.scrollWidth,
+              clientWidth: row.clientWidth,
+            };
+          }),
+          viewportWidth: window.innerWidth,
+          documentWidth: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth),
+        };
+      });
+      expectedActions ||= geometry.actions;
+      expect(geometry.actions).toEqual(expectedActions);
+      expect(geometry.cardDisplay).not.toBe("none");
+      expect(geometry.documentWidth).toBeLessThanOrEqual(viewport.width + 1);
+      for (const row of geometry.rows) {
+        expect(row.height, `${viewport.width}px Account row target`).toBeGreaterThanOrEqual(44);
+        expect(row.scrollWidth, `${viewport.width}px Account row overflow`).toBe(row.clientWidth);
+      }
+      await expect(page.locator('.customer-bottom-nav a[href="/account"]')).toHaveAttribute("aria-current", "page");
+
+      if (viewport.width <= 800) {
+        expect(geometry.cardOrder, `${viewport.width}px mobile Account order`).toBe("-1");
+        expect(geometry.navDisplay, `${viewport.width}px bottom nav`).toBe("flex");
+        expect(geometry.navPosition, `${viewport.width}px bottom nav positioning`).toBe("fixed");
+        expect(geometry.mainPaddingBottom, `${viewport.width}px bottom nav clearance`).toBeGreaterThanOrEqual(92);
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        const logout = page.locator('[data-account-action="logout"]').boundingBox();
+        const bottomNav = page.locator(".customer-bottom-nav").boundingBox();
+        const [logoutBox, bottomNavBox] = await Promise.all([logout, bottomNav]);
+        expect(logoutBox).not.toBeNull();
+        expect(bottomNavBox).not.toBeNull();
+        expect(logoutBox!.y + logoutBox!.height).toBeLessThanOrEqual(bottomNavBox!.y + 1);
+      } else {
+        expect(geometry.navDisplay, `${viewport.width}px desktop bottom nav`).toBe("none");
+      }
+
+      if ([375, 390, 430, 844, 1440].includes(viewport.width)) {
+        await page.screenshot({ path: testInfo.outputPath(`account-hub-${viewport.width}.png`), fullPage: true });
+      }
+    }
+  });
+
   test("How To Order keeps one seven-step journey and switches to a readable vertical timeline", async ({ page }) => {
     await page.goto("/how-to-order", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".order-step")).toHaveCount(7);

@@ -13,8 +13,21 @@ Desktop is an expansion of the mobile BFG system, not a second visual product.
 | Detail view              | Image comes first, then metadata and action                                   | Image and details share a two-column composition                   | Same image priority and green action closure                               | Stacks to columns                                               | Mobile reading order is preserved           |
 | Forms                    | One-column fields with full-width primary action                              | Two-column fields only where existing markup supports it           | Same labels, 48px inputs, borders, focus, error color                      | Grid collapses/expands                                          | Touch ergonomics and desktop efficiency     |
 | Orders/tracking/invoices | Stacked panels and vertical timelines                                         | Panels can share a calm two-column grid; timeline remains vertical | Same status tones, row separators, rust money                              | Width/layout changes only                                       | Operational content stays legible           |
-| Account                  | Stacked profile, operational cards, and links                                 | Two-column operational grid with same card family                  | Same hierarchy and semantic colors                                         | Grid expansion                                                  | Avoids a generic desktop dashboard redesign |
+| Account                  | Stacked summary, account menu, operational cards, and links                   | Two-column operational grid with same card family                  | Same hierarchy and semantic colors                                         | Grid expansion                                                  | Keeps every essential account action reachable without desktop chrome |
 | Story cards              | Horizontal touch scroll where already used                                    | Cards sit in a restrained row                                      | Same card variants and copy hierarchy                                      | Overflow behavior changes                                       | Touch-friendly narrative on mobile          |
 | Footer                   | Hidden because bottom nav is the primary mobile shell                         | Quiet support footer remains below content                         | Same paper/muted text treatment                                            | Desktop-only support utility                                    | Avoids duplicate chrome on mobile           |
 
 Validation widths: 375px, 390px, 430px, 768px, 1024px, and 1440px.
+
+## Mobile Account navigation closure — 2026-08-26
+
+At the existing customer mobile breakpoint (`max-width: 800px`), Account
+renders a stacked hub containing the canonical Profile, Address, Activity,
+Clerk account-management, and Clerk sign-out actions. The hub is placed before
+the operational Account cards in mobile reading order. It does not introduce a
+second destination, horizontal sub-navigation, or a mobile desktop header.
+
+The five-item customer bottom navigation remains unchanged. Customer main
+content keeps the existing page-bottom and safe-area clearance so the final
+Account action remains tappable above the fixed bar. Desktop keeps the existing
+header navigation and UserButton presentation.

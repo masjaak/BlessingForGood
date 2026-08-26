@@ -8,6 +8,22 @@ source: conversation
 
 # Changelog
 
+## [customer-account-responsive-navigation] — 2026-08-26
+
+### Changed
+
+- Added a mobile Account hub with the existing Profile, Address, Activity,
+  Clerk account-management, and Clerk sign-out actions.
+- Kept the customer five-item bottom navigation and desktop header intact;
+  mobile content now reserves the existing bottom-nav safe area.
+
+### QA
+
+- Focused Account component coverage and the responsive geometry matrix pass
+  across portrait, landscape, tablet, and desktop widths.
+- Full deterministic Vitest, TypeScript, ESLint, Format, Build, Convex check,
+  `npm audit --omit=dev`, and `git diff --check` pass.
+
 ## [final-yellow-unknown-closure] — 2026-08-26
 
 ### Changed

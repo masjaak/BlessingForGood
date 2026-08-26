@@ -1,5 +1,19 @@
 # BFG Project Status
 
+## Customer Account responsive navigation closure — 2026-08-26
+
+The Customer Account mobile hub is implemented in the current maintenance
+patch. Portrait, landscape, tablet, and desktop layouts expose the same
+essential Account actions: Profile, Address, Activity, Clerk account
+management, and Clerk sign-out. The existing five-item mobile bottom nav,
+desktop header, role boundaries, and authenticated data flows are unchanged.
+
+Local evidence: focused Account component coverage, the responsive geometry
+matrix at 375/390/430/667x375/844x390/768/1024/1440, and the full deterministic
+Vitest/typecheck/lint/build/audit/Convex checks pass. Production authenticated
+Customer acceptance remains dependent on an available legitimate Customer
+session; no identity or business data was fabricated.
+
 ## Final yellow / unknown closure — 2026-08-26
 
 The four named closure items are implemented in commit `43f444c` and deployed

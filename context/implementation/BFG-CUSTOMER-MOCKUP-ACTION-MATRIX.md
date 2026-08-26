@@ -26,8 +26,8 @@ blocked by the absence of a designated Customer QA identity and intentional real
 | C-06/latest | Batch-open notification | Open assigned batch from badge | notifications→batch detail | activity center | event + tracking | recipient/ownership | ACTIVE_LOCAL | not deployed | SOURCE-MAPPED | PASS | real batch event |
 | C-07 | Balance/top-up/proof/history | Deposit operations | `/account/deposit` | deposit page | top-up/account/ledger | ownership | ACTIVE_LOCAL | not deployed | SOURCE-MAPPED | PASS | real safe event or empty state |
 | C-07 | Invoice/detail/payment proof | Manual payment | `/account/invoices*` | invoice form | invoice/payment/storage | ownership | ACTIVE_LOCAL | proof not deployed | SOURCE-MAPPED | PASS | real/fixture privacy UAT |
-| C-08 | Profile/address/access/account links | Account management | `/account*` | dashboard/profile/address | own queries/mutations | ownership | ACTIVE | live | PASS_LOCAL | PASS | authenticated populated render |
-| C-08 | Logout | End session | header account control | Clerk `UserButton` | Clerk | signed in | ACTIVE | live | PROPORTIONAL | PASS | none |
+| C-08 | Profile/address/activity/account links | Account management | `/account*` | `AccountNavigation` plus canonical account routes | own queries/mutations + Clerk | ownership / signed-in session | ACTIVE | pending release | PASS_LOCAL | PASS | authenticated populated render |
+| C-08 | Logout | End session | `/account` Account hub | `AccountNavigation` | Clerk `signOut` | signed in | ACTIVE | pending release | PASS_LOCAL | PASS | authenticated Production walkthrough |
 | authenticated mobile | Five-item bottom nav | Canonical mobile IA | customer routes | `CustomerBottomNav` | none | signed-in/public shell | ACTIVE | live | PASS_LOCAL | PASS | preserve |
 
 Required controls: `UNKNOWN=0`, `DEAD_ACTION=0`. Notification/Inbox placement follows the authenticated header; no

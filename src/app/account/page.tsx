@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, EmptyState, LinkButton, Money, PageHeader, StatusBadge } from "@/components/ui";
+import { AccountNavigation } from "@/components/account-navigation";
 import { PageAwareSkeleton } from "@/components/page-aware-skeleton";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
@@ -13,89 +13,6 @@ import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
-import { ActivityIcon, useWorkspaceActivity } from "@/components/workspace-actions";
-
-function AccountActivityRow({
-  description,
-  href,
-  icon,
-  label,
-  unread,
-}: {
-  description: string;
-  href: string;
-  icon: ReactNode;
-  label: string;
-  unread?: number;
-}) {
-  return (
-    <Link className="dashboard-row account-activity-row" href={href}>
-      <span className="account-activity-row-main">
-        <span className="account-activity-icon" aria-hidden="true">
-          {icon}
-        </span>
-        <span>
-          <strong>{label}</strong>
-          <small>{description}</small>
-        </span>
-      </span>
-      <span className="account-activity-row-end">
-        {unread ? <span className="account-activity-count">{unread > 99 ? "99+" : unread} baru</span> : null}
-        <span aria-hidden="true">→</span>
-      </span>
-    </Link>
-  );
-}
-
-function AccountNavigation() {
-  const { activity } = useWorkspaceActivity();
-
-  return (
-    <Card className="account-navigation-card">
-      <section className="account-navigation-section">
-        <div className="split-heading">
-          <div>
-            <span className="card-kicker">AKTIVITAS</span>
-            <h2>Aktivitas</h2>
-          </div>
-        </div>
-        <div className="content-stack">
-          <AccountActivityRow
-            description="Pembaruan sistem dan pesan operasional BFG"
-            href="/account/notifications"
-            icon={<ActivityIcon />}
-            label="Buka Aktivitas"
-            unread={activity}
-          />
-        </div>
-      </section>
-      <section className="account-navigation-section">
-        <div className="split-heading">
-          <div>
-            <span className="card-kicker">AKUN</span>
-            <h2>Profil & alamat</h2>
-          </div>
-        </div>
-        <div className="content-stack">
-          <Link className="dashboard-row" href="/account/profile">
-            <span>
-              <strong>Profil</strong>
-              <small>Nama dan informasi kontak</small>
-            </span>
-            <span aria-hidden="true">→</span>
-          </Link>
-          <Link className="dashboard-row" href="/account/addresses">
-            <span>
-              <strong>Alamat pengiriman</strong>
-              <small>Kelola alamat untuk pesananmu</small>
-            </span>
-            <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </section>
-    </Card>
-  );
-}
 
 function AccountDashboard() {
   const { state, ordersLoading } = useProduct();

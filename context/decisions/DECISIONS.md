@@ -256,3 +256,16 @@ The following implementation choices are prototype-only and are recorded in `PRO
   require an existing active customer `appUsers` record.
 - Join requests are retained as admission/audit history. No automatic privacy
   deletion or cron is introduced in Phase 06.7.
+
+## Customer Account responsive navigation closure — 2026-08-26
+
+- The canonical Customer Account destinations remain `/account/profile`,
+  `/account/addresses`, and `/account/notifications`. At the existing mobile
+  breakpoint, they are presented in one stacked Account hub together with
+  Clerk account management and sign-out; essential actions must not depend on
+  portrait versus landscape orientation.
+- Account management uses Clerk's supported `openUserProfile` flow and
+  sign-out uses Clerk `signOut({ redirectUrl: "/" })`. No custom authentication
+  mechanism or Clerk configuration surface is exposed.
+- The existing five-item Customer bottom navigation and desktop header remain
+  the primary shell navigation. No horizontal Account tab strip is introduced.

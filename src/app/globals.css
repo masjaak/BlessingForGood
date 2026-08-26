@@ -4974,7 +4974,7 @@ p {
   }
 
   .customer-shell > main {
-    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--layout-page-bottom) + var(--button-height-icon) + env(safe-area-inset-bottom));
   }
 
   .workspace-skeleton-customer-dashboard-grid > .workspace-skeleton-customer-dashboard-panel {
@@ -5707,49 +5707,6 @@ p {
 .account-navigation-section + .account-navigation-section {
   padding-top: var(--frame-frame-gap);
   border-top: 1px solid var(--line);
-}
-
-.account-activity-row-main {
-  display: flex !important;
-  align-items: center;
-  gap: 12px !important;
-}
-
-.account-activity-icon {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--mint);
-}
-
-.account-activity-icon svg {
-  width: 19px;
-  height: 19px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.7;
-}
-
-.account-activity-row-end {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-.account-activity-count {
-  color: var(--accent-dark);
-  font-size: 0.72rem;
-  font-weight: var(--font-weight-bold);
-  white-space: nowrap;
 }
 
 .admin-shell .admin-topbar {
@@ -6999,5 +6956,142 @@ p {
     align-self: auto;
     width: 132px;
     height: 132px;
+  }
+}
+
+/* Customer Account actions stay in the mobile reading order when header controls collapse. */
+.account-menu-list {
+  display: grid;
+  min-width: 0;
+}
+
+.account-menu-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 11px 0;
+  color: var(--ink);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  white-space: normal;
+}
+
+.account-menu-row:last-child {
+  border-bottom: 0;
+}
+
+.account-menu-row:hover {
+  color: var(--ink);
+  background: var(--mint);
+}
+
+.account-menu-row-content,
+.account-menu-row.button .button-label {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.account-menu-row-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-menu-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--mint);
+}
+
+.account-menu-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.account-menu-row-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.account-menu-row-copy strong,
+.account-menu-row-copy small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-menu-row-copy small {
+  color: var(--ink-muted);
+}
+
+.account-menu-row-arrow {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-muted);
+  font-size: 1.2rem;
+}
+
+.account-menu-count {
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.account-menu-row.button {
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.account-menu-row.button.account-menu-row-danger {
+  margin-top: 8px;
+  padding-inline: 12px;
+  color: var(--button-danger-fg);
+  border: 1px solid var(--button-danger-border);
+  border-radius: var(--button-radius);
+  background: var(--button-danger-bg);
+}
+
+.account-menu-row.button.account-menu-row-danger:hover {
+  color: var(--button-danger-fg);
+  border-color: var(--button-danger-border);
+  background: var(--button-danger-bg-hover);
+}
+
+.account-signout-error {
+  margin: 8px 0 0;
+  color: var(--button-danger-fg);
+}
+
+@media (max-width: 800px) {
+  .customer-shell .account-dashboard-grid > .account-navigation-card {
+    order: -1;
   }
 }
