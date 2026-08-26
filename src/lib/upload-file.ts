@@ -1,7 +1,7 @@
 import type { Id } from "../../convex/_generated/dataModel";
 
 export type BfgUploadPurpose = "book-cover" | "book-gallery" | "payment-proof" | "deposit-proof";
-type ConvexToken = (options: { template: "convex" }) => Promise<string | null>;
+type ConvexToken = (options: { template?: "convex" }) => Promise<string | null>;
 
 export function normalizeUploadMimeType(value: string): string {
   const normalized = value.split(";", 1)[0]?.trim().toLowerCase() || "";
@@ -12,12 +12,16 @@ export async function uploadBfgFile(
   file: File,
   purpose: BfgUploadPurpose,
   getToken: ConvexToken,
+  sessionClaims?: unknown,
 ): Promise<Id<"_storage">> {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_CONVEX_SITE_URL ||
-    process.env.NEXT_PUBLIC_CONVEX_URL?.replace(/\.convex\.cloud$/, ".convex.site");
+  const siteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
   if (!siteUrl) throw new Error("UPLOAD_REJECTED");
-  const token = await getToken({ template: "convex" });
+  const nativeConvexSession =
+    typeof sessionClaims === "object" &&
+    sessionClaims !== null &&
+    "aud" in sessionClaims &&
+    sessionClaims.aud === "convex";
+  const token = await getToken(nativeConvexSession ? {} : { template: "convex" });
   if (!token) throw new Error("UPLOAD_REJECTED");
   const url = new URL("/bfg/upload", siteUrl);
   url.searchParams.set("purpose", purpose);

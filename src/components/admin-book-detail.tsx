@@ -164,7 +164,7 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [pendingAction, setPendingAction] = useState<
     "book" | "publish" | "variant" | "cover" | "gallery" | "preview" | null
   >(null);
-  const { getToken } = useAuth();
+  const { getToken, sessionClaims } = useAuth();
 
   function bookInput(nextPublicationStatus?: PublicationStatus) {
     return {
@@ -223,7 +223,7 @@ function BookEditor({ book }: { book: AdminBook }) {
           setCoverError(validationError);
           return;
         }
-        const storageId = await uploadBfgFile(coverFile, "book-cover", getToken);
+        const storageId = await uploadBfgFile(coverFile, "book-cover", getToken, sessionClaims);
         await attachCover({
           bookId: book._id,
           storageId,
@@ -255,7 +255,7 @@ function BookEditor({ book }: { book: AdminBook }) {
         setGalleryError(validationError.replace("Cover", "Gambar galeri"));
         return;
       }
-      const storageId = await uploadBfgFile(galleryFile, "book-gallery", getToken);
+      const storageId = await uploadBfgFile(galleryFile, "book-gallery", getToken, sessionClaims);
       await attachGalleryImage({
         bookId: book._id,
         storageId,

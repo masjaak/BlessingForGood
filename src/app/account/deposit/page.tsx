@@ -25,7 +25,7 @@ function DepositPage() {
   const transactions = useQuery(api.depositTransactions.listMine, { paginationOpts: { numItems: 100, cursor: null } });
   const topUps = useQuery(api.depositTopUps.listMine, {});
   const submit = useAction(api.depositTopUps.submit);
-  const { getToken } = useAuth();
+  const { getToken, sessionClaims } = useAuth();
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -43,7 +43,7 @@ function DepositPage() {
         file.size > 5_000_000
       )
         throw new Error();
-      const storageId = await uploadBfgFile(file, "deposit-proof", getToken);
+      const storageId = await uploadBfgFile(file, "deposit-proof", getToken, sessionClaims);
       await submit({
         amount: Number(amount),
         bankReference: reference || undefined,

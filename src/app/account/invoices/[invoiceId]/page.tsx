@@ -265,7 +265,7 @@ function PaymentConfirmationForm({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const paymentSettings = useQuery(api.settings.getForCustomer, {});
-  const { getToken } = useAuth();
+  const { getToken, sessionClaims } = useAuth();
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -282,7 +282,7 @@ function PaymentConfirmationForm({
         proofFile.size > 5_000_000
       )
         throw new Error("Bukti pembayaran tidak valid.");
-      const storageId = await uploadBfgFile(proofFile, "payment-proof", getToken);
+      const storageId = await uploadBfgFile(proofFile, "payment-proof", getToken, sessionClaims);
       await submitPaymentConfirmation(invoiceId, {
         amount: Number(amount),
         paymentMethod,
