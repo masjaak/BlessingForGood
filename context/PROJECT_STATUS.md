@@ -1,5 +1,29 @@
 # BFG Project Status
 
+## Final yellow / unknown closure — 2026-08-26
+
+The four named closure items are implemented in commit `43f444c` and deployed
+to the canonical Production domain. BFG Admin approval now starts the private
+server-side Clerk invitation reconciliation; `/join` uses `appUsers.role` and
+`status`; trusted invitation acceptance provisions the active Customer; and
+the eight historical cover assertions now test the current transformed,
+clipped-frame presentation contract.
+
+Final evidence: Vitest `60 files / 315 tests`, full current Playwright
+`284/284`, TypeScript, ESLint, Format, Build, Convex Development check,
+`npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check` pass.
+Vercel Production deployment `dpl_459z5nNtK56GBrn8whG793oHP9VT` is `READY`
+and aliased to `https://www.blessingforgood.com`; Convex Production remains
+`clean-eel-522` and receives the server-only Clerk secret during the canonical
+Vercel build. No fake identity or Production business record was created.
+
+The engineering path for a real active Production Customer is green, and the
+exact role-boundary journey is covered in isolated Convex tests. A legitimate
+authenticated Production Customer session was not available in this runtime,
+so the real Production Ready Stock order remains the only external UAT
+checkpoint; it must be run with an existing Customer account and existing
+positive-stock item.
+
 ## Operational reconciliation — 2026-08-26
 
 The requested Batch PO, Secret Catalog, Ready Stock, error-safety, button

@@ -8,6 +8,31 @@ source: conversation
 
 # Changelog
 
+## [final-yellow-unknown-closure] — 2026-08-26
+
+### Changed
+
+- Admin Join approval now starts one private server-side Clerk Backend SDK
+  reconciliation. Existing identities and pending invitations are reused;
+  failures are safe and retryable; repeated approval is idempotent.
+- `/join` now follows canonical `appUsers.role/status`: active and suspended
+  Customers never see the new-request form, while Admin/Owner remains outside
+  Customer mutation authority. Trusted invitation acceptance provisions the
+  active Customer app user.
+- Reconciled the eight `coverPresentation` assertions to the current intentional
+  transformed artwork/clipped frame contract, preserving cover upload and
+  presentation behavior.
+
+### QA
+
+- Full Vitest: `60 files / 315 tests`; full current Playwright: `284/284`.
+- TypeScript, ESLint, Format, Build, Convex Development check,
+  `git diff --check`, and `npm audit --omit=dev` (`0 vulnerabilities`) pass.
+- Canonical Vercel Production deployment
+  `dpl_459z5nNtK56GBrn8whG793oHP9VT` is ready at
+  `https://www.blessingforgood.com`; no fake Production identity or business
+  data was created.
+
 ## [operational-reconciliation] — 2026-08-26
 
 ### Changed

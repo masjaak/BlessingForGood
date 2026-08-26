@@ -43,13 +43,22 @@ is checked separately from Clerk loading and sign-in state. The app provisions
 hard-coded or returned to the client. `BFG_OWNER_CLERK_USER_ID` is server-only
 and controls the single owner bootstrap match.
 
-## Preview boundary
+## Current Production release wiring — 2026-08-26
+
+The canonical Vercel Production build synchronizes the server-only
+`CLERK_SECRET_KEY` into Convex Production before deploying functions. This
+supports the BFG Admin invitation action; it does not expose the key to the
+browser or business records.
 
 The Vercel build wrapper is:
 
 ```text
+npx convex env set CLERK_JWT_ISSUER_DOMAIN "$CLERK_JWT_ISSUER_DOMAIN" --prod
+npx convex env set CLERK_SECRET_KEY "$CLERK_SECRET_KEY" --prod
 npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"
 ```
+
+## Preview boundary
 
 This wrapper does not authorize a Preview or Production operation. Preview is
 not an active BFG environment; never create or target a Preview-looking

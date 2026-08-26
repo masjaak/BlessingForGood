@@ -1,7 +1,9 @@
 # BFG SECRET EXPOSURE AUDIT
 
 Status: `PHASE_09_2_FINAL_ASSURANCE / GREEN_EVIDENCE`;
-reviewed 2026-08-22. No secret values are reproduced here.
+reviewed 2026-08-26. No secret values are reproduced here. The automatic BFG
+invitation action is server-only, and the canonical Vercel build synchronizes
+its required Clerk secret into Convex Production without browser exposure.
 
 ## Classification
 

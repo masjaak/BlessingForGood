@@ -1,5 +1,15 @@
 # BFG PHASE 09 — OPERATIONS & MAINTENANCE
 
+## Current closure release override — 2026-08-26
+
+The earlier maintenance baseline below is historical. The current source is
+`43f444c`; Vercel Production deployment
+`dpl_459z5nNtK56GBrn8whG793oHP9VT` is `READY`, full Vitest is `60 files / 315
+tests`, and full Playwright is `284/284`. Automatic Clerk invitation,
+membership `/join` gating, and cover presentation reconciliation are now part
+of the deployed maintenance baseline. Real Production Customer Ready Stock
+acceptance still requires a legitimate Customer session and existing stock.
+
 Status: `ACTIVE — MAINTENANCE MODE`
 Initial review: 2026-08-22 (Asia/Jakarta)
 Owner: BFG Owner/Admin

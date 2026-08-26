@@ -1,7 +1,26 @@
 # BFG Operational Reconciliation — 2026-08-26
 
-Status: DEPLOYED; authenticated Production Customer UAT remains account-gated
-when no legitimate Production Customer session is available.
+Status: SUPERSEDED BY FINAL YELLOW / UNKNOWN CLOSURE; authenticated Production
+Customer UAT remains account-gated when no legitimate Production Customer
+session is available.
+
+## Final closure override — 2026-08-26
+
+Commit `43f444c` adds automatic BFG-side Clerk invitation reconciliation,
+trusted invitation acceptance, active Customer `/join` gating, and the proper
+coverPresentation Playwright contract. Full Vitest is `60 files / 315 tests`
+and full current Playwright is `284/284`. Vercel Production deployment
+`dpl_459z5nNtK56GBrn8whG793oHP9VT` is `READY` at the canonical domain.
+
+The previous cover failures were stale raw-image containment assertions; the
+current test verifies the intentional transformed artwork inside an overflow-
+hidden cover frame, preserving object-fit and document-overflow guarantees.
+
+The previous Ready Stock Production failure remains correctly classified as an
+Admin/Owner call to a Customer-only mutation. No legitimate authenticated
+Production Customer session was available here, and no Production business
+data was fabricated; the isolated active-Customer reservation/order/projection
+journey is covered and green.
 
 ## Locked product boundaries
 
