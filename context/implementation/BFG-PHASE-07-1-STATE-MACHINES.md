@@ -1,6 +1,6 @@
 # BFG Phase 07.1 State Machines
 
-Status: `CANONICAL_IMPLEMENTED_LOCALLY__PRODUCTION_UAT_PENDING`
+Status: `CANONICAL_IMPLEMENTED__AUTOMATIC_INVITATION_AND_JOIN_GATING`
 
 These machines reuse existing domain states. Phase 07.1 adds only the minimum communication and access transitions
 required by the reconciled contract.
@@ -104,11 +104,15 @@ PAYMENT PROJECTION: UNPAID | PAYMENT_SUBMITTED | PARTIALLY_PAID | PAID
 ## Join and admission
 
 ```text
-NOT_REQUESTED → SUBMITTED → UNDER_REVIEW → APPROVED_PENDING_ADMISSION → ADMITTED
-                                      ↘ REJECTED
+NOT_REQUESTED → SUBMITTED → UNDER_REVIEW → APPROVED → INVITATION_PENDING → SENT → ADMITTED
+                                      ↘ REJECTED                         ↘ FAILED → RETRY
 ```
 
 - Public submission does not create a Clerk user or `appUsers` row.
-- Approval is required before admission. Existing-identity admission is idempotent; manual Clerk invitation remains
-  the external handoff for applicants without an identity.
+- Approval is required before admission. Existing-identity admission is
+  idempotent; a private server-side Clerk action reuses an exact identity or
+  pending invitation before creating one invitation.
+- `appUsers.role/status` remains the membership authority. Active Customers
+  are redirected away from `/join`; Admin/Owner never receives Customer
+  mutation authority.
 - Approval/rejection may create a safe operational Inbox message only when a canonical recipient exists.

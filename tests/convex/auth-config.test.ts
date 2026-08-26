@@ -20,6 +20,7 @@ describe("Convex Clerk auth configuration", () => {
   it("keeps Production Convex issuer synchronization in the release command", () => {
     const { buildCommand } = JSON.parse(readFileSync("vercel.json", "utf8")) as { buildCommand: string };
     expect(buildCommand).toContain("convex env set CLERK_JWT_ISSUER_DOMAIN");
+    expect(buildCommand).toContain("convex env set CLERK_SECRET_KEY");
     expect(buildCommand).toContain("--prod");
   });
 });

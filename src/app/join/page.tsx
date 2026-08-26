@@ -2,7 +2,8 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { BrandMascot } from "@/components/brand";
 import { BFGSelect } from "@/components/bfg-select";
@@ -206,9 +207,19 @@ function ConnectedJoinForm() {
 }
 
 function JoinPageContent() {
-  const { dataSource, authState, retryAuth } = useProduct();
+  const { dataSource, authState, retryAuth, sessionRole } = useProduct();
   const { isLoaded, isSignedIn } = useAuth();
-  const joinRequests = useQuery(api.joinRequests.mine, isSignedIn && dataSource === "convex" ? {} : "skip");
+  const router = useRouter();
+  const joinRequests = useQuery(
+    api.joinRequests.mine,
+    isSignedIn && dataSource === "convex" && authState === "admission-required" ? {} : "skip",
+  );
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && authState === "authenticated" && sessionRole === "customer") {
+      router.replace("/account");
+    }
+  }, [authState, isLoaded, isSignedIn, router, sessionRole]);
 
   if (isSignedIn && (authState === "convex-error" || authState === "network-error")) {
     return (
@@ -224,6 +235,18 @@ function JoinPageContent() {
     (isSignedIn && authState !== "authenticated" && authState !== "suspended" && authState !== "admission-required")
   ) {
     return <div className="state-panel">Memeriksa akses BFG…</div>;
+  }
+  if (isSignedIn && authState === "suspended") {
+    return (
+      <Card className="notice-card content-stack">
+        <span className="card-kicker">Akun tidak aktif</span>
+        <h2>Akunmu sedang tidak aktif.</h2>
+        <p>Hubungi BFG untuk bantuan.</p>
+      </Card>
+    );
+  }
+  if (isSignedIn && authState === "authenticated" && sessionRole === "customer") {
+    return <div className="state-panel">Membuka ruang customer…</div>;
   }
   if (isSignedIn && authState === "admission-required") {
     if (joinRequests === undefined) return <div className="state-panel">Memeriksa permintaan bergabung…</div>;
@@ -253,12 +276,21 @@ function JoinPageContent() {
         </Card>
       );
     }
+    if (latestRequest.status === "approved" && latestRequest.admissionStatus === "invitation_failed") {
+      return (
+        <Card className="notice-card content-stack">
+          <span className="card-kicker">Disetujui</span>
+          <h2>Undangan belum berhasil dikirim.</h2>
+          <p>Permintaanmu sudah disetujui, tetapi undangan belum berhasil dikirim. Tim BFG akan membantumu.</p>
+        </Card>
+      );
+    }
     if (latestRequest.status === "approved" && latestRequest.admissionStatus === "invitation_pending") {
       return (
         <Card className="notice-card content-stack">
           <span className="card-kicker">Disetujui</span>
-          <h2>Undangan Clerk diperlukan.</h2>
-          <p>Admin BFG sudah menyetujui permintaanmu. Ikuti undangan Clerk untuk mengaktifkan akses BFG.</p>
+          <h2>{latestRequest.invitationStatus === "sent" ? "Undangan telah dikirim." : "Undangan sedang diproses."}</h2>
+          <p>Permintaanmu sudah disetujui. Ikuti tautan pada email untuk menyelesaikan akses BFG.</p>
         </Card>
       );
     }
@@ -266,21 +298,18 @@ function JoinPageContent() {
       <Card className="notice-card content-stack">
         <span className="card-kicker">Dalam peninjauan</span>
         <h2>Permintaanmu sedang ditinjau.</h2>
-        <p>Tim BFG akan mengabari setelah proses peninjauan selesai.</p>
+        <p>Tim BFG akan memberi kabar setelah proses review selesai.</p>
       </Card>
     );
   }
   if (isSignedIn) {
     return (
       <Card className="notice-card content-stack">
-        <span className="card-kicker">Sudah menjadi Blessfriend</span>
-        <h2>Akun BFG-mu sudah aktif.</h2>
-        <p>Lanjutkan ke akun atau buka katalog komunitas.</p>
+        <span className="card-kicker">Ruang kerja Admin</span>
+        <h2>Operasi pelanggan dilakukan melalui ruang kerja Admin.</h2>
+        <p>Gunakan pesanan berbantuan untuk membantu Customer tanpa melewati batas aksesnya.</p>
         <div className="actions">
-          <LinkButton href="/account">Buka akun</LinkButton>
-          <LinkButton href="/catalog" variant="secondary">
-            Buka katalog
-          </LinkButton>
+          <LinkButton href="/admin">Buka ruang kerja Admin</LinkButton>
         </div>
       </Card>
     );
@@ -303,7 +332,7 @@ export default function JoinPage() {
         <PageHeader
           eyebrow="Gabung Blessfriends"
           title="Mulai perjalananmu bersama komunitas BFG."
-          description="Kirim permintaan, tunggu tinjauan admin, lalu ikuti langkah undangan bila disetujui."
+          description="Kirim permintaan, tunggu review Admin, lalu ikuti tautan undangan bila disetujui."
         />
         <JoinPageContent />
       </div>

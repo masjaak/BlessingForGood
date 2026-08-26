@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { findCurrentUser, requireIdentity, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
@@ -12,7 +13,7 @@ import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { enforceRateLimit } from "./lib/rateLimit";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
-type JoinRequestAdmissionStatus = "pending" | "invitation_pending" | "active" | "rejected";
+type JoinRequestAdmissionStatus = "pending" | "invitation_pending" | "invitation_failed" | "active" | "rejected";
 
 const duplicateStatuses = new Set<JoinRequestStatus>(["submitted", "under_review", "approved"]);
 
@@ -47,7 +48,10 @@ function normalizeContact(value: string): string {
   return contact;
 }
 
-async function activeEmailDuplicateStatus(ctx: MutationCtx, normalizedEmail: string): Promise<JoinRequestStatus | null> {
+async function activeEmailDuplicateStatus(
+  ctx: MutationCtx,
+  normalizedEmail: string,
+): Promise<JoinRequestStatus | null> {
   const matches = await ctx.db
     .query("joinRequests")
     .withIndex("by_normalized_email", (index) => index.eq("normalizedEmail", normalizedEmail))
@@ -57,7 +61,10 @@ async function activeEmailDuplicateStatus(ctx: MutationCtx, normalizedEmail: str
   return statuses[0] ?? null;
 }
 
-async function activeApplicantDuplicateStatus(ctx: MutationCtx, applicantClerkUserId: string): Promise<JoinRequestStatus | null> {
+async function activeApplicantDuplicateStatus(
+  ctx: MutationCtx,
+  applicantClerkUserId: string,
+): Promise<JoinRequestStatus | null> {
   const matches = await ctx.db
     .query("joinRequests")
     .withIndex("by_applicant_clerk_user_id", (index) => index.eq("applicantClerkUserId", applicantClerkUserId))
@@ -71,6 +78,7 @@ async function admissionStatus(
 ): Promise<JoinRequestAdmissionStatus> {
   if (request.status === "rejected") return "rejected";
   if (request.status !== "approved") return "pending";
+  if (request.invitationStatus === "failed" && !request.admittedAppUserId) return "invitation_failed";
   if (!request.applicantClerkUserId && !request.admittedAppUserId) return "invitation_pending";
   const user = request.admittedAppUserId
     ? await ctx.db.get(request.admittedAppUserId)
@@ -101,6 +109,7 @@ async function requestView(ctx: QueryCtx | MutationCtx, request: Doc<"joinReques
     rejectionReason: request.rejectionReason ?? null,
     admissionStatus: await admissionStatus(ctx, request),
     admissionError: request.admissionError ?? null,
+    invitationError: request.invitationError ?? null,
     createdAt: new Date(request.createdAt).toISOString(),
     updatedAt: new Date(request.updatedAt).toISOString(),
   };
@@ -134,6 +143,7 @@ export const submit = mutation({
     }
     const name = requiredText(args.name, "name", 120);
     const email = normalizeEmail(args.email);
+    if (identity?.email && email !== identity.email.trim().toLowerCase()) fail("ADMISSION_REQUIRED");
     const contact = requiredText(args.contact, "contact", 80);
     const normalizedContact = normalizeContact(contact);
     const city = requiredText(args.city, "area", 120);
@@ -272,15 +282,17 @@ export const approve = mutation({
   handler: async (ctx, args) => {
     const reviewer = await requirePermission(ctx, "customers.manage");
     const request = await getRequest(ctx, args.joinRequestId);
+    if (request.status === "approved") return requestView(ctx, request);
     requireStatus(request, "under_review");
     const now = Date.now();
     await ctx.db.patch(request._id, {
       status: "approved",
-      invitationStatus: "ready",
+      invitationStatus: "pending",
       reviewedAt: now,
       reviewedByUserId: reviewer._id,
       reviewNote: optionalText(args.reviewNote, "review note", 500),
       admissionError: undefined,
+      invitationError: undefined,
       updatedAt: now,
     });
     await recordAudit(ctx, reviewer._id, "join_request.approved", "join_request", request._id);
@@ -308,7 +320,41 @@ export const approve = mutation({
       }
       updated = await ctx.db.get(request._id);
       if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
+    } else {
+      await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
+        joinRequestId: request._id,
+        actorUserId: reviewer._id,
+      });
     }
+    return requestView(ctx, updated);
+  },
+});
+
+export const retryInvitation = mutation({
+  args: { joinRequestId: v.id("joinRequests") },
+  handler: async (ctx, args) => {
+    const reviewer = await requirePermission(ctx, "customers.manage");
+    const request = await getRequest(ctx, args.joinRequestId);
+    requireStatus(request, "approved");
+    if (request.admittedAppUserId || request.invitationStatus === "accepted" || request.invitationStatus === "sent") {
+      return requestView(ctx, request);
+    }
+    if (request.invitationStatus !== "failed" && request.invitationStatus !== "ready") {
+      fail("CLERK_INVITATION_RETRY_REQUIRED");
+    }
+    const now = Date.now();
+    await ctx.db.patch(request._id, {
+      invitationStatus: "pending",
+      invitationError: undefined,
+      updatedAt: now,
+    });
+    await recordAudit(ctx, reviewer._id, "join_request.invitation_retry_requested", "join_request", request._id);
+    await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
+      joinRequestId: request._id,
+      actorUserId: reviewer._id,
+    });
+    const updated = await ctx.db.get(request._id);
+    if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
     return requestView(ctx, updated);
   },
 });

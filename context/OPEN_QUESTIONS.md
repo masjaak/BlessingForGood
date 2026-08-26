@@ -79,9 +79,11 @@ the canonical repository.
 - [OPEN BUSINESS/PRIVACY DECISION] `JOIN_REQUEST_RETENTION_POLICY`: define
   retention, access, and disposal rules for admission records containing
   contact details. Phase 06.2 preserves history and adds no public deletion.
-- [DEFERRED] Clerk invitation execution, invitation acceptance evidence, and
-  safe `joinRequest` → `appUser` linking remain manual identity-lifecycle work.
-  Approval only sets `invitationStatus=ready`.
+- [RESOLVED 2026-08-26] Clerk invitation execution and safe
+  `joinRequest` → `appUser` linking are handled by the private BFG server
+  action. Exact identities and pending invitations are reused, approval is
+  idempotent, failures expose a safe retry state, and trusted invitation
+  acceptance provisions the active Customer `appUser`.
 - [DEFERRED INFRASTRUCTURE] Rate limiting and bot controls need stable
   infrastructure. Phase 06.2 uses server validation, normalization, bounded
   duplicate checks, generic duplicate errors, and acknowledgement gating.

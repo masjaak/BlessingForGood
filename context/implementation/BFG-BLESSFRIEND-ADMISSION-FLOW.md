@@ -1,6 +1,6 @@
 # BFG Blessfriend Admission Flow
 
-Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
+Status: `BFG_PHASE_07_1_FINAL_CLOSURE_AUTOMATIC_INVITATION_IMPLEMENTED`
 
 This is the Phase 07.1 admission contract. Clerk authenticates an identity;
 Convex `appUsers` admission and status authorize BFG customer access. A Clerk
@@ -16,7 +16,7 @@ existing join status vocabulary:
 | `NOT_REQUESTED` | no unresolved request | Applicant may submit the Join form |
 | `SUBMITTING` | mutation in flight | Form is validating/creating one request |
 | `PENDING_REVIEW` | `submitted` or `under_review` | Admin review is required |
-| `APPROVED_PENDING_ADMISSION` | `approved` plus `invitation_pending` or retryable error | Approval is recorded; identity handoff is not active yet |
+| `APPROVED_PENDING_ADMISSION` | `approved` plus `pending`, `sent`, or `failed` invitation | Approval is recorded; identity handoff is not active yet |
 | `ADMITTED` | `approved` plus active `appUser` | Private customer workspace may unlock |
 | `REJECTED` | `rejected` | Request history is retained and visibly resolved |
 | `ERROR` | submit/admission error | Recoverable error; no silent state advance |
@@ -38,9 +38,10 @@ APPROVED_PENDING_ADMISSION
   --ADMISSION_FAILED--> APPROVED_PENDING_ADMISSION + retryable error
 ```
 
-Invalid transitions include admitting without Admin approval, approving or
-rejecting a resolved request, creating a second unresolved request for the
-same applicant, and treating Clerk authentication as admission.
+Invalid transitions include admitting without Admin approval, creating a
+second unresolved request for the same applicant, and treating Clerk
+authentication as admission. Repeated approval is idempotent and never
+creates a second invitation or app user.
 
 ## Events and guards
 
@@ -57,8 +58,9 @@ same applicant, and treating Clerk authentication as admission.
 | `ADMISSION_FAILED` | Approval remains recorded with a recoverable `admissionError`; retry does not erase history |
 
 Admin review and admission mutations remain server-authorized and audited by
-the existing BFG audit path. Repeated approval is an explicit invalid
-transition; retry is a separate approved-only operation.
+the existing BFG audit path. Repeated approval is idempotent and does not
+create another invitation or app user; retry is a separate approved-only
+operation for a failed or legacy invitation state.
 
 ## Existing Clerk identity
 
@@ -72,11 +74,10 @@ login.
 ## New Clerk identity
 
 A signed-out applicant can submit a durable request. Approval records BFG
-approval and leaves the request in `invitation_pending` until the existing
-manual Clerk invitation/provisioning process is completed. No Clerk user is
-created by the Join mutation, and no second identity system is introduced.
-When the invited user later signs in, the existing supported email-based
-invitation path provisions the one active `appUser` and links the request.
+approval and schedules a private Clerk invitation reconciliation. No Clerk
+user is created by the Join mutation, and no second identity system is
+introduced. When the invited user later signs in, the trusted normalized email
+path provisions the one active `appUser` and links the request.
 
 ## Customer states
 
@@ -98,9 +99,10 @@ may perform those actions.
 
 ## Failure recovery and schema scope
 
-If approval succeeds but an existing-identity admission handoff fails, the
-request remains `approved`, stores a concise `admissionError`, and exposes
-`retryAdmission`. There is no global retry service.
+If approval succeeds but Clerk invitation delivery fails, the request remains
+`approved`, stores a concise `invitationError`, and exposes `retryInvitation`.
+Existing-identity admission failures retain the separate `retryAdmission`
+path. There is no global retry service.
 
 The schema change is additive and Join-only: optional captured subject/email,
 admission error, admitted appUser reference, and an applicant-subject index.
@@ -111,7 +113,8 @@ are unchanged.
 ## Verification
 
 Deterministic Convex coverage proves public/signed-in Join access, persistence,
-duplicate prevention, pending count, review, approval, rejection, existing
-identity reuse, idempotent appUser creation, and no auto-admission from login.
+duplicate prevention, pending count, review, approval, rejection, automatic
+invitation creation/reuse, failure/retry, existing identity reuse, idempotent
+appUser creation, and trusted-email activation.
 Customer guard/auth-state coverage proves active admission clears the stale
 admission-required state while customer `/admin` denial remains intact.

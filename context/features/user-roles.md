@@ -20,7 +20,8 @@ and sign-out. Owners cannot suspend themselves or another owner.
 
 ## Admission review
 
-Active admins and owners can review `/admin/join-requests`. Approval makes a
-request eligible for the manual Clerk invitation handoff only; it does not
-create an account, assign a role, establish ownership, or grant Secret Catalog
-access. Customers and suspended admins cannot review admission requests.
+Active admins and owners can review `/admin/join-requests`. Approval starts
+the automatic server-side Clerk invitation reconciliation and does not require
+Clerk Dashboard access. It does not grant Secret Catalog access or change a
+role outside the canonical `appUsers` provisioning path. Customers and
+suspended admins cannot review admission requests.

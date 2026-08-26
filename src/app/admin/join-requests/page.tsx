@@ -48,12 +48,14 @@ function JoinRequestCard({
   approve,
   reject,
   retryAdmission,
+  retryInvitation,
 }: {
   request: JoinRequest;
   startReview: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
   approve: (joinRequestId: Id<"joinRequests">, reviewNote?: string) => Promise<unknown>;
   reject: (joinRequestId: Id<"joinRequests">, rejectionReason: string, reviewNote?: string) => Promise<unknown>;
   retryAdmission: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
+  retryInvitation: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
 }) {
   const [reviewNote, setReviewNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -128,10 +130,10 @@ function JoinRequestCard({
           <ActionGroup variant="responsive">
             <Button
               type="button"
-              loading={pendingAction === "Disetujui; proses admission dimulai."}
+              loading={pendingAction === "Disetujui; undangan diproses."}
               loadingLabel="Menyetujui…"
               onClick={() =>
-                void run(() => approve(requestId, reviewNote || undefined), "Disetujui; proses admission dimulai.")
+                void run(() => approve(requestId, reviewNote || undefined), "Disetujui; undangan diproses.")
               }
             >
               Setujui
@@ -156,10 +158,28 @@ function JoinRequestCard({
           <p className="success-banner" role="status">
             {request.admissionStatus === "active"
               ? "Blessfriend aktif. Akses pelanggan sudah terbuka."
-              : request.admissionStatus === "invitation_pending"
-                ? "Disetujui. Buat undangan Clerk secara manual untuk identitas baru."
-                : "Disetujui, tetapi admission masih perlu diselesaikan."}
+              : request.admissionStatus === "invitation_failed"
+                ? "Disetujui. Undangan belum berhasil dikirim."
+                : request.invitationStatus === "pending"
+                  ? "Disetujui. Undangan sedang diproses."
+                  : request.invitationStatus === "sent"
+                    ? "Disetujui. Undangan sudah dikirim dan masih menunggu diterima."
+                    : "Disetujui. Undangan belum diproses."}
           </p>
+          {request.invitationStatus === "failed" || request.invitationStatus === "ready" ? (
+            <ActionGroup variant="responsive">
+              <span className="error-text action-support">{request.invitationError || "Undangan belum dikirim."}</span>
+              <Button
+                type="button"
+                variant="secondary"
+                loading={pendingAction === "Undangan dicoba kembali."}
+                loadingLabel="Mengirim…"
+                onClick={() => void run(() => retryInvitation(requestId), "Undangan dicoba kembali.")}
+              >
+                {request.invitationStatus === "ready" ? "Kirim undangan" : "Kirim ulang undangan"}
+              </Button>
+            </ActionGroup>
+          ) : null}
           {request.admissionError ? (
             <ActionGroup variant="responsive">
               <span className="error-text action-support">Proses penerimaan anggota perlu dicoba lagi.</span>
@@ -206,6 +226,7 @@ function ConnectedJoinRequests() {
   const approveMutation = useMutation(api.joinRequests.approve);
   const rejectMutation = useMutation(api.joinRequests.reject);
   const retryAdmissionMutation = useMutation(api.joinRequests.retryAdmission);
+  const retryInvitationMutation = useMutation(api.joinRequests.retryInvitation);
   const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!requests || !query) return requests;
@@ -221,7 +242,7 @@ function ConnectedJoinRequests() {
       <PageHeader
         eyebrow="Operasi admission"
         title="Tinjau permintaan Blessfriends."
-        description="Persetujuan adalah peristiwa admission BFG. Identitas Clerk yang sudah terhubung diaktifkan tanpa duplikasi; identitas baru dilanjutkan melalui undangan manual."
+        description="Persetujuan adalah peristiwa admission BFG. Identitas yang sudah terhubung diaktifkan tanpa duplikasi; identitas baru menerima undangan otomatis melalui BFG."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -267,6 +288,7 @@ function ConnectedJoinRequests() {
                   rejectMutation({ joinRequestId, rejectionReason, reviewNote })
                 }
                 retryAdmission={(joinRequestId) => retryAdmissionMutation({ joinRequestId })}
+                retryInvitation={(joinRequestId) => retryInvitationMutation({ joinRequestId })}
               />
             ))
           ) : filteredRequests ? (

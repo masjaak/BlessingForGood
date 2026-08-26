@@ -129,6 +129,9 @@ export default defineSchema({
     rejectionReason: v.optional(v.string()),
     admissionError: v.optional(v.string()),
     admittedAppUserId: v.optional(v.id("appUsers")),
+    clerkInvitationId: v.optional(v.string()),
+    invitationSentAt: v.optional(v.number()),
+    invitationError: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

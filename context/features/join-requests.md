@@ -1,14 +1,13 @@
 # Join Requests Feature
 
-Status: Phase 06.2 implemented locally; integrated runtime QA is deferred to
-stable staging.
+Status: automatic Clerk invitation and membership activation implemented in
+the canonical Production path.
 
 ## Boundary
 
 `/join` is a public request-for-access form, not public signup. A join request
 is not a Clerk account, an `appUsers` row, or Secret Catalog access. Approval
-only makes the applicant eligible for the manual Clerk Development invitation
-handoff.
+starts the server-side Clerk invitation reconciliation inside BFG Admin.
 
 ## Stored record
 
@@ -31,6 +30,9 @@ reviewNote?
 rejectionReason?
 createdAt
 updatedAt
+clerkInvitationId?
+invitationSentAt?
+invitationError?
 ```
 
 Email is lowercased. Contact normalization trims, lowercases, and removes
@@ -47,8 +49,9 @@ submitted → under_review → approved
 
 Review transitions are forward-only. A rejected applicant may submit a new
 request; the original row and audit events remain preserved. An approved row
-has `invitationStatus=ready`; no `invited` or `accepted` state is recorded
-because Clerk invitation execution and acceptance are not automated here.
+uses `invitationStatus=pending`; the private Clerk action reuses an exact
+pending invitation, creates one invitation when needed, or reconciles an
+existing identity. `ready` remains a legacy retryable state.
 
 ## Public workflow
 
@@ -67,13 +70,14 @@ Authenticated users see an already-a-member state instead of the form.
 ## Admin workflow
 
 `/admin/join-requests` is available to active admin/owner users. It supports
-status filtering, bounded queue search, start review, approve, and reject with
-a required reason. All actions derive the reviewer from verified `appUsers`,
-write the row and audit event in one mutation, and reject stale transitions.
+status filtering, bounded queue search, start review, approve, reject, and
+invitation retry with a required reason. All actions derive the reviewer from
+verified `appUsers`, write the row and audit event in one mutation, and reject
+stale transitions. Approval does not require Clerk Dashboard access.
 
-Approved applicants remain `invitation pending` operationally: an owner/admin
-uses the existing Clerk Development runbook manually. Invitation URLs, tokens,
-or auth storage are never stored in Convex or repository artifacts.
+Approved applicants remain `invitation pending` until the server-side action
+confirms delivery or an existing identity. Invitation URLs, tokens, or auth
+storage are never stored in Convex or repository artifacts.
 
 ## Privacy and retention
 

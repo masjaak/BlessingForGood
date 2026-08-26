@@ -1,5 +1,22 @@
 # Clerk Development Invitation Runbook
 
+## Current BFG Admin workflow
+
+The normal workflow is entirely inside BFG:
+
+```text
+Join Request → Admin review → Setujui → BFG sends/reuses Clerk invitation
+```
+
+`joinRequests.approve` is audited and idempotent. The private Clerk Backend
+SDK action resolves an exact existing identity or pending invitation before
+creating one invitation. Admin uses `Kirim ulang undangan` only for a safe
+failed/legacy state; opening Clerk Dashboard is not a routine step.
+
+The Production Convex deployment receives `CLERK_SECRET_KEY` from the
+server-only Vercel environment. No invitation URL, token, secret, or provider
+error is stored or shown.
+
 This runbook uses Development only. Do not record invitee email, Clerk ID,
 invitation URL, password, token, or auth storage in repository artifacts.
 
@@ -16,13 +33,13 @@ invitation URL, password, token, or auth storage in repository artifacts.
 8. Delete or clean only explicitly created QA records after counts are saved;
    stop if unknown business data is found.
 
-## Approved join-request handoff
+## Historical Development acceptance verification
 
-For an approved `/admin/join-requests` record, use the existing Clerk
-Development invitation process manually. The Convex approval only sets
-`invitationStatus=ready`; do not store an invitation URL, token, or Clerk
-secret. Invitation acceptance and any future `joinRequest` → `appUser` link
-require verified Clerk identity evidence and are outside Phase 06.2.
+For an approved Development record, use the invitation delivered by BFG and
+complete Clerk sign-up in an isolated QA browser context. The first trusted
+authenticated BFG request provisions `appUsers` as `role=customer`,
+`status=active`, and links the approved request. Do not create a second Clerk
+identity or use a manual dashboard invitation to bypass the BFG path.
 
 Evidence labels:
 

@@ -25,6 +25,8 @@ import type * as depositTransactions from "../depositTransactions.js";
 import type * as http from "../http.js";
 import type * as invoiceDepositAllocations from "../invoiceDepositAllocations.js";
 import type * as invoices from "../invoices.js";
+import type * as joinRequestInvitationState from "../joinRequestInvitationState.js";
+import type * as joinRequestInvitations from "../joinRequestInvitations.js";
 import type * as joinRequests from "../joinRequests.js";
 import type * as lib_accessCodes from "../lib/accessCodes.js";
 import type * as lib_audit from "../lib/audit.js";
@@ -94,6 +96,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   invoiceDepositAllocations: typeof invoiceDepositAllocations;
   invoices: typeof invoices;
+  joinRequestInvitationState: typeof joinRequestInvitationState;
+  joinRequestInvitations: typeof joinRequestInvitations;
   joinRequests: typeof joinRequests;
   "lib/accessCodes": typeof lib_accessCodes;
   "lib/audit": typeof lib_audit;

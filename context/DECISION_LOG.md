@@ -82,3 +82,9 @@ source-backed, and added here before implementation.
 | BFG-DEC-057 | 2026-08-24 / parallel-workstream reconciliation | Button and Product Logic could each own an ActionGroup implementation. | The global Button system owns one ActionGroup's variants, spacing, size, and state; pages select legitimate business actions and hierarchy. | Integrated source review; `src/components/ui.tsx`; `src/app/globals.css` | Eliminates shared-component drift without weakening business semantics. | ACTIVE |
 | BFG-DEC-058 | 2026-08-24 / production closure | A deployed invoice-reference implementation could justify an unreviewed live backfill. | Run a bounded authenticated Production preview first; because the current preview returned `IDENTITY_REQUIRED`, no backfill is authorized or run. | Canonical Convex Production preview | Protects financial records and preserves idempotent metadata-only scope. | ACTIVE |
 | BFG-DEC-059 | 2026-08-24 / production closure | Recovery evidence could be overstated during UI/business integration. | Carry forward verified manual backup, isolated restore, and Storage restore; retain `RPO: MANUAL / NOT GUARANTEED`, `RTO target: 30 minutes`, and no automatic-backup claim. | Recovery playbook and Production assurance evidence | Keeps P1 truthful while closing unrelated work. | ACTIVE |
+
+## Final yellow / unknown closure — 2026-08-26
+
+| ID | Decision | Status |
+| --- | --- | --- |
+| BFG-DEC-060 | Admin approval starts one private server-side Clerk Backend SDK reconciliation; exact identities and pending invitations are reused, failures are retryable, repeated approval is idempotent, and `appUsers.role/status` gates `/join` with active Customers redirected away. The cover presentation test asserts the intentional transformed, clipped-frame contract rather than the obsolete raw-image containment assumption. | ACTIVE |

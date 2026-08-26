@@ -40,8 +40,11 @@ export async function admitApprovedJoinRequest(
     .withIndex("by_clerk_user_id", (query) => query.eq("clerkUserId", clerkUserId))
     .unique();
   if (existing) {
+    if (request.admittedAppUserId === existing._id && request.invitationStatus === "accepted") return existing;
     await ctx.db.patch(request._id, {
       admittedAppUserId: existing._id,
+      invitationStatus: "accepted",
+      invitationError: undefined,
       admissionError: undefined,
       updatedAt: Date.now(),
     });
@@ -68,6 +71,8 @@ export async function admitApprovedJoinRequest(
   if (!admitted) fail("USER_NOT_FOUND");
   await ctx.db.patch(request._id, {
     admittedAppUserId: appUserId,
+    invitationStatus: "accepted",
+    invitationError: undefined,
     admissionError: undefined,
     updatedAt: Date.now(),
   });
@@ -98,6 +103,7 @@ export const ensureCurrentUser = mutation({
     const ownerClerkUserId = process.env.BFG_OWNER_CLERK_USER_ID;
     if (!ownerClerkUserId) fail("AUTH_CONFIGURATION_MISSING");
     const now = Date.now();
+    const normalizedIdentityEmail = identity.email?.trim().toLowerCase();
     const existing = await findCurrentUser(ctx, identity);
     if (existing) {
       const memberCode =
@@ -118,19 +124,18 @@ export const ensureCurrentUser = mutation({
     let approvedRequest: Doc<"joinRequests"> | null = null;
     let staffInvitation: Doc<"staffInvitations"> | null = null;
     if (identity.subject !== ownerClerkUserId) {
-      const normalizedEmail = identity.email?.trim().toLowerCase();
-      if (!normalizedEmail) fail("ADMISSION_REQUIRED");
+      if (!normalizedIdentityEmail) fail("ADMISSION_REQUIRED");
       staffInvitation = await ctx.db
         .query("staffInvitations")
-        .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
+        .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedIdentityEmail))
         .filter((query) => query.eq(query.field("status"), "pending"))
         .first();
       if (!staffInvitation) {
         approvedRequest = await ctx.db
           .query("joinRequests")
-          .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
+          .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedIdentityEmail))
           .filter((query) => query.eq(query.field("status"), "approved"))
-          .filter((query) => query.eq(query.field("invitationStatus"), "ready"))
+          .filter((query) => query.neq(query.field("invitationStatus"), "not_ready"))
           .first();
         if (!approvedRequest) fail("ADMISSION_REQUIRED");
         if (approvedRequest.applicantClerkUserId && approvedRequest.applicantClerkUserId !== identity.subject) {
@@ -151,7 +156,18 @@ export const ensureCurrentUser = mutation({
       lastSeenAt: now,
     });
     if (approvedRequest) {
-      await ctx.db.patch(approvedRequest._id, { admittedAppUserId: userId, updatedAt: now });
+      await ctx.db.patch(approvedRequest._id, {
+        applicantClerkUserId: identity.subject,
+        applicantEmailSnapshot: normalizedIdentityEmail,
+        admittedAppUserId: userId,
+        invitationStatus: "accepted",
+        invitationError: undefined,
+        admissionError: undefined,
+        updatedAt: now,
+      });
+      await recordAudit(ctx, userId, "join_request.admission_succeeded", "join_request", approvedRequest._id, {
+        appUserId: userId,
+      });
     }
     if (staffInvitation) {
       await ctx.db.patch(staffInvitation._id, {

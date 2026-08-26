@@ -1,5 +1,28 @@
 # BFG SOURCE OF TRUTH
 
+## Final yellow / unknown closure override — 2026-08-26
+
+Admin approval remains entirely inside BFG. `joinRequests.approve` records the
+approval once, then schedules a private server-side Clerk Backend SDK action.
+That action resolves an exact existing Clerk identity or pending invitation
+before creating one new invitation. Delivery is persisted as `pending`,
+`sent`, `accepted`, or `failed`; failed delivery is retryable from BFG Admin.
+Clerk secrets never enter browser code, Convex documents, audit metadata, or
+product error copy.
+
+`appUsers.role` and `appUsers.status` remain the membership authority. An
+active Customer is redirected away from `/join`; pending, approved invitation,
+failed invitation, suspended, and Admin/Owner states never render a new
+Customer application form. An approved request plus a trusted exact Clerk
+email provisions one active Customer on the first authenticated BFG request.
+
+The Ready Stock mutation remains Customer-only and Admin-assisted ordering
+remains the separate existing path. The eight former Cover Presentation
+Playwright failures were stale raw-bounding-box expectations: transformed
+artwork is intentionally clipped by the canonical cover frame. The regression
+now asserts `contain`, clipped presentation, transformed metadata, and no
+viewport overflow without weakening upload/media security.
+
 ## Operational reconciliation override — 2026-08-26
 
 The current maintenance correction preserves the canonical commerce model.

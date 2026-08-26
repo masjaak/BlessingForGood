@@ -2,6 +2,14 @@
 
 ## Operational reconciliation — 2026-08-26
 
+- Join approval is one BFG Admin mutation followed by a private, server-side
+  Clerk Backend SDK reconciliation action. Exact existing identities and
+  pending invitations are reused; a new invitation is created at most once
+  for the approved normalized email, and failure is a safe retryable state.
+- `appUsers.role/status` is the sole membership authority. `/join` derives its
+  state from the same resolver as the Customer shell; active and suspended
+  Customers never see a new Join form, and Admin/Owner never receives Customer
+  mutation authority.
 - Customer checkout authority is exact, not visual: only an authenticated
   active Customer may call `orders:createReadyStock` or the Customer preorder
   mutation. Admin/Owner browse access does not grant Customer mutation rights;
@@ -117,6 +125,10 @@ Phase 06.1 records the following approved implementation decisions:
   contact/help CTA. It is superseded and closed by the Phase 06.7 canonical
   order/reservation policy below.
 - Cover metadata remains a reference; durable upload/storage is deferred.
+
+The historical Phase 06.2 admission wording below is superseded by the
+automatic invitation and activation decision above; it remains retained as
+historical source evidence.
 
 Phase 06.2 records the following approved admission decisions:
 

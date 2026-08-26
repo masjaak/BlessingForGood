@@ -13,16 +13,19 @@ requires a valid scoped catalog session. `/sign-up` only renders when Clerk
 supplies a valid invitation ticket; a public visit redirects home and cannot
 create an arbitrary `appUsers` row.
 
-After authentication, a non-owner identity must match an approved,
-`invitationStatus=ready` Join request by normalized email before
-`users.ensureCurrentUser` provisions the customer. Existing active users and
-the server-configured owner remain idempotent. Google authentication, if
-enabled in Clerk, does not bypass this admission check.
+After authentication, a non-owner identity must match an approved Join request
+with a non-`not_ready` invitation lifecycle state by normalized trusted email
+before `users.ensureCurrentUser` provisions the customer. Existing active users
+and the server-configured owner remain idempotent. Google authentication, if
+enabled in Clerk, does not bypass this admission check. An active Customer is
+redirected away from `/join`; Admin/Owner is never treated as Customer.
 
 The client distinguishes Clerk loading, signed out, Convex loading,
 provisioning, authenticated, suspended, admission required, permission denied,
 configuration missing, and network failure. Protected queries do not mount
 before Convex auth and app-user state are ready.
 
-[DEFERRED TO STAGING] Real invitation acceptance and authenticated browser
-evidence remain pending stable staging QA.
+The Clerk Backend SDK invitation action is server-only and receives
+`CLERK_SECRET_KEY` through the Production Convex deploy command. Invitation
+failure persists safe retry state; no Clerk URL, token, or provider error is
+returned to the browser.

@@ -16,7 +16,7 @@ The pre-account admission path is separate from identity ownership:
 public visitor
     ↓ validated anonymous submission
 joinRequests
-    ↓ approved + manual Clerk handoff
+    ↓ approved + server-side Clerk invitation reconciliation
 Clerk invitation → appUsers
 ```
 

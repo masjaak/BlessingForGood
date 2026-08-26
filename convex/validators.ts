@@ -42,7 +42,14 @@ export const joinRequestStatusValidator = v.union(
   v.literal("approved"),
   v.literal("rejected"),
 );
-export const joinRequestInvitationStatusValidator = v.union(v.literal("not_ready"), v.literal("ready"));
+export const joinRequestInvitationStatusValidator = v.union(
+  v.literal("not_ready"),
+  v.literal("ready"),
+  v.literal("pending"),
+  v.literal("sent"),
+  v.literal("accepted"),
+  v.literal("failed"),
+);
 export const joinRequestBookInterestValidator = v.union(
   v.literal("Children & Picture Books"),
   v.literal("Middle Grade"),

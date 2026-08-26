@@ -1,5 +1,13 @@
 # BFG Secrets Management
 
+## Current Production wiring — 2026-08-26
+
+`CLERK_SECRET_KEY` is stored in the server-only Vercel Production environment
+and synchronized into Convex Production by the canonical `vercel.json`
+build command before `convex deploy`. Values are never printed, committed,
+persisted in BFG records, or exposed to the browser. The invitation action
+fails closed when the server secret is unavailable.
+
 ## Rules
 
 - Keep `.env.local`, `.vercel/`, deploy keys, cookies, and auth storage out of
@@ -15,8 +23,8 @@
 ## Production
 
 Production Clerk, Convex auth, Vercel deploy keys, and business secrets remain
-absent/untouched for this phase. A missing required secret must fail closed,
-not trigger a fallback or guessed configuration.
+server-only. A missing required secret must fail closed, not trigger a
+fallback or guessed configuration.
 
 ## Cleanup classification
 

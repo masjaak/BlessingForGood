@@ -3,11 +3,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import JoinPage from "@/app/join/page";
 import { useProduct } from "@/domain/prototype/store";
 
 vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn() }));
 vi.mock("convex/react", () => ({ useMutation: vi.fn(), useQuery: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
 vi.mock("@/components/brand", () => ({
   BrandMascot: ({ className = "" }: { className?: string }) => <span className={className} aria-hidden="true" />,
 }));
@@ -15,6 +17,7 @@ vi.mock("@/components/site-shell", () => ({ SiteShell: ({ children }: { children
 vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 
 beforeEach(() => {
+  vi.mocked(useRouter).mockReturnValue({ replace: vi.fn() } as never);
   vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
   vi.mocked(useProduct).mockReturnValue({
     dataSource: "convex",
@@ -39,7 +42,56 @@ describe("Join Blessfriends admission entry", () => {
     render(<JoinPage />);
 
     expect(screen.getByRole("heading", { name: "Permintaanmu sedang ditinjau." })).toBeTruthy();
-    expect(screen.getByText("Tim BFG akan mengabari setelah proses peninjauan selesai.")).toBeTruthy();
+    expect(screen.getByText("Tim BFG akan memberi kabar setelah proses review selesai.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
+  });
+
+  it("redirects an active Customer away from the Join form", () => {
+    const replace = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({ replace } as never);
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "authenticated",
+      sessionRole: "customer",
+      retryAuth: vi.fn(),
+    } as never);
+
+    render(<JoinPage />);
+
+    expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
+    expect(replace).toHaveBeenCalledWith("/account");
+  });
+
+  it("blocks a suspended Customer without offering a new application", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "suspended",
+      sessionRole: "customer",
+      retryAuth: vi.fn(),
+    } as never);
+
+    render(<JoinPage />);
+
+    expect(screen.getByRole("heading", { name: "Akunmu sedang tidak aktif." })).toBeTruthy();
+    expect(screen.getByText("Hubungi BFG untuk bantuan.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
+  });
+
+  it("shows approved invitation lifecycle states without rendering the form", () => {
+    vi.mocked(useQuery).mockReturnValue([
+      { status: "approved", admissionStatus: "invitation_pending", invitationStatus: "sent" },
+    ] as never);
+
+    const { unmount } = render(<JoinPage />);
+    expect(screen.getByRole("heading", { name: "Undangan telah dikirim." })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
+    unmount();
+
+    vi.mocked(useQuery).mockReturnValue([
+      { status: "approved", admissionStatus: "invitation_failed", invitationStatus: "failed" },
+    ] as never);
+    render(<JoinPage />);
+    expect(screen.getByRole("heading", { name: "Undangan belum berhasil dikirim." })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
   });
 

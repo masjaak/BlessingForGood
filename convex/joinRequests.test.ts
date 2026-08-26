@@ -109,19 +109,13 @@ describe("BFG join request workflow", () => {
     );
 
     await expect(
-      t.mutation(
-        api.joinRequests.submit,
-        requestInput({ email: "NEW@example.com", contact: "+62 811 2222 3333" }),
-      ),
+      t.mutation(api.joinRequests.submit, requestInput({ email: "NEW@example.com", contact: "+62 811 2222 3333" })),
     ).rejects.toThrow("JOIN_REQUEST_DUPLICATE");
 
     await admin.mutation(api.joinRequests.startReview, { joinRequestId: submitted.joinRequestId });
     await admin.mutation(api.joinRequests.approve, { joinRequestId: submitted.joinRequestId });
     await expect(
-      t.mutation(
-        api.joinRequests.submit,
-        requestInput({ email: "new@example.com", contact: "+62 811 2222 3334" }),
-      ),
+      t.mutation(api.joinRequests.submit, requestInput({ email: "new@example.com", contact: "+62 811 2222 3334" })),
     ).rejects.toThrow("JOIN_REQUEST_ALREADY_APPROVED");
   });
 
@@ -171,6 +165,18 @@ describe("BFG join request workflow", () => {
     await expect(applicant.query(api.joinRequests.mine, {})).resolves.toMatchObject([
       { status: "approved", admissionStatus: "active" },
     ]);
+  });
+
+  it("does not bind an authenticated admission to a client-supplied email", async () => {
+    const t = testConvex();
+    const applicant = t.withIdentity({ subject: "trusted-email-applicant", email: "trusted@example.com" });
+
+    await expect(
+      applicant.mutation(
+        api.joinRequests.submit,
+        requestInput({ email: "different@example.com", contact: "+62 811-2222-3334" }),
+      ),
+    ).rejects.toThrow("ADMISSION_REQUIRED");
   });
 
   it("keeps pending attention scoped to reviewable requests", async () => {
@@ -230,12 +236,15 @@ describe("BFG join request workflow", () => {
     await admin.mutation(api.joinRequests.startReview, { joinRequestId: resubmitted.joinRequestId });
     const approved = await admin.mutation(api.joinRequests.approve, {
       joinRequestId: resubmitted.joinRequestId,
-      reviewNote: "Ready for the manual Clerk invitation handoff.",
+      reviewNote: "Ready for the automatic Clerk invitation handoff.",
     });
-    expect(approved).toMatchObject({ status: "approved", invitationStatus: "ready" });
+    expect(approved).toMatchObject({ status: "approved", invitationStatus: "pending" });
     await expect(
       admin.mutation(api.joinRequests.approve, { joinRequestId: resubmitted.joinRequestId }),
-    ).rejects.toThrow("JOIN_REQUEST_INVALID_STATE");
+    ).resolves.toMatchObject({
+      status: "approved",
+      invitationStatus: "pending",
+    });
     const actions = await t.run(async (ctx) =>
       (await ctx.db.query("auditEvents").collect()).map((event) => event.action),
     );

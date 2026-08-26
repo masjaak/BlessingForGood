@@ -2,6 +2,16 @@
 
 Status: `BFG_PHASE_07_1_FINAL_CLOSURE_LOCAL_PRODUCTION_ACCEPTANCE_PENDING`
 
+## Final yellow / unknown closure override — 2026-08-26
+
+The current admission implementation supersedes the earlier authenticated
+acceptance labels below: Admin approval automatically starts the private
+server-side Clerk invitation reconciliation, and `/join` uses the canonical
+`appUsers.role/status` resolver. Active Customers redirect away from `/join`;
+pending, approved/invitation-pending, failed, and suspended states never show
+the new-request form. The remaining Production labels are historical evidence
+until a legitimate authenticated Customer session is supplied.
+
 `COMPLETE` means the route has a natural entry, usable current UI, canonical
 data/action wiring, and explicit state handling. Authenticated populated visual
 acceptance remains separately gated by the intentional real-user acceptance;
@@ -56,7 +66,8 @@ admission journey:
 The same signed-in Clerk identity is captured server-side on submission when
 available. Approval reuses or creates exactly one active `appUser` for that
 subject; it never auto-admits from login and never creates a duplicate Clerk
-identity. New identities remain on the existing manual Clerk invitation path.
+identity. New identities receive a server-side Clerk invitation through BFG;
+Clerk Dashboard is not a normal operational step.
 
 Customer visual convergence is implemented through one shared header/logo
 primitive. Local rendered smoke passed at 375, 390, 430, and 1440px; the
