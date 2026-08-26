@@ -13,7 +13,9 @@ export async function uploadBfgFile(
   purpose: BfgUploadPurpose,
   getToken: ConvexToken,
 ): Promise<Id<"_storage">> {
-  const siteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_CONVEX_SITE_URL ||
+    process.env.NEXT_PUBLIC_CONVEX_URL?.replace(/\.convex\.cloud$/, ".convex.site");
   if (!siteUrl) throw new Error("UPLOAD_REJECTED");
   const token = await getToken({ template: "convex" });
   if (!token) throw new Error("UPLOAD_REJECTED");
