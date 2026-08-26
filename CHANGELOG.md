@@ -27,9 +27,14 @@ source: conversation
 
 ### QA
 
-- Targeted Convex and component regression suites pass before the full release
-  gate. Final counts and deployment evidence are recorded after the complete
-  local and Production verification pass.
+- Full Vitest: `59 files / 306 tests`; TypeScript, ESLint, Format, Build,
+  Convex Development check, `git diff --check`, and `npm audit --omit=dev`
+  (`0` vulnerabilities) pass.
+- Convex Production `clean-eel-522` and Vercel Production
+  `dpl_BW8uYMyoKLWyPqXM7chQv2JwMtKK` are ready. Public HTTP smoke returned
+  `200`; Playwright passed `276/284`, with eight known preserved Cover/Gallery
+  framing assertion failures. New Button geometry passed `8/8` supported
+  customer viewports. No fake Production identity or business data was used.
 
 ## [client-uat-round-3] — 2026-08-25
 

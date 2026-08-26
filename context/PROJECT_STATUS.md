@@ -3,8 +3,8 @@
 ## Operational reconciliation — 2026-08-26
 
 The requested Batch PO, Secret Catalog, Ready Stock, error-safety, button
-geometry, and destructive-action corrections are implemented locally on the
-canonical `main` worktree. The implementation preserves the existing Clerk
+geometry, and destructive-action corrections are implemented, committed, and
+deployed from the canonical `main` worktree. The implementation preserves the existing Clerk
 identity boundary, Customer-only Ready Stock mutation, Admin-assisted order
 path, canonical reservation/order/invoice/Activity projections, private
 catalog access, and Batch state machine.
@@ -13,9 +13,15 @@ Added/updated coverage includes active Customer Ready Stock ordering, Admin
 checkout role guidance, guarded Catalog reopen, Catalog-to-Batch eligibility
 summary, non-empty-roster PO lock, safe Batch errors, authorized Secret Book
 Detail content projection, and server-side unused-versus-referenced deletion
-guards. Release status remains pending until the full local gates, commit/push,
-canonical Convex/Vercel Production deployment, and available smoke checks are
-completed. No fake identity or Production business record was created.
+guards. Full Vitest passed `59 files / 306 tests`; TypeScript, ESLint, Format,
+Build, Convex Development check, `npm audit --omit=dev` (`0`), and
+`git diff --check` passed. Convex Production `clean-eel-522` and Vercel
+Production `dpl_BW8uYMyoKLWyPqXM7chQv2JwMtKK` are deployed and ready; public
+HTTP smoke returned `200`. Public Playwright passed `276/284`; the eight
+remaining failures are the pre-existing preserved Cover/Gallery framing
+assertion, while the new Button geometry matrix passed `8/8`. No fake identity
+or Production business record was created. A legitimate authenticated
+Production Customer session remains the only account-gated UAT step.
 
 ## Client UAT Round 3 — 2026-08-25
 

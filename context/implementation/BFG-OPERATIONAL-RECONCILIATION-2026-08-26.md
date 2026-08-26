@@ -1,7 +1,7 @@
 # BFG Operational Reconciliation — 2026-08-26
 
-Status: IMPLEMENTED LOCALLY; release gates and deployment remain evidence
-gates for this change.
+Status: DEPLOYED; authenticated Production Customer UAT remains account-gated
+when no legitimate Production Customer session is available.
 
 ## Locked product boundaries
 
@@ -49,3 +49,20 @@ gates for this change.
   covered by component tests.
 
 No Production business data or fake identity was created for this work.
+
+## Release evidence
+
+- Commit `5904bbb0ffd1d31792a6f1d4f1f84eb328fcae85` is on `main` and
+  `origin/main`.
+- Full Vitest: 59 files, 306 tests passed. TypeScript, ESLint, format, Next
+  production build, Convex Development check, `npm audit --omit=dev` (0
+  vulnerabilities), and `git diff --check` passed.
+- Convex Production deployed to `clean-eel-522`; Vercel Production deployment
+  `dpl_BW8uYMyoKLWyPqXM7chQv2JwMtKK` is `READY` at
+  `https://www.blessingforgood.com`.
+- Public Playwright regression: 276/284 passed. The 8 failures are the known
+  preserved `coverPresentation` geometry assertion at
+  `tests/e2e/phase071-surface.spec.ts:130`; the new text-button geometry test
+  passed 8/8 at 375, 390, 430, 768, 834, 1024, 1280, and 1440.
+- Production HTTP smoke returned `200`. No authenticated Production Customer
+  account or business record was fabricated.
