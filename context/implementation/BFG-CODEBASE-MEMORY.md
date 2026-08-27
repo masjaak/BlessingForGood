@@ -18,6 +18,33 @@ Post-diff map refreshed for the removed-member Admin projection cleanup on
 - No schema, Clerk, membership mutation, historical data, or customer
   business projection changed.
 
+## Post-diff memory — invitation missing-requirements submit — 2026-08-28
+
+- `src/components/clerk-invitation-acceptance.tsx` remains the single BFG
+  presentation/orchestration boundary for invitation ticket acceptance. The
+  existing Clerk Future `signUp` proxy is refreshed through `signUpRef` and is
+  re-read after `password`/`update`; no second signup resource or auth system
+  was introduced.
+- The submit path now separates Clerk update errors from post-update
+  finalization errors. Known Clerk field codes and fields map to safe local
+  messages beside the affected control; unknown update failures remain a
+  retryable technical form error. `submitting` always resets in `finally`, so
+  the same valid ticket can be retried.
+- The form renders only Clerk-reported requirements. After a successful
+  update it re-reads `status`, `missingFields`, `unverifiedFields`, Protect,
+  and `createdSessionId` before choosing another requirement, verification,
+  or finalization. Existing finalize → Clerk session → Convex → canonical
+  `appUsers` reconciliation is unchanged.
+- Safe `bfg_invitation_stage` diagnostics carry correlation ID, submitted
+  field names, stage completion, state arrays, and Clerk code/field; they do
+  not carry field values. The password control is `type=password` with
+  `autocomplete=new-password` and regression coverage asserts no password
+  value appears in diagnostics.
+- Focused invitation coverage is `16/16`; full Vitest is `69 files / 377
+  tests`; TypeScript, ESLint, format, Convex Development check, build, audit,
+  and diff checks pass. Local Playwright remains unavailable without a Clerk
+  publishable key; legitimate Production invitee UAT is still a release gate.
+
 ## Major Domain Modules
 
 | Domain | Convex modules/tables | Customer/Admin consumers |

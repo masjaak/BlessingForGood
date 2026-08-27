@@ -13,6 +13,7 @@ const ACCOUNT_REDIRECT = "/account";
 const TICKET_ERROR = "Undangan tidak valid atau sudah kedaluwarsa.";
 const ACTIVATION_ERROR =
   "Aktivasi belum selesai. Coba lagi menggunakan undangan terbaru atau masuk dengan akun yang menerima undangan.";
+const TECHNICAL_ERROR = "Data belum dapat disimpan. Periksa koneksi lalu coba lagi.";
 const SECURITY_CHECK_ERROR = "Lengkapi pemeriksaan keamanan Clerk untuk melanjutkan.";
 const INVITATION_TIMEOUT_MS = 15_000;
 const SUPPORTED_INVITATION_FIELDS = new Set([
@@ -27,12 +28,122 @@ const SUPPORTED_INVITATION_FIELDS = new Set([
 ]);
 
 type AcceptancePhase = "loading" | "form" | "verification" | "finishing" | "error";
-type SafeTraceValue = boolean | number | string | null;
+type SafeTraceValue = boolean | number | string | null | readonly string[];
+type InvitationField =
+  | "firstName"
+  | "lastName"
+  | "emailAddress"
+  | "emailOrPhone"
+  | "phoneNumber"
+  | "username"
+  | "password"
+  | "legalAccepted";
 type VerificationMethod = {
   field: "email_address" | "phone_number";
   mode: "code" | "link";
   key: string;
 };
+
+type ClerkErrorLike = {
+  code?: unknown;
+  longMessage?: unknown;
+  meta?: { paramName?: unknown; param_name?: unknown };
+  errors?: readonly ClerkErrorLike[];
+};
+
+function getClerkErrorDetails(error: unknown) {
+  const root = error && typeof error === "object" ? (error as ClerkErrorLike) : null;
+  const nested = root?.errors?.[0] || root;
+  const code = typeof nested?.code === "string" ? nested.code : null;
+  const paramName =
+    typeof nested?.meta?.paramName === "string"
+      ? nested.meta.paramName
+      : typeof nested?.meta?.param_name === "string"
+        ? nested.meta.param_name
+        : null;
+  return { code, paramName };
+}
+
+function mapClerkField(value: string | null): InvitationField | null {
+  switch (value?.replace(/[- ]/g, "_")) {
+    case "first_name":
+      return "firstName";
+    case "last_name":
+      return "lastName";
+    case "email_address":
+      return "emailAddress";
+    case "email_address_or_phone_number":
+    case "identifier":
+      return "emailOrPhone";
+    case "phone_number":
+      return "phoneNumber";
+    case "username":
+      return "username";
+    case "password":
+      return "password";
+    case "legal_accepted":
+      return "legalAccepted";
+    default:
+      return null;
+  }
+}
+
+function getClerkErrorField(error: unknown, missingFields: readonly string[] = []) {
+  const { code, paramName } = getClerkErrorDetails(error);
+  const explicitField = mapClerkField(paramName);
+  if (explicitField) return explicitField;
+
+  if (code?.includes("password")) return "password";
+  if (code?.includes("username")) return "username";
+  if (code?.includes("email")) return "emailAddress";
+  if (code?.includes("phone")) return "phoneNumber";
+  if (code?.includes("identifier")) {
+    if (missingFields.includes("username")) return "username";
+    if (missingFields.includes("email_address")) return "emailAddress";
+    if (missingFields.includes("email_address_or_phone_number")) return "emailOrPhone";
+    if (missingFields.includes("phone_number")) return "phoneNumber";
+  }
+  return null;
+}
+
+function getClerkFieldErrorMessage(error: unknown, field: InvitationField | null) {
+  if (!field) return null;
+  const { code } = getClerkErrorDetails(error);
+  if (
+    field === "username" &&
+    ["form_identifier_exists", "form_identifier_exists__username", "username_exists", "username_exists_code"].includes(
+      code || "",
+    )
+  ) {
+    return "Username ini sudah digunakan. Pilih username lain.";
+  }
+  if (
+    field === "password" &&
+    [
+      "form_password_length_too_short",
+      "form_password_not_strong_enough",
+      "form_password_pwned",
+      "form_password_compromised",
+      "form_password_validation_failed",
+      "form_password_size_in_bytes_exceeded",
+    ].includes(code || "")
+  ) {
+    return "Password belum memenuhi persyaratan keamanan Clerk.";
+  }
+  if (
+    field === "username" &&
+    ["form_username_invalid_character", "form_username_needs_non_number_char"].includes(code || "")
+  ) {
+    return "Username berisi karakter yang tidak didukung Clerk.";
+  }
+  if (field === "username" && code === "form_username_invalid_length") {
+    return "Panjang username belum sesuai persyaratan Clerk.";
+  }
+  if (field === "emailAddress" && code === "form_email_address_blocked") {
+    return "Email ini tidak dapat digunakan untuk membuat akun.";
+  }
+  return "Periksa nilai ini lalu coba lagi.";
+}
 
 function getVerificationMethod(signUp: {
   unverifiedFields?: readonly string[];
@@ -64,7 +175,7 @@ function createInvitationTraceId() {
 }
 
 function logInvitationStage(traceId: string, stage: string, fields: Record<string, SafeTraceValue> = {}) {
-  console.info("bfg_invitation_stage", { traceId, stage, ...fields });
+  console.info("bfg_invitation_stage", { correlationId: traceId, traceId, stage, ...fields });
 }
 
 function withInvitationTimeout<T>(operation: Promise<T>) {
@@ -101,6 +212,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationSentKey, setVerificationSentKey] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<InvitationField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const startedTicket = useRef<string | null>(null);
   const traceId = useRef(createInvitationTraceId());
@@ -153,6 +265,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     if (!currentSignUp || finalizeStarted.current) return;
     finalizeStarted.current = true;
     logInvitationStage(traceId.current, "FINALIZE_START", {
+      finalizeStarted: true,
       status: currentSignUp.status,
       createdSessionIdPresent: Boolean(currentSignUp.createdSessionId),
     });
@@ -161,15 +274,28 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
       const { error: finalizeError } = await withInvitationTimeout(currentSignUp.finalize());
       logInvitationStage(traceId.current, "FINALIZE_DONE", {
         success: !finalizeError,
+        finalizeCompleted: !finalizeError,
         status: signUpRef.current?.status || currentSignUp.status,
+        clerkErrorCode: getClerkErrorDetails(finalizeError).code,
+        clerkErrorField: getClerkErrorField(finalizeError),
       });
       if (finalizeError) {
         setError(ACTIVATION_ERROR);
         setPhase("error");
       }
     } catch (finalizeError) {
-      logInvitationStage(traceId.current, "FINALIZE_DONE", { success: false });
-      logInvitationStage(traceId.current, "ERROR", { stage: "finalize", reason: "request_failed" });
+      logInvitationStage(traceId.current, "FINALIZE_DONE", {
+        success: false,
+        finalizeCompleted: false,
+        clerkErrorCode: getClerkErrorDetails(finalizeError).code,
+        clerkErrorField: getClerkErrorField(finalizeError),
+      });
+      logInvitationStage(traceId.current, "ERROR", {
+        stage: "finalize",
+        reason: "request_failed",
+        clerkErrorCode: getClerkErrorDetails(finalizeError).code,
+        clerkErrorField: getClerkErrorField(finalizeError),
+      });
       throw finalizeError;
     }
   }, []);
@@ -181,8 +307,8 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     const unverifiedFields = currentSignUp.unverifiedFields || [];
     logInvitationStage(traceId.current, "SIGNUP_STATE", {
       status: currentSignUp.status,
-      missingFieldCount: missingFields.length,
-      unverifiedFieldCount: unverifiedFields.length,
+      missingFields,
+      unverifiedFields,
       createdSessionIdPresent: Boolean(currentSignUp.createdSessionId),
       existingSessionPresent: Boolean(currentSignUp.existingSession),
     });
@@ -287,8 +413,8 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
         if (!updatedSignUp) return;
         logInvitationStage(traceId.current, "SIGNUP_TICKET_RESULT", {
           status: updatedSignUp.status,
-          missingFieldCount: updatedSignUp.missingFields?.length || 0,
-          unverifiedFieldCount: updatedSignUp.unverifiedFields?.length || 0,
+          missingFields: updatedSignUp.missingFields || [],
+          unverifiedFields: updatedSignUp.unverifiedFields || [],
           createdSessionIdPresent: Boolean(updatedSignUp.createdSessionId),
           existingSessionPresent: Boolean(updatedSignUp.existingSession),
         });
@@ -385,10 +511,12 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
     const currentSignUp = signUpRef.current;
     if (!currentSignUp) return;
     setSubmitting(true);
     setError(null);
+    setFieldErrors({});
     try {
       const missingFields = currentSignUp.missingFields || [];
       const params: {
@@ -413,31 +541,99 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
       logInvitationStage(traceId.current, "SIGNUP_UPDATE_START", {
         method: missingFields.includes("password") ? "password" : "update",
-        fieldCount: missingFields.length,
+        submitStarted: true,
+        submittedFieldNames: missingFields,
+        updateStarted: true,
+        statusBefore: currentSignUp.status,
       });
-      const { error: updateError } = await withInvitationTimeout(
-        missingFields.includes("password")
-          ? currentSignUp.password({ ...params, password })
-          : currentSignUp.update(params),
-      );
-      const updatedSignUp = signUpRef.current;
-      logInvitationStage(traceId.current, "SIGNUP_UPDATE_DONE", {
-        success: !updateError,
-        status: updatedSignUp?.status || currentSignUp.status,
-        missingFieldCount: updatedSignUp?.missingFields?.length || 0,
-        unverifiedFieldCount: updatedSignUp?.unverifiedFields?.length || 0,
-      });
-      if (updateError) {
-        logInvitationStage(traceId.current, "ERROR", { stage: "signup_update", reason: "provider_rejected" });
-        setError(ACTIVATION_ERROR);
-        setPhase("error");
+      let updateResult: { error: unknown };
+      try {
+        updateResult = await withInvitationTimeout(
+          missingFields.includes("password")
+            ? currentSignUp.password({ ...params, password })
+            : currentSignUp.update(params),
+        );
+      } catch (updateFailure) {
+        const updateFailureDetails = getClerkErrorDetails(updateFailure);
+        logInvitationStage(traceId.current, "SIGNUP_UPDATE_DONE", {
+          success: false,
+          updateFinished: false,
+          status: currentSignUp.status,
+          statusAfter: currentSignUp.status,
+          missingFields: currentSignUp.missingFields || [],
+          unverifiedFields: currentSignUp.unverifiedFields || [],
+          createdSessionIdPresent: Boolean(currentSignUp.createdSessionId),
+          clerkErrorCode: updateFailureDetails.code,
+          clerkErrorField: getClerkErrorField(updateFailure, missingFields),
+        });
+        logInvitationStage(traceId.current, "ERROR", {
+          stage: "signup_update",
+          reason: "request_failed",
+          clerkErrorCode: updateFailureDetails.code,
+          clerkErrorField: getClerkErrorField(updateFailure, missingFields),
+        });
+        const field = getClerkErrorField(updateFailure, missingFields);
+        const message = getClerkFieldErrorMessage(updateFailure, field);
+        if (field && message) setFieldErrors({ [field]: message });
+        else setError(TECHNICAL_ERROR);
+        setPhase("form");
         return;
       }
-      await advanceFromSignUpState();
-    } catch {
-      logInvitationStage(traceId.current, "ERROR", { stage: "signup_update", reason: "request_failed" });
-      setError(ACTIVATION_ERROR);
-      setPhase("error");
+      const { error: updateError } = updateResult;
+      const updatedSignUp = signUpRef.current;
+      const updateErrorDetails = getClerkErrorDetails(updateError);
+      logInvitationStage(traceId.current, "SIGNUP_UPDATE_DONE", {
+        success: !updateError,
+        updateFinished: true,
+        status: updatedSignUp?.status || currentSignUp.status,
+        statusAfter: updatedSignUp?.status || currentSignUp.status,
+        missingFields: updatedSignUp?.missingFields || currentSignUp.missingFields || [],
+        unverifiedFields: updatedSignUp?.unverifiedFields || currentSignUp.unverifiedFields || [],
+        createdSessionIdPresent: Boolean(updatedSignUp?.createdSessionId),
+        clerkErrorCode: updateErrorDetails.code,
+        clerkErrorField: getClerkErrorField(updateError, missingFields),
+      });
+      if (updateError) {
+        const field = getClerkErrorField(updateError, missingFields);
+        logInvitationStage(traceId.current, "ERROR", {
+          stage: "signup_update",
+          reason: "provider_rejected",
+          clerkErrorCode: updateErrorDetails.code,
+          clerkErrorField: field,
+        });
+        const message = getClerkFieldErrorMessage(updateError, field);
+        if (field && message) {
+          setFieldErrors({ [field]: message });
+          setPhase("form");
+        } else {
+          setError(TECHNICAL_ERROR);
+          setPhase("form");
+        }
+        return;
+      }
+      try {
+        await advanceFromSignUpState();
+      } catch (progressFailure) {
+        const progressFailureDetails = getClerkErrorDetails(progressFailure);
+        logInvitationStage(traceId.current, "ERROR", {
+          stage: "post_signup_update",
+          reason: "request_failed",
+          clerkErrorCode: progressFailureDetails.code,
+          clerkErrorField: getClerkErrorField(progressFailure),
+        });
+        setError(ACTIVATION_ERROR);
+        setPhase("error");
+      }
+    } catch (submitFailure) {
+      const submitFailureDetails = getClerkErrorDetails(submitFailure);
+      logInvitationStage(traceId.current, "ERROR", {
+        stage: "signup_submit",
+        reason: "request_failed",
+        clerkErrorCode: submitFailureDetails.code,
+        clerkErrorField: getClerkErrorField(submitFailure),
+      });
+      setError(TECHNICAL_ERROR);
+      setPhase("form");
     } finally {
       setSubmitting(false);
     }
@@ -577,6 +773,14 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const verificationMethod = liveSignUp ? getVerificationMethod(liveSignUp) : null;
   const verificationSent = verificationMethod?.key === verificationSentKey;
   const usePhoneVerification = verificationMethod?.field === "phone_number";
+  const renderFieldError = (field: InvitationField) => {
+    const message = fieldErrors[field];
+    return message ? (
+      <p id={`invitation-${field}-error`} className="error-text" role="alert">
+        {message}
+      </p>
+    ) : null;
+  };
 
   if (phase === "verification") {
     return (
@@ -654,112 +858,151 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
             <p className="lede">Lengkapi akunmu untuk mengaktifkan akses Blessfriend.</p>
           </div>
           {liveMissingFields.includes("first_name") ? (
-            <label className="field" htmlFor="invitation-first-name">
-              <span className="field-label">Nama depan</span>
-              <input
-                id="invitation-first-name"
-                className="input"
-                value={firstName}
-                onChange={(event) => setFirstName(event.target.value)}
-                autoComplete="given-name"
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-first-name">
+                <span className="field-label">Nama depan</span>
+                <input
+                  id="invitation-first-name"
+                  className="input"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  autoComplete="given-name"
+                  aria-invalid={Boolean(fieldErrors.firstName)}
+                  aria-describedby={fieldErrors.firstName ? "invitation-firstName-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("firstName")}
+            </>
           ) : null}
           {liveMissingFields.includes("last_name") ? (
-            <label className="field" htmlFor="invitation-last-name">
-              <span className="field-label">Nama belakang</span>
-              <input
-                id="invitation-last-name"
-                className="input"
-                value={lastName}
-                onChange={(event) => setLastName(event.target.value)}
-                autoComplete="family-name"
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-last-name">
+                <span className="field-label">Nama belakang</span>
+                <input
+                  id="invitation-last-name"
+                  className="input"
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  autoComplete="family-name"
+                  aria-invalid={Boolean(fieldErrors.lastName)}
+                  aria-describedby={fieldErrors.lastName ? "invitation-lastName-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("lastName")}
+            </>
           ) : null}
           {liveMissingFields.includes("email_address") ? (
-            <label className="field" htmlFor="invitation-email">
-              <span className="field-label">Email</span>
-              <input
-                id="invitation-email"
-                className="input"
-                type="email"
-                value={emailAddress}
-                onChange={(event) => setEmailAddress(event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-email">
+                <span className="field-label">Email</span>
+                <input
+                  id="invitation-email"
+                  className="input"
+                  type="email"
+                  value={emailAddress}
+                  onChange={(event) => setEmailAddress(event.target.value)}
+                  autoComplete="email"
+                  aria-invalid={Boolean(fieldErrors.emailAddress)}
+                  aria-describedby={fieldErrors.emailAddress ? "invitation-emailAddress-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("emailAddress")}
+            </>
           ) : null}
           {liveMissingFields.includes("email_address_or_phone_number") ? (
-            <label className="field" htmlFor="invitation-email-or-phone">
-              <span className="field-label">Email atau nomor telepon</span>
-              <input
-                id="invitation-email-or-phone"
-                className="input"
-                value={emailOrPhone}
-                onChange={(event) => setEmailOrPhone(event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-email-or-phone">
+                <span className="field-label">Email atau nomor telepon</span>
+                <input
+                  id="invitation-email-or-phone"
+                  className="input"
+                  value={emailOrPhone}
+                  onChange={(event) => setEmailOrPhone(event.target.value)}
+                  autoComplete="email"
+                  aria-invalid={Boolean(fieldErrors.emailOrPhone)}
+                  aria-describedby={fieldErrors.emailOrPhone ? "invitation-emailOrPhone-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("emailOrPhone")}
+            </>
           ) : null}
           {liveMissingFields.includes("phone_number") ? (
-            <label className="field" htmlFor="invitation-phone">
-              <span className="field-label">Nomor telepon</span>
-              <input
-                id="invitation-phone"
-                className="input"
-                type="tel"
-                value={phoneNumber}
-                onChange={(event) => setPhoneNumber(event.target.value)}
-                autoComplete="tel"
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-phone">
+                <span className="field-label">Nomor telepon</span>
+                <input
+                  id="invitation-phone"
+                  className="input"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(event) => setPhoneNumber(event.target.value)}
+                  autoComplete="tel"
+                  aria-invalid={Boolean(fieldErrors.phoneNumber)}
+                  aria-describedby={fieldErrors.phoneNumber ? "invitation-phoneNumber-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("phoneNumber")}
+            </>
           ) : null}
           {liveMissingFields.includes("username") ? (
-            <label className="field" htmlFor="invitation-username">
-              <span className="field-label">Username</span>
-              <input
-                id="invitation-username"
-                className="input"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                autoComplete="username"
-                minLength={4}
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-username">
+                <span className="field-label">Username</span>
+                <input
+                  id="invitation-username"
+                  className="input"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  autoComplete="username"
+                  aria-invalid={Boolean(fieldErrors.username)}
+                  aria-describedby={fieldErrors.username ? "invitation-username-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("username")}
+            </>
           ) : null}
           {liveMissingFields.includes("password") ? (
-            <label className="field" htmlFor="invitation-password">
-              <span className="field-label">Password</span>
-              <input
-                id="invitation-password"
-                className="input"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-password">
+                <span className="field-label">Password</span>
+                <input
+                  id="invitation-password"
+                  className="input"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? "invitation-password-error" : undefined}
+                  required
+                />
+              </label>
+              {renderFieldError("password")}
+            </>
           ) : null}
           {liveMissingFields.includes("legal_accepted") ? (
-            <label className="field" htmlFor="invitation-legal-accepted">
-              <span className="field-label">Persetujuan</span>
-              <input
-                id="invitation-legal-accepted"
-                type="checkbox"
-                checked={legalAccepted}
-                onChange={(event) => setLegalAccepted(event.target.checked)}
-                required
-              />
-              <span>Saya menyetujui ketentuan yang berlaku.</span>
-            </label>
+            <>
+              <label className="field" htmlFor="invitation-legal-accepted">
+                <span className="field-label">Persetujuan</span>
+                <input
+                  id="invitation-legal-accepted"
+                  type="checkbox"
+                  checked={legalAccepted}
+                  onChange={(event) => setLegalAccepted(event.target.checked)}
+                  aria-invalid={Boolean(fieldErrors.legalAccepted)}
+                  aria-describedby={fieldErrors.legalAccepted ? "invitation-legalAccepted-error" : undefined}
+                  required
+                />
+                <span>Saya menyetujui ketentuan yang berlaku.</span>
+              </label>
+              {renderFieldError("legalAccepted")}
+            </>
           ) : null}
           {unsupportedFields.length > 0 ? (
             <p className="error-text" role="alert">

@@ -92,6 +92,111 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
   });
 
+  it("keeps the invitation form usable for a Clerk username validation error", async () => {
+    let attempts = 0;
+    const invitationLogs = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn().mockImplementation(() => {
+        attempts += 1;
+        if (attempts === 1) {
+          return Promise.resolve({
+            error: {
+              code: "form_identifier_exists",
+              longMessage: "This username is already taken.",
+            },
+          });
+        }
+        signUp.status = "complete";
+        return Promise.resolve({ error: null });
+      }),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+
+    const passwordInput = screen.getByLabelText("Password");
+    expect(passwordInput.getAttribute("type")).toBe("password");
+    expect(passwordInput.getAttribute("autocomplete")).toBe("new-password");
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(passwordInput, { target: { value: "safe-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+
+    await waitFor(() => expect(screen.getByText("Username ini sudah digunakan. Pilih username lain.")).toBeTruthy());
+    expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader-new" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+    await waitFor(() => expect(signUp.password).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+    expect(JSON.stringify(invitationLogs.mock.calls)).not.toContain("safe-password");
+    invitationLogs.mockRestore();
+  });
+
+  it("renders the next Clerk requirement instead of finalizing early", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn().mockImplementation(() => {
+        signUp.missingFields = ["first_name"];
+        return Promise.resolve({ error: null });
+      }),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "safe-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Nama depan")).toBeTruthy());
+    expect(screen.queryByLabelText("Password")).toBeNull();
+    expect(signUp.finalize).not.toHaveBeenCalled();
+  });
+
+  it("keeps a technical Clerk update failure retryable on the same invitation", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("network failure"))
+        .mockImplementation(() => {
+          signUp.status = "complete";
+          return Promise.resolve({ error: null });
+        }),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "safe-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Data belum dapat disimpan. Periksa koneksi lalu coba lagi.")).toBeTruthy(),
+    );
+    expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+    await waitFor(() => expect(signUp.password).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
   it("renders and submits only the fields reported by Clerk", async () => {
     const signUp = {
       status: "missing_requirements",

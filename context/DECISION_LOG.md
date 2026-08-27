@@ -94,3 +94,9 @@ source-backed, and added here before implementation.
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | BFG-DEC-061 | 2026-08-27 / invitation acceptance | An effect-local active flag and one-shot ticket guard could own a multi-stage Clerk invitation handoff while Clerk auth and sign-up resources changed. | `/accept-invitation` keeps one per-ticket orchestration alive across Clerk signal/resource/auth changes; it branches from the current Clerk status and requirements, completes configured verification/Protect steps, finalizes once, waits for existing Convex/BFG membership reconciliation, and redirects only for `appUser=customer/active`. | Latest explicit user decision; installed Clerk v7 contract; deterministic RED regression | Prevents the first incorrect boundary from discarding the ticket result and leaving activation in processing, without adding an auth system or membership writer. | ACTIVE |
+
+## Invitation missing-requirements submit correction — 2026-08-28
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-062 | 2026-08-28 / invitation acceptance | A `signUp.password()`/`signUp.update()` rejection could be collapsed into the fatal `Aktivasi belum selesai` page. | The submit boundary classifies the actual Clerk error safely; field validation stays on `Lengkapi akun` with a mapped field message and same-ticket retry, technical update failures stay recoverable on the form, and only the re-read complete signup can finalize. | Latest real recording; installed Clerk Future contract; deterministic RED regression | Keeps Clerk authoritative, preserves correction without a new invitation, and prevents validation from being misreported as activation failure. | ACTIVE |

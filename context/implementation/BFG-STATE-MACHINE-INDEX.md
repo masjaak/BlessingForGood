@@ -40,6 +40,17 @@ Every stateful mutation must name its source state, target state, guard, side
 effect, audit consequence, customer projection, and invalid-transition test in
 [`BFG-BUSINESS-CONSEQUENCE-MATRIX.md`](BFG-BUSINESS-CONSEQUENCE-MATRIX.md).
 
+## Invitation submit clarification — 2026-08-28
+
+The `missing_requirements` form enters a submitting state only for the
+duration of the Clerk `password`/`update` call. A returned or thrown Clerk
+field error transitions back to `missing_requirements` with a mapped field
+message and preserves the current ticket for correction. A successful update
+re-reads the current Clerk resource and transitions to another requirement,
+verification, or `signup_complete`; it never finalizes from submitted field
+names alone. Finalization, session activation, Convex readiness, and active
+membership remain the existing downstream gates.
+
 ## Maintenance guard clarifications — 2026-08-22
 
 No new lifecycle states were added. The current guards are:

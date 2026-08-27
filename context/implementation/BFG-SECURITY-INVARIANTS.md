@@ -24,6 +24,7 @@ client may hide or show controls; only Convex guards grant authority.
 | SEC-16 | Production and Development identity/configuration remain separated; no fallback to similarly named BFG projects. | repository decisions and environment runbooks | pre-deploy environment verification |
 | SEC-17 | Admin/Owner MFA remains a Production operational requirement even when implementation authorization is Convex-side. | Clerk production policy/runbooks | Production operator acceptance; do not claim from local UI tests alone |
 | SEC-18 | No dummy business records are created in Production to satisfy a screenshot or flow. | zero-data policy and release process | review every UAT fixture/data mutation; retain `BLOCKED_BY_DATA` when needed |
+| SEC-19 | Invitation completion never exposes or logs password values; Clerk owns password policy and validation. | `src/components/clerk-invitation-acceptance.tsx`, installed Clerk Future resource | password input type/autocomplete assertion; field-error retry assertion; safe diagnostic review |
 
 ## Security Closure Rule
 

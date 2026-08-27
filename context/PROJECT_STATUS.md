@@ -69,6 +69,35 @@ same real invitee proves Clerk completion, Convex authentication, active BFG
 membership, Admin `Aktif`, `/account`, `/join`, Ready Stock, Buku Saya, and
 Tagihan.
 
+## Invitation missing-requirements submit correction — 2026-08-28
+
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_AUTHENTICATED_UAT_PENDING`
+
+The new real recording superseded the earlier ticket-spinner diagnosis. The
+current failure is the `Lengkapi akun` submit boundary: the old handler
+collapsed a returned or thrown Clerk `password`/`update` failure into the
+generic `Aktivasi belum selesai` page. The deterministic RED reproduction
+returned Clerk code `form_identifier_exists`; it stayed on the form only after
+the fix, showed the safe username error, and successfully resubmitted the same
+ticket.
+
+The smallest behavioral correction keeps Clerk as the authority: it logs only
+safe field names/state/error code and field, maps known validation codes to a
+field-level message, keeps technical update failures retryable, resets
+`submitting`, and re-reads the current Future resource before moving to more
+requirements, verification, or finalization. The existing finalize → session
+→ Convex → canonical membership reconciliation and current/removed admission
+guards are unchanged. The password input is asserted as masked with
+`autocomplete=new-password`; no password value is logged.
+
+Local evidence: focused invitation tests `16/16`, full Vitest `69 files /
+377 tests`, TypeScript, ESLint, Format, Convex Development check, production
+build, `npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check`
+pass. The affected local Playwright surface could not start because this
+checkout lacks a Clerk publishable key. No production invitee, mailbox, or
+business fixture was fabricated; authenticated Production UAT remains open
+until an authorized operator supplies a legitimate new invitation journey.
+
 ## Membership removal and reapply closure — 2026-08-27
 
 Status: `IMPLEMENTED_AND_DEPLOYED; REAL_CUSTOMER_RETEST_PENDING`

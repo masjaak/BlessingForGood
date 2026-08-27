@@ -87,6 +87,17 @@ direct completion, resource refresh, auth/session handoff, missing fields,
 email-code and email-link verification, same/different-account handling,
 invalid tickets, and recovery from a hanging ticket request.
 
+At the missing-requirements submit boundary, Clerk's returned or thrown
+`signUp.password()`/`signUp.update()` result is authoritative. A mapped Clerk
+field-validation error stays on `Lengkapi akun`, is rendered beside the
+affected field, and leaves the same ticket retryable. An unmapped update
+failure is a recoverable technical form error. Only a current complete signup
+may enter finalization; remaining `missingFields`, `unverifiedFields`,
+Protect, and verification states are re-read from the current Clerk Future
+resource after each update. Safe invitation diagnostics contain the
+correlation ID, field names, state, and Clerk error code/field only; password
+values are never logged.
+
 All Account, Join, Ready Stock, Buku Saya, Tagihan, Customer shell, and Admin
 Join Request surfaces remain projections of this same canonical state. No
 page-specific membership implementation is permitted.
