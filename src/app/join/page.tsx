@@ -212,7 +212,9 @@ function JoinPageContent() {
   const router = useRouter();
   const joinRequests = useQuery(
     api.joinRequests.mine,
-    signedIn && dataSource === "convex" && authState === "admission-required" ? {} : "skip",
+    signedIn && dataSource === "convex" && (authState === "admission-required" || authState === "removed")
+      ? {}
+      : "skip",
   );
 
   useEffect(() => {
@@ -232,7 +234,11 @@ function JoinPageContent() {
   }
   if (
     authState === "loading" ||
-    (signedIn && authState !== "authenticated" && authState !== "suspended" && authState !== "admission-required")
+    (signedIn &&
+      authState !== "authenticated" &&
+      authState !== "suspended" &&
+      authState !== "removed" &&
+      authState !== "admission-required")
   ) {
     return <div className="state-panel">Memeriksa akses BFG…</div>;
   }
@@ -248,9 +254,9 @@ function JoinPageContent() {
   if (signedIn && authState === "authenticated" && sessionRole === "customer") {
     return <div className="state-panel">Membuka ruang customer…</div>;
   }
-  if (signedIn && authState === "admission-required") {
+  if (signedIn && (authState === "admission-required" || authState === "removed")) {
     if (joinRequests === undefined) return <div className="state-panel">Memeriksa permintaan bergabung…</div>;
-    const latestRequest = joinRequests[0];
+    const latestRequest = joinRequests.find((request) => request.admissionStatus !== "removed");
     if (!latestRequest) return <ConnectedJoinForm />;
     if (latestRequest.status === "rejected") {
       return (

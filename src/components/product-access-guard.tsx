@@ -63,6 +63,19 @@ export function ProductAccessGuard({
   if (membershipState === "MEMBERSHIP_RECONCILING") {
     return <PageAwareSkeleton workspace={pathname.startsWith("/admin") ? "admin" : "customer"} pathname={pathname} />;
   }
+  if (authState === "removed" || userStatus === "removed") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Membership dihapus</span>
+        <h1>Akun ini bukan Blessfriend aktif.</h1>
+        <p>Membership BFG telah dihapus. Ajukan permintaan bergabung kembali untuk mendapatkan akses lagi.</p>
+        <div className="actions">
+          <LinkButton href="/join">Gabung Blessfriends</LinkButton>
+          <UserButton />
+        </div>
+      </div>
+    );
+  }
   if (authState === "admission-required" && membershipState === "APPROVED_INVITATION_PENDING") {
     return (
       <div className="guard-card">

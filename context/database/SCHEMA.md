@@ -14,9 +14,16 @@ document IDs.
 | `auditEvents`       | privileged actor history                       | actor, action, target, timestamp, safe metadata                       |
 | `prototypeSessions` | retained legacy test/local table               | token digest and expiry only; active Preview never reads/writes       |
 
-`appUsers` roles are `owner`, `admin`, `customer`; statuses are `active` and
-`suspended`. Its indexes are `by_clerk_user_id`, `by_role`, `by_status`,
-`by_role_and_status`, and `by_created_at`.
+`appUsers` roles are `owner`, `admin`, `customer`; statuses are `active`,
+`suspended`, and `removed`. A removed Customer row is a membership tombstone;
+its canonical ID, member code, and business references remain valid. Its
+indexes are `by_clerk_user_id`, `by_role`, `by_status`, `by_role_and_status`,
+`by_email_snapshot`, `by_member_code`, and `by_created_at`.
+
+`appUsers.removedAt`, `removedByUserId`, and `removalReason` record the BFG
+membership removal without changing the Clerk identity. `joinRequests` uses
+the corresponding optional removal fields to preserve the original admission
+record while making it historical rather than current authority.
 
 ## Catalog and order tables
 

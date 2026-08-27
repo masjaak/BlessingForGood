@@ -54,6 +54,16 @@ describe("authenticated product session state", () => {
         requests: [],
       }),
     ).toBe("NO_APPLICATION");
+    expect(
+      resolveProductMembershipState({
+        clerkLoaded: true,
+        clerkSignedIn: true,
+        convexLoading: false,
+        appUser: { status: "removed" },
+        provisioning: false,
+        requests: [],
+      }),
+    ).toBe("REMOVED");
   });
 
   it("reads structured Convex error codes without trusting the message", () => {
@@ -80,6 +90,7 @@ describe("authenticated product session state", () => {
     expect(resolve({ appUser: { role: "admin", status: "active" } })).toBe("authenticated");
     expect(resolve({ appUser: { role: "owner", status: "active" } })).toBe("authenticated");
     expect(resolve({ appUser: { role: "customer", status: "suspended" } })).toBe("suspended");
+    expect(resolve({ appUser: { role: "customer", status: "removed" } })).toBe("removed");
     expect(resolve({ provisionError: true })).toBe("network-error");
   });
 

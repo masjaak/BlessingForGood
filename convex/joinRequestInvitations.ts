@@ -114,3 +114,26 @@ export const deliver = internalAction({
     }
   },
 });
+
+export const revoke = internalAction({
+  args: { joinRequestId: v.id("joinRequests") },
+  handler: async (ctx, args) => {
+    const target = await ctx.runQuery(internal.joinRequestInvitationState.removalTarget, {
+      joinRequestId: args.joinRequestId,
+    });
+    if (!target) return { status: "complete" as const };
+
+    try {
+      const client = clerkClient();
+      const invitation = target.invitationId ? null : await findPendingInvitation(client, target.email);
+      const invitationId =
+        target.invitationId || (invitation && invitation.createdAt <= target.removedAt ? invitation.id : null);
+      if (!invitationId) return { status: "not_found" as const };
+      await client.invitations.revokeInvitation(invitationId);
+      return { status: "revoked" as const };
+    } catch {
+      // Membership removal is already committed in BFG; Clerk revocation is best effort.
+      return { status: "skipped" as const };
+    }
+  },
+});

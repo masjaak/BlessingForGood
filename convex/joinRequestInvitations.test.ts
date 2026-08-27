@@ -9,6 +9,7 @@ const clerkState = vi.hoisted(() => ({
   getUserList: vi.fn(),
   getInvitationList: vi.fn(),
   createInvitation: vi.fn(),
+  revokeInvitation: vi.fn(),
 }));
 
 vi.mock("@clerk/backend", () => ({
@@ -17,6 +18,7 @@ vi.mock("@clerk/backend", () => ({
     invitations: {
       getInvitationList: clerkState.getInvitationList,
       createInvitation: clerkState.createInvitation,
+      revokeInvitation: clerkState.revokeInvitation,
     },
   })),
 }));
@@ -56,6 +58,7 @@ describe("automatic Clerk invitation reconciliation", () => {
       emailAddress: email,
       status: "pending",
     });
+    clerkState.revokeInvitation.mockReset().mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -99,6 +102,23 @@ describe("automatic Clerk invitation reconciliation", () => {
     expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
       invitationStatus: "sent",
       admissionStatus: "invitation_pending",
+    });
+  });
+
+  it("revokes a pending Clerk invitation after BFG membership removal", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const approved = await submitForApproval(t, admin);
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    await admin.mutation(api.joinRequests.removeMember, { joinRequestId: approved.joinRequestId });
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    expect(clerkState.revokeInvitation).toHaveBeenCalledOnce();
+    expect(clerkState.revokeInvitation).toHaveBeenCalledWith("inv_test_1");
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      admissionStatus: "removed",
+      invitationStatus: "sent",
     });
   });
 

@@ -1,7 +1,7 @@
 # Join Requests Feature
 
-Status: automatic Clerk invitation and membership activation implemented in
-the canonical Production path.
+Status: automatic Clerk invitation, membership activation, and Admin
+membership removal are implemented in the canonical Production path.
 
 ## Boundary
 
@@ -33,6 +33,9 @@ updatedAt
 clerkInvitationId?
 invitationSentAt?
 invitationError?
+removedAt?
+removedByUserId?
+removalReason?
 ```
 
 Email is lowercased. Contact normalization trims, lowercases, and removes
@@ -57,27 +60,38 @@ existing identity. `ready` remains a legacy retryable state.
 
 Visitors provide name, email, WhatsApp/phone, optional city, optional note, and
 an acknowledgement that submission does not create an account. The public
-mutation validates and normalizes server-side, blocks an existing submitted,
-under-review, or approved email/contact match, and returns only a safe request
-identifier/status response. A pending duplicate receives retry/review guidance;
-an approved duplicate receives invitation/login guidance. Public queries
-cannot list or read requests. The primary `bookInterest` value accepts the
-current practical taxonomy plus legacy `Children Books`, `Collector Books`, and
-`Novel` values without invalidating existing requests.
+mutation validates and normalizes server-side, blocks an existing non-removed
+submitted, under-review, or approved email/contact match, and blocks a matching
+active Customer membership. It returns only a safe request identifier/status
+response. A pending duplicate receives retry/review guidance; an approved
+duplicate receives invitation/login guidance. Public queries cannot list or
+read requests. The primary `bookInterest` value accepts the current practical
+taxonomy plus legacy `Children Books`, `Collector Books`, and `Novel` values
+without invalidating existing requests.
 
 Authenticated users see an already-a-member state instead of the form.
 
 ## Admin workflow
 
 `/admin/join-requests` is available to active admin/owner users. It supports
-status filtering, bounded queue search, start review, approve, reject, and
-invitation retry with a required reason. All actions derive the reviewer from
-verified `appUsers`, write the row and audit event in one mutation, and reject
-stale transitions. Approval does not require Clerk Dashboard access.
+status filtering, bounded queue search, start review, approve, reject,
+invitation retry, and Remove member. All actions derive the reviewer from
+verified `appUsers`, write the BFG state and audit event in one mutation, and
+reject stale transitions. Approval and membership removal do not require Clerk
+Dashboard access.
 
 Approved applicants remain `invitation pending` until the server-side action
 confirms delivery or an existing identity. Invitation URLs, tokens, or auth
 storage are never stored in Convex or repository artifacts.
+
+An approved Customer can be removed by Admin without deleting the Clerk
+identity or any business record. Removal keeps the original approved row and
+invitation fact as history, marks the admission as removed, deactivates the
+Customer `appUsers` row, and writes one `membership.removed` audit event. A
+removed request is excluded from duplicate and authenticated admission lookup;
+the same email must submit and receive approval for a new request before the
+membership can become active again. Pending Clerk invitations are revoked on a
+best-effort server action; accepted invitations remain accepted history.
 
 ## Privacy and retention
 

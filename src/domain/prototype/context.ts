@@ -22,6 +22,7 @@ export type ProductAuthState =
   | "authenticated"
   | "admission-required"
   | "suspended"
+  | "removed"
   | "network-error"
   | "configuration-missing";
 
@@ -32,10 +33,12 @@ export type ProductMembershipState =
   | "PENDING"
   | "APPROVED_INVITATION_PENDING"
   | "ACTIVE"
-  | "SUSPENDED";
+  | "SUSPENDED"
+  | "REMOVED";
 
 type MembershipRequestState = {
   status: "submitted" | "under_review" | "approved" | "rejected";
+  admissionStatus?: "pending" | "invitation_pending" | "invitation_failed" | "active" | "removed" | "rejected";
 };
 
 export type ProductMembershipResolutionInput = {
@@ -44,7 +47,7 @@ export type ProductMembershipResolutionInput = {
   convexLoading: boolean;
   appUser:
     | {
-        status: "active" | "suspended";
+        status: "active" | "suspended" | "removed";
       }
     | null
     | undefined;
@@ -64,8 +67,9 @@ export function resolveProductMembershipState({
   if (!clerkSignedIn) return "AUTH_LOADING";
   if (appUser?.status === "suspended") return "SUSPENDED";
   if (appUser?.status === "active") return "ACTIVE";
+  if (appUser?.status === "removed") return "REMOVED";
   if (provisioning || appUser === undefined || requests === undefined) return "MEMBERSHIP_RECONCILING";
-  const latest = requests[0];
+  const latest = requests.find((request) => request.admissionStatus !== "removed");
   if (latest?.status === "approved") return "APPROVED_INVITATION_PENDING";
   if (latest?.status === "submitted" || latest?.status === "under_review") return "PENDING";
   return "NO_APPLICATION";
@@ -87,7 +91,7 @@ export type ProductAuthResolutionInput = {
   appUser:
     | {
         role: ProductRole;
-        status: "active" | "suspended";
+        status: "active" | "suspended" | "removed";
       }
     | null
     | undefined;
@@ -113,6 +117,7 @@ export function resolveProductAuthState({
   if (!convexAuthenticated) return "convex-error";
   if (provisionError) return "network-error";
   if (appUser?.status === "suspended") return "suspended";
+  if (appUser?.status === "removed") return "removed";
   if (appUser?.status === "active") return "authenticated";
   if (admissionDenied) return "admission-required";
   if (provisioning || appUser === undefined || appUser === null) return "provisioning";
@@ -127,7 +132,7 @@ export interface ProductContextValue {
   hydrated: boolean;
   dataSource: ProductDataSource;
   sessionRole: ProductRole | null;
-  userStatus: "active" | "suspended" | null;
+  userStatus: "active" | "suspended" | "removed" | null;
   authState: ProductAuthState;
   membershipState: ProductMembershipState;
   catalogLoading: boolean;

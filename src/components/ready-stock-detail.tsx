@@ -128,6 +128,15 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
         </LinkButton>
       </div>
     );
+  } else if (authState === "removed") {
+    return (
+      <div className="catalog-member-note">
+        <p>Membership BFG-mu telah dihapus.</p>
+        <LinkButton href="/join" variant="secondary">
+          Gabung Blessfriends
+        </LinkButton>
+      </div>
+    );
   } else if (authState === "authenticated" && sessionRole === "customer") {
     // Keep this exact role boundary aligned with orders:createReadyStock.
   } else if (sessionRole === "admin" || sessionRole === "owner") {

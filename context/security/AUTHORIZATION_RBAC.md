@@ -60,6 +60,13 @@ Active admins/owners use `customers.read` for the operational queue and
 suspended admins are denied. Approval means invitation eligibility only: it
 does not create an `appUser`, role, ownership relationship, or catalog grant.
 
+`joinRequests.removeMember` requires `customers.manage`, targets only a
+Customer membership, and rejects Admin/Owner targets. It preserves the Clerk
+identity and historical business ownership rows while changing the canonical
+Customer status to `removed`. The shared active-user guard denies removed
+users, and old approved admissions are excluded from reconciliation; a new
+approved request is required for reactivation.
+
 Phase 06.3 operational rules use `tracking.read.all` and `tracking.manage` for
 admin/owner batch rosters, assignment changes, and purchase summaries. Full
 rosters never mount for customers; customer tracking remains owned-order

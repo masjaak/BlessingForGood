@@ -28,7 +28,7 @@ import {
 const bookFormat = bookFormatValidator;
 const legacySessionRole = v.union(v.literal("customer"), v.literal("admin"));
 const role = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer"));
-const userStatus = v.union(v.literal("active"), v.literal("suspended"));
+const userStatus = v.union(v.literal("active"), v.literal("suspended"), v.literal("removed"));
 const catalogStatus = v.union(v.literal("draft"), v.literal("open"), v.literal("closed"), v.literal("archived"));
 const orderStatus = v.union(v.literal("submitted"), v.literal("cancelled"), v.literal("completed"));
 const uploadPurpose = v.union(
@@ -66,11 +66,15 @@ export default defineSchema({
     lastSeenAt: v.number(),
     suspendedAt: v.optional(v.number()),
     suspendedByUserId: v.optional(v.id("appUsers")),
+    removedAt: v.optional(v.number()),
+    removedByUserId: v.optional(v.id("appUsers")),
+    removalReason: v.optional(v.string()),
   })
     .index("by_clerk_user_id", ["clerkUserId"])
     .index("by_role", ["role"])
     .index("by_status", ["status"])
     .index("by_role_and_status", ["role", "status"])
+    .index("by_email_snapshot", ["emailSnapshot"])
     .index("by_member_code", ["memberCode"])
     .index("by_created_at", ["createdAt"]),
 
@@ -132,6 +136,9 @@ export default defineSchema({
     clerkInvitationId: v.optional(v.string()),
     invitationSentAt: v.optional(v.number()),
     invitationError: v.optional(v.string()),
+    removedAt: v.optional(v.number()),
+    removedByUserId: v.optional(v.id("appUsers")),
+    removalReason: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

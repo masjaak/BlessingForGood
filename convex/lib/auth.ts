@@ -98,6 +98,7 @@ export async function requireCurrentUser(ctx: AuthCtx): Promise<Doc<"appUsers">>
 
 export async function requireActiveUser(ctx: AuthCtx): Promise<Doc<"appUsers">> {
   const user = await requireCurrentUser(ctx);
+  if (user.status === "removed") fail("USER_REMOVED");
   if (user.status !== "active") fail("USER_SUSPENDED");
   return user;
 }

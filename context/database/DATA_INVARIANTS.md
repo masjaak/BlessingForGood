@@ -7,6 +7,8 @@
   server-side bootstrap subject match.
 - Existing role and status are preserved on re-login.
 - Suspended users remain suspended and cannot use protected functions.
+- Removed Customer users retain their canonical row and history but cannot use
+  protected Customer functions; an old approved request cannot reactivate them.
 - At least one active owner remains because owners cannot be demoted or
   suspended in this phase.
 - Active business ownership references `appUsers`, never prototype sessions,
@@ -15,13 +17,17 @@
   deposits, profile, and addresses.
 - Join requests never create fake `appUsers` or business ownership. Their
   applicant contact fields are normalized server-side before duplicate checks.
-- For one normalized email or contact, at most one `submitted`, `under_review`,
-  or `approved` request may exist. Rejected history remains and may be followed
-  by a new request.
+- For one normalized email or contact, at most one non-removed `submitted`,
+  `under_review`, or `approved` request may exist. Rejected and removed history
+  remains and may be followed by a new request.
 - Join-request review is forward-only: `submitted → under_review → approved`
   or `rejected`; stale or double review attempts are rejected.
 - Approval sets invitation eligibility only. It does not create a Clerk account,
   assign a role, link an `appUser`, or grant Secret Catalog access.
+- Admin membership removal is a single audited mutation that marks the
+  approved request and Customer `appUsers` row removed without deleting either
+  row. A new approved request is the only reactivation path; invitation
+  acceptance history is never rewritten.
 
 ## Catalog and orders
 

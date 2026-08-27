@@ -183,7 +183,10 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
   const terminalAuthError =
     phase === "finishing" &&
-    (authState === "admission-required" || authState === "suspended" || authState === "configuration-missing");
+    (authState === "admission-required" ||
+      authState === "suspended" ||
+      authState === "removed" ||
+      authState === "configuration-missing");
 
   if (phase === "error" || terminalAuthError) {
     return (

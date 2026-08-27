@@ -1,5 +1,24 @@
 # BFG SOURCE OF TRUTH
 
+## Membership removal and reapply P0 — 2026-08-27
+
+The BFG membership lifecycle is separate from Clerk identity. Admin
+`Remove member` changes the canonical Customer `appUsers` status to `removed`
+and marks the approved Join Request as historical; it never deletes the Clerk
+user or business history. Removed `appUsers` rows retain their IDs and member
+codes so Orders, Invoices, Payments, Deposits, Refunds, Batch, Ready Stock, and
+Activity references remain readable.
+
+Removed admissions are excluded from duplicate email checks and authenticated
+reconciliation. The same normalized email may submit a fresh Join Request only
+when no active Customer membership and no current pending/approved admission
+remain. An old approved request cannot auto-reactivate a removed user. A new
+approval is required; the same Clerk subject reuses the historical appUser and
+member code, while a genuinely new Clerk subject gets a new appUser/member code
+and leaves the old tombstone intact. Accepted invitation history remains
+accepted; pending invitation revocation is best effort and never deletes a
+Clerk identity.
+
 ## Membership admission P0 override — 2026-08-27
 
 The 27 August Production failure was not a Ready Stock defect. Convex

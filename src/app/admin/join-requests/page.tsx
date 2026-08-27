@@ -12,6 +12,7 @@ import {
   ActionGroup,
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   LoadingRegion,
@@ -49,6 +50,7 @@ function JoinRequestCard({
   reject,
   retryAdmission,
   retryInvitation,
+  removeMember,
 }: {
   request: JoinRequest;
   startReview: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
@@ -56,12 +58,14 @@ function JoinRequestCard({
   reject: (joinRequestId: Id<"joinRequests">, rejectionReason: string, reviewNote?: string) => Promise<unknown>;
   retryAdmission: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
   retryInvitation: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
+  removeMember: (joinRequestId: Id<"joinRequests">) => Promise<unknown>;
 }) {
   const [reviewNote, setReviewNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const requestId = request.joinRequestId as Id<"joinRequests">;
 
   async function run(action: () => Promise<unknown>, success: string) {
@@ -86,8 +90,12 @@ function JoinRequestCard({
           <h2>{request.name}</h2>
           <p className="subtle">{request.email}</p>
         </div>
-        <StatusBadge tone={statusTone(request.status)}>
-          {request.admissionStatus === "active" ? "Aktif" : statusLabels[request.status]}
+        <StatusBadge tone={request.admissionStatus === "removed" ? "warning" : statusTone(request.status)}>
+          {request.admissionStatus === "active"
+            ? "Aktif"
+            : request.admissionStatus === "removed"
+              ? "Dihapus dari membership"
+              : statusLabels[request.status]}
         </StatusBadge>
       </div>
       <div className="summary-line">
@@ -157,46 +165,74 @@ function JoinRequestCard({
       ) : null}
       {request.status === "approved" ? (
         <div className="content-stack approved-feedback-section">
-          <p className="success-banner" role="status">
-            {request.admissionStatus === "active"
-              ? "Customer sudah menjadi Blessfriend."
-              : request.admissionStatus === "invitation_failed"
-                ? "Disetujui. Undangan belum berhasil dikirim."
-                : request.invitationStatus === "pending"
-                  ? "Disetujui. Undangan sedang diproses."
-                  : request.invitationStatus === "sent"
-                    ? "Disetujui. Undangan sudah dikirim dan masih menunggu diterima."
-                    : "Disetujui. Undangan belum diproses."}
-          </p>
-          {request.admissionStatus !== "active" &&
-          (request.invitationStatus === "failed" || request.invitationStatus === "ready") ? (
-            <ActionGroup variant="responsive">
-              <span className="error-text action-support">{request.invitationError || "Undangan belum dikirim."}</span>
-              <Button
-                type="button"
-                variant="secondary"
-                loading={pendingAction === "Undangan dicoba kembali."}
-                loadingLabel="Mengirim…"
-                onClick={() => void run(() => retryInvitation(requestId), "Undangan dicoba kembali.")}
-              >
-                {request.invitationStatus === "ready" ? "Kirim undangan" : "Kirim ulang undangan"}
-              </Button>
-            </ActionGroup>
-          ) : null}
-          {request.admissionStatus !== "active" && request.admissionError ? (
-            <ActionGroup variant="responsive">
-              <span className="error-text action-support">Proses penerimaan anggota perlu dicoba lagi.</span>
-              <Button
-                type="button"
-                variant="secondary"
-                loading={pendingAction === "Proses admission dicoba kembali."}
-                loadingLabel="Mencoba lagi…"
-                onClick={() => void run(() => retryAdmission(requestId), "Proses admission dicoba kembali.")}
-              >
-                Coba lagi
-              </Button>
-            </ActionGroup>
-          ) : null}
+          {request.admissionStatus === "removed" ? (
+            <>
+              <p className="success-banner" role="status">
+                Customer bukan Blessfriend aktif.
+              </p>
+              <p className="subtle">
+                Dihapus{request.removedAt ? ` ${new Date(request.removedAt).toLocaleString("id-ID")}` : ""}
+                {request.removedByName ? ` oleh ${request.removedByName}` : " oleh Admin BFG"}.
+              </p>
+              {request.removalReason ? <p className="subtle">Alasan: {request.removalReason}</p> : null}
+            </>
+          ) : (
+            <>
+              <p className="success-banner" role="status">
+                {request.admissionStatus === "active"
+                  ? "Customer sudah menjadi Blessfriend."
+                  : request.admissionStatus === "invitation_failed"
+                    ? "Disetujui. Undangan belum berhasil dikirim."
+                    : request.invitationStatus === "pending"
+                      ? "Disetujui. Undangan sedang diproses."
+                      : request.invitationStatus === "sent"
+                        ? "Disetujui. Undangan sudah dikirim dan masih menunggu diterima."
+                        : "Disetujui. Undangan belum diproses."}
+              </p>
+              {request.admissionStatus !== "active" &&
+              (request.invitationStatus === "failed" || request.invitationStatus === "ready") ? (
+                <ActionGroup variant="responsive">
+                  <span className="error-text action-support">
+                    {request.invitationError || "Undangan belum dikirim."}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={pendingAction === "Undangan dicoba kembali."}
+                    loadingLabel="Mengirim…"
+                    onClick={() => void run(() => retryInvitation(requestId), "Undangan dicoba kembali.")}
+                  >
+                    {request.invitationStatus === "ready" ? "Kirim undangan" : "Kirim ulang undangan"}
+                  </Button>
+                </ActionGroup>
+              ) : null}
+              {request.admissionStatus !== "active" && request.admissionError ? (
+                <ActionGroup variant="responsive">
+                  <span className="error-text action-support">Proses penerimaan anggota perlu dicoba lagi.</span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={pendingAction === "Proses admission dicoba kembali."}
+                    loadingLabel="Mencoba lagi…"
+                    onClick={() => void run(() => retryAdmission(requestId), "Proses admission dicoba kembali.")}
+                  >
+                    Coba lagi
+                  </Button>
+                </ActionGroup>
+              ) : null}
+              <ActionGroup variant="responsive">
+                <Button
+                  type="button"
+                  variant="danger"
+                  loading={pendingAction === "Membership dihapus."}
+                  loadingLabel="Menghapus…"
+                  onClick={() => setRemoveDialogOpen(true)}
+                >
+                  Remove member
+                </Button>
+              </ActionGroup>
+            </>
+          )}
         </div>
       ) : null}
       {request.status === "rejected" ? <p className="subtle">Alasan: {request.rejectionReason}</p> : null}
@@ -217,6 +253,18 @@ function JoinRequestCard({
           ) : null}
         </div>
       ) : null}
+      <ConfirmationDialog
+        open={removeDialogOpen}
+        title="Remove member?"
+        description="Customer akan kehilangan akses sebagai Blessfriend. Riwayat pesanan, tagihan, Batch, deposit, dan aktivitas tetap disimpan. Customer dapat mengajukan permintaan bergabung kembali setelah membership dihapus."
+        confirmLabel="Remove member"
+        danger
+        onConfirm={() => {
+          setRemoveDialogOpen(false);
+          void run(() => removeMember(requestId), "Membership dihapus.");
+        }}
+        onCancel={() => setRemoveDialogOpen(false)}
+      />
     </Card>
   );
 }
@@ -230,6 +278,7 @@ function ConnectedJoinRequests() {
   const rejectMutation = useMutation(api.joinRequests.reject);
   const retryAdmissionMutation = useMutation(api.joinRequests.retryAdmission);
   const retryInvitationMutation = useMutation(api.joinRequests.retryInvitation);
+  const removeMemberMutation = useMutation(api.joinRequests.removeMember);
   const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!requests || !query) return requests;
@@ -292,6 +341,7 @@ function ConnectedJoinRequests() {
                 }
                 retryAdmission={(joinRequestId) => retryAdmissionMutation({ joinRequestId })}
                 retryInvitation={(joinRequestId) => retryInvitationMutation({ joinRequestId })}
+                removeMember={(joinRequestId) => removeMemberMutation({ joinRequestId })}
               />
             ))
           ) : filteredRequests ? (

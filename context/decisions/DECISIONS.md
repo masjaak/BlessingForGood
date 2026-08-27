@@ -1,5 +1,25 @@
 # Decisions
 
+## Membership removal and reapply P0 — 2026-08-27
+
+- Clerk identity and BFG membership remain separate lifecycle authorities.
+  `joinRequests.removeMember` is the Admin/Owner-controlled BFG membership
+  revocation and never calls Clerk user deletion.
+- `appUsers.status=removed` is the membership tombstone. It preserves the
+  canonical app-user ID, member code, ownership references, and business/audit
+  history; `suspended` remains a distinct temporary-access state.
+- Approved requests and accepted invitation facts remain historical after
+  removal, but removed requests are excluded from duplicate prevention and
+  `users.ensureCurrentUser` reconciliation. Only a new approved request may
+  reactivate membership.
+- The existing Clerk subject reuses its removed Customer row and member code
+  after new approval. A new Clerk subject creates a new Customer row/code so
+  the former subject remains auditable. Pending Clerk invitations are revoked
+  best effort; accepted invitations are never rewritten.
+- Removal is one atomic BFG mutation with one `membership.removed` audit event;
+  Admin/Owner targets are rejected and historical business records are never
+  hard-deleted.
+
 ## Membership admission root closure P0 — 2026-08-27
 
 - Preserve Convex custom-template forwarding from `5ca0bf4`; it is required

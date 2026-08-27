@@ -8,6 +8,28 @@ source: conversation
 
 # Changelog
 
+## [membership-removal-reapply-closure] — 2026-08-27
+
+### Added
+
+- Added the Admin `Remove member` action and confirmation on approved Join
+  Request membership cards.
+- Added the canonical `removed` membership tombstone, historical admission
+  removal metadata, one semantic audit event, and best-effort revocation of
+  pending Clerk invitations.
+- Excluded removed admissions from duplicate prevention and authentication
+  reconciliation so the same email can submit a fresh request without
+  allowing an old approval to reactivate the membership.
+- Preserved the existing appUser/member code for same-subject rejoin and kept
+  a new Clerk subject as a separate historical appUser.
+
+### QA
+
+- Full Vitest (69 files, 366 tests), Convex checks, TypeScript, ESLint,
+  formatting, production build, audit, and diff checks pass locally. Browser
+  E2E still requires a Clerk-enabled environment; Production evidence remains
+  pending.
+
 ## [membership-admission-root-closure] — 2026-08-27
 
 ### Fixed

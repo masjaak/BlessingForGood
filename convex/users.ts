@@ -69,12 +69,16 @@ async function logMembershipDiagnostic(
 
 async function findApprovedJoinRequest(ctx: MutationCtx | QueryCtx, normalizedEmail: string | null) {
   if (!normalizedEmail) return null;
-  return ctx.db
+  const requests = await ctx.db
     .query("joinRequests")
     .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedEmail))
-    .filter((query) => query.eq(query.field("status"), "approved"))
-    .filter((query) => query.neq(query.field("invitationStatus"), "not_ready"))
-    .first();
+    .order("desc")
+    .take(50);
+  return (
+    requests.find(
+      (request) => request.status === "approved" && request.invitationStatus !== "not_ready" && !request.removedAt,
+    ) ?? null
+  );
 }
 
 function appUserView(user: Doc<"appUsers">) {
@@ -98,15 +102,32 @@ export async function admitApprovedJoinRequest(
   request: Doc<"joinRequests">,
   actorUserId: Id<"appUsers">,
 ): Promise<Doc<"appUsers"> | null> {
-  if (request.status !== "approved") fail("JOIN_REQUEST_INVALID_STATE");
+  if (request.status !== "approved" || request.removedAt) fail("JOIN_REQUEST_INVALID_STATE");
   const clerkUserId = request.applicantClerkUserId;
   if (!clerkUserId) return null;
 
-  const existing = await ctx.db
+  let existing = await ctx.db
     .query("appUsers")
     .withIndex("by_clerk_user_id", (query) => query.eq("clerkUserId", clerkUserId))
     .unique();
   if (existing) {
+    if (existing.status === "removed") {
+      if (existing.role !== "customer") fail("MEMBERSHIP_REMOVAL_NOT_ALLOWED");
+      const now = Date.now();
+      await ctx.db.patch(existing._id, {
+        status: "active",
+        removedAt: undefined,
+        removedByUserId: undefined,
+        removalReason: undefined,
+        suspendedAt: undefined,
+        suspendedByUserId: undefined,
+        updatedAt: now,
+        lastSeenAt: now,
+      });
+      const reactivated = await ctx.db.get(existing._id);
+      if (!reactivated) fail("USER_NOT_FOUND");
+      existing = reactivated;
+    }
     if (request.admittedAppUserId === existing._id && request.invitationStatus === "accepted") return existing;
     await ctx.db.patch(request._id, {
       admittedAppUserId: existing._id,
@@ -536,6 +557,7 @@ export const suspend = mutation({
     const target = await targetUser(ctx, args.userId);
     if (target._id === actor._id) fail("SELF_SUSPENSION");
     if (target.role === "owner") fail("OWNER_PROTECTED");
+    if (target.status === "removed") fail("USER_REMOVED");
     if (target.status === "suspended") return appUserView(target);
     const now = Date.now();
     await ctx.db.patch(target._id, {
@@ -557,6 +579,7 @@ export const reactivate = mutation({
     const actor = await requireOwner(ctx);
     const target = await targetUser(ctx, args.userId);
     if (target.role === "owner") fail("OWNER_PROTECTED");
+    if (target.status === "removed") fail("USER_REMOVED");
     if (target.status === "active") return appUserView(target);
     await ctx.db.patch(target._id, {
       status: "active",

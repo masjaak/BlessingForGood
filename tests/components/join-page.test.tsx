@@ -74,6 +74,23 @@ describe("Join Blessfriends admission entry", () => {
     expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
   });
 
+  it("ignores a historical removed admission and allows a fresh request", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "removed",
+      sessionRole: "customer",
+      retryAuth: vi.fn(),
+    } as never);
+    vi.mocked(useQuery).mockReturnValue([
+      { status: "approved", admissionStatus: "removed", invitationStatus: "accepted" },
+    ] as never);
+
+    render(<JoinPage />);
+
+    expect(screen.getByRole("heading", { name: "Ceritakan cara terbaik untuk menghubungimu." })).toBeTruthy();
+    expect(screen.queryByText("Email ini sudah pernah disetujui.")).toBeNull();
+  });
+
   it("shows approved invitation lifecycle states without rendering the form", () => {
     vi.mocked(useQuery).mockReturnValue([
       { status: "approved", admissionStatus: "invitation_pending", invitationStatus: "sent" },

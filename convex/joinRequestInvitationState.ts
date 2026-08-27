@@ -13,6 +13,7 @@ export const target = internalQuery({
     if (
       !request ||
       request.status !== "approved" ||
+      request.removedAt ||
       request.admittedAppUserId ||
       request.invitationStatus !== "pending"
     ) {
@@ -22,6 +23,27 @@ export const target = internalQuery({
       joinRequestId: request._id,
       email: request.normalizedEmail,
       applicantClerkUserId: request.applicantClerkUserId ?? null,
+    };
+  },
+});
+
+export const removalTarget = internalQuery({
+  args: { joinRequestId: v.id("joinRequests") },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.joinRequestId);
+    if (
+      !request ||
+      request.status !== "approved" ||
+      !request.removedAt ||
+      (request.invitationStatus !== "pending" && request.invitationStatus !== "sent")
+    ) {
+      return null;
+    }
+    return {
+      joinRequestId: request._id,
+      email: request.normalizedEmail,
+      invitationId: request.clerkInvitationId ?? null,
+      removedAt: request.removedAt,
     };
   },
 });
@@ -38,6 +60,7 @@ export const markSent = internalMutation({
     if (
       !request ||
       request.status !== "approved" ||
+      request.removedAt ||
       request.admittedAppUserId ||
       request.invitationStatus !== "pending"
     ) {
@@ -78,6 +101,7 @@ export const markFailed = internalMutation({
     if (
       !request ||
       request.status !== "approved" ||
+      request.removedAt ||
       request.admittedAppUserId ||
       request.invitationStatus !== "pending"
     ) {
@@ -113,7 +137,7 @@ export const reconcileIdentity = internalMutation({
   },
   handler: async (ctx, args) => {
     const request = await ctx.db.get(args.joinRequestId);
-    if (!request || request.status !== "approved") return null;
+    if (!request || request.status !== "approved" || request.removedAt) return null;
     if (request.admittedAppUserId && request.invitationStatus === "accepted") return "active" as const;
     if (request.normalizedEmail !== args.email) return null;
     const wasAdmitted = Boolean(request.admittedAppUserId);

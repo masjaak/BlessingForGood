@@ -1,5 +1,18 @@
 # BFG Project Status
 
+## Membership removal and reapply closure — 2026-08-27
+
+Status: `IMPLEMENTED_LOCALLY; QA_AND_PRODUCTION_PENDING`
+
+Admin can remove an approved or active Customer from the Join Request queue.
+The server transaction tombstones the Customer membership, preserves the
+approved request and accepted invitation history, records one audit event, and
+best-effort revokes pending Clerk invitations without deleting Clerk identity.
+Removed admissions no longer block `/join` or auto-reactivate through the old
+approval. A fresh request and new approval are required; same-subject approval
+reuses the existing appUser/member code, while a new Clerk subject remains a
+separate historical identity.
+
 ## Membership admission root closure P0 — 2026-08-27
 
 Status: `ROOT_CAUSE_FIXED_AND_DEPLOYED; CUSTOMER_ACCEPTANCE_PENDING`

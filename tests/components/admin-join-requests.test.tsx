@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
 import AdminJoinRequestsPage from "@/app/admin/join-requests/page";
@@ -46,6 +46,10 @@ describe("Admin Join Request admission projection", () => {
         reviewedByUserId: null,
         reviewNote: null,
         rejectionReason: null,
+        removedAt: null,
+        removedByUserId: null,
+        removedByName: null,
+        removalReason: null,
         admissionStatus: "active",
         admissionError: "stale error",
         invitationError: "stale error",
@@ -61,6 +65,92 @@ describe("Admin Join Request admission projection", () => {
     expect(screen.queryByText("Disetujui. Undangan sedang diproses.")).toBeNull();
     expect(screen.queryByRole("button", { name: /undangan/i })).toBeNull();
     expect(screen.queryByRole("button", { name: "Coba lagi" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Remove member" })).toBeTruthy();
     expect(useMutation).toHaveBeenCalled();
+  });
+
+  it("confirms removal and renders the historical removed state", () => {
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.open = true;
+    };
+    vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+    vi.mocked(useQuery).mockReturnValue([
+      {
+        joinRequestId: "join-removed",
+        name: "Removed Reader",
+        email: "removed@example.com",
+        contact: "+628123456789",
+        city: "Jakarta",
+        bookInterest: "Children Books",
+        note: null,
+        source: "website",
+        acknowledged: true,
+        status: "approved",
+        invitationStatus: "accepted",
+        submittedAt: "2026-08-27T00:00:00.000Z",
+        reviewedAt: "2026-08-27T00:01:00.000Z",
+        reviewedByUserId: null,
+        reviewNote: null,
+        rejectionReason: null,
+        removedAt: "2026-08-27T00:02:00.000Z",
+        removedByUserId: "admin-1",
+        removedByName: "Admin BFG",
+        removalReason: null,
+        admissionStatus: "removed",
+        admissionError: null,
+        invitationError: null,
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:02:00.000Z",
+      },
+    ] as never);
+
+    render(<AdminJoinRequestsPage />);
+
+    expect(screen.getByText("Dihapus dari membership")).toBeTruthy();
+    expect(screen.getByText("Customer bukan Blessfriend aktif.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Remove member" })).toBeNull();
+    expect(screen.queryByText("Customer sudah menjadi Blessfriend.")).toBeNull();
+  });
+
+  it("opens the destructive confirmation dialog", () => {
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.open = true;
+    };
+    vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+    vi.mocked(useQuery).mockReturnValue([
+      {
+        joinRequestId: "join-confirm",
+        name: "Confirm Reader",
+        email: "confirm@example.com",
+        contact: "+628123456789",
+        city: "Jakarta",
+        bookInterest: "Children Books",
+        note: null,
+        source: "website",
+        acknowledged: true,
+        status: "approved",
+        invitationStatus: "accepted",
+        submittedAt: "2026-08-27T00:00:00.000Z",
+        reviewedAt: null,
+        reviewedByUserId: null,
+        reviewNote: null,
+        rejectionReason: null,
+        removedAt: null,
+        removedByUserId: null,
+        removedByName: null,
+        removalReason: null,
+        admissionStatus: "active",
+        admissionError: null,
+        invitationError: null,
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:00:00.000Z",
+      },
+    ] as never);
+
+    render(<AdminJoinRequestsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Remove member" }));
+
+    expect(screen.getByRole("heading", { name: "Remove member?" })).toBeTruthy();
+    expect(screen.getByText(/Riwayat pesanan, tagihan, Batch, deposit, dan aktivitas tetap disimpan/)).toBeTruthy();
   });
 });

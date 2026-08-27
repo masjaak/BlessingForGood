@@ -104,6 +104,18 @@ describe("ProductAccessGuard session boundary", () => {
     expect(screen.queryByText("Private content")).toBeNull();
   });
 
+  it("sends removed memberships back to the fresh Join flow", () => {
+    render(
+      <ProductContext.Provider value={contextValue({ authState: "removed", userStatus: "removed" })}>
+        <ProductAccessGuard requiredRole="customer">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Akun ini bukan Blessfriend aktif." })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Gabung Blessfriends" }).getAttribute("href")).toBe("/join");
+    expect(screen.queryByText("Private content")).toBeNull();
+  });
+
   it.each(["customer", "admin", "owner"] as const)("allows active %s accounts into the customer workspace", (role) => {
     render(
       <ProductContext.Provider value={contextValue({ sessionRole: role })}>

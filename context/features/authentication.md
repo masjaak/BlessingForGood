@@ -16,14 +16,17 @@ create an arbitrary `appUsers` row.
 After authentication, a non-owner identity must match an approved Join request
 with a non-`not_ready` invitation lifecycle state by normalized trusted email
 before `users.ensureCurrentUser` provisions the customer. Existing active users
-and the server-configured owner remain idempotent. Google authentication, if
+and the server-configured owner remain idempotent. A removed Customer retains
+its BFG row and Clerk identity but is not active, cannot use protected Customer
+operations, and cannot be reactivated by an old approved request; only a new
+approved request may restore membership. Google authentication, if
 enabled in Clerk, does not bypass this admission check. An active Customer is
 redirected away from `/join`; Admin/Owner is never treated as Customer.
 
 The client distinguishes Clerk loading, signed out, Convex loading,
-provisioning, authenticated, suspended, admission required, permission denied,
-configuration missing, and network failure. Protected queries do not mount
-before Convex auth and app-user state are ready.
+provisioning, authenticated, suspended, removed, admission required,
+permission denied, configuration missing, and network failure. Protected
+queries do not mount before Convex auth and app-user state are ready.
 
 The Clerk Backend SDK invitation action is server-only and receives
 `CLERK_SECRET_KEY` through the Production Convex deploy command. Invitation

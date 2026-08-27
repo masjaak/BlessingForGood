@@ -11,11 +11,16 @@ import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 
 const roleLabels = { owner: "Pemilik", admin: "Admin", customer: "Pelanggan" } as const;
-const userStatusLabels = { active: "Aktif", suspended: "Ditangguhkan", pending: "Menunggu" } as const;
+const userStatusLabels = {
+  active: "Aktif",
+  suspended: "Ditangguhkan",
+  removed: "Dihapus",
+  pending: "Menunggu",
+} as const;
 
 function UserManagement() {
   const [role, setRole] = useState<"owner" | "admin" | "customer" | undefined>();
-  const [status, setStatus] = useState<"active" | "suspended" | undefined>();
+  const [status, setStatus] = useState<"active" | "suspended" | "removed" | undefined>();
   const users = useQuery(api.users.list, { role, status, paginationOpts: { numItems: 100, cursor: null } });
   const invitations = useQuery(api.users.listStaffInvitations, {});
   const updateRole = useMutation(api.users.updateRole);
@@ -130,6 +135,7 @@ function UserManagement() {
                 <option value="">Semua</option>
                 <option value="active">Aktif</option>
                 <option value="suspended">Ditangguhkan</option>
+                <option value="removed">Dihapus</option>
               </BFGSelect>
             </label>
           </Card>
@@ -179,7 +185,7 @@ function UserManagement() {
                     >
                       Tangguhkan
                     </Button>
-                  ) : (
+                  ) : user.status === "suspended" ? (
                     <Button
                       loading={pendingAction === `reactivate:${user.appUserId}`}
                       loadingLabel="Mengaktifkan…"
@@ -192,7 +198,7 @@ function UserManagement() {
                     >
                       Aktifkan kembali
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               ) : null}
             </Card>

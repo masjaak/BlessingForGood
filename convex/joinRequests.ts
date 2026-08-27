@@ -13,7 +13,8 @@ import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { enforceRateLimit } from "./lib/rateLimit";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
-type JoinRequestAdmissionStatus = "pending" | "invitation_pending" | "invitation_failed" | "active" | "rejected";
+type JoinRequestAdmissionStatus =
+  "pending" | "invitation_pending" | "invitation_failed" | "active" | "removed" | "rejected";
 
 const duplicateStatuses = new Set<JoinRequestStatus>(["submitted", "under_review", "approved"]);
 
@@ -48,6 +49,11 @@ function normalizeContact(value: string): string {
   return contact;
 }
 
+function maskedEmail(email: string): string {
+  const [local, domain] = email.split("@", 2);
+  return domain ? `${local.slice(0, 1)}***@${domain}` : "***";
+}
+
 async function activeEmailDuplicateStatus(
   ctx: MutationCtx,
   normalizedEmail: string,
@@ -56,7 +62,9 @@ async function activeEmailDuplicateStatus(
     .query("joinRequests")
     .withIndex("by_normalized_email", (index) => index.eq("normalizedEmail", normalizedEmail))
     .take(50);
-  const statuses = matches.filter((request) => duplicateStatuses.has(request.status)).map((request) => request.status);
+  const statuses = matches
+    .filter((request) => !request.removedAt && duplicateStatuses.has(request.status))
+    .map((request) => request.status);
   if (statuses.includes("approved")) return "approved";
   return statuses[0] ?? null;
 }
@@ -69,23 +77,27 @@ async function activeApplicantDuplicateStatus(
     .query("joinRequests")
     .withIndex("by_applicant_clerk_user_id", (index) => index.eq("applicantClerkUserId", applicantClerkUserId))
     .take(50);
-  return matches.find((request) => duplicateStatuses.has(request.status))?.status ?? null;
+  return matches.find((request) => !request.removedAt && duplicateStatuses.has(request.status))?.status ?? null;
+}
+
+async function linkedAppUser(ctx: QueryCtx | MutationCtx, request: Doc<"joinRequests">) {
+  const admitted = request.admittedAppUserId ? await ctx.db.get(request.admittedAppUserId) : null;
+  if (admitted || !request.applicantClerkUserId) return admitted;
+  return ctx.db
+    .query("appUsers")
+    .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", request.applicantClerkUserId!))
+    .unique();
 }
 
 async function admissionStatus(
   ctx: QueryCtx | MutationCtx,
   request: Doc<"joinRequests">,
 ): Promise<JoinRequestAdmissionStatus> {
+  if (request.removedAt) return "removed";
   if (request.status === "rejected") return "rejected";
   if (request.status !== "approved") return "pending";
-  const user = request.admittedAppUserId
-    ? await ctx.db.get(request.admittedAppUserId)
-    : request.applicantClerkUserId
-      ? await ctx.db
-          .query("appUsers")
-          .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", request.applicantClerkUserId!))
-          .unique()
-      : null;
+  const user = await linkedAppUser(ctx, request);
+  if (user?.status === "removed") return "removed";
   if (user?.role === "customer" && user.status === "active") return "active";
   if (request.invitationStatus === "failed" && !user) return "invitation_failed";
   if (!user) return "invitation_pending";
@@ -93,6 +105,7 @@ async function admissionStatus(
 }
 
 async function requestView(ctx: QueryCtx | MutationCtx, request: Doc<"joinRequests">) {
+  const removedBy = request.removedByUserId ? await ctx.db.get(request.removedByUserId) : null;
   return {
     joinRequestId: request._id,
     name: request.name,
@@ -110,6 +123,10 @@ async function requestView(ctx: QueryCtx | MutationCtx, request: Doc<"joinReques
     reviewedByUserId: request.reviewedByUserId ?? null,
     reviewNote: request.reviewNote ?? null,
     rejectionReason: request.rejectionReason ?? null,
+    removedAt: request.removedAt ? new Date(request.removedAt).toISOString() : null,
+    removedByUserId: request.removedByUserId ?? null,
+    removedByName: removedBy?.displayNameSnapshot ?? removedBy?.emailSnapshot ?? null,
+    removalReason: request.removalReason ?? null,
     admissionStatus: await admissionStatus(ctx, request),
     admissionError: request.admissionError ?? null,
     invitationError: request.invitationError ?? null,
@@ -141,12 +158,20 @@ export const submit = mutation({
   handler: async (ctx, args) => {
     if (!args.acknowledged) fail("JOIN_REQUEST_ACKNOWLEDGEMENT_REQUIRED");
     const identity = await ctx.auth.getUserIdentity();
-    if (identity && (await findCurrentUser(ctx, identity))) {
-      fail("JOIN_REQUEST_INVALID_STATE");
-    }
     const name = requiredText(args.name, "name", 120);
     const email = normalizeEmail(args.email);
     if (identity?.email && email !== identity.email.trim().toLowerCase()) fail("ADMISSION_REQUIRED");
+    const currentUser = identity ? await findCurrentUser(ctx, identity) : null;
+    if (currentUser && !(currentUser.role === "customer" && currentUser.status === "removed")) {
+      fail("JOIN_REQUEST_INVALID_STATE");
+    }
+    const matchingMembers = await ctx.db
+      .query("appUsers")
+      .withIndex("by_email_snapshot", (index) => index.eq("emailSnapshot", email))
+      .take(50);
+    if (matchingMembers.some((user) => user.role === "customer" && user.status !== "removed")) {
+      fail("JOIN_REQUEST_ALREADY_APPROVED");
+    }
     const contact = requiredText(args.contact, "contact", 80);
     const normalizedContact = normalizeContact(contact);
     const city = requiredText(args.city, "area", 120);
@@ -333,11 +358,65 @@ export const approve = mutation({
   },
 });
 
+export const removeMember = mutation({
+  args: {
+    joinRequestId: v.id("joinRequests"),
+    removalReason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requirePermission(ctx, "customers.manage");
+    const request = await getRequest(ctx, args.joinRequestId);
+    if (request.removedAt) return requestView(ctx, request);
+    requireStatus(request, "approved");
+    const removalReason = optionalText(args.removalReason, "removal reason", 500);
+    const target = await linkedAppUser(ctx, request);
+    if (target && target.role !== "customer") fail("MEMBERSHIP_REMOVAL_NOT_ALLOWED");
+    const now = Date.now();
+    if (target) {
+      await ctx.db.patch(target._id, {
+        status: "removed",
+        removedAt: target.removedAt ?? now,
+        removedByUserId: target.removedByUserId ?? actor._id,
+        removalReason: target.removalReason ?? removalReason,
+        suspendedAt: undefined,
+        suspendedByUserId: undefined,
+        updatedAt: now,
+      });
+    }
+    await ctx.db.patch(request._id, {
+      removedAt: now,
+      removedByUserId: actor._id,
+      removalReason,
+      updatedAt: now,
+    });
+    await recordAudit(
+      ctx,
+      actor._id,
+      "membership.removed",
+      target ? "appUser" : "join_request",
+      target?._id ?? request._id,
+      {
+        email: maskedEmail(request.normalizedEmail),
+        joinRequestId: String(request._id),
+        ...(target ? { appUserId: String(target._id) } : {}),
+        ...(removalReason ? { reason: removalReason } : {}),
+      },
+    );
+    if (request.invitationStatus === "pending" || request.invitationStatus === "sent") {
+      await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.revoke, { joinRequestId: request._id });
+    }
+    const updated = await ctx.db.get(request._id);
+    if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
+    return requestView(ctx, updated);
+  },
+});
+
 export const retryInvitation = mutation({
   args: { joinRequestId: v.id("joinRequests") },
   handler: async (ctx, args) => {
     const reviewer = await requirePermission(ctx, "customers.manage");
     const request = await getRequest(ctx, args.joinRequestId);
+    if (request.removedAt) return requestView(ctx, request);
     requireStatus(request, "approved");
     if (request.admittedAppUserId || request.invitationStatus === "accepted" || request.invitationStatus === "sent") {
       return requestView(ctx, request);
@@ -367,6 +446,7 @@ export const retryAdmission = mutation({
   handler: async (ctx, args) => {
     const reviewer = await requirePermission(ctx, "customers.manage");
     const request = await getRequest(ctx, args.joinRequestId);
+    if (request.removedAt) return requestView(ctx, request);
     requireStatus(request, "approved");
     if (!request.applicantClerkUserId) return requestView(ctx, request);
     try {

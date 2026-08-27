@@ -137,7 +137,7 @@ export const refundPayoutStatusValidator = v.union(
   v.literal("failed"),
 );
 export const roleValidator = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer"));
-export const userStatusValidator = v.union(v.literal("active"), v.literal("suspended"));
+export const userStatusValidator = v.union(v.literal("active"), v.literal("suspended"), v.literal("removed"));
 export const paginationValidator = v.object({
   numItems: v.number(),
   cursor: v.union(v.string(), v.null()),

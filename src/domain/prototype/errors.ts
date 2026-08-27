@@ -12,6 +12,9 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "JOIN_REQUEST_INVALID_STATE" || message.includes("JOIN_REQUEST_INVALID_STATE")) {
     return "Akun BFG-mu sudah terdaftar. Masuk untuk melanjutkan.";
   }
+  if (code === "USER_REMOVED" || message.includes("USER_REMOVED")) {
+    return "Membership BFG-mu telah dihapus. Ajukan permintaan bergabung kembali untuk mendapatkan akses lagi.";
+  }
   if (code === "JOIN_REQUEST_ACKNOWLEDGEMENT_REQUIRED" || message.includes("JOIN_REQUEST_ACKNOWLEDGEMENT_REQUIRED")) {
     return "Centang persetujuan sebelum mengirim permintaan.";
   }
