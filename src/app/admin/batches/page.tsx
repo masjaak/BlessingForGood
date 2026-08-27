@@ -65,7 +65,7 @@ function CreateBatchForm() {
           <Field label="Kode referensi">
             <input className="input" value={referenceCode} onChange={(event) => setReferenceCode(event.target.value)} />
           </Field>
-          <Field label="Deadline PO" hint="Batas finalisasi item dan jumlah pembelian untuk Batch ini.">
+          <Field label="Deadline PO" hint="Batas finalisasi roster dan jumlah pembelian sebelum PO dikunci.">
             <input
               className="input"
               type="datetime-local"
@@ -74,7 +74,7 @@ function CreateBatchForm() {
               required
             />
           </Field>
-          <Field label="ETA Cargo" hint="Bulan dan tahun estimasi tiba">
+          <Field label="ETA Cargo" hint="Estimasi tiba dalam format bulan dan tahun">
             <input
               className="input"
               type="month"

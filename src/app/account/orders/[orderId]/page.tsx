@@ -151,12 +151,13 @@ function CustomerOrderDetail() {
                   {batch.currentShipmentStage ? shipmentStageLabels[batch.currentShipmentStage] : "Belum dimulai"}
                 </p>
                 <p className="subtle">Estimasi tiba: {formatCargoEta(batch.etaCargoMonth)}</p>
+                <p className="subtle">Pembaruan terakhir: {new Date(batch.updatedAt).toLocaleString("id-ID")}</p>
                 <Timeline history={batch.history} labels={shipmentStageLabels} />
               </div>
             ))
           ) : (
             <p className="subtle">
-              Pesananmu sudah tercatat. Status perjalanan Batch akan muncul setelah Admin memasukkan item ini ke siklus
+              Pesananmu sudah tercatat. Perjalanan Batch akan muncul setelah Admin memasukkan pesanan ini ke siklus
               PO/cargo.
             </p>
           )}

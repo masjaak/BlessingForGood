@@ -21,6 +21,52 @@ async function createOwnedOrder(
 describe("BFG batches and shipment tracking", () => {
   beforeEach(configureTestEnvironment);
 
+  it("edits batch metadata before lock and rejects edits after lock", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const firstDeadline = Date.now() + 24 * 60 * 60 * 1000;
+    const nextDeadline = firstDeadline + 24 * 60 * 60 * 1000;
+
+    const created = await admin.mutation(api.batches.create, {
+      name: "Editable Batch",
+      description: "Before update",
+      poDeadlineAt: firstDeadline,
+    });
+
+    await admin.mutation(api.batches.update, {
+      batchId: created.batchId,
+      name: "Updated Batch",
+      description: "After update",
+      poDeadlineAt: nextDeadline,
+    });
+    await admin.mutation(api.batches.update, {
+      batchId: created.batchId,
+      name: "Renamed Batch",
+    });
+
+    await expect(admin.query(api.batches.getForAdmin, { batchId: created.batchId })).resolves.toMatchObject({
+      name: "Renamed Batch",
+      description: "After update",
+      poDeadlineAt: nextDeadline,
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(created.batchId, {
+        currentShipmentStage: "po_closed",
+        updatedAt: Date.now(),
+      });
+    });
+
+    await expect(
+      admin.mutation(api.batches.update, {
+        batchId: created.batchId,
+        name: "Illegal update",
+        description: "Should not persist",
+        poDeadlineAt: nextDeadline,
+      }),
+    ).rejects.toThrow("BATCH_LOCKED");
+  });
+
   it("requires admin for batches and keeps catalog links unique", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

@@ -6,6 +6,7 @@ import { mutation, query } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
+import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { requiredText } from "./lib/validation";
 import { nextBatchReference } from "./lib/batchNumbers";
 
@@ -28,15 +29,16 @@ async function catalogRosterSummary(ctx: DataCtx, catalogId: Id<"secretCatalogs"
   let eligibleQuantity = 0;
   for (const order of orders) {
     if (order.source === "ready_stock") continue;
-    customers.add(String(order.customerUserId));
     const items = await ctx.db
       .query("orderItems")
       .withIndex("by_order", (index) => index.eq("orderId", order._id))
       .take(200);
     for (const item of items) {
-      if (item.quantity <= 0) continue;
+      const fulfillableQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+      if (fulfillableQuantity <= 0) continue;
+      customers.add(String(order.customerUserId));
       eligibleOrderItemCount += 1;
-      eligibleQuantity += item.quantity;
+      eligibleQuantity += fulfillableQuantity;
       publishers.add(item.publisherNameSnapshot);
     }
   }
@@ -148,6 +150,48 @@ export const create = mutation({
     });
     await recordAudit(ctx, user._id, "batch.created", "batch", batchId);
     return getBatchSummary(ctx, batchId);
+  },
+});
+
+export const update = mutation({
+  args: {
+    batchId: v.id("batches"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    poDeadlineAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "batches.manage");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch) fail("BATCH_NOT_FOUND");
+    if (batch.isArchived) fail("BATCH_ARCHIVED");
+    if (batch.currentShipmentStage) fail("BATCH_LOCKED");
+    const poDeadlineAt = args.poDeadlineAt === undefined ? batch.poDeadlineAt : args.poDeadlineAt;
+    if (poDeadlineAt !== undefined && poDeadlineAt <= Date.now()) {
+      fail("VALIDATION_FAILED", "PO deadline must be in the future");
+    }
+    const links = await ctx.db
+      .query("catalogBatchLinks")
+      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
+      .take(200);
+    const nextBatch = { ...batch, poDeadlineAt };
+    await Promise.all(
+      links.map(async (link) => {
+        const catalog = await ctx.db.get(link.catalogId);
+        if (!catalog) fail("CATALOG_NOT_FOUND");
+        assertBatchCatalogDeadline(nextBatch, catalog);
+      }),
+    );
+    const name = requiredText(args.name, "batch name");
+    const description = args.description === undefined ? batch.description : args.description.trim() || undefined;
+    await ctx.db.patch(args.batchId, {
+      name,
+      description,
+      poDeadlineAt,
+      updatedAt: Date.now(),
+    });
+    await recordAudit(ctx, user._id, "batch.updated", "batch", args.batchId);
+    return getBatchSummary(ctx, args.batchId);
   },
 });
 

@@ -4,8 +4,68 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
 
+async function storeTestMedia(t: ReturnType<typeof testConvex>) {
+  return t.run(async (ctx) =>
+    ctx.storage.store(
+      new Blob([new Uint8Array([1, 2, 3]).buffer as ArrayBuffer], {
+        type: "image/png",
+      }),
+    ),
+  );
+}
+
 describe("BFG destructive action guards", () => {
   beforeEach(configureTestEnvironment);
+
+  it("cleans owned media without deleting shared storage", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const adminUser = await admin.query(api.users.current, {});
+    if (!adminUser) throw new Error("Expected admin user");
+
+    const publisherId = await admin.mutation(api.publishers.create, {
+      name: "Shared Media Publisher",
+    });
+    const first = await admin.mutation(api.books.create, {
+      publisherId,
+      title: "First draft",
+    });
+    const second = await admin.mutation(api.books.create, {
+      publisherId,
+      title: "Second draft",
+    });
+    const sharedCover = await storeTestMedia(t);
+    const ownedGallery = await storeTestMedia(t);
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(first, {
+        coverStorageId: sharedCover,
+        updatedAt: Date.now(),
+      });
+      await ctx.db.patch(second, {
+        coverStorageId: sharedCover,
+        updatedAt: Date.now(),
+      });
+      await ctx.db.insert("bookMedia", {
+        bookId: first,
+        storageId: ownedGallery,
+        displayOrder: 0,
+        altText: "First draft gallery",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        createdByUserId: adminUser.appUserId,
+      });
+    });
+
+    await admin.mutation(api.books.remove, { bookId: first });
+
+    await expect(admin.query(api.books.getForAdmin, { bookId: second })).resolves.not.toBeNull();
+    await expect(t.run(async (ctx) => ctx.storage.getUrl(sharedCover))).resolves.not.toBeNull();
+    await expect(t.run(async (ctx) => ctx.storage.getUrl(ownedGallery))).resolves.toBeNull();
+
+    await admin.mutation(api.books.remove, { bookId: second });
+    await expect(t.run(async (ctx) => ctx.storage.getUrl(sharedCover))).resolves.toBeNull();
+  });
 
   it("deletes only an unused draft Book and its empty stock setup", async () => {
     const t = testConvex();

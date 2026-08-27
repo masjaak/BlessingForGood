@@ -507,11 +507,11 @@ export const remove = mutation({
       ctx.db
         .query("bookVariants")
         .withIndex("by_book", (query) => query.eq("bookId", book._id))
-        .take(100),
+        .collect(),
       ctx.db
         .query("bookMedia")
         .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
-        .take(8),
+        .collect(),
       ctx.db
         .query("orderItems")
         .withIndex("by_book", (query) => query.eq("bookId", book._id))

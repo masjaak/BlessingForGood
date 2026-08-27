@@ -70,7 +70,16 @@ type AdminAssignment = {
 
 type RosterItem = Pick<
   AdminAssignment,
-  "assignmentId" | "orderId" | "orderItemId" | "bookVariantId" | "bookTitle" | "format" | "isbn" | "assignedQuantity"
+  | "assignmentId"
+  | "orderId"
+  | "orderItemId"
+  | "bookVariantId"
+  | "bookTitle"
+  | "format"
+  | "isbn"
+  | "assignedQuantity"
+  | "orderCode"
+  | "publisherName"
 >;
 
 type CustomerRoster = {
@@ -585,6 +594,8 @@ export const getForAdmin = query({
         format: item.format,
         isbn: item.isbn,
         assignedQuantity: item.assignedQuantity,
+        orderCode: item.orderCode,
+        publisherName: item.publisherName,
       });
       customerGroups.set(customerKey, customer);
       const purchaseKey = String(item.bookVariantId);
@@ -661,6 +672,7 @@ export const listUnassignedForAdmin = query({
     const result = [];
     for (const order of orders) {
       if (order.source === "ready_stock" || !order.catalogId || !catalogIds.has(String(order.catalogId))) continue;
+      const customer = await ctx.db.get(order.customerUserId);
       const items = await ctx.db
         .query("orderItems")
         .withIndex("by_order", (index) => index.eq("orderId", order._id))
@@ -680,11 +692,13 @@ export const listUnassignedForAdmin = query({
             orderCode: order.orderCode || null,
             customerUserId: order.customerUserId,
             customerName: order.customerName,
+            customerMemberCode: customer?.memberCode || null,
             catalogId: order.catalogId,
             catalogName: catalogNames.get(String(order.catalogId)) || "Unknown catalog",
             orderItemId: item._id,
             bookVariantId: item.bookVariantId,
             bookTitle: item.bookTitleSnapshot,
+            publisherName: item.publisherNameSnapshot,
             format: item.formatSnapshot,
             isbn: item.isbnSnapshot,
             unitPriceAmount: item.unitPriceAmountSnapshot,
@@ -692,6 +706,12 @@ export const listUnassignedForAdmin = query({
             assignedQuantity,
             assignedToBatchQuantity,
             remainingQuantity: fulfillableQuantity - assignedQuantity,
+            assignmentState:
+              assignedToBatchQuantity > 0
+                ? "Sebagian masuk Batch ini"
+                : assignedQuantity > 0
+                  ? "Sebagian masuk Batch lain"
+                  : "Belum masuk Batch",
           });
         }
         if (result.length >= 200) return result;

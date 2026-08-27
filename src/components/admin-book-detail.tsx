@@ -25,6 +25,7 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { getConvexErrorCode } from "@/domain/prototype/context";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import type { CoverPresentation } from "@/components/book-cover";
 import { ProductGallery } from "@/components/product-gallery";
@@ -201,12 +202,13 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [galleryPendingMediaId, setGalleryPendingMediaId] = useState<string | null>(null);
   const [confirmGalleryMedia, setConfirmGalleryMedia] = useState<GalleryImage | null>(null);
   const [confirmDeleteBook, setConfirmDeleteBook] = useState(false);
+  const [deleteBlocked, setDeleteBlocked] = useState(false);
   const [previewLabel, setPreviewLabel] = useState(book.externalPreviewLabel || "");
   const [previewUrl, setPreviewUrl] = useState(book.externalPreviewUrl || "");
   const [previewMessage, setPreviewMessage] = useState("");
   const [previewError, setPreviewError] = useState("");
   const [pendingAction, setPendingAction] = useState<
-    "book" | "publish" | "variant" | "cover" | "gallery" | "preview" | "delete" | null
+    "book" | "publish" | "variant" | "cover" | "gallery" | "preview" | "delete" | "archive" | null
   >(null);
   const { getToken, sessionClaims } = useAuth();
 
@@ -333,15 +335,46 @@ function BookEditor({ book }: { book: AdminBook }) {
   async function deleteBook() {
     setBookMessage("");
     setBookError("");
+    setDeleteBlocked(false);
     setPendingAction("delete");
     try {
       await removeBook({ bookId: book._id });
       router.push("/admin/books");
     } catch (reason) {
-      setBookError(productErrorMessage(reason, "Buku belum dapat dihapus."));
+      const code = getConvexErrorCode(reason);
+      const rawMessage = reason instanceof Error ? reason.message : "";
+      if (
+        code === "ENTITY_IN_USE" ||
+        code === "ENTITY_DELETE_NOT_ALLOWED" ||
+        rawMessage.includes("ENTITY_IN_USE") ||
+        rawMessage.includes("ENTITY_DELETE_NOT_ALLOWED")
+      ) {
+        setDeleteBlocked(true);
+        setBookError(
+          "Buku tidak dapat dihapus. Buku ini sudah memiliki riwayat pesanan atau masih digunakan dalam operasional BFG. Gunakan Arsipkan buku sebagai gantinya.",
+        );
+      } else {
+        setBookError(productErrorMessage(reason, "Buku belum dapat dihapus."));
+      }
     } finally {
       setPendingAction(null);
       setConfirmDeleteBook(false);
+    }
+  }
+
+  async function archiveBook() {
+    setBookMessage("");
+    setBookError("");
+    setPendingAction("archive");
+    try {
+      await updateBook(bookInput("archived"));
+      setPublicationStatus("archived");
+      setDeleteBlocked(false);
+      setBookMessage("Buku diarsipkan.");
+    } catch {
+      setBookError("Buku belum dapat diarsipkan. Silakan coba lagi.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -710,6 +743,20 @@ function BookEditor({ book }: { book: AdminBook }) {
                   </Button>
                 ) : null}
               </ActionGroup>
+              {deleteBlocked && book.publicationStatus === "draft" ? (
+                <div className="form-actions">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={pendingAction === "archive"}
+                    loadingLabel="Mengarsipkan…"
+                    disabled={pendingAction !== null}
+                    onClick={() => void archiveBook()}
+                  >
+                    Arsipkan buku
+                  </Button>
+                </div>
+              ) : null}
               {bookError ? (
                 <p className="error-text" role="alert">
                   {bookError}
@@ -802,7 +849,7 @@ function BookEditor({ book }: { book: AdminBook }) {
           <ConfirmationDialog
             open={confirmDeleteBook}
             title="Hapus buku ini?"
-            description="Hanya Book Master draf tanpa referensi bisnis yang dapat dihapus."
+            description="Buku hanya dapat dihapus jika masih draf dan belum memiliki pesanan atau riwayat operasional. Tindakan ini tidak dapat dibatalkan."
             confirmLabel="Hapus buku"
             danger
             onCancel={() => setConfirmDeleteBook(false)}

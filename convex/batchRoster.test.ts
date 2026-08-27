@@ -34,6 +34,28 @@ describe("BFG batch roster and assisted orders", () => {
     });
     const batch = await admin.mutation(api.batches.create, { name: "Roster Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    const eligibleRoster = await admin.query(api.batchTracking.listUnassignedForAdmin, { batchId: batch.batchId });
+    expect(eligibleRoster).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          customerName: "Roster Customer A",
+          customerMemberCode: expect.any(String),
+          orderCode: expect.any(String),
+          bookTitle: "Roster Catalog Book",
+          publisherName: "Roster Catalog Publisher",
+          format: "PB",
+          remainingQuantity: 2,
+          assignmentState: "Belum masuk Batch",
+        }),
+        expect.objectContaining({
+          customerName: "Roster Customer B",
+          customerMemberCode: expect.any(String),
+          orderCode: expect.any(String),
+          remainingQuantity: 1,
+          assignmentState: "Belum masuk Batch",
+        }),
+      ]),
+    );
     await admin.mutation(api.batchTracking.assignOrderItem, {
       orderItemId: firstOrder.items[0]._id,
       batchId: batch.batchId,
