@@ -2,7 +2,7 @@
 
 ## Membership removal and reapply closure — 2026-08-27
 
-Status: `IMPLEMENTED_LOCALLY; QA_AND_PRODUCTION_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; REAL_CUSTOMER_RETEST_PENDING`
 
 Admin can remove an approved or active Customer from the Join Request queue.
 The server transaction tombstones the Customer membership, preserves the
@@ -12,6 +12,11 @@ Removed admissions no longer block `/join` or auto-reactivate through the old
 approval. A fresh request and new approval are required; same-subject approval
 reuses the existing appUser/member code, while a new Clerk subject remains a
 separate historical identity.
+
+Local full Vitest, Convex, TypeScript, ESLint, format, build, audit, and diff
+gates pass. Convex Production and Vercel Production are deployed. Public
+production smoke passes; authenticated Admin/customer lifecycle retest still
+requires an authorized real account.
 
 ## Membership admission root closure P0 — 2026-08-27
 

@@ -26,9 +26,9 @@ source: conversation
 ### QA
 
 - Full Vitest (69 files, 366 tests), Convex checks, TypeScript, ESLint,
-  formatting, production build, audit, and diff checks pass locally. Browser
-  E2E still requires a Clerk-enabled environment; Production evidence remains
-  pending.
+  formatting, production build, audit, and diff checks pass locally. Convex
+  Production, Vercel Production, and public smoke are green. Authenticated
+  Admin/customer lifecycle retest still requires an authorized real account.
 
 ## [membership-admission-root-closure] — 2026-08-27
 
