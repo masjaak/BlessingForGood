@@ -71,7 +71,7 @@ Tagihan.
 
 ## Invitation missing-requirements submit correction — 2026-08-28
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_AUTHENTICATED_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; PRODUCTION_AUTHENTICATED_UAT_PENDING`
 
 The new real recording superseded the earlier ticket-spinner diagnosis. The
 current failure is the `Lengkapi akun` submit boundary: the old handler
@@ -94,9 +94,18 @@ Local evidence: focused invitation tests `16/16`, full Vitest `69 files /
 377 tests`, TypeScript, ESLint, Format, Convex Development check, production
 build, `npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check`
 pass. The affected local Playwright surface could not start because this
-checkout lacks a Clerk publishable key. No production invitee, mailbox, or
-business fixture was fabricated; authenticated Production UAT remains open
-until an authorized operator supplies a legitimate new invitation journey.
+checkout lacks a Clerk publishable key.
+
+Production evidence: Vercel deployment `dpl_8CfEewUKNSNDxLnpfAXG7GCKULSZ` is
+`READY` and aliased to `https://www.blessingforgood.com`; its configured build
+wrapper completed the production build and Convex Production deployment to
+`clean-eel-522`. The protected public `/accept-invitation` smoke returned the
+BFG route and loading surface without a 404. The affected Production
+Playwright attempt was blocked before page launch by the host Chromium
+permission error (`bootstrap_check_in`, code 1100), so it provides no
+authenticated application result. No production invitee, mailbox, or business
+fixture was fabricated; authenticated Production UAT remains open until an
+authorized operator supplies a legitimate new invitation journey.
 
 ## Membership removal and reapply closure — 2026-08-27
 
