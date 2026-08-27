@@ -1,5 +1,35 @@
 # BFG Project Status
 
+## Invitation acceptance P0 root closure — 2026-08-27
+
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_REAL_CUSTOMER_UAT_PENDING`
+
+The first incorrect boundary is now reproduced and covered: the previous
+`/accept-invitation` effect cancelled its in-flight `signUp.ticket` continuation
+when Clerk refreshed auth or the sign-up resource. Its one-shot ticket guard
+then prevented retry, so the route never reached requirements, finalization, or
+membership reconciliation. The fix keeps one per-ticket run alive, reads the
+current Clerk signal after async boundaries, and drives explicit ticket,
+requirements, verification, Protect, finalization, session, Convex, and active
+membership states. It redirects only after the existing BFG `appUser` is
+`customer/active`.
+
+The installed Clerk contract is `@clerk/nextjs 7.8.0` (`@clerk/react 6.14.5`):
+the implementation uses `signUp.ticket`, dynamic `missingFields` and
+`unverifiedFields`, current verification strategies, Protect challenge support,
+and `signUp.finalize`. The existing server-side Clerk subject/verified-primary-
+email lookup and single canonical membership reconciler are unchanged. No
+Remove Member, Book Delete, Batch, Ready Stock business logic, or other green
+domain was modified.
+
+Local evidence: focused invitation tests `13/13`, full Vitest `69 files /
+373 tests`, TypeScript, ESLint, Format, Convex Development check, production
+build, `npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check`
+pass. Local rendered browser QA remains unavailable because this checkout has
+no Clerk publishable key; the existing production-key boundary was preserved.
+Production deployment and a legitimate new invitee's authenticated ticket
+journey are still required before this ticket can be marked closed.
+
 ## Membership removal and reapply closure — 2026-08-27
 
 Status: `IMPLEMENTED_AND_DEPLOYED; REAL_CUSTOMER_RETEST_PENDING`

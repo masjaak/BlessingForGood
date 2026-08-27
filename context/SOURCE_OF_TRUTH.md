@@ -52,6 +52,33 @@ The canonical contract is:
   Customer activation. Logs contain no ticket, JWT, token, raw subject, or raw
   email.
 
+### Invitation acceptance P0 correction — 2026-08-27
+
+The deterministic RED reproduction of the reported stuck invitation established
+the first incorrect application boundary. The old `/accept-invitation` effect
+owned the asynchronous `signUp.ticket` handoff with an effect-local active
+flag, while depending on Clerk auth and sign-up resource identity. Clerk can
+refresh those values while the ticket request is in flight; React then cleaned
+up the effect, ignored the ticket result, and the one-shot ticket guard blocked
+the next attempt. `signUp.finalize` and the returned Clerk requirements were
+never reached, leaving the route in ticket processing until its recovery copy.
+
+The route now keeps a per-ticket run alive across Clerk signal/resource/auth
+changes, reads the current sign-up resource after each async boundary, and
+advances from Clerk's actual `status`, `missingFields`, `unverifiedFields`,
+verification strategy, and Protect challenge. It renders only the fields Clerk
+reports, uses the installed Clerk verification/Protect methods when required,
+finalizes exactly once, and waits for the existing Clerk → Convex → BFG
+reconciliation to report an active Customer before redirecting. A same-session
+completed sign-up may continue only when Clerk's current session/user matches;
+the existing different-account guard remains in force.
+
+This correction adds no membership writer and does not change the trusted
+server-side subject/verified-email contract. The new route regression covers
+direct completion, resource refresh, auth/session handoff, missing fields,
+email-code and email-link verification, same/different-account handling,
+invalid tickets, and recovery from a hanging ticket request.
+
 All Account, Join, Ready Stock, Buku Saya, Tagihan, Customer shell, and Admin
 Join Request surfaces remain projections of this same canonical state. No
 page-specific membership implementation is permitted.

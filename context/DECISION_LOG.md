@@ -88,3 +88,9 @@ source-backed, and added here before implementation.
 | ID | Decision | Status |
 | --- | --- | --- |
 | BFG-DEC-060 | Admin approval starts one private server-side Clerk Backend SDK reconciliation; exact identities and pending invitations are reused, failures are retryable, repeated approval is idempotent, and `appUsers.role/status` gates `/join` with active Customers redirected away. The cover presentation test asserts the intentional transformed, clipped-frame contract rather than the obsolete raw-image containment assumption. | ACTIVE |
+
+## Invitation acceptance P0 — 2026-08-27
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-061 | 2026-08-27 / invitation acceptance | An effect-local active flag and one-shot ticket guard could own a multi-stage Clerk invitation handoff while Clerk auth and sign-up resources changed. | `/accept-invitation` keeps one per-ticket orchestration alive across Clerk signal/resource/auth changes; it branches from the current Clerk status and requirements, completes configured verification/Protect steps, finalizes once, waits for existing Convex/BFG membership reconciliation, and redirects only for `appUser=customer/active`. | Latest explicit user decision; installed Clerk v7 contract; deterministic RED regression | Prevents the first incorrect boundary from discarding the ticket result and leaving activation in processing, without adding an auth system or membership writer. | ACTIVE |

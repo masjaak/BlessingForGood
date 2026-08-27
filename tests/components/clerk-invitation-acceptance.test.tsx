@@ -69,6 +69,7 @@ describe("BFG application invitation acceptance", () => {
   it("completes the required username and password fields after ticket handoff", async () => {
     const signUp = {
       status: "missing_requirements",
+      missingFields: ["username", "password"],
       ticket: vi.fn().mockResolvedValue({ error: null }),
       password: vi.fn().mockImplementation(() => {
         signUp.status = "complete";
@@ -79,11 +80,11 @@ describe("BFG application invitation acceptance", () => {
     vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
 
     render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Terima undangan BFG" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
 
     fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "safe-password" } });
-    fireEvent.click(screen.getByRole("button", { name: "Aktifkan akun" }));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
 
     await waitFor(() =>
       expect(signUp.password).toHaveBeenCalledWith({ username: "reader", password: "safe-password" }),
@@ -91,9 +92,207 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
   });
 
+  it("renders and submits only the fields reported by Clerk", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: ["first_name", "last_name", "legal_accepted"],
+      unverifiedFields: [],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      update: vi.fn().mockImplementation(() => {
+        signUp.status = "complete";
+        return Promise.resolve({ error: null });
+      }),
+      password: vi.fn(),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+
+    expect(screen.getByLabelText("Nama depan")).toBeTruthy();
+    expect(screen.getByLabelText("Nama belakang")).toBeTruthy();
+    expect(screen.getByRole("checkbox")).toBeTruthy();
+    expect(screen.queryByLabelText("Username")).toBeNull();
+    expect(screen.queryByLabelText("Password")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Nama depan"), { target: { value: "Ari" } });
+    fireEvent.change(screen.getByLabelText("Nama belakang"), { target: { value: "Budi" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+
+    await waitFor(() =>
+      expect(signUp.update).toHaveBeenCalledWith({
+        firstName: "Ari",
+        lastName: "Budi",
+        legalAccepted: true,
+      }),
+    );
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
+  it("handles Clerk email verification before finalization", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: [],
+      unverifiedFields: ["email_address"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      update: vi.fn(),
+      password: vi.fn(),
+      verifications: {
+        emailAddress: { supportedStrategies: ["email_code"] },
+        sendEmailCode: vi.fn().mockResolvedValue({ error: null }),
+        verifyEmailCode: vi.fn().mockImplementation(() => {
+          signUp.status = "complete";
+          signUp.unverifiedFields = [];
+          return Promise.resolve({ error: null });
+        }),
+      },
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Verifikasi akun" })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "Kirim kode verifikasi" }));
+    await waitFor(() => expect(signUp.verifications.sendEmailCode).toHaveBeenCalledOnce());
+
+    fireEvent.change(screen.getByLabelText("Kode verifikasi"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Verifikasi kode" }));
+
+    await waitFor(() => expect(signUp.verifications.verifyEmailCode).toHaveBeenCalledWith({ code: "123456" }));
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
+  it("handles a Clerk email-link verification before finalization", async () => {
+    let releaseLink!: (result: { error: null }) => void;
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: [],
+      unverifiedFields: ["email_address"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      update: vi.fn(),
+      password: vi.fn(),
+      verifications: {
+        emailAddress: { supportedStrategies: ["email_link"] },
+        sendEmailLink: vi.fn().mockResolvedValue({ error: null }),
+        waitForEmailLinkVerification: vi.fn(
+          () =>
+            new Promise<{ error: null }>((resolve) => {
+              releaseLink = resolve;
+            }),
+        ),
+      },
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Verifikasi akun" })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "Kirim tautan verifikasi" }));
+    await waitFor(() =>
+      expect(signUp.verifications.sendEmailLink).toHaveBeenCalledWith({ verificationUrl: window.location.href }),
+    );
+    await waitFor(() => expect(signUp.verifications.waitForEmailLinkVerification).toHaveBeenCalledOnce());
+
+    signUp.status = "complete";
+    signUp.unverifiedFields = [];
+    await act(async () => releaseLink({ error: null }));
+
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
+  it("waits for the Clerk sign-up resource before starting the ticket", async () => {
+    const signUp = {
+      status: "complete",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn(),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    const state: { currentSignUp?: typeof signUp } = {};
+    vi.mocked(useSignUp).mockImplementation(() => ({ signUp: state.currentSignUp }) as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    expect(signUp.ticket).not.toHaveBeenCalled();
+
+    state.currentSignUp = signUp;
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+
+    await waitFor(() => expect(signUp.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
+  it("keeps the ticket flow alive when Clerk activates the session during handoff", async () => {
+    let releaseTicket!: (result: { error: null }) => void;
+    let isSignedIn = false;
+    const signUp = {
+      status: "complete",
+      missingFields: [],
+      unverifiedFields: [],
+      ticket: vi.fn(
+        () =>
+          new Promise<{ error: null }>((resolve) => {
+            releaseTicket = resolve;
+          }),
+      ),
+      password: vi.fn(),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useAuth).mockImplementation(
+      () => ({ isLoaded: true, isSignedIn, sessionId: isSignedIn ? "session-b" : null, userId: "user-b" }) as never,
+    );
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(signUp.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+
+    isSignedIn = true;
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await act(async () => releaseTicket({ error: null }));
+
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
+  it("continues the ticket orchestration after Clerk refreshes its signup resource", async () => {
+    let releaseTicket!: (result: { error: null }) => void;
+    const firstSignUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn(
+        () =>
+          new Promise<{ error: null }>((resolve) => {
+            releaseTicket = resolve;
+          }),
+      ),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    const refreshedSignUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn(),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    let currentSignUp = firstSignUp;
+    vi.mocked(useSignUp).mockImplementation(() => ({ signUp: currentSignUp }) as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+
+    await waitFor(() => expect(firstSignUp.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+    currentSignUp = refreshedSignUp;
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await act(async () => releaseTicket({ error: null }));
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+  });
+
   it("does not discard the ticket when no ticket is present", () => {
     const signUp = {
       status: "missing_requirements",
+      missingFields: ["username", "password"],
       ticket: vi.fn(),
       password: vi.fn(),
       finalize: vi.fn(),
@@ -108,17 +307,52 @@ describe("BFG application invitation acceptance", () => {
 
   it("preserves the explicit account-switch guard for an existing session", () => {
     const signUp = {
-      status: "missing_requirements",
+      status: "complete",
+      existingSession: { sessionId: "session-b" },
+      createdUserId: "user-b",
       ticket: vi.fn(),
       password: vi.fn(),
       finalize: vi.fn(),
     };
-    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-a",
+      userId: "user-a",
+    } as never);
     vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
 
     render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
 
     expect(screen.getByText("Undangan ini ditujukan untuk email lain.")).toBeTruthy();
+    expect(signUp.ticket).not.toHaveBeenCalled();
+  });
+
+  it("continues a completed invitation for the same active Clerk session", async () => {
+    const signUp = {
+      status: "complete",
+      createdUserId: "user-b",
+      existingSession: { sessionId: "session-b" },
+      missingFields: [],
+      unverifiedFields: [],
+      ticket: vi.fn(),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-b",
+      userId: "user-b",
+    } as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.queryByText("Undangan ini ditujukan untuk email lain.")).toBeNull());
+
+    productState = { authState: "authenticated", sessionRole: "customer" };
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
     expect(signUp.ticket).not.toHaveBeenCalled();
   });
 
