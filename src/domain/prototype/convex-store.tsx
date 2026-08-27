@@ -160,10 +160,11 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [provisioning, setProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState(false);
   const [admissionDenied, setAdmissionDenied] = useState(false);
-  const provisioningRef = useRef(false);
+  const provisioningSessionRef = useRef<string | null>(null);
   const reconciledSessionRef = useRef<string | null>(null);
 
-  const { isLoaded, isSignedIn, sessionId } = useAuth();
+  const { isLoaded, isSignedIn, sessionId, userId } = useAuth();
+  const authSessionKey = sessionId || userId || "signed-in";
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
   const retryConvexAuth = useConvexRetry();
 
@@ -223,8 +224,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       convexAuthLoading ||
       !isAuthenticated ||
       me === undefined ||
-      reconciledSessionRef.current === (sessionId || "signed-in") ||
-      provisioningRef.current ||
+      reconciledSessionRef.current === authSessionKey ||
+      provisioningSessionRef.current === authSessionKey ||
       admissionDenied ||
       provisionError
     )
@@ -232,14 +233,13 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      const sessionKey = sessionId || "signed-in";
-      provisioningRef.current = true;
+      provisioningSessionRef.current = authSessionKey;
       setProvisioning(true);
       setProvisionError(false);
       const correlationId = globalThis.crypto?.randomUUID?.() || `bootstrap-${Date.now()}`;
       void ensureCurrentUser({ correlationId })
         .then(() => {
-          reconciledSessionRef.current = sessionKey;
+          if (active) reconciledSessionRef.current = authSessionKey;
         })
         .catch((reason) => {
           if (!active) return;
@@ -248,8 +248,10 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
           } else setProvisionError(true);
         })
         .finally(() => {
-          provisioningRef.current = false;
-          if (active) setProvisioning(false);
+          if (provisioningSessionRef.current === authSessionKey) {
+            provisioningSessionRef.current = null;
+            if (active) setProvisioning(false);
+          }
         });
     });
     return () => {
@@ -264,7 +266,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     isSignedIn,
     me,
     provisionError,
-    sessionId,
+    authSessionKey,
   ]);
 
   useEffect(() => {
@@ -273,7 +275,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       setAdmissionDenied(false);
       setProvisionError(false);
     });
-  }, [isSignedIn, sessionId]);
+  }, [authSessionKey, isSignedIn]);
 
   const catalogs = useMemo(
     () =>
@@ -426,7 +428,9 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ProductContextValue>(
     () => ({
-      hydrated: isLoaded && (!isSignedIn || (me !== undefined && me !== null) || provisionError),
+      hydrated:
+        isLoaded &&
+        (isSignedIn === false || (isSignedIn === true && ((me !== undefined && me !== null) || provisionError))),
       dataSource: "convex",
       sessionRole: me?.role || null,
       userStatus: me?.status || null,

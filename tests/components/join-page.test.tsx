@@ -1,13 +1,11 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import JoinPage from "@/app/join/page";
 import { useProduct } from "@/domain/prototype/store";
 
-vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn() }));
 vi.mock("convex/react", () => ({ useMutation: vi.fn(), useQuery: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
 vi.mock("@/components/brand", () => ({
@@ -18,7 +16,6 @@ vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 
 beforeEach(() => {
   vi.mocked(useRouter).mockReturnValue({ replace: vi.fn() } as never);
-  vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
   vi.mocked(useProduct).mockReturnValue({
     dataSource: "convex",
     authState: "admission-required",
@@ -96,7 +93,11 @@ describe("Join Blessfriends admission entry", () => {
   });
 
   it("submits the public form while signed out and accepts expanded interests", async () => {
-    vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "signed-out",
+      retryAuth: vi.fn(),
+    } as never);
     const submit = vi.fn().mockResolvedValue({ whatsappGroupUrl: null });
     vi.mocked(useMutation).mockReturnValue(submit as never);
 

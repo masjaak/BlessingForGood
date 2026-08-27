@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,6 +8,7 @@ import { BrandMascot } from "@/components/brand";
 import { BFGSelect } from "@/components/bfg-select";
 import { Button, Card, ErrorState, Field, LinkButton, PageHeader } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { isProductIdentityAuthenticated } from "@/domain/prototype/context";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -208,20 +208,20 @@ function ConnectedJoinForm() {
 
 function JoinPageContent() {
   const { dataSource, authState, retryAuth, sessionRole } = useProduct();
-  const { isLoaded, isSignedIn } = useAuth();
+  const signedIn = isProductIdentityAuthenticated(authState);
   const router = useRouter();
   const joinRequests = useQuery(
     api.joinRequests.mine,
-    isSignedIn && dataSource === "convex" && authState === "admission-required" ? {} : "skip",
+    signedIn && dataSource === "convex" && authState === "admission-required" ? {} : "skip",
   );
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && authState === "authenticated" && sessionRole === "customer") {
+    if (signedIn && authState === "authenticated" && sessionRole === "customer") {
       router.replace("/account");
     }
-  }, [authState, isLoaded, isSignedIn, router, sessionRole]);
+  }, [authState, router, sessionRole, signedIn]);
 
-  if (isSignedIn && (authState === "convex-error" || authState === "network-error")) {
+  if (authState === "convex-error" || authState === "network-error") {
     return (
       <ErrorState
         title="Sesi BFG belum siap."
@@ -231,12 +231,12 @@ function JoinPageContent() {
     );
   }
   if (
-    !isLoaded ||
-    (isSignedIn && authState !== "authenticated" && authState !== "suspended" && authState !== "admission-required")
+    authState === "loading" ||
+    (signedIn && authState !== "authenticated" && authState !== "suspended" && authState !== "admission-required")
   ) {
     return <div className="state-panel">Memeriksa akses BFG…</div>;
   }
-  if (isSignedIn && authState === "suspended") {
+  if (signedIn && authState === "suspended") {
     return (
       <Card className="notice-card content-stack">
         <span className="card-kicker">Akun tidak aktif</span>
@@ -245,10 +245,10 @@ function JoinPageContent() {
       </Card>
     );
   }
-  if (isSignedIn && authState === "authenticated" && sessionRole === "customer") {
+  if (signedIn && authState === "authenticated" && sessionRole === "customer") {
     return <div className="state-panel">Membuka ruang customer…</div>;
   }
-  if (isSignedIn && authState === "admission-required") {
+  if (signedIn && authState === "admission-required") {
     if (joinRequests === undefined) return <div className="state-panel">Memeriksa permintaan bergabung…</div>;
     const latestRequest = joinRequests[0];
     if (!latestRequest) return <ConnectedJoinForm />;
@@ -302,7 +302,7 @@ function JoinPageContent() {
       </Card>
     );
   }
-  if (isSignedIn) {
+  if (signedIn) {
     return (
       <Card className="notice-card content-stack">
         <span className="card-kicker">Ruang kerja Admin</span>

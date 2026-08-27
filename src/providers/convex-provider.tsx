@@ -19,16 +19,17 @@ function useBfgClerkAuth() {
 }
 
 function ConvexAuthRecovery({ onRetry, attemptRef }: { onRetry: () => void; attemptRef: { current: number } }) {
-  const { isLoaded, isSignedIn, sessionId } = useAuth();
+  const { isLoaded, isSignedIn, sessionId, userId } = useAuth();
   const { isLoading, isAuthenticated } = useConvexAuth();
-  const lastSessionId = useRef(sessionId);
+  const sessionKey = sessionId || userId || "signed-in";
+  const lastSessionKey = useRef(sessionKey);
 
   useEffect(() => {
-    if (sessionId !== lastSessionId.current || !isSignedIn) {
-      lastSessionId.current = sessionId;
+    if (sessionKey !== lastSessionKey.current || !isSignedIn) {
+      lastSessionKey.current = sessionKey;
       attemptRef.current = 0;
     }
-  }, [attemptRef, isSignedIn, sessionId]);
+  }, [attemptRef, isSignedIn, sessionKey]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || isLoading || isAuthenticated || attemptRef.current > 0) return;

@@ -65,4 +65,35 @@ describe("authenticated customer bootstrap caller", () => {
     );
     expect(document.querySelector("output")?.dataset.membershipState).toBe("ACTIVE");
   });
+
+  it("starts bootstrap for a new Clerk identity while the prior session is still pending", async () => {
+    let resolveFirst!: (value: unknown) => void;
+    const firstBootstrap = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    ensureCurrentUser
+      .mockReset()
+      .mockImplementationOnce(() => firstBootstrap)
+      .mockResolvedValueOnce({ role: "customer", status: "active" });
+
+    let clerkAuth = { isLoaded: true, isSignedIn: true, sessionId: "session-a", userId: "user-a" };
+    vi.mocked(useAuth).mockImplementation(() => clerkAuth as never);
+    const { rerender } = render(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+
+    await waitFor(() => expect(ensureCurrentUser).toHaveBeenCalledOnce());
+
+    clerkAuth = { isLoaded: true, isSignedIn: true, sessionId: "session-b", userId: "user-b" };
+    rerender(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+    await waitFor(() => expect(ensureCurrentUser).toHaveBeenCalledTimes(2));
+
+    resolveFirst({ role: "customer", status: "active" });
+  });
 });

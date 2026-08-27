@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ClerkInvitationForm } from "@/components/clerk-invitation-form";
 import { Button, Card } from "@/components/ui";
+import { useProduct } from "@/domain/prototype/store";
 
 const ACCOUNT_REDIRECT = "/account";
 const TICKET_ERROR = "Undangan tidak valid atau sudah kedaluwarsa.";
-const ACTIVATION_ERROR = "Aktivasi akun belum berhasil. Silakan buka kembali undangan terbaru dari BFG.";
+const ACTIVATION_ERROR =
+  "Aktivasi belum selesai. Coba lagi menggunakan undangan terbaru atau masuk dengan akun yang menerima undangan.";
+const INVITATION_TIMEOUT_MS = 15_000;
 
 type AcceptancePhase = "loading" | "form" | "finishing" | "error";
 
@@ -20,9 +23,26 @@ function logInvitationStage(traceId: string, stage: string, fields: Record<strin
   console.info("bfg_invitation_stage", { traceId, stage, ...fields });
 }
 
+function withInvitationTimeout<T>(operation: Promise<T>) {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => reject(new Error("invitation-timeout")), INVITATION_TIMEOUT_MS);
+    operation.then(
+      (value) => {
+        window.clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (reason) => {
+        window.clearTimeout(timeoutId);
+        reject(reason);
+      },
+    );
+  });
+}
+
 export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { signUp } = useSignUp();
+  const { authState, sessionRole } = useProduct();
   const router = useRouter();
   const [phase, setPhase] = useState<AcceptancePhase>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +52,8 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const startedTicket = useRef<string | null>(null);
   const traceId = useRef(createInvitationTraceId());
   const routeLogged = useRef(false);
+  const redirected = useRef(false);
+  const timedOut = useRef(false);
 
   useEffect(() => {
     if (routeLogged.current) return;
@@ -44,38 +66,48 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     if (!signUp) return;
     logInvitationStage(traceId.current, "TICKET_FINALIZE_STARTED");
     setPhase("finishing");
-    const { error: finalizeError } = await signUp.finalize({
-      navigate: ({ session, decorateUrl }) => {
-        if (session?.currentTask) {
-          logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
-          router.push(ACCOUNT_REDIRECT);
-          return;
-        }
-        const url = decorateUrl(ACCOUNT_REDIRECT);
-        logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
-        if (url.startsWith("http")) window.location.href = url;
-        else router.push(url);
-      },
-    });
+    const { error: finalizeError } = await withInvitationTimeout(signUp.finalize());
     if (finalizeError) {
       setError(ACTIVATION_ERROR);
       setPhase("error");
     }
-  }, [router, signUp]);
+  }, [signUp]);
+
+  useEffect(() => {
+    if (phase !== "finishing" || redirected.current) return;
+    if (authState === "authenticated" && sessionRole === "customer") {
+      redirected.current = true;
+      logInvitationStage(traceId.current, "MEMBERSHIP_ACTIVE");
+      logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
+      router.replace(ACCOUNT_REDIRECT);
+    }
+  }, [authState, phase, router, sessionRole]);
+
+  useEffect(() => {
+    if (phase !== "loading" && phase !== "finishing") return;
+    timedOut.current = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut.current = true;
+      setError(ACTIVATION_ERROR);
+      setPhase("error");
+    }, INVITATION_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [phase]);
 
   useEffect(() => {
     if (isLoaded) logInvitationStage(traceId.current, "SESSION_PRESENT", { signedIn: Boolean(isSignedIn) });
     if (!ticket || !isLoaded || isSignedIn || !signUp || startedTicket.current === ticket) return;
     startedTicket.current = ticket;
     let active = true;
+    timedOut.current = false;
     setPhase("loading");
     setError(null);
 
     void (async () => {
       try {
         logInvitationStage(traceId.current, "TICKET_FLOW_STARTED");
-        const { error: ticketError } = await signUp.ticket({ ticket });
-        if (!active) return;
+        const { error: ticketError } = await withInvitationTimeout(signUp.ticket({ ticket }));
+        if (!active || timedOut.current) return;
         if (ticketError) {
           setError(TICKET_ERROR);
           setPhase("error");
@@ -88,7 +120,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
         }
         setPhase("form");
       } catch {
-        if (!active) return;
+        if (!active || timedOut.current) return;
         setError(ACTIVATION_ERROR);
         setPhase("error");
       }
@@ -105,10 +137,12 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     setSubmitting(true);
     setError(null);
     try {
-      const { error: passwordError } = await signUp.password({
-        password,
-        username: username.trim(),
-      });
+      const { error: passwordError } = await withInvitationTimeout(
+        signUp.password({
+          password,
+          username: username.trim(),
+        }),
+      );
       if (passwordError) {
         setError(ACTIVATION_ERROR);
         setPhase("error");
@@ -142,18 +176,31 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     return <div className="state-panel auth-invitation-state">Memuat undangan…</div>;
   }
 
-  if (isSignedIn) {
-    return <ClerkInvitationForm redirectUrl={ACCOUNT_REDIRECT} />;
-  }
+  const terminalAuthError =
+    phase === "finishing" &&
+    (authState === "admission-required" || authState === "suspended" || authState === "configuration-missing");
 
-  if (phase === "error") {
+  if (phase === "error" || terminalAuthError) {
     return (
       <Card frame="attention" className="auth-invitation-card" role="alert">
         <span className="eyebrow">Undangan BFG</span>
         <h1>Aktivasi belum selesai.</h1>
         <p>{error || ACTIVATION_ERROR}</p>
+        <div className="form-actions">
+          <Button type="button" variant="secondary" onClick={() => window.location.reload()}>
+            Coba lagi
+          </Button>
+        </div>
       </Card>
     );
+  }
+
+  if (phase === "finishing") {
+    return <div className="state-panel auth-invitation-state">Mengaktifkan akun BFG…</div>;
+  }
+
+  if (isSignedIn) {
+    return <ClerkInvitationForm redirectUrl={ACCOUNT_REDIRECT} />;
   }
 
   if (phase === "form") {

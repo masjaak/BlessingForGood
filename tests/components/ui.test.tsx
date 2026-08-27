@@ -274,7 +274,7 @@ describe("public UI foundation", () => {
   it("keeps the Admin workspace switch out of customer primary navigation", () => {
     vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: true } as never);
     render(
-      <ProductContext.Provider value={{ sessionRole: "owner" } as never}>
+      <ProductContext.Provider value={{ sessionRole: "owner", authState: "authenticated" } as never}>
         <SiteShell>Customer content</SiteShell>
       </ProductContext.Provider>,
     );

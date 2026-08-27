@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, type ReactNode } from "react";
-import { UserButton, useAuth } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { bfgClerkAppearance } from "@/config/clerk";
 import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
 import { LinkButton } from "@/components/ui";
-import { ProductContext } from "@/domain/prototype/context";
+import { isProductIdentityAuthenticated, ProductContext } from "@/domain/prototype/context";
 
 const customerLinks = [
   { href: "/", label: "Beranda" },
@@ -120,10 +120,8 @@ export function CustomerBottomNav({ pathname }: { pathname: string }) {
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
-  const signedIn = Boolean(isLoaded && isSignedIn);
   const product = useContext(ProductContext);
-  const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
+  const activityEnabled = product?.dataSource === "convex" && product.authState === "authenticated";
 
   return (
     <WorkspaceActivityProvider enabled={activityEnabled} workspace="admin">
@@ -149,10 +147,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
-  const { isLoaded, isSignedIn } = useAuth();
-  const signedIn = Boolean(isLoaded && isSignedIn);
   const product = useContext(ProductContext);
-  const activityEnabled = signedIn && product?.dataSource === "convex" && product?.authState === "authenticated";
+  const signedIn = Boolean(product && isProductIdentityAuthenticated(product.authState));
+  const activityEnabled = product?.dataSource === "convex" && product.authState === "authenticated";
   const isAdmin = pathname.startsWith("/admin");
   const inPersistentAdminShell = useContext(AdminShellContext);
   const current = (href: string) => (href === "/" ? pathname === href : pathname.startsWith(href));

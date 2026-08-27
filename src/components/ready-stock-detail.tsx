@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   EmptyState,
+  ErrorState,
   Field,
   LinkButton,
   LoadingRegion,
@@ -99,7 +100,7 @@ function ConnectedDetail({ slug }: { slug: string }) {
 }
 
 export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
-  const { authState, sessionRole } = useProduct();
+  const { authState, retryAuth, sessionRole } = useProduct();
   const createOrder = useMutation(api.orders.createReadyStock);
   const [variantId, setVariantId] = useState(book.variants[0]?.id || "");
   const [quantity, setQuantity] = useState("1");
@@ -108,7 +109,26 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   const [pending, setPending] = useState(false);
   const selected = book.variants.find((variant) => variant.id === variantId);
 
-  if (authState === "authenticated" && sessionRole === "customer") {
+  if (authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
+    return <p className="subtle">Menyiapkan akun BFG…</p>;
+  } else if (authState === "convex-error" || authState === "network-error") {
+    return (
+      <ErrorState
+        title="Sesi BFG belum siap."
+        description="Kami belum dapat mengonfirmasi akunmu. Coba lagi sebentar lagi."
+        action={<Button onClick={retryAuth}>Coba lagi</Button>}
+      />
+    );
+  } else if (authState === "admission-required") {
+    return (
+      <div className="catalog-member-note">
+        <p>Akunmu belum aktif sebagai Blessfriend.</p>
+        <LinkButton href="/join" variant="secondary">
+          Gabung Blessfriends
+        </LinkButton>
+      </div>
+    );
+  } else if (authState === "authenticated" && sessionRole === "customer") {
     // Keep this exact role boundary aligned with orders:createReadyStock.
   } else if (sessionRole === "admin" || sessionRole === "owner") {
     return (
@@ -121,7 +141,7 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
     );
   } else if (authState === "suspended") {
     return <p className="subtle">Akunmu sedang ditangguhkan. Hubungi admin BFG untuk bantuan.</p>;
-  } else if (authState !== "authenticated") {
+  } else if (authState === "signed-out") {
     return (
       <div className="form-actions">
         <LinkButton href="/account" variant="secondary">

@@ -60,7 +60,8 @@ export function resolveProductMembershipState({
   provisioning,
   requests,
 }: ProductMembershipResolutionInput): ProductMembershipState {
-  if (!clerkLoaded || !clerkSignedIn || convexLoading) return "AUTH_LOADING";
+  if (!clerkLoaded || clerkSignedIn === undefined || convexLoading) return "AUTH_LOADING";
+  if (!clerkSignedIn) return "AUTH_LOADING";
   if (appUser?.status === "suspended") return "SUSPENDED";
   if (appUser?.status === "active") return "ACTIVE";
   if (provisioning || appUser === undefined || requests === undefined) return "MEMBERSHIP_RECONCILING";
@@ -106,6 +107,7 @@ export function resolveProductAuthState({
   provisionError,
 }: ProductAuthResolutionInput): ProductAuthState {
   if (!clerkLoaded) return "loading";
+  if (clerkSignedIn === undefined) return "loading";
   if (!clerkSignedIn) return "signed-out";
   if (convexLoading) return "convex-loading";
   if (!convexAuthenticated) return "convex-error";
@@ -115,6 +117,10 @@ export function resolveProductAuthState({
   if (admissionDenied) return "admission-required";
   if (provisioning || appUser === undefined || appUser === null) return "provisioning";
   return "authenticated";
+}
+
+export function isProductIdentityAuthenticated(authState: ProductAuthState) {
+  return Boolean(authState && !["loading", "signed-out", "configuration-missing"].includes(authState));
 }
 
 export interface ProductContextValue {

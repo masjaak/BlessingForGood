@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useMutation } from "convex/react";
 import { ReadyStockOrderAction } from "@/components/ready-stock-detail";
@@ -53,5 +53,39 @@ describe("Ready Stock checkout role boundary", () => {
     render(<ReadyStockOrderAction book={book} />);
 
     expect(screen.getByRole("button", { name: "Pesan Ready Stock" })).toBeTruthy();
+  });
+
+  it.each(["loading", "convex-loading", "provisioning"] as const)(
+    "does not classify %s as signed out while the session resolves",
+    (authState) => {
+      vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+      vi.mocked(useProduct).mockReturnValue({ authState, sessionRole: null } as never);
+
+      render(<ReadyStockOrderAction book={book} />);
+
+      expect(screen.getByText("Menyiapkan akun BFG…")).toBeTruthy();
+      expect(screen.queryByRole("link", { name: "Masuk untuk memesan" })).toBeNull();
+    },
+  );
+
+  it("directs a resolved signed-in non-member to Join instead of sign-in", () => {
+    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    vi.mocked(useProduct).mockReturnValue({ authState: "admission-required", sessionRole: null } as never);
+
+    render(<ReadyStockOrderAction book={book} />);
+
+    expect(screen.getByRole("link", { name: "Gabung Blessfriends" }).getAttribute("href")).toBe("/join");
+    expect(screen.queryByRole("link", { name: "Masuk untuk memesan" })).toBeNull();
+  });
+
+  it("offers auth retry for a terminal Convex session error", () => {
+    const retryAuth = vi.fn();
+    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    vi.mocked(useProduct).mockReturnValue({ authState: "convex-error", sessionRole: null, retryAuth } as never);
+
+    render(<ReadyStockOrderAction book={book} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Coba lagi" }));
+    expect(retryAuth).toHaveBeenCalledOnce();
   });
 });

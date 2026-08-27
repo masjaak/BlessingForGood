@@ -51,6 +51,15 @@ export function ProductAccessGuard({
       )
     );
   }
+  if (authState === "convex-error" || authState === "network-error") {
+    return (
+      <ErrorState
+        title="Sesi BFG belum siap."
+        description="Kami belum dapat mengonfirmasi sesi akunmu. Coba lagi sebentar lagi."
+        action={<Button onClick={retryAuth}>Coba lagi</Button>}
+      />
+    );
+  }
   if (membershipState === "MEMBERSHIP_RECONCILING") {
     return <PageAwareSkeleton workspace={pathname.startsWith("/admin") ? "admin" : "customer"} pathname={pathname} />;
   }
@@ -95,15 +104,6 @@ export function ProductAccessGuard({
         <p>Hubungi admin BFG jika kamu membutuhkan bantuan.</p>
         <UserButton />
       </div>
-    );
-  }
-  if (authState === "convex-error" || authState === "network-error") {
-    return (
-      <ErrorState
-        title="Sesi BFG belum siap."
-        description="Kami belum dapat mengonfirmasi sesi akunmu. Coba lagi sebentar lagi."
-        action={<Button onClick={retryAuth}>Coba lagi</Button>}
-      />
     );
   }
   if (

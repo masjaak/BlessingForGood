@@ -63,6 +63,7 @@ describe("authenticated product session state", () => {
 
   it("keeps Clerk and Convex hydration separate", () => {
     expect(resolve({ clerkLoaded: false })).toBe("loading");
+    expect(resolve({ clerkSignedIn: undefined })).toBe("loading");
     expect(resolve({ clerkSignedIn: false })).toBe("signed-out");
     expect(resolve({ convexLoading: true, convexAuthenticated: false })).toBe("convex-loading");
     expect(resolve({ convexAuthenticated: false })).toBe("convex-error");
