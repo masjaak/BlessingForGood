@@ -28,7 +28,7 @@ build, `npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check`
 pass. Local rendered browser QA remains unavailable because this checkout has
 no Clerk publishable key; the existing production-key boundary was preserved.
 
-Production evidence: Vercel deployment `dpl_GhUSQShFN4FHRPj5Ni7RPcXBg6zi`
+Production evidence: Vercel deployment `dpl_D17RfSmUraJqNNnSej6AWBf471zU`
 is `READY` and aliased to `https://www.blessingforgood.com`; the canonical
 Vercel build deployed Convex Production `clean-eel-522` without creating a
 second project. The affected public
