@@ -18,6 +18,7 @@ import {
   Field,
   IconButton,
   InlineBooleanField,
+  LinkButton,
   LoadingRegion,
   PageHeader,
   SkeletonCard,
@@ -450,16 +451,62 @@ function BookEditor({ book }: { book: AdminBook }) {
         eyebrow="Master Buku"
         title={book.title}
         actions={
-          <StatusBadge tone={book.publicationStatus === "published" ? "positive" : "neutral"}>
-            {publicationLabels[book.publicationStatus]}
-          </StatusBadge>
+          <>
+            <LinkButton href="#book-editor" variant="secondary">
+              Edit
+            </LinkButton>
+            {book.publicationStatus === "draft" && !deleteBlocked ? (
+              <Button
+                type="button"
+                variant="danger"
+                loading={pendingAction === "delete"}
+                disabled={pendingAction !== null}
+                loadingLabel="Menghapus…"
+                onClick={() => setConfirmDeleteBook(true)}
+              >
+                Hapus buku
+              </Button>
+            ) : null}
+            {book.publicationStatus !== "draft" && book.publicationStatus !== "archived" ? (
+              <Button
+                type="button"
+                variant="secondary"
+                loading={pendingAction === "archive"}
+                loadingLabel="Mengarsipkan…"
+                disabled={pendingAction !== null}
+                onClick={() => void archiveBook()}
+              >
+                Arsipkan buku
+              </Button>
+            ) : null}
+            {deleteBlocked ? (
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  loading={pendingAction === "archive"}
+                  loadingLabel="Mengarsipkan…"
+                  disabled={pendingAction !== null}
+                  onClick={() => void archiveBook()}
+                >
+                  Arsipkan buku
+                </Button>
+                <span className="subtle action-support" role="alert">
+                  Buku tidak dapat dihapus karena sudah memiliki riwayat operasional.
+                </span>
+              </>
+            ) : null}
+            <StatusBadge tone={book.publicationStatus === "published" ? "positive" : "neutral"}>
+              {publicationLabels[book.publicationStatus]}
+            </StatusBadge>
+          </>
         }
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
           <Card className="admin-book-detail-card">
-            <form className="form-card" onSubmit={saveBook}>
+            <form className="form-card" id="book-editor" onSubmit={saveBook}>
               <section className="admin-book-detail-section">
                 <div className="split-heading">
                   <div>
@@ -730,33 +777,7 @@ function BookEditor({ book }: { book: AdminBook }) {
                     Terbitkan buku
                   </Button>
                 ) : null}
-                {book.publicationStatus === "draft" ? (
-                  <Button
-                    type="button"
-                    variant="danger"
-                    loading={pendingAction === "delete"}
-                    disabled={pendingAction !== null}
-                    loadingLabel="Menghapus…"
-                    onClick={() => setConfirmDeleteBook(true)}
-                  >
-                    Hapus buku
-                  </Button>
-                ) : null}
               </ActionGroup>
-              {deleteBlocked && book.publicationStatus === "draft" ? (
-                <div className="form-actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    loading={pendingAction === "archive"}
-                    loadingLabel="Mengarsipkan…"
-                    disabled={pendingAction !== null}
-                    onClick={() => void archiveBook()}
-                  >
-                    Arsipkan buku
-                  </Button>
-                </div>
-              ) : null}
               {bookError ? (
                 <p className="error-text" role="alert">
                   {bookError}

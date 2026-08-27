@@ -157,7 +157,7 @@ function CustomerOrderDetail() {
             ))
           ) : (
             <p className="subtle">
-              Pesananmu sudah tercatat. Perjalanan Batch akan muncul setelah Admin memasukkan pesanan ini ke siklus
+              Pesananmu sudah tercatat. Perjalanan Batch akan muncul setelah Admin memasukkan item ini ke siklus
               PO/cargo.
             </p>
           )}

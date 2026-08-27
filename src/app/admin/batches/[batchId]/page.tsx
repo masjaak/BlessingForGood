@@ -75,6 +75,7 @@ function AdminBatchDetail() {
   const [messageIsError, setMessageIsError] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [pendingStage, setPendingStage] = useState<(typeof shipmentStages)[number] | null>(null);
+  const [confirmLock, setConfirmLock] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const router = useRouter();
@@ -140,6 +141,10 @@ function AdminBatchDetail() {
 
   async function advance() {
     if (!nextStage) return;
+    if (nextStage === "po_closed") {
+      setConfirmLock(true);
+      return;
+    }
     await run(() => updateShipmentStage(batchId, nextStage), "Tahap pengiriman diperbarui.", "shipment");
   }
 
@@ -192,6 +197,17 @@ function AdminBatchDetail() {
                 void run(() => updateShipmentStage(batchId, target, true), "Tahap pengiriman diperbarui.", "shipment");
             }}
           />
+          <ConfirmationDialog
+            open={confirmLock}
+            title="Kunci PO?"
+            description="Setelah PO ditutup, assignment, tautan Catalog, dan data procurement utama tidak dapat diubah."
+            confirmLabel="Kunci PO"
+            onCancel={() => setConfirmLock(false)}
+            onConfirm={() => {
+              setConfirmLock(false);
+              void run(() => updateShipmentStage(batchId, "po_closed"), "PO dikunci.", "shipment");
+            }}
+          />
           {message ? (
             <p className={messageIsError ? "error-text" : "success-banner"} role={messageIsError ? "alert" : "status"}>
               {message}
@@ -201,7 +217,7 @@ function AdminBatchDetail() {
             Alur kerja: Informasi Batch → Catalog terhubung → Roster pesanan eligible → Masukkan ke Batch → Purchase
             Summary → Kunci PO → shipment.
           </p>
-          <Card>
+          <Card style={{ order: 1 }}>
             <span className="card-kicker">1. Informasi Batch</span>
             <h2>Data procurement</h2>
             <p className="subtle">
@@ -220,7 +236,7 @@ function AdminBatchDetail() {
               }}
             />
           </Card>
-          <Card>
+          <Card style={{ order: 6 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">6–7. Kunci PO & perjalanan pengiriman</span>
@@ -296,7 +312,7 @@ function AdminBatchDetail() {
             </div>
           </Card>
 
-          <Card>
+          <Card style={{ order: 7 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">Perkiraan tiba</span>
@@ -316,7 +332,7 @@ function AdminBatchDetail() {
             />
           </Card>
 
-          <Card>
+          <Card style={{ order: 2 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">2. Catalog terhubung</span>
@@ -324,8 +340,8 @@ function AdminBatchDetail() {
               </div>
             </div>
             <p className="subtle">
-              Hubungkan Catalog untuk mengambil pesanan preorder yang eligible. Item baru masuk ke Batch setelah Admin
-              melakukan assignment; melepas tautan hanya menghapus relasi.
+              Hubungkan Catalog untuk mengambil preorder yang memenuhi syarat ke Roster Batch. Item baru masuk ke Batch
+              setelah Admin melakukan assignment; melepas tautan hanya menghapus relasi.
             </p>
             {!currentBatch.catalogLinks.length ? (
               <p className="subtle">
@@ -384,6 +400,7 @@ function AdminBatchDetail() {
                   {availableCatalogs.map((catalog) => (
                     <option value={catalog.id} key={catalog.id}>
                       {catalog.name}
+                      {catalog.closingAt ? ` · batas ${formatCatalogDeadline(Date.parse(catalog.closingAt))}` : ""}
                     </option>
                   ))}
                 </BFGSelect>
@@ -394,7 +411,7 @@ function AdminBatchDetail() {
                   onClick={() => {
                     if (catalogId) void run(() => linkCatalog(batchId, catalogId), "Katalog ditautkan.", "link");
                   }}
-                  disabled={rosterLocked || pendingAction !== null}
+                  disabled={rosterLocked || pendingAction !== null || !catalogId}
                 >
                   Hubungkan Catalog
                 </Button>
@@ -404,17 +421,14 @@ function AdminBatchDetail() {
             )}
           </Card>
 
-          <Card>
+          <Card style={{ order: 4 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">4. Masukkan item ke Batch</span>
                 <h2>{currentBatch.assignments.length} penugasan</h2>
               </div>
             </div>
-            <p className="subtle">
-              Pilih item Roster yang benar-benar ikut dalam satu procurement / PO / cargo cycle ini. Purchase Summary
-              dihitung otomatis dari item yang sudah dimasukkan.
-            </p>
+            <p className="subtle">Masukkan ke Batch untuk memasukkan item ke pembelian/cargo ini.</p>
             {currentBatch.assignments.length ? (
               currentBatch.assignments.map((assignment) => (
                 <div className="content-stack" key={assignment.assignmentId}>
@@ -494,7 +508,7 @@ function AdminBatchDetail() {
             )}
           </Card>
 
-          <Card>
+          <Card style={{ order: 4 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">Roster Batch</span>
@@ -530,7 +544,7 @@ function AdminBatchDetail() {
             )}
           </Card>
 
-          <Card>
+          <Card style={{ order: 5 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">5. Purchase Summary</span>
@@ -538,8 +552,8 @@ function AdminBatchDetail() {
               </div>
             </div>
             <p className="subtle">
-              Rekap final untuk melakukan pembelian ke Publisher, dihitung otomatis dari item yang sudah dimasukkan ke
-              Batch. Ringkasan ini tidak diedit terpisah.
+              Ringkasan pembelian dihitung otomatis dari item yang sudah masuk Batch. Ringkasan ini tidak diedit
+              terpisah.
             </p>
             {currentBatch.purchaseSummary.length ? (
               <div className="table-wrap">
@@ -578,14 +592,14 @@ function AdminBatchDetail() {
             )}
           </Card>
 
-          <Card>
+          <Card style={{ order: 3 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">3. Roster pesanan · eligible</span>
                 <h2>{currentBatchUnassigned.length} item siap diproses</h2>
               </div>
             </div>
-            <p className="subtle">Daftar item preorder Customer yang memenuhi syarat untuk dimasukkan ke Batch ini.</p>
+            <p className="subtle">Daftar preorder Customer yang dapat dimasukkan ke siklus procurement ini.</p>
             {customerTargets.length ? (
               <div className="content-stack">
                 <span className="card-kicker">Target pelanggan</span>
@@ -667,7 +681,7 @@ function AdminBatchDetail() {
             )}
           </Card>
 
-          <Card>
+          <Card style={{ order: 8 }}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">Riwayat status</span>
