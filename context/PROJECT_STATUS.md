@@ -2,7 +2,7 @@
 
 ## Invitation acceptance P0 root closure — 2026-08-27
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_REAL_CUSTOMER_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The first incorrect boundary is now reproduced and covered: the previous
 `/accept-invitation` effect cancelled its in-flight `signUp.ticket` continuation
@@ -27,8 +27,22 @@ Local evidence: focused invitation tests `13/13`, full Vitest `69 files /
 build, `npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check`
 pass. Local rendered browser QA remains unavailable because this checkout has
 no Clerk publishable key; the existing production-key boundary was preserved.
-Production deployment and a legitimate new invitee's authenticated ticket
-journey are still required before this ticket can be marked closed.
+
+Production evidence: Vercel deployment `dpl_88ZBbFB7z619q7NspraYsQgfsbfr`
+is `READY` and aliased to `https://www.blessingforgood.com`; the canonical
+Vercel build deployed Convex Production `clean-eel-522` without creating a
+second project. The affected public Playwright recovery check passed `5/5` at
+375, 390, 430, 768, and 1440 pixels. A live fake-ticket trace reached
+`SIGNUP_TICKET_START` and the configured Clerk Turnstile challenge; its
+headless challenge cannot prove a legitimate invitee's completion, so no real
+ticket acceptance or membership activation is inferred from that check.
+
+Authenticated Production QA and real business UAT remain pending because no
+authorized Admin/invitee session and mailbox for a new legitimate invitation
+are available in this runtime. This ticket must not be marked closed until the
+same real invitee proves Clerk completion, Convex authentication, active BFG
+membership, Admin `Aktif`, `/account`, `/join`, Ready Stock, Buku Saya, and
+Tagihan.
 
 ## Membership removal and reapply closure — 2026-08-27
 

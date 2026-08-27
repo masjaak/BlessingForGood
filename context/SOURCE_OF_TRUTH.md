@@ -84,9 +84,13 @@ Join Request surfaces remain projections of this same canonical state. No
 page-specific membership implementation is permitted.
 
 The root correction is deployed to Convex Production `clean-eel-522` and the
-canonical Vercel domain. The observed real journey reached approval and one
-new Clerk invitation, but not Customer ticket acceptance; final Customer and
-Ready Stock acceptance stays open until that same legitimate invitee acts.
+canonical Vercel domain in Vercel deployment
+`dpl_88ZBbFB7z619q7NspraYsQgfsbfr`. The affected public fake-ticket recovery
+check passes at 375, 390, 430, 768, and 1440 pixels; this proves bounded
+rendered recovery, not successful invitation acceptance. The observed real
+journey reached approval and one new Clerk invitation, but not Customer ticket
+acceptance; final Customer and Ready Stock acceptance stays open until that
+same legitimate invitee acts.
 
 ## Final yellow / unknown closure override — 2026-08-26
 
