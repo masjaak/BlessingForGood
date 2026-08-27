@@ -3746,6 +3746,16 @@ p {
   background: #fcfbf7;
 }
 
+.admin-books-table .admin-book-row-actions {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 640px) {
+  .admin-page .admin-books-table .admin-book-row-actions > .button {
+    width: auto;
+  }
+}
+
 .numeric-cell {
   text-align: right !important;
   font-variant-numeric: tabular-nums;

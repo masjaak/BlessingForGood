@@ -8,8 +8,10 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import {
+  ActionGroup,
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   InlineBooleanField,
@@ -20,6 +22,8 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { getConvexErrorCode } from "@/domain/prototype/context";
+import { productErrorMessage } from "@/domain/prototype/errors";
 
 type PublicationStatus = "draft" | "published" | "special" | "archived";
 type Availability = "in_stock" | "out_of_stock" | "not_listed";
@@ -55,6 +59,11 @@ function ConnectedAdminBooks() {
   const createPublisher = useMutation(api.publishers.create);
   const updatePublisher = useMutation(api.publishers.update);
   const createBook = useMutation(api.books.create);
+  const removeBook = useMutation(api.books.remove);
+  const updateBook = useMutation(api.books.update);
+  const [deleteState, setDeleteState] = useState<{ bookId: Id<"books">; blocked: boolean } | null>(null);
+  const [deletePendingBookId, setDeletePendingBookId] = useState<Id<"books"> | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
   async function addPublisher(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,6 +98,58 @@ function ConnectedAdminBooks() {
       setPendingAction(null);
     }
   }
+
+  function openDeleteDialog(bookId: Id<"books">) {
+    setDeleteError("");
+    setDeleteState({ bookId, blocked: false });
+  }
+
+  async function deleteBook() {
+    if (!deleteState) return;
+    const bookId = deleteState.bookId;
+    setDeleteError("");
+    setDeletePendingBookId(bookId);
+    try {
+      await removeBook({ bookId });
+      setDeleteState(null);
+    } catch (reason) {
+      const code = getConvexErrorCode(reason);
+      const rawMessage = reason instanceof Error ? reason.message : "";
+      if (
+        code === "ENTITY_IN_USE" ||
+        code === "ENTITY_DELETE_NOT_ALLOWED" ||
+        rawMessage.includes("ENTITY_IN_USE") ||
+        rawMessage.includes("ENTITY_DELETE_NOT_ALLOWED")
+      ) {
+        setDeleteState({ bookId, blocked: true });
+      } else {
+        setDeleteError(productErrorMessage(reason, "Buku belum dapat dihapus."));
+        setDeleteState(null);
+      }
+    } finally {
+      setDeletePendingBookId(null);
+    }
+  }
+
+  async function archiveBook() {
+    if (!deleteState) return;
+    const bookId = deleteState.bookId;
+    setDeleteError("");
+    setDeletePendingBookId(bookId);
+    try {
+      await updateBook({ bookId, publicationStatus: "archived" });
+      setDeleteState(null);
+    } catch (reason) {
+      setDeleteError(productErrorMessage(reason, "Buku belum dapat diarsipkan. Silakan coba lagi."));
+      setDeleteState(null);
+    } finally {
+      setDeletePendingBookId(null);
+    }
+  }
+
+  const selectedBook = books?.find((book) => book._id === deleteState?.bookId);
+  const canArchiveSelectedBook = Boolean(selectedBook && selectedBook.publicationStatus !== "archived");
+  const deleteBlocked = deleteState?.blocked === true;
 
   return (
     <div className="page admin-page">
@@ -277,9 +338,21 @@ function ConnectedAdminBooks() {
                       </td>
                       <td>{book.isListed ? book.stockQuantity : "Belum dicatat"}</td>
                       <td>
-                        <LinkButton href={`/admin/books/${book._id}`} variant="secondary">
-                          Edit
-                        </LinkButton>
+                        <ActionGroup className="admin-book-row-actions" aria-label={`Aksi ${book.title}`}>
+                          <LinkButton href={`/admin/books/${book._id}`} variant="secondary">
+                            Edit
+                          </LinkButton>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            loading={deletePendingBookId === book._id}
+                            disabled={deletePendingBookId !== null}
+                            loadingLabel="Menghapus…"
+                            onClick={() => openDeleteDialog(book._id)}
+                          >
+                            Hapus
+                          </Button>
+                        </ActionGroup>
                       </td>
                     </tr>
                   ))}
@@ -292,6 +365,32 @@ function ConnectedAdminBooks() {
               description="Buat penerbit dan buku pertama untuk mulai menata katalog."
             />
           ) : null}
+          {deleteError ? (
+            <p className="error-text" role="alert">
+              {deleteError}
+            </p>
+          ) : null}
+          <ConfirmationDialog
+            open={deleteState !== null}
+            title={deleteBlocked ? "Buku tidak dapat dihapus" : "Hapus buku ini?"}
+            description={
+              deleteBlocked
+                ? "Buku ini sudah memiliki riwayat operasional atau masih digunakan dalam proses BFG. Gunakan Arsipkan buku sebagai gantinya."
+                : "Buku hanya dapat dihapus jika belum memiliki pesanan atau riwayat operasional. Tindakan ini tidak dapat dibatalkan."
+            }
+            confirmLabel={
+              deleteBlocked && canArchiveSelectedBook ? "Arsipkan buku" : deleteBlocked ? "Tutup" : "Hapus buku"
+            }
+            danger={!deleteBlocked}
+            onCancel={() => setDeleteState(null)}
+            onConfirm={() => {
+              if (deleteBlocked && !canArchiveSelectedBook) {
+                setDeleteState(null);
+                return;
+              }
+              void (deleteBlocked ? archiveBook() : deleteBook());
+            }}
+          />
         </div>
       </div>
     </div>
