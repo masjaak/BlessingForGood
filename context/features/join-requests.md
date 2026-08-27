@@ -75,10 +75,11 @@ Authenticated users see an already-a-member state instead of the form.
 
 `/admin/join-requests` is available to active admin/owner users. It supports
 status filtering, bounded queue search, start review, approve, reject,
-invitation retry, and Remove member. All actions derive the reviewer from
-verified `appUsers`, write the BFG state and audit event in one mutation, and
-reject stale transitions. Approval and membership removal do not require Clerk
-Dashboard access.
+invitation retry, and Remove member. Its default operational projection hides
+requests marked with `removedAt`; the Join Request and removal history remain
+stored. All actions derive the reviewer from verified `appUsers`, write the
+BFG state and audit event in one mutation, and reject stale transitions.
+Approval and membership removal do not require Clerk Dashboard access.
 
 Approved applicants remain `invitation pending` until the server-side action
 confirms delivery or an existing identity. Invitation URLs, tokens, or auth

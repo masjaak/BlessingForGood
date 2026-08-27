@@ -1,7 +1,22 @@
 # BFG CODEBASE MEMORY
 
-Post-diff map refreshed for the Phase 08 final journey correction on 2026-08-21.
-This is structural memory, not product requirement authority.
+Post-diff map refreshed for the removed-member Admin projection cleanup on
+2026-08-27. This is structural memory, not product requirement authority.
+
+## Post-diff memory — removed-member Admin projection cleanup
+
+- `convex/joinRequests.ts:listForAdmin` owns the default Admin
+  `Permintaan bergabung` operational projection and filters `removedAt` at
+  the indexed query boundary before the existing bounded `take(200)`.
+- `src/app/admin/join-requests/page.tsx` performs search over that returned
+  projection, so removed requests cannot reappear through the route-local
+  search. `src/app/admin/page.tsx` consumes the same projection for dashboard
+  counts.
+- `convex/users.ts:findApprovedJoinRequest` remains the separate current
+  admission resolver used by authenticated reconciliation. It still excludes
+  removed requests and can select a new current approved reapply request.
+- No schema, Clerk, membership mutation, historical data, or customer
+  business projection changed.
 
 ## Major Domain Modules
 

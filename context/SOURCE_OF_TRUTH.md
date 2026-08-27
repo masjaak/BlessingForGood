@@ -19,6 +19,14 @@ and leaves the old tombstone intact. Accepted invitation history remains
 accepted; pending invitation revocation is best effort and never deletes a
 Clerk identity.
 
+The default Admin `Permintaan bergabung` list is an operational projection,
+owned by `joinRequests.listForAdmin`. It excludes any request with
+`removedAt`, including when a status filter is supplied, while the underlying
+Join Request and its removal metadata remain queryable by historical/owner
+surfaces. This projection filter is deliberately separate from
+`users.findApprovedJoinRequest`, which must continue resolving the current
+eligible approved admission for invitation and membership reconciliation.
+
 ## Membership admission P0 override — 2026-08-27
 
 The 27 August Production failure was not a Ready Stock defect. Convex

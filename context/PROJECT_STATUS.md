@@ -1,5 +1,22 @@
 # BFG Project Status
 
+## Removed member Admin list cleanup — 2026-08-27
+
+Status: `IMPLEMENTED; LOCAL_REGRESSION_GREEN; PRODUCTION_UAT_PENDING`
+
+`joinRequests.listForAdmin` now returns current operational admissions only by
+excluding requests with `removedAt` before its existing bounded result limit.
+The removal mutation remains a tombstone-only write: the Join Request,
+appUser, invitation history, and audit event are preserved. The separate
+`users.findApprovedJoinRequest` resolver remains available to invitation and
+membership reconciliation, so a new approved reapply request is still
+activatable while the old removed request cannot reactivate membership.
+
+Focused removal, reapply, and invitation-reconciliation regressions pass. Full
+local deterministic gates pass. Local Playwright cannot start because this
+checkout has no Clerk publishable key; Production deployment and authenticated
+UAT remain to be completed for this change.
+
 ## Invitation acceptance P0 root closure — 2026-08-27
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

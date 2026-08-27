@@ -116,9 +116,59 @@ describe("automatic Clerk invitation reconciliation", () => {
 
     expect(clerkState.revokeInvitation).toHaveBeenCalledOnce();
     expect(clerkState.revokeInvitation).toHaveBeenCalledWith("inv_test_1");
-    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
-      admissionStatus: "removed",
+    expect(await admin.query(api.joinRequests.listForAdmin, { status: "approved" })).toEqual([]);
+    expect(await t.run(async (ctx) => ctx.db.get(approved.joinRequestId))).toMatchObject({
+      status: "approved",
       invitationStatus: "sent",
+      removedAt: expect.any(Number),
+    });
+  });
+
+  it("keeps a current reapply admission available to invitation reconciliation", async () => {
+    const rejoinEmail = "rejoin-reader@example.com";
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const requestA = await submitForApproval(t, admin, requestInput({ email: rejoinEmail }));
+    await t.finishAllScheduledFunctions(() => undefined);
+    await admin.mutation(api.joinRequests.removeMember, { joinRequestId: requestA.joinRequestId });
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    const requestB = await t.mutation(
+      api.joinRequests.submit,
+      requestInput({ email: rejoinEmail, contact: "+62 812-3456-7891" }),
+    );
+    await admin.mutation(api.joinRequests.startReview, { joinRequestId: requestB.joinRequestId });
+    await admin.mutation(api.joinRequests.approve, { joinRequestId: requestB.joinRequestId });
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    clerkState.getUser.mockResolvedValue({
+      id: "clerk_rejoin_reader",
+      primaryEmailAddressId: "rejoin_email",
+      emailAddresses: [
+        {
+          id: "rejoin_email",
+          emailAddress: rejoinEmail,
+          verification: { status: "verified" },
+        },
+      ],
+    });
+    const acceptedIdentity = t.withIdentity({ subject: "clerk_rejoin_reader" });
+
+    await expect(acceptedIdentity.action(api.userProvisioning.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "active",
+    });
+    expect(await admin.query(api.joinRequests.listForAdmin, {})).toEqual([
+      expect.objectContaining({ joinRequestId: requestB.joinRequestId, admissionStatus: "active" }),
+    ]);
+    expect(await t.run(async (ctx) => ctx.db.get(requestA.joinRequestId))).toMatchObject({
+      status: "approved",
+      removedAt: expect.any(Number),
+    });
+    expect(await t.run(async (ctx) => ctx.db.get(requestB.joinRequestId))).toMatchObject({
+      status: "approved",
+      invitationStatus: "accepted",
+      applicantClerkUserId: "clerk_rejoin_reader",
     });
   });
 

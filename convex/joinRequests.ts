@@ -280,9 +280,15 @@ export const listForAdmin = query({
       ? await ctx.db
           .query("joinRequests")
           .withIndex("by_status_and_submitted_at", (index) => index.eq("status", args.status!))
+          .filter((query) => query.eq(query.field("removedAt"), undefined))
           .order("desc")
           .take(200)
-      : await ctx.db.query("joinRequests").withIndex("by_submitted_at").order("desc").take(200);
+      : await ctx.db
+          .query("joinRequests")
+          .withIndex("by_submitted_at")
+          .filter((query) => query.eq(query.field("removedAt"), undefined))
+          .order("desc")
+          .take(200);
     return Promise.all(requests.map((request) => requestView(ctx, request)));
   },
 });

@@ -1,5 +1,17 @@
 # Decisions
 
+## Removed admission Admin projection — 2026-08-27
+
+- The default Admin `Permintaan bergabung` queue is a current operational
+  projection, not the Join Request history authority.
+- `joinRequests.listForAdmin` excludes requests with `removedAt` in both its
+  default and status-filtered paths. It does not delete or rewrite the
+  historical Join Request, appUser, invitation, or audit records.
+- `users.findApprovedJoinRequest` remains a separate current-admission
+  resolver. Its removed-request exclusion continues to protect invitation,
+  login, and membership reconciliation while a new approved request remains
+  discoverable.
+
 ## Membership removal and reapply P0 — 2026-08-27
 
 - Clerk identity and BFG membership remain separate lifecycle authorities.

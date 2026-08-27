@@ -79,12 +79,21 @@ describe("BFG membership removal lifecycle", () => {
       role: "customer",
       status: "removed",
     });
+    expect(await admin.query(api.joinRequests.listForAdmin, {})).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ joinRequestId: requestA })]),
+    );
+    expect(await admin.query(api.joinRequests.listForAdmin, { status: "approved" })).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ joinRequestId: requestA })]),
+    );
     expect(await admin.query(api.orders.listEligibleCustomers, {})).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ customerUserId: current.appUserId })]),
     );
 
     const reapply = await t.mutation(api.joinRequests.submit, requestInput({ contact: "+62 812-3456-7892" }));
     expect(reapply.status).toBe("submitted");
+    expect(await admin.query(api.joinRequests.listForAdmin, {})).toEqual([
+      expect.objectContaining({ joinRequestId: reapply.joinRequestId, status: "submitted" }),
+    ]);
     await expect(admin.mutation(api.joinRequests.removeMember, { joinRequestId: requestA })).resolves.toMatchObject({
       admissionStatus: "removed",
     });

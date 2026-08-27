@@ -2,11 +2,27 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-26
+last_updated: 2026-08-27
 source: conversation
 ---
 
 # Changelog
+
+## [removed-member-admin-projection] — 2026-08-27
+
+### Fixed
+
+- Removed Join Requests no longer appear in the default or status-filtered
+  Admin `Permintaan bergabung` operational projection.
+- Preserved the Join Request, appUser, invitation, removal metadata, and
+  audit history; the current approved-admission resolver remains separate and
+  available to invitation/membership reconciliation.
+
+### QA
+
+- Added removal-list, reapply, and current-approved-invitation regression
+  coverage. Full local deterministic gates pass; authenticated Production UAT
+  remains pending.
 
 ## [membership-removal-reapply-closure] — 2026-08-27
 
