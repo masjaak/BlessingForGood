@@ -37,6 +37,11 @@ All Account, Join, Ready Stock, Buku Saya, Tagihan, Customer shell, and Admin
 Join Request surfaces remain projections of this same canonical state. No
 page-specific membership implementation is permitted.
 
+The root correction is deployed to Convex Production `clean-eel-522` and the
+canonical Vercel domain. The observed real journey reached approval and one
+new Clerk invitation, but not Customer ticket acceptance; final Customer and
+Ready Stock acceptance stays open until that same legitimate invitee acts.
+
 ## Final yellow / unknown closure override — 2026-08-26
 
 Admin approval remains entirely inside BFG. `joinRequests.approve` records the

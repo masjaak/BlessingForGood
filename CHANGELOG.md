@@ -38,8 +38,14 @@ source: conversation
 - Full Vitest `68 files / 356 tests`, TypeScript, ESLint, Format, Build,
   Convex Development check, `npm audit --omit=dev` (`0 vulnerabilities`), and
   `git diff --check` pass. Local Playwright remains unavailable because this
-  checkout intentionally has no Clerk publishable key; Production UAT remains
-  the release gate.
+  checkout intentionally has no Clerk publishable key.
+- Convex Production `clean-eel-522` and Vercel Production deployment
+  `dpl_43Vv7DsfARCs69FBdNJDhbZhQQgc` are READY. Production public Playwright
+  passed `215/215`; seven network/Clerk CDN suspensions recovered on retry.
+- A legitimate live journey reached Admin approval and
+  `INVITATION_CREATED`. The invitee did not open/accept the invitation during
+  the observation window, so Customer activation and the real Ready Stock
+  order remain explicitly pending rather than inferred from automated tests.
 
 ## [real-invitation-ticket-p0] — 2026-08-27
 

@@ -6,7 +6,7 @@ The normal workflow is entirely inside BFG:
 
 ```text
 Join Request → Admin review → Setujui → BFG sends/reuses Clerk invitation
-→ BFG `/sign-up?__clerk_ticket=...` → authenticated bootstrap → active Customer
+→ BFG `/accept-invitation?__clerk_ticket=...` → authenticated bootstrap → active Customer
 ```
 
 `joinRequests.approve` is audited and idempotent. The private Clerk Backend
@@ -25,7 +25,7 @@ invitation URL, password, token, or auth storage in repository artifacts.
    integration by names/status only.
 2. Create or use a Development invitation for a QA identity.
 3. Open the invitation URL only in an isolated QA browser context.
-4. Complete account acceptance through BFG's invite-only `/sign-up` route.
+4. Complete account acceptance through BFG's invite-only `/accept-invitation` route.
 5. If another Clerk session is already active, verify BFG shows the account
    mismatch message and `[Gunakan akun yang diundang]`; do not continue as the
    existing account. Use the action to sign out and restart the ticket.

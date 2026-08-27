@@ -2,7 +2,7 @@
 
 ## Membership admission root closure P0 — 2026-08-27
 
-Status: `ROOT_CAUSE_FIXED; PRODUCTION_DEPLOYMENT_AND_UAT_PENDING`
+Status: `ROOT_CAUSE_FIXED_AND_DEPLOYED; CUSTOMER_ACCEPTANCE_PENDING`
 
 Live canonical Convex Production logs established the first incorrect
 boundary. Correlation `9b79020d-2520-4975-8621-7a97bd39c2be` had a valid Clerk
@@ -31,9 +31,19 @@ their canonical status.
 Local evidence: full Vitest `68 files / 356 tests`, TypeScript, ESLint, Format,
 Build, Convex Development check, `npm audit --omit=dev` (`0 vulnerabilities`),
 and `git diff --check` pass. Local Playwright cannot start because this
-checkout intentionally lacks a Clerk publishable key. Convex Production,
-Vercel Production, and the single legitimate fresh-Customer journey remain
-the release gate; no Production UAT result is claimed here.
+checkout intentionally lacks a Clerk publishable key.
+
+Production evidence: Convex `clean-eel-522` and Vercel deployment
+`dpl_43Vv7DsfARCs69FBdNJDhbZhQQgc` are READY on the canonical domain. Public
+Production Playwright passed `215/215`, with seven transient network/Clerk CDN
+suspensions recovered on retry. A legitimate operator journey reached Admin
+approval and one new `INVITATION_CREATED`; the Admin projection remained
+reactive. No Customer ticket/session event occurred during the observation
+window, and the connected mailbox was not the invitee's mailbox. Customer
+activation, authenticated surface refreshes, and the real Ready Stock order
+therefore remain pending on the legitimate recipient opening that exact
+invitation. No substitute identity or fake Production business record was
+created.
 
 ## Customer Account responsive navigation closure — 2026-08-26
 
