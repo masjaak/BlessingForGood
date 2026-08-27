@@ -21,8 +21,10 @@ source: conversation
 ### QA
 
 - Added removal-list, reapply, and current-approved-invitation regression
-  coverage. Full local deterministic gates pass; authenticated Production UAT
-  remains pending.
+  coverage. Full local deterministic gates pass. Vercel Production
+  `dpl_EjkNaZvd6i4QsvjoRi8TziG3S8LT` is `READY`; the affected signed-out Admin
+  route smoke passed at 1024/1280/1440 and public viewport smoke passed at
+  390/768/1440. Authenticated Production UAT remains pending.
 
 ## [membership-removal-reapply-closure] — 2026-08-27
 

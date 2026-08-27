@@ -2,7 +2,7 @@
 
 ## Removed member Admin list cleanup — 2026-08-27
 
-Status: `IMPLEMENTED; LOCAL_REGRESSION_GREEN; PRODUCTION_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 `joinRequests.listForAdmin` now returns current operational admissions only by
 excluding requests with `removedAt` before its existing bounded result limit.
@@ -13,9 +13,16 @@ membership reconciliation, so a new approved reapply request is still
 activatable while the old removed request cannot reactivate membership.
 
 Focused removal, reapply, and invitation-reconciliation regressions pass. Full
-local deterministic gates pass. Local Playwright cannot start because this
-checkout has no Clerk publishable key; Production deployment and authenticated
-UAT remain to be completed for this change.
+local deterministic gates pass. Vercel Production deployment
+`dpl_EjkNaZvd6i4QsvjoRi8TziG3S8LT` is `READY` on the canonical aliases; its
+existing build wrapper deployed the Convex change to Production `clean-eel-522`.
+The affected signed-out Admin route smoke passed `3/3` at 1024/1280/1440, and
+the public homepage smoke passed `3/3` at 390/768/1440.
+
+Local Playwright cannot start because this checkout has no Clerk publishable
+key. Authenticated Admin Remove Member, hard-refresh, and invitee completion
+UAT remain pending because no authorized account/mailbox is available in this
+runtime; no fake account or business data was created.
 
 ## Invitation acceptance P0 root closure — 2026-08-27
 
