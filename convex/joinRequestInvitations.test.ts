@@ -75,6 +75,7 @@ describe("automatic Clerk invitation reconciliation", () => {
       emailAddress: email,
       notify: true,
       ignoreExisting: false,
+      redirectUrl: "/sign-up?redirect_url=%2Faccount",
     });
     expect(await admin.query(api.joinRequests.listForAdmin, { status: "approved" })).toMatchObject([
       {
@@ -156,7 +157,9 @@ describe("automatic Clerk invitation reconciliation", () => {
     const { admin } = await setupUsers(t);
     const approved = await submitForApproval(t, admin, requestInput({ email: "accepted-reader@example.com" }));
     await t.finishAllScheduledFunctions(() => undefined);
-    await expect(admin.mutation(api.joinRequests.approve, { joinRequestId: approved.joinRequestId })).resolves.toMatchObject({
+    await expect(
+      admin.mutation(api.joinRequests.approve, { joinRequestId: approved.joinRequestId }),
+    ).resolves.toMatchObject({
       status: "approved",
       invitationStatus: "sent",
     });
@@ -232,6 +235,30 @@ describe("automatic Clerk invitation reconciliation", () => {
     ).toHaveLength(0);
   });
 
+  it("does not activate Customer B when Customer A remains the active session", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const approvedEmail = "customer-b@example.com";
+    const approved = await submitForApproval(t, admin, requestInput({ email: approvedEmail }));
+    const sessionA = t.withIdentity({
+      subject: "clerk_customer_a",
+      email: "customer-a@example.com",
+      emailVerified: true,
+    });
+
+    await expect(sessionA.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      joinRequestId: approved.joinRequestId,
+      invitationStatus: "pending",
+      admissionStatus: "invitation_pending",
+    });
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("appUsers").collect()).filter((user) => user.clerkUserId === "clerk_customer_a"),
+      ),
+    ).toHaveLength(0);
+  });
+
   it("requires a trusted email claim and keeps suspended customers suspended", async () => {
     const t = testConvex();
     const { owner, customer } = await setupUsers(t);
@@ -260,11 +287,7 @@ describe("automatic Clerk invitation reconciliation", () => {
   it("does not convert an existing privileged appUser into a Customer", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
-    const approved = await submitForApproval(
-      t,
-      admin,
-      requestInput({ email: "phase041-admin-test@example.com" }),
-    );
+    const approved = await submitForApproval(t, admin, requestInput({ email: "phase041-admin-test@example.com" }));
 
     await expect(admin.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
       role: "admin",

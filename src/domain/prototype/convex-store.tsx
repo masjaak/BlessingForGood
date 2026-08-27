@@ -10,6 +10,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import {
   getConvexErrorCode,
   ProductContext,
+  resolveProductMembershipState,
   resolveProductAuthState,
   type ProductContextValue,
 } from "@/domain/prototype/context";
@@ -176,6 +177,10 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const updateStatus = useMutation(api.orders.updateStatus);
 
   const me = useQuery(api.users.current, isAuthenticated ? {} : "skip");
+  const myJoinRequests = useQuery(
+    api.joinRequests.mine,
+    isAuthenticated && me?.role !== "admin" && me?.role !== "owner" ? {} : "skip",
+  );
   const activeUser = me?.status === "active" && isAuthenticated;
   const adminWorkspace = pathname.startsWith("/admin");
   const isAdmin = activeUser && adminWorkspace && roleCanAccess(me?.role || null, "admin");
@@ -231,7 +236,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       provisioningRef.current = true;
       setProvisioning(true);
       setProvisionError(false);
-      void ensureCurrentUser({})
+      const correlationId = globalThis.crypto?.randomUUID?.() || `bootstrap-${Date.now()}`;
+      void ensureCurrentUser({ correlationId })
         .then(() => {
           reconciledSessionRef.current = sessionKey;
         })
@@ -400,6 +406,14 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     admissionDenied,
     provisionError,
   });
+  const membershipState = resolveProductMembershipState({
+    clerkLoaded: isLoaded,
+    clerkSignedIn: isSignedIn,
+    convexLoading: convexAuthLoading,
+    appUser: me,
+    provisioning,
+    requests: myJoinRequests,
+  });
   const retryAuth = useCallback(() => {
     setProvisionError(false);
     retryConvexAuth();
@@ -417,6 +431,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       sessionRole: me?.role || null,
       userStatus: me?.status || null,
       authState,
+      membershipState,
       catalogLoading,
       catalogsLoading,
       ordersLoading,
@@ -438,6 +453,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       catalogLoading,
       catalogsLoading,
       me,
+      membershipState,
       isLoaded,
       isSignedIn,
       ordersLoading,

@@ -20,16 +20,19 @@ Values are kept outside Git and are never printed. Never use the local
 
 Restricted Mode is enabled in the supplied Clerk Development setup. Email
 authentication is available, Convex integration is activated, and invitation
-acceptance is the only normal account-admission path. `/sign-up` remains for
-valid invitation acceptance but is not linked as public signup UX.
+acceptance is the only normal account-admission path. BFG-created invitations
+land on the invite-only `/sign-up` route with Clerk's ticket parameter; it is
+not linked as public signup UX. A pre-existing Clerk session cannot be silently
+used for a different invitation.
 
 ## Application integration
 
 - `src/proxy.ts` uses `clerkMiddleware()` and the Clerk matcher.
 - The root layout has one `ClerkProvider`.
 - The shell uses `Show`, `SignInButton`, and `UserButton`.
-- Auth routes use current Clerk App Router components and redirect signed-in
-  users to `/catalog`.
+- Auth routes use current Clerk App Router components. Invitation tickets are
+  handled before signed-in redirects, with explicit sign-out/restart recovery
+  for a possible account mismatch.
 - `ConvexProviderWithClerk` passes Clerk auth to Convex.
 
 Clerk identity is not the BFG role system. Convex owns role/status/permission
@@ -44,6 +47,7 @@ passwords, cookies, storage state, session tokens, invitation URLs, emails, or
 Clerk IDs.
 
 [CLERK VERIFIED] Development configuration names and environment type were
-checked without exposing values. [BLOCKED] Real Production sign-in,
-invitation acceptance, and authenticated browser QA require the matching
-Production instance/domain and canonical Convex configuration.
+checked without exposing values. [PRODUCTION RETEST REQUIRED] Real ticket
+acceptance, identity correlation, and authenticated browser QA require the
+matching Production instance/domain and an authorized legitimate Customer
+session; deterministic tests do not replace that proof.

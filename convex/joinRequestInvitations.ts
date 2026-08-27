@@ -76,6 +76,7 @@ export const deliver = internalAction({
         emailAddress: target.email,
         notify: true,
         ignoreExisting: false,
+        redirectUrl: "/sign-up?redirect_url=%2Faccount",
       });
       await ctx.runMutation(internal.joinRequestInvitationState.markSent, {
         joinRequestId: target.joinRequestId,

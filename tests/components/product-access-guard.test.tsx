@@ -53,6 +53,20 @@ describe("ProductAccessGuard session boundary", () => {
     expect(screen.queryByText("Private content")).toBeNull();
   });
 
+  it("does not tell an approved applicant to apply again", () => {
+    render(
+      <ProductContext.Provider
+        value={contextValue({ authState: "admission-required", membershipState: "APPROVED_INVITATION_PENDING" })}
+      >
+        <ProductAccessGuard requiredRole="customer">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Permintaanmu sudah disetujui." })).toBeTruthy();
+    expect(screen.getByText("Kami sedang menyelesaikan aktivasi akunmu.")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
+  });
+
   it("denies signed-out users from the Admin workspace", () => {
     render(
       <ProductContext.Provider value={contextValue({ authState: "signed-out" })}>

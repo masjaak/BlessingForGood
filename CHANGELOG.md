@@ -8,6 +8,26 @@ source: conversation
 
 # Changelog
 
+## [real-invitation-ticket-p0] — 2026-08-27
+
+### Changed
+
+- Routed BFG-created Clerk invitations through the invite-only ticket-aware
+  `/sign-up` flow and added explicit account-mismatch sign-out/restart
+  recovery, preventing a stale signed-in account from being used for another
+  invite.
+- Kept `users.ensureCurrentUser` as the single membership bootstrap path,
+  added approved activation-pending state, and recorded privacy-safe
+  reconciliation diagnostics.
+
+### QA
+
+- Full Vitest, TypeScript, ESLint, Format, Build, Convex Development check,
+  `npm audit --omit=dev`, and `git diff --check` pass.
+- Production retest is required because the real 27 August recording
+  superseded the previous deterministic closure; no fake identity or business
+  data was used.
+
 ## [customer-account-responsive-navigation] — 2026-08-26
 
 ### Changed

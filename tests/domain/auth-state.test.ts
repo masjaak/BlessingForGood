@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getConvexErrorCode,
+  resolveProductMembershipState,
   resolveProductAuthState,
   type ProductAuthResolutionInput,
 } from "@/domain/prototype/context";
@@ -22,6 +23,39 @@ function resolve(overrides: Partial<ProductAuthResolutionInput> = {}) {
 }
 
 describe("authenticated product session state", () => {
+  it("keeps approved admission distinct from no application while bootstrap settles", () => {
+    expect(
+      resolveProductMembershipState({
+        clerkLoaded: true,
+        clerkSignedIn: true,
+        convexLoading: false,
+        appUser: null,
+        provisioning: true,
+        requests: undefined,
+      }),
+    ).toBe("MEMBERSHIP_RECONCILING");
+    expect(
+      resolveProductMembershipState({
+        clerkLoaded: true,
+        clerkSignedIn: true,
+        convexLoading: false,
+        appUser: null,
+        provisioning: false,
+        requests: [{ status: "approved" }],
+      }),
+    ).toBe("APPROVED_INVITATION_PENDING");
+    expect(
+      resolveProductMembershipState({
+        clerkLoaded: true,
+        clerkSignedIn: true,
+        convexLoading: false,
+        appUser: null,
+        provisioning: false,
+        requests: [],
+      }),
+    ).toBe("NO_APPLICATION");
+  });
+
   it("reads structured Convex error codes without trusting the message", () => {
     expect(getConvexErrorCode({ data: { code: "ADMISSION_REQUIRED" } })).toBe("ADMISSION_REQUIRED");
     expect(getConvexErrorCode(new Error("Server Error"))).toBeNull();

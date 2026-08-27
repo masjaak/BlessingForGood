@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Real invitation ticket acceptance P0 — 2026-08-27
+
+Status: `CODE_PATCHED; PRODUCTION_RETEST_REQUIRED`
+
+The real Production recording on 27 August 2026 supersedes the previous green
+invitation/membership report: Clerk ticket acceptance returned to BFG
+`/account`, but the browser still showed `Akun belum aktif`, and Admin did not
+show the active-member projection. No deterministic report closes this gate.
+
+Canonical code now routes BFG-created Clerk invitations through the invite-only
+`/sign-up` ticket route, blocks silent continuation of an already signed-in
+session with explicit sign-out/restart recovery, calls the existing
+`users.ensureCurrentUser` from the authenticated provider, and distinguishes
+approved activation-pending state from no application. Convex logs now expose
+privacy-safe correlation, identity hash/mask, appUser, request, and
+reconciliation fields without raw tokens or identity values.
+
+Local evidence: full Vitest `328/328`, TypeScript, ESLint, Format, Build,
+Convex Development check, `npm audit --omit=dev` (`0 vulnerabilities`), and
+`git diff --check` pass. The exact 02:04:45–02:05:10 WIB Production trace is
+not available in the retained log stream, and this worktree has no authorized
+BFG Production Clerk session. Production identity, Admin/customer activation,
+hard refresh, account switch, and Ready Stock live UAT remain unverified by
+design; no fake identity or business record was created.
+
 ## Customer Account responsive navigation closure — 2026-08-26
 
 The Customer Account mobile hub is implemented in the current maintenance

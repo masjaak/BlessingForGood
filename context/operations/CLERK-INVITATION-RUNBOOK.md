@@ -6,6 +6,7 @@ The normal workflow is entirely inside BFG:
 
 ```text
 Join Request → Admin review → Setujui → BFG sends/reuses Clerk invitation
+→ BFG `/sign-up?__clerk_ticket=...` → authenticated bootstrap → active Customer
 ```
 
 `joinRequests.approve` is audited and idempotent. The private Clerk Backend
@@ -24,13 +25,16 @@ invitation URL, password, token, or auth storage in repository artifacts.
    integration by names/status only.
 2. Create or use a Development invitation for a QA identity.
 3. Open the invitation URL only in an isolated QA browser context.
-4. Complete account acceptance through Clerk's `/sign-up` route.
-5. Confirm the first protected Convex request provisions `appUsers` as
+4. Complete account acceptance through BFG's invite-only `/sign-up` route.
+5. If another Clerk session is already active, verify BFG shows the account
+   mismatch message and `[Gunakan akun yang diundang]`; do not continue as the
+   existing account. Use the action to sign out and restart the ticket.
+6. Confirm the first protected Convex request provisions `appUsers` as
    `customer` unless the server bootstrap subject matches.
-6. Sign out, sign back in, reload, and confirm the same app user is reused.
-7. Confirm owner/admin/customer/suspended behavior using separate Development
+7. Sign out, sign back in, reload, and confirm the same app user is reused.
+8. Confirm owner/admin/customer/suspended behavior using separate Development
    QA identities; never use real customer data.
-8. Delete or clean only explicitly created QA records after counts are saved;
+9. Delete or clean only explicitly created QA records after counts are saved;
    stop if unknown business data is found.
 
 ## Historical Development acceptance verification

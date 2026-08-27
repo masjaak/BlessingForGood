@@ -17,7 +17,15 @@ export function ProductAccessGuard({
   requiredRole?: "admin" | "customer" | "owner";
   signedOutContent?: ReactNode;
 }) {
-  const { hydrated, dataSource, sessionRole, userStatus, authState, retryAuth } = useProduct();
+  const {
+    hydrated,
+    dataSource,
+    sessionRole,
+    userStatus,
+    authState,
+    membershipState = "NO_APPLICATION",
+    retryAuth,
+  } = useProduct();
   const pathname = usePathname() || "/";
 
   if (dataSource === "unavailable" || authState === "configuration-missing") {
@@ -41,6 +49,29 @@ export function ProductAccessGuard({
           </LinkButton>
         </div>
       )
+    );
+  }
+  if (membershipState === "MEMBERSHIP_RECONCILING") {
+    return <PageAwareSkeleton workspace={pathname.startsWith("/admin") ? "admin" : "customer"} pathname={pathname} />;
+  }
+  if (authState === "admission-required" && membershipState === "APPROVED_INVITATION_PENDING") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Permintaan disetujui</span>
+        <h1>Permintaanmu sudah disetujui.</h1>
+        <p>Kami sedang menyelesaikan aktivasi akunmu.</p>
+        <UserButton />
+      </div>
+    );
+  }
+  if (authState === "admission-required" && membershipState === "PENDING") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Permintaan sedang ditinjau</span>
+        <h1>Permintaanmu sedang ditinjau.</h1>
+        <p>Tim BFG akan memberi kabar setelah proses review selesai.</p>
+        <UserButton />
+      </div>
     );
   }
   if (authState === "admission-required") {
@@ -75,7 +106,13 @@ export function ProductAccessGuard({
       />
     );
   }
-  if (!hydrated || authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
+  if (
+    !hydrated ||
+    authState === "loading" ||
+    authState === "convex-loading" ||
+    authState === "provisioning" ||
+    membershipState === "AUTH_LOADING"
+  ) {
     return <PageAwareSkeleton workspace={pathname.startsWith("/admin") ? "admin" : "customer"} pathname={pathname} />;
   }
   const allowed = !requiredRole || roleCanAccess(sessionRole, requiredRole);

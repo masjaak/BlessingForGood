@@ -1,5 +1,35 @@
 # BFG SOURCE OF TRUTH
 
+## Real Clerk ticket acceptance P0 override — 2026-08-27
+
+The 27 August 2026 Production recording supersedes the previous invitation
+and membership-sync closure. The observed journey reached a signed-in BFG
+`/account` page while still rendering the inactive-member CTA; therefore
+deterministic reconciliation tests are not Production acceptance evidence.
+
+The canonical ticket contract is now:
+
+- BFG-created Clerk invitations use the supported `/sign-up` redirect with
+  Clerk's `__clerk_ticket` parameter.
+- A live Clerk session on the ticket route must not be silently reused for a
+  different invitee. BFG shows an account-mismatch recovery action that signs
+  out the current session and restarts the same ticket URL.
+- The root authenticated `ConvexProductProvider` remains the single caller of
+  `users.ensureCurrentUser`; it passes a safe correlation ID and waits for
+  membership reconciliation before a definitive account state.
+- An approved identity that is still reconciling is distinct from
+  `NO_APPLICATION`; it shows approved/activation-pending guidance and never a
+  second Join CTA. `appUsers.role/status` remains the authorization authority.
+- Server diagnostics contain only a correlation ID, hashed subject, masked
+  trusted email, and lifecycle/status fields. Tokens, raw subjects, and raw
+  email addresses are never logged.
+
+The exact 02:04:45–02:05:10 WIB Production identity cannot be reconstructed
+from the retained Convex log stream in this worktree, and no authorized BFG
+Production Clerk session is available for replay. The ticket path remains
+`PRODUCTION_RETEST_REQUIRED` until the real Customer proves active Account,
+Admin `Aktif`, and Ready Stock behavior.
+
 ## Final yellow / unknown closure override — 2026-08-26
 
 Admin approval remains entirely inside BFG. `joinRequests.approve` records the

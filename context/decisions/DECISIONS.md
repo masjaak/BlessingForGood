@@ -1,5 +1,22 @@
 # Decisions
 
+## Real Clerk ticket acceptance P0 — 2026-08-27
+
+- The invitation action sets Clerk's supported custom redirect to BFG's
+  invite-only `/sign-up` route. The route must process `__clerk_ticket` before
+  any signed-in redirect can return a stale session to `/account`.
+- A signed-in browser opening an invitation ticket is treated as a possible
+  account mismatch. BFG never activates the ticket's applicant under the
+  existing subject; the supported recovery is explicit sign-out and ticket
+  restart.
+- `ConvexProductProvider` is the canonical authenticated bootstrap caller for
+  `users.ensureCurrentUser`. No second membership reconciler is introduced.
+- Membership UI states are explicit: `AUTH_LOADING`,
+  `MEMBERSHIP_RECONCILING`, `NO_APPLICATION`, `PENDING`,
+  `APPROVED_INVITATION_PENDING`, `ACTIVE`, and `SUSPENDED`.
+- Production diagnostics are privacy-safe and observational only; they do not
+  change admission, authorization, ownership, or Clerk identity behavior.
+
 ## Operational reconciliation — 2026-08-26
 
 - Join approval is one BFG Admin mutation followed by a private, server-side

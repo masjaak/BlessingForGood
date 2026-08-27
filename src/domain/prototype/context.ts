@@ -25,6 +25,51 @@ export type ProductAuthState =
   | "network-error"
   | "configuration-missing";
 
+export type ProductMembershipState =
+  | "AUTH_LOADING"
+  | "MEMBERSHIP_RECONCILING"
+  | "NO_APPLICATION"
+  | "PENDING"
+  | "APPROVED_INVITATION_PENDING"
+  | "ACTIVE"
+  | "SUSPENDED";
+
+type MembershipRequestState = {
+  status: "submitted" | "under_review" | "approved" | "rejected";
+};
+
+export type ProductMembershipResolutionInput = {
+  clerkLoaded: boolean;
+  clerkSignedIn: boolean | undefined;
+  convexLoading: boolean;
+  appUser:
+    | {
+        status: "active" | "suspended";
+      }
+    | null
+    | undefined;
+  provisioning: boolean;
+  requests: MembershipRequestState[] | undefined;
+};
+
+export function resolveProductMembershipState({
+  clerkLoaded,
+  clerkSignedIn,
+  convexLoading,
+  appUser,
+  provisioning,
+  requests,
+}: ProductMembershipResolutionInput): ProductMembershipState {
+  if (!clerkLoaded || !clerkSignedIn || convexLoading) return "AUTH_LOADING";
+  if (appUser?.status === "suspended") return "SUSPENDED";
+  if (appUser?.status === "active") return "ACTIVE";
+  if (provisioning || appUser === undefined || requests === undefined) return "MEMBERSHIP_RECONCILING";
+  const latest = requests[0];
+  if (latest?.status === "approved") return "APPROVED_INVITATION_PENDING";
+  if (latest?.status === "submitted" || latest?.status === "under_review") return "PENDING";
+  return "NO_APPLICATION";
+}
+
 export function getConvexErrorCode(reason: unknown): string | null {
   if (typeof reason !== "object" || reason === null) return null;
   const data = (reason as { data?: unknown }).data;
@@ -78,6 +123,7 @@ export interface ProductContextValue {
   sessionRole: ProductRole | null;
   userStatus: "active" | "suspended" | null;
   authState: ProductAuthState;
+  membershipState: ProductMembershipState;
   catalogLoading: boolean;
   catalogsLoading: boolean;
   ordersLoading: boolean;

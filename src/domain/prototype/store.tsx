@@ -20,6 +20,7 @@ function UnavailableProductProvider({ children }: { children: ReactNode }) {
       sessionRole: null,
       userStatus: null,
       authState: "configuration-missing",
+      membershipState: "AUTH_LOADING",
       catalogLoading: false,
       catalogsLoading: false,
       ordersLoading: false,
