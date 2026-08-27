@@ -80,6 +80,10 @@ export const deliver = internalAction({
         ignoreExisting: false,
         redirectUrl: BFG_INVITATION_REDIRECT_URL,
       });
+      console.log("bfg_invitation_stage", {
+        stage: "INVITATION_CREATED",
+        invitationId: invitation.id,
+      });
       await ctx.runMutation(internal.joinRequestInvitationState.markSent, {
         joinRequestId: target.joinRequestId,
         actorUserId: args.actorUserId,

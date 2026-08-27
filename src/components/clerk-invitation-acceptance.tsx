@@ -12,6 +12,14 @@ const ACTIVATION_ERROR = "Aktivasi akun belum berhasil. Silakan buka kembali und
 
 type AcceptancePhase = "loading" | "form" | "finishing" | "error";
 
+function createInvitationTraceId() {
+  return globalThis.crypto?.randomUUID?.() || `invite-${Date.now().toString(36)}`;
+}
+
+function logInvitationStage(traceId: string, stage: string, fields: Record<string, boolean> = {}) {
+  console.info("bfg_invitation_stage", { traceId, stage, ...fields });
+}
+
 export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { signUp } = useSignUp();
@@ -22,17 +30,29 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const startedTicket = useRef<string | null>(null);
+  const traceId = useRef(createInvitationTraceId());
+  const routeLogged = useRef(false);
+
+  useEffect(() => {
+    if (routeLogged.current) return;
+    routeLogged.current = true;
+    logInvitationStage(traceId.current, "BFG_ACCEPT_ROUTE_REACHED", { ticketPresent: Boolean(ticket) });
+    if (ticket) logInvitationStage(traceId.current, "TICKET_PRESENT");
+  }, [ticket]);
 
   const finalize = useCallback(async () => {
     if (!signUp) return;
+    logInvitationStage(traceId.current, "TICKET_FINALIZE_STARTED");
     setPhase("finishing");
     const { error: finalizeError } = await signUp.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
+          logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
           router.push(ACCOUNT_REDIRECT);
           return;
         }
         const url = decorateUrl(ACCOUNT_REDIRECT);
+        logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
         if (url.startsWith("http")) window.location.href = url;
         else router.push(url);
       },
@@ -44,6 +64,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   }, [router, signUp]);
 
   useEffect(() => {
+    if (isLoaded) logInvitationStage(traceId.current, "SESSION_PRESENT", { signedIn: Boolean(isSignedIn) });
     if (!ticket || !isLoaded || isSignedIn || !signUp || startedTicket.current === ticket) return;
     startedTicket.current = ticket;
     let active = true;
@@ -52,6 +73,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
     void (async () => {
       try {
+        logInvitationStage(traceId.current, "TICKET_FLOW_STARTED");
         const { error: ticketError } = await signUp.ticket({ ticket });
         if (!active) return;
         if (ticketError) {
@@ -59,6 +81,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
           setPhase("error");
           return;
         }
+        logInvitationStage(traceId.current, "TICKET_FLOW_COMPLETED");
         if (signUp.status === "complete") {
           await finalize();
           return;
