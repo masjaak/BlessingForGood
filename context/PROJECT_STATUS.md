@@ -28,10 +28,11 @@ build, `npm audit --omit=dev` (`0 vulnerabilities`), and `git diff --check`
 pass. Local rendered browser QA remains unavailable because this checkout has
 no Clerk publishable key; the existing production-key boundary was preserved.
 
-Production evidence: Vercel deployment `dpl_88ZBbFB7z619q7NspraYsQgfsbfr`
+Production evidence: Vercel deployment `dpl_GhUSQShFN4FHRPj5Ni7RPcXBg6zi`
 is `READY` and aliased to `https://www.blessingforgood.com`; the canonical
 Vercel build deployed Convex Production `clean-eel-522` without creating a
-second project. The affected public Playwright recovery check passed `5/5` at
+second project. The affected public
+Playwright recovery check passed `5/5` at
 375, 390, 430, 768, and 1440 pixels. A live fake-ticket trace reached
 `SIGNUP_TICKET_START` and the configured Clerk Turnstile challenge; its
 headless challenge cannot prove a legitimate invitee's completion, so no real

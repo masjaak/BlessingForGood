@@ -85,7 +85,7 @@ page-specific membership implementation is permitted.
 
 The root correction is deployed to Convex Production `clean-eel-522` and the
 canonical Vercel domain in Vercel deployment
-`dpl_88ZBbFB7z619q7NspraYsQgfsbfr`. The affected public fake-ticket recovery
+`dpl_GhUSQShFN4FHRPj5Ni7RPcXBg6zi`. The affected public fake-ticket recovery
 check passes at 375, 390, 430, 768, and 1440 pixels; this proves bounded
 rendered recovery, not successful invitation acceptance. The observed real
 journey reached approval and one new Clerk invitation, but not Customer ticket
