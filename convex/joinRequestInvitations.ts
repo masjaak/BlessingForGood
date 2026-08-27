@@ -11,6 +11,8 @@ function clerkClient() {
   return createClerkClient({ secretKey });
 }
 
+const BFG_INVITATION_REDIRECT_URL = "https://www.blessingforgood.com/accept-invitation";
+
 function hasExactEmail(user: { emailAddresses: Array<{ emailAddress: string }> }, email: string) {
   return user.emailAddresses.some((address) => address.emailAddress.trim().toLowerCase() === email);
 }
@@ -76,7 +78,7 @@ export const deliver = internalAction({
         emailAddress: target.email,
         notify: true,
         ignoreExisting: false,
-        redirectUrl: "/sign-up?redirect_url=%2Faccount",
+        redirectUrl: BFG_INVITATION_REDIRECT_URL,
       });
       await ctx.runMutation(internal.joinRequestInvitationState.markSent, {
         joinRequestId: target.joinRequestId,

@@ -5050,6 +5050,12 @@ p {
   width: 100%;
 }
 
+.auth-page .auth-invitation-card,
+.auth-page .auth-invitation-state {
+  width: 100%;
+  margin: 0;
+}
+
 .auth-page .auth-secondary-actions {
   display: grid;
   justify-items: center;

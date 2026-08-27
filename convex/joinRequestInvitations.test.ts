@@ -75,7 +75,7 @@ describe("automatic Clerk invitation reconciliation", () => {
       emailAddress: email,
       notify: true,
       ignoreExisting: false,
-      redirectUrl: "/sign-up?redirect_url=%2Faccount",
+      redirectUrl: "https://www.blessingforgood.com/accept-invitation",
     });
     expect(await admin.query(api.joinRequests.listForAdmin, { status: "approved" })).toMatchObject([
       {
