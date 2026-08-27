@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ClerkInvitationForm } from "@/components/clerk-invitation-form";
 import { Button, Card } from "@/components/ui";
+import { BFG_MEMBERSHIP_CORRELATION_KEY } from "@/config/clerk";
 import { useProduct } from "@/domain/prototype/store";
 
 const ACCOUNT_REDIRECT = "/account";
@@ -59,7 +60,10 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     if (routeLogged.current) return;
     routeLogged.current = true;
     logInvitationStage(traceId.current, "BFG_ACCEPT_ROUTE_REACHED", { ticketPresent: Boolean(ticket) });
-    if (ticket) logInvitationStage(traceId.current, "TICKET_PRESENT");
+    if (ticket) {
+      window.sessionStorage.setItem(BFG_MEMBERSHIP_CORRELATION_KEY, traceId.current);
+      logInvitationStage(traceId.current, "INVITATION_OPENED");
+    }
   }, [ticket]);
 
   const finalize = useCallback(async () => {
@@ -77,8 +81,9 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     if (phase !== "finishing" || redirected.current) return;
     if (authState === "authenticated" && sessionRole === "customer") {
       redirected.current = true;
-      logInvitationStage(traceId.current, "MEMBERSHIP_ACTIVE");
+      logInvitationStage(traceId.current, "CUSTOMER_ACTIVE");
       logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
+      window.sessionStorage.removeItem(BFG_MEMBERSHIP_CORRELATION_KEY);
       router.replace(ACCOUNT_REDIRECT);
     }
   }, [authState, phase, router, sessionRole]);
@@ -95,7 +100,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   }, [phase]);
 
   useEffect(() => {
-    if (isLoaded) logInvitationStage(traceId.current, "SESSION_PRESENT", { signedIn: Boolean(isSignedIn) });
+    if (isLoaded && isSignedIn) logInvitationStage(traceId.current, "CLERK_SESSION_ACTIVE");
     if (!ticket || !isLoaded || isSignedIn || !signUp || startedTicket.current === ticket) return;
     startedTicket.current = ticket;
     let active = true;
@@ -113,7 +118,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
           setPhase("error");
           return;
         }
-        logInvitationStage(traceId.current, "TICKET_FLOW_COMPLETED");
+        logInvitationStage(traceId.current, "TICKET_ACCEPTED");
         if (signUp.status === "complete") {
           await finalize();
           return;

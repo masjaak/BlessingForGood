@@ -69,6 +69,7 @@ import type * as reports from "../reports.js";
 import type * as secretCatalogs from "../secretCatalogs.js";
 import type * as settings from "../settings.js";
 import type * as uploads from "../uploads.js";
+import type * as userProvisioning from "../userProvisioning.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 
@@ -140,6 +141,7 @@ declare const fullApi: ApiFromModules<{
   secretCatalogs: typeof secretCatalogs;
   settings: typeof settings;
   uploads: typeof uploads;
+  userProvisioning: typeof userProvisioning;
   users: typeof users;
   validators: typeof validators;
 }>;

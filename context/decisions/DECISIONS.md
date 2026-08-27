@@ -1,5 +1,24 @@
 # Decisions
 
+## Membership admission root closure P0 — 2026-08-27
+
+- Preserve Convex custom-template forwarding from `5ca0bf4`; it is required
+  for the intended Clerk/Convex authentication contract and is not rolled
+  back merely because that template omits email.
+- Recover missing admission identity server-side from Clerk Backend using the
+  already authenticated Clerk subject. Only the verified primary email may be
+  offered to the canonical reconciliation transaction.
+- `userProvisioning.ensureCurrentUser` is the root authenticated caller;
+  `users.ensureCurrentUser` plus `admitApprovedJoinRequest` remains the single
+  membership implementation. Account, Join, Ready Stock, Buku Saya, Tagihan,
+  and Admin projections may not create sibling reconcilers.
+- A failed Clerk Backend lookup is an unresolved/retryable authentication
+  handoff, not evidence that the Customer must Join again. Existing active,
+  suspended, Admin, and Owner records remain authoritative.
+- Invitation observability reuses one safe browser-to-server correlation ID;
+  raw Clerk tickets, subjects, email addresses, JWTs, and secrets are never
+  logged.
+
 ## Real Clerk ticket acceptance P0 — 2026-08-27
 
 - The invitation action sets Clerk's supported custom redirect to BFG's

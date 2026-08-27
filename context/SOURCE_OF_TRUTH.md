@@ -1,34 +1,41 @@
 # BFG SOURCE OF TRUTH
 
-## Real Clerk ticket acceptance P0 override — 2026-08-27
+## Membership admission P0 override — 2026-08-27
 
-The 27 August 2026 Production recording supersedes the previous invitation
-and membership-sync closure. The observed journey reached a signed-in BFG
-`/account` page while still rendering the inactive-member CTA; therefore
-deterministic reconciliation tests are not Production acceptance evidence.
+The 27 August Production failure was not a Ready Stock defect. Convex
+authenticated the correct Clerk subject, but the custom Convex JWT template
+omitted the email claim. The canonical reconciler therefore could not match
+the approved Join Request and correctly failed closed before BFG membership
+existed.
 
-The canonical ticket contract is now:
+The canonical contract is:
 
-- BFG-created Clerk invitations use the supported `/sign-up` redirect with
-  Clerk's `__clerk_ticket` parameter.
-- A live Clerk session on the ticket route must not be silently reused for a
-  different invitee. BFG shows an account-mismatch recovery action that signs
-  out the current session and restarts the same ticket URL.
-- The root authenticated `ConvexProductProvider` remains the single caller of
-  `users.ensureCurrentUser`; it passes a safe correlation ID and waits for
-  membership reconciliation before a definitive account state.
-- An approved identity that is still reconciling is distinct from
-  `NO_APPLICATION`; it shows approved/activation-pending guidance and never a
-  second Join CTA. `appUsers.role/status` remains the authorization authority.
-- Server diagnostics contain only a correlation ID, hashed subject, masked
-  trusted email, and lifecycle/status fields. Tokens, raw subjects, and raw
-  email addresses are never logged.
+- Clerk remains identity authority; the Join Request remains admission-decision
+  authority; the invitation remains onboarding transport; `appUsers.role` and
+  `appUsers.status` remain BFG authorization authority.
+- BFG-created invitation tickets continue through the current
+  `/accept-invitation` Clerk v7 flow with `__clerk_ticket`, wrong-account
+  recovery, session activation, and membership-confirmed redirect.
+- After Convex recognizes the authenticated subject, the root
+  `ConvexProductProvider` calls `userProvisioning.ensureCurrentUser`. That
+  server action reads the same subject's Clerk Backend user and accepts only
+  its verified primary email; no query parameter, form value, storage value,
+  or client context can supply admission email.
+- The action invokes the existing `users.ensureCurrentUser` transaction. Its
+  shared `admitApprovedJoinRequest` helper remains the single write path for
+  active Customer membership and accepted invitation/admission persistence.
+- Missing/unverified email and subject mismatch fail closed. A Clerk provider
+  lookup failure is retryable rather than `ADMISSION_REQUIRED`, so unresolved
+  state never renders a false Join CTA. Active, suspended, Admin, and Owner
+  records preserve their stronger canonical state.
+- One privacy-safe correlation ID spans invitation open, ticket acceptance,
+  Clerk session activation, Convex auth readiness, reconciliation, and final
+  Customer activation. Logs contain no ticket, JWT, token, raw subject, or raw
+  email.
 
-The exact 02:04:45–02:05:10 WIB Production identity cannot be reconstructed
-from the retained Convex log stream in this worktree, and no authorized BFG
-Production Clerk session is available for replay. The ticket path remains
-`PRODUCTION_RETEST_REQUIRED` until the real Customer proves active Account,
-Admin `Aktif`, and Ready Stock behavior.
+All Account, Join, Ready Stock, Buku Saya, Tagihan, Customer shell, and Admin
+Join Request surfaces remain projections of this same canonical state. No
+page-specific membership implementation is permitted.
 
 ## Final yellow / unknown closure override — 2026-08-26
 

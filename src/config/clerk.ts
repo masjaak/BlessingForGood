@@ -1,3 +1,5 @@
+export const BFG_MEMBERSHIP_CORRELATION_KEY = "bfg-membership-correlation-id";
+
 export const bfgClerkAppearance = {
   variables: {
     colorPrimary: "#1c563f",

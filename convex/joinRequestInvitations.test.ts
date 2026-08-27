@@ -181,6 +181,57 @@ describe("automatic Clerk invitation reconciliation", () => {
     ).toHaveLength(1);
   });
 
+  it("reconciles an accepted invitation when the Convex token omits the Clerk email", async () => {
+    const acceptedEmail = "tokenless-email-reader@example.com";
+    const clerkUserId = "clerk_tokenless_email_reader";
+    clerkState.getUser.mockResolvedValue({
+      id: clerkUserId,
+      primaryEmailAddressId: "idn_verified",
+      emailAddresses: [
+        {
+          id: "idn_verified",
+          emailAddress: acceptedEmail,
+          verification: { status: "verified" },
+        },
+      ],
+    });
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    await submitForApproval(t, admin, requestInput({ email: acceptedEmail }));
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    const acceptedIdentity = t.withIdentity({ subject: clerkUserId });
+    await expect(acceptedIdentity.action(api.userProvisioning.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "active",
+    });
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      invitationStatus: "accepted",
+      admissionStatus: "active",
+    });
+  });
+
+  it("keeps Clerk email lookup failures retryable instead of showing Join again", async () => {
+    const acceptedEmail = "retryable-lookup-reader@example.com";
+    clerkState.getUser.mockRejectedValue(new Error("provider unavailable"));
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    await expect(customer.action(api.userProvisioning.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "active",
+    });
+    await submitForApproval(t, admin, requestInput({ email: acceptedEmail }));
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    const acceptedIdentity = t.withIdentity({ subject: "clerk_retryable_lookup_reader" });
+    await expect(acceptedIdentity.action(api.userProvisioning.ensureCurrentUser, {})).rejects.toThrow(
+      "CLERK_INVITATION_RETRY_REQUIRED",
+    );
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      admissionStatus: "invitation_pending",
+    });
+  });
+
   it("does not activate a matching identity before Admin approval", async () => {
     const t = testConvex();
     const pendingEmail = "pending-reader@example.com";
@@ -242,11 +293,20 @@ describe("automatic Clerk invitation reconciliation", () => {
     const approved = await submitForApproval(t, admin, requestInput({ email: approvedEmail }));
     const sessionA = t.withIdentity({
       subject: "clerk_customer_a",
-      email: "customer-a@example.com",
-      emailVerified: true,
+    });
+    clerkState.getUser.mockResolvedValue({
+      id: "clerk_customer_a",
+      primaryEmailAddressId: "idn_customer_a",
+      emailAddresses: [
+        {
+          id: "idn_customer_a",
+          emailAddress: "customer-a@example.com",
+          verification: { status: "verified" },
+        },
+      ],
     });
 
-    await expect(sessionA.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    await expect(sessionA.action(api.userProvisioning.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
     expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
       joinRequestId: approved.joinRequestId,
       invitationStatus: "pending",
@@ -259,17 +319,28 @@ describe("automatic Clerk invitation reconciliation", () => {
     ).toHaveLength(0);
   });
 
-  it("requires a trusted email claim and keeps suspended customers suspended", async () => {
+  it("requires a verified Clerk primary email and keeps suspended customers suspended", async () => {
     const t = testConvex();
     const { owner, customer } = await setupUsers(t);
     const unverifiedEmail = "unverified-reader@example.com";
     const approved = await submitForApproval(t, owner, requestInput({ email: unverifiedEmail }));
     const unverifiedIdentity = t.withIdentity({
       subject: "clerk_unverified_reader",
-      email: unverifiedEmail,
-      emailVerified: false,
     });
-    await expect(unverifiedIdentity.mutation(api.users.ensureCurrentUser, {})).rejects.toThrow("ADMISSION_REQUIRED");
+    clerkState.getUser.mockResolvedValue({
+      id: "clerk_unverified_reader",
+      primaryEmailAddressId: "idn_unverified",
+      emailAddresses: [
+        {
+          id: "idn_unverified",
+          emailAddress: unverifiedEmail,
+          verification: { status: "unverified" },
+        },
+      ],
+    });
+    await expect(unverifiedIdentity.action(api.userProvisioning.ensureCurrentUser, {})).rejects.toThrow(
+      "ADMISSION_REQUIRED",
+    );
     expect((await owner.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
       joinRequestId: approved.joinRequestId,
       admissionStatus: "invitation_pending",

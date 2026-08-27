@@ -1,12 +1,13 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { BFG_MEMBERSHIP_CORRELATION_KEY } from "@/config/clerk";
 import {
   getConvexErrorCode,
   ProductContext,
@@ -168,7 +169,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth();
   const retryConvexAuth = useConvexRetry();
 
-  const ensureCurrentUser = useMutation(api.users.ensureCurrentUser);
+  const ensureCurrentUser = useAction(api.userProvisioning.ensureCurrentUser);
   const createBundle = useMutation(api.secretCatalogs.createBundle);
   const openCatalog = useMutation(api.secretCatalogs.open);
   const closeCatalogMutation = useMutation(api.secretCatalogs.close);
@@ -236,7 +237,10 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       provisioningSessionRef.current = authSessionKey;
       setProvisioning(true);
       setProvisionError(false);
-      const correlationId = globalThis.crypto?.randomUUID?.() || `bootstrap-${Date.now()}`;
+      const storedCorrelationId = window.sessionStorage
+        .getItem(BFG_MEMBERSHIP_CORRELATION_KEY)
+        ?.match(/^[A-Za-z0-9_-]{1,80}$/)?.[0];
+      const correlationId = storedCorrelationId || globalThis.crypto?.randomUUID?.() || `bootstrap-${Date.now()}`;
       void ensureCurrentUser({ correlationId })
         .then(() => {
           if (active) reconciledSessionRef.current = authSessionKey;

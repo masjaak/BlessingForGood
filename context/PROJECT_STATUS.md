@@ -1,29 +1,39 @@
 # BFG Project Status
 
-## Real invitation ticket acceptance P0 — 2026-08-27
+## Membership admission root closure P0 — 2026-08-27
 
-Status: `CODE_PATCHED; PRODUCTION_RETEST_REQUIRED`
+Status: `ROOT_CAUSE_FIXED; PRODUCTION_DEPLOYMENT_AND_UAT_PENDING`
 
-The real Production recording on 27 August 2026 supersedes the previous green
-invitation/membership report: Clerk ticket acceptance returned to BFG
-`/account`, but the browser still showed `Akun belum aktif`, and Admin did not
-show the active-member projection. No deterministic report closes this gate.
+Live canonical Convex Production logs established the first incorrect
+boundary. Correlation `9b79020d-2520-4975-8621-7a97bd39c2be` had a valid Clerk
+subject and Convex authentication, but `trustedEmail=null`; therefore
+`users.ensureCurrentUser` could not find the matching approved Join Request
+and failed `ADMISSION_REQUIRED` before creating an `appUsers` row. The Ready
+Stock CTA was a downstream projection of that upstream failure.
 
-Canonical code now routes BFG-created Clerk invitations through the invite-only
-`/sign-up` ticket route, blocks silent continuation of an already signed-in
-session with explicit sign-out/restart recovery, calls the existing
-`users.ensureCurrentUser` from the authenticated provider, and distinguishes
-approved activation-pending state from no application. Convex logs now expose
-privacy-safe correlation, identity hash/mask, appUser, request, and
-reconciliation fields without raw tokens or identity values.
+Git archaeology identifies `5ca0bf4` as the behavioral regression. It
+correctly forwarded Convex's requested Clerk JWT template, preserving the
+required custom-template audience and authentication fix, but the configured
+template contains no email claim. Later admission implementations continued
+to rely on `identity.email`, so approval, invitation acceptance, and Clerk
+authentication could not converge to BFG membership.
 
-Local evidence: full Vitest `328/328`, TypeScript, ESLint, Format, Build,
-Convex Development check, `npm audit --omit=dev` (`0 vulnerabilities`), and
-`git diff --check` pass. The exact 02:04:45–02:05:10 WIB Production trace is
-not available in the retained log stream, and this worktree has no authorized
-BFG Production Clerk session. Production identity, Admin/customer activation,
-hard refresh, account switch, and Ready Stock live UAT remain unverified by
-design; no fake identity or business record was created.
+The root provider now calls one server-side `userProvisioning.ensureCurrentUser`
+action only after Convex authentication is ready. The action binds the current
+Clerk subject to that same subject's Clerk Backend user, accepts only a
+verified primary email, and runs the existing `ensureCurrentUser` transaction.
+That transaction remains the only membership implementation and persists the
+active `appUser` plus accepted invitation/admission projection atomically.
+Wrong accounts and unverified addresses fail closed; transient Clerk lookup
+failures remain retryable; existing active/suspended/privileged users retain
+their canonical status.
+
+Local evidence: full Vitest `68 files / 356 tests`, TypeScript, ESLint, Format,
+Build, Convex Development check, `npm audit --omit=dev` (`0 vulnerabilities`),
+and `git diff --check` pass. Local Playwright cannot start because this
+checkout intentionally lacks a Clerk publishable key. Convex Production,
+Vercel Production, and the single legitimate fresh-Customer journey remain
+the release gate; no Production UAT result is claimed here.
 
 ## Customer Account responsive navigation closure — 2026-08-26
 

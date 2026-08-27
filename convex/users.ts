@@ -2,7 +2,7 @@ import { paginationOptsValidator, type UserIdentity } from "convex/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
 import { findCurrentUser, requireOwner, requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
@@ -42,6 +42,14 @@ async function logMembershipDiagnostic(
   try {
     console.log("bfg_membership_reconciliation", {
       event,
+      stage:
+        event === "ensure_started"
+          ? "ENSURE_USER_START"
+          : event === "ensure_failed"
+            ? "ENSURE_USER_FAILED"
+            : fields.reconciliationResult === "active"
+              ? "CUSTOMER_ACTIVE"
+              : "MEMBERSHIP_RECONCILED",
       correlationId: fields.correlationId || "unspecified",
       clerkSubjectHash: await safeSubjectHash(identity.subject),
       trustedEmail: maskedEmail(normalizedEmail),
@@ -166,172 +174,192 @@ async function reconcileExistingCustomerAdmission(
   await admitApprovedJoinRequest(ctx, updated, user._id);
 }
 
-export const ensureCurrentUser = mutation({
-  args: { correlationId: v.optional(v.string()) },
-  returns: v.object({
-    appUserId: v.id("appUsers"),
-    role: roleValidator,
-    status: userStatusValidator,
-    emailSnapshot: v.union(v.string(), v.null()),
-    displayNameSnapshot: v.union(v.string(), v.null()),
-    imageUrlSnapshot: v.union(v.string(), v.null()),
-    memberCode: v.union(v.string(), v.null()),
-    createdAt: v.string(),
-    updatedAt: v.string(),
-    lastSeenAt: v.string(),
-    suspendedAt: v.union(v.string(), v.null()),
-  }),
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) fail("IDENTITY_REQUIRED");
-    const correlationId = args.correlationId?.match(/^[A-Za-z0-9_-]{1,80}$/)?.[0];
-    const normalizedIdentityEmail = trustedIdentityEmail(identity);
-    const ownerClerkUserId = process.env.BFG_OWNER_CLERK_USER_ID;
-    if (!ownerClerkUserId) {
-      await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, null, {
-        correlationId,
-        reconciliationCalled: false,
-        reconciliationResult: "auth_configuration_missing",
-      });
-      fail("AUTH_CONFIGURATION_MISSING");
-    }
-    const now = Date.now();
-    const existing = await findCurrentUser(ctx, identity);
-    const matchingApprovedRequest = await findApprovedJoinRequest(ctx, normalizedIdentityEmail);
-    await logMembershipDiagnostic(
-      "ensure_started",
-      identity,
-      normalizedIdentityEmail,
-      existing,
-      matchingApprovedRequest,
-      {
-        correlationId,
-        reconciliationCalled: Boolean(existing),
-        reconciliationResult: "pending",
-      },
-    );
-    if (existing) {
-      const memberCode =
-        existing.memberCode ||
-        (await nextMemberCode(ctx, identity.name || existing.displayNameSnapshot || identity.email || undefined));
-      await ctx.db.patch(existing._id, {
-        emailSnapshot: identity.email || existing.emailSnapshot,
-        displayNameSnapshot: identity.name || existing.displayNameSnapshot,
-        imageUrlSnapshot: identity.pictureUrl || existing.imageUrlSnapshot,
-        memberCode,
-        updatedAt: now,
-        lastSeenAt: now,
-      });
-      await reconcileExistingCustomerAdmission(
+const appUserViewValidator = v.object({
+  appUserId: v.id("appUsers"),
+  role: roleValidator,
+  status: userStatusValidator,
+  emailSnapshot: v.union(v.string(), v.null()),
+  displayNameSnapshot: v.union(v.string(), v.null()),
+  imageUrlSnapshot: v.union(v.string(), v.null()),
+  memberCode: v.union(v.string(), v.null()),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  lastSeenAt: v.string(),
+  suspendedAt: v.union(v.string(), v.null()),
+});
+
+async function ensureCurrentUserHandler(
+  ctx: MutationCtx,
+  args: { correlationId?: string },
+  clerkVerifiedEmail?: string | null,
+  clerkLookupFailed = false,
+) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) fail("IDENTITY_REQUIRED");
+  const correlationId = args.correlationId?.match(/^[A-Za-z0-9_-]{1,80}$/)?.[0];
+  const normalizedIdentityEmail =
+    clerkVerifiedEmail === undefined
+      ? trustedIdentityEmail(identity)
+      : clerkVerifiedEmail?.trim().toLowerCase() || null;
+  const ownerClerkUserId = process.env.BFG_OWNER_CLERK_USER_ID;
+  if (!ownerClerkUserId) {
+    await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, null, {
+      correlationId,
+      reconciliationCalled: false,
+      reconciliationResult: "auth_configuration_missing",
+    });
+    fail("AUTH_CONFIGURATION_MISSING");
+  }
+  const now = Date.now();
+  const existing = await findCurrentUser(ctx, identity);
+  const matchingApprovedRequest = await findApprovedJoinRequest(ctx, normalizedIdentityEmail);
+  await logMembershipDiagnostic(
+    "ensure_started",
+    identity,
+    normalizedIdentityEmail,
+    existing,
+    matchingApprovedRequest,
+    {
+      correlationId,
+      reconciliationCalled: Boolean(existing),
+      reconciliationResult: "pending",
+    },
+  );
+  if (existing) {
+    const memberCode =
+      existing.memberCode ||
+      (await nextMemberCode(
         ctx,
-        identity,
-        existing,
-        normalizedIdentityEmail,
-        matchingApprovedRequest,
-      );
-      const updated = await ctx.db.get(existing._id);
-      if (!updated) fail("USER_NOT_FOUND");
-      const reconciledRequest = matchingApprovedRequest ? await ctx.db.get(matchingApprovedRequest._id) : null;
-      await logMembershipDiagnostic("ensure_complete", identity, normalizedIdentityEmail, updated, reconciledRequest, {
-        correlationId,
-        reconciliationCalled: Boolean(existing),
-        reconciliationResult:
-          reconciledRequest?.invitationStatus === "accepted" ? "active" : "existing_user_not_admitted",
-      });
-      return appUserView(updated);
-    }
-    let approvedRequest: Doc<"joinRequests"> | null = null;
-    let staffInvitation: Doc<"staffInvitations"> | null = null;
-    if (identity.subject !== ownerClerkUserId) {
-      if (!normalizedIdentityEmail) {
-        await logMembershipDiagnostic(
-          "ensure_failed",
-          identity,
-          normalizedIdentityEmail,
-          null,
-          matchingApprovedRequest,
-          {
-            correlationId,
-            reconciliationCalled: false,
-            reconciliationResult: "admission_required_unverified_email",
-          },
-        );
-        fail("ADMISSION_REQUIRED");
-      }
-      staffInvitation = await ctx.db
-        .query("staffInvitations")
-        .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedIdentityEmail))
-        .filter((query) => query.eq(query.field("status"), "pending"))
-        .first();
-      if (!staffInvitation) {
-        approvedRequest = matchingApprovedRequest;
-        if (!approvedRequest) {
-          await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, null, {
-            correlationId,
-            reconciliationCalled: false,
-            reconciliationResult: "admission_required_no_approved_request",
-          });
-          fail("ADMISSION_REQUIRED");
-        }
-        if (approvedRequest.applicantClerkUserId && approvedRequest.applicantClerkUserId !== identity.subject) {
-          await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, approvedRequest, {
-            correlationId,
-            reconciliationCalled: false,
-            reconciliationResult: "admission_required_identity_mismatch",
-          });
-          fail("ADMISSION_REQUIRED");
-        }
-      }
-    }
-    const userId = await ctx.db.insert("appUsers", {
-      clerkUserId: identity.subject,
-      role: identity.subject === ownerClerkUserId ? "owner" : staffInvitation?.role || "customer",
-      status: "active",
-      emailSnapshot: identity.email,
-      displayNameSnapshot: identity.name,
-      imageUrlSnapshot: identity.pictureUrl,
-      memberCode: await nextMemberCode(ctx, identity.name || identity.email || undefined),
-      createdAt: now,
+        identity.name || existing.displayNameSnapshot || normalizedIdentityEmail || undefined,
+      ));
+    await ctx.db.patch(existing._id, {
+      emailSnapshot: normalizedIdentityEmail || existing.emailSnapshot,
+      displayNameSnapshot: identity.name || existing.displayNameSnapshot,
+      imageUrlSnapshot: identity.pictureUrl || existing.imageUrlSnapshot,
+      memberCode,
       updatedAt: now,
       lastSeenAt: now,
     });
-    if (approvedRequest) {
-      const applicantEmailSnapshot = normalizedIdentityEmail;
-      if (!applicantEmailSnapshot) fail("ADMISSION_REQUIRED");
-      await ctx.db.patch(approvedRequest._id, {
-        applicantClerkUserId: identity.subject,
-        applicantEmailSnapshot,
-        updatedAt: now,
-      });
-      const linkedRequest = await ctx.db.get(approvedRequest._id);
-      if (!linkedRequest) fail("JOIN_REQUEST_NOT_FOUND");
-      await admitApprovedJoinRequest(ctx, linkedRequest, userId);
-    }
-    if (staffInvitation) {
-      await ctx.db.patch(staffInvitation._id, {
-        status: "claimed",
-        claimedAt: now,
-        claimedByUserId: userId,
-        updatedAt: now,
-      });
-      await recordAudit(
-        ctx,
-        staffInvitation.createdByUserId,
-        "staff_invitation.claimed",
-        "staffInvitation",
-        staffInvitation._id,
-        { appUserId: String(userId) },
-      );
-    }
-    const user = await ctx.db.get(userId);
-    if (!user) fail("USER_NOT_FOUND");
-    const reconciledRequest = approvedRequest ? await ctx.db.get(approvedRequest._id) : null;
-    await logMembershipDiagnostic("ensure_complete", identity, normalizedIdentityEmail, user, reconciledRequest, {
+    await reconcileExistingCustomerAdmission(ctx, identity, existing, normalizedIdentityEmail, matchingApprovedRequest);
+    const updated = await ctx.db.get(existing._id);
+    if (!updated) fail("USER_NOT_FOUND");
+    const reconciledRequest = matchingApprovedRequest ? await ctx.db.get(matchingApprovedRequest._id) : null;
+    await logMembershipDiagnostic("ensure_complete", identity, normalizedIdentityEmail, updated, reconciledRequest, {
       correlationId,
-      reconciliationCalled: Boolean(approvedRequest),
-      reconciliationResult: approvedRequest ? "active" : staffInvitation ? "staff_active" : "owner_active",
+      reconciliationCalled: Boolean(existing),
+      reconciliationResult:
+        reconciledRequest?.invitationStatus === "accepted" ? "active" : "existing_user_not_admitted",
     });
-    return appUserView(user);
+    return appUserView(updated);
+  }
+  let approvedRequest: Doc<"joinRequests"> | null = null;
+  let staffInvitation: Doc<"staffInvitations"> | null = null;
+  if (identity.subject !== ownerClerkUserId) {
+    if (!normalizedIdentityEmail) {
+      await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, matchingApprovedRequest, {
+        correlationId,
+        reconciliationCalled: false,
+        reconciliationResult: clerkLookupFailed
+          ? "clerk_verified_email_lookup_failed"
+          : "admission_required_unverified_email",
+      });
+      if (clerkLookupFailed) fail("CLERK_INVITATION_RETRY_REQUIRED");
+      fail("ADMISSION_REQUIRED");
+    }
+    staffInvitation = await ctx.db
+      .query("staffInvitations")
+      .withIndex("by_normalized_email", (query) => query.eq("normalizedEmail", normalizedIdentityEmail))
+      .filter((query) => query.eq(query.field("status"), "pending"))
+      .first();
+    if (!staffInvitation) {
+      approvedRequest = matchingApprovedRequest;
+      if (!approvedRequest) {
+        await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, null, {
+          correlationId,
+          reconciliationCalled: false,
+          reconciliationResult: "admission_required_no_approved_request",
+        });
+        fail("ADMISSION_REQUIRED");
+      }
+      if (approvedRequest.applicantClerkUserId && approvedRequest.applicantClerkUserId !== identity.subject) {
+        await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, approvedRequest, {
+          correlationId,
+          reconciliationCalled: false,
+          reconciliationResult: "admission_required_identity_mismatch",
+        });
+        fail("ADMISSION_REQUIRED");
+      }
+    }
+  }
+  const userId = await ctx.db.insert("appUsers", {
+    clerkUserId: identity.subject,
+    role: identity.subject === ownerClerkUserId ? "owner" : staffInvitation?.role || "customer",
+    status: "active",
+    emailSnapshot: normalizedIdentityEmail || undefined,
+    displayNameSnapshot: identity.name,
+    imageUrlSnapshot: identity.pictureUrl,
+    memberCode: await nextMemberCode(ctx, identity.name || normalizedIdentityEmail || undefined),
+    createdAt: now,
+    updatedAt: now,
+    lastSeenAt: now,
+  });
+  if (approvedRequest) {
+    const applicantEmailSnapshot = normalizedIdentityEmail;
+    if (!applicantEmailSnapshot) fail("ADMISSION_REQUIRED");
+    await ctx.db.patch(approvedRequest._id, {
+      applicantClerkUserId: identity.subject,
+      applicantEmailSnapshot,
+      updatedAt: now,
+    });
+    const linkedRequest = await ctx.db.get(approvedRequest._id);
+    if (!linkedRequest) fail("JOIN_REQUEST_NOT_FOUND");
+    await admitApprovedJoinRequest(ctx, linkedRequest, userId);
+  }
+  if (staffInvitation) {
+    await ctx.db.patch(staffInvitation._id, {
+      status: "claimed",
+      claimedAt: now,
+      claimedByUserId: userId,
+      updatedAt: now,
+    });
+    await recordAudit(
+      ctx,
+      staffInvitation.createdByUserId,
+      "staff_invitation.claimed",
+      "staffInvitation",
+      staffInvitation._id,
+      { appUserId: String(userId) },
+    );
+  }
+  const user = await ctx.db.get(userId);
+  if (!user) fail("USER_NOT_FOUND");
+  const reconciledRequest = approvedRequest ? await ctx.db.get(approvedRequest._id) : null;
+  await logMembershipDiagnostic("ensure_complete", identity, normalizedIdentityEmail, user, reconciledRequest, {
+    correlationId,
+    reconciliationCalled: Boolean(approvedRequest),
+    reconciliationResult: approvedRequest ? "active" : staffInvitation ? "staff_active" : "owner_active",
+  });
+  return appUserView(user);
+}
+
+export const ensureCurrentUser = mutation({
+  args: { correlationId: v.optional(v.string()) },
+  returns: appUserViewValidator,
+  handler: (ctx, args) => ensureCurrentUserHandler(ctx, args),
+});
+
+export const ensureCurrentUserFromClerk = internalMutation({
+  args: {
+    clerkSubject: v.string(),
+    clerkVerifiedEmail: v.union(v.string(), v.null()),
+    clerkLookupFailed: v.boolean(),
+    correlationId: v.optional(v.string()),
+  },
+  returns: appUserViewValidator,
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.clerkSubject) fail("IDENTITY_REQUIRED");
+    return ensureCurrentUserHandler(ctx, args, args.clerkVerifiedEmail, args.clerkLookupFailed);
   },
 });
 

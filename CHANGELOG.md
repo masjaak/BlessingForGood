@@ -8,6 +8,39 @@ source: conversation
 
 # Changelog
 
+## [membership-admission-root-closure] — 2026-08-27
+
+### Fixed
+
+- Repaired the Clerk-to-Convex admission boundary for Production JWTs that
+  authenticate the correct Clerk subject but omit the email claim. The root
+  product provider now resolves that subject's verified primary email through
+  the server-only Clerk Backend SDK, then invokes the existing canonical
+  `users.ensureCurrentUser` reconciliation transaction.
+- Kept verified-email, account-mismatch, privileged-role, suspension, and
+  session-switch protections fail-closed. Clerk lookup failures remain
+  retryable and do not become a false `Gabung Blessfriends` state.
+- Carried one privacy-safe invitation correlation ID from ticket acceptance
+  through Convex authentication and membership reconciliation.
+
+### Regression evidence
+
+- Commit `5ca0bf4` correctly began forwarding Convex's requested Clerk JWT
+  template, but the configured Production template supplies the required
+  audience and subject without an email claim. The later admission code
+  required that missing claim before it could find the approved Join Request.
+- Production correlation `9b79020d-2520-4975-8621-7a97bd39c2be` reached
+  `ensure_started` with an authenticated subject, `trustedEmail=null`, no
+  `appUser`, and then failed `ADMISSION_REQUIRED` before reconciliation.
+
+### QA
+
+- Full Vitest `68 files / 356 tests`, TypeScript, ESLint, Format, Build,
+  Convex Development check, `npm audit --omit=dev` (`0 vulnerabilities`), and
+  `git diff --check` pass. Local Playwright remains unavailable because this
+  checkout intentionally has no Clerk publishable key; Production UAT remains
+  the release gate.
+
 ## [real-invitation-ticket-p0] — 2026-08-27
 
 ### Changed
