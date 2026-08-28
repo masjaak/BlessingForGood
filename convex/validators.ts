@@ -50,6 +50,7 @@ export const joinRequestInvitationStatusValidator = v.union(
   v.literal("accepted"),
   v.literal("failed"),
 );
+export const joinRequestOnboardingPathValidator = v.union(v.literal("sign_in"), v.literal("sign_up"));
 export const joinRequestBookInterestValidator = v.union(
   v.literal("Children & Picture Books"),
   v.literal("Middle Grade"),

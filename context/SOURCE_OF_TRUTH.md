@@ -1,5 +1,32 @@
 # BFG SOURCE OF TRUTH
 
+## Clerk identity routing and invitation lifecycle P0 — 2026-08-28
+
+Admin approval is an admission decision, not automatic Clerk-user creation.
+The current router resolves one onboarding path from the trusted server-side
+Clerk identity state:
+
+- an existing linked BFG Customer reuses its current identity and current
+  admission;
+- an existing Clerk identity without an active BFG membership uses
+  `onboardingPath=sign_in`, with no new signup invitation; and
+- only an email with no existing Clerk identity uses one BFG Clerk invitation
+  and the invite-only signup path.
+
+`onboardingPath` is a persisted routing marker, not a second membership state.
+`appUsers.role` and `appUsers.status` remain the only BFG membership authority;
+an approved Join Request without an active Customer `appUsers` row is never
+shown as `Aktif` merely because a Clerk subject or email exists.
+
+The invitation route compares the current Clerk session's verified primary
+email with the current approved admission email after canonical normalization.
+Historical `appUser.clerkUserId` values are used only for guarded subject
+lineage/reapply checks and cannot produce an email mismatch when the current
+verified email matches. A genuinely different current session remains blocked
+with masked account-switch recovery. Invitation delivery uses
+`ignoreExisting=false`, reuses one pending invitation, and only explicit
+resend revokes/replaces the current pending ticket.
+
 ## Membership removal and reapply P0 — 2026-08-27
 
 The BFG membership lifecycle is separate from Clerk identity. Admin

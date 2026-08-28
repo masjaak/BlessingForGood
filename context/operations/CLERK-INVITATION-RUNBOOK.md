@@ -5,14 +5,18 @@
 The normal workflow is entirely inside BFG:
 
 ```text
-Join Request → Admin review → Setujui → BFG sends/reuses Clerk invitation
-→ BFG `/accept-invitation?__clerk_ticket=...` → authenticated bootstrap → active Customer
+Join Request → Admin review → Setujui → identity router
+  existing Clerk identity → sign in → authenticated bootstrap → active Customer
+  no Clerk identity → one Clerk invitation → BFG `/accept-invitation?__clerk_ticket=...`
+    → signup → authenticated bootstrap → active Customer
 ```
 
 `joinRequests.approve` is audited and idempotent. The private Clerk Backend
 SDK action resolves an exact existing identity or pending invitation before
-creating one invitation. Admin uses `Kirim ulang undangan` only for a safe
-failed/legacy state; opening Clerk Dashboard is not a routine step.
+creating one invitation. An existing identity is marked sign-in-required and
+does not receive a signup invitation. Admin uses `Kirim ulang undangan` only
+for an explicit replacement of the current pending ticket; opening Clerk
+Dashboard is not a routine step.
 
 The Production Convex deployment receives `CLERK_SECRET_KEY` from the
 server-only Vercel environment. No invitation URL, token, secret, or provider
@@ -25,10 +29,13 @@ invitation URL, password, token, or auth storage in repository artifacts.
    integration by names/status only.
 2. Create or use a Development invitation for a QA identity.
 3. Open the invitation URL only in an isolated QA browser context.
-4. Complete account acceptance through BFG's invite-only `/accept-invitation` route.
-5. If another Clerk session is already active, verify BFG shows the account
-   mismatch message and `[Gunakan akun yang diundang]`; do not continue as the
-   existing account. Use the action to sign out and restart the ticket.
+4. For a new identity, complete account acceptance through BFG's invite-only
+   `/accept-invitation` route. For an existing identity, use BFG sign-in and
+   continue with the approved admission; do not create a second identity.
+5. If another Clerk session is already active, verify BFG compares the current
+   verified primary email with the ticket target: a matching email continues;
+   a different email shows masked account-switch recovery and
+   `[Gunakan akun yang diundang]`.
 6. Confirm the first protected Convex request provisions `appUsers` as
    `customer` unless the server bootstrap subject matches.
 7. Sign out, sign back in, reload, and confirm the same app user is reused.

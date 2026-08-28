@@ -109,6 +109,20 @@ describe("Join Blessfriends admission entry", () => {
     expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
   });
 
+  it("routes an existing Clerk identity to sign-in", () => {
+    vi.mocked(useQuery).mockReturnValue([
+      { status: "approved", admissionStatus: "sign_in_required", invitationStatus: "ready" },
+    ] as never);
+
+    render(<JoinPage />);
+
+    expect(screen.getByRole("heading", { name: "Akun BFG-mu sudah ada." })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Masuk dengan akun BFG" }).getAttribute("href")).toBe(
+      "/sign-in?redirect_url=%2Faccount",
+    );
+    expect(screen.queryByRole("button", { name: "Kirim permintaan" })).toBeNull();
+  });
+
   it("submits the public form while signed out and accepts expanded interests", async () => {
     vi.mocked(useProduct).mockReturnValue({
       dataSource: "convex",

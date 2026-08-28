@@ -153,4 +153,49 @@ describe("Admin Join Request admission projection", () => {
     expect(screen.getByRole("heading", { name: "Remove member?" })).toBeTruthy();
     expect(screen.getByText(/Riwayat pesanan, tagihan, Batch, deposit, dan aktivitas tetap disimpan/)).toBeTruthy();
   });
+
+  it("shows existing Clerk identity sign-in without claiming Active", () => {
+    vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+    vi.mocked(useQuery).mockReturnValue([
+      {
+        joinRequestId: "join-existing",
+        name: "Existing Reader",
+        email: "existing@example.com",
+        contact: "+628123456789",
+        city: "Jakarta",
+        bookInterest: "Children Books",
+        note: null,
+        source: "website",
+        acknowledged: true,
+        status: "approved",
+        invitationStatus: "ready",
+        onboardingPath: "sign_in",
+        submittedAt: "2026-08-27T00:00:00.000Z",
+        reviewedAt: "2026-08-27T00:01:00.000Z",
+        reviewedByUserId: null,
+        reviewNote: null,
+        rejectionReason: null,
+        removedAt: null,
+        removedByUserId: null,
+        removedByName: null,
+        removalReason: null,
+        admissionStatus: "sign_in_required",
+        admissionError: null,
+        invitationError: null,
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:01:00.000Z",
+      },
+    ] as never);
+
+    render(<AdminJoinRequestsPage />);
+
+    expect(
+      screen.getByText("Disetujui. Akun Clerk sudah ada; Customer perlu masuk untuk mengaktifkan membership."),
+    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Masuk dengan akun BFG" }).getAttribute("href")).toBe(
+      "/sign-in?redirect_url=%2Faccount",
+    );
+    expect(screen.queryByText("Aktif")).toBeNull();
+    expect(screen.queryByRole("button", { name: /kirim.*undangan/i })).toBeNull();
+  });
 });

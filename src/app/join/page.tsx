@@ -291,6 +291,18 @@ function JoinPageContent() {
         </Card>
       );
     }
+    if (latestRequest.status === "approved" && latestRequest.admissionStatus === "sign_in_required") {
+      return (
+        <Card className="notice-card content-stack">
+          <span className="card-kicker">Disetujui</span>
+          <h2>Akun BFG-mu sudah ada.</h2>
+          <p>Masuk dengan akun BFG yang menerima persetujuan ini untuk mengaktifkan membership.</p>
+          <div className="actions">
+            <LinkButton href="/sign-in?redirect_url=%2Faccount">Masuk dengan akun BFG</LinkButton>
+          </div>
+        </Card>
+      );
+    }
     if (latestRequest.status === "approved" && latestRequest.admissionStatus === "invitation_pending") {
       return (
         <Card className="notice-card content-stack">

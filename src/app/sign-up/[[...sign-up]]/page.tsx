@@ -1,24 +1,23 @@
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand";
 import { BackButton } from "@/components/back-button";
-import { ClerkInvitationForm } from "@/components/clerk-invitation-form";
-import { safeAuthRedirect } from "@/lib/auth-redirect";
+import { ClerkInvitationAcceptance } from "@/components/clerk-invitation-acceptance";
 
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect_url?: string | string[]; __clerk_ticket?: string | string[] }>;
+  searchParams: Promise<{ __clerk_ticket?: string | string[] }>;
 }) {
   const params = await searchParams;
-  if (!params.__clerk_ticket) redirect("/");
-  const redirectUrl = safeAuthRedirect(params.redirect_url);
+  const ticket = Array.isArray(params.__clerk_ticket) ? params.__clerk_ticket[0] : params.__clerk_ticket;
+  if (!ticket) redirect("/");
   return (
     <main className="auth-page">
       <BackButton fallback="/" />
       <div className="auth-shell">
         <BrandLogo linkToHome={false} />
         <p className="auth-invite-note">Pembuatan akun hanya tersedia melalui undangan BFG yang masih berlaku.</p>
-        <ClerkInvitationForm redirectUrl={redirectUrl} />
+        <ClerkInvitationAcceptance ticket={ticket} />
       </div>
     </main>
   );

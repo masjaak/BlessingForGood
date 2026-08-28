@@ -1,12 +1,12 @@
 # BFG STATE MACHINE INDEX
 
-Reconciled: 2026-08-15
+Reconciled: 2026-08-28
 This is an index, not a second implementation. The named Convex validators,
 transition helpers, mutations, and tests are canonical.
 
 | Domain | States | Events / transitions | Guards / invalid transitions | Canonical implementation | Tests |
 |---|---|---|---|---|---|
-| Admission | `submitted`, `under_review`, `approved`, `rejected` | submit, start review, approve, reject, retry admission | duplicate active request; review only from expected state; Clerk alone cannot admit | `convex/joinRequests.ts`, `convex/users.ts`, `validators.ts` | `convex/phase071-reconciliation.test.ts`, policy/auth tests |
+| Admission | `submitted`, `under_review`, `approved`, `rejected`; derived `sign_in_required`, `invitation_pending`, `invitation_failed`, `active`, `removed` | submit, start review, approve, route identity, retry/resend, authenticate, reconcile | duplicate active request; review only from expected state; Clerk identity alone cannot admit; only linked active Customer is `active` | `convex/joinRequests.ts`, `convex/joinRequestInvitations.ts`, `convex/users.ts`, `validators.ts` | `convex/joinRequests.test.ts`, `convex/joinRequestInvitations.test.ts`, membership/auth tests |
 | Invitation acceptance | `route_booting`, `ticket_processing`, `missing_requirements`, `verification_required`, `signup_complete`, `finalizing`, `session_activating`, `waiting_for_convex`, `membership_reconciling`, `active`, `session_mismatch`, `invalid_or_expired`, `error` | mount route, process `__clerk_ticket`, render Clerk-reported fields, verify/Protect, finalize, activate session, await Convex auth, reconcile membership, redirect Account | no ticket; invalid/expired ticket; no invented fields; verification/Protect cannot be bypassed; different Clerk session cannot claim invite; Account redirect requires active BFG Customer | `src/components/clerk-invitation-acceptance.tsx`, `src/components/clerk-invitation-form.tsx`, `src/domain/prototype/convex-store.tsx`, `convex/userProvisioning.ts`, `convex/users.ts` | `tests/components/clerk-invitation-acceptance.test.tsx`, auth/admission tests |
 | appUser access | missing, `active`, `suspended` | admitted/ensure, suspend, reactivate | `requireActiveUser`; missing appUser and suspended users fail closed | `convex/lib/auth.ts`, `convex/users.ts` | auth/security tests |
 | Product publication | `draft`, `published`, `special`, `archived` | create/update/publish/archive | customer projections exclude invalid publication/availability; archived edit guarded where applicable | `convex/books.ts`, `convex/lib/catalogView.ts` | product/phase071 tests |
@@ -33,6 +33,28 @@ transition helpers, mutations, and tests are canonical.
 | Inbox/message | unread, read | create event-backed operational message, mark read | recipient/role scope; no social-chat state | `convex/notifications.ts` with `surface=inbox` | activity/inbox tests |
 | Content | `draft`, `published` | upsert, publish | approved content key; public query only published | `convex/contentBlocks.ts` | content tests |
 | Staff invitation | `pending`, `claimed`, `revoked` | invite, claim on matching Clerk email, revoke | owner/Admin policy; only pending can revoke/claim | `convex/users.ts`, schema | user/security tests |
+
+## Identity routing clarification — 2026-08-28
+
+The semantic path is:
+
+```text
+ADMISSION_PENDING
+→ APPROVED_IDENTITY_UNKNOWN
+→ APPROVED_EXISTING_IDENTITY / EXISTING_IDENTITY_SIGNIN_REQUIRED
+→ APPROVED_NEW_IDENTITY_INVITED / INVITATION_PENDING
+→ IDENTITY_AUTHENTICATED
+→ MEMBERSHIP_RECONCILING
+→ ACTIVE
+```
+
+`joinRequests.onboardingPath` stores only `sign_in` or `sign_up` after the
+server-side identity decision; it is not a replacement for `appUsers.status`.
+The old request remains `REMOVED` after Remove Member, and a new approved
+request is the only route to reapply. Historical Clerk subjects can support a
+guarded removed-tombstone rebind but never authorize a current email mismatch.
+Explicit resend revokes the current pending invitation before creating its one
+replacement; ordinary approval/reconciliation is idempotent.
 
 ## Transition Rule
 

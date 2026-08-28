@@ -1,5 +1,46 @@
 # BFG CODEBASE MEMORY
 
+Post-diff map refreshed for the Clerk identity-routing and invitation
+lifecycle P0 correction on 2026-08-28. This is structural memory, not product
+requirement authority.
+
+## Post-diff memory — Clerk identity routing and invitation lifecycle
+
+- `convex/joinRequests.ts:approve` directly admits only an already-linked
+  Customer `appUsers` row. A stored applicant Clerk subject without BFG
+  membership is sent through `joinRequestInvitations.deliver` so the server
+  resolves existing identity versus new identity once.
+- `convex/joinRequestInvitations.ts` uses exact email lookup, keeps
+  `ignoreExisting:false`, routes an existing Clerk identity to
+  `markSignInRequired`, reuses an existing pending invitation, and has one
+  explicit `replace` path for revoke-then-resend. `joinRequestInvitationState.ts`
+  owns the persisted delivery/path projection; no second membership writer was
+  added.
+- `convex/users.ts` still owns the only `appUsers` admission transaction.
+  Current verified email is the admission key; a changed subject is accepted
+  only for a current approved reapply against a removed historical tombstone.
+  Diagnostics hash subjects and mask emails while carrying admission and match
+  fields.
+- `src/components/clerk-invitation-acceptance.tsx` inspects the current
+  ticket-bound signup email even when a different Clerk session is present.
+  Same verified email continues, a different one receives account-switch
+  recovery, and the existing same-session/verification/Protect/finalize/
+  Convex gates remain.
+- `src/components/clerk-invitation-form.tsx` no longer emits a blanket
+  mismatch for every signed-in user; it compares normalized verified primary
+  email and shows masked values. `/sign-up` uses the canonical ticket-aware
+  acceptance route.
+- Admin Join Requests, `/join`, and `ProductAccessGuard` project
+  `sign_in_required` as sign-in guidance rather than `Aktif` or a new Join CTA.
+  No Book, Batch, Ready Stock, Finance, Upload, Activity, or button architecture
+  implementation changed.
+
+Local regression coverage now includes same-email/different-subject, real
+different-email mismatch, existing Clerk/no-duplicate invitation, fresh
+identity one-invite, explicit resend replacement, authenticated applicant
+pre-activation, and removed-member reapply. Production Clerk configuration,
+real mailbox journeys, and authenticated UAT remain external release gates.
+
 Post-diff map refreshed for the removed-member Admin projection cleanup on
 2026-08-27. This is structural memory, not product requirement authority.
 

@@ -100,3 +100,9 @@ source-backed, and added here before implementation.
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | BFG-DEC-062 | 2026-08-28 / invitation acceptance | A `signUp.password()`/`signUp.update()` rejection could be collapsed into the fatal `Aktivasi belum selesai` page. | The submit boundary classifies the actual Clerk error safely; field validation stays on `Lengkapi akun` with a mapped field message and same-ticket retry, technical update failures stay recoverable on the form, and only the re-read complete signup can finalize. | Latest real recording; installed Clerk Future contract; deterministic RED regression | Keeps Clerk authoritative, preserves correction without a new invitation, and prevents validation from being misreported as activation failure. | ACTIVE |
+
+## Clerk identity routing and invitation lifecycle P0 — 2026-08-28
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-063 | 2026-08-28 / identity routing | A stored applicant Clerk subject could auto-create/activate a BFG Customer, and signed-in invitation acceptance could always be treated as a different account. | Approval requires an existing linked BFG Customer before direct admission; an existing Clerk identity without current BFG membership is routed to sign-in with no signup invitation, while only a missing identity receives one invitation. Invitation mismatch compares the current verified primary Clerk email with the current approved admission email; historical subjects remain lineage data only. | Latest production recordings; Clerk invitation contract; deterministic RED regressions | Separates identity existence from BFG membership, prevents duplicate identities/invitation spam, fixes false same-email mismatch, and preserves different-account protection. | ACTIVE |

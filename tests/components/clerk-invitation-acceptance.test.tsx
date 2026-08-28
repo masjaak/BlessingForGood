@@ -1,15 +1,19 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useAuth, useSignUp } from "@clerk/nextjs";
+import { useAuth, useSignUp, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { ClerkInvitationAcceptance } from "@/components/clerk-invitation-acceptance";
 import { useProduct } from "@/domain/prototype/store";
 
-vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn(), useSignUp: vi.fn() }));
+vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn(), useSignUp: vi.fn(), useUser: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
 vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 vi.mock("@/components/clerk-invitation-form", () => ({
-  ClerkInvitationForm: () => <div>Undangan ini ditujukan untuk email lain.</div>,
+  normalizeInvitationEmail: (value: string | null | undefined) => value?.trim().toLowerCase() || null,
+  maskInvitationEmail: (value: string | null) => value,
+  ClerkInvitationForm: ({ invitedEmail }: { invitedEmail?: string | null }) => (
+    <div data-invited-email={invitedEmail || ""}>Invitation account recovery</div>
+  ),
 }));
 
 describe("BFG application invitation acceptance", () => {
@@ -19,6 +23,7 @@ describe("BFG application invitation acceptance", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
+    vi.mocked(useUser).mockReturnValue({ isLoaded: true, user: null } as never);
     vi.mocked(useRouter).mockReturnValue(router as never);
     productState = { authState: "provisioning", sessionRole: null };
     vi.mocked(useProduct).mockImplementation(() => productState as never);
@@ -415,7 +420,8 @@ describe("BFG application invitation acceptance", () => {
       status: "complete",
       existingSession: { sessionId: "session-b" },
       createdUserId: "user-b",
-      ticket: vi.fn(),
+      emailAddress: "invite-b@example.com",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
       password: vi.fn(),
       finalize: vi.fn(),
     };
@@ -425,12 +431,57 @@ describe("BFG application invitation acceptance", () => {
       sessionId: "session-a",
       userId: "user-a",
     } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "invite-a@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
     vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
 
     render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
 
-    expect(screen.getByText("Undangan ini ditujukan untuk email lain.")).toBeTruthy();
-    expect(signUp.ticket).not.toHaveBeenCalled();
+    return waitFor(() => expect(screen.getByText("Invitation account recovery")).toBeTruthy()).then(() =>
+      expect(signUp.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }),
+    );
+  });
+
+  it("continues a different-session invitation when the verified email matches", async () => {
+    const signUp = {
+      status: "complete",
+      emailAddress: "customer@example.com",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-current",
+      userId: "user-current",
+    } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "Customer@Example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+
+    await waitFor(() => expect(signUp.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+    expect(screen.queryByText("Invitation account recovery")).toBeNull();
+    expect(screen.getByText("Mengaktifkan akun BFG…")).toBeTruthy();
+
+    productState = { authState: "authenticated", sessionRole: "customer" };
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
   });
 
   it("continues a completed invitation for the same active Clerk session", async () => {

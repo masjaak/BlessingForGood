@@ -14,7 +14,7 @@ import { enforceRateLimit } from "./lib/rateLimit";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 type JoinRequestAdmissionStatus =
-  "pending" | "invitation_pending" | "invitation_failed" | "active" | "removed" | "rejected";
+  "pending" | "invitation_pending" | "invitation_failed" | "sign_in_required" | "active" | "removed" | "rejected";
 
 const duplicateStatuses = new Set<JoinRequestStatus>(["submitted", "under_review", "approved"]);
 
@@ -99,6 +99,7 @@ async function admissionStatus(
   const user = await linkedAppUser(ctx, request);
   if (user?.status === "removed") return "removed";
   if (user?.role === "customer" && user.status === "active") return "active";
+  if (request.onboardingPath === "sign_in" && !user) return "sign_in_required";
   if (request.invitationStatus === "failed" && !user) return "invitation_failed";
   if (!user) return "invitation_pending";
   return "pending";
@@ -118,6 +119,7 @@ async function requestView(ctx: QueryCtx | MutationCtx, request: Doc<"joinReques
     acknowledged: request.acknowledged,
     status: request.status,
     invitationStatus: request.invitationStatus,
+    onboardingPath: request.onboardingPath ?? null,
     submittedAt: new Date(request.submittedAt).toISOString(),
     reviewedAt: request.reviewedAt ? new Date(request.reviewedAt).toISOString() : null,
     reviewedByUserId: request.reviewedByUserId ?? null,
@@ -332,7 +334,8 @@ export const approve = mutation({
     await recordAudit(ctx, reviewer._id, "join_request.approved", "join_request", request._id);
     let updated = await ctx.db.get(request._id);
     if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
-    if (updated.applicantClerkUserId) {
+    const linked = await linkedAppUser(ctx, updated);
+    if (linked?.role === "customer") {
       try {
         const admitted = await admitApprovedJoinRequest(ctx, updated, reviewer._id);
         if (admitted) {
@@ -424,8 +427,29 @@ export const retryInvitation = mutation({
     const request = await getRequest(ctx, args.joinRequestId);
     if (request.removedAt) return requestView(ctx, request);
     requireStatus(request, "approved");
-    if (request.admittedAppUserId || request.invitationStatus === "accepted" || request.invitationStatus === "sent") {
+    if (request.admittedAppUserId || request.invitationStatus === "accepted") {
       return requestView(ctx, request);
+    }
+    if (request.onboardingPath === "sign_in") return requestView(ctx, request);
+    if (request.invitationStatus === "sent") {
+      const now = Date.now();
+      await ctx.db.patch(request._id, {
+        invitationStatus: "pending",
+        onboardingPath: "sign_up",
+        clerkInvitationId: undefined,
+        invitationSentAt: undefined,
+        invitationError: undefined,
+        updatedAt: now,
+      });
+      await recordAudit(ctx, reviewer._id, "join_request.invitation_resend_requested", "join_request", request._id);
+      await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.replace, {
+        joinRequestId: request._id,
+        actorUserId: reviewer._id,
+        invitationId: request.clerkInvitationId,
+      });
+      const updated = await ctx.db.get(request._id);
+      if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
+      return requestView(ctx, updated);
     }
     if (request.invitationStatus !== "failed" && request.invitationStatus !== "ready") {
       fail("CLERK_INVITATION_RETRY_REQUIRED");
@@ -454,7 +478,16 @@ export const retryAdmission = mutation({
     const request = await getRequest(ctx, args.joinRequestId);
     if (request.removedAt) return requestView(ctx, request);
     requireStatus(request, "approved");
-    if (!request.applicantClerkUserId) return requestView(ctx, request);
+    const linked = await linkedAppUser(ctx, request);
+    if (!linked) {
+      if (request.applicantClerkUserId) {
+        await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
+          joinRequestId: request._id,
+          actorUserId: reviewer._id,
+        });
+      }
+      return requestView(ctx, request);
+    }
     try {
       await admitApprovedJoinRequest(ctx, request, reviewer._id);
       await ctx.db.patch(request._id, { admissionError: undefined, updatedAt: Date.now() });

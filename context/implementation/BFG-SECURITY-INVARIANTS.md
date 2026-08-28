@@ -1,6 +1,6 @@
 # BFG SECURITY INVARIANTS
 
-Reconciled: 2026-08-15
+Reconciled: 2026-08-28
 These invariants are mandatory before any security-sensitive change. The
 client may hide or show controls; only Convex guards grant authority.
 
@@ -25,6 +25,7 @@ client may hide or show controls; only Convex guards grant authority.
 | SEC-17 | Admin/Owner MFA remains a Production operational requirement even when implementation authorization is Convex-side. | Clerk production policy/runbooks | Production operator acceptance; do not claim from local UI tests alone |
 | SEC-18 | No dummy business records are created in Production to satisfy a screenshot or flow. | zero-data policy and release process | review every UAT fixture/data mutation; retain `BLOCKED_BY_DATA` when needed |
 | SEC-19 | Invitation completion never exposes or logs password values; Clerk owns password policy and validation. | `src/components/clerk-invitation-acceptance.tsx`, installed Clerk Future resource | password input type/autocomplete assertion; field-error retry assertion; safe diagnostic review |
+| SEC-20 | Current verified Clerk email is compared with the current approved admission email; historical subjects do not authorize a different current identity, and different current sessions remain blocked. | `src/components/clerk-invitation-acceptance.tsx`, `clerk-invitation-form.tsx`, `users.ts` | same-email/different-subject, different-email mismatch, removed-tombstone reapply, masked diagnostics |
 
 ## Security Closure Rule
 

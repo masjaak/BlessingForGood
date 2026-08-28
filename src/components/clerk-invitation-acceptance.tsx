@@ -1,10 +1,10 @@
 "use client";
 
-import { useAuth, useSignUp } from "@clerk/nextjs";
+import { useAuth, useSignUp, useUser } from "@clerk/nextjs";
 import { executeProtectCheck } from "@clerk/shared/internal/clerk-js/protectCheck";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { ClerkInvitationForm } from "@/components/clerk-invitation-form";
+import { ClerkInvitationForm, maskInvitationEmail, normalizeInvitationEmail } from "@/components/clerk-invitation-form";
 import { Button, Card } from "@/components/ui";
 import { BFG_MEMBERSHIP_CORRELATION_KEY } from "@/config/clerk";
 import { useProduct } from "@/domain/prototype/store";
@@ -196,6 +196,7 @@ function withInvitationTimeout<T>(operation: Promise<T>) {
 
 export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const { isLoaded, isSignedIn, sessionId, userId } = useAuth();
+  const { isLoaded: isUserLoaded, user } = useUser();
   const { signUp } = useSignUp();
   const { authState, sessionRole } = useProduct();
   const router = useRouter();
@@ -214,6 +215,8 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const [verificationSentKey, setVerificationSentKey] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<InvitationField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null);
+  const [inspectedTicket, setInspectedTicket] = useState<string | null>(null);
   const startedTicket = useRef<string | null>(null);
   const traceId = useRef(createInvitationTraceId());
   const routeLogged = useRef(false);
@@ -236,6 +239,9 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     sessionId &&
     (liveSignUp?.existingSession?.sessionId === sessionId ||
       (liveSignUp?.status === "complete" && liveSignUp.createdUserId && liveSignUp.createdUserId === userId)),
+  );
+  const currentVerifiedEmail = normalizeInvitationEmail(
+    user?.primaryEmailAddress?.verification?.status === "verified" ? user.primaryEmailAddress.emailAddress : null,
   );
 
   useEffect(() => {
@@ -392,17 +398,18 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
   useEffect(() => {
     const currentSignUp = signUpRef.current;
-    if (!ticket || !isLoaded || !currentSignUp) {
+    if (!ticket || !isLoaded || !currentSignUp || (isSignedIn && !isUserLoaded)) {
       if (!ticket) ticketRun.current = null;
       return;
     }
-    if (isSignedIn || startedTicket.current === ticket) return;
+    if (sameSessionInvite || startedTicket.current === ticket) return;
     startedTicket.current = ticket;
     const run = { ticket };
     ticketRun.current = run;
     timedOut.current = false;
     setPhase("loading");
     setError(null);
+    const wasSignedIn = isSignedIn;
 
     void (async () => {
       try {
@@ -411,17 +418,51 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
         if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
         const updatedSignUp = signUpRef.current;
         if (!updatedSignUp) return;
+        const nextInvitedEmail = normalizeInvitationEmail(updatedSignUp.emailAddress);
+        setInvitedEmail(nextInvitedEmail);
+        setInspectedTicket(ticket);
+        const emailsMatch = Boolean(
+          wasSignedIn && nextInvitedEmail && currentVerifiedEmail && nextInvitedEmail === currentVerifiedEmail,
+        );
         logInvitationStage(traceId.current, "SIGNUP_TICKET_RESULT", {
           status: updatedSignUp.status,
           missingFields: updatedSignUp.missingFields || [],
           unverifiedFields: updatedSignUp.unverifiedFields || [],
           createdSessionIdPresent: Boolean(updatedSignUp.createdSessionId),
           existingSessionPresent: Boolean(updatedSignUp.existingSession),
+          invitedEmail: maskInvitationEmail(nextInvitedEmail),
+          currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
+          currentClerkSubjectSuffix: userId?.slice(-8) || null,
+          emailsMatch,
         });
+        if (wasSignedIn && nextInvitedEmail && currentVerifiedEmail && !emailsMatch) {
+          logInvitationStage(traceId.current, "INVITATION_EMAIL_MISMATCH", {
+            invitedEmail: maskInvitationEmail(nextInvitedEmail),
+            currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
+            currentClerkSubjectSuffix: userId?.slice(-8) || null,
+            emailsMatch: false,
+          });
+          setPhase("form");
+          return;
+        }
         if (ticketError) {
           logInvitationStage(traceId.current, "ERROR", { stage: "ticket", reason: "provider_rejected" });
           setError(TICKET_ERROR);
           setPhase("error");
+          return;
+        }
+        if (wasSignedIn) {
+          if (emailsMatch) {
+            logInvitationStage(traceId.current, "INVITATION_EMAIL_MATCH", {
+              invitedEmail: maskInvitationEmail(nextInvitedEmail),
+              currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
+              currentClerkSubjectSuffix: userId?.slice(-8) || null,
+              emailsMatch: true,
+            });
+            setPhase("finishing");
+          } else {
+            setPhase("form");
+          }
           return;
         }
         logInvitationStage(traceId.current, "TICKET_ACCEPTED");
@@ -436,7 +477,17 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
         setPhase("error");
       }
     })();
-  }, [advanceFromSignUpState, isLoaded, isSignedIn, signUpReady, ticket]);
+  }, [
+    advanceFromSignUpState,
+    currentVerifiedEmail,
+    isLoaded,
+    isSignedIn,
+    isUserLoaded,
+    sameSessionInvite,
+    signUpReady,
+    ticket,
+    userId,
+  ]);
 
   useEffect(() => {
     if (phase !== "form" && phase !== "verification") return;
@@ -766,7 +817,12 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   }
 
   if (isSignedIn) {
-    return <ClerkInvitationForm redirectUrl={ACCOUNT_REDIRECT} />;
+    return (
+      <ClerkInvitationForm
+        redirectUrl={ACCOUNT_REDIRECT}
+        invitedEmail={inspectedTicket === ticket ? invitedEmail : null}
+      />
+    );
   }
 
   const unsupportedFields = liveMissingFields.filter((field) => !SUPPORTED_INVITATION_FIELDS.has(field));

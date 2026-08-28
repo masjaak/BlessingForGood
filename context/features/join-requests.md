@@ -21,9 +21,10 @@ city?
 note?
 source
 acknowledged
-status
-invitationStatus
-submittedAt
+ status
+ invitationStatus
+onboardingPath?
+ submittedAt
 reviewedAt?
 reviewedByUserId?
 reviewNote?
@@ -52,9 +53,11 @@ submitted → under_review → approved
 
 Review transitions are forward-only. A rejected applicant may submit a new
 request; the original row and audit events remain preserved. An approved row
-uses `invitationStatus=pending`; the private Clerk action reuses an exact
-pending invitation, creates one invitation when needed, or reconciles an
-existing identity. `ready` remains a legacy retryable state.
+uses `invitationStatus=pending`; the private Clerk action first resolves an
+exact existing identity. Existing identity routes to `onboardingPath=sign_in`
+without creating a signup invitation; a missing identity routes to
+`onboardingPath=sign_up`, reuses one exact pending invitation, or creates one
+invitation when needed. `ready` remains a legacy retryable state.
 
 ## Public workflow
 
@@ -81,9 +84,11 @@ stored. All actions derive the reviewer from verified `appUsers`, write the
 BFG state and audit event in one mutation, and reject stale transitions.
 Approval and membership removal do not require Clerk Dashboard access.
 
-Approved applicants remain `invitation pending` until the server-side action
-confirms delivery or an existing identity. Invitation URLs, tokens, or auth
-storage are never stored in Convex or repository artifacts.
+Approved applicants remain pending until the server-side action records either
+`sign_in_required` for an existing identity or one delivered signup
+invitation. Invitation URLs, tokens, or auth storage are never stored in
+Convex or repository artifacts. Explicit resend revokes the current pending
+Clerk invitation before creating one replacement.
 
 An approved Customer can be removed by Admin without deleting the Clerk
 identity or any business record. Removal keeps the original approved row and

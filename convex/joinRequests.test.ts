@@ -130,7 +130,7 @@ describe("BFG join request workflow", () => {
     );
   });
 
-  it("connects an existing Clerk identity to one approved Blessfriend admission", async () => {
+  it("does not turn a signed-in Clerk applicant into a BFG member before authentication converges", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
     const applicant = t.withIdentity({
@@ -150,9 +150,13 @@ describe("BFG join request workflow", () => {
 
     await admin.mutation(api.joinRequests.startReview, { joinRequestId: submitted.joinRequestId });
     const approved = await admin.mutation(api.joinRequests.approve, { joinRequestId: submitted.joinRequestId });
-    expect(approved).toMatchObject({ status: "approved", admissionStatus: "active" });
+    expect(approved).toMatchObject({
+      status: "approved",
+      invitationStatus: "pending",
+      admissionStatus: "invitation_pending",
+    });
     expect(await admin.query(api.joinRequests.pendingCount, {})).toBe(0);
-    expect(await applicant.query(api.users.current, {})).toMatchObject({ role: "customer", status: "active" });
+    expect(await applicant.query(api.users.current, {})).toBeNull();
     await expect(applicant.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
       role: "customer",
       status: "active",

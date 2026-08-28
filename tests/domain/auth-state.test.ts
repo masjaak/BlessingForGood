@@ -51,6 +51,16 @@ describe("authenticated product session state", () => {
         convexLoading: false,
         appUser: null,
         provisioning: false,
+        requests: [{ status: "approved", admissionStatus: "sign_in_required" }],
+      }),
+    ).toBe("EXISTING_IDENTITY_SIGNIN_REQUIRED");
+    expect(
+      resolveProductMembershipState({
+        clerkLoaded: true,
+        clerkSignedIn: true,
+        convexLoading: false,
+        appUser: null,
+        provisioning: false,
         requests: [],
       }),
     ).toBe("NO_APPLICATION");

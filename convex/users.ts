@@ -52,7 +52,13 @@ async function logMembershipDiagnostic(
               : "MEMBERSHIP_RECONCILED",
       correlationId: fields.correlationId || "unspecified",
       clerkSubjectHash: await safeSubjectHash(identity.subject),
-      trustedEmail: maskedEmail(normalizedEmail),
+      currentVerifiedEmail: maskedEmail(normalizedEmail),
+      invitedEmail: maskedEmail(request?.normalizedEmail ?? null),
+      emailsMatch: request && normalizedEmail ? request.normalizedEmail === normalizedEmail : null,
+      currentAdmissionId: request ? String(request._id) : null,
+      subjectMatchesHistoricalAppUser: request?.applicantClerkUserId
+        ? request.applicantClerkUserId === identity.subject
+        : null,
       appUserExists: Boolean(user),
       appUserRole: user?.role ?? null,
       appUserStatus: user?.status ?? null,
@@ -76,7 +82,10 @@ async function findApprovedJoinRequest(ctx: MutationCtx | QueryCtx, normalizedEm
     .take(50);
   return (
     requests.find(
-      (request) => request.status === "approved" && request.invitationStatus !== "not_ready" && !request.removedAt,
+      (request) =>
+        request.status === "approved" &&
+        (request.invitationStatus !== "not_ready" || request.onboardingPath === "sign_in") &&
+        !request.removedAt,
     ) ?? null
   );
 }
@@ -178,13 +187,27 @@ async function reconcileExistingCustomerAdmission(
   request: Doc<"joinRequests"> | null,
 ) {
   if (user.role !== "customer" || user.status !== "active" || !normalizedEmail) return;
+  if (!request) return;
+  const historicalUser =
+    request.applicantClerkUserId && request.applicantClerkUserId !== identity.subject
+      ? await ctx.db
+          .query("appUsers")
+          .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", request.applicantClerkUserId!))
+          .unique()
+      : null;
+  const admittedUser =
+    request.admittedAppUserId && request.admittedAppUserId !== user._id
+      ? await ctx.db.get(request.admittedAppUserId)
+      : null;
   if (
-    !request ||
-    (request.applicantClerkUserId && request.applicantClerkUserId !== identity.subject) ||
-    (request.admittedAppUserId && request.admittedAppUserId !== user._id)
+    request.applicantClerkUserId &&
+    request.applicantClerkUserId !== identity.subject &&
+    historicalUser?.status !== "removed"
   ) {
     return;
   }
+  if (admittedUser && admittedUser.status !== "removed") return;
+  if (request.admittedAppUserId && !admittedUser && request.admittedAppUserId !== user._id) return;
   await ctx.db.patch(request._id, {
     applicantClerkUserId: identity.subject,
     applicantEmailSnapshot: normalizedEmail,
@@ -303,12 +326,20 @@ async function ensureCurrentUserHandler(
         fail("ADMISSION_REQUIRED");
       }
       if (approvedRequest.applicantClerkUserId && approvedRequest.applicantClerkUserId !== identity.subject) {
-        await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, approvedRequest, {
-          correlationId,
-          reconciliationCalled: false,
-          reconciliationResult: "admission_required_identity_mismatch",
-        });
-        fail("ADMISSION_REQUIRED");
+        const historicalUser = await ctx.db
+          .query("appUsers")
+          .withIndex("by_clerk_user_id", (index) => index.eq("clerkUserId", approvedRequest!.applicantClerkUserId!))
+          .unique();
+        if (historicalUser?.status === "removed") {
+          // A removed BFG membership does not own a future Clerk subject.
+        } else {
+          await logMembershipDiagnostic("ensure_failed", identity, normalizedIdentityEmail, null, approvedRequest, {
+            correlationId,
+            reconciliationCalled: false,
+            reconciliationResult: "admission_required_identity_mismatch",
+          });
+          fail("ADMISSION_REQUIRED");
+        }
       }
     }
   }

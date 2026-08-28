@@ -67,6 +67,22 @@ describe("ProductAccessGuard session boundary", () => {
     expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
   });
 
+  it("routes an approved existing identity to sign-in", () => {
+    render(
+      <ProductContext.Provider
+        value={contextValue({ authState: "admission-required", membershipState: "EXISTING_IDENTITY_SIGNIN_REQUIRED" })}
+      >
+        <ProductAccessGuard requiredRole="customer">Private content</ProductAccessGuard>
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Akun BFG-mu sudah ada." })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Masuk dengan akun BFG" }).getAttribute("href")).toBe(
+      "/sign-in?redirect_url=%2Faccount",
+    );
+    expect(screen.queryByText("Private content")).toBeNull();
+  });
+
   it("denies signed-out users from the Admin workspace", () => {
     render(
       <ProductContext.Provider value={contextValue({ authState: "signed-out" })}>

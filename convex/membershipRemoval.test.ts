@@ -172,6 +172,55 @@ describe("BFG membership removal lifecycle", () => {
     );
   });
 
+  it("accepts a new subject for the same email when the old membership is a tombstone", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const current = await customer.query(api.users.current, {});
+    if (!current) throw new Error("customer fixture missing");
+    const requestA = await seedApprovedMembership(t, current.appUserId);
+    await admin.mutation(api.joinRequests.removeMember, { joinRequestId: requestA });
+
+    const requestB = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("joinRequests", {
+        name: "Returning Reader",
+        email: customerEmail,
+        normalizedEmail: customerEmail,
+        applicantClerkUserId: CUSTOMER_SUBJECT,
+        applicantEmailSnapshot: customerEmail,
+        contact: "081200000001",
+        normalizedContact: "+628120000001",
+        city: "Jakarta",
+        bookInterest: "Children Books",
+        source: "test",
+        acknowledged: true,
+        status: "approved",
+        invitationStatus: "ready",
+        admittedAppUserId: current.appUserId,
+        submittedAt: now,
+        reviewedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+    const newIdentity = t.withIdentity({
+      subject: "replacement-clerk-subject",
+      email: customerEmail,
+      emailVerified: true,
+    });
+
+    await expect(newIdentity.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "active",
+    });
+    expect(await t.run(async (ctx) => ctx.db.get(requestB))).toMatchObject({
+      applicantClerkUserId: "replacement-clerk-subject",
+      invitationStatus: "accepted",
+      admittedAppUserId: expect.any(String),
+    });
+    expect(await t.run(async (ctx) => ctx.db.get(current.appUserId))).toMatchObject({ status: "removed" });
+  });
+
   it("keeps active memberships and privileged accounts from using the removal flow", async () => {
     const t = testConvex();
     const { owner, admin } = await setupUsers(t);

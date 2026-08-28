@@ -2,11 +2,33 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-27
+last_updated: 2026-08-28
 source: conversation
 ---
 
 # Changelog
+
+## [clerk-identity-routing-invitation-lifecycle] — 2026-08-28
+
+### Fixed
+
+- Separated Clerk identity existence from BFG membership during Admin
+  approval. Existing Clerk identities use sign-in/reconciliation; only truly
+  new identities receive a signup invitation.
+- Kept one pending invitation per current admission and made explicit resend
+  revoke the current ticket before creating one replacement. Clerk invitation
+  creation remains `ignoreExisting: false`.
+- Replaced the blanket signed-in invitation mismatch with a comparison between
+  the current verified primary Clerk email and the current ticket/admission
+  email. Historical subjects do not produce a false same-email mismatch, while
+  different-account protection remains.
+
+### QA
+
+- Added Convex and component regressions for identity routing, idempotent
+  approval, resend, same-email/different-subject, different-email mismatch,
+  and removed-member reapply. Production Clerk configuration and authenticated
+  existing/new-user UAT remain pending without authorized credentials/mailbox.
 
 ## [removed-member-admin-projection] — 2026-08-27
 

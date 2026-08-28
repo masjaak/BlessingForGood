@@ -23,6 +23,7 @@ export const target = internalQuery({
       joinRequestId: request._id,
       email: request.normalizedEmail,
       applicantClerkUserId: request.applicantClerkUserId ?? null,
+      invitationId: request.clerkInvitationId ?? null,
     };
   },
 });
@@ -69,6 +70,7 @@ export const markSent = internalMutation({
     const now = Date.now();
     await ctx.db.patch(request._id, {
       invitationStatus: "sent",
+      onboardingPath: "sign_up",
       clerkInvitationId: args.invitationId,
       invitationSentAt: now,
       invitationError: undefined,
@@ -88,6 +90,48 @@ export const markSent = internalMutation({
       relatedEntityId: String(request._id),
     });
     return "sent" as const;
+  },
+});
+
+export const markSignInRequired = internalMutation({
+  args: {
+    joinRequestId: v.id("joinRequests"),
+    actorUserId: v.id("appUsers"),
+    replacedInvitation: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.joinRequestId);
+    if (
+      !request ||
+      request.status !== "approved" ||
+      request.removedAt ||
+      request.admittedAppUserId ||
+      request.invitationStatus !== "pending"
+    ) {
+      return null;
+    }
+    const now = Date.now();
+    await ctx.db.patch(request._id, {
+      invitationStatus: "ready",
+      onboardingPath: "sign_in",
+      clerkInvitationId: undefined,
+      invitationSentAt: undefined,
+      invitationError: undefined,
+      updatedAt: now,
+    });
+    await recordAudit(ctx, args.actorUserId, "join_request.identity_sign_in_required", "join_request", request._id, {
+      replacedInvitation: String(args.replacedInvitation),
+    });
+    await notifyAdmins(ctx, {
+      surface: "inbox",
+      eventType: "join_request.identity_sign_in_required",
+      title: "Akun Clerk sudah ada",
+      body: `Masuk dengan akun BFG diperlukan untuk ${request.normalizedEmail}.`,
+      destination: "/admin/join-requests",
+      relatedEntityType: "joinRequest",
+      relatedEntityId: String(request._id),
+    });
+    return "sign_in_required" as const;
   },
 });
 

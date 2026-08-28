@@ -175,7 +175,12 @@ describe("automatic Clerk invitation reconciliation", () => {
   it("reconciles an existing Clerk identity into one active Customer", async () => {
     const existingClerkUserId = "clerk_existing_reader";
     clerkState.getUserList.mockResolvedValue({
-      data: [{ id: existingClerkUserId, emailAddresses: [{ emailAddress: email }] }],
+      data: [
+        {
+          id: existingClerkUserId,
+          emailAddresses: [{ emailAddress: email, verification: { status: "verified" } }],
+        },
+      ],
     });
     const t = testConvex();
     const { admin } = await setupUsers(t);
@@ -184,8 +189,17 @@ describe("automatic Clerk invitation reconciliation", () => {
 
     expect(clerkState.createInvitation).not.toHaveBeenCalled();
     expect(approved.status).toBe("approved");
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      invitationStatus: "ready",
+      admissionStatus: "sign_in_required",
+      onboardingPath: "sign_in",
+    });
     const existingIdentity = t.withIdentity({ subject: existingClerkUserId, email });
-    expect(await existingIdentity.query(api.users.current, {})).toMatchObject({ role: "customer", status: "active" });
+    expect(await existingIdentity.query(api.users.current, {})).toBeNull();
+    await expect(existingIdentity.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      role: "customer",
+      status: "active",
+    });
     expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
       invitationStatus: "accepted",
       admissionStatus: "active",
@@ -195,6 +209,28 @@ describe("automatic Clerk invitation reconciliation", () => {
         (await ctx.db.query("appUsers").collect()).filter((user) => user.clerkUserId === existingClerkUserId),
       ),
     ).toHaveLength(1);
+  });
+
+  it("replaces one current invitation only when Admin explicitly resends", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const approved = await submitForApproval(t, admin, requestInput({ email: "resend-reader@example.com" }));
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    await admin.mutation(api.joinRequests.retryInvitation, { joinRequestId: approved.joinRequestId });
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      invitationStatus: "pending",
+      admissionStatus: "invitation_pending",
+    });
+    await t.finishAllScheduledFunctions(() => undefined);
+
+    expect(clerkState.revokeInvitation).toHaveBeenCalledWith("inv_test_1");
+    expect(clerkState.createInvitation).toHaveBeenCalledTimes(2);
+    expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
+      invitationStatus: "sent",
+      admissionStatus: "invitation_pending",
+      onboardingPath: "sign_up",
+    });
   });
 
   it("persists a safe failure and retries from the Admin workflow", async () => {

@@ -86,6 +86,19 @@ export function ProductAccessGuard({
       </div>
     );
   }
+  if (authState === "admission-required" && membershipState === "EXISTING_IDENTITY_SIGNIN_REQUIRED") {
+    return (
+      <div className="guard-card">
+        <span className="eyebrow">Permintaan disetujui</span>
+        <h1>Akun BFG-mu sudah ada.</h1>
+        <p>Masuk dengan akun BFG untuk mengaktifkan membership yang baru disetujui.</p>
+        <div className="actions">
+          <LinkButton href="/sign-in?redirect_url=%2Faccount">Masuk dengan akun BFG</LinkButton>
+          <UserButton />
+        </div>
+      </div>
+    );
+  }
   if (authState === "admission-required" && membershipState === "PENDING") {
     return (
       <div className="guard-card">

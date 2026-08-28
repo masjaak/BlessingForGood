@@ -15,6 +15,7 @@ import {
   ConfirmationDialog,
   EmptyState,
   Field,
+  LinkButton,
   LoadingRegion,
   PageHeader,
   SkeletonCard,
@@ -181,15 +182,18 @@ function JoinRequestCard({
               <p className="success-banner" role="status">
                 {request.admissionStatus === "active"
                   ? "Customer sudah menjadi Blessfriend."
-                  : request.admissionStatus === "invitation_failed"
-                    ? "Disetujui. Undangan belum berhasil dikirim."
-                    : request.invitationStatus === "pending"
-                      ? "Disetujui. Undangan sedang diproses."
-                      : request.invitationStatus === "sent"
-                        ? "Disetujui. Undangan sudah dikirim dan masih menunggu diterima."
-                        : "Disetujui. Undangan belum diproses."}
+                  : request.admissionStatus === "sign_in_required"
+                    ? "Disetujui. Akun Clerk sudah ada; Customer perlu masuk untuk mengaktifkan membership."
+                    : request.admissionStatus === "invitation_failed"
+                      ? "Disetujui. Undangan belum berhasil dikirim."
+                      : request.invitationStatus === "pending"
+                        ? "Disetujui. Undangan sedang diproses."
+                        : request.invitationStatus === "sent"
+                          ? "Disetujui. Undangan sudah dikirim dan masih menunggu diterima."
+                          : "Disetujui. Undangan belum diproses."}
               </p>
               {request.admissionStatus !== "active" &&
+              request.admissionStatus !== "sign_in_required" &&
               (request.invitationStatus === "failed" || request.invitationStatus === "ready") ? (
                 <ActionGroup variant="responsive">
                   <span className="error-text action-support">
@@ -204,6 +208,13 @@ function JoinRequestCard({
                   >
                     {request.invitationStatus === "ready" ? "Kirim undangan" : "Kirim ulang undangan"}
                   </Button>
+                </ActionGroup>
+              ) : null}
+              {request.admissionStatus === "sign_in_required" ? (
+                <ActionGroup variant="responsive">
+                  <LinkButton href="/sign-in?redirect_url=%2Faccount" variant="secondary">
+                    Masuk dengan akun BFG
+                  </LinkButton>
                 </ActionGroup>
               ) : null}
               {request.admissionStatus !== "active" && request.admissionError ? (
