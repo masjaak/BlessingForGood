@@ -27,7 +27,7 @@ const SUPPORTED_INVITATION_FIELDS = new Set([
   "username",
 ]);
 
-type AcceptancePhase = "loading" | "form" | "verification" | "finishing" | "error";
+type AcceptancePhase = "loading" | "form" | "verification" | "finishing" | "active" | "error";
 type ClerkTicketStatus = "sign_in" | "sign_up" | "complete";
 type SafeTraceValue = boolean | number | string | null | readonly string[];
 type InvitationField =
@@ -249,6 +249,7 @@ export function ClerkInvitationAcceptance({
   const ticketRun = useRef<{ ticket: string } | null>(null);
   const signInTicketStarted = useRef<string | null>(null);
   const redirected = useRef(false);
+  const activeInvitationRef = useRef(false);
   const finalizeStarted = useRef(false);
   const timedOut = useRef(false);
   const emailLinkWaitStarted = useRef<string | null>(null);
@@ -267,6 +268,20 @@ export function ClerkInvitationAcceptance({
   const currentVerifiedEmail = normalizeInvitationEmail(
     user?.primaryEmailAddress?.verification?.status === "verified" ? user.primaryEmailAddress.emailAddress : null,
   );
+  const invitationEmail = normalizeInvitationEmail(invitedEmail || liveSignUp?.emailAddress || signIn?.identifier);
+  const activeInvitation = Boolean(
+    isLoaded &&
+    isUserLoaded &&
+    isSignedIn &&
+    sessionId &&
+    userId &&
+    currentVerifiedEmail &&
+    authState === "authenticated" &&
+    sessionRole === "customer" &&
+    ((invitationEmail && invitationEmail === currentVerifiedEmail) ||
+      (!invitationEmail && (sameSessionInvite || phase === "finishing"))),
+  );
+  if (activeInvitation) activeInvitationRef.current = true;
 
   useEffect(() => {
     signInRef.current = signIn;
@@ -296,7 +311,7 @@ export function ClerkInvitationAcceptance({
 
   const finalize = useCallback(async () => {
     const currentSignUp = signUpRef.current;
-    if (!currentSignUp || finalizeStarted.current) return;
+    if (!currentSignUp || finalizeStarted.current || activeInvitationRef.current) return;
     finalizeStarted.current = true;
     logInvitationStage(traceId.current, "FINALIZE_START", {
       finalizeStarted: true,
@@ -306,6 +321,7 @@ export function ClerkInvitationAcceptance({
     setPhase("finishing");
     try {
       const { error: finalizeError } = await withInvitationTimeout(currentSignUp.finalize());
+      if (activeInvitationRef.current) return;
       logInvitationStage(traceId.current, "FINALIZE_DONE", {
         success: !finalizeError,
         finalizeCompleted: !finalizeError,
@@ -313,11 +329,12 @@ export function ClerkInvitationAcceptance({
         clerkErrorCode: getClerkErrorDetails(finalizeError).code,
         clerkErrorField: getClerkErrorField(finalizeError),
       });
-      if (finalizeError) {
+      if (finalizeError && !activeInvitationRef.current) {
         setError(ACTIVATION_ERROR);
         setPhase("error");
       }
     } catch (finalizeError) {
+      if (activeInvitationRef.current) return;
       logInvitationStage(traceId.current, "FINALIZE_DONE", {
         success: false,
         finalizeCompleted: false,
@@ -336,7 +353,7 @@ export function ClerkInvitationAcceptance({
 
   const finalizeSignIn = useCallback(async (signInResource = signInRef.current) => {
     const currentSignIn = signInResource;
-    if (!currentSignIn || finalizeStarted.current) return;
+    if (!currentSignIn || finalizeStarted.current || activeInvitationRef.current) return;
     finalizeStarted.current = true;
     logInvitationStage(traceId.current, "SIGNIN_FINALIZE_START", {
       finalizeStarted: true,
@@ -350,6 +367,7 @@ export function ClerkInvitationAcceptance({
       const { error: finalizeError } = await withInvitationTimeout(
         currentSignIn.finalize({
           navigate: ({ session }) => {
+            if (activeInvitationRef.current) return;
             if (session?.currentTask) {
               logInvitationStage(traceId.current, "SESSION_PENDING", {
                 sessionTask: session.currentTask.key,
@@ -362,17 +380,19 @@ export function ClerkInvitationAcceptance({
           },
         }),
       );
+      if (activeInvitationRef.current) return;
       logInvitationStage(traceId.current, "SIGNIN_FINALIZE_DONE", {
         success: !finalizeError,
         finalizeCompleted: !finalizeError,
         status: currentSignIn.status,
         clerkErrorCode: getClerkErrorDetails(finalizeError).code,
       });
-      if (finalizeError) {
+      if (finalizeError && !activeInvitationRef.current) {
         setError(ACTIVATION_ERROR);
         setPhase("error");
       }
     } catch (finalizeError) {
+      if (activeInvitationRef.current) return;
       logInvitationStage(traceId.current, "SIGNIN_FINALIZE_DONE", {
         success: false,
         finalizeCompleted: false,
@@ -384,7 +404,7 @@ export function ClerkInvitationAcceptance({
 
   const advanceFromSignUpState = useCallback(async () => {
     const currentSignUp = signUpRef.current;
-    if (!currentSignUp) return;
+    if (!currentSignUp || activeInvitationRef.current || redirected.current) return;
     const missingFields = currentSignUp.missingFields || [];
     const unverifiedFields = currentSignUp.unverifiedFields || [];
     logInvitationStage(traceId.current, "SIGNUP_STATE", {
@@ -437,24 +457,18 @@ export function ClerkInvitationAcceptance({
   }, [finalize]);
 
   useEffect(() => {
-    if ((phase !== "finishing" && !sameSessionInvite) || redirected.current) return;
-    if (
-      isLoaded &&
-      isUserLoaded &&
-      isSignedIn &&
-      sessionId &&
-      userId &&
-      currentVerifiedEmail &&
-      authState === "authenticated" &&
-      sessionRole === "customer"
-    ) {
-      redirected.current = true;
-      logInvitationStage(traceId.current, "CUSTOMER_ACTIVE");
-      logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
-      window.sessionStorage.removeItem(BFG_MEMBERSHIP_CORRELATION_KEY);
-      router.replace(ACCOUNT_REDIRECT);
-    }
+    if (!activeInvitation || redirected.current) return;
+    activeInvitationRef.current = true;
+    redirected.current = true;
+    logInvitationStage(traceId.current, "CUSTOMER_ACTIVE");
+    logInvitationStage(traceId.current, "SUCCESS_STATE_ENTERED");
+    setError(null);
+    setPhase("active");
+    window.sessionStorage.removeItem(BFG_MEMBERSHIP_CORRELATION_KEY);
+    logInvitationStage(traceId.current, "SUCCESS_REDIRECT_START");
+    router.replace(ACCOUNT_REDIRECT);
   }, [
+    activeInvitation,
     authState,
     currentVerifiedEmail,
     isLoaded,
@@ -469,17 +483,23 @@ export function ClerkInvitationAcceptance({
   ]);
 
   useEffect(() => {
-    if ((phase !== "loading" && phase !== "finishing") || (isSignedIn && !sameSessionInvite && !ticketRun.current))
+    if (
+      activeInvitation ||
+      phase === "active" ||
+      (phase !== "loading" && phase !== "finishing") ||
+      (isSignedIn && !sameSessionInvite && !ticketRun.current)
+    )
       return;
     timedOut.current = false;
     const timeoutId = window.setTimeout(() => {
+      if (activeInvitationRef.current) return;
       timedOut.current = true;
       logInvitationStage(traceId.current, "ERROR", { stage: phase, reason: "timeout" });
       setError(ACTIVATION_ERROR);
       setPhase("error");
     }, INVITATION_TIMEOUT_MS);
     return () => window.clearTimeout(timeoutId);
-  }, [isSignedIn, phase, sameSessionInvite]);
+  }, [activeInvitation, isSignedIn, phase, sameSessionInvite]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) {
@@ -498,7 +518,8 @@ export function ClerkInvitationAcceptance({
     startedTicket.current = ticket;
     ticketRun.current = { ticket };
     queueMicrotask(() => {
-      if (!mounted.current || ticketRun.current?.ticket !== ticket) return;
+      if (!mounted.current || ticketRun.current?.ticket !== ticket || activeInvitationRef.current || redirected.current)
+        return;
       setInspectedTicket(ticket);
       setAuthMode("sign-in");
       setError(null);
@@ -513,6 +534,8 @@ export function ClerkInvitationAcceptance({
       !ticket ||
       !isLoaded ||
       !currentSignIn ||
+      activeInvitation ||
+      phase === "active" ||
       !signInTicketRequested ||
       clerkStatus === "complete" ||
       (isSignedIn && !isUserLoaded) ||
@@ -536,7 +559,7 @@ export function ClerkInvitationAcceptance({
           signInTicketStarted: true,
         });
         const { error: ticketError } = await withInvitationTimeout(currentSignIn.ticket({ ticket }));
-        if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        if (!mounted.current || ticketRun.current !== run || timedOut.current || activeInvitationRef.current) return;
         const updatedSignIn = currentSignIn;
         const nextInvitedEmail = normalizeInvitationEmail(updatedSignIn.identifier);
         if (nextInvitedEmail) setInvitedEmail(nextInvitedEmail);
@@ -592,7 +615,7 @@ export function ClerkInvitationAcceptance({
         logInvitationStage(traceId.current, "SIGNIN_TICKET_ACCEPTED", { status: updatedSignIn.status });
         setPhase("form");
       } catch (signInFailure) {
-        if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        if (!mounted.current || ticketRun.current !== run || timedOut.current || activeInvitationRef.current) return;
         logInvitationStage(traceId.current, "ERROR", {
           stage: "sign_in_ticket",
           reason: timedOut.current ? "timeout" : "request_failed",
@@ -604,6 +627,7 @@ export function ClerkInvitationAcceptance({
       }
     })();
   }, [
+    activeInvitation,
     authMode,
     clerkStatus,
     currentVerifiedEmail,
@@ -612,6 +636,7 @@ export function ClerkInvitationAcceptance({
     isLoaded,
     isSignedIn,
     isUserLoaded,
+    phase,
     ticket,
     userId,
   ]);
@@ -622,6 +647,8 @@ export function ClerkInvitationAcceptance({
       !ticket ||
       !isLoaded ||
       !currentSignUp ||
+      activeInvitation ||
+      phase === "active" ||
       (isSignedIn && !isUserLoaded) ||
       clerkStatus === "sign_in" ||
       clerkStatus === "complete"
@@ -642,7 +669,7 @@ export function ClerkInvitationAcceptance({
       try {
         logInvitationStage(traceId.current, "SIGNUP_TICKET_START");
         const { error: ticketError } = await withInvitationTimeout(currentSignUp.ticket({ ticket }));
-        if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        if (!mounted.current || ticketRun.current !== run || timedOut.current || activeInvitationRef.current) return;
         const updatedSignUp = signUpRef.current;
         if (!updatedSignUp) return;
         const nextInvitedEmail = normalizeInvitationEmail(updatedSignUp.emailAddress);
@@ -712,7 +739,7 @@ export function ClerkInvitationAcceptance({
         logInvitationStage(traceId.current, "TICKET_ACCEPTED");
         await advanceFromSignUpState();
       } catch (ticketFailure) {
-        if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        if (!mounted.current || ticketRun.current !== run || timedOut.current || activeInvitationRef.current) return;
         if (isExistingIdentityError(ticketFailure)) {
           logInvitationStage(traceId.current, "EXISTING_IDENTITY_SIGNIN_REQUIRED", {
             safeClerkErrorCode: getClerkErrorDetails(ticketFailure).code,
@@ -735,12 +762,14 @@ export function ClerkInvitationAcceptance({
       }
     })();
   }, [
+    activeInvitation,
     advanceFromSignUpState,
     currentVerifiedEmail,
     clerkStatus,
     isLoaded,
     isSignedIn,
     isUserLoaded,
+    phase,
     sameSessionInvite,
     signUpReady,
     ticket,
@@ -748,18 +777,21 @@ export function ClerkInvitationAcceptance({
   ]);
 
   useEffect(() => {
-    if (phase !== "form" && phase !== "verification") return;
+    if (activeInvitation || phase === "active" || (phase !== "form" && phase !== "verification")) return;
     if (liveSignUp?.status === "complete") {
       void advanceFromSignUpState().catch(() => {
+        if (activeInvitationRef.current) return;
         setError(ACTIVATION_ERROR);
         setPhase("error");
       });
     }
-  }, [advanceFromSignUpState, liveSignUp?.status, phase]);
+  }, [activeInvitation, advanceFromSignUpState, liveSignUp?.status, phase]);
 
   useEffect(() => {
     const challenge = signUpRef.current?.protectCheck;
     if (
+      activeInvitation ||
+      phase === "active" ||
       phase !== "form" ||
       !protectCheckToken ||
       !challenge ||
@@ -777,7 +809,7 @@ export function ClerkInvitationAcceptance({
         return currentSignUp ? withInvitationTimeout(currentSignUp.submitProtectCheck({ proofToken })) : null;
       })
       .then((result) => {
-        if (!result || !mounted.current || controller.signal.aborted) return;
+        if (!result || !mounted.current || controller.signal.aborted || activeInvitationRef.current) return;
         if (result.error) {
           logInvitationStage(traceId.current, "ERROR", { stage: "protect_check", reason: "provider_rejected" });
           setError(SECURITY_CHECK_ERROR);
@@ -785,17 +817,18 @@ export function ClerkInvitationAcceptance({
         }
         logInvitationStage(traceId.current, "PROTECT_CHECK_DONE");
         void advanceFromSignUpState().catch(() => {
+          if (activeInvitationRef.current) return;
           setError(ACTIVATION_ERROR);
           setPhase("error");
         });
       })
       .catch(() => {
-        if (!mounted.current || controller.signal.aborted) return;
+        if (!mounted.current || controller.signal.aborted || activeInvitationRef.current) return;
         logInvitationStage(traceId.current, "ERROR", { stage: "protect_check", reason: "request_failed" });
         setError(SECURITY_CHECK_ERROR);
       });
     return () => controller.abort();
-  }, [advanceFromSignUpState, phase, protectCheckToken]);
+  }, [activeInvitation, advanceFromSignUpState, phase, protectCheckToken]);
 
   useEffect(() => {
     if (phase !== "finishing" && !sameSessionInvite) {
@@ -832,7 +865,7 @@ export function ClerkInvitationAcceptance({
     )
       return;
     queueMicrotask(() => {
-      if (mounted.current && !redirected.current) setPhase("finishing");
+      if (mounted.current && !redirected.current && !activeInvitationRef.current) setPhase("finishing");
     });
   }, [
     authMode,
@@ -891,6 +924,7 @@ export function ClerkInvitationAcceptance({
             : currentSignUp.update(params),
         );
       } catch (updateFailure) {
+        if (activeInvitationRef.current) return;
         const updateFailureDetails = getClerkErrorDetails(updateFailure);
         logInvitationStage(traceId.current, "SIGNUP_UPDATE_DONE", {
           success: false,
@@ -917,6 +951,7 @@ export function ClerkInvitationAcceptance({
         return;
       }
       const { error: updateError } = updateResult;
+      if (activeInvitationRef.current) return;
       const updatedSignUp = signUpRef.current;
       const updateErrorDetails = getClerkErrorDetails(updateError);
       logInvitationStage(traceId.current, "SIGNUP_UPDATE_DONE", {
@@ -951,6 +986,7 @@ export function ClerkInvitationAcceptance({
       try {
         await advanceFromSignUpState();
       } catch (progressFailure) {
+        if (activeInvitationRef.current) return;
         const progressFailureDetails = getClerkErrorDetails(progressFailure);
         logInvitationStage(traceId.current, "ERROR", {
           stage: "post_signup_update",
@@ -962,6 +998,7 @@ export function ClerkInvitationAcceptance({
         setPhase("error");
       }
     } catch (submitFailure) {
+      if (activeInvitationRef.current) return;
       const submitFailureDetails = getClerkErrorDetails(submitFailure);
       logInvitationStage(traceId.current, "ERROR", {
         stage: "signup_submit",
@@ -980,6 +1017,7 @@ export function ClerkInvitationAcceptance({
     event.preventDefault();
     const currentSignUp = signUpRef.current;
     const verificationMethod = currentSignUp ? getVerificationMethod(currentSignUp) : null;
+    if (activeInvitationRef.current) return;
     if (!currentSignUp || !verificationMethod) {
       logInvitationStage(traceId.current, "ERROR", { stage: "verification", reason: "unsupported_strategy" });
       setError(ACTIVATION_ERROR);
@@ -1002,6 +1040,7 @@ export function ClerkInvitationAcceptance({
               ? currentSignUp.verifications.sendPhoneCode()
               : currentSignUp.verifications.sendEmailCode(),
         );
+        if (activeInvitationRef.current) return;
         if (sendError) {
           logInvitationStage(traceId.current, "ERROR", { stage: "verification", reason: "send_rejected" });
           setError(ACTIVATION_ERROR);
@@ -1013,7 +1052,7 @@ export function ClerkInvitationAcceptance({
           void currentSignUp.verifications
             .waitForEmailLinkVerification()
             .then(({ error: waitError }) => {
-              if (!mounted.current) return;
+              if (!mounted.current || activeInvitationRef.current) return;
               if (waitError) {
                 logInvitationStage(traceId.current, "ERROR", {
                   stage: "verification",
@@ -1026,7 +1065,7 @@ export function ClerkInvitationAcceptance({
               return advanceFromSignUpState();
             })
             .catch(() => {
-              if (!mounted.current) return;
+              if (!mounted.current || activeInvitationRef.current) return;
               logInvitationStage(traceId.current, "ERROR", { stage: "verification", reason: "link_wait_failed" });
               setError(ACTIVATION_ERROR);
             });
@@ -1043,6 +1082,7 @@ export function ClerkInvitationAcceptance({
           ? currentSignUp.verifications.verifyPhoneCode({ code: verificationCode.trim() })
           : currentSignUp.verifications.verifyEmailCode({ code: verificationCode.trim() }),
       );
+      if (activeInvitationRef.current) return;
       if (verifyError) {
         logInvitationStage(traceId.current, "ERROR", { stage: "verification", reason: "verify_rejected" });
         setError(ACTIVATION_ERROR);
@@ -1054,6 +1094,7 @@ export function ClerkInvitationAcceptance({
       });
       await advanceFromSignUpState();
     } catch {
+      if (activeInvitationRef.current) return;
       logInvitationStage(traceId.current, "ERROR", { stage: "verification", reason: "request_failed" });
       setError(ACTIVATION_ERROR);
       setPhase("error");
@@ -1084,6 +1125,10 @@ export function ClerkInvitationAcceptance({
       authState === "suspended" ||
       authState === "removed" ||
       authState === "configuration-missing");
+
+  if (phase === "active" || activeInvitation || activeInvitationRef.current) {
+    return <div className="state-panel auth-invitation-state">Akunmu sudah aktif. Membuka akunmu…</div>;
+  }
 
   if (phase === "error" || terminalAuthError) {
     return (

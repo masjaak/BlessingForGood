@@ -18,6 +18,18 @@ the current approved non-removed admission; and the existing canonical
 reconciler must persist `appUsers.role=customer,status=active`. Only then do
 Admin and Customer surfaces project `Aktif`/active.
 
+The remaining post-success defect was isolated at the acceptance component's
+old redirect/render boundary. Its redirect required `phase=finishing` or
+`sameSessionInvite`, while a Clerk resource/effect refresh could leave the
+route in `form` or `error` after the same Customer was already active. The
+fatal branch then won and an old ticket could be evaluated again, producing
+the recorded account-mismatch and consumed/expired-invitation screens. The
+repair adds one latched `active` terminal state based on canonical active
+Customer membership and the verified invitation identity, blocks all late
+ticket/error/timeout writers, clears the invitation correlation marker, and
+uses `router.replace("/account")`. Known conflicting invitation targets still
+use the existing wrong-account guard.
+
 The latest Production sign-in recording identified the remaining first wrong
 boundary in the existing-identity handoff: the embedded Clerk `SignIn` was
 mounted with path routing on the single `/accept-invitation` page, so the
@@ -53,9 +65,9 @@ guards and changes only the premature routing boundary. Clerk's supported
 creating a duplicate Clerk user; pending handoffs are reused and explicit
 resend remains the only replacement path.
 
-Focused and full deterministic tests are green locally (`69 files / 394
-tests`). TypeScript, ESLint, Format, Convex Development check, Production
-build, audit, and diff checks pass. Vercel's Git deployment check for commit
+Focused and full deterministic tests are green locally (`69 files / 398
+tests`; Convex `29 files / 182 tests`). TypeScript, ESLint, Format, Convex
+Development check, Production build, audit, and diff checks pass. Vercel's Git deployment check for commit
 `cc6f987` is successful (`GzoR6K7dCHNwFRhnYMkGm1U3q6ZE`) on the canonical
 Production alias. The affected public fake-ticket recovery journey passes
 `5/5` at 375, 390, 430, 768, and 1440 pixels and the canonical route returns

@@ -35,6 +35,19 @@ through the single canonical admission reconciler. Only then do
 `appUsers.role=customer`, `appUsers.status=active`, accepted onboarding, and
 the Admin `Aktif` projection become true.
 
+### Post-activation terminal success — 2026-08-28
+
+Once the current verified Clerk identity is a canonical active BFG Customer,
+the invitation handoff is complete. The acceptance component enters one
+terminal `active` state and replaces the invitation URL with `/account`; it
+does not process the ticket again, evaluate account mismatch, wait for an
+invitation timeout, or render a consumed/expired-ticket error. A known
+invitation email must match the verified current email; when Clerk has already
+consumed the handoff and no target email remains, only an established
+same-session/completion continuation may use the active membership result.
+The pre-activation different-account guard and genuine invalid-ticket branch
+remain unchanged.
+
 Invitation delivery reuses one pending current handoff and only explicit
 resend replaces it. Clerk's supported `ignoreExisting:true` option is used so
 an existing Clerk identity does not turn the current BFG admission into a

@@ -4,6 +4,28 @@ Post-diff map refreshed for the canonical invitation onboarding and final
 activation P0 correction on 2026-08-28. This is structural memory, not product
 requirement authority.
 
+## Post-diff memory — invitation post-success finalization — 2026-08-28
+
+- `src/components/clerk-invitation-acceptance.tsx` now treats a verified
+  current Clerk identity whose Product context is `authenticated/customer` as
+  terminal success when the known invitation target matches (or when Clerk
+  has already established the same-session completion context). It renders a
+  short success state and calls `router.replace("/account")`.
+- `activeInvitationRef` is a one-way terminal latch. Late ticket results,
+  Clerk resource refreshes, finalization callbacks, Protect/verification
+  continuations, and the timeout cannot write mismatch, consumed-ticket, or
+  activation-error state after membership is active. The ticket is not
+  reprocessed and the existing correlation marker is cleared.
+- The existing known-email wrong-account guard and genuine invalid-ticket
+  handling remain before activation; no Clerk user deletion, invitation
+  writer, Convex membership writer, or second auth/reconciliation path was
+  added.
+- Focused invitation coverage is `30/30`; full Vitest is `69 files / 398
+  tests`, Convex is `29 files / 182 tests`, and TypeScript, ESLint, Format,
+  build, audit, Convex check, and diff checks pass. Authenticated Production
+  UAT remains an external gate because no authorized Customer/mailbox fixture
+  is available in this runtime.
+
 ## Post-diff memory — canonical invitation onboarding and final activation
 
 - `convex/joinRequests.ts:approve` never activates a Customer merely because a

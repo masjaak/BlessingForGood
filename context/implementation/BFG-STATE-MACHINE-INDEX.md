@@ -70,6 +70,17 @@ status and transitions to `missing_requirements`/`Lengkapi akun`, verification,
 Protect, or completion. The former bare rejection path to generic `error` is
 not a legal recoverable identity transition.
 
+## Post-activation terminal success — 2026-08-28
+
+After the canonical Product context reports the verified current Clerk identity
+as an active Customer, `active` is terminal for the invitation route. The
+component latches that state, stops ticket/finalization/timeout continuations,
+clears the invitation correlation marker, and uses `router.replace("/account")`.
+Consumed or stale ticket state cannot transition an already-active matching
+Customer into `session_mismatch`, `invalid_or_expired`, or generic `error`.
+The verified-email mismatch guard still applies before activation and for a
+known conflicting invitation target.
+
 ## Transition Rule
 
 Every stateful mutation must name its source state, target state, guard, side
