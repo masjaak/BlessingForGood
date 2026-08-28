@@ -28,8 +28,11 @@
   shipping claims, or Secret Catalog fields.
 - Focused and full checks pass, including 71 Vitest files / 404 tests,
   TypeScript, ESLint, format, build, Convex check, audit, and diff checks.
-  Search Console verification and sitemap submission remain operator steps;
-  actual query impressions become the next keyword-priority source.
+  Commit `27267b5a02ab8990cbe527fa3cb0c5369358ac90` is deployed to Vercel
+  Production as `dpl_E9QURZTanU7Bo4GjkvjPLwBN333E`; live robots, sitemap,
+  public-page, structured-data, and unknown-book 404 checks pass. Search
+  Console verification and sitemap submission remain operator steps; actual
+  query impressions become the next keyword-priority source.
 
 ## Post-diff memory — homepage Open Graph metadata — 2026-08-28
 

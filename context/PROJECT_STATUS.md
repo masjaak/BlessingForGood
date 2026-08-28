@@ -2,7 +2,7 @@
 
 ## SEO/PSEO/GEO discovery foundation — 2026-08-28
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_SEARCH_CONSOLE_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; SEARCH_CONSOLE_PENDING`
 
 The public search foundation is implemented without changing Auth, Clerk,
 Ready Stock business semantics, Secret Catalog authorization, Batch, Book CRUD,
@@ -22,10 +22,12 @@ were generated. No truthful public update timestamp exists, so sitemap
 `lastModified` is omitted.
 
 Focused and full checks are green: 71 Vitest files / 404 tests, Convex check,
-TypeScript, ESLint, Format, build, audit, and diff checks. Production Vercel
-deployment and live crawl QA are the remaining delivery gate. Search Console
-verification and sitemap submission must be completed by an operator; no
-indexing or search-volume result is claimed here.
+TypeScript, ESLint, Format, build, audit, and diff checks. Commit
+`27267b5a02ab8990cbe527fa3cb0c5369358ac90` is deployed to Vercel Production as
+`dpl_E9QURZTanU7Bo4GjkvjPLwBN333E`; live robots, sitemap, public-page,
+structured-data, and unknown-book 404 checks pass. Search Console verification
+and sitemap submission must be completed by an operator; no indexing or
+search-volume result is claimed here.
 
 ## Homepage Open Graph metadata — 2026-08-28
 
