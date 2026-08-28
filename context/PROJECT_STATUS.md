@@ -27,6 +27,14 @@ returns successful sign-in to the same page as `__clerk_status=complete`. The
 manual ticket/status gate and canonical Convex membership reconciler remain
 unchanged; no second auth or membership system was added.
 
+The follow-up `sign_in` repair preserves the exact Clerk Future resource that
+accepted the ticket across an async Clerk refresh. `signIn.ticket` returns an
+error envelope while the accepted resource exposes the updated status and
+`finalize`; the continuation therefore reads and finalizes that same resource
+instead of a possibly refreshed hook snapshot. A non-complete status remains
+an actionable embedded Clerk sign-in continuation, and a pending session task
+returns to that continuation rather than becoming generic activation failure.
+
 The regression was introduced by `cda2890`, which detected an existing Clerk
 user before creating the current invitation, persisted `onboardingPath=sign_in`,
 and replaced the normal Admin copy/action. The repair keeps the current
@@ -36,7 +44,7 @@ guards and changes only the premature routing boundary. Clerk's supported
 creating a duplicate Clerk user; pending handoffs are reused and explicit
 resend remains the only replacement path.
 
-Focused and full deterministic tests are green locally (`69 files / 392
+Focused and full deterministic tests are green locally (`69 files / 393
 tests`). Vercel Production
 deployment `dpl_BJ5wQXejHQr3M4QqwfTEKDwEnCMo` is `READY` on the canonical
 aliases; its configured build wrapper deployed the changed Convex functions to

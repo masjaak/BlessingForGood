@@ -47,6 +47,7 @@ type VerificationMethod = {
 
 type ClerkErrorLike = {
   code?: unknown;
+  name?: unknown;
   longMessage?: unknown;
   meta?: { paramName?: unknown; param_name?: unknown };
   errors?: readonly ClerkErrorLike[];
@@ -56,13 +57,14 @@ function getClerkErrorDetails(error: unknown) {
   const root = error && typeof error === "object" ? (error as ClerkErrorLike) : null;
   const nested = root?.errors?.[0] || root;
   const code = typeof nested?.code === "string" ? nested.code : null;
+  const type = typeof nested?.name === "string" ? nested.name : null;
   const paramName =
     typeof nested?.meta?.paramName === "string"
       ? nested.meta.paramName
       : typeof nested?.meta?.param_name === "string"
         ? nested.meta.param_name
         : null;
-  return { code, paramName };
+  return { code, paramName, type };
 }
 
 function mapClerkField(value: string | null): InvitationField | null {
@@ -327,8 +329,8 @@ export function ClerkInvitationAcceptance({
     }
   }, []);
 
-  const finalizeSignIn = useCallback(async () => {
-    const currentSignIn = signInRef.current;
+  const finalizeSignIn = useCallback(async (signInResource = signInRef.current) => {
+    const currentSignIn = signInResource;
     if (!currentSignIn || finalizeStarted.current) return;
     finalizeStarted.current = true;
     logInvitationStage(traceId.current, "SIGNIN_FINALIZE_START", {
@@ -343,16 +345,22 @@ export function ClerkInvitationAcceptance({
       const { error: finalizeError } = await withInvitationTimeout(
         currentSignIn.finalize({
           navigate: ({ session }) => {
-            logInvitationStage(traceId.current, session?.currentTask ? "SESSION_PENDING" : "SESSION_ACTIVE", {
-              sessionTask: session?.currentTask?.key || null,
-            });
+            if (session?.currentTask) {
+              logInvitationStage(traceId.current, "SESSION_PENDING", {
+                sessionTask: session.currentTask.key,
+              });
+              setError(null);
+              setPhase("form");
+              return;
+            }
+            logInvitationStage(traceId.current, "SESSION_ACTIVE", { sessionTask: null });
           },
         }),
       );
       logInvitationStage(traceId.current, "SIGNIN_FINALIZE_DONE", {
         success: !finalizeError,
         finalizeCompleted: !finalizeError,
-        status: signInRef.current?.status || currentSignIn.status,
+        status: currentSignIn.status,
         clerkErrorCode: getClerkErrorDetails(finalizeError).code,
       });
       if (finalizeError) {
@@ -518,11 +526,13 @@ export function ClerkInvitationAcceptance({
 
     void (async () => {
       try {
-        logInvitationStage(traceId.current, "SIGNIN_TICKET_START");
+        logInvitationStage(traceId.current, "SIGNIN_TICKET_START", {
+          statusFromUrl: clerkStatus ?? null,
+          signInTicketStarted: true,
+        });
         const { error: ticketError } = await withInvitationTimeout(currentSignIn.ticket({ ticket }));
         if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
-        const updatedSignIn = signInRef.current;
-        if (!updatedSignIn) return;
+        const updatedSignIn = currentSignIn;
         const nextInvitedEmail = normalizeInvitationEmail(updatedSignIn.identifier);
         if (nextInvitedEmail) setInvitedEmail(nextInvitedEmail);
         setInspectedTicket(ticket);
@@ -530,7 +540,12 @@ export function ClerkInvitationAcceptance({
           wasSignedIn && nextInvitedEmail && currentVerifiedEmail && nextInvitedEmail === currentVerifiedEmail,
         );
         logInvitationStage(traceId.current, "SIGNIN_TICKET_RESULT", {
-          status: updatedSignIn.status,
+          statusFromUrl: clerkStatus ?? null,
+          signInTicketResolved: true,
+          returnedSignInStatus: updatedSignIn.status,
+          hookSignInStatus: signInRef.current?.status || null,
+          currentTaskPresent: false,
+          selectedRenderState: ticketError ? "error" : updatedSignIn.status === "complete" ? "finishing" : "form",
           identifier: maskInvitationEmail(nextInvitedEmail),
           currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
           currentClerkSubjectSuffix: userId?.slice(-8) || null,
@@ -538,6 +553,8 @@ export function ClerkInvitationAcceptance({
           createdSessionIdPresent: Boolean(updatedSignIn.createdSessionId),
           supportedFirstFactors: (updatedSignIn.supportedFirstFactors || []).map((factor) => factor.strategy),
           supportedSecondFactors: (updatedSignIn.supportedSecondFactors || []).map((factor) => factor.strategy),
+          safeClerkErrorCode: getClerkErrorDetails(ticketError).code,
+          safeClerkErrorType: getClerkErrorDetails(ticketError).type,
         });
         if (wasSignedIn && nextInvitedEmail && currentVerifiedEmail && !emailsMatch) {
           logInvitationStage(traceId.current, "INVITATION_EMAIL_MISMATCH", {
@@ -564,7 +581,7 @@ export function ClerkInvitationAcceptance({
           logInvitationStage(traceId.current, "SIGNIN_COMPLETE", {
             createdSessionIdPresent: Boolean(updatedSignIn.createdSessionId),
           });
-          await finalizeSignIn();
+          await finalizeSignIn(currentSignIn);
           return;
         }
         logInvitationStage(traceId.current, "SIGNIN_TICKET_ACCEPTED", { status: updatedSignIn.status });
@@ -575,6 +592,7 @@ export function ClerkInvitationAcceptance({
           stage: "sign_in_ticket",
           reason: timedOut.current ? "timeout" : "request_failed",
           clerkErrorCode: getClerkErrorDetails(signInFailure).code,
+          safeClerkErrorType: getClerkErrorDetails(signInFailure).type,
         });
         setError(ACTIVATION_ERROR);
         setPhase("error");

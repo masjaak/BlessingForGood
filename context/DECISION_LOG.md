@@ -106,3 +106,9 @@ source-backed, and added here before implementation.
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | BFG-DEC-063 | 2026-08-28 / identity routing | Clerk user existence could bypass the BFG invitation journey, produce `sign_in_required`, and make Admin responsible for starting Customer login. | Every current approved, non-removed admission receives one deterministic BFG onboarding handoff. Clerk identity state selects signup, sign-in, already-complete, or wrong-account handling inside `/accept-invitation`; every valid branch returns to the same canonical membership reconciler. | Latest Production recording; current client decision; Clerk invitation contract; deterministic RED regressions | Restores the proven Customer journey, supports existing identities without duplicates, preserves current-email/session security, and closes final profile-to-active reconciliation. | ACTIVE |
+
+## Invitation `sign_in` resource continuity — 2026-08-28
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-064 | 2026-08-28 / invitation acceptance | After `signIn.ticket`, the hook's current resource could be read after Clerk refreshed it, allowing the accepted ticket result and finalizer to be discarded or misclassified. | Keep the exact SignIn resource that accepted the current invitation ticket for status inspection and finalization. Treat valid non-complete status as same-route Clerk authentication continuation; only an active Clerk session proceeds to Convex and the canonical BFG reconciler. | Latest sign-in recording; installed Clerk Future contract; deterministic resource-refresh RED regression | Fixes the first auth boundary without changing the admission lifecycle, adding an auth system, or touching membership/business domains. | ACTIVE |

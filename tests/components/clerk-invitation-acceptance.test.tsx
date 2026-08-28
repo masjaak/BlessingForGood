@@ -156,6 +156,41 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
   });
 
+  it("finalizes the sign-in resource that accepted the ticket after a Clerk refresh", async () => {
+    let releaseTicket!: (result: { error: null }) => void;
+    const acceptedSignIn = {
+      status: "needs_first_factor",
+      identifier: "customer@example.com",
+      ticket: vi.fn(
+        () =>
+          new Promise<{ error: null }>((resolve) => {
+            releaseTicket = resolve;
+          }),
+      ),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    const refreshedSignIn = {
+      status: "needs_first_factor",
+      identifier: "customer@example.com",
+      ticket: vi.fn(),
+      finalize: vi.fn(),
+    };
+    let currentSignIn = acceptedSignIn;
+    vi.mocked(useSignIn).mockImplementation(() => ({ signIn: currentSignIn }) as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp: { status: "missing_requirements" } } as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+    await waitFor(() => expect(acceptedSignIn.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+
+    currentSignIn = refreshedSignIn;
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+    acceptedSignIn.status = "complete";
+    await act(async () => releaseTicket({ error: null }));
+
+    await waitFor(() => expect(acceptedSignIn.finalize).toHaveBeenCalledOnce());
+    expect(refreshedSignIn.finalize).not.toHaveBeenCalled();
+  });
+
   it("does not hide a pending Clerk session task behind a generic activation failure", async () => {
     const invitationLogs = vi.spyOn(console, "info").mockImplementation(() => undefined);
     const signIn = {
@@ -180,6 +215,7 @@ describe("BFG application invitation acceptance", () => {
     expect(
       invitationLogs.mock.calls.some(([, payload]) => (payload as { stage?: string }).stage === "SESSION_PENDING"),
     ).toBe(true);
+    expect(screen.getByText("Invitation account recovery")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
     invitationLogs.mockRestore();
   });

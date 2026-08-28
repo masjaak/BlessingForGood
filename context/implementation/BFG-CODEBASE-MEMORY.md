@@ -29,9 +29,13 @@ requirement authority.
   consumes `signIn.ticket` before rendering the same-route embedded Clerk
   sign-in flow. That embedded sign-in uses hash routing on the non-catch-all
   acceptance page, and successful sign-in returns as `__clerk_status=complete`
-  to avoid consuming the invitation ticket twice. `complete` only proceeds
-  when the current session, verified email, Convex auth, and active Customer
-  state are all present. Different current sessions remain guarded.
+  to avoid consuming the invitation ticket twice. The resource that accepts
+  the ticket is retained for status inspection and finalization across a Clerk
+  hook refresh; a non-complete status selects the same-route embedded sign-in
+  continuation, and a pending session task returns to that continuation.
+  `complete` only proceeds when the current session, verified email, Convex
+  auth, and active Customer state are all present. Different current sessions
+  remain guarded.
 - Admin Join Requests, `/join`, and `ProductAccessGuard` now use neutral
   approval/waiting copy. The Admin workspace no longer offers Customer login as
   the primary onboarding action. No Book, Batch, Ready Stock, Finance, Upload,
