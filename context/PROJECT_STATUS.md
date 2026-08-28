@@ -2,7 +2,7 @@
 
 ## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_AUTHENTICATED_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The current worktree restores the canonical lifecycle: Admin approval always
 sends/reuses one BFG onboarding handoff to `/accept-invitation`, regardless of
@@ -55,13 +55,15 @@ resend remains the only replacement path.
 
 Focused and full deterministic tests are green locally (`69 files / 394
 tests`). TypeScript, ESLint, Format, Convex Development check, Production
-build, audit, and diff checks pass. The affected public fake-ticket recovery
-journey passes `5/5` read-only Production viewport checks and the canonical
-route returns HTTP 200; that fixture never proves a valid invitation or
-membership activation. Production deployment of this source correction and
-authenticated Clerk/Convex QA remain pending because no authorized
-`BFG_E2E_CUSTOMER_EMAIL`, mailbox, or current Customer session is available;
-no identity, invitation, mailbox, or business fixture has been fabricated.
+build, audit, and diff checks pass. Vercel's Git deployment check for commit
+`cc6f987` is successful (`GzoR6K7dCHNwFRhnYMkGm1U3q6ZE`) on the canonical
+Production alias. The affected public fake-ticket recovery journey passes
+`5/5` at 375, 390, 430, 768, and 1440 pixels and the canonical route returns
+HTTP 200; that fixture never proves a valid invitation or membership
+activation. Authenticated Clerk/Convex QA remains pending because no
+authorized `BFG_E2E_CUSTOMER_EMAIL`, mailbox, or current Customer session is
+available; no identity, invitation, mailbox, or business fixture has been
+fabricated.
 
 ## Removed member Admin list cleanup — 2026-08-27
 

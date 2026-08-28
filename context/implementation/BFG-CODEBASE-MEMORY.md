@@ -50,11 +50,11 @@ Local regression coverage includes the exact thrown existing-identity RED, new
 identity final activation, existing-identity handoff, completed session,
 wrong-session mismatch, explicit resend/idempotency, authenticated
 pre-activation, and removed-member reapply. Vercel Production deployment
-`dpl_BJ5wQXejHQr3M4QqwfTEKDwEnCMo` is `READY` and the changed Convex functions
-are present in Production `clean-eel-522`; the affected public recovery check
-passes `5/5`. Authenticated UAT was attempted after deployment and remains an
-external release gate because no authorized Customer email or mailbox is
-available; no real identity or invitation fixture was fabricated.
+`GzoR6K7dCHNwFRhnYMkGm1U3q6ZE` is successful on the canonical alias; the
+affected public recovery check passes `5/5` at 375, 390, 430, 768, and 1440.
+Authenticated UAT remains an external release gate because no authorized
+Customer email or mailbox is available; no real identity or invitation
+fixture was fabricated.
 
 Post-diff map refreshed for the removed-member Admin projection cleanup on
 2026-08-27. This is structural memory, not product requirement authority.
