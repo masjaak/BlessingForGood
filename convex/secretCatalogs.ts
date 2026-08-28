@@ -164,6 +164,20 @@ export const archive = mutation({
   },
 });
 
+export const restore = mutation({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const catalog = await ctx.db.get(args.catalogId);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (catalog.status !== "archived") fail("CATALOG_CLOSED");
+    const now = Date.now();
+    await ctx.db.patch(catalog._id, { status: "draft", updatedAt: now });
+    await recordAudit(ctx, user._id, "catalog.restored", "catalog", catalog._id);
+    return getCatalogView(ctx, args.catalogId);
+  },
+});
+
 export const remove = mutation({
   args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {

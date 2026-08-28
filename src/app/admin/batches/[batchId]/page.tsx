@@ -25,6 +25,7 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
+import { formatGbpMinor } from "@/lib/gbp";
 
 function formatCatalogDeadline(value: number | null | undefined): string {
   return value
@@ -579,7 +580,9 @@ function AdminBatchDetail() {
                         <td>{item.format}</td>
                         <td>{item.isbn}</td>
                         <td>{item.quantity}</td>
-                        <td>{item.supplierPriceGbpMinor === null ? "—" : `${item.supplierPriceGbpMinor} pence`}</td>
+                        <td>
+                          {item.supplierPriceGbpMinor === null ? "—" : formatGbpMinor(item.supplierPriceGbpMinor)}
+                        </td>
                         <td>{item.unitPriceAmount.toLocaleString("id-ID")}</td>
                         <td>{item.customerCount}</td>
                       </tr>

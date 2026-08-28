@@ -1,3 +1,5 @@
+import { formatGbpMinor } from "@/lib/gbp";
+
 function excelCell(value: string | number): string {
   const text = String(value);
   const dangerous = /^[=+\-@]/.test(text);
@@ -38,7 +40,7 @@ export function purchaseSummaryCsvRows(items: PurchaseSummaryExportRow[]): Array
         item.bookTitle,
         item.format,
         item.quantity,
-        item.supplierPriceGbpMinor ?? "",
+        item.supplierPriceGbpMinor === null ? "" : formatGbpMinor(item.supplierPriceGbpMinor),
         item.unitPriceAmount,
       ]);
     }

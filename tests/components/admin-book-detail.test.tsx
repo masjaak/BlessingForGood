@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { AdminBookDetail } from "@/components/admin-book-detail";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -113,5 +114,40 @@ describe("Admin Book Detail lifecycle actions", () => {
     expect(screen.getByRole("link", { name: "Edit" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Arsipkan buku" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Hapus buku" })).toBeNull();
+  });
+
+  it("accepts decimal pounds and keeps the variant creation grid aligned", async () => {
+    const mutation = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useMutation).mockReturnValue(mutation as never);
+    mockBook({
+      ...draftBook,
+      variants: [
+        {
+          _id: "variant-1",
+          format: "PB",
+          isbn: "9780000000001",
+          priceAmount: 150000,
+          supplierPriceGbpMinor: 1999,
+          stockQuantity: 0,
+          isAvailable: true,
+        },
+      ],
+    } as never);
+
+    render(<AdminBookDetail bookId="book-1" />);
+
+    const existingGbp = screen.getAllByRole("textbox", { name: /Harga GBP \(£\)/ })[0];
+    expect(existingGbp.getAttribute("inputmode")).toBe("decimal");
+    fireEvent.change(existingGbp, { target: { value: "19,99" } });
+    fireEvent.submit(existingGbp.closest("form")!);
+
+    await waitFor(() => {
+      expect(mutation).toHaveBeenCalledWith(expect.objectContaining({ supplierPriceGbpMinor: 1999 }));
+    });
+
+    const styles = readFileSync("src/app/globals.css", "utf8");
+    expect(styles).toContain(
+      "grid-template-columns: 100px minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(150px, 0.7fr) auto;",
+    );
   });
 });

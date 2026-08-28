@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminCatalogsPage from "@/app/admin/catalogs/page";
 import { AdminCatalogAccess } from "@/components/admin-catalog-access";
@@ -41,6 +41,9 @@ beforeEach(() => {
     catalogsLoading: false,
     closeCatalog: vi.fn(),
   } as never);
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.setAttribute("open", "");
+  };
 });
 
 describe("Secret Catalog operational discoverability", () => {
@@ -115,6 +118,30 @@ describe("Secret Catalog operational discoverability", () => {
     );
     expect(screen.getByText("Draf")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Buku dalam katalog" })).toBeTruthy();
+  });
+
+  it("exposes and confirms a restore action for an archived catalog", async () => {
+    const restore = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useMutation).mockReturnValue(restore as never);
+    const catalog = {
+      id: "catalog-archived",
+      name: "Archived",
+      status: "archived",
+      description: null,
+      closesAt: null,
+    };
+    const queryResults = [catalog, [], []];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-archived" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Pulihkan katalog" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Pulihkan katalog ini?" })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Pulihkan katalog" }));
+
+    await waitFor(() => expect(restore).toHaveBeenCalledWith({ catalogId: "catalog-archived" }));
   });
 
   it("keeps Buat kode akses actionable only after a catalog exists", () => {

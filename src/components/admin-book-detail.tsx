@@ -30,6 +30,7 @@ import { getConvexErrorCode } from "@/domain/prototype/context";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import type { CoverPresentation } from "@/components/book-cover";
 import { ProductGallery } from "@/components/product-gallery";
+import { formatGbpMinor, normalizeGbpInput, parseGbpMinor } from "@/lib/gbp";
 import { uploadBfgFile } from "@/lib/upload-file";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
@@ -52,7 +53,7 @@ function VariantRow({ variant }: { variant: Variant }) {
   const [isbn, setIsbn] = useState(variant.isbn);
   const [price, setPrice] = useState(String(variant.priceAmount));
   const [supplierPriceGbp, setSupplierPriceGbp] = useState(
-    variant.supplierPriceGbpMinor === undefined ? "" : String(variant.supplierPriceGbpMinor),
+    variant.supplierPriceGbpMinor === undefined ? "" : formatGbpMinor(variant.supplierPriceGbpMinor),
   );
   const [quantity, setStock] = useState(String(variant.stockQuantity));
   const [enabled, setEnabled] = useState(variant.isAvailable);
@@ -70,13 +71,17 @@ function VariantRow({ variant }: { variant: Variant }) {
         bookVariantId: variant._id,
         isbn,
         priceAmount: Number(price),
-        supplierPriceGbpMinor: supplierPriceGbp.trim() ? Number(supplierPriceGbp) : undefined,
+        supplierPriceGbpMinor: parseGbpMinor(supplierPriceGbp),
         isAvailable: enabled,
       });
       await setQuantity({ bookVariantId: variant._id, quantity: Number(quantity) });
       setMessage("Tersimpan.");
-    } catch {
-      setMessage("Perubahan format atau stok ditolak.");
+    } catch (reason) {
+      setMessage(
+        reason instanceof Error && reason.message.startsWith("Harga GBP")
+          ? reason.message
+          : "Perubahan format atau stok ditolak.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -124,14 +129,13 @@ function VariantRow({ variant }: { variant: Variant }) {
           required
         />
       </Field>
-      <Field label="Harga GBP (pence)" hint="Harga pemasok; kosong bila belum tersedia">
+      <Field label="Harga GBP (£)" hint="Harga pemasok; gunakan titik, contoh 19.99. Kosong bila belum tersedia">
         <input
           className="input"
-          type="number"
-          min="0"
-          step="1"
+          type="text"
+          inputMode="decimal"
           value={supplierPriceGbp}
-          onChange={(event) => setSupplierPriceGbp(event.target.value)}
+          onChange={(event) => setSupplierPriceGbp(normalizeGbpInput(event.target.value))}
         />
       </Field>
       <InlineBooleanField checked={enabled} label="Aktif" onChange={setEnabled} />
@@ -420,14 +424,18 @@ function BookEditor({ book }: { book: AdminBook }) {
         format,
         isbn,
         priceAmount: Number(price),
-        supplierPriceGbpMinor: supplierPriceGbp.trim() ? Number(supplierPriceGbp) : undefined,
+        supplierPriceGbpMinor: parseGbpMinor(supplierPriceGbp),
       });
       setIsbn("");
       setPrice("");
       setSupplierPriceGbp("");
       setVariantMessage("Format ditambahkan.");
-    } catch {
-      setVariantMessage("Format ditolak. Periksa ISBN, harga, dan format unik.");
+    } catch (reason) {
+      setVariantMessage(
+        reason instanceof Error && reason.message.startsWith("Harga GBP")
+          ? reason.message
+          : "Format ditolak. Periksa ISBN, harga, dan format unik.",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -829,14 +837,13 @@ function BookEditor({ book }: { book: AdminBook }) {
                   required
                 />
               </Field>
-              <Field label="Harga GBP (pence)">
+              <Field label="Harga GBP (£)" hint="Harga pemasok; gunakan titik, contoh 19.99">
                 <input
                   className="input"
-                  type="number"
-                  min="0"
-                  step="1"
+                  type="text"
+                  inputMode="decimal"
                   value={supplierPriceGbp}
-                  onChange={(event) => setSupplierPriceGbp(event.target.value)}
+                  onChange={(event) => setSupplierPriceGbp(normalizeGbpInput(event.target.value))}
                 />
               </Field>
               <Button

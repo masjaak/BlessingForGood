@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
-import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
+import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
 async function storeTestMedia(t: ReturnType<typeof testConvex>) {
   return t.run(async (ctx) =>
@@ -160,6 +160,45 @@ describe("BFG destructive action guards", () => {
     });
     await admin.mutation(api.secretCatalogs.close, { catalogId });
     await expect(admin.mutation(api.secretCatalogs.reopen, { catalogId })).rejects.toThrow("CATALOG_REOPEN_BLOCKED");
+  });
+
+  it("restores an archived Catalog as the same draft without losing its products", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const bundle = await createOpenCatalog(admin, "Archived Restore Catalog", "0008");
+
+    await admin.mutation(api.secretCatalogs.archive, { catalogId: bundle.catalogId });
+    await expect(customer.mutation(api.secretCatalogs.restore, { catalogId: bundle.catalogId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    const restored = await admin.mutation(api.secretCatalogs.restore, { catalogId: bundle.catalogId });
+
+    expect(restored).toMatchObject({ id: bundle.catalogId, status: "draft" });
+    await expect(admin.query(api.secretCatalogs.getForAdmin, { catalogId: bundle.catalogId })).resolves.toMatchObject({
+      _id: bundle.catalogId,
+      status: "draft",
+      name: "Archived Restore Catalog",
+    });
+    await expect(admin.query(api.catalogItems.listForCatalog, { catalogId: bundle.catalogId })).resolves.toMatchObject([
+      { bookVariantId: bundle.variantIds[0], format: "PB", isbn: "97800000008" },
+    ]);
+    await expect(admin.query(api.bookVariants.listForBook, { bookId: bundle.bookId })).resolves.toMatchObject([
+      { _id: bundle.variantIds[0], format: "PB", isbn: "97800000008" },
+    ]);
+    await expect(
+      t.run(async (ctx) => (await ctx.db.query("auditEvents").collect()).map((event) => event.action)),
+    ).resolves.toEqual(expect.arrayContaining(["catalog.archived", "catalog.restored"]));
+    await expect(admin.mutation(api.secretCatalogs.restore, { catalogId: bundle.catalogId })).rejects.toThrow(
+      "CATALOG_CLOSED",
+    );
+  });
+
+  it("rejects restore from a non-archived Catalog state", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Draft Restore Guard" });
+
+    await expect(admin.mutation(api.secretCatalogs.restore, { catalogId })).rejects.toThrow("CATALOG_CLOSED");
   });
 
   it("requires a populated roster before locking a Batch PO", async () => {

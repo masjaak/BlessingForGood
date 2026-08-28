@@ -13,7 +13,7 @@ describe("Excel-compatible export", () => {
 });
 
 describe("publisher purchase export", () => {
-  it("groups derived purchase rows by publisher and keeps GBP in integer pence", () => {
+  it("groups derived purchase rows by publisher and exports GBP as pounds", () => {
     const items = [
       {
         publisherName: "Publisher B",
@@ -39,14 +39,14 @@ describe("publisher purchase export", () => {
       ["Publisher A", "", "", "", "", "", ""],
       ["Publisher A", "9781", "Alpha", "HB", 1, "", 180000],
       ["Publisher B", "", "", "", "", "", ""],
-      ["Publisher B", "9782", "Zebra", "PB", 2, 1299, 210000],
+      ["Publisher B", "9782", "Zebra", "PB", 2, "12.99", 210000],
     ]);
     expect(toExcelCsv(purchaseSummaryCsvRows(items)).slice(1).split("\r\n")).toEqual([
       "Publisher,ISBN,Judul,Format,Qty,Harga GBP,Harga IDR",
       "Publisher A,,,,,,",
       "Publisher A,9781,Alpha,HB,1,,180000",
       "Publisher B,,,,,,",
-      "Publisher B,9782,Zebra,PB,2,1299,210000",
+      "Publisher B,9782,Zebra,PB,2,12.99,210000",
     ]);
   });
 });

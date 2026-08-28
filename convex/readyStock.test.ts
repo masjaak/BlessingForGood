@@ -85,15 +85,20 @@ describe("BFG Ready Stock and Book Master", () => {
       format: "BB",
       isbn: "9780000041046",
       priceAmount: 120000,
+      supplierPriceGbpMinor: 999,
     });
-    await admin.mutation(api.bookVariants.update, { bookVariantId: variantId, priceAmount: 125000 });
+    await admin.mutation(api.bookVariants.update, {
+      bookVariantId: variantId,
+      priceAmount: 125000,
+      supplierPriceGbpMinor: 1899,
+    });
     await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 4 });
     await admin.mutation(api.books.update, { bookId, publicationStatus: "published", author: "Ops Author" });
 
     expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({
       author: "Ops Author",
       publicationStatus: "published",
-      variants: [{ priceAmount: 125000, stockQuantity: 4 }],
+      variants: [{ priceAmount: 125000, stockQuantity: 4, supplierPriceGbpMinor: 1899 }],
     });
     const actions = await t.run(async (ctx) =>
       (await ctx.db.query("auditEvents").collect()).map((event) => event.action),

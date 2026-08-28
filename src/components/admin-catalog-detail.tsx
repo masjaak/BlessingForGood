@@ -32,6 +32,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const close = useMutation(api.secretCatalogs.close);
   const reopen = useMutation(api.secretCatalogs.reopen);
   const archive = useMutation(api.secretCatalogs.archive);
+  const restore = useMutation(api.secretCatalogs.restore);
   const removeCatalog = useMutation(api.secretCatalogs.remove);
   const add = useMutation(api.catalogItems.add);
   const remove = useMutation(api.catalogItems.remove);
@@ -183,6 +184,24 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 }
               >
                 Buka kembali
+              </Button>
+            ) : null}
+            {catalog.status === "archived" ? (
+              <Button
+                type="button"
+                variant="secondary"
+                loading={pending === "restore"}
+                onClick={() =>
+                  setConfirmAction({
+                    title: "Pulihkan katalog ini?",
+                    description: "Katalog akan kembali sebagai Draf. Produk dan riwayat katalog tetap dipertahankan.",
+                    confirmLabel: "Pulihkan katalog",
+                    action: () =>
+                      void run("restore", () => restore({ catalogId: id }), "Katalog dipulihkan sebagai draf."),
+                  })
+                }
+              >
+                Pulihkan katalog
               </Button>
             ) : null}
             {catalog.status !== "archived" ? (
