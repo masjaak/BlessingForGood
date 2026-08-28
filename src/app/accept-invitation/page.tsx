@@ -1,6 +1,14 @@
 import { BrandLogo } from "@/components/brand";
 import { BackButton } from "@/components/back-button";
 import { ClerkInvitationAcceptance } from "@/components/clerk-invitation-acceptance";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "Terima Undangan | Blessing For Goods",
+  description: "Terima undangan dan selesaikan aktivasi akun Blessing For Goods.",
+  path: "/accept-invitation",
+  index: false,
+});
 
 export default async function AcceptInvitationPage({
   searchParams,

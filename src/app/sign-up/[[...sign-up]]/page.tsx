@@ -2,6 +2,14 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand";
 import { BackButton } from "@/components/back-button";
 import { ClerkInvitationAcceptance } from "@/components/clerk-invitation-acceptance";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "Aktivasi Undangan | Blessing For Goods",
+  description: "Selesaikan aktivasi akun Blessing For Goods melalui undangan yang masih berlaku.",
+  path: "/sign-up",
+  index: false,
+});
 
 export default async function SignUpPage({
   searchParams,

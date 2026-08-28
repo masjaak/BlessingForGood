@@ -1,5 +1,36 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — SEO/PSEO/GEO discovery foundation — 2026-08-28
+
+- `src/app/layout.tsx` remains the root owner of the existing BFG metadata and
+  social preview foundation. `src/app/robots.ts` is the single robots
+  authority; it allows public crawling, disallows private route families, and
+  explicitly allows `OAI-SearchBot` to reach public content. Robots is not an
+  authorization boundary, and no GPTBot-specific policy was added.
+- `src/app/sitemap.ts` is the single sitemap authority. It emits canonical
+  `www` URLs for the homepage, useful public informational pages, Ready Stock,
+  and currently public Ready Stock book slugs. It excludes auth, account,
+  admin, Secret Catalog, transaction, filter, and non-public content. It does
+  not emit `lastModified` because the safe public projection has no truthful
+  update timestamp.
+- `/ready-stock/[slug]` is the only implemented programmatic search dimension:
+  it uses the existing anonymous public Ready Stock projection, renders the
+  real book in server HTML, emits unique metadata/Product/Breadcrumb data, and
+  returns a real 404 for an unknown slug. Author, publisher, and category
+  landing pages were not added because the current public route/data contract
+  does not yet establish useful pages for them.
+- Index policy: homepage, Ready Stock, public Ready Stock book pages,
+  community, how-to-order, and help are indexable. Join, Secret Catalog,
+  account, admin, auth, and invitation surfaces carry `noindex`; private
+  content remains protected by existing authorization. Product structured data
+  contains only projected public title, cover, description, variant, price,
+  format/ISBN, and stock-derived availability—never reviews, ratings,
+  shipping claims, or Secret Catalog fields.
+- Focused and full checks pass, including 71 Vitest files / 404 tests,
+  TypeScript, ESLint, format, build, Convex check, audit, and diff checks.
+  Search Console verification and sitemap submission remain operator steps;
+  actual query impressions become the next keyword-priority source.
+
 ## Post-diff memory — homepage Open Graph metadata — 2026-08-28
 
 - `src/app/layout.tsx` is the single root metadata owner. It defines the BFG

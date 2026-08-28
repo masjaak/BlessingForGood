@@ -5,6 +5,14 @@ import { BackButton } from "@/components/back-button";
 import { ClerkAuthForm } from "@/components/clerk-auth-form";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
 import { LinkButton } from "@/components/ui";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "Masuk | Blessing For Goods",
+  description: "Masuk ke akun Blessing For Goods melalui undangan BFG.",
+  path: "/sign-in",
+  index: false,
+});
 
 export default async function SignInPage({
   searchParams,

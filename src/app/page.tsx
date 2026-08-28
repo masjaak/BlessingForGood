@@ -1,11 +1,14 @@
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { HowToOrderSteps } from "@/components/how-to-order";
+import { JsonLd } from "@/components/json-ld";
 import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { createHomepageStructuredData } from "@/lib/seo";
 
 export default function HomePage() {
   return (
     <SiteShell>
+      <JsonLd data={createHomepageStructuredData()} />
       <div className="page home-page">
         <section className="hero home-hero" aria-labelledby="home-title">
           <div className="hero-copy">
@@ -14,8 +17,8 @@ export default function HomePage() {
               Semua bisa dimulai dari satu buku yang tepat.
             </h1>
             <p className="lede">
-              BFG membantu Blessfriends menemukan bacaan yang bisa menumbuhkan rasa ingin tahu, imajinasi, dan kebiasaan
-              baik—sedikit demi sedikit.
+              Blessing For Goods adalah community-led imported bookstore yang membantu Blessfriends menemukan buku impor
+              berbahasa Inggris—dari Ready Stock sampai preorder—sedikit demi sedikit.
             </p>
             <div className="home-hero-actions" aria-label="Akses buku">
               <LinkButton href="/ready-stock" size="large">

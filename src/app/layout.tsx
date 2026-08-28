@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.blessingforgood.com"),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  robots: { index: true, follow: true },
   alternates: {
     canonical: "/",
   },

@@ -19,23 +19,26 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import type { PublicReadyStockList } from "@/lib/seo";
 
 type BookFormat = "BB" | "PB" | "HB";
 type Sort = "newest" | "title" | "price";
 
-function ReadyStockResults() {
+function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStockList }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [publisherId, setPublisherId] = useState("");
   const [format, setFormat] = useState<BookFormat | "">("");
   const [sort, setSort] = useState<Sort>("newest");
-  const result = useQuery(api.readyStock.list, {
+  const liveResult = useQuery(api.readyStock.list, {
     search: search || undefined,
     category: category || undefined,
     publisherId: publisherId ? (publisherId as Id<"publishers">) : undefined,
     format: format || undefined,
     sort,
   });
+  const useInitialResult = !search && !category && !publisherId && !format && sort === "newest";
+  const result = liveResult === undefined && useInitialResult ? initialResult : liveResult;
 
   if (result === undefined) {
     return (
@@ -117,6 +120,7 @@ function ReadyStockResults() {
                 format={book.variants[0]?.format}
                 presentation={book.coverPresentation}
                 src={book.coverImageUrl || undefined}
+                alt={`Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`}
               />
               <div className="ready-stock-copy">
                 <StatusBadge tone="positive">Ready Stock · {book.totalStock} tersedia</StatusBadge>
@@ -146,7 +150,7 @@ function ReadyStockResults() {
   );
 }
 
-export function ReadyStockCatalog() {
+export function ReadyStockCatalog({ initialResult }: { initialResult?: PublicReadyStockList }) {
   const { dataSource } = useProduct();
   return (
     <div className="page ready-stock-page">
@@ -156,7 +160,7 @@ export function ReadyStockCatalog() {
         description="Temukan judul, format, harga, dan stok yang dapat dipesan langsung melalui BFG."
       />
       {dataSource === "convex" ? (
-        <ReadyStockResults />
+        <ReadyStockResults initialResult={initialResult} />
       ) : (
         <EmptyState
           title="Ready Stock belum tersedia."

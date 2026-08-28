@@ -1,5 +1,32 @@
 # BFG Project Status
 
+## SEO/PSEO/GEO discovery foundation — 2026-08-28
+
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_SEARCH_CONSOLE_PENDING`
+
+The public search foundation is implemented without changing Auth, Clerk,
+Ready Stock business semantics, Secret Catalog authorization, Batch, Book CRUD,
+finance, or customer data exposure. The canonical domain is
+`https://www.blessingforgood.com`. `src/app/robots.ts` is the only robots
+authority and `src/app/sitemap.ts` is the only sitemap authority. Public
+homepage, Ready Stock, useful informational pages, and real public Ready Stock
+book pages are crawlable/indexable; private/auth/admin/Secret Catalog surfaces
+are noindex and excluded from the sitemap. `OAI-SearchBot` is allowed on public
+content through the public rule set.
+
+The existing public Ready Stock projection is the only PSEO source. Public book
+pages now server-render real title/details, return 404 for unknown slugs, and
+emit route metadata plus factual Product and Breadcrumb JSON-LD. No author,
+publisher, category, spelling-variant, filter, or keyword-swapped landing pages
+were generated. No truthful public update timestamp exists, so sitemap
+`lastModified` is omitted.
+
+Focused and full checks are green: 71 Vitest files / 404 tests, Convex check,
+TypeScript, ESLint, Format, build, audit, and diff checks. Production Vercel
+deployment and live crawl QA are the remaining delivery gate. Search Console
+verification and sitemap submission must be completed by an operator; no
+indexing or search-volume result is claimed here.
+
 ## Homepage Open Graph metadata — 2026-08-28
 
 Status: `IMPLEMENTED_AND_DEPLOYED`

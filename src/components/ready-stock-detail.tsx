@@ -22,11 +22,13 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import type { PublicReadyStockBook } from "@/lib/seo";
 
 type ReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
 
-function ConnectedDetail({ slug }: { slug: string }) {
-  const book = useQuery(api.readyStock.getBySlug, { slug });
+function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: PublicReadyStockBook }) {
+  const liveBook = useQuery(api.readyStock.getBySlug, { slug });
+  const book = liveBook === undefined ? initialBook : liveBook;
   if (book === undefined) {
     return (
       <LoadingRegion label="Memuat detail buku">
@@ -60,6 +62,7 @@ function ConnectedDetail({ slug }: { slug: string }) {
           publisher={book.publisher.name}
           presentation={book.coverPresentation}
           src={book.coverImageUrl || undefined}
+          alt={`Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`}
         />
         <div className="content-stack">
           <div className="form-actions">
@@ -226,12 +229,12 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   );
 }
 
-export function ReadyStockDetail({ slug }: { slug: string }) {
+export function ReadyStockDetail({ slug, initialBook }: { slug: string; initialBook?: PublicReadyStockBook }) {
   const { dataSource } = useProduct();
   return (
     <div className="page ready-stock-page">
       {dataSource === "convex" ? (
-        <ConnectedDetail slug={slug} />
+        <ConnectedDetail slug={slug} initialBook={initialBook} />
       ) : (
         <EmptyState
           title="Buku tidak tersedia."
