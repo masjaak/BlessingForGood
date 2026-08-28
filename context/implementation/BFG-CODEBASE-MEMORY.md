@@ -22,9 +22,14 @@ requirement authority.
   added.
 - Focused invitation coverage is `30/30`; full Vitest is `69 files / 398
   tests`, Convex is `29 files / 182 tests`, and TypeScript, ESLint, Format,
-  build, audit, Convex check, and diff checks pass. Authenticated Production
-  UAT remains an external gate because no authorized Customer/mailbox fixture
-  is available in this runtime.
+  build, audit, Convex check, and diff checks pass. Vercel deployment
+  `4H54pzdUnqUtnkrzUeUbz9pNSShQ` for canonical commit
+  `2071c369388aa669446b6419d193c9fb7e1bf3cb` is successful on the Production
+  alias. The affected public fake-ticket recovery check passes `8/8` at
+  375/390/430/768/834/1024/1280/1440; the full unauthenticated public suite
+  is `285 passed`, `8` repeated data-limited cover failures, and `7 skipped`.
+  Authenticated Production UAT remains an external gate because no authorized
+  Customer/mailbox fixture is available in this runtime.
 
 ## Post-diff memory — canonical invitation onboarding and final activation
 

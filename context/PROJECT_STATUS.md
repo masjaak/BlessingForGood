@@ -67,15 +67,18 @@ resend remains the only replacement path.
 
 Focused and full deterministic tests are green locally (`69 files / 398
 tests`; Convex `29 files / 182 tests`). TypeScript, ESLint, Format, Convex
-Development check, Production build, audit, and diff checks pass. Vercel's Git deployment check for commit
-`cc6f987` is successful (`GzoR6K7dCHNwFRhnYMkGm1U3q6ZE`) on the canonical
-Production alias. The affected public fake-ticket recovery journey passes
-`5/5` at 375, 390, 430, 768, and 1440 pixels and the canonical route returns
-HTTP 200; that fixture never proves a valid invitation or membership
-activation. Authenticated Clerk/Convex QA remains pending because no
-authorized `BFG_E2E_CUSTOMER_EMAIL`, mailbox, or current Customer session is
-available; no identity, invitation, mailbox, or business fixture has been
-fabricated.
+Development check, Production build, audit, and diff checks pass. Vercel's
+Git deployment check for canonical commit `2071c369388aa669446b6419d193c9fb7e1bf3cb`
+is successful (`4H54pzdUnqUtnkrzUeUbz9pNSShQ`) on the canonical Production
+alias. The affected public fake-ticket recovery journey passes `8/8` at
+375, 390, 430, 768, 834, 1024, 1280, and 1440 pixels and the canonical route
+returns HTTP 200; that fixture never proves a valid invitation or membership
+activation. The full unauthenticated public suite is `285 passed`, `8
+data-limited cover assertions failed`, and `7 skipped`; those eight failures
+are the same unrelated pre-existing cover fixture at the supported Customer
+widths. Authenticated Clerk/Convex QA remains pending because no authorized
+`BFG_E2E_CUSTOMER_EMAIL`, mailbox, or current Customer session is available;
+no identity, invitation, mailbox, or business fixture has been fabricated.
 
 ## Removed member Admin list cleanup — 2026-08-27
 
