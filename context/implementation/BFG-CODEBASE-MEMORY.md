@@ -1,5 +1,28 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — minor stability tuning — 2026-08-29
+
+- `src/lib/gbp.ts` owns Admin UI GBP pence↔pounds parsing and formatting.
+  Storage remains `bookVariants.supplierPriceGbpMinor` as integer pence through
+  the existing `convex/schema.ts`, `convex/bookVariants.ts`, and product-domain
+  boundaries. No public projection exposes it.
+- `convex/secretCatalogs.ts:restore` is the sole `archived → draft` mutation. It
+  is permission-checked and audited, patches only lifecycle metadata, and the
+  UI owner is `src/components/admin-catalog-detail.tsx` using the existing
+  confirmation action pattern.
+- The local alignment owner is `.admin-variant-create` in
+  `src/app/globals.css`; existing responsive overrides and shared form styles
+  remain unchanged.
+- Regression owners are `tests/lib/gbp.test.ts`,
+  `convex/destructive-actions.test.ts`, `convex/readyStock.test.ts`,
+  `tests/components/admin-book-detail.test.tsx`,
+  `tests/components/admin-catalog-discoverability.test.tsx`, and
+  `tests/lib/excel-export.test.ts`.
+- Auth, Ready Stock semantics, Batch lifecycle, Finance, Secret Catalog access,
+  SEO/PSEO/GEO, robots, sitemap, and social metadata were not changed. Local
+  engineering checks and public Production smoke checks pass; authenticated
+  Admin UAT remains pending because no authorized session/fixture was available.
+
 ## Post-diff memory — SEO/PSEO/GEO discovery foundation — 2026-08-28
 
 - `src/app/layout.tsx` remains the root owner of the existing BFG metadata and

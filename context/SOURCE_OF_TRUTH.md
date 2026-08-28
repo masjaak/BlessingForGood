@@ -1,5 +1,19 @@
 # BFG SOURCE OF TRUTH
 
+## Minor stability tuning — 2026-08-29
+
+- Supplier GBP cost remains internal Book Variant data stored as integer pence.
+  Admin Book Master accepts pound values with a dot as the canonical separator,
+  up to two decimal places, and normalizes a mobile comma separator. Public and
+  Customer projections remain unchanged and never expose supplier GBP cost.
+- Secret Catalog lifecycle includes one permission-checked `archived → draft`
+  restore transition through `secretCatalogs.restore`. It preserves the same
+  Catalog and its records/history and does not reopen Customer access; the
+  existing guarded `closed → open` `reopen` transition remains unchanged.
+- The affected Book Master variant-create grid now has one column per field and
+  action at desktop widths. Existing form primitives and responsive breakpoints
+  remain canonical.
+
 ## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
 The current approved BFG admission owns the Customer onboarding lifecycle.

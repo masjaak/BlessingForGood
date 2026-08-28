@@ -1,5 +1,19 @@
 # Decisions
 
+## Minor stability tuning — 2026-08-29
+
+- GBP supplier cost remains stored as integer pence at Book Variant level. Admin
+  enters pounds with a dot as the canonical separator, accepts at most two
+  decimals, and safely normalizes a mobile comma separator. Existing pence
+  values read back as pound values in internal displays and exports. GBP remains
+  internal supplier data and is not added to public or Customer projections.
+- Archived Secret Catalog restoration is one authorized `archived → draft`
+  mutation on the same Catalog. It preserves Catalog data and history, does not
+  reopen Customer access, and leaves the existing `closed → open` reopen guards
+  unchanged.
+- The affected Book Master variant-create grid uses the existing design system
+  and responsive breakpoints. No shared form primitive was changed.
+
 ## Removed admission Admin projection — 2026-08-27
 
 - The default Admin `Permintaan bergabung` queue is a current operational

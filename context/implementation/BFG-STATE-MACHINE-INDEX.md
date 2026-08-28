@@ -1,6 +1,6 @@
 # BFG STATE MACHINE INDEX
 
-Reconciled: 2026-08-28
+Reconciled: 2026-08-29
 This is an index, not a second implementation. The named Convex validators,
 transition helpers, mutations, and tests are canonical.
 
@@ -15,7 +15,7 @@ transition helpers, mutations, and tests are canonical.
 | Batch PO | editable/unset, six shipment stages, archived | create/link/assign, stage update, archive | forward state helper; stage locks catalog/roster edits; archived terminal | `convex/batches.ts`, `convex/batchTracking.ts`, `convex/lib/shipmentTransitions.ts` | batch/state tests |
 | Shipment tracking | `po_closed`, `ordered_to_supplier`, `shipped_internationally`, `customs`, `to_indonesia_warehouse`, `at_store` | update stage | no backward transition; no skip unless explicit `allowSkip` path | `convex/lib/shipmentTransitions.ts`, `batchTracking.ts` | transition tests |
 | Fulfillment tracking | `awaiting_payment`, `awaiting_address`, `packing`, `shipped`, `completed` | update stage | sequential helper and exception guard; this phase has no payment-settlement guard; completion triggers Ready Stock consume | `convex/lib/fulfillmentTransitions.ts`, `orderFulfillment.ts` | fulfillment/policy tests |
-| Secret Catalog | `draft`, `open`, `closed`, `archived` | create/open/close/archive behavior | closed/archived cannot reopen; effective close time denies access | `convex/secretCatalogs.ts`, `convex/lib/catalogView.ts` | catalog tests |
+| Secret Catalog | `draft`, `open`, `closed`, `archived` | create/open/close/reopen/archive/restore behavior; `closed → open` remains the existing guarded reopen, while `archived → draft` is the authorized restore | archived restores only to draft; restore from non-archived is rejected; effective close time still denies access and Customer access is not reopened by restore | `convex/secretCatalogs.ts`, `convex/lib/catalogView.ts` | `convex/destructive-actions.test.ts`, catalog tests |
 | Catalog access code | active, revoked, expired/invalid | generate, redeem, revoke, expiry | digest/pepper; no plaintext persistence; rate limit; catalog scope | `convex/catalogAccess.ts`, `convex/lib/accessCodes.ts` | security/access tests |
 | Catalog access session | active, expired, revoked | issue on unlock, validate per query | session digest/expiry/revocation; no cross-catalog use | `convex/catalogAccess.ts`, `convex/lib/sessions.ts` | access/session tests |
 | Member catalog grant | active, revoked, expired/closed effective | grant, revoke, expiry/close | active customer target; Admin/Owner mutation; ownership still required for order | `convex/catalogAccess.ts`, schema grants | access/ownership tests |

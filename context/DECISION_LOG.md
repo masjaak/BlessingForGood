@@ -124,3 +124,10 @@ source-backed, and added here before implementation.
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | BFG-DEC-066 | 2026-08-28 / invitation post-success finalization | The invitation route could continue evaluating its old ticket after Clerk/session and canonical BFG membership activation, allowing mismatch and consumed-ticket errors to overwrite success. | A verified current identity with `appUser.role=customer,status=active` enters one latched terminal `active` state and immediately `router.replace("/account")`. Known invitation targets must match; pre-activation wrong-account and genuine invalid-ticket guards remain. | Latest operator recording; source trace; deterministic RED regressions for active membership, late consumed-ticket results, stale finalization errors, and form-to-active completion | Makes successful onboarding authoritative over transient invitation state without deleting Clerk users, bypassing admission, or adding a second reconciler. | ACTIVE |
+
+## Minor stability tuning — 2026-08-29
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-067 | 2026-08-29 / stability tuning | GBP supplier price UI treated stored pence as whole-number pounds and native `step=1` rejected decimal input. | Keep integer-pence storage; Admin input accepts pound values with at most two decimals, canonical dot formatting, and safe comma normalization; internal displays format from pence. | Latest user decision; source trace; GBP regressions | Supports real `9.99`/`18.99` supplier prices without a money migration or public disclosure. | ACTIVE |
+| BFG-DEC-068 | 2026-08-29 / stability tuning | Archived Catalog had no recovery action. | Add one permission-checked `archived → draft` restore on the same Catalog ID, preserving records/history and not auto-opening Customer access. | Latest user decision; Secret Catalog state trace; restore regressions | Prevents an irreversible archive dead end without changing access, orders, or Batch relationships. | ACTIVE |

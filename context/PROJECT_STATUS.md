@@ -1,5 +1,23 @@
 # BFG Project Status
 
+## Minor stability tuning — 2026-08-29
+
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+The GBP supplier-price input now accepts up to two decimal places with safe
+comma-to-dot normalization while preserving integer-pence storage. Archived
+Secret Catalogs can be restored to Draft through one authorized mutation on the
+same Catalog entity. The affected Book Master variant-create grid was locally
+aligned using its existing CSS system and breakpoints.
+
+Commit `e7d9708faa621f0586817b442d20d603550129de` was deployed to Vercel
+Production as `dpl_3Rw3yCAD4nw1f98oHxhwCV1JUvX3`; the existing deployment wrapper
+also validated/deployed Convex Production `clean-eel-522`. Live robots, sitemap,
+public HTTP, and public book HTML checks pass. Authorized Admin production UAT
+for decimal save/reload, archived Catalog restore, and visual checks at 390,
+768, and 1440 pixels remains pending because no authorized session or safe
+fixture was available; no Production business data was mutated.
+
 ## SEO/PSEO/GEO discovery foundation — 2026-08-28
 
 Status: `IMPLEMENTED_AND_DEPLOYED; SEARCH_CONSOLE_PENDING`
