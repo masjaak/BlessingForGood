@@ -38,13 +38,13 @@ resend remains the only replacement path.
 
 Focused and full deterministic tests are green locally (`69 files / 392
 tests`). Vercel Production
-deployment `dpl_H976woa5nsaZ8RMKULYab2LaAPDW` is `READY` on the canonical
+deployment `dpl_BJ5wQXejHQr3M4QqwfTEKDwEnCMo` is `READY` on the canonical
 aliases; its configured build wrapper deployed the changed Convex functions to
 Production `clean-eel-522`. The affected public invitation recovery journey
-passes `8/8` Playwright viewport checks, and the canonical route returns HTTP
-200. Authenticated Clerk/Convex QA, mailbox delivery-count checks, and
-legitimate new/existing Customer UAT remain open because this runtime has no
-authorized Clerk publishable key, test identities, or mailbox; no identity,
+passes `5/5` read-only Production viewport checks, and the canonical route
+returns HTTP 200. Authenticated Clerk/Convex QA and legitimate new/existing
+Customer UAT were attempted after deployment but remain open because no
+authorized `BFG_E2E_CUSTOMER_EMAIL` or mailbox is available; no identity,
 invitation, mailbox, or business fixture has been fabricated.
 
 ## Removed member Admin list cleanup — 2026-08-27
