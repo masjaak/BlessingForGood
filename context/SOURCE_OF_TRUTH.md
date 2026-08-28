@@ -18,8 +18,9 @@ historical subject alone never makes a Customer `Aktif`.
 The application invitation route consumes the Clerk ticket and optional
 `__clerk_status` on the same BFG page. New identities use the existing
 `signUp.ticket` → profile requirements → verification/Protect → finalize
-journey. Existing identities receive the same BFG handoff and use the
-embedded sign-in flow with the current route preserved as the continuation.
+journey. Existing identities receive the same BFG handoff and use Clerk's
+ticket-aware `signIn.ticket` flow with the embedded sign-in UI and current route
+preserved as the continuation.
 An already authenticated matching completed ticket continues without another
 login form. A different current session remains blocked by the verified
 primary-email account-switch guard.

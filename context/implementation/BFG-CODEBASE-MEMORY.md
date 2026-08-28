@@ -26,9 +26,10 @@ requirement authority.
 - `src/components/clerk-invitation-acceptance.tsx` accepts the Clerk ticket on
   the same BFG route. New tickets use the existing `signUp.ticket` → dynamic
   profile/verification/Protect → finalize path; `__clerk_status=sign_in`
-  renders the same-route embedded Clerk sign-in flow; `complete` only proceeds
-  when the current session, verified email, Convex auth, and active Customer
-  state are all present. Different current sessions remain guarded.
+  consumes `signIn.ticket` before rendering the same-route embedded Clerk
+  sign-in flow; `complete` only proceeds when the current session, verified
+  email, Convex auth, and active Customer state are all present. Different
+  current sessions remain guarded.
 - Admin Join Requests, `/join`, and `ProductAccessGuard` now use neutral
   approval/waiting copy. The Admin workspace no longer offers Customer login as
   the primary onboarding action. No Book, Batch, Ready Stock, Finance, Upload,
@@ -37,8 +38,11 @@ requirement authority.
 Local regression coverage includes the exact existing-identity RED, new
 identity final activation, existing-identity handoff, completed session,
 wrong-session mismatch, explicit resend/idempotency, authenticated
-pre-activation, and removed-member reapply. Production Clerk configuration,
-real mailbox journeys, and authenticated UAT remain external release gates.
+pre-activation, and removed-member reapply. Vercel Production deployment
+`dpl_H976woa5nsaZ8RMKULYab2LaAPDW` is `READY` and the changed Convex functions
+are present in Production `clean-eel-522`; the affected public recovery check
+passes `8/8`. Production Clerk configuration, real mailbox journeys, and
+authenticated UAT remain external release gates.
 
 Post-diff map refreshed for the removed-member Admin projection cleanup on
 2026-08-27. This is structural memory, not product requirement authority.

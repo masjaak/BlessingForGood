@@ -2,7 +2,7 @@
 
 ## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_AUTHENTICATED_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The current worktree restores the canonical lifecycle: Admin approval always
 sends/reuses one BFG onboarding handoff to `/accept-invitation`, regardless of
@@ -27,10 +27,15 @@ guards and changes only the premature routing boundary. Clerk's supported
 creating a duplicate Clerk user; pending handoffs are reused and explicit
 resend remains the only replacement path.
 
-Focused and full deterministic tests are green locally. Production deployment,
-authenticated Clerk/Convex QA, mailbox delivery-count checks, and legitimate
-new/existing Customer UAT remain open until an authorized runtime is available;
-no identity, invitation, mailbox, or business fixture has been fabricated.
+Focused and full deterministic tests are green locally. Vercel Production
+deployment `dpl_H976woa5nsaZ8RMKULYab2LaAPDW` is `READY` on the canonical
+aliases; its configured build wrapper deployed the changed Convex functions to
+Production `clean-eel-522`. The affected public invitation recovery journey
+passes `8/8` Playwright viewport checks, and the canonical route returns HTTP
+200. Authenticated Clerk/Convex QA, mailbox delivery-count checks, and
+legitimate new/existing Customer UAT remain open because this runtime has no
+authorized Clerk publishable key, test identities, or mailbox; no identity,
+invitation, mailbox, or business fixture has been fabricated.
 
 ## Removed member Admin list cleanup — 2026-08-27
 
