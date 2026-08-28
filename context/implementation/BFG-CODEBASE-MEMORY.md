@@ -36,12 +36,17 @@ requirement authority.
   `complete` only proceeds when the current session, verified email, Convex
   auth, and active Customer state are all present. Different current sessions
   remain guarded.
+- The `signUp.ticket` boundary classifies returned Clerk error envelopes and
+  rejected Promises through the same existing-identity check. A safe existing
+  identity error re-enters the same-route sign-in continuation instead of
+  writing the generic activation failure; a successful new ticket still uses
+  the current `missing_requirements` → `Lengkapi akun` transition.
 - Admin Join Requests, `/join`, and `ProductAccessGuard` now use neutral
   approval/waiting copy. The Admin workspace no longer offers Customer login as
   the primary onboarding action. No Book, Batch, Ready Stock, Finance, Upload,
   Activity, or unrelated button architecture changed.
 
-Local regression coverage includes the exact existing-identity RED, new
+Local regression coverage includes the exact thrown existing-identity RED, new
 identity final activation, existing-identity handoff, completed session,
 wrong-session mismatch, explicit resend/idempotency, authenticated
 pre-activation, and removed-member reapply. Vercel Production deployment

@@ -112,3 +112,9 @@ source-backed, and added here before implementation.
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | BFG-DEC-064 | 2026-08-28 / invitation acceptance | After `signIn.ticket`, the hook's current resource could be read after Clerk refreshed it, allowing the accepted ticket result and finalizer to be discarded or misclassified. | Keep the exact SignIn resource that accepted the current invitation ticket for status inspection and finalization. Treat valid non-complete status as same-route Clerk authentication continuation; only an active Clerk session proceeds to Convex and the canonical BFG reconciler. | Latest sign-in recording; installed Clerk Future contract; deterministic resource-refresh RED regression | Fixes the first auth boundary without changing the admission lifecycle, adding an auth system, or touching membership/business domains. | ACTIVE |
+
+## Invitation ticket error classification — 2026-08-28
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-065 | 2026-08-28 / invitation acceptance | A rejected `signUp.ticket` Promise could enter a bare catch and collapse an existing-identity Clerk code into `Aktivasi belum selesai`. | Returned and thrown `signUp.ticket` errors use the same safe existing-identity classifier. `form_identifier_exists`/`user_exists` re-enters the existing same-route sign-in continuation; a successful new ticket still advances from its current Clerk requirements to `Lengkapi akun`. | Current source trace; installed Clerk Future contract; deterministic RED regression | Keeps recoverable identity continuation out of the generic fatal branch without forcing signup, deleting a Clerk user, or changing the BFG admission/reconciliation path. | ACTIVE |

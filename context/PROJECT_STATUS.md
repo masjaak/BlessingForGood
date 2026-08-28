@@ -2,7 +2,7 @@
 
 ## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
-Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_AUTHENTICATED_UAT_PENDING`
 
 The current worktree restores the canonical lifecycle: Admin approval always
 sends/reuses one BFG onboarding handoff to `/accept-invitation`, regardless of
@@ -35,6 +35,15 @@ instead of a possibly refreshed hook snapshot. A non-complete status remains
 an actionable embedded Clerk sign-in continuation, and a pending session task
 returns to that continuation rather than becoming generic activation failure.
 
+The current P0 boundary is the companion `signUp.ticket` failure path. The
+previous bare catch treated a rejected Clerk Promise as an activation failure,
+even when the safe Clerk code (`form_identifier_exists`/`user_exists`) meant
+that the existing-identity continuation was required. The correction applies
+the same classifier to returned and thrown ticket errors, clears the fatal
+state, and re-enters the existing same-route sign-in handoff. A successful new
+identity ticket remains on the current `missing_requirements` → `Lengkapi akun`
+path; no identity or membership lifecycle was added.
+
 The regression was introduced by `cda2890`, which detected an existing Clerk
 user before creating the current invitation, persisted `onboardingPath=sign_in`,
 and replaced the normal Admin copy/action. The repair keeps the current
@@ -44,16 +53,15 @@ guards and changes only the premature routing boundary. Clerk's supported
 creating a duplicate Clerk user; pending handoffs are reused and explicit
 resend remains the only replacement path.
 
-Focused and full deterministic tests are green locally (`69 files / 393
-tests`). Vercel Production
-deployment `dpl_BJ5wQXejHQr3M4QqwfTEKDwEnCMo` is `READY` on the canonical
-aliases; its configured build wrapper deployed the changed Convex functions to
-Production `clean-eel-522`. The affected public invitation recovery journey
-passes `5/5` read-only Production viewport checks, and the canonical route
-returns HTTP 200. Authenticated Clerk/Convex QA and legitimate new/existing
-Customer UAT were attempted after deployment but remain open because no
-authorized `BFG_E2E_CUSTOMER_EMAIL` or mailbox is available; no identity,
-invitation, mailbox, or business fixture has been fabricated.
+Focused and full deterministic tests are green locally (`69 files / 394
+tests`). TypeScript, ESLint, Format, Convex Development check, Production
+build, audit, and diff checks pass. The affected public fake-ticket recovery
+journey passes `5/5` read-only Production viewport checks and the canonical
+route returns HTTP 200; that fixture never proves a valid invitation or
+membership activation. Production deployment of this source correction and
+authenticated Clerk/Convex QA remain pending because no authorized
+`BFG_E2E_CUSTOMER_EMAIL`, mailbox, or current Customer session is available;
+no identity, invitation, mailbox, or business fixture has been fabricated.
 
 ## Removed member Admin list cleanup — 2026-08-27
 

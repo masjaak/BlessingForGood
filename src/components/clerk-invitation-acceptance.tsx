@@ -67,6 +67,11 @@ function getClerkErrorDetails(error: unknown) {
   return { code, paramName, type };
 }
 
+function isExistingIdentityError(error: unknown) {
+  const code = getClerkErrorDetails(error).code;
+  return Boolean(code?.includes("exists") || code === "user_exists");
+}
+
 function mapClerkField(value: string | null): InvitationField | null {
   switch (value?.replace(/[- ]/g, "_")) {
     case "first_name":
@@ -668,7 +673,6 @@ export function ClerkInvitationAcceptance({
           return;
         }
         if (ticketError) {
-          const ticketErrorCode = getClerkErrorDetails(ticketError).code;
           if (wasSignedIn && emailsMatch) {
             logInvitationStage(traceId.current, "INVITATION_EMAIL_MATCH", {
               invitedEmail: maskInvitationEmail(nextInvitedEmail),
@@ -679,7 +683,7 @@ export function ClerkInvitationAcceptance({
             setPhase("finishing");
             return;
           }
-          if (ticketErrorCode?.includes("exists") || ticketErrorCode === "user_exists") {
+          if (isExistingIdentityError(ticketError)) {
             logInvitationStage(traceId.current, "EXISTING_IDENTITY_SIGNIN_REQUIRED");
             setAuthMode("sign-in");
             setError(null);
@@ -707,11 +711,24 @@ export function ClerkInvitationAcceptance({
         }
         logInvitationStage(traceId.current, "TICKET_ACCEPTED");
         await advanceFromSignUpState();
-      } catch {
+      } catch (ticketFailure) {
         if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        if (isExistingIdentityError(ticketFailure)) {
+          logInvitationStage(traceId.current, "EXISTING_IDENTITY_SIGNIN_REQUIRED", {
+            safeClerkErrorCode: getClerkErrorDetails(ticketFailure).code,
+            safeClerkErrorType: getClerkErrorDetails(ticketFailure).type,
+          });
+          setInspectedTicket(ticket);
+          setAuthMode("sign-in");
+          setError(null);
+          setPhase("loading");
+          return;
+        }
         logInvitationStage(traceId.current, "ERROR", {
           stage: "ticket",
           reason: timedOut.current ? "timeout" : "request_failed",
+          safeClerkErrorCode: getClerkErrorDetails(ticketFailure).code,
+          safeClerkErrorType: getClerkErrorDetails(ticketFailure).type,
         });
         setError(ACTIVATION_ERROR);
         setPhase("error");

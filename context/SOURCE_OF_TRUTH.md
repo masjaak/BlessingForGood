@@ -53,6 +53,26 @@ journey. The current repair removes only that premature identity router and
 keeps its verified-email, session, removal/reapply, retry, and security
 guards; it does not roll back the repository or add another membership writer.
 
+### Invitation ticket error classification — 2026-08-28
+
+The Clerk `signUp.ticket` Future can expose a failure as either a returned
+`{ error }` envelope or a rejected Promise. These two result shapes are one
+Clerk boundary and must use the same classification. An existing-identity
+code such as `form_identifier_exists` or `user_exists` returns to the
+same-route existing-identity sign-in continuation with the BFG fatal error
+cleared; it does not create another identity or bypass the current admission.
+A successful new-identity ticket still advances from Clerk's current
+`missing_requirements` state to the existing `Lengkapi akun` form. Safe
+correlation diagnostics record only the Clerk code/type and stage needed to
+distinguish this branch from a real invalid-ticket or finalization failure.
+
+The deterministic RED regression models the rejected-Promise shape that the
+previous bare catch collapsed into `Aktivasi belum selesai`. A valid
+authenticated Production invitee was not available in this runtime, so the
+public fake-ticket timeout remains diagnostic evidence only and is not used as
+proof of a real Customer outcome. Authenticated Production UAT remains the
+release gate.
+
 ## Membership removal and reapply P0 — 2026-08-27
 
 The BFG membership lifecycle is separate from Clerk identity. Admin

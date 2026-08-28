@@ -260,6 +260,30 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
   });
 
+  it("keeps a thrown existing-identity ticket recoverable inside the invitation flow", async () => {
+    const signIn = {
+      status: "needs_first_factor",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useSignIn).mockReturnValue({ signIn } as never);
+    const signUp = {
+      status: "missing_requirements",
+      emailAddress: "customer@example.com",
+      ticket: vi.fn().mockRejectedValue({ code: "form_identifier_exists" }),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_up" />);
+
+    await waitFor(() => expect(screen.getByText("Invitation account recovery")).toBeTruthy());
+    await waitFor(() => expect(signIn.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+    expect(screen.getByText("Invitation account recovery").getAttribute("data-auth-mode")).toBe("sign-in");
+    expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
+  });
+
   it("continues an already authenticated correct session without another login form", async () => {
     vi.mocked(useAuth).mockReturnValue({
       isLoaded: true,

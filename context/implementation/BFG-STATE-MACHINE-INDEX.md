@@ -59,6 +59,17 @@ removed-tombstone rebind but never authorize a current email mismatch.
 Explicit resend replaces the current pending handoff; ordinary approval and
 reconciliation are idempotent.
 
+## Invitation ticket error classification — 2026-08-28
+
+`ticket_processing` has one deterministic interpretation boundary. A Clerk
+`signUp.ticket` failure returned as `{ error }` and the same failure surfaced
+as a rejected Promise are classified identically: existing-identity codes
+(`form_identifier_exists`/`user_exists`) transition to the existing-identity
+sign-in continuation, while a successful new ticket reads the current Clerk
+status and transitions to `missing_requirements`/`Lengkapi akun`, verification,
+Protect, or completion. The former bare rejection path to generic `error` is
+not a legal recoverable identity transition.
+
 ## Transition Rule
 
 Every stateful mutation must name its source state, target state, guard, side
