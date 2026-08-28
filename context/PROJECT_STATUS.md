@@ -1,5 +1,25 @@
 # BFG Project Status
 
+## Homepage Open Graph metadata — 2026-08-28
+
+Status: `IMPLEMENTED_AND_DEPLOYED`
+
+The homepage root metadata in `src/app/layout.tsx` now owns the canonical BFG
+title, description, production canonical URL, Open Graph website metadata, and
+Twitter/X `summary_large_image` metadata. Both social systems reference the
+same approved static asset at `public/opengraphimageBFG.png`; no dynamic image
+generator, logo/mascot change, route metadata expansion, auth change, Convex
+change, or business-logic change is part of this ticket.
+
+The asset was discovered at the local BFG source folder, verified as an
+untouched `1672×941` PNG, and copied byte-for-byte into the current repository.
+Focused metadata coverage is green; the full frontend and Convex suites,
+TypeScript, ESLint, Format, build, audit, Convex check, and diff checks pass.
+Production commit `c8abf1437fa1611fda6e83a77df9ccbc610178c9` is deployed by
+Vercel. The canonical homepage emits the absolute image URL
+`https://www.blessingforgood.com/opengraphimageBFG.png`, and that URL returns
+HTTP `200` with `image/png`; its live SHA-256 matches the approved local file.
+
 ## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

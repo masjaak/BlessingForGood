@@ -1,5 +1,20 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — homepage Open Graph metadata — 2026-08-28
+
+- `src/app/layout.tsx` is the single root metadata owner. It defines the BFG
+  title, description, `metadataBase`, homepage canonical, Open Graph website
+  fields, and Twitter/X `summary_large_image` fields.
+- `public/opengraphimageBFG.png` is the approved static social preview asset;
+  it is `1672×941`, `image/png`, and the Open Graph and Twitter/X metadata use
+  the same absolute Production URL after Next.js metadata resolution.
+- No `opengraph-image` generator, separate Twitter image, route-by-route SEO
+  system, Auth/Clerk change, Convex change, or business-domain change belongs
+  to this ticket.
+- Focused metadata tests and the full deterministic checks pass. Vercel
+  Production commit `c8abf1437fa1611fda6e83a77df9ccbc610178c9` emits the
+  expected homepage head and serves the approved image with matching SHA-256.
+
 Post-diff map refreshed for the canonical invitation onboarding and final
 activation P0 correction on 2026-08-28. This is structural memory, not product
 requirement authority.
