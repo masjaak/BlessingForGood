@@ -17,31 +17,8 @@ const BFG_INVITATION_REDIRECT_URL = "https://www.blessingforgood.com/accept-invi
 type InvitationTarget = {
   joinRequestId: Id<"joinRequests">;
   email: string;
-  applicantClerkUserId: string | null;
-  invitationId: string | null;
 };
-type DeliveryResult = { status: "complete" | "sent" | "sign_in_required" | "failed" };
-
-function hasExactEmail(user: { emailAddresses: Array<{ emailAddress: string }> }, email: string) {
-  return user.emailAddresses.some((address) => address.emailAddress.trim().toLowerCase() === email);
-}
-
-async function findExistingUser(
-  client: ReturnType<typeof clerkClient>,
-  email: string,
-  applicantClerkUserId: string | null,
-) {
-  if (applicantClerkUserId) {
-    try {
-      const user = await client.users.getUser(applicantClerkUserId);
-      if (hasExactEmail(user, email)) return user;
-    } catch {
-      // The stored subject can be stale; resolve the trusted email below.
-    }
-  }
-  const users = await client.users.getUserList({ emailAddress: [email], limit: 100 });
-  return users.data.find((user) => hasExactEmail(user, email)) ?? null;
-}
+type DeliveryResult = { status: "complete" | "sent" | "failed" };
 
 async function findPendingInvitation(
   client: ReturnType<typeof clerkClient>,
@@ -54,41 +31,6 @@ async function findPendingInvitation(
       (invitation) => invitation.id !== excludedInvitationId && invitation.emailAddress.trim().toLowerCase() === email,
     ) ?? null
   );
-}
-
-async function retirePendingInvitation(
-  client: ReturnType<typeof clerkClient>,
-  email: string,
-  invitationId: string | null,
-) {
-  try {
-    const invitation = invitationId ? { id: invitationId } : await findPendingInvitation(client, email);
-    if (!invitation) return false;
-    await client.invitations.revokeInvitation(invitation.id);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function routeExistingIdentity(
-  ctx: ActionCtx,
-  target: InvitationTarget,
-  actorUserId: Id<"appUsers">,
-  client: ReturnType<typeof clerkClient>,
-) {
-  const replacedInvitation = await retirePendingInvitation(client, target.email, target.invitationId);
-  await ctx.runMutation(internal.joinRequestInvitationState.markSignInRequired, {
-    joinRequestId: target.joinRequestId,
-    actorUserId,
-    replacedInvitation,
-  });
-  console.log("bfg_invitation_stage", {
-    stage: "IDENTITY_SIGN_IN_REQUIRED",
-    existingIdentity: true,
-    replacedInvitation,
-  });
-  return { status: "sign_in_required" as const };
 }
 
 async function deliverInvitation(
@@ -104,9 +46,6 @@ async function deliverInvitation(
   let client: ReturnType<typeof clerkClient> | null = null;
   try {
     client = clerkClient();
-    const existingUser = await findExistingUser(client, target.email, target.applicantClerkUserId);
-    if (existingUser) return routeExistingIdentity(ctx, target, args.actorUserId, client);
-
     const existingInvitation = await findPendingInvitation(client, target.email, excludedInvitationId);
     if (existingInvitation) {
       await ctx.runMutation(internal.joinRequestInvitationState.markSent, {
@@ -121,7 +60,7 @@ async function deliverInvitation(
     const invitation = await client.invitations.createInvitation({
       emailAddress: target.email,
       notify: true,
-      ignoreExisting: false,
+      ignoreExisting: true,
       redirectUrl: BFG_INVITATION_REDIRECT_URL,
     });
     console.log("bfg_invitation_stage", {
@@ -138,8 +77,6 @@ async function deliverInvitation(
   } catch {
     try {
       const fallbackClient = client || clerkClient();
-      const existingUser = await findExistingUser(fallbackClient, target.email, target.applicantClerkUserId);
-      if (existingUser) return routeExistingIdentity(ctx, target, args.actorUserId, fallbackClient);
       const existingInvitation = await findPendingInvitation(fallbackClient, target.email, excludedInvitationId);
       if (existingInvitation) {
         await ctx.runMutation(internal.joinRequestInvitationState.markSent, {

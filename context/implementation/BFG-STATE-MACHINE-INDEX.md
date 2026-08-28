@@ -6,7 +6,7 @@ transition helpers, mutations, and tests are canonical.
 
 | Domain | States | Events / transitions | Guards / invalid transitions | Canonical implementation | Tests |
 |---|---|---|---|---|---|
-| Admission | `submitted`, `under_review`, `approved`, `rejected`; derived `sign_in_required`, `invitation_pending`, `invitation_failed`, `active`, `removed` | submit, start review, approve, route identity, retry/resend, authenticate, reconcile | duplicate active request; review only from expected state; Clerk identity alone cannot admit; only linked active Customer is `active` | `convex/joinRequests.ts`, `convex/joinRequestInvitations.ts`, `convex/users.ts`, `validators.ts` | `convex/joinRequests.test.ts`, `convex/joinRequestInvitations.test.ts`, membership/auth tests |
+| Admission | `submitted`, `under_review`, `approved`, `rejected`; derived `invitation_pending`, `invitation_failed`, `active`, `removed` | submit, start review, approve, send/reuse handoff, retry/resend, authenticate, reconcile | duplicate active request; review only from expected state; current approved non-removed admission is required; Clerk identity alone cannot admit; only canonical active Customer is `active` | `convex/joinRequests.ts`, `convex/joinRequestInvitations.ts`, `convex/users.ts`, `validators.ts` | `convex/joinRequests.test.ts`, `convex/joinRequestInvitations.test.ts`, membership/auth tests |
 | Invitation acceptance | `route_booting`, `ticket_processing`, `missing_requirements`, `verification_required`, `signup_complete`, `finalizing`, `session_activating`, `waiting_for_convex`, `membership_reconciling`, `active`, `session_mismatch`, `invalid_or_expired`, `error` | mount route, process `__clerk_ticket`, render Clerk-reported fields, verify/Protect, finalize, activate session, await Convex auth, reconcile membership, redirect Account | no ticket; invalid/expired ticket; no invented fields; verification/Protect cannot be bypassed; different Clerk session cannot claim invite; Account redirect requires active BFG Customer | `src/components/clerk-invitation-acceptance.tsx`, `src/components/clerk-invitation-form.tsx`, `src/domain/prototype/convex-store.tsx`, `convex/userProvisioning.ts`, `convex/users.ts` | `tests/components/clerk-invitation-acceptance.test.tsx`, auth/admission tests |
 | appUser access | missing, `active`, `suspended` | admitted/ensure, suspend, reactivate | `requireActiveUser`; missing appUser and suspended users fail closed | `convex/lib/auth.ts`, `convex/users.ts` | auth/security tests |
 | Product publication | `draft`, `published`, `special`, `archived` | create/update/publish/archive | customer projections exclude invalid publication/availability; archived edit guarded where applicable | `convex/books.ts`, `convex/lib/catalogView.ts` | product/phase071 tests |
@@ -40,21 +40,24 @@ The semantic path is:
 
 ```text
 ADMISSION_PENDING
-→ APPROVED_IDENTITY_UNKNOWN
-→ APPROVED_EXISTING_IDENTITY / EXISTING_IDENTITY_SIGNIN_REQUIRED
-→ APPROVED_NEW_IDENTITY_INVITED / INVITATION_PENDING
+→ APPROVED
+→ ONBOARDING_SENT / ONBOARDING_OPENED
+→ AUTH_REQUIRED
+→ NEW_IDENTITY_SIGNUP / EXISTING_IDENTITY_SIGNIN / ALREADY_AUTHENTICATED / WRONG_IDENTITY
 → IDENTITY_AUTHENTICATED
+→ CONVEX_AUTH_READY
 → MEMBERSHIP_RECONCILING
 → ACTIVE
 ```
 
-`joinRequests.onboardingPath` stores only `sign_in` or `sign_up` after the
-server-side identity decision; it is not a replacement for `appUsers.status`.
-The old request remains `REMOVED` after Remove Member, and a new approved
-request is the only route to reapply. Historical Clerk subjects can support a
-guarded removed-tombstone rebind but never authorize a current email mismatch.
-Explicit resend revokes the current pending invitation before creating its one
-replacement; ordinary approval/reconciliation is idempotent.
+Sign-up versus sign-in is an internal Clerk branch; it never creates a second
+BFG admission lifecycle. `joinRequests.onboardingPath` is retained only for
+legacy delivery metadata and is cleared by current handoff delivery. The old
+request remains `REMOVED` after Remove Member, and a new approved request is
+the only route to reapply. Historical Clerk subjects can support a guarded
+removed-tombstone rebind but never authorize a current email mismatch.
+Explicit resend replaces the current pending handoff; ordinary approval and
+reconciliation are idempotent.
 
 ## Transition Rule
 

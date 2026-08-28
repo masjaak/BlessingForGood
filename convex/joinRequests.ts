@@ -6,15 +6,14 @@ import { mutation, query } from "./_generated/server";
 import { findCurrentUser, requireIdentity, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
-import { admitApprovedJoinRequest } from "./users";
 import { joinRequestStatusValidator } from "./validators";
 import { joinRequestBookInterestValidator } from "./validators";
-import { notifyAdmins, notifyUser } from "./lib/notifications";
+import { notifyAdmins } from "./lib/notifications";
 import { enforceRateLimit } from "./lib/rateLimit";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 type JoinRequestAdmissionStatus =
-  "pending" | "invitation_pending" | "invitation_failed" | "sign_in_required" | "active" | "removed" | "rejected";
+  "pending" | "invitation_pending" | "invitation_failed" | "active" | "removed" | "rejected";
 
 const duplicateStatuses = new Set<JoinRequestStatus>(["submitted", "under_review", "approved"]);
 
@@ -97,11 +96,9 @@ async function admissionStatus(
   if (request.status === "rejected") return "rejected";
   if (request.status !== "approved") return "pending";
   const user = await linkedAppUser(ctx, request);
-  if (user?.status === "removed") return "removed";
   if (user?.role === "customer" && user.status === "active") return "active";
-  if (request.onboardingPath === "sign_in" && !user) return "sign_in_required";
-  if (request.invitationStatus === "failed" && !user) return "invitation_failed";
-  if (!user) return "invitation_pending";
+  if (request.invitationStatus === "failed" && (!user || user.status === "removed")) return "invitation_failed";
+  if (!user || user.status === "removed") return "invitation_pending";
   return "pending";
 }
 
@@ -332,37 +329,12 @@ export const approve = mutation({
       updatedAt: now,
     });
     await recordAudit(ctx, reviewer._id, "join_request.approved", "join_request", request._id);
-    let updated = await ctx.db.get(request._id);
+    const updated = await ctx.db.get(request._id);
     if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
-    const linked = await linkedAppUser(ctx, updated);
-    if (linked?.role === "customer") {
-      try {
-        const admitted = await admitApprovedJoinRequest(ctx, updated, reviewer._id);
-        if (admitted) {
-          await notifyUser(ctx, admitted._id, {
-            surface: "notification",
-            eventType: "join_request.approved",
-            title: "Akun Blessfriend aktif",
-            body: "Permintaan bergabungmu disetujui. Workspace customer sudah tersedia.",
-            destination: "/account",
-            relatedEntityType: "joinRequest",
-            relatedEntityId: String(request._id),
-          });
-        }
-      } catch {
-        await ctx.db.patch(request._id, { admissionError: "Admission handoff needs retry.", updatedAt: Date.now() });
-        await recordAudit(ctx, reviewer._id, "join_request.admission_failed", "join_request", request._id, {
-          reason: "retry_required",
-        });
-      }
-      updated = await ctx.db.get(request._id);
-      if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
-    } else {
-      await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
-        joinRequestId: request._id,
-        actorUserId: reviewer._id,
-      });
-    }
+    await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
+      joinRequestId: request._id,
+      actorUserId: reviewer._id,
+    });
     return requestView(ctx, updated);
   },
 });
@@ -430,12 +402,11 @@ export const retryInvitation = mutation({
     if (request.admittedAppUserId || request.invitationStatus === "accepted") {
       return requestView(ctx, request);
     }
-    if (request.onboardingPath === "sign_in") return requestView(ctx, request);
     if (request.invitationStatus === "sent") {
       const now = Date.now();
       await ctx.db.patch(request._id, {
         invitationStatus: "pending",
-        onboardingPath: "sign_up",
+        onboardingPath: undefined,
         clerkInvitationId: undefined,
         invitationSentAt: undefined,
         invitationError: undefined,
@@ -457,6 +428,7 @@ export const retryInvitation = mutation({
     const now = Date.now();
     await ctx.db.patch(request._id, {
       invitationStatus: "pending",
+      onboardingPath: undefined,
       invitationError: undefined,
       updatedAt: now,
     });
@@ -478,25 +450,19 @@ export const retryAdmission = mutation({
     const request = await getRequest(ctx, args.joinRequestId);
     if (request.removedAt) return requestView(ctx, request);
     requireStatus(request, "approved");
-    const linked = await linkedAppUser(ctx, request);
-    if (!linked) {
-      if (request.applicantClerkUserId) {
-        await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
-          joinRequestId: request._id,
-          actorUserId: reviewer._id,
-        });
-      }
-      return requestView(ctx, request);
-    }
-    try {
-      await admitApprovedJoinRequest(ctx, request, reviewer._id);
-      await ctx.db.patch(request._id, { admissionError: undefined, updatedAt: Date.now() });
-    } catch {
-      await ctx.db.patch(request._id, { admissionError: "Admission handoff needs retry.", updatedAt: Date.now() });
-      await recordAudit(ctx, reviewer._id, "join_request.admission_failed", "join_request", request._id, {
-        reason: "retry_required",
-      });
-    }
+    if (request.admittedAppUserId || request.invitationStatus === "accepted") return requestView(ctx, request);
+    await ctx.db.patch(request._id, {
+      invitationStatus: "pending",
+      onboardingPath: undefined,
+      admissionError: undefined,
+      invitationError: undefined,
+      updatedAt: Date.now(),
+    });
+    await recordAudit(ctx, reviewer._id, "join_request.admission_retry_requested", "join_request", request._id);
+    await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.deliver, {
+      joinRequestId: request._id,
+      actorUserId: reviewer._id,
+    });
     const updated = await ctx.db.get(request._id);
     if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
     return requestView(ctx, updated);

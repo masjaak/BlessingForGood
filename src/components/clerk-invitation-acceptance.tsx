@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, useSignUp, useUser } from "@clerk/nextjs";
+import { useAuth, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import { executeProtectCheck } from "@clerk/shared/internal/clerk-js/protectCheck";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -28,6 +28,7 @@ const SUPPORTED_INVITATION_FIELDS = new Set([
 ]);
 
 type AcceptancePhase = "loading" | "form" | "verification" | "finishing" | "error";
+type ClerkTicketStatus = "sign_in" | "sign_up" | "complete";
 type SafeTraceValue = boolean | number | string | null | readonly string[];
 type InvitationField =
   | "firstName"
@@ -194,9 +195,16 @@ function withInvitationTimeout<T>(operation: Promise<T>) {
   });
 }
 
-export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
+export function ClerkInvitationAcceptance({
+  ticket,
+  clerkStatus,
+}: {
+  ticket?: string;
+  clerkStatus?: ClerkTicketStatus;
+}) {
   const { isLoaded, isSignedIn, sessionId, userId } = useAuth();
   const { isLoaded: isUserLoaded, user } = useUser();
+  const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const { authState, sessionRole } = useProduct();
   const router = useRouter();
@@ -217,6 +225,8 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [invitedEmail, setInvitedEmail] = useState<string | null>(null);
   const [inspectedTicket, setInspectedTicket] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">(clerkStatus === "sign_in" ? "sign-in" : "sign-up");
+  const signInRef = useRef(signIn);
   const startedTicket = useRef<string | null>(null);
   const traceId = useRef(createInvitationTraceId());
   const routeLogged = useRef(false);
@@ -224,6 +234,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const lastAuthStage = useRef<string | null>(null);
   const mounted = useRef(true);
   const ticketRun = useRef<{ ticket: string } | null>(null);
+  const signInTicketStarted = useRef<string | null>(null);
   const redirected = useRef(false);
   const finalizeStarted = useRef(false);
   const timedOut = useRef(false);
@@ -243,6 +254,10 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   const currentVerifiedEmail = normalizeInvitationEmail(
     user?.primaryEmailAddress?.verification?.status === "verified" ? user.primaryEmailAddress.emailAddress : null,
   );
+
+  useEffect(() => {
+    signInRef.current = signIn;
+  }, [signIn]);
 
   useEffect(() => {
     signUpRef.current = signUp;
@@ -306,6 +321,38 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
     }
   }, []);
 
+  const finalizeSignIn = useCallback(async () => {
+    const currentSignIn = signInRef.current;
+    if (!currentSignIn || finalizeStarted.current) return;
+    finalizeStarted.current = true;
+    logInvitationStage(traceId.current, "SIGNIN_FINALIZE_START", {
+      finalizeStarted: true,
+      status: currentSignIn.status,
+      createdSessionIdPresent: Boolean(currentSignIn.createdSessionId),
+    });
+    setPhase("finishing");
+    try {
+      const { error: finalizeError } = await withInvitationTimeout(currentSignIn.finalize());
+      logInvitationStage(traceId.current, "SIGNIN_FINALIZE_DONE", {
+        success: !finalizeError,
+        finalizeCompleted: !finalizeError,
+        status: signInRef.current?.status || currentSignIn.status,
+        clerkErrorCode: getClerkErrorDetails(finalizeError).code,
+      });
+      if (finalizeError) {
+        setError(ACTIVATION_ERROR);
+        setPhase("error");
+      }
+    } catch (finalizeError) {
+      logInvitationStage(traceId.current, "SIGNIN_FINALIZE_DONE", {
+        success: false,
+        finalizeCompleted: false,
+        clerkErrorCode: getClerkErrorDetails(finalizeError).code,
+      });
+      throw finalizeError;
+    }
+  }, []);
+
   const advanceFromSignUpState = useCallback(async () => {
     const currentSignUp = signUpRef.current;
     if (!currentSignUp) return;
@@ -362,14 +409,35 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
   useEffect(() => {
     if ((phase !== "finishing" && !sameSessionInvite) || redirected.current) return;
-    if (authState === "authenticated" && sessionRole === "customer") {
+    if (
+      isLoaded &&
+      isUserLoaded &&
+      isSignedIn &&
+      sessionId &&
+      userId &&
+      currentVerifiedEmail &&
+      authState === "authenticated" &&
+      sessionRole === "customer"
+    ) {
       redirected.current = true;
       logInvitationStage(traceId.current, "CUSTOMER_ACTIVE");
       logInvitationStage(traceId.current, "REDIRECT_ACCOUNT");
       window.sessionStorage.removeItem(BFG_MEMBERSHIP_CORRELATION_KEY);
       router.replace(ACCOUNT_REDIRECT);
     }
-  }, [authState, phase, router, sameSessionInvite, sessionRole]);
+  }, [
+    authState,
+    currentVerifiedEmail,
+    isLoaded,
+    isSignedIn,
+    isUserLoaded,
+    phase,
+    router,
+    sameSessionInvite,
+    sessionId,
+    sessionRole,
+    userId,
+  ]);
 
   useEffect(() => {
     if ((phase !== "loading" && phase !== "finishing") || (isSignedIn && !sameSessionInvite && !ticketRun.current))
@@ -397,8 +465,126 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   }, [isLoaded, isSignedIn, sessionId, userId]);
 
   useEffect(() => {
+    if (!ticket || !isLoaded || clerkStatus !== "complete") return;
+    startedTicket.current = ticket;
+    ticketRun.current = { ticket };
+    queueMicrotask(() => {
+      if (!mounted.current || ticketRun.current?.ticket !== ticket) return;
+      setInspectedTicket(ticket);
+      setAuthMode("sign-in");
+      setError(null);
+      setPhase("finishing");
+    });
+  }, [clerkStatus, isLoaded, ticket]);
+
+  useEffect(() => {
+    const currentSignIn = signInRef.current;
+    const signInTicketRequested = clerkStatus === "sign_in" || (authMode === "sign-in" && inspectedTicket === ticket);
+    if (
+      !ticket ||
+      !isLoaded ||
+      !currentSignIn ||
+      !signInTicketRequested ||
+      clerkStatus === "complete" ||
+      (isSignedIn && !isUserLoaded) ||
+      signInTicketStarted.current === ticket
+    )
+      return;
+    signInTicketStarted.current = ticket;
+    startedTicket.current = ticket;
+    const run = { ticket };
+    ticketRun.current = run;
+    timedOut.current = false;
+    setPhase("loading");
+    setAuthMode("sign-in");
+    setError(null);
+    const wasSignedIn = isSignedIn;
+
+    void (async () => {
+      try {
+        logInvitationStage(traceId.current, "SIGNIN_TICKET_START");
+        const { error: ticketError } = await withInvitationTimeout(currentSignIn.ticket({ ticket }));
+        if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        const updatedSignIn = signInRef.current;
+        if (!updatedSignIn) return;
+        const nextInvitedEmail = normalizeInvitationEmail(updatedSignIn.identifier);
+        if (nextInvitedEmail) setInvitedEmail(nextInvitedEmail);
+        setInspectedTicket(ticket);
+        const emailsMatch = Boolean(
+          wasSignedIn && nextInvitedEmail && currentVerifiedEmail && nextInvitedEmail === currentVerifiedEmail,
+        );
+        logInvitationStage(traceId.current, "SIGNIN_TICKET_RESULT", {
+          status: updatedSignIn.status,
+          identifier: maskInvitationEmail(nextInvitedEmail),
+          currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
+          currentClerkSubjectSuffix: userId?.slice(-8) || null,
+          emailsMatch,
+          createdSessionIdPresent: Boolean(updatedSignIn.createdSessionId),
+        });
+        if (wasSignedIn && nextInvitedEmail && currentVerifiedEmail && !emailsMatch) {
+          logInvitationStage(traceId.current, "INVITATION_EMAIL_MISMATCH", {
+            invitedEmail: maskInvitationEmail(nextInvitedEmail),
+            currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
+            currentClerkSubjectSuffix: userId?.slice(-8) || null,
+            emailsMatch: false,
+          });
+          setPhase("form");
+          return;
+        }
+        if (ticketError) {
+          const ticketErrorCode = getClerkErrorDetails(ticketError).code;
+          if (wasSignedIn && emailsMatch && ticketErrorCode?.includes("session")) {
+            setPhase("finishing");
+            return;
+          }
+          logInvitationStage(traceId.current, "ERROR", { stage: "sign_in_ticket", reason: "provider_rejected" });
+          setError(TICKET_ERROR);
+          setPhase("error");
+          return;
+        }
+        if (updatedSignIn.status === "complete") {
+          logInvitationStage(traceId.current, "SIGNIN_COMPLETE", {
+            createdSessionIdPresent: Boolean(updatedSignIn.createdSessionId),
+          });
+          await finalizeSignIn();
+          return;
+        }
+        logInvitationStage(traceId.current, "SIGNIN_TICKET_ACCEPTED", { status: updatedSignIn.status });
+        setPhase("form");
+      } catch (signInFailure) {
+        if (!mounted.current || ticketRun.current !== run || timedOut.current) return;
+        logInvitationStage(traceId.current, "ERROR", {
+          stage: "sign_in_ticket",
+          reason: timedOut.current ? "timeout" : "request_failed",
+          clerkErrorCode: getClerkErrorDetails(signInFailure).code,
+        });
+        setError(ACTIVATION_ERROR);
+        setPhase("error");
+      }
+    })();
+  }, [
+    authMode,
+    clerkStatus,
+    currentVerifiedEmail,
+    finalizeSignIn,
+    inspectedTicket,
+    isLoaded,
+    isSignedIn,
+    isUserLoaded,
+    ticket,
+    userId,
+  ]);
+
+  useEffect(() => {
     const currentSignUp = signUpRef.current;
-    if (!ticket || !isLoaded || !currentSignUp || (isSignedIn && !isUserLoaded)) {
+    if (
+      !ticket ||
+      !isLoaded ||
+      !currentSignUp ||
+      (isSignedIn && !isUserLoaded) ||
+      clerkStatus === "sign_in" ||
+      clerkStatus === "complete"
+    ) {
       if (!ticket) ticketRun.current = null;
       return;
     }
@@ -446,6 +632,24 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
           return;
         }
         if (ticketError) {
+          const ticketErrorCode = getClerkErrorDetails(ticketError).code;
+          if (wasSignedIn && emailsMatch) {
+            logInvitationStage(traceId.current, "INVITATION_EMAIL_MATCH", {
+              invitedEmail: maskInvitationEmail(nextInvitedEmail),
+              currentVerifiedEmail: maskInvitationEmail(currentVerifiedEmail),
+              currentClerkSubjectSuffix: userId?.slice(-8) || null,
+              emailsMatch: true,
+            });
+            setPhase("finishing");
+            return;
+          }
+          if (ticketErrorCode?.includes("exists") || ticketErrorCode === "user_exists") {
+            logInvitationStage(traceId.current, "EXISTING_IDENTITY_SIGNIN_REQUIRED");
+            setAuthMode("sign-in");
+            setError(null);
+            setPhase("loading");
+            return;
+          }
           logInvitationStage(traceId.current, "ERROR", { stage: "ticket", reason: "provider_rejected" });
           setError(TICKET_ERROR);
           setPhase("error");
@@ -480,6 +684,7 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   }, [
     advanceFromSignUpState,
     currentVerifiedEmail,
+    clerkStatus,
     isLoaded,
     isSignedIn,
     isUserLoaded,
@@ -559,6 +764,34 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
       logInvitationStage(traceId.current, "MEMBERSHIP_RECONCILE_START");
     }
   }, [authState, phase, sameSessionInvite, sessionRole]);
+
+  useEffect(() => {
+    if (
+      authMode !== "sign-in" ||
+      !ticket ||
+      inspectedTicket !== ticket ||
+      !invitedEmail ||
+      !isUserLoaded ||
+      !isSignedIn ||
+      invitedEmail !== currentVerifiedEmail ||
+      authState !== "authenticated" ||
+      sessionRole !== "customer"
+    )
+      return;
+    queueMicrotask(() => {
+      if (mounted.current && !redirected.current) setPhase("finishing");
+    });
+  }, [
+    authMode,
+    authState,
+    currentVerifiedEmail,
+    inspectedTicket,
+    invitedEmail,
+    isSignedIn,
+    isUserLoaded,
+    sessionRole,
+    ticket,
+  ]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -792,6 +1025,8 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
 
   const terminalAuthError =
     (phase === "finishing" || sameSessionInvite) &&
+    isUserLoaded &&
+    Boolean(currentVerifiedEmail) &&
     (authState === "admission-required" ||
       authState === "suspended" ||
       authState === "removed" ||
@@ -819,7 +1054,18 @@ export function ClerkInvitationAcceptance({ ticket }: { ticket?: string }) {
   if (isSignedIn) {
     return (
       <ClerkInvitationForm
-        redirectUrl={ACCOUNT_REDIRECT}
+        authMode={authMode}
+        redirectUrl={`${window.location.pathname}${window.location.search}`}
+        invitedEmail={inspectedTicket === ticket ? invitedEmail : null}
+      />
+    );
+  }
+
+  if (authMode === "sign-in") {
+    return (
+      <ClerkInvitationForm
+        authMode="sign-in"
+        redirectUrl={`${window.location.pathname}${window.location.search}`}
         invitedEmail={inspectedTicket === ticket ? invitedEmail : null}
       />
     );

@@ -1,31 +1,54 @@
 # BFG SOURCE OF TRUTH
 
-## Clerk identity routing and invitation lifecycle P0 — 2026-08-28
+## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
-Admin approval is an admission decision, not automatic Clerk-user creation.
-The current router resolves one onboarding path from the trusted server-side
-Clerk identity state:
+The current approved BFG admission owns the Customer onboarding lifecycle.
+Admin approval always schedules one deterministic BFG onboarding handoff to
+`/accept-invitation`, whether or not Clerk already has an identity for the
+email. Clerk identity state only selects the authentication subflow inside
+that handoff: new identity signup, existing identity sign-in, an already
+completed matching session, or wrong-account recovery.
 
-- an existing linked BFG Customer reuses its current identity and current
-  admission;
-- an existing Clerk identity without an active BFG membership uses
-  `onboardingPath=sign_in`, with no new signup invitation; and
-- only an email with no existing Clerk identity uses one BFG Clerk invitation
-  and the invite-only signup path.
+`onboardingPath` is legacy delivery metadata, not a BFG state or router. Old
+`sign_in` values cannot bypass the current approved admission; new delivery
+clears that marker. `appUsers.role` and `appUsers.status` remain the only BFG
+membership authority. Approval alone, a Clerk user record alone, or a stored
+historical subject alone never makes a Customer `Aktif`.
 
-`onboardingPath` is a persisted routing marker, not a second membership state.
-`appUsers.role` and `appUsers.status` remain the only BFG membership authority;
-an approved Join Request without an active Customer `appUsers` row is never
-shown as `Aktif` merely because a Clerk subject or email exists.
+The application invitation route consumes the Clerk ticket and optional
+`__clerk_status` on the same BFG page. New identities use the existing
+`signUp.ticket` → profile requirements → verification/Protect → finalize
+journey. Existing identities receive the same BFG handoff and use the
+embedded sign-in flow with the current route preserved as the continuation.
+An already authenticated matching completed ticket continues without another
+login form. A different current session remains blocked by the verified
+primary-email account-switch guard.
 
-The invitation route compares the current Clerk session's verified primary
-email with the current approved admission email after canonical normalization.
-Historical `appUser.clerkUserId` values are used only for guarded subject
-lineage/reapply checks and cannot produce an email mismatch when the current
-verified email matches. A genuinely different current session remains blocked
-with masked account-switch recovery. Invitation delivery uses
-`ignoreExisting=false`, reuses one pending invitation, and only explicit
-resend revokes/replaces the current pending ticket.
+After Clerk session activation, the root Convex provider waits for real
+Convex auth readiness and invokes the existing `users.ensureCurrentUser`
+transaction. It resolves the current approved, non-removed admission by the
+current verified Clerk email/subject and converges every valid auth branch
+through the single canonical admission reconciler. Only then do
+`appUsers.role=customer`, `appUsers.status=active`, accepted onboarding, and
+the Admin `Aktif` projection become true.
+
+Invitation delivery reuses one pending current handoff and only explicit
+resend replaces it. Clerk's supported `ignoreExisting:true` option is used so
+an existing Clerk identity does not turn the current BFG admission into a
+generic sign-in dead end or cause a duplicate identity. No BFG password or
+second authentication system exists.
+
+### Regression archaeology
+
+Commit `cda2890` introduced the regression by checking for an existing Clerk
+user before creating the current BFG invitation, setting
+`onboardingPath=sign_in`, and changing the Admin experience to a generic
+`Masuk dengan akun BFG` action. The prior invitation acceptance implementation
+(`542f067`) and the latest customer recording establish the intended
+Admin approve → invitation email → `/accept-invitation` → `Lengkapi akun`
+journey. The current repair removes only that premature identity router and
+keeps its verified-email, session, removal/reapply, retry, and security
+guards; it does not roll back the repository or add another membership writer.
 
 ## Membership removal and reapply P0 — 2026-08-27
 

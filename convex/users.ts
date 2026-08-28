@@ -84,7 +84,7 @@ async function findApprovedJoinRequest(ctx: MutationCtx | QueryCtx, normalizedEm
     requests.find(
       (request) =>
         request.status === "approved" &&
-        (request.invitationStatus !== "not_ready" || request.onboardingPath === "sign_in") &&
+        request.invitationStatus !== "not_ready" &&
         !request.removedAt,
     ) ?? null
   );
@@ -186,7 +186,7 @@ async function reconcileExistingCustomerAdmission(
   normalizedEmail: string | null,
   request: Doc<"joinRequests"> | null,
 ) {
-  if (user.role !== "customer" || user.status !== "active" || !normalizedEmail) return;
+  if (user.role !== "customer" || !normalizedEmail) return;
   if (!request) return;
   const historicalUser =
     request.applicantClerkUserId && request.applicantClerkUserId !== identity.subject

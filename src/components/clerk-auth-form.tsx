@@ -11,9 +11,11 @@ const serverSnapshot = () => false;
 export function ClerkAuthForm({
   mode,
   redirectUrl = "/catalog",
+  path,
 }: {
   mode: "sign-in" | "sign-up";
   redirectUrl?: string;
+  path?: string;
 }) {
   const mounted = useSyncExternalStore(noSubscribe, clientSnapshot, serverSnapshot);
 
@@ -26,7 +28,7 @@ export function ClerkAuthForm({
 
   return mode === "sign-in" ? (
     <SignIn
-      path="/sign-in"
+      path={path || "/sign-in"}
       routing="path"
       fallbackRedirectUrl={redirectUrl}
       withSignUp={false}

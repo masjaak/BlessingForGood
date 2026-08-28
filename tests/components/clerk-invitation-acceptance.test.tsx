@@ -1,18 +1,20 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useAuth, useSignUp, useUser } from "@clerk/nextjs";
+import { useAuth, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { ClerkInvitationAcceptance } from "@/components/clerk-invitation-acceptance";
 import { useProduct } from "@/domain/prototype/store";
 
-vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn(), useSignUp: vi.fn(), useUser: vi.fn() }));
+vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn(), useSignIn: vi.fn(), useSignUp: vi.fn(), useUser: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
 vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 vi.mock("@/components/clerk-invitation-form", () => ({
   normalizeInvitationEmail: (value: string | null | undefined) => value?.trim().toLowerCase() || null,
   maskInvitationEmail: (value: string | null) => value,
-  ClerkInvitationForm: ({ invitedEmail }: { invitedEmail?: string | null }) => (
-    <div data-invited-email={invitedEmail || ""}>Invitation account recovery</div>
+  ClerkInvitationForm: ({ authMode, invitedEmail }: { authMode?: string; invitedEmail?: string | null }) => (
+    <div data-auth-mode={authMode || "sign-up"} data-invited-email={invitedEmail || ""}>
+      Invitation account recovery
+    </div>
   ),
 }));
 
@@ -23,6 +25,14 @@ describe("BFG application invitation acceptance", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
+    vi.mocked(useSignIn).mockReturnValue({
+      signIn: {
+        status: "needs_first_factor",
+        identifier: null,
+        ticket: vi.fn().mockResolvedValue({ error: null }),
+        finalize: vi.fn().mockResolvedValue({ error: null }),
+      },
+    } as never);
     vi.mocked(useUser).mockReturnValue({ isLoaded: true, user: null } as never);
     vi.mocked(useRouter).mockReturnValue(router as never);
     productState = { authState: "provisioning", sessionRole: null };
@@ -50,8 +60,173 @@ describe("BFG application invitation acceptance", () => {
     expect(router.replace).not.toHaveBeenCalled();
 
     productState = { authState: "authenticated", sessionRole: "customer" };
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "customer@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-b",
+      userId: "user-b",
+    } as never);
     view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+  });
+
+  it("uses the same BFG invitation route for an existing Clerk identity", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      ticket: vi.fn(),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+
+    await waitFor(() => expect(screen.getByText("Invitation account recovery")).toBeTruthy());
+    expect(screen.getByText("Invitation account recovery").getAttribute("data-auth-mode")).toBe("sign-in");
+    expect(signUp.ticket).not.toHaveBeenCalled();
+  });
+
+  it("consumes an existing-identity ticket before resuming BFG activation", async () => {
+    const signIn = {
+      status: "complete",
+      identifier: "customer@example.com",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignIn).mockReturnValue({ signIn } as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp: { status: "missing_requirements" } } as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+
+    await waitFor(() => expect(signIn.ticket).toHaveBeenCalledWith({ ticket: "ticket-safe" }));
+    await waitFor(() => expect(signIn.finalize).toHaveBeenCalledOnce());
+
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-b",
+      userId: "user-b",
+    } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "customer@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    vi.mocked(useProduct).mockReturnValue({ authState: "authenticated", sessionRole: "customer" } as never);
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+  });
+
+  it("resumes the same invitation after an existing identity signs in", async () => {
+    let signedIn = false;
+    vi.mocked(useAuth).mockImplementation(
+      () =>
+        ({
+          isLoaded: true,
+          isSignedIn: signedIn,
+          sessionId: signedIn ? "session-b" : null,
+          userId: signedIn ? "user-b" : null,
+        }) as never,
+    );
+    const signUp = {
+      status: "missing_requirements",
+      emailAddress: "customer@example.com",
+      ticket: vi.fn().mockResolvedValue({ error: { code: "form_identifier_exists" } }),
+      password: vi.fn(),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByText("Invitation account recovery")).toBeTruthy());
+    expect(screen.getByText("Invitation account recovery").getAttribute("data-auth-mode")).toBe("sign-in");
+
+    signedIn = true;
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "customer@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    productState = { authState: "authenticated", sessionRole: "customer" };
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+  });
+
+  it("continues an already authenticated correct session without another login form", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-b",
+      userId: "user-b",
+    } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "customer@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp: { status: "missing_requirements" } } as never);
+    productState = { authState: "authenticated", sessionRole: "customer" };
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="complete" />);
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+    expect(screen.queryByText("Invitation account recovery")).toBeNull();
+  });
+
+  it("does not redirect a different signed-in account from a sign-in ticket", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-a",
+      userId: "user-a",
+    } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "other@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp: { status: "missing_requirements" } } as never);
+    vi.mocked(useSignIn).mockReturnValue({
+      signIn: {
+        status: "needs_first_factor",
+        identifier: "invite@example.com",
+        ticket: vi.fn().mockResolvedValue({ error: null }),
+        finalize: vi.fn(),
+      },
+    } as never);
+    productState = { authState: "authenticated", sessionRole: "customer" };
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+
+    await waitFor(() => expect(screen.getByText("Invitation account recovery")).toBeTruthy());
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it("keeps the ticket out of the UI and shows a safe invalid-invitation error", async () => {
@@ -500,6 +675,15 @@ describe("BFG application invitation acceptance", () => {
       isSignedIn: true,
       sessionId: "session-b",
       userId: "user-b",
+    } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "customer@example.com",
+          verification: { status: "verified" },
+        },
+      },
     } as never);
     vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
 

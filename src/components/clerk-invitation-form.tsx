@@ -18,9 +18,11 @@ export function maskInvitationEmail(email: string | null) {
 export function ClerkInvitationForm({
   redirectUrl,
   invitedEmail,
+  authMode = "sign-up",
 }: {
   redirectUrl: string;
   invitedEmail?: string | null;
+  authMode?: "sign-in" | "sign-up";
 }) {
   const { isLoaded, isSignedIn, signOut } = useAuth();
   const { isLoaded: isUserLoaded, user } = useUser();
@@ -63,5 +65,11 @@ export function ClerkInvitationForm({
       </div>
     );
   }
-  return <ClerkAuthForm mode="sign-up" redirectUrl={redirectUrl} />;
+  return (
+    <ClerkAuthForm
+      mode={authMode}
+      path={authMode === "sign-in" ? "/accept-invitation" : undefined}
+      redirectUrl={redirectUrl}
+    />
+  );
 }

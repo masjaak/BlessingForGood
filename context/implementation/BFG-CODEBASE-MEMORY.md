@@ -1,51 +1,44 @@
 # BFG CODEBASE MEMORY
 
-Post-diff map refreshed for the Clerk identity-routing and invitation
-lifecycle P0 correction on 2026-08-28. This is structural memory, not product
+Post-diff map refreshed for the canonical invitation onboarding and final
+activation P0 correction on 2026-08-28. This is structural memory, not product
 requirement authority.
 
-## Post-diff memory — Clerk identity routing and invitation lifecycle
+## Post-diff memory — canonical invitation onboarding and final activation
 
-- `convex/joinRequests.ts:approve` directly admits only an already-linked
-  Customer `appUsers` row. A stored applicant Clerk subject without BFG
-  membership is sent through `joinRequestInvitations.deliver` so the server
-  resolves existing identity versus new identity once.
-- `convex/joinRequestInvitations.ts` uses exact email lookup, keeps
-  `ignoreExisting:false`, routes an existing Clerk identity to
-  `markSignInRequired`, reuses an existing pending invitation, and has one
-  explicit `replace` path for revoke-then-resend. `joinRequestInvitationState.ts`
-  owns the persisted delivery/path projection; no second membership writer was
-  added.
+- `convex/joinRequests.ts:approve` never activates a Customer merely because a
+  Clerk subject is stored. It always schedules
+  `joinRequestInvitations.deliver`; only an authenticated Customer reaching
+  `users.ensureCurrentUser` can invoke the canonical admission writer.
+- `convex/joinRequestInvitations.ts` reuses a current pending handoff and calls
+  Clerk `createInvitation` with `ignoreExisting:true` and the canonical
+  `/accept-invitation` redirect. Clerk identity existence is therefore handled
+  by the handoff, not by a BFG `sign_in_required` lifecycle. Explicit resend
+  remains the only revoke/replace path.
+- `convex/joinRequestInvitationState.ts` owns delivery persistence only. The
+  removed `markSignInRequired` and `reconcileIdentity` paths were the
+  regression-specific router/writer; no second membership writer was added.
 - `convex/users.ts` still owns the only `appUsers` admission transaction.
   Current verified email is the admission key; a changed subject is accepted
   only for a current approved reapply against a removed historical tombstone.
-  Diagnostics hash subjects and mask emails while carrying admission and match
-  fields.
-- `src/components/clerk-invitation-acceptance.tsx` inspects the current
-  ticket-bound signup email even when a different Clerk session is present.
-  Same verified email continues, a different one receives account-switch
-  recovery, and the existing same-session/verification/Protect/finalize/
-  Convex gates remain.
-- `src/components/clerk-invitation-form.tsx` no longer emits a blanket
-  mismatch for every signed-in user; it compares normalized verified primary
-  email and shows masked values. `/sign-up` uses the canonical ticket-aware
-  acceptance route.
-- Admin Join Requests, `/join`, and `ProductAccessGuard` project
-  `sign_in_required` as sign-in guidance rather than `Aktif` or a new Join CTA.
-  No Book, Batch, Ready Stock, Finance, Upload, Activity, or button architecture
-  implementation changed.
+  The removed tombstone is reactivated only by authenticated reconciliation of
+  the new request, preserving its member code.
+- `src/components/clerk-invitation-acceptance.tsx` accepts the Clerk ticket on
+  the same BFG route. New tickets use the existing `signUp.ticket` → dynamic
+  profile/verification/Protect → finalize path; `__clerk_status=sign_in`
+  renders the same-route embedded Clerk sign-in flow; `complete` only proceeds
+  when the current session, verified email, Convex auth, and active Customer
+  state are all present. Different current sessions remain guarded.
+- Admin Join Requests, `/join`, and `ProductAccessGuard` now use neutral
+  approval/waiting copy. The Admin workspace no longer offers Customer login as
+  the primary onboarding action. No Book, Batch, Ready Stock, Finance, Upload,
+  Activity, or unrelated button architecture changed.
 
-Local regression coverage now includes same-email/different-subject, real
-different-email mismatch, existing Clerk/no-duplicate invitation, fresh
-identity one-invite, explicit resend replacement, authenticated applicant
+Local regression coverage includes the exact existing-identity RED, new
+identity final activation, existing-identity handoff, completed session,
+wrong-session mismatch, explicit resend/idempotency, authenticated
 pre-activation, and removed-member reapply. Production Clerk configuration,
 real mailbox journeys, and authenticated UAT remain external release gates.
-
-The implementation is deployed to Vercel Production, and the public
-Playwright smoke suite passed `121/121` across the required customer widths
-and Admin/public routes. This does not substitute for authenticated
-existing-identity, fresh-identity, same-email, different-email, or mailbox
-invitation-count UAT.
 
 Post-diff map refreshed for the removed-member Admin projection cleanup on
 2026-08-27. This is structural memory, not product requirement authority.

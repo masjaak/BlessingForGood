@@ -125,7 +125,16 @@ describe("BFG membership removal lifecycle", () => {
     await admin.mutation(api.joinRequests.startReview, { joinRequestId: requestB.joinRequestId });
     const approvedB = await admin.mutation(api.joinRequests.approve, { joinRequestId: requestB.joinRequestId });
 
-    expect(approvedB).toMatchObject({ status: "approved", invitationStatus: "accepted", admissionStatus: "active" });
+    expect(approvedB).toMatchObject({
+      status: "approved",
+      invitationStatus: "pending",
+      admissionStatus: "invitation_pending",
+    });
+    await expect(customer.mutation(api.users.ensureCurrentUser, {})).resolves.toMatchObject({
+      appUserId: current.appUserId,
+      role: "customer",
+      status: "active",
+    });
     expect(await customer.query(api.users.current, {})).toMatchObject({
       appUserId: current.appUserId,
       role: "customer",

@@ -51,9 +51,9 @@ describe("authenticated product session state", () => {
         convexLoading: false,
         appUser: null,
         provisioning: false,
-        requests: [{ status: "approved", admissionStatus: "sign_in_required" }],
+        requests: [{ status: "approved", admissionStatus: "invitation_pending" }],
       }),
-    ).toBe("EXISTING_IDENTITY_SIGNIN_REQUIRED");
+    ).toBe("APPROVED_INVITATION_PENDING");
     expect(
       resolveProductMembershipState({
         clerkLoaded: true,

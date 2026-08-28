@@ -32,15 +32,13 @@ export type ProductMembershipState =
   | "NO_APPLICATION"
   | "PENDING"
   | "APPROVED_INVITATION_PENDING"
-  | "EXISTING_IDENTITY_SIGNIN_REQUIRED"
   | "ACTIVE"
   | "SUSPENDED"
   | "REMOVED";
 
 type MembershipRequestState = {
   status: "submitted" | "under_review" | "approved" | "rejected";
-  admissionStatus?:
-    "pending" | "invitation_pending" | "invitation_failed" | "sign_in_required" | "active" | "removed" | "rejected";
+  admissionStatus?: "pending" | "invitation_pending" | "invitation_failed" | "active" | "removed" | "rejected";
 };
 
 export type ProductMembershipResolutionInput = {
@@ -72,9 +70,6 @@ export function resolveProductMembershipState({
   if (appUser?.status === "removed") return "REMOVED";
   if (provisioning || appUser === undefined || requests === undefined) return "MEMBERSHIP_RECONCILING";
   const latest = requests.find((request) => request.admissionStatus !== "removed");
-  if (latest?.status === "approved" && latest.admissionStatus === "sign_in_required") {
-    return "EXISTING_IDENTITY_SIGNIN_REQUIRED";
-  }
   if (latest?.status === "approved") return "APPROVED_INVITATION_PENDING";
   if (latest?.status === "submitted" || latest?.status === "under_review") return "PENDING";
   return "NO_APPLICATION";

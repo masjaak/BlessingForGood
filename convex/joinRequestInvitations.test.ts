@@ -74,10 +74,11 @@ describe("automatic Clerk invitation reconciliation", () => {
     await t.finishAllScheduledFunctions(() => undefined);
 
     expect(clerkState.createInvitation).toHaveBeenCalledTimes(1);
+    expect(clerkState.getUserList).not.toHaveBeenCalled();
     expect(clerkState.createInvitation).toHaveBeenCalledWith({
       emailAddress: email,
       notify: true,
-      ignoreExisting: false,
+      ignoreExisting: true,
       redirectUrl: "https://www.blessingforgood.com/accept-invitation",
     });
     expect(await admin.query(api.joinRequests.listForAdmin, { status: "approved" })).toMatchObject([
@@ -172,7 +173,7 @@ describe("automatic Clerk invitation reconciliation", () => {
     });
   });
 
-  it("reconciles an existing Clerk identity into one active Customer", async () => {
+  it("sends the approved Customer through one invitation even when Clerk already has the identity", async () => {
     const existingClerkUserId = "clerk_existing_reader";
     clerkState.getUserList.mockResolvedValue({
       data: [
@@ -187,12 +188,17 @@ describe("automatic Clerk invitation reconciliation", () => {
     const approved = await submitForApproval(t, admin);
     await t.finishAllScheduledFunctions(() => undefined);
 
-    expect(clerkState.createInvitation).not.toHaveBeenCalled();
+    expect(clerkState.createInvitation).toHaveBeenCalledTimes(1);
+    expect(clerkState.createInvitation).toHaveBeenCalledWith({
+      emailAddress: email,
+      notify: true,
+      ignoreExisting: true,
+      redirectUrl: "https://www.blessingforgood.com/accept-invitation",
+    });
     expect(approved.status).toBe("approved");
     expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
-      invitationStatus: "ready",
-      admissionStatus: "sign_in_required",
-      onboardingPath: "sign_in",
+      invitationStatus: "sent",
+      admissionStatus: "invitation_pending",
     });
     const existingIdentity = t.withIdentity({ subject: existingClerkUserId, email });
     expect(await existingIdentity.query(api.users.current, {})).toBeNull();
@@ -229,7 +235,7 @@ describe("automatic Clerk invitation reconciliation", () => {
     expect((await admin.query(api.joinRequests.listForAdmin, { status: "approved" }))[0]).toMatchObject({
       invitationStatus: "sent",
       admissionStatus: "invitation_pending",
-      onboardingPath: "sign_up",
+      onboardingPath: null,
     });
   });
 

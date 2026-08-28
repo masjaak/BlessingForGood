@@ -154,7 +154,7 @@ describe("Admin Join Request admission projection", () => {
     expect(screen.getByText(/Riwayat pesanan, tagihan, Batch, deposit, dan aktivitas tetap disimpan/)).toBeTruthy();
   });
 
-  it("shows existing Clerk identity sign-in without claiming Active", () => {
+  it("keeps approved existing identities in the canonical email activation lifecycle", () => {
     vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
     vi.mocked(useQuery).mockReturnValue([
       {
@@ -168,8 +168,7 @@ describe("Admin Join Request admission projection", () => {
         source: "website",
         acknowledged: true,
         status: "approved",
-        invitationStatus: "ready",
-        onboardingPath: "sign_in",
+        invitationStatus: "sent",
         submittedAt: "2026-08-27T00:00:00.000Z",
         reviewedAt: "2026-08-27T00:01:00.000Z",
         reviewedByUserId: null,
@@ -179,7 +178,7 @@ describe("Admin Join Request admission projection", () => {
         removedByUserId: null,
         removedByName: null,
         removalReason: null,
-        admissionStatus: "sign_in_required",
+        admissionStatus: "invitation_pending",
         admissionError: null,
         invitationError: null,
         createdAt: "2026-08-27T00:00:00.000Z",
@@ -190,11 +189,9 @@ describe("Admin Join Request admission projection", () => {
     render(<AdminJoinRequestsPage />);
 
     expect(
-      screen.getByText("Disetujui. Akun Clerk sudah ada; Customer perlu masuk untuk mengaktifkan membership."),
+      screen.getByText("Disetujui. Panduan aktivasi sudah dikirim ke Customer. Menunggu aktivasi selesai."),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Masuk dengan akun BFG" }).getAttribute("href")).toBe(
-      "/sign-in?redirect_url=%2Faccount",
-    );
+    expect(screen.queryByRole("link", { name: "Masuk dengan akun BFG" })).toBeNull();
     expect(screen.queryByText("Aktif")).toBeNull();
     expect(screen.queryByRole("button", { name: /kirim.*undangan/i })).toBeNull();
   });

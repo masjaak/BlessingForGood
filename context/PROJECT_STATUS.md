@@ -1,37 +1,36 @@
 # BFG Project Status
 
-## Clerk identity routing and invitation lifecycle P0 — 2026-08-28
+## Canonical invitation onboarding and final activation P0 — 2026-08-28
 
-Status: `IMPLEMENTED_AND_DEPLOYED; PRODUCTION_CLERK_CONFIG_AND_AUTHENTICATED_UAT_PENDING`
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_AND_AUTHENTICATED_UAT_PENDING`
 
-The first wrong boundaries are corrected in the current worktree. Approval no
-longer treats an applicant Clerk subject as a BFG membership unless a linked
-Customer `appUsers` row already exists. Server-side invitation reconciliation
-now routes an exact existing Clerk identity to sign-in, creates no signup
-invitation for that identity, reuses one pending invitation for a genuinely
-new identity, and replaces the current ticket only on explicit resend.
+The current worktree restores the canonical lifecycle: Admin approval always
+sends/reuses one BFG onboarding handoff to `/accept-invitation`, regardless of
+Clerk identity existence. New identity signup, existing identity sign-in,
+already-authenticated completion, and wrong-account recovery are auth
+subflows inside that same admission journey. The former
+`Clerk user exists → sign_in_required → Admin login button` router is gone.
 
-`/accept-invitation` now resolves the ticket-bound target through the Clerk
-signup resource and compares it with the current Clerk user's verified primary
-email. Same-email sessions continue; different sessions receive masked
-account-switch recovery. The Convex membership diagnostic records only the
-correlation ID, subject hash, masked emails, admission ID, match result, and
-historical-subject result. Remove Member, reapply tombstones, verification,
-session security, and the single canonical `appUsers` reconciler remain intact.
+The final activation boundary is explicit: after `Lengkapi akun` succeeds,
+Clerk must expose a real active session and verified primary email; the root
+Convex provider must become auth-ready; `users.ensureCurrentUser` must resolve
+the current approved non-removed admission; and the existing canonical
+reconciler must persist `appUsers.role=customer,status=active`. Only then do
+Admin and Customer surfaces project `Aktif`/active.
 
-Local focused and full deterministic tests are green after the change. The
-checkout has no authorized Clerk publishable/secret production credentials, so
-Clerk Production password settings cannot be inspected or changed here. BFG
-contains no duplicate uppercase/number/special-character password validator;
-the password field remains masked and Clerk remains the password authority.
-Real existing-identity, fresh-identity, same-email, different-email, and
-invitation-count UAT therefore remain release gates. No identity, invitation,
-mailbox, or business data was fabricated.
+The regression was introduced by `cda2890`, which detected an existing Clerk
+user before creating the current invitation, persisted `onboardingPath=sign_in`,
+and replaced the normal Admin copy/action. The repair keeps the current
+verified-email, session, Remove Member, Reapply, retry, and reconciliation
+guards and changes only the premature routing boundary. Clerk's supported
+`ignoreExisting:true` invitation option handles existing identities without
+creating a duplicate Clerk user; pending handoffs are reused and explicit
+resend remains the only replacement path.
 
-The implementation is deployed to Vercel Production. The public production
-Playwright smoke suite passed `121/121` across the required customer widths
-and Admin/public routes. Authenticated existing-identity, fresh-identity,
-mailbox-count, and Clerk Dashboard configuration evidence remains pending.
+Focused and full deterministic tests are green locally. Production deployment,
+authenticated Clerk/Convex QA, mailbox delivery-count checks, and legitimate
+new/existing Customer UAT remain open until an authorized runtime is available;
+no identity, invitation, mailbox, or business fixture has been fabricated.
 
 ## Removed member Admin list cleanup — 2026-08-27
 

@@ -67,19 +67,18 @@ describe("ProductAccessGuard session boundary", () => {
     expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
   });
 
-  it("routes an approved existing identity to sign-in", () => {
+  it("keeps an approved existing identity in the activation wait state", () => {
     render(
       <ProductContext.Provider
-        value={contextValue({ authState: "admission-required", membershipState: "EXISTING_IDENTITY_SIGNIN_REQUIRED" })}
+        value={contextValue({ authState: "admission-required", membershipState: "APPROVED_INVITATION_PENDING" })}
       >
         <ProductAccessGuard requiredRole="customer">Private content</ProductAccessGuard>
       </ProductContext.Provider>,
     );
 
-    expect(screen.getByRole("heading", { name: "Akun BFG-mu sudah ada." })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Masuk dengan akun BFG" }).getAttribute("href")).toBe(
-      "/sign-in?redirect_url=%2Faccount",
-    );
+    expect(screen.getByRole("heading", { name: "Permintaanmu sudah disetujui." })).toBeTruthy();
+    expect(screen.getByText("Kami sedang menyelesaikan aktivasi akunmu.")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Masuk dengan akun BFG" })).toBeNull();
     expect(screen.queryByText("Private content")).toBeNull();
   });
 
