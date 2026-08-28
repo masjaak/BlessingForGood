@@ -41,6 +41,12 @@ identity one-invite, explicit resend replacement, authenticated applicant
 pre-activation, and removed-member reapply. Production Clerk configuration,
 real mailbox journeys, and authenticated UAT remain external release gates.
 
+The implementation is deployed to Vercel Production, and the public
+Playwright smoke suite passed `121/121` across the required customer widths
+and Admin/public routes. This does not substitute for authenticated
+existing-identity, fresh-identity, same-email, different-email, or mailbox
+invitation-count UAT.
+
 Post-diff map refreshed for the removed-member Admin projection cleanup on
 2026-08-27. This is structural memory, not product requirement authority.
 

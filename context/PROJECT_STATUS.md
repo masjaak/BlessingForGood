@@ -2,7 +2,7 @@
 
 ## Clerk identity routing and invitation lifecycle P0 — 2026-08-28
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_CLERK_CONFIG_AND_AUTHENTICATED_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; PRODUCTION_CLERK_CONFIG_AND_AUTHENTICATED_UAT_PENDING`
 
 The first wrong boundaries are corrected in the current worktree. Approval no
 longer treats an applicant Clerk subject as a BFG membership unless a linked
@@ -27,6 +27,11 @@ the password field remains masked and Clerk remains the password authority.
 Real existing-identity, fresh-identity, same-email, different-email, and
 invitation-count UAT therefore remain release gates. No identity, invitation,
 mailbox, or business data was fabricated.
+
+The implementation is deployed to Vercel Production. The public production
+Playwright smoke suite passed `121/121` across the required customer widths
+and Admin/public routes. Authenticated existing-identity, fresh-identity,
+mailbox-count, and Clerk Dashboard configuration evidence remains pending.
 
 ## Removed member Admin list cleanup — 2026-08-27
 
