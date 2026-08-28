@@ -27,9 +27,11 @@ requirement authority.
   the same BFG route. New tickets use the existing `signUp.ticket` → dynamic
   profile/verification/Protect → finalize path; `__clerk_status=sign_in`
   consumes `signIn.ticket` before rendering the same-route embedded Clerk
-  sign-in flow; `complete` only proceeds when the current session, verified
-  email, Convex auth, and active Customer state are all present. Different
-  current sessions remain guarded.
+  sign-in flow. That embedded sign-in uses hash routing on the non-catch-all
+  acceptance page, and successful sign-in returns as `__clerk_status=complete`
+  to avoid consuming the invitation ticket twice. `complete` only proceeds
+  when the current session, verified email, Convex auth, and active Customer
+  state are all present. Different current sessions remain guarded.
 - Admin Join Requests, `/join`, and `ProductAccessGuard` now use neutral
   approval/waiting copy. The Admin workspace no longer offers Customer login as
   the primary onboarding action. No Book, Batch, Ready Stock, Finance, Upload,

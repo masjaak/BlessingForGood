@@ -195,6 +195,12 @@ function withInvitationTimeout<T>(operation: Promise<T>) {
   });
 }
 
+function getInvitationContinuationUrl(authMode: "sign-in" | "sign-up") {
+  const url = new URL(window.location.href);
+  if (authMode === "sign-in") url.searchParams.set("__clerk_status", "complete");
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 export function ClerkInvitationAcceptance({
   ticket,
   clerkStatus,
@@ -329,10 +335,20 @@ export function ClerkInvitationAcceptance({
       finalizeStarted: true,
       status: currentSignIn.status,
       createdSessionIdPresent: Boolean(currentSignIn.createdSessionId),
+      supportedFirstFactors: (currentSignIn.supportedFirstFactors || []).map((factor) => factor.strategy),
+      supportedSecondFactors: (currentSignIn.supportedSecondFactors || []).map((factor) => factor.strategy),
     });
     setPhase("finishing");
     try {
-      const { error: finalizeError } = await withInvitationTimeout(currentSignIn.finalize());
+      const { error: finalizeError } = await withInvitationTimeout(
+        currentSignIn.finalize({
+          navigate: ({ session }) => {
+            logInvitationStage(traceId.current, session?.currentTask ? "SESSION_PENDING" : "SESSION_ACTIVE", {
+              sessionTask: session?.currentTask?.key || null,
+            });
+          },
+        }),
+      );
       logInvitationStage(traceId.current, "SIGNIN_FINALIZE_DONE", {
         success: !finalizeError,
         finalizeCompleted: !finalizeError,
@@ -520,6 +536,8 @@ export function ClerkInvitationAcceptance({
           currentClerkSubjectSuffix: userId?.slice(-8) || null,
           emailsMatch,
           createdSessionIdPresent: Boolean(updatedSignIn.createdSessionId),
+          supportedFirstFactors: (updatedSignIn.supportedFirstFactors || []).map((factor) => factor.strategy),
+          supportedSecondFactors: (updatedSignIn.supportedSecondFactors || []).map((factor) => factor.strategy),
         });
         if (wasSignedIn && nextInvitedEmail && currentVerifiedEmail && !emailsMatch) {
           logInvitationStage(traceId.current, "INVITATION_EMAIL_MISMATCH", {
@@ -1055,7 +1073,7 @@ export function ClerkInvitationAcceptance({
     return (
       <ClerkInvitationForm
         authMode={authMode}
-        redirectUrl={`${window.location.pathname}${window.location.search}`}
+        redirectUrl={getInvitationContinuationUrl(authMode)}
         invitedEmail={inspectedTicket === ticket ? invitedEmail : null}
       />
     );
@@ -1065,7 +1083,7 @@ export function ClerkInvitationAcceptance({
     return (
       <ClerkInvitationForm
         authMode="sign-in"
-        redirectUrl={`${window.location.pathname}${window.location.search}`}
+        redirectUrl={getInvitationContinuationUrl("sign-in")}
         invitedEmail={inspectedTicket === ticket ? invitedEmail : null}
       />
     );

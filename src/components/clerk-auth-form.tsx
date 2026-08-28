@@ -28,8 +28,9 @@ export function ClerkAuthForm({
 
   return mode === "sign-in" ? (
     <SignIn
-      path={path || "/sign-in"}
-      routing="path"
+      {...(path === "/accept-invitation"
+        ? { routing: "hash" as const }
+        : { path: path || "/sign-in", routing: "path" as const })}
       fallbackRedirectUrl={redirectUrl}
       withSignUp={false}
       transferable={false}

@@ -19,8 +19,10 @@ The application invitation route consumes the Clerk ticket and optional
 `__clerk_status` on the same BFG page. New identities use the existing
 `signUp.ticket` → profile requirements → verification/Protect → finalize
 journey. Existing identities receive the same BFG handoff and use Clerk's
-ticket-aware `signIn.ticket` flow with the embedded sign-in UI and current route
-preserved as the continuation.
+ticket-aware `signIn.ticket` flow with the embedded sign-in UI. Because the BFG
+acceptance page is not a Clerk catch-all route, that embedded existing-user
+continuation uses hash routing; successful sign-in returns to the same BFG page
+with `__clerk_status=complete` so the invitation ticket is not consumed twice.
 An already authenticated matching completed ticket continues without another
 login form. A different current session remains blocked by the verified
 primary-email account-switch guard.

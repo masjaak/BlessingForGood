@@ -18,6 +18,15 @@ the current approved non-removed admission; and the existing canonical
 reconciler must persist `appUsers.role=customer,status=active`. Only then do
 Admin and Customer surfaces project `Aktif`/active.
 
+The latest Production sign-in recording identified the remaining first wrong
+boundary in the existing-identity handoff: the embedded Clerk `SignIn` was
+mounted with path routing on the single `/accept-invitation` page, so the
+non-complete `signIn.ticket` state had no reliable same-page continuation. The
+current repair uses Clerk hash routing only for that embedded sign-in branch and
+returns successful sign-in to the same page as `__clerk_status=complete`. The
+manual ticket/status gate and canonical Convex membership reconciler remain
+unchanged; no second auth or membership system was added.
+
 The regression was introduced by `cda2890`, which detected an existing Clerk
 user before creating the current invitation, persisted `onboardingPath=sign_in`,
 and replaced the normal Admin copy/action. The repair keeps the current
@@ -27,7 +36,8 @@ guards and changes only the premature routing boundary. Clerk's supported
 creating a duplicate Clerk user; pending handoffs are reused and explicit
 resend remains the only replacement path.
 
-Focused and full deterministic tests are green locally. Vercel Production
+Focused and full deterministic tests are green locally (`69 files / 392
+tests`). Vercel Production
 deployment `dpl_H976woa5nsaZ8RMKULYab2LaAPDW` is `READY` on the canonical
 aliases; its configured build wrapper deployed the changed Convex functions to
 Production `clean-eel-522`. The affected public invitation recovery journey

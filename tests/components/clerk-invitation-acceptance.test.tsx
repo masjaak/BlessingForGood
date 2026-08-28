@@ -11,8 +11,20 @@ vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 vi.mock("@/components/clerk-invitation-form", () => ({
   normalizeInvitationEmail: (value: string | null | undefined) => value?.trim().toLowerCase() || null,
   maskInvitationEmail: (value: string | null) => value,
-  ClerkInvitationForm: ({ authMode, invitedEmail }: { authMode?: string; invitedEmail?: string | null }) => (
-    <div data-auth-mode={authMode || "sign-up"} data-invited-email={invitedEmail || ""}>
+  ClerkInvitationForm: ({
+    authMode,
+    invitedEmail,
+    redirectUrl,
+  }: {
+    authMode?: string;
+    invitedEmail?: string | null;
+    redirectUrl?: string;
+  }) => (
+    <div
+      data-auth-mode={authMode || "sign-up"}
+      data-invited-email={invitedEmail || ""}
+      data-redirect-url={redirectUrl || ""}
+    >
       Invitation account recovery
     </div>
   ),
@@ -24,6 +36,7 @@ describe("BFG application invitation acceptance", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, "", "/accept-invitation?__clerk_ticket=ticket-safe");
     vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
     vi.mocked(useSignIn).mockReturnValue({
       signIn: {
@@ -95,6 +108,18 @@ describe("BFG application invitation acceptance", () => {
     expect(signUp.ticket).not.toHaveBeenCalled();
   });
 
+  it("keeps a non-complete sign-in ticket in the invitation context", async () => {
+    window.history.replaceState({}, "", "/accept-invitation?__clerk_status=sign_in&__clerk_ticket=ticket-safe");
+    vi.mocked(useSignUp).mockReturnValue({ signUp: { status: "missing_requirements" } } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+
+    const continuation = await screen.findByText("Invitation account recovery");
+    expect(continuation.getAttribute("data-auth-mode")).toBe("sign-in");
+    expect(continuation.getAttribute("data-redirect-url")).toContain("__clerk_status=complete");
+    expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
+  });
+
   it("consumes an existing-identity ticket before resuming BFG activation", async () => {
     const signIn = {
       status: "complete",
@@ -129,6 +154,34 @@ describe("BFG application invitation acceptance", () => {
     view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+  });
+
+  it("does not hide a pending Clerk session task behind a generic activation failure", async () => {
+    const invitationLogs = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const signIn = {
+      status: "complete",
+      identifier: "customer@example.com",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      finalize: vi
+        .fn()
+        .mockImplementation(
+          async ({ navigate }: { navigate: (args: { session?: { currentTask?: { key: string } } }) => void }) => {
+            navigate({ session: { currentTask: { key: "setup_mfa" } } });
+            return { error: null };
+          },
+        ),
+    };
+    vi.mocked(useSignIn).mockReturnValue({ signIn } as never);
+    vi.mocked(useSignUp).mockReturnValue({ signUp: { status: "missing_requirements" } } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" clerkStatus="sign_in" />);
+
+    await waitFor(() => expect(signIn.finalize).toHaveBeenCalledOnce());
+    expect(
+      invitationLogs.mock.calls.some(([, payload]) => (payload as { stage?: string }).stage === "SESSION_PENDING"),
+    ).toBe(true);
+    expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
+    invitationLogs.mockRestore();
   });
 
   it("resumes the same invitation after an existing identity signs in", async () => {
