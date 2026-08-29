@@ -107,7 +107,9 @@ No new lifecycle states were added. The current guards are:
   Order detail CTA reflects actual invoice presence rather than a duplicate
   state machine.
 - Batch linking and item movement require the linked Secret Catalog's
-  `closesAt` to equal the Batch `poDeadlineAt` (including both being unset).
+  `closesAt` and Batch `poDeadlineAt` to resolve to the same
+  `Asia/Jakarta` calendar date (including both being unset); minute-level
+  timestamp differences on that date are not a mismatch.
 - Book Save remains an editable `draft` update; publication is an explicit
   `books.update(..., publicationStatus: "published")` action, with the same
   Admin/Owner authorization and audit boundary.

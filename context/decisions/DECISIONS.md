@@ -13,6 +13,13 @@
   unchanged.
 - The affected Book Master variant-create grid uses the existing design system
   and responsive breakpoints. No shared form primitive was changed.
+- Operational Admin mutation controls use the existing framed `secondary` or
+  `danger` Button variants; navigation, support, reset, and icon controls keep
+  their intentional low-emphasis treatment. This changes presentation only.
+- Catalog/Batch deadline compatibility is date-based in `Asia/Jakarta` while
+  `secretCatalogs.closesAt` and `batches.poDeadlineAt` remain UTC timestamps.
+  Date-only inputs store the selected Jakarta calendar date's end timestamp;
+  existing Customer cutoff and lifecycle guards otherwise remain unchanged.
 
 ## Removed admission Admin projection — 2026-08-27
 

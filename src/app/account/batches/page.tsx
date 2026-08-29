@@ -6,6 +6,7 @@ import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
+import { formatBfgCalendarDate } from "@/lib/calendar-date";
 
 function CustomerBatches() {
   const batches = useQuery(api.batchTracking.listMine, {});
@@ -40,7 +41,7 @@ function CustomerBatches() {
                   : `${batch.availableItems.length} item tersedia melalui akses katalog.`}
               </p>
               {batch.poDeadlineAt ? (
-                <p className="subtle">Deadline PO: {new Date(batch.poDeadlineAt).toLocaleString("id-ID")}</p>
+                <p className="subtle">Deadline PO: {formatBfgCalendarDate(batch.poDeadlineAt)}</p>
               ) : null}
               <p className="subtle">Estimasi tiba: {formatCargoEta(batch.etaCargoMonth)}</p>
               <LinkButton href={`/account/batches/${batch.batchId}`} variant="secondary">

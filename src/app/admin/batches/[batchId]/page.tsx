@@ -26,18 +26,14 @@ import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
 import { formatGbpMinor } from "@/lib/gbp";
+import { calendarDateInputValue, calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
 
 function formatCatalogDeadline(value: number | null | undefined): string {
-  return value
-    ? new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
-    : "Belum ditentukan";
+  return value === null || value === undefined ? "Belum ditentukan" : formatBfgCalendarDate(value);
 }
 
 function formatBatchDeadlineInput(value: number | null | undefined): string {
-  if (!value) return "";
-  const date = new Date(value);
-  const pad = (part: number) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return calendarDateInputValue(value);
 }
 
 function downloadPurchaseSummary(batch: BatchDetail) {
@@ -279,7 +275,7 @@ function AdminBatchDetail() {
                 </label>
                 <Button
                   type="button"
-                  variant="tertiary"
+                  variant="danger"
                   loading={pendingAction === "archive"}
                   loadingLabel="Mengarsipkan…"
                   onClick={() => setConfirmArchive(true)}
@@ -355,7 +351,7 @@ function AdminBatchDetail() {
                   <strong>CATALOG TERHUBUNG · {link.catalogName}</strong>
                   <Button
                     type="button"
-                    variant="tertiary"
+                    variant="secondary"
                     loading={pendingAction === `unlink-${link.catalogId}`}
                     loadingLabel="Melepas tautan…"
                     onClick={() =>
@@ -462,7 +458,7 @@ function AdminBatchDetail() {
                     <div className="form-actions">
                       <Button
                         type="button"
-                        variant="tertiary"
+                        variant="secondary"
                         loading={pendingAction === `unassign-${assignment.assignmentId}`}
                         loadingLabel="Mengeluarkan…"
                         onClick={() =>
@@ -769,7 +765,7 @@ function BatchMetadataForm({
       await updateBatch(batch.batchId, {
         name,
         description,
-        poDeadlineAt: poDeadlineAt ? Date.parse(poDeadlineAt) : undefined,
+        poDeadlineAt: poDeadlineAt ? calendarDateToEndTimestamp(poDeadlineAt) : undefined,
       });
       onDone();
     } catch (reason) {
@@ -794,7 +790,7 @@ function BatchMetadataForm({
         <Field label="Deadline PO" hint="Batas finalisasi roster dan jumlah pembelian sebelum PO dikunci.">
           <input
             className="input"
-            type="datetime-local"
+            type="date"
             value={poDeadlineAt}
             onChange={(event) => setPoDeadlineAt(event.target.value)}
             disabled={disabled || pending}

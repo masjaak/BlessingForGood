@@ -9,11 +9,20 @@ import { fail } from "./lib/errors";
 import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { requiredText } from "./lib/validation";
 import { nextBatchReference } from "./lib/batchNumbers";
+import { calendarDateKey } from "../src/lib/calendar-date";
 
 type DataCtx = QueryCtx | MutationCtx;
 
 export function assertBatchCatalogDeadline(batch: Doc<"batches">, catalog: Doc<"secretCatalogs">): void {
-  if ((batch.poDeadlineAt ?? null) !== (catalog.closesAt ?? null)) {
+  const batchDeadline = batch.poDeadlineAt ?? null;
+  const catalogDeadline = catalog.closesAt ?? null;
+  const sameCalendarDate =
+    batchDeadline === null && catalogDeadline === null
+      ? true
+      : batchDeadline !== null &&
+        catalogDeadline !== null &&
+        calendarDateKey(batchDeadline) === calendarDateKey(catalogDeadline);
+  if (!sameCalendarDate) {
     fail("BATCH_DEADLINE_MISMATCH", "Batch dan Secret Catalog harus memiliki deadline PO yang sama");
   }
 }

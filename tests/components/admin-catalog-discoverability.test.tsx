@@ -97,6 +97,7 @@ describe("Secret Catalog operational discoverability", () => {
     expect(screen.getByText("Nama katalog")).toBeTruthy();
     expect(screen.getByText("Batas pemesanan")).toBeTruthy();
     expect(document.querySelectorAll("#create-catalog .field-hint")).toHaveLength(3);
+    expect(document.querySelector("#create-catalog input[type='date']")).toBeTruthy();
   });
 
   it("exposes Kelola akses from catalog detail", () => {
@@ -142,6 +143,25 @@ describe("Secret Catalog operational discoverability", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Pulihkan katalog" }));
 
     await waitFor(() => expect(restore).toHaveBeenCalledWith({ catalogId: "catalog-archived" }));
+  });
+
+  it("uses a date-only deadline input for an existing catalog", () => {
+    vi.mocked(useQuery)
+      .mockReturnValueOnce({
+        id: "catalog-1",
+        name: "August",
+        status: "draft",
+        description: null,
+        closesAt: Date.parse("2030-08-30T20:21:00.000+07:00"),
+      } as never)
+      .mockReturnValueOnce([] as never)
+      .mockReturnValueOnce([] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    const deadlineInput = screen.getByText("Batas pemesanan").closest("label")?.querySelector("input");
+    expect(deadlineInput?.getAttribute("type")).toBe("date");
+    expect((deadlineInput as HTMLInputElement | null)?.value).toBe("2030-08-30");
   });
 
   it("keeps Buat kode akses actionable only after a catalog exists", () => {

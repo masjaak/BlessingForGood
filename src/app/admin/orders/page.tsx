@@ -449,7 +449,7 @@ function BackfillOrderReferences() {
     <span className="form-actions">
       <Button
         type="button"
-        variant="tertiary"
+        variant="secondary"
         loading={pending}
         loadingLabel="Melengkapi…"
         onClick={async () => {

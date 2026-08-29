@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { formatBfgCalendarDate } from "@/lib/calendar-date";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
 import { productErrorMessage } from "@/domain/prototype/errors";
@@ -191,7 +192,7 @@ export function CustomerCatalog() {
         title={catalog.name}
         description={
           catalog.closingAt
-            ? `Batas pemesanan: ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(catalog.closingAt))}. Customer dapat melakukan preorder sampai tanggal ini.`
+            ? `Batas pemesanan: ${formatBfgCalendarDate(catalog.closingAt)}. Customer dapat melakukan preorder sampai tanggal ini.`
             : "Katalog ini sedang terbuka."
         }
       />

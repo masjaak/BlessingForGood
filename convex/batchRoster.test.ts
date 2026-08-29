@@ -409,21 +409,45 @@ describe("BFG batch roster and assisted orders", () => {
     ).rejects.toThrow("BATCH_LOCKED");
   });
 
-  it("rejects a Batch whose close date differs from its Catalog close date", async () => {
+  it("links a Catalog and Batch on the same calendar date despite different stored minutes", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const catalog = await admin.mutation(api.secretCatalogs.createBundle, {
+      name: "Same Calendar Date Catalog",
+      publisherName: "Same Date Publisher",
+      bookTitle: "Same Date Book",
+      closesAt: Date.parse("2030-08-30T20:21:00.000+07:00"),
+      accessCode: "same-calendar-date-code",
+      variants: [{ format: "PB", isbn: "97800009941", priceAmount: 110000 }],
+    });
+    await admin.mutation(api.secretCatalogs.open, { catalogId: catalog.catalogId });
+    const batch = await admin.mutation(api.batches.create, {
+      name: "Same Calendar Date Batch",
+      poDeadlineAt: Date.parse("2030-08-30T20:22:00.000+07:00"),
+    });
+
+    await expect(
+      admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId }),
+    ).resolves.toMatchObject({
+      catalogLinks: [expect.objectContaining({ catalogId: catalog.catalogId })],
+    });
+  });
+
+  it("rejects a Batch whose calendar date differs from its Catalog close date", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
     const catalog = await admin.mutation(api.secretCatalogs.createBundle, {
       name: "Deadline Mismatch Catalog",
       publisherName: "Deadline Publisher",
       bookTitle: "Deadline Book",
-      closesAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      closesAt: Date.parse("2030-08-30T20:21:00.000+07:00"),
       accessCode: "deadline-mismatch-code",
       variants: [{ format: "PB", isbn: "97800009931", priceAmount: 110000 }],
     });
     await admin.mutation(api.secretCatalogs.open, { catalogId: catalog.catalogId });
     const batch = await admin.mutation(api.batches.create, {
       name: "Mismatched Deadline Batch",
-      poDeadlineAt: Date.now() + 14 * 24 * 60 * 60 * 1000,
+      poDeadlineAt: Date.parse("2030-08-31T20:22:00.000+07:00"),
     });
     await expect(
       admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId }),

@@ -1,5 +1,21 @@
 # BFG SOURCE OF TRUTH
 
+## Admin action and deadline tuning — 2026-08-29
+
+- Operational Admin mutations use a visibly framed existing BFG `Button`
+  variant. Tertiary remains reserved for navigation, support, reset, and
+  intentionally low-emphasis controls whose interaction is already clear.
+  This tuning changes affordance only; callbacks, loading, disabled, and
+  authorization behavior remain unchanged.
+- Secret Catalog `closesAt` and Batch `poDeadlineAt` remain UTC millisecond
+  timestamps. The Catalog/Batch compatibility guard compares their calendar
+  dates in the existing `Asia/Jakarta` presentation timezone, while all other
+  eligibility and lifecycle guards remain unchanged.
+- The relevant Catalog and Batch deadline inputs and displays use a calendar
+  date. A selected date is stored as the end of that `Asia/Jakarta` day so the
+  existing Customer cutoff remains open through the displayed date. Legacy
+  timestamp records are not migrated.
+
 ## Minor stability tuning — 2026-08-29
 
 - Supplier GBP cost remains internal Book Variant data stored as integer pence.

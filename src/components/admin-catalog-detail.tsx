@@ -20,6 +20,7 @@ import {
 } from "@/components/ui";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { calendarDateInputValue, calendarDateToEndTimestamp } from "@/lib/calendar-date";
 
 export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
@@ -62,7 +63,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   if (!catalog) return <div className="state-panel">Katalog tidak ditemukan.</div>;
   const effectiveName = name ?? catalog.name;
   const effectiveDescription = description ?? catalog.description ?? "";
-  const effectiveClosesAt = closesAt ?? (catalog.closesAt ? new Date(catalog.closesAt).toISOString().slice(0, 16) : "");
+  const effectiveClosesAt = closesAt ?? calendarDateInputValue(catalog.closesAt);
 
   async function run(key: string, action: () => Promise<unknown>, success: string) {
     setPending(key);
@@ -106,7 +107,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                   catalogId: id,
                   name: effectiveName,
                   description: effectiveDescription || undefined,
-                  closesAt: effectiveClosesAt ? Date.parse(effectiveClosesAt) : undefined,
+                  closesAt: effectiveClosesAt ? calendarDateToEndTimestamp(effectiveClosesAt) : undefined,
                 }),
               "Katalog tersimpan.",
             );
@@ -124,7 +125,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             <Field label="Batas pemesanan" hint="Customer dapat melakukan preorder sampai tanggal ini.">
               <input
                 className="input"
-                type="datetime-local"
+                type="date"
                 value={effectiveClosesAt}
                 onChange={(event) => setClosesAt(event.target.value)}
               />
@@ -207,7 +208,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             {catalog.status !== "archived" ? (
               <Button
                 type="button"
-                variant="tertiary"
+                variant="danger"
                 loading={pending === "archive"}
                 onClick={() =>
                   setConfirmAction({

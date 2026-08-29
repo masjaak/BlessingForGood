@@ -29,6 +29,17 @@ vi.mock("@/components/admin-nav", () => ({
   AdminNav: () => <nav aria-label="Admin navigation" />,
 }));
 
+type CatalogLinkFixture = {
+  catalogId: string;
+  catalogName: string;
+  closingAt: number | null;
+  createdAt: string;
+  eligibleOrderItemCount: number;
+  eligibleCustomerCount: number;
+  eligibleQuantity: number;
+  publisherCount: number;
+};
+
 const batch = {
   batchId: "batch-1",
   id: "batch-1",
@@ -45,7 +56,7 @@ const batch = {
   customerCount: 0,
   createdAt: "2026-08-27T00:00:00.000Z",
   updatedAt: "2026-08-27T00:00:00.000Z",
-  catalogLinks: [],
+  catalogLinks: [] as CatalogLinkFixture[],
   assignments: [],
   customerRoster: [],
   purchaseSummary: [],
@@ -74,7 +85,7 @@ const rosterItem = {
   assignmentState: "Belum masuk Batch",
 };
 
-function setup() {
+function setup(currentBatch = batch) {
   const linkCatalog = vi.fn().mockResolvedValue({});
   const assignOrderItem = vi.fn().mockResolvedValue({});
   const updateShipmentStage = vi.fn().mockResolvedValue({});
@@ -92,7 +103,7 @@ function setup() {
   } as never);
   vi.mocked(useOperations).mockReturnValue({
     batchList: { page: [] },
-    currentBatch: batch,
+    currentBatch,
     currentBatchUnassigned: [rosterItem],
     updateBatch: vi.fn().mockResolvedValue({}),
     linkCatalog,
@@ -129,6 +140,31 @@ describe("Admin Batch Detail rendered workflow", () => {
     expect(screen.getByText("A Customer")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Masukkan ke Batch" })).toBeTruthy();
     expect(screen.getByText("Ringkasan akan muncul setelah item Roster dimasukkan ke Batch.")).toBeTruthy();
+    const deadlineInput = screen.getByText("Deadline PO").closest("label")?.querySelector("input");
+    expect(deadlineInput?.getAttribute("type")).toBe("date");
+    expect((deadlineInput as HTMLInputElement | null)?.value).toBe("2026-09-01");
+  });
+
+  it("frames the Catalog unlink operation with the existing secondary button variant", () => {
+    setup({
+      ...batch,
+      catalogLinks: [
+        {
+          catalogId: "catalog-1",
+          catalogName: "September Catalog",
+          closingAt: Date.parse("2026-09-01T12:00:00.000Z"),
+          createdAt: "2026-08-27T00:00:00.000Z",
+          eligibleOrderItemCount: 0,
+          eligibleCustomerCount: 0,
+          eligibleQuantity: 0,
+          publisherCount: 0,
+        },
+      ],
+    });
+
+    render(<AdminBatchDetailPage />);
+
+    expect(screen.getByRole("button", { name: "Lepas tautan" }).classList.contains("button-secondary")).toBe(true);
   });
 
   it("persists Catalog linking and roster assignment through the rendered controls", async () => {

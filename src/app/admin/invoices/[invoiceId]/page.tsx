@@ -269,7 +269,7 @@ function AdminInvoiceDetail() {
                       <>
                         <Button
                           type="button"
-                          variant="tertiary"
+                          variant="danger"
                           loading={pendingAction === `release-${allocation.allocationId}`}
                           loadingLabel="Melepaskan…"
                           onClick={() =>
@@ -284,7 +284,7 @@ function AdminInvoiceDetail() {
                         </Button>
                         <Button
                           type="button"
-                          variant="tertiary"
+                          variant="danger"
                           loading={pendingAction === `reverse-${allocation.allocationId}`}
                           loadingLabel="Membalikkan…"
                           onClick={() =>
@@ -329,7 +329,7 @@ function AdminInvoiceDetail() {
                     {transaction.type !== "reversal" && !transaction.reversedByTransactionId ? (
                       <Button
                         type="button"
-                        variant="tertiary"
+                        variant="danger"
                         loading={pendingAction === `transaction-${transaction.transactionId}`}
                         loadingLabel="Membalikkan…"
                         onClick={() =>

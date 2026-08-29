@@ -19,6 +19,7 @@ import { useOperations } from "@/domain/prototype/operations-context";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
 
 function CreateBatchForm() {
   const { createBatch } = useOperations();
@@ -38,7 +39,7 @@ function CreateBatchForm() {
         name,
         referenceCode: referenceCode || undefined,
         description: description || undefined,
-        poDeadlineAt: Date.parse(poDeadlineAt),
+        poDeadlineAt: calendarDateToEndTimestamp(poDeadlineAt),
         etaCargoMonth: etaCargoMonth || undefined,
       });
       setName("");
@@ -68,7 +69,7 @@ function CreateBatchForm() {
           <Field label="Deadline PO" hint="Batas finalisasi roster dan jumlah pembelian sebelum PO dikunci.">
             <input
               className="input"
-              type="datetime-local"
+              type="date"
               value={poDeadlineAt}
               onChange={(event) => setPoDeadlineAt(event.target.value)}
               required
@@ -142,9 +143,7 @@ function AdminBatches() {
                 <p className="subtle">{batch.description || "Tanpa deskripsi"}</p>
                 <div className="summary-line">
                   <span>Deadline PO</span>
-                  <strong>
-                    {batch.poDeadlineAt ? new Date(batch.poDeadlineAt).toLocaleString("id-ID") : "Belum ditentukan"}
-                  </strong>
+                  <strong>{batch.poDeadlineAt ? formatBfgCalendarDate(batch.poDeadlineAt) : "Belum ditentukan"}</strong>
                 </div>
                 <div className="summary-line">
                   <span>ETA Cargo</span>

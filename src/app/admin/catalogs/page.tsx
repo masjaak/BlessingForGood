@@ -22,6 +22,7 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
 
 function CatalogForm() {
   const createCatalog = useMutation(api.secretCatalogs.create);
@@ -37,11 +38,10 @@ function CatalogForm() {
     setError("");
     setIsSubmitting(true);
     try {
-      if (closingAt && Number.isNaN(new Date(closingAt).getTime())) throw new Error("tanggal tutup tidak valid");
       const catalogId = await createCatalog({
         name,
         description: description || undefined,
-        closesAt: closingAt ? new Date(closingAt).getTime() : undefined,
+        closesAt: closingAt ? calendarDateToEndTimestamp(closingAt) : undefined,
       });
       router.push(`/admin/catalogs/${catalogId}`);
     } catch (reason) {
@@ -72,7 +72,7 @@ function CatalogForm() {
           <Field label="Batas pemesanan" hint="Customer dapat melakukan preorder sampai tanggal ini.">
             <input
               className="input"
-              type="datetime-local"
+              type="date"
               value={closingAt}
               onChange={(event) => setClosingAt(event.target.value)}
             />
@@ -146,7 +146,7 @@ function CatalogList() {
             </div>
             <p>
               {catalog.closingAt
-                ? `Batas pemesanan ${new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(catalog.closingAt))}.`
+                ? `Batas pemesanan ${formatBfgCalendarDate(catalog.closingAt)}.`
                 : "Belum ada batas pemesanan."}
             </p>
             <div className="summary-line">
