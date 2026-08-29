@@ -1,5 +1,27 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Admin action and deadline tuning — 2026-08-29
+
+- Confirmed frameless operational Admin mutations are owned by their existing
+  `Button` callsites and now use framed `secondary` or `danger` variants. The
+  shared Button primitive, callbacks, loading/disabled behavior, permissions,
+  navigation links, support/reset controls, and icon controls were not changed.
+- `src/lib/calendar-date.ts` is the single date adapter for the relevant
+  Catalog/Batch deadline UX and comparison. It uses the existing
+  `Asia/Jakarta` display timezone, converts date-only input to that day's end
+  timestamp, and leaves existing UTC millisecond storage unchanged.
+- `convex/batches.ts:assertBatchCatalogDeadline` remains the sole shared
+  Catalog-to-Batch deadline guard. It now compares calendar-date keys while
+  preserving unset-deadline behavior and all other Batch, Customer cutoff,
+  lifecycle, and authorization rules.
+- Focused deadline, date-adapter, and Admin rendered regressions pass. Full
+  Convex and frontend Vitest suites pass sequentially (`27/27` files,
+  `179/179` tests; `46/46` files, `244/244` tests); TypeScript, ESLint,
+  formatting, build, Convex check, and diff checks pass. Commit `a3200dd` is
+  deployed through the canonical Vercel Production path; authenticated
+  Production UAT remains pending without an authorized session or safe
+  fixture.
+
 ## Post-diff memory — minor stability tuning — 2026-08-29
 
 - `src/lib/gbp.ts` owns Admin UI GBP pence↔pounds parsing and formatting.

@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Admin action and deadline tuning — 2026-08-29
+
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+Confirmed frameless Admin mutation/lifecycle controls now use the existing
+framed `secondary` or `danger` Button variants; navigation, support, reset,
+dialog-cancel, and icon controls remain unchanged. Catalog and Batch deadline
+inputs/displays use a calendar date while raw UTC timestamps remain stored.
+The shared Catalog-to-Batch guard compares `closesAt` and `poDeadlineAt` by
+`Asia/Jakarta` calendar date, preserving all other eligibility, lifecycle,
+authorization, and Customer cutoff rules.
+
+Commit `a3200dd58063218d3a1fa5359614e0ccec2f427a` is on `main` and
+`origin/main`. GitHub/Vercel reports Production deployment
+`blessing-for-good-8k0r02k1s-masjaaks-projects.vercel.app` as completed, with
+the configured build path deploying the changed Convex functions to
+Production `clean-eel-522`. Live homepage, public Ready Stock, robots, and
+sitemap checks return expected responses; signed-out Admin Catalogs and Batch
+routes redirect to Clerk sign-in. No Production business record was mutated.
+
+Local deterministic gates pass. Local authenticated rendered QA is blocked by
+the absent local Clerk publishable key, and authorized Production Admin UAT for
+the button appearance and same-day Catalog-to-Batch link remains an operator
+gate; no credentials or fake records were introduced.
+
 ## Minor stability tuning — 2026-08-29
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

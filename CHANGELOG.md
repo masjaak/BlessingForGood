@@ -2,11 +2,31 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-28
+last_updated: 2026-08-29
 source: conversation
 ---
 
 # Changelog
+
+## [admin-action-deadline-tuning] — 2026-08-29
+
+### Fixed
+
+- Framed confirmed operational Admin mutation/lifecycle actions with the
+  existing BFG `secondary`/`danger` Button variants without changing behavior.
+- Changed relevant Catalog and Batch deadline inputs/displays to calendar-date
+  UX while retaining UTC timestamp storage.
+- Made Catalog-to-Batch deadline compatibility compare the existing
+  `Asia/Jakarta` calendar date, so same-day minute differences no longer cause
+  a false mismatch.
+
+### QA
+
+- Added date-adapter, same-day deadline, and Admin rendered-control regressions.
+- Full frontend/Convex Vitest suites, TypeScript, ESLint, format, build,
+  Convex check, and diff checks pass. Commit `a3200dd` is deployed through the
+  canonical Vercel Production path; authenticated Admin UAT remains pending
+  without an authorized session or safe fixture.
 
 ## [clerk-identity-routing-invitation-lifecycle] — 2026-08-28
 

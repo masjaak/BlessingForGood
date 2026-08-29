@@ -1,5 +1,24 @@
 # BFG Global Button Audit
 
+## Admin affordance tuning — 2026-08-29
+
+The scoped Admin audit found operational mutation/lifecycle controls using the
+frameless tertiary treatment. Existing framed variants now own these actions:
+
+- Catalog archive: `src/components/admin-catalog-detail.tsx` → `danger`.
+- Batch archive: `src/app/admin/batches/[batchId]/page.tsx` → `danger`.
+- Catalog unlink and Batch unassign: the same Batch detail route → `secondary`.
+- Invoice allocation release/reversal and transaction reversal:
+  `src/app/admin/invoices/[invoiceId]/page.tsx` → `danger`.
+- Admin order-reference backfill: `src/app/admin/orders/page.tsx` →
+  `secondary`.
+
+`Lepas tautan` keeps its existing callback, loading state, disabled state, and
+authorization path. Navigation, inline links, support/reset actions, dialog
+cancel controls, and icon controls remain tertiary by design. No shared Button
+primitive or global Admin styling changed. Authenticated Production UAT for
+the affected records remains pending.
+
 Status: SOURCE + DETERMINISTIC QA COMPLETE; public/signed-out Production
 render QA complete; authenticated state-specific QA remains an explicit
 qualified gate. Audited against integrated source `f0eddc82` on 2026-08-24.
