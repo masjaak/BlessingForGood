@@ -218,7 +218,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
         page.append(card);
       });
     }
-    const cover = page.locator(".book-cover").first();
+    const cover = page.locator(".e2e-book-cover-fixture .book-cover, .ready-stock-grid .book-cover:has(img)").first();
     const coverImage = cover.locator("img");
     await expect(coverImage).toBeVisible();
     const coverGeometry = await cover.evaluate((element) => {
