@@ -25,6 +25,7 @@ import { orderReference } from "@/domain/prototype/order-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { matchesAdminCatalogRecord, normalizeDiscoveryQuery } from "@/lib/catalog-discovery";
 
 function OrderTable() {
   const { state, updateOrderStatus, dataSource, ordersLoading } = useProduct();
@@ -207,25 +208,60 @@ function ConvexAssistedOrderForm() {
   const [catalogId, setCatalogId] = useState("");
   const [variantId, setVariantId] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [variantSearch, setVariantSearch] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submissionKeyRef = useRef<string | null>(null);
   const catalogs = state.catalogs.filter((candidate) => candidate.status === "open");
   const catalog = catalogs.find((candidate) => candidate.id === catalogId);
   const preorderVariants =
-    catalog?.books.flatMap((book) => book.variants.map((variant) => ({ ...variant, bookTitle: book.title }))) || [];
+    catalog?.books.flatMap((book) =>
+      book.variants.map((variant) => ({
+        ...variant,
+        bookTitle: book.title,
+        publisher: book.publisher,
+        author: book.author,
+      })),
+    ) || [];
   const readyStockVariants =
     readyStockRows
       ?.filter((row) => row.isAvailable && row.availableQuantity > 0)
       .map((row) => ({
         id: row.variantId,
         bookTitle: row.title,
+        publisher: row.publisherName,
+        author: row.author,
         format: row.format,
         isbn: row.isbn,
         price: row.priceAmount,
       })) || [];
   const variants = source === "ready_stock" ? readyStockVariants : preorderVariants;
   const selectedVariant = variants.find((variant) => variant.id === variantId);
+  const normalizedCatalogSearch = normalizeDiscoveryQuery(catalogSearch);
+  const filteredCatalogs = catalogs.filter(
+    (candidate) => !normalizedCatalogSearch || candidate.name.toLowerCase().includes(normalizedCatalogSearch),
+  );
+  const normalizedVariantSearch = normalizeDiscoveryQuery(variantSearch);
+  const filteredVariants = variants.filter((variant) =>
+    matchesAdminCatalogRecord(
+      {
+        title: variant.bookTitle,
+        publisher: variant.publisher,
+        author: variant.author,
+        isbn: variant.isbn,
+      },
+      normalizedVariantSearch,
+    ),
+  );
+  const visibleCatalogs =
+    catalog && !filteredCatalogs.some((candidate) => candidate.id === catalog.id)
+      ? [catalog, ...filteredCatalogs]
+      : filteredCatalogs;
+  const visibleVariants =
+    selectedVariant && !filteredVariants.some((variant) => variant.id === selectedVariant.id)
+      ? [selectedVariant, ...filteredVariants]
+      : filteredVariants;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -245,6 +281,8 @@ function ConvexAssistedOrderForm() {
       setCustomerId("");
       setCatalogId("");
       setVariantId("");
+      setCatalogSearch("");
+      setVariantSearch("");
       setSource("preorder");
       setQuantity("1");
       submissionKeyRef.current = null;
@@ -296,6 +334,8 @@ function ConvexAssistedOrderForm() {
                   setSource(event.target.value as "preorder" | "ready_stock");
                   setCatalogId("");
                   setVariantId("");
+                  setCatalogSearch("");
+                  setVariantSearch("");
                 }}
               >
                 <option value="preorder">Secret Catalog / preorder</option>
@@ -305,41 +345,66 @@ function ConvexAssistedOrderForm() {
             {source === "preorder" ? (
               <label className="field">
                 <span className="field-label">Katalog</span>
+                <input
+                  className="input"
+                  type="search"
+                  value={catalogSearch}
+                  onChange={(event) => setCatalogSearch(event.target.value)}
+                  placeholder="Cari Catalog..."
+                  aria-label="Cari Catalog"
+                />
                 <BFGSelect
+                  aria-label="Katalog"
                   className="select"
                   value={catalogId}
                   onChange={(event) => {
                     setCatalogId(event.target.value);
                     setVariantId("");
+                    setVariantSearch("");
                   }}
                   required
                 >
                   <option value="">Pilih katalog terbuka…</option>
-                  {catalogs.map((catalogOption) => (
+                  {visibleCatalogs.map((catalogOption) => (
                     <option value={catalogOption.id} key={catalogOption.id}>
                       {catalogOption.name}
                     </option>
                   ))}
                 </BFGSelect>
+                {!filteredCatalogs.length ? <span className="subtle">Tidak ada Catalog yang cocok.</span> : null}
               </label>
             ) : null}
           </div>
           <div className="form-grid">
             <label className="field">
               <span className="field-label">Buku / varian</span>
+              <input
+                className="input"
+                type="search"
+                value={variantSearch}
+                onChange={(event) => setVariantSearch(event.target.value)}
+                placeholder="Cari judul, ISBN, publisher, atau penulis..."
+                aria-label="Cari buku atau varian"
+                disabled={source === "preorder" && !catalogId}
+              />
               <BFGSelect
+                aria-label="Buku / varian"
                 className="select"
                 value={variantId}
                 onChange={(event) => setVariantId(event.target.value)}
+                disabled={source === "preorder" && !catalogId}
                 required
               >
                 <option value="">Pilih varian…</option>
-                {variants.map((variant) => (
+                {visibleVariants.map((variant) => (
                   <option value={variant.id} key={variant.id}>
-                    {variant.bookTitle} · {variant.format} · {variant.isbn}
+                    {variant.bookTitle} · {variant.publisher} · {variant.format} · {variant.isbn}
                   </option>
                 ))}
               </BFGSelect>
+              {catalogId && !filteredVariants.length ? (
+                <span className="subtle">Tidak ada varian yang cocok.</span>
+              ) : null}
             </label>
             <label className="field">
               <span className="field-label">Jumlah</span>

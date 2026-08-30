@@ -10,21 +10,138 @@ import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { requiredText } from "./lib/validation";
 import { nextBatchReference } from "./lib/batchNumbers";
 import { calendarDateKey } from "../src/lib/calendar-date";
+import { notifyUser } from "./lib/notifications";
 
 type DataCtx = QueryCtx | MutationCtx;
 
 export function assertBatchCatalogDeadline(batch: Doc<"batches">, catalog: Doc<"secretCatalogs">): void {
-  const batchDeadline = batch.poDeadlineAt ?? null;
-  const catalogDeadline = catalog.closesAt ?? null;
-  const sameCalendarDate =
-    batchDeadline === null && catalogDeadline === null
-      ? true
-      : batchDeadline !== null &&
-        catalogDeadline !== null &&
-        calendarDateKey(batchDeadline) === calendarDateKey(catalogDeadline);
-  if (!sameCalendarDate) {
+  if (!batchCatalogDeadlineMatches(batch, catalog)) {
     fail("BATCH_DEADLINE_MISMATCH", "Batch dan Secret Catalog harus memiliki deadline PO yang sama");
   }
+}
+
+function batchCatalogDeadlineMatches(batch: Doc<"batches">, catalog: Doc<"secretCatalogs">): boolean {
+  const batchDeadline = batch.poDeadlineAt ?? null;
+  const catalogDeadline = catalog.closesAt ?? null;
+  return (
+    (batchDeadline === null && catalogDeadline === null) ||
+    (batchDeadline !== null &&
+      catalogDeadline !== null &&
+      calendarDateKey(batchDeadline) === calendarDateKey(catalogDeadline))
+  );
+}
+
+export async function eligibleReceivingBatches(ctx: DataCtx, catalogId: Id<"secretCatalogs">) {
+  const catalog = await ctx.db.get(catalogId);
+  if (!catalog) return [];
+  const links = await ctx.db
+    .query("catalogBatchLinks")
+    .withIndex("by_catalog", (index) => index.eq("catalogId", catalogId))
+    .take(200);
+  const batches = await Promise.all(links.map((link) => ctx.db.get(link.batchId)));
+  return batches.filter((batch): batch is Doc<"batches"> =>
+    Boolean(batch && !batch.isArchived && !batch.currentShipmentStage && batchCatalogDeadlineMatches(batch, catalog)),
+  );
+}
+
+async function assignOrderItemsToBatch(
+  ctx: MutationCtx,
+  orderId: Id<"orders">,
+  catalogId: Id<"secretCatalogs">,
+  batch: Doc<"batches">,
+  assignedByUserId: Id<"appUsers">,
+) {
+  const order = await ctx.db.get(orderId);
+  if (!order || order.catalogId !== catalogId || order.source === "ready_stock" || order.status !== "submitted") {
+    return { assignedItemCount: 0, assignedQuantity: 0 };
+  }
+  const items = await ctx.db
+    .query("orderItems")
+    .withIndex("by_order", (index) => index.eq("orderId", orderId))
+    .take(200);
+  let assignedItemCount = 0;
+  let assignedQuantity = 0;
+  for (const item of items) {
+    const fulfillableQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+    if (fulfillableQuantity <= 0) continue;
+    const assignments = await ctx.db
+      .query("orderItemBatchAssignments")
+      .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+      .take(200);
+    const assignedTotal = assignments.reduce((total, assignment) => total + assignment.assignedQuantity, 0);
+    const remainingQuantity = fulfillableQuantity - assignedTotal;
+    if (remainingQuantity <= 0) continue;
+    const existing = assignments.find((assignment) => assignment.batchId === batch._id);
+    const now = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        assignedQuantity: existing.assignedQuantity + remainingQuantity,
+        updatedAt: now,
+        assignedByUserId,
+      });
+    } else {
+      await ctx.db.insert("orderItemBatchAssignments", {
+        orderItemId: item._id,
+        batchId: batch._id,
+        assignedQuantity: remainingQuantity,
+        createdAt: now,
+        updatedAt: now,
+        assignedByUserId,
+      });
+    }
+    assignedItemCount += 1;
+    assignedQuantity += remainingQuantity;
+    await recordAudit(ctx, assignedByUserId, "batch.item_auto_assigned", "orderItem", String(item._id), {
+      batchId: String(batch._id),
+      catalogId: String(catalogId),
+    });
+  }
+  if (assignedItemCount > 0) {
+    await notifyUser(ctx, order.customerUserId, {
+      surface: "notification",
+      eventType: "batch.opened",
+      title: "Batch PO tersedia",
+      body: `${batch.name} kini memuat buku dari pesananmu.`,
+      destination: `/account/batches/${batch._id}`,
+      relatedEntityType: "batch",
+      relatedEntityId: String(batch._id),
+    });
+  }
+  return { assignedItemCount, assignedQuantity };
+}
+
+export async function autoAssignOrderItemsForCatalog(
+  ctx: MutationCtx,
+  orderId: Id<"orders">,
+  catalogId: Id<"secretCatalogs">,
+  assignedByUserId: Id<"appUsers">,
+) {
+  const candidates = await eligibleReceivingBatches(ctx, catalogId);
+  if (candidates.length !== 1) return { candidateCount: candidates.length, assignedItemCount: 0, assignedQuantity: 0 };
+  const result = await assignOrderItemsToBatch(ctx, orderId, catalogId, candidates[0], assignedByUserId);
+  return { candidateCount: 1, ...result };
+}
+
+export async function autoAssignCatalogOrders(
+  ctx: MutationCtx,
+  catalogId: Id<"secretCatalogs">,
+  assignedByUserId: Id<"appUsers">,
+) {
+  const candidates = await eligibleReceivingBatches(ctx, catalogId);
+  if (candidates.length !== 1) return { candidateCount: candidates.length, assignedItemCount: 0, assignedQuantity: 0 };
+  // ponytail: bounded backfill scan; add a cursor-based job when one Catalog can exceed 200 submitted orders.
+  const orders = await ctx.db
+    .query("orders")
+    .withIndex("by_catalog_and_status", (index) => index.eq("catalogId", catalogId).eq("status", "submitted"))
+    .take(200);
+  let assignedItemCount = 0;
+  let assignedQuantity = 0;
+  for (const order of orders) {
+    const result = await assignOrderItemsToBatch(ctx, order._id, catalogId, candidates[0], assignedByUserId);
+    assignedItemCount += result.assignedItemCount;
+    assignedQuantity += result.assignedQuantity;
+  }
+  return { candidateCount: 1, assignedItemCount, assignedQuantity };
 }
 
 async function catalogRosterSummary(ctx: DataCtx, catalogId: Id<"secretCatalogs">) {
@@ -262,6 +379,7 @@ export const linkCatalog = mutation({
       createdAt: Date.now(),
       createdByUserId: user._id,
     });
+    await autoAssignCatalogOrders(ctx, args.catalogId, user._id);
     await recordAudit(ctx, user._id, "batch.catalog_linked", "batch", args.batchId, { catalogId: args.catalogId });
     return getBatchSummary(ctx, args.batchId);
   },

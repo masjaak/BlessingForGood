@@ -164,6 +164,7 @@ export const listForAdmin = query({
             return {
               bookId: book._id,
               title: book.title,
+              author: book.author ?? null,
               publisherName: publisher?.name || "—",
               publicationStatus: book.publicationStatus,
               variantId: variant._id,

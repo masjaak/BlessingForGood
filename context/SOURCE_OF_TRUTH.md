@@ -1,5 +1,35 @@
 # BFG SOURCE OF TRUTH
 
+## Batch auto-assignment, operational recap, and assisted-order search — 2026-08-30
+
+- Source contract: `Catalog → Batch` remains the Admin's procurement decision;
+  `orderItemBatchAssignments` remains the only assignment authority. A submitted
+  eligible preorder item is assigned server-side only when its Catalog resolves
+  to exactly one non-archived, editable Batch with the existing compatible
+  deadline. Existing eligible unassigned items are backfilled by the same
+  server-authoritative Catalog-link mutation. Zero or ambiguous targets remain
+  safe exceptions; manual assignment remains for correction and exception work.
+- Visual contract: the Admin Batch detail leads with a compact assignment/order
+  recap and a separate exception list. Recap fields use order-item, Batch,
+  invoice, and payment snapshots; format remains the Book variant format
+  (`BB`, `PB`, `HB`), and no GPE formula is invented without a canonical source.
+  Customer invoice status keeps the existing BFG status treatment.
+- Search contract: assisted-order Catalog discovery searches the already
+  eligible open Catalog projection by name. Book/Variant discovery searches
+  title, ISBN, publisher, and author only within the selected Catalog. Search
+  changes discovery, not server price snapshots or order mutation authority.
+  Existing `BFGSelect` remains the selector; the smallest BFG-styled search
+  input is used around it rather than adding a new combobox library.
+- Finance audit: the current invoice owner is `convex/invoices.ts`, where one
+  active invoice is associated with one order. Therefore two Catalog orders by
+  one Customer currently produce one invoice per order; this ticket audits and
+  documents that behavior and does not change invoice grouping.
+- Protected boundaries: Auth, Membership, Secret Catalog access, Book Master,
+  Catalog eligibility, Ready Stock, Purchase Summary, Lock PO, Shipment,
+  Finance ledgers, and existing order snapshot behavior remain unchanged except
+  for the explicitly traced assignment, recap, picker-discovery, and status
+  projections above.
+
 ## Adaptive natural-ratio book cover frame — 2026-08-30
 
 - This is a frontend-only presentation correction. The previous `contain` fix

@@ -41,7 +41,9 @@ describe("BFG invoice persistence", () => {
       invoiceId: invoice.invoiceId,
       invoiceNumber: invoice.invoiceNumber,
     });
-    expect(await admin.query(api.invoices.getByInvoiceNumberForAdmin, { invoiceNumber: invoice.invoiceNumber })).toMatchObject({
+    expect(
+      await admin.query(api.invoices.getByInvoiceNumberForAdmin, { invoiceNumber: invoice.invoiceNumber }),
+    ).toMatchObject({
       invoiceId: invoice.invoiceId,
       invoiceNumber: invoice.invoiceNumber,
     });
@@ -95,6 +97,44 @@ describe("BFG invoice persistence", () => {
         .collect(),
     );
     expect(invoices.filter((invoice) => invoice.status !== "void")).toHaveLength(1);
+  });
+
+  it("keeps one invoice per order when one customer orders from two catalogs", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const firstCatalog = await createOpenCatalog(admin, "Invoice Catalog A", "2347", "invoice-code-a");
+    const secondCatalog = await createOpenCatalog(admin, "Invoice Catalog B", "2348", "invoice-code-b");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "invoice-code-a" });
+    const firstOrder = await customer.mutation(api.orders.submit, {
+      catalogId: firstCatalog.catalogId,
+      customerName: "Multi Catalog Customer",
+      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1 }],
+    });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "invoice-code-b" });
+    const secondOrder = await customer.mutation(api.orders.submit, {
+      catalogId: secondCatalog.catalogId,
+      customerName: "Multi Catalog Customer",
+      items: [{ variantId: secondCatalog.variantIds[0], quantity: 1 }],
+    });
+    const firstInvoice = await admin.mutation(api.invoices.create, {
+      orderId: firstOrder.orderId,
+      depositRequirementMode: "none",
+    });
+    const secondInvoice = await admin.mutation(api.invoices.create, {
+      orderId: secondOrder.orderId,
+      depositRequirementMode: "none",
+    });
+    await admin.mutation(api.invoices.issue, { invoiceId: firstInvoice.invoiceId });
+    await admin.mutation(api.invoices.issue, { invoiceId: secondInvoice.invoiceId });
+
+    const mine = await customer.query(api.invoices.listMine, { paginationOpts: { numItems: 10, cursor: null } });
+    expect(mine.page).toHaveLength(2);
+    expect(new Set(mine.page.map((invoice) => String(invoice.invoiceId)))).toEqual(
+      new Set([String(firstInvoice.invoiceId), String(secondInvoice.invoiceId)]),
+    );
+    expect(new Set(mine.page.map((invoice) => String(invoice.orderId)))).toEqual(
+      new Set([String(firstOrder.orderId), String(secondOrder.orderId)]),
+    );
   });
 
   it("backfills legacy invoice references without changing invoice identity or money", async () => {

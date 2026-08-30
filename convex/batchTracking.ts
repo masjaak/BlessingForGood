@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { assertBatchCatalogDeadline, getBatchSummary } from "./batches";
+import { assertBatchCatalogDeadline, eligibleReceivingBatches, getBatchSummary } from "./batches";
 import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { canTransitionShipment } from "./lib/shipmentTransitions";
@@ -66,6 +66,11 @@ type AdminAssignment = {
   supplierPriceGbpMinor: number | null;
   assignedQuantity: number;
   orderedQuantity: number;
+  orderDate: string;
+  etaCargoMonth: string | null;
+  dpAmount: number;
+  paymentStatus: Doc<"invoices">["paymentStatus"];
+  gpe: null;
 };
 
 type RosterItem = Pick<
@@ -550,8 +555,21 @@ export const getForAdmin = query({
     const variantIds = [...new Set(loaded.map(({ orderItem }) => orderItem.bookVariantId))];
     const variants = await Promise.all(variantIds.map((variantId) => ctx.db.get(variantId)));
     const variantById = new Map(variantIds.map((variantId, index) => [variantId, variants[index]]));
+    const orderIds = [...new Set(loaded.map(({ order }) => order._id))];
+    const invoiceRows = await Promise.all(
+      orderIds.map((orderId) =>
+        ctx.db
+          .query("invoices")
+          .withIndex("by_order", (index) => index.eq("orderId", orderId))
+          .take(50),
+      ),
+    );
+    const invoiceByOrder = new Map(
+      orderIds.map((orderId, index) => [orderId, invoiceRows[index].find((invoice) => invoice.status !== "void")]),
+    );
     const assignedItems: AdminAssignment[] = loaded.flatMap(({ assignment, orderItem, order }) => {
       if (!order.catalogId || order.source === "ready_stock") return [];
+      const invoice = invoiceByOrder.get(order._id);
       return [
         {
           assignmentId: assignment._id,
@@ -572,6 +590,11 @@ export const getForAdmin = query({
           supplierPriceGbpMinor: variantById.get(orderItem.bookVariantId)?.supplierPriceGbpMinor ?? null,
           assignedQuantity: assignment.assignedQuantity,
           orderedQuantity: orderItem.quantity,
+          orderDate: new Date(order.submittedAt).toISOString(),
+          etaCargoMonth: summary.etaCargoMonth,
+          dpAmount: invoice?.allocatedDepositAmount ?? 0,
+          paymentStatus: invoice?.paymentStatus ?? "unpaid",
+          gpe: null,
         },
       ];
     });
@@ -663,6 +686,14 @@ export const listUnassignedForAdmin = query({
         }),
       ),
     );
+    const receivingBatchCounts = new Map(
+      await Promise.all(
+        [...catalogIds].map(
+          async (catalogId) =>
+            [catalogId, (await eligibleReceivingBatches(ctx, catalogId as Id<"secretCatalogs">)).length] as const,
+        ),
+      ),
+    );
     // ponytail: bounded 200-order/item scan; add a roster index when BFG volume exceeds this ceiling.
     const orders = await ctx.db
       .query("orders")
@@ -707,11 +738,13 @@ export const listUnassignedForAdmin = query({
             assignedToBatchQuantity,
             remainingQuantity: fulfillableQuantity - assignedQuantity,
             assignmentState:
-              assignedToBatchQuantity > 0
-                ? "Sebagian masuk Batch ini"
-                : assignedQuantity > 0
-                  ? "Sebagian masuk Batch lain"
-                  : "Belum masuk Batch",
+              (receivingBatchCounts.get(String(order.catalogId)) || 0) > 1
+                ? "Tujuan Batch ambigu"
+                : assignedToBatchQuantity > 0
+                  ? "Sebagian masuk Batch ini"
+                  : assignedQuantity > 0
+                    ? "Sebagian masuk Batch lain"
+                    : "Belum masuk Batch",
           });
         }
         if (result.length >= 200) return result;

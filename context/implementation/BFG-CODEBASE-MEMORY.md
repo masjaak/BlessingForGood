@@ -1,5 +1,48 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Batch auto-assignment, operational recap, and assisted-order search — 2026-08-30
+
+- Request: remove the linear Admin assignment step for normal eligible
+  preorder items, make the Batch surface operationally scannable, add search
+  to assisted-order Catalog and Book/Variant pickers, and audit invoice and
+  Customer payment visibility without changing finance grouping.
+- Final Batch contract: `Catalog → Batch` remains the Admin procurement
+  decision. The server uses `orderItemBatchAssignments` as the only authority.
+  Existing submitted eligible items are backfilled when a Catalog link leaves
+  exactly one valid, editable, non-archived, unlocked receiving Batch; future
+  submitted eligible items use the same resolver. Zero candidates remain
+  unassigned, more than one candidate remains an explicit Admin exception,
+  and manual assignment remains for correction/fallback.
+- Code owners: `convex/batches.ts` owns the receiving resolver and link
+  backfill; `convex/orders.ts` owns the submit/assisted-order server boundary;
+  `convex/batchTracking.ts` owns the Admin roster/recap projection and
+  ambiguity state; `src/app/admin/batches/[batchId]/page.tsx` owns the compact
+  recap and exception presentation.
+- Recap sources: order `submittedAt`, Customer/order snapshots, order-item
+  title/ISBN/Publisher/format/quantity/price snapshots, Batch `etaCargoMonth`,
+  invoice `allocatedDepositAmount`, and invoice `paymentStatus`. GPE has no
+  canonical BFG source and is intentionally unavailable; no formula was
+  invented.
+- Finance audit: `convex/invoices.ts` associates one active invoice with one
+  order, so one Customer ordering from Catalog A and Catalog B currently sees
+  two invoices. Grouping was not changed. Customer invoice list/detail already
+  exposes the canonical unpaid, partial, and paid status labels with BFG
+  status badges; no second payment state machine was added.
+- Search contract: `src/app/admin/orders/page.tsx` searches eligible open
+  Catalog names and selected-Catalog variants by title, ISBN, publisher, and
+  author. Existing `BFGSelect` controls remain the selectors, with BFG-styled
+  native search inputs for discovery only; server pricing snapshots and order
+  mutations remain authoritative.
+- Evidence: deterministic 100-item backfill/future-order, zero/ambiguous/
+  locked-target, recap-finance, invoice-grouping, picker-search, customer
+  payment-visibility, full Vitest/Convex/frontend regression, TypeScript,
+  ESLint, format, build, Convex check, and diff check pass. Local browser smoke
+  could not render because the checkout has no Clerk publishable key and the
+  escalated browser could not reach the local loopback server. No Production
+  data was created or changed; deployment and authenticated Production UAT
+  remain pending.
+- FINAL VERDICT: IMPLEMENTED; PRODUCTION GATE PENDING
+
 ## Post-diff memory — Adaptive natural-ratio book cover frame — 2026-08-30
 
 - Request: remove the remaining visible top/bottom or side gap around uploaded

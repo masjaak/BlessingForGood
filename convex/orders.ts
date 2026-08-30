@@ -14,6 +14,7 @@ import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/
 import { positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
 import { enforceRateLimit } from "./lib/rateLimit";
+import { autoAssignOrderItemsForCatalog } from "./batches";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
@@ -241,6 +242,7 @@ export const submit = mutation({
       resolved,
       catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
     );
+    await autoAssignOrderItemsForCatalog(ctx, order.orderId, args.catalogId, user._id);
     await notifyAdmins(ctx, {
       surface: "notification",
       eventType: "order.submitted",
@@ -557,6 +559,7 @@ export const createAssisted = mutation({
         resolved,
         catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
       );
+      await autoAssignOrderItemsForCatalog(ctx, order.orderId, args.catalogId, actor._id);
       await recordAudit(ctx, actor._id, "order.admin_assisted_created", "order", order.orderId, {
         source: "admin_assisted",
       });
@@ -655,6 +658,21 @@ export const edit = mutation({
       .query("orderItems")
       .withIndex("by_order", (query) => query.eq("orderId", order._id))
       .collect();
+    const oldAssignments = (
+      await Promise.all(
+        oldItems.map((item) =>
+          ctx.db
+            .query("orderItemBatchAssignments")
+            .withIndex("by_order_item", (query) => query.eq("orderItemId", item._id))
+            .take(200),
+        ),
+      )
+    ).flat();
+    for (const assignment of oldAssignments) {
+      const batch = await ctx.db.get(assignment.batchId);
+      if (batch?.isArchived || batch?.currentShipmentStage) fail("ORDER_LOCKED");
+    }
+    for (const assignment of oldAssignments) await ctx.db.delete(assignment._id);
     for (const item of oldItems) await ctx.db.delete(item._id);
     for (const item of resolved) {
       await ctx.db.insert("orderItems", {
@@ -688,6 +706,7 @@ export const edit = mutation({
       changedByUserId: user._id,
       note: "Order edited before catalog close",
     });
+    await autoAssignOrderItemsForCatalog(ctx, order._id, order.catalogId, user._id);
     return orderView(ctx, order._id);
   },
 });

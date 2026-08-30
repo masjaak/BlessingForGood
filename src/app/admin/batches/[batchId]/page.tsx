@@ -19,7 +19,13 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
-import { shipmentStageLabels, shipmentStages } from "@/domain/prototype/operations";
+import {
+  formatCargoEta,
+  invoicePaymentStatusLabel,
+  shipmentStageLabels,
+  shipmentStages,
+} from "@/domain/prototype/operations";
+import { formatIdr } from "@/domain/prototype/logic";
 import { useOperations, type BatchDetail } from "@/domain/prototype/operations-context";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
@@ -102,15 +108,10 @@ function AdminBatchDetail() {
   const linked = new Set(currentBatch.catalogLinks.map((link) => String(link.catalogId)));
   const availableCatalogs = state.catalogs.filter((catalog) => !linked.has(catalog.id));
   const rosterLocked = currentBatch.rosterLocked;
-  const customerTargets = currentBatchUnassigned.reduce<
-    Array<{ customerUserId: string; customerName: string; items: typeof currentBatchUnassigned }>
-  >((groups, item) => {
-    const existing = groups.find((group) => group.customerUserId === String(item.customerUserId));
-    if (existing) existing.items.push(item);
-    else groups.push({ customerUserId: String(item.customerUserId), customerName: item.customerName, items: [item] });
-    return groups;
-  }, []);
-
+  const eligibleOrderItemCount = currentBatch.catalogLinks.reduce(
+    (total, link) => total + link.eligibleOrderItemCount,
+    0,
+  );
   function movableBatches(catalogId: string) {
     return (batchList?.page || []).filter(
       (batch) =>
@@ -211,8 +212,8 @@ function AdminBatchDetail() {
             </p>
           ) : null}
           <p className="subtle action-support">
-            Alur kerja: Informasi Batch → Catalog terhubung → Roster pesanan eligible → Masukkan ke Batch → Purchase
-            Summary → Kunci PO → shipment.
+            Alur kerja: Informasi Batch → Catalog terhubung → pesanan eligible masuk otomatis bila tujuan tunggal →
+            rekap dan pengecualian → Purchase Summary → Kunci PO → shipment.
           </p>
           <Card style={{ order: 1 }}>
             <span className="card-kicker">1. Informasi Batch</span>
@@ -337,8 +338,9 @@ function AdminBatchDetail() {
               </div>
             </div>
             <p className="subtle">
-              Hubungkan Catalog untuk mengambil preorder yang memenuhi syarat ke Roster Batch. Item baru masuk ke Batch
-              setelah Admin melakukan assignment; melepas tautan hanya menghapus relasi.
+              Hubungkan Catalog untuk menetapkan siklus procurement penerima. Pesanan eligible dari Catalog dengan tepat
+              satu Batch yang masih dapat diubah akan masuk otomatis; tujuan kosong atau ambigu muncul sebagai
+              pengecualian. Melepas tautan hanya menghapus relasi.
             </p>
             {!currentBatch.catalogLinks.length ? (
               <p className="subtle">
@@ -421,87 +423,134 @@ function AdminBatchDetail() {
           <Card style={{ order: 4 }}>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">4. Masukkan item ke Batch</span>
-                <h2>{currentBatch.assignments.length} penugasan</h2>
+                <span className="card-kicker">4. Rekap Pesanan</span>
+                <h2>{currentBatch.assignments.length} item masuk Batch</h2>
               </div>
             </div>
-            <p className="subtle">Masukkan ke Batch untuk memasukkan item ke pembelian/cargo ini.</p>
+            <p className="subtle">
+              Data operasional memakai snapshot order dan catatan keuangan kanonik. Format adalah varian buku; DP adalah
+              deposit yang benar-benar teralokasi.
+            </p>
             {currentBatch.assignments.length ? (
-              currentBatch.assignments.map((assignment) => (
-                <div className="content-stack" key={assignment.assignmentId}>
-                  <div className="summary-line">
-                    <span>
-                      {assignment.assignedQuantity}/{assignment.orderedQuantity} × {assignment.bookTitle} ·{" "}
-                      {assignment.publisherName} · {assignment.format} · {assignment.customerName}
-                      <br />
-                      <span className="subtle">
-                        memberCode: {assignment.customerMemberCode || "—"} · {assignment.isbn} ·{" "}
-                        {assignment.catalogName}
-                        <br />
-                        Order:{" "}
-                        {assignment.orderCode || `BFG-ORD-LEGACY-${String(assignment.orderId).slice(-8).toUpperCase()}`}
-                        <br />
-                        Status: Masuk Batch ini
-                      </span>
-                    </span>
-                    <span className="subtle">IDR {assignment.unitPriceAmount.toLocaleString("id-ID")}</span>
-                  </div>
-                  {!rosterLocked ? (
-                    <AssignmentQuantityForm
-                      assignment={assignment}
-                      batchId={batchId}
-                      assignOrderItem={assignOrderItem}
-                      onDone={() => setMessage("Jumlah penugasan diperbarui.")}
-                    />
-                  ) : null}
-                  {!rosterLocked ? (
-                    <div className="form-actions">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        loading={pendingAction === `unassign-${assignment.assignmentId}`}
-                        loadingLabel="Mengeluarkan…"
-                        onClick={() =>
-                          void run(
-                            () => unassignOrderItem(assignment.orderItemId, batchId),
-                            "Item dikeluarkan dari Batch.",
-                            `unassign-${assignment.assignmentId}`,
-                          )
-                        }
-                      >
-                        Keluarkan dari Batch
-                      </Button>
-                      {movableBatches(String(assignment.catalogId)).length ? (
-                        <label className="field">
-                          <span className="field-label">Pindahkan ke</span>
-                          <BFGSelect
-                            className="select"
-                            defaultValue=""
-                            onChange={(event) => {
-                              if (event.target.value) {
-                                void run(
-                                  () => moveOrderItem(assignment.orderItemId, batchId, event.target.value),
-                                  "Item dipindahkan ke Batch.",
-                                  `move-${assignment.assignmentId}`,
-                                );
-                              }
-                            }}
-                          >
-                            <option value="">Pilih batch yang dapat diubah…</option>
-                            {movableBatches(String(assignment.catalogId)).map((candidate) => (
-                              <option key={candidate.batchId} value={candidate.batchId}>
-                                {candidate.name}
-                              </option>
-                            ))}
-                          </BFGSelect>
-                        </label>
-                      ) : null}
-                    </div>
-                  ) : null}
+              <>
+                <div className="table-wrap">
+                  <table className="data-table batch-recap-table">
+                    <caption className="sr-only">Rekap operasional pesanan Batch</caption>
+                    <thead>
+                      <tr>
+                        <th>Tanggal pesan</th>
+                        <th>Customer</th>
+                        <th>Buku</th>
+                        <th>Format</th>
+                        <th>Qty</th>
+                        <th>Status pembayaran</th>
+                        <th>DP</th>
+                        <th>Harga</th>
+                        <th>ISBN</th>
+                        <th>Publisher</th>
+                        <th>ETA</th>
+                        <th>GPE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentBatch.assignments.map((assignment) => (
+                        <tr key={assignment.assignmentId}>
+                          <td>{formatBfgCalendarDate(assignment.orderDate)}</td>
+                          <td>
+                            <strong>{assignment.customerName}</strong>
+                            <br />
+                            <span className="subtle">{assignment.customerMemberCode || "—"}</span>
+                            <br />
+                            <span className="subtle">
+                              {assignment.orderCode ||
+                                `BFG-ORD-LEGACY-${String(assignment.orderId).slice(-8).toUpperCase()}`}
+                            </span>
+                          </td>
+                          <td>{assignment.bookTitle}</td>
+                          <td>{assignment.format}</td>
+                          <td>
+                            {assignment.assignedQuantity}/{assignment.orderedQuantity}
+                          </td>
+                          <td>
+                            <StatusBadge tone={assignment.paymentStatus === "paid" ? "positive" : "warning"}>
+                              {invoicePaymentStatusLabel(assignment.paymentStatus)}
+                            </StatusBadge>
+                          </td>
+                          <td>{formatIdr(assignment.dpAmount)}</td>
+                          <td>{formatIdr(assignment.unitPriceAmount)}</td>
+                          <td>{assignment.isbn}</td>
+                          <td>{assignment.publisherName}</td>
+                          <td>{formatCargoEta(assignment.etaCargoMonth)}</td>
+                          <td>{assignment.gpe ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))
+                {!rosterLocked ? (
+                  <details className="content-stack">
+                    <summary>Koreksi assignment</summary>
+                    {currentBatch.assignments.map((assignment) => (
+                      <div className="content-stack" key={assignment.assignmentId}>
+                        <strong>
+                          {assignment.customerName} · {assignment.bookTitle} · {assignment.assignedQuantity}/
+                          {assignment.orderedQuantity}
+                        </strong>
+                        <AssignmentQuantityForm
+                          assignment={assignment}
+                          batchId={batchId}
+                          assignOrderItem={assignOrderItem}
+                          onDone={() => setMessage("Jumlah penugasan diperbarui.")}
+                        />
+                        <div className="form-actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            loading={pendingAction === `unassign-${assignment.assignmentId}`}
+                            loadingLabel="Mengeluarkan…"
+                            onClick={() =>
+                              void run(
+                                () => unassignOrderItem(assignment.orderItemId, batchId),
+                                "Item dikeluarkan dari Batch.",
+                                `unassign-${assignment.assignmentId}`,
+                              )
+                            }
+                          >
+                            Keluarkan dari Batch
+                          </Button>
+                          {movableBatches(String(assignment.catalogId)).length ? (
+                            <label className="field">
+                              <span className="field-label">Pindahkan ke</span>
+                              <BFGSelect
+                                className="select"
+                                defaultValue=""
+                                onChange={(event) => {
+                                  if (event.target.value) {
+                                    void run(
+                                      () => moveOrderItem(assignment.orderItemId, batchId, event.target.value),
+                                      "Item dipindahkan ke Batch.",
+                                      `move-${assignment.assignmentId}`,
+                                    );
+                                  }
+                                }}
+                              >
+                                <option value="">Pilih batch yang dapat diubah…</option>
+                                {movableBatches(String(assignment.catalogId)).map((candidate) => (
+                                  <option key={candidate.batchId} value={candidate.batchId}>
+                                    {candidate.name}
+                                  </option>
+                                ))}
+                              </BFGSelect>
+                            </label>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </details>
+                ) : null}
+              </>
             ) : (
-              <p className="subtle">Belum ada item pesanan yang ditugaskan ke batch ini.</p>
+              <p className="subtle">Belum ada pesanan yang masuk ke Batch ini.</p>
             )}
           </Card>
 
@@ -594,49 +643,21 @@ function AdminBatchDetail() {
           <Card style={{ order: 3 }}>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">3. Roster pesanan · eligible</span>
-                <h2>{currentBatchUnassigned.length} item siap diproses</h2>
+                <span className="card-kicker">3. Roster Pesanan</span>
+                <h2>{eligibleOrderItemCount} item siap diproses</h2>
               </div>
             </div>
-            <p className="subtle">Daftar preorder Customer yang dapat dimasukkan ke siklus procurement ini.</p>
-            {customerTargets.length ? (
-              <div className="content-stack">
-                <span className="card-kicker">Target pelanggan</span>
-                {customerTargets.map((target) => (
-                  <div className="summary-line" key={target.customerUserId}>
-                    <span>
-                      <strong>{target.customerName}</strong>
-                      <br />
-                      <span className="subtle">{target.items.length} item pesanan masih tersedia</span>
-                    </span>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      loading={pendingAction === `target-${target.customerUserId}`}
-                      loadingLabel="Memasukkan…"
-                      disabled={rosterLocked || pendingAction !== null}
-                      onClick={() =>
-                        void run(
-                          async () => {
-                            for (const item of target.items) {
-                              await assignOrderItem(
-                                item.orderItemId,
-                                batchId,
-                                item.assignedToBatchQuantity + item.remainingQuantity,
-                              );
-                            }
-                          },
-                          `${target.customerName} ditambahkan ke roster.`,
-                          `target-${target.customerUserId}`,
-                        )
-                      }
-                    >
-                      Masukkan pelanggan ke Batch
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <p className="subtle">
+              Item normal masuk otomatis setelah Catalog memiliki satu Batch penerima. Hanya item tanpa tujuan, tujuan
+              ambigu, atau koreksi yang membutuhkan keputusan Admin.
+            </p>
+            <div className="summary-line">
+              <span>Rekap assignment</span>
+              <strong>
+                {currentBatch.assignments.length} masuk Batch · {currentBatchUnassigned.length} perlu tindakan
+              </strong>
+            </div>
+            {currentBatchUnassigned.length ? <h3>Perlu tindakan</h3> : null}
             {currentBatchUnassigned.length ? (
               currentBatchUnassigned.map((item) => (
                 <div className="summary-line" key={item.orderItemId}>
@@ -676,7 +697,7 @@ function AdminBatchDetail() {
                 </div>
               ))
             ) : (
-              <p className="subtle">Belum ada item yang bisa dimasukkan ke Batch.</p>
+              <p className="subtle">Semua pesanan eligible sudah masuk otomatis atau belum memiliki pengecualian.</p>
             )}
           </Card>
 

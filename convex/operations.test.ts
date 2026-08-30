@@ -100,13 +100,13 @@ describe("BFG batches and shipment tracking", () => {
     const { admin, customer } = await setupUsers(t);
     const catalog = await createOpenCatalog(admin, "Operations Main", "1002", "catalog-1002");
     const otherCatalog = await createOpenCatalog(admin, "Operations Other", "1003", "catalog-1003");
-    const order = await createOwnedOrder(customer, catalog.catalogId as string, catalog.variantIds[0] as string, "catalog-1002");
     const mainBatch = await admin.mutation(api.batches.create, { name: "Cargo Main" });
     const secondBatch = await admin.mutation(api.batches.create, { name: "Cargo Second" });
     const unrelatedBatch = await admin.mutation(api.batches.create, { name: "Cargo Other" });
     await admin.mutation(api.batches.linkCatalog, { batchId: mainBatch.batchId, catalogId: catalog.catalogId });
     await admin.mutation(api.batches.linkCatalog, { batchId: secondBatch.batchId, catalogId: catalog.catalogId });
     await admin.mutation(api.batches.linkCatalog, { batchId: unrelatedBatch.batchId, catalogId: otherCatalog.catalogId });
+    const order = await createOwnedOrder(customer, catalog.catalogId as string, catalog.variantIds[0] as string, "catalog-1002");
     await expect(
       admin.mutation(api.batchTracking.assignOrderItem, {
         orderItemId: order.items[0]._id,
@@ -140,16 +140,11 @@ describe("BFG batches and shipment tracking", () => {
     const order = await createOwnedOrder(customer, catalog.catalogId as string, catalog.variantIds[0] as string, "catalog-1005");
     const batch = await admin.mutation(api.batches.create, { name: "Cargo Order" });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
-    await admin.mutation(api.batchTracking.assignOrderItem, {
-      orderItemId: order.items[0]._id,
-      batchId: batch.batchId,
-      assignedQuantity: 1,
-    });
     const detail = await admin.query(api.batchTracking.getForOrderAdmin, { orderId: order.orderId });
     expect(detail.items[0]).toMatchObject({
       orderItemId: order.items[0]._id,
       orderedQuantity: 2,
-      assignments: [{ batchId: batch.batchId, assignedQuantity: 1 }],
+      assignments: [{ batchId: batch.batchId, assignedQuantity: 2 }],
     });
   });
 
@@ -160,11 +155,6 @@ describe("BFG batches and shipment tracking", () => {
     const order = await createOwnedOrder(customer, catalog.catalogId as string, catalog.variantIds[0] as string, "catalog-1004");
     const batch = await admin.mutation(api.batches.create, { name: "Cargo Timeline" });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
-    await admin.mutation(api.batchTracking.assignOrderItem, {
-      orderItemId: order.items[0]._id,
-      batchId: batch.batchId,
-      assignedQuantity: 1,
-    });
     await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
     await admin.mutation(api.batchTracking.updateShipmentStage, {
       batchId: batch.batchId,

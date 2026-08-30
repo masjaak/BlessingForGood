@@ -134,10 +134,8 @@ describe("Admin Batch Detail rendered workflow", () => {
     const cards = [...container.querySelectorAll(".admin-content > .card")];
 
     expect(cards.map((card) => Number((card as HTMLElement).style.order))).toEqual([1, 6, 7, 2, 4, 4, 5, 3, 8]);
-    expect(
-      screen.getByText(/Hubungkan Catalog untuk mengambil preorder yang memenuhi syarat ke\s+Roster Batch/),
-    ).toBeTruthy();
-    expect(screen.getByText("A Customer")).toBeTruthy();
+    expect(screen.getByText(/Hubungkan Catalog untuk menetapkan siklus procurement penerima/)).toBeTruthy();
+    expect(screen.getByText(/A Customer/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Masukkan ke Batch" })).toBeTruthy();
     expect(screen.getByText("Ringkasan akan muncul setelah item Roster dimasukkan ke Batch.")).toBeTruthy();
     const deadlineInput = screen.getByText("Deadline PO").closest("label")?.querySelector("input");
