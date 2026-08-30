@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useRef, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
@@ -24,22 +25,35 @@ import type { OrderStatus } from "@/domain/prototype/types";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
+import { asOrder, type OrderView } from "@/domain/prototype/convex-store";
 import { SiteShell } from "@/components/site-shell";
 import { matchesAdminCatalogRecord, normalizeDiscoveryQuery } from "@/lib/catalog-discovery";
 
 function OrderTable() {
   const { state, updateOrderStatus, dataSource, ordersLoading } = useProduct();
+  const pagination = useAdminCursorPagination();
+  const adminOrders = useQuery(
+    api.orders.listForAdmin,
+    dataSource === "convex" ? { paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor } } : "skip",
+  );
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
-  if (ordersLoading) {
+  const pageOrders = Array.isArray(adminOrders)
+    ? state.orders
+    : adminOrders?.page
+        .map((order) => asOrder(order as OrderView))
+        .filter((order): order is NonNullable<typeof order> => Boolean(order));
+  const orders = dataSource === "convex" ? pageOrders || [] : state.orders;
+  if (ordersLoading || (dataSource === "convex" && adminOrders === undefined)) {
     return (
       <LoadingRegion label="Memuat pesanan">
         <SkeletonTable rows={6} />
       </LoadingRegion>
     );
   }
-  if (state.orders.length === 0)
+  if (orders.length === 0)
     return (
       <EmptyState
         title="Belum ada pesanan untuk ditinjau"
@@ -51,7 +65,7 @@ function OrderTable() {
         }
       />
     );
-  const rows = state.orders.filter((order) => {
+  const rows = orders.filter((order) => {
     if (statusFilter && order.status !== statusFilter) return false;
     const needle = search.trim().toLowerCase();
     return (
@@ -75,7 +89,10 @@ function OrderTable() {
             className="input"
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              pagination.reset();
+              setSearch(event.target.value);
+            }}
             placeholder="Pelanggan, pesanan, atau buku"
           />
         </Field>
@@ -83,7 +100,10 @@ function OrderTable() {
           <BFGSelect
             className="select"
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as OrderStatus | "")}
+            onChange={(event) => {
+              pagination.reset();
+              setStatusFilter(event.target.value as OrderStatus | "");
+            }}
           >
             <option value="">Semua</option>
             <option value="submitted">Masuk</option>
@@ -194,13 +214,24 @@ function OrderTable() {
           mascotVariant={false}
         />
       )}
+      {!Array.isArray(adminOrders) && adminOrders ? (
+        <AdminPagination
+          {...pagination}
+          rowCount={rows.length}
+          isDone={adminOrders.isDone}
+          continueCursor={adminOrders.continueCursor}
+        />
+      ) : null}
     </div>
   );
 }
 
 function ConvexAssistedOrderForm() {
   const { state } = useProduct();
-  const customers = useQuery(api.orders.listEligibleCustomers, {});
+  const customerPagination = useAdminCursorPagination();
+  const customers = useQuery(api.orders.listEligibleCustomers, {
+    paginationOpts: { numItems: customerPagination.pageSize, cursor: customerPagination.cursor },
+  });
   const readyStockRows = useQuery(api.readyStock.listForAdmin, {});
   const createAssisted = useMutation(api.orders.createAssisted);
   const [source, setSource] = useState<"preorder" | "ready_stock">("preorder");
@@ -213,6 +244,8 @@ function ConvexAssistedOrderForm() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submissionKeyRef = useRef<string | null>(null);
+  const customerPage = Array.isArray(customers) ? { page: customers, isDone: true, continueCursor: "" } : customers;
+  const customerRows = customerPage?.page || [];
   const catalogs = state.catalogs.filter((candidate) => candidate.status === "open");
   const catalog = catalogs.find((candidate) => candidate.id === catalogId);
   const preorderVariants =
@@ -302,138 +335,146 @@ function ConvexAssistedOrderForm() {
         Pilih pelanggan BFG aktif yang sudah ada. Server menentukan snapshot pelanggan dan harga.
       </p>
       {customers === undefined ? <div className="state-panel">Memuat pelanggan yang memenuhi syarat…</div> : null}
-      {customers &&
-      customers.length > 0 &&
+      {customerRows.length > 0 &&
       (source === "preorder"
         ? catalogs.length > 0
         : Boolean(readyStockRows?.some((row) => row.isAvailable && row.availableQuantity > 0))) ? (
-        <form className="form-card" onSubmit={submit}>
-          <div className="form-grid">
-            <label className="field">
-              <span className="field-label">Pelanggan</span>
-              <BFGSelect
-                className="select"
-                value={customerId}
-                onChange={(event) => setCustomerId(event.target.value)}
-                required
-              >
-                <option value="">Pilih pelanggan…</option>
-                {customers.map((customer) => (
-                  <option value={customer.customerUserId} key={customer.customerUserId}>
-                    {customer.displayName} · {customer.memberCode || "tanpa kode"}
-                  </option>
-                ))}
-              </BFGSelect>
-            </label>
-            <label className="field">
-              <span className="field-label">Sumber</span>
-              <BFGSelect
-                className="select"
-                value={source}
-                onChange={(event) => {
-                  setSource(event.target.value as "preorder" | "ready_stock");
-                  setCatalogId("");
-                  setVariantId("");
-                  setCatalogSearch("");
-                  setVariantSearch("");
-                }}
-              >
-                <option value="preorder">Secret Catalog / preorder</option>
-                <option value="ready_stock">Ready Stock</option>
-              </BFGSelect>
-            </label>
-            {source === "preorder" ? (
+        <>
+          <form className="form-card" onSubmit={submit}>
+            <div className="form-grid">
               <label className="field">
-                <span className="field-label">Katalog</span>
-                <input
-                  className="input"
-                  type="search"
-                  value={catalogSearch}
-                  onChange={(event) => setCatalogSearch(event.target.value)}
-                  placeholder="Cari Catalog..."
-                  aria-label="Cari Catalog"
-                />
+                <span className="field-label">Pelanggan</span>
                 <BFGSelect
-                  aria-label="Katalog"
                   className="select"
-                  value={catalogId}
-                  onChange={(event) => {
-                    setCatalogId(event.target.value);
-                    setVariantId("");
-                    setVariantSearch("");
-                  }}
+                  value={customerId}
+                  onChange={(event) => setCustomerId(event.target.value)}
                   required
                 >
-                  <option value="">Pilih katalog terbuka…</option>
-                  {visibleCatalogs.map((catalogOption) => (
-                    <option value={catalogOption.id} key={catalogOption.id}>
-                      {catalogOption.name}
+                  <option value="">Pilih pelanggan…</option>
+                  {customerRows.map((customer) => (
+                    <option value={customer.customerUserId} key={customer.customerUserId}>
+                      {customer.displayName} · {customer.memberCode || "tanpa kode"}
                     </option>
                   ))}
                 </BFGSelect>
-                {!filteredCatalogs.length ? <span className="subtle">Tidak ada Catalog yang cocok.</span> : null}
               </label>
-            ) : null}
-          </div>
-          <div className="form-grid">
-            <label className="field">
-              <span className="field-label">Buku / varian</span>
-              <input
-                className="input"
-                type="search"
-                value={variantSearch}
-                onChange={(event) => setVariantSearch(event.target.value)}
-                placeholder="Cari judul, ISBN, publisher, atau penulis..."
-                aria-label="Cari buku atau varian"
-                disabled={source === "preorder" && !catalogId}
-              />
-              <BFGSelect
-                aria-label="Buku / varian"
-                className="select"
-                value={variantId}
-                onChange={(event) => setVariantId(event.target.value)}
-                disabled={source === "preorder" && !catalogId}
-                required
-              >
-                <option value="">Pilih varian…</option>
-                {visibleVariants.map((variant) => (
-                  <option value={variant.id} key={variant.id}>
-                    {variant.bookTitle} · {variant.publisher} · {variant.format} · {variant.isbn}
-                  </option>
-                ))}
-              </BFGSelect>
-              {catalogId && !filteredVariants.length ? (
-                <span className="subtle">Tidak ada varian yang cocok.</span>
+              <label className="field">
+                <span className="field-label">Sumber</span>
+                <BFGSelect
+                  className="select"
+                  value={source}
+                  onChange={(event) => {
+                    setSource(event.target.value as "preorder" | "ready_stock");
+                    setCatalogId("");
+                    setVariantId("");
+                    setCatalogSearch("");
+                    setVariantSearch("");
+                  }}
+                >
+                  <option value="preorder">Secret Catalog / preorder</option>
+                  <option value="ready_stock">Ready Stock</option>
+                </BFGSelect>
+              </label>
+              {source === "preorder" ? (
+                <label className="field">
+                  <span className="field-label">Katalog</span>
+                  <input
+                    className="input"
+                    type="search"
+                    value={catalogSearch}
+                    onChange={(event) => setCatalogSearch(event.target.value)}
+                    placeholder="Cari Catalog..."
+                    aria-label="Cari Catalog"
+                  />
+                  <BFGSelect
+                    aria-label="Katalog"
+                    className="select"
+                    value={catalogId}
+                    onChange={(event) => {
+                      setCatalogId(event.target.value);
+                      setVariantId("");
+                      setVariantSearch("");
+                    }}
+                    required
+                  >
+                    <option value="">Pilih katalog terbuka…</option>
+                    {visibleCatalogs.map((catalogOption) => (
+                      <option value={catalogOption.id} key={catalogOption.id}>
+                        {catalogOption.name}
+                      </option>
+                    ))}
+                  </BFGSelect>
+                  {!filteredCatalogs.length ? <span className="subtle">Tidak ada Catalog yang cocok.</span> : null}
+                </label>
               ) : null}
-            </label>
-            <label className="field">
-              <span className="field-label">Jumlah</span>
-              <input
-                className="input"
-                type="number"
-                min="1"
-                max="1000"
-                step="1"
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-                required
-              />
-            </label>
-          </div>
-          <div className="form-actions">
-            <span className="subtle">
-              Harga server: {selectedVariant ? `IDR ${selectedVariant.price.toLocaleString("id-ID")}` : "pilih varian"}
-            </span>
-            <Button type="submit" loading={submitting} loadingLabel="Mencatat…">
-              Catat pesanan berbantuan
-            </Button>
-          </div>
-          {message ? (
-            <span className="subtle" role="status">
-              {message}
-            </span>
-          ) : null}
-        </form>
+            </div>
+            <div className="form-grid">
+              <label className="field">
+                <span className="field-label">Buku / varian</span>
+                <input
+                  className="input"
+                  type="search"
+                  value={variantSearch}
+                  onChange={(event) => setVariantSearch(event.target.value)}
+                  placeholder="Cari judul, ISBN, publisher, atau penulis..."
+                  aria-label="Cari buku atau varian"
+                  disabled={source === "preorder" && !catalogId}
+                />
+                <BFGSelect
+                  aria-label="Buku / varian"
+                  className="select"
+                  value={variantId}
+                  onChange={(event) => setVariantId(event.target.value)}
+                  disabled={source === "preorder" && !catalogId}
+                  required
+                >
+                  <option value="">Pilih varian…</option>
+                  {visibleVariants.map((variant) => (
+                    <option value={variant.id} key={variant.id}>
+                      {variant.bookTitle} · {variant.publisher} · {variant.format} · {variant.isbn}
+                    </option>
+                  ))}
+                </BFGSelect>
+                {catalogId && !filteredVariants.length ? (
+                  <span className="subtle">Tidak ada varian yang cocok.</span>
+                ) : null}
+              </label>
+              <label className="field">
+                <span className="field-label">Jumlah</span>
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  step="1"
+                  value={quantity}
+                  onChange={(event) => setQuantity(event.target.value)}
+                  required
+                />
+              </label>
+            </div>
+            <div className="form-actions">
+              <span className="subtle">
+                Harga server:{" "}
+                {selectedVariant ? `IDR ${selectedVariant.price.toLocaleString("id-ID")}` : "pilih varian"}
+              </span>
+              <Button type="submit" loading={submitting} loadingLabel="Mencatat…">
+                Catat pesanan berbantuan
+              </Button>
+            </div>
+            {message ? (
+              <span className="subtle" role="status">
+                {message}
+              </span>
+            ) : null}
+          </form>
+          <AdminPagination
+            {...customerPagination}
+            rowCount={customerRows.length}
+            isDone={customerPage?.isDone ?? true}
+            continueCursor={customerPage?.continueCursor ?? ""}
+          />
+        </>
       ) : customers !== undefined ? (
         <p className="subtle">Pelanggan aktif dan sumber produk yang tersedia diperlukan.</p>
       ) : null}
@@ -487,12 +528,7 @@ function AdminOrders() {
         eyebrow="Operasi pesanan"
         title="Tinjau pesanan, lalu lanjutkan tahapnya."
         description="Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan Convex kanonik."
-        actions={
-          <div className="form-actions">
-            <span className="subtle order-count">{state.orders.length} tercatat</span>
-            {dataSource === "convex" ? <BackfillOrderReferences /> : null}
-          </div>
-        }
+        actions={<div className="form-actions">{dataSource === "convex" ? <BackfillOrderReferences /> : null}</div>}
       />
       <div className="admin-workspace">
         <AdminNav />

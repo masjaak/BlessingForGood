@@ -1,5 +1,43 @@
 # BFG SOURCE OF TRUTH
 
+## 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
+
+- Scale contract: the previous 100-Customer harness and 200-item Catalog-link
+  backfill bound are superseded. `convex/batches.ts` now processes eligible
+  order items in 100-item cursor pages with an idempotent internal continuation
+  until the Catalog is exhausted. Each continuation rechecks Catalog, link,
+  receiving Batch, item eligibility, assignment state, and edit/lock state.
+- Pagination contract: Batch recap/roster, unassigned exceptions, Admin
+  Customers, Orders, and Exceptions use bounded Convex pages. The shared
+  `AdminPagination` surface offers 10/25/50/100 with 25 as the default and
+  resets cursor state on page-size or material filter changes. Global summary
+  counts remain separate from page rows.
+- Cost contract: `GPE` means harga modal/supplier cost. The operational recap
+  reads the existing `bookVariants.supplierPriceGbpMinor` integer-pence field
+  and displays `Harga modal (GBP)` through the existing GBP formatter. No
+  conversion, FX API, or new cost field was introduced; no order-item cost
+  snapshot exists in the current schema, so the canonical variant field is the
+  traced authority for this surface.
+- Admin System contract: the previous System group and audit route were
+  owner-only, which hid System from legitimate active Admin accounts. The
+  visible read-only audit surface now uses the canonical `appUsers.role` /
+  `audit.read` Admin permission; users/settings and destructive operations
+  remain Owner-only. No personal email allowlist was found or added.
+- Finance remains unchanged: one active invoice per order, so Catalog A and
+  Catalog B orders remain separate invoices because their cargo/Close PO and
+  payment timing differ.
+- Code owners: `convex/batches.ts` owns resumable assignment backfill;
+  `convex/batchTracking.ts`, `convex/orders.ts`, and
+  `convex/orderExceptions.ts` own bounded operational pages;
+  `src/domain/prototype/pagination.ts` and `src/components/admin-pagination.tsx`
+  own cursor/page-size state and controls; `convex/lib/auth.ts`,
+  `src/components/admin-nav.tsx`, and `/admin/audit` own the System access
+  path.
+
+The 2026-08-30 Batch section below remains the historical baseline; its
+statement that GPE is unavailable and that backfill is only bounded by the
+original link mutation is superseded by this decision.
+
 ## Batch auto-assignment, operational recap, and assisted-order search — 2026-08-30
 
 - Source contract: `Catalog → Batch` remains the Admin's procurement decision;
@@ -56,9 +94,16 @@
   existing Vercel build configuration still owns its release-path Convex
   coupling. Signed-out Production smoke passed 39/40 at customer 390 and
   admin 1280; the one unrelated failure is the stale `Kode akses katalog`
-  assertion against current `Kode akses Secret Catalog` copy. Authenticated
-  real-cover Admin/Customer UAT remains an operator gate because no authorized
-  Clerk session or approved live cover fixture was available.
+  assertion against current `Kode akses Secret Catalog` copy.
+- Authenticated real-cover Production UAT passed with real Production book
+  media. Admin Book cover preview and Secret Catalog Book Detail follow the
+  uploaded image's natural aspect ratio with no top, bottom, left, or right
+  artificial letterbox gap, crop, or distortion. Catalog cards and Ready Stock
+  surfaces remain visually stable; Gallery thumbnails remain unchanged and
+  green. Upload,
+  access, search, variants, and ordering remain green.
+
+FINAL VERDICT: CLOSED
 
 ## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
 
@@ -658,30 +703,30 @@ human WhatsApp handoff remains allowed where the approved flow calls for it.
 
 ## Current Production Baseline
 
-| Item                           | Canonical value                                                          |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| Phase 08 implementation commit | `e04f3cd` — align External Preview label/control/support rows |
-| Phase 09 baseline source       | `85908d9` — current reviewed `main` |
-| `origin/main`                  | `85908d9` at review start |
-| Convex Development             | `content-snake-214`                                                      |
-| Convex Production              | `clean-eel-522`                                                          |
-| Vercel Production deployment   | Latest `READY` Production deployment, aliased to canonical domains |
-| Canonical Production URL       | `https://www.blessingforgood.com`                                        |
+| Item                           | Canonical value                                                                                                                                |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 08 implementation commit | `e04f3cd` — align External Preview label/control/support rows                                                                                  |
+| Phase 09 baseline source       | `85908d9` — current reviewed `main`                                                                                                            |
+| `origin/main`                  | `85908d9` at review start                                                                                                                      |
+| Convex Development             | `content-snake-214`                                                                                                                            |
+| Convex Production              | `clean-eel-522`                                                                                                                                |
+| Vercel Production deployment   | Latest `READY` Production deployment, aliased to canonical domains                                                                             |
+| Canonical Production URL       | `https://www.blessingforgood.com`                                                                                                              |
 | Safe live evidence             | `/how-to-order` returned HTTP 200; deployed CSS contains the External Preview grid; signed-out `/admin/books` boundary `3/3` at 1024/1280/1440 |
 
 Current exact regression baseline:
 
-| Gate        | Result                                                                                                                                                                                    |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vitest      | `241 / 241`                                                                                                                                                                               |
-| Convex      | `111 / 111` (included in Vitest)                                                                                                                                                          |
+| Gate        | Result                                                                                                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vitest      | `241 / 241`                                                                                                                                                                                                   |
+| Convex      | `111 / 111` (included in Vitest)                                                                                                                                                                              |
 | Playwright  | local full suite `264 / 264`; Convex deterministic suite `111 / 111`; live public HTTP and signed-out Admin boundary healthy; previous eight cover assertions reconciled as `ENVIRONMENT_ONLY / DATA-LIMITED` |
-| TypeScript  | PASS                                                                                                                                                                                      |
-| ESLint      | PASS                                                                                                                                                                                      |
-| Format      | PASS                                                                                                                                                                                      |
-| Build       | PASS                                                                                                                                                                                      |
-| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; deployed CSS contains the named paired-grid rules |
-| Real UAT    | Latest user-supplied authenticated Production screenshot is the real Book Detail acceptance evidence; the corrected surface is deployed and no mutation was performed |
+| TypeScript  | PASS                                                                                                                                                                                                          |
+| ESLint      | PASS                                                                                                                                                                                                          |
+| Format      | PASS                                                                                                                                                                                                          |
+| Build       | PASS                                                                                                                                                                                                          |
+| Rendered QA | local production-server route/viewport checks pass at 375/390/430/768/834/1024/1280/1440; deployed CSS contains the named paired-grid rules                                                                   |
+| Real UAT    | Latest user-supplied authenticated Production screenshot is the real Book Detail acceptance evidence; the corrected surface is deployed and no mutation was performed                                         |
 
 No access codes, credentials, tokens, or customer-identifying business data
 belong in this document or any other context file.

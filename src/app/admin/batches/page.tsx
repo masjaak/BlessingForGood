@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
@@ -103,7 +104,7 @@ function CreateBatchForm() {
 }
 
 function AdminBatches() {
-  const { batchList } = useOperations();
+  const { batchList, batchListPagination } = useOperations();
   const { state } = useProduct();
   if (!batchList) {
     return (
@@ -186,6 +187,12 @@ function AdminBatches() {
               }
             />
           )}
+          <AdminPagination
+            {...batchListPagination}
+            rowCount={batchList.page.length}
+            isDone={batchList.isDone}
+            continueCursor={batchList.continueCursor}
+          />
           <p className="subtle">Katalog yang tersedia untuk operasi batch: {state.catalogs.length}.</p>
         </div>
       </div>

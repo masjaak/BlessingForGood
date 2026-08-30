@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BFGSelect } from "@/components/bfg-select";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
@@ -62,6 +63,8 @@ function AdminBatchDetail() {
     batchList,
     currentBatch,
     currentBatchUnassigned,
+    currentBatchPagination,
+    currentBatchUnassignedPagination,
     updateBatch,
     linkCatalog,
     unlinkCatalog,
@@ -101,6 +104,11 @@ function AdminBatchDetail() {
       />
     );
   }
+  const assignmentPage = currentBatch.assignmentPage || { isDone: true, continueCursor: "" };
+  const unassignedPage = Array.isArray(currentBatchUnassigned)
+    ? { page: currentBatchUnassigned, isDone: true, continueCursor: "" }
+    : currentBatchUnassigned;
+  const unassignedRows = unassignedPage.page;
   const currentIndex = currentBatch.currentShipmentStage
     ? shipmentStages.indexOf(currentBatch.currentShipmentStage)
     : -1;
@@ -424,7 +432,7 @@ function AdminBatchDetail() {
             <div className="split-heading">
               <div>
                 <span className="card-kicker">4. Rekap Pesanan</span>
-                <h2>{currentBatch.assignments.length} item masuk Batch</h2>
+                <h2>{currentBatch.assignmentCount} item masuk Batch</h2>
               </div>
             </div>
             <p className="subtle">
@@ -449,7 +457,7 @@ function AdminBatchDetail() {
                         <th>ISBN</th>
                         <th>Publisher</th>
                         <th>ETA</th>
-                        <th>GPE</th>
+                        <th>Harga modal (GBP)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -481,7 +489,7 @@ function AdminBatchDetail() {
                           <td>{assignment.isbn}</td>
                           <td>{assignment.publisherName}</td>
                           <td>{formatCargoEta(assignment.etaCargoMonth)}</td>
-                          <td>{assignment.gpe ?? "—"}</td>
+                          <td>{assignment.gpe == null ? "—" : formatGbpMinor(assignment.gpe)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -548,6 +556,12 @@ function AdminBatchDetail() {
                     ))}
                   </details>
                 ) : null}
+                <AdminPagination
+                  {...currentBatchPagination}
+                  rowCount={currentBatch.assignments.length}
+                  isDone={assignmentPage.isDone}
+                  continueCursor={assignmentPage.continueCursor}
+                />
               </>
             ) : (
               <p className="subtle">Belum ada pesanan yang masuk ke Batch ini.</p>
@@ -558,7 +572,7 @@ function AdminBatchDetail() {
             <div className="split-heading">
               <div>
                 <span className="card-kicker">Roster Batch</span>
-                <h2>{currentBatch.customerRoster.length} pelanggan</h2>
+                <h2>{currentBatch.customerCount} pelanggan</h2>
               </div>
             </div>
             <p className="subtle">
@@ -612,7 +626,7 @@ function AdminBatchDetail() {
                       <th>Format</th>
                       <th>ISBN</th>
                       <th>Qty</th>
-                      <th>Harga GBP</th>
+                      <th>Harga modal (GBP)</th>
                       <th>Harga IDR</th>
                       <th>Pelanggan</th>
                     </tr>
@@ -654,12 +668,12 @@ function AdminBatchDetail() {
             <div className="summary-line">
               <span>Rekap assignment</span>
               <strong>
-                {currentBatch.assignments.length} masuk Batch · {currentBatchUnassigned.length} perlu tindakan
+                {currentBatch.assignmentCount} masuk Batch · {unassignedRows.length} perlu tindakan
               </strong>
             </div>
-            {currentBatchUnassigned.length ? <h3>Perlu tindakan</h3> : null}
-            {currentBatchUnassigned.length ? (
-              currentBatchUnassigned.map((item) => (
+            {unassignedRows.length ? <h3>Perlu tindakan</h3> : null}
+            {unassignedRows.length ? (
+              unassignedRows.map((item) => (
                 <div className="summary-line" key={item.orderItemId}>
                   <span>
                     {item.remainingQuantity} × {item.bookTitle} · {item.publisherName} · {item.format} ·{" "}
@@ -696,9 +710,15 @@ function AdminBatchDetail() {
                   </Button>
                 </div>
               ))
-            ) : (
+            ) : unassignedPage.isDone ? (
               <p className="subtle">Semua pesanan eligible sudah masuk otomatis atau belum memiliki pengecualian.</p>
-            )}
+            ) : null}
+            <AdminPagination
+              {...currentBatchUnassignedPagination}
+              rowCount={unassignedRows.length}
+              isDone={unassignedPage.isDone}
+              continueCursor={unassignedPage.continueCursor}
+            />
           </Card>
 
           <Card style={{ order: 8 }}>

@@ -1,8 +1,9 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
@@ -13,6 +14,7 @@ import { calendarDateKey } from "../src/lib/calendar-date";
 import { notifyUser } from "./lib/notifications";
 
 type DataCtx = QueryCtx | MutationCtx;
+const CATALOG_BACKFILL_ITEM_CHUNK_SIZE = 100;
 
 export function assertBatchCatalogDeadline(batch: Doc<"batches">, catalog: Doc<"secretCatalogs">): void {
   if (!batchCatalogDeadlineMatches(batch, catalog)) {
@@ -34,14 +36,56 @@ function batchCatalogDeadlineMatches(batch: Doc<"batches">, catalog: Doc<"secret
 export async function eligibleReceivingBatches(ctx: DataCtx, catalogId: Id<"secretCatalogs">) {
   const catalog = await ctx.db.get(catalogId);
   if (!catalog) return [];
-  const links = await ctx.db
-    .query("catalogBatchLinks")
-    .withIndex("by_catalog", (index) => index.eq("catalogId", catalogId))
+  const batches: Doc<"batches">[] = [];
+  const links = ctx.db.query("catalogBatchLinks").withIndex("by_catalog", (index) => index.eq("catalogId", catalogId));
+  for await (const link of links) {
+    const batch = await ctx.db.get(link.batchId);
+    if (batch && !batch.isArchived && !batch.currentShipmentStage && batchCatalogDeadlineMatches(batch, catalog)) {
+      batches.push(batch);
+    }
+  }
+  return batches;
+}
+
+async function assignOrderItemToBatch(
+  ctx: MutationCtx,
+  item: Doc<"orderItems">,
+  catalogId: Id<"secretCatalogs">,
+  batch: Doc<"batches">,
+  assignedByUserId: Id<"appUsers">,
+) {
+  const fulfillableQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+  if (fulfillableQuantity <= 0) return { assignedItemCount: 0, assignedQuantity: 0 };
+  const assignments = await ctx.db
+    .query("orderItemBatchAssignments")
+    .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
     .take(200);
-  const batches = await Promise.all(links.map((link) => ctx.db.get(link.batchId)));
-  return batches.filter((batch): batch is Doc<"batches"> =>
-    Boolean(batch && !batch.isArchived && !batch.currentShipmentStage && batchCatalogDeadlineMatches(batch, catalog)),
-  );
+  const assignedTotal = assignments.reduce((total, assignment) => total + assignment.assignedQuantity, 0);
+  const remainingQuantity = fulfillableQuantity - assignedTotal;
+  if (remainingQuantity <= 0) return { assignedItemCount: 0, assignedQuantity: 0 };
+  const existing = assignments.find((assignment) => assignment.batchId === batch._id);
+  const now = Date.now();
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      assignedQuantity: existing.assignedQuantity + remainingQuantity,
+      updatedAt: now,
+      assignedByUserId,
+    });
+  } else {
+    await ctx.db.insert("orderItemBatchAssignments", {
+      orderItemId: item._id,
+      batchId: batch._id,
+      assignedQuantity: remainingQuantity,
+      createdAt: now,
+      updatedAt: now,
+      assignedByUserId,
+    });
+  }
+  await recordAudit(ctx, assignedByUserId, "batch.item_auto_assigned", "orderItem", String(item._id), {
+    batchId: String(batch._id),
+    catalogId: String(catalogId),
+  });
+  return { assignedItemCount: 1, assignedQuantity: remainingQuantity };
 }
 
 async function assignOrderItemsToBatch(
@@ -55,46 +99,13 @@ async function assignOrderItemsToBatch(
   if (!order || order.catalogId !== catalogId || order.source === "ready_stock" || order.status !== "submitted") {
     return { assignedItemCount: 0, assignedQuantity: 0 };
   }
-  const items = await ctx.db
-    .query("orderItems")
-    .withIndex("by_order", (index) => index.eq("orderId", orderId))
-    .take(200);
+  const items = ctx.db.query("orderItems").withIndex("by_order", (index) => index.eq("orderId", orderId));
   let assignedItemCount = 0;
   let assignedQuantity = 0;
-  for (const item of items) {
-    const fulfillableQuantity = await fulfillableQuantityForOrderItem(ctx, item);
-    if (fulfillableQuantity <= 0) continue;
-    const assignments = await ctx.db
-      .query("orderItemBatchAssignments")
-      .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
-      .take(200);
-    const assignedTotal = assignments.reduce((total, assignment) => total + assignment.assignedQuantity, 0);
-    const remainingQuantity = fulfillableQuantity - assignedTotal;
-    if (remainingQuantity <= 0) continue;
-    const existing = assignments.find((assignment) => assignment.batchId === batch._id);
-    const now = Date.now();
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        assignedQuantity: existing.assignedQuantity + remainingQuantity,
-        updatedAt: now,
-        assignedByUserId,
-      });
-    } else {
-      await ctx.db.insert("orderItemBatchAssignments", {
-        orderItemId: item._id,
-        batchId: batch._id,
-        assignedQuantity: remainingQuantity,
-        createdAt: now,
-        updatedAt: now,
-        assignedByUserId,
-      });
-    }
-    assignedItemCount += 1;
-    assignedQuantity += remainingQuantity;
-    await recordAudit(ctx, assignedByUserId, "batch.item_auto_assigned", "orderItem", String(item._id), {
-      batchId: String(batch._id),
-      catalogId: String(catalogId),
-    });
+  for await (const item of items) {
+    const result = await assignOrderItemToBatch(ctx, item, catalogId, batch, assignedByUserId);
+    assignedItemCount += result.assignedItemCount;
+    assignedQuantity += result.assignedQuantity;
   }
   if (assignedItemCount > 0) {
     await notifyUser(ctx, order.customerUserId, {
@@ -122,44 +133,101 @@ export async function autoAssignOrderItemsForCatalog(
   return { candidateCount: 1, ...result };
 }
 
-export async function autoAssignCatalogOrders(
+async function backfillCatalogOrdersChunk(
   ctx: MutationCtx,
+  args: {
+    batchId: Id<"batches">;
+    catalogId: Id<"secretCatalogs">;
+    assignedByUserId: Id<"appUsers">;
+    cursor?: string;
+  },
+) {
+  const batch = await ctx.db.get(args.batchId);
+  const catalog = await ctx.db.get(args.catalogId);
+  const link = await ctx.db
+    .query("catalogBatchLinks")
+    .withIndex("by_catalog_and_batch", (index) => index.eq("catalogId", args.catalogId).eq("batchId", args.batchId))
+    .unique();
+  const candidates = await eligibleReceivingBatches(ctx, args.catalogId);
+  if (!batch || !catalog || !link || candidates.length !== 1 || candidates[0]._id !== batch._id) {
+    return { assignedItemCount: 0, assignedQuantity: 0, isDone: true };
+  }
+  const page = await ctx.db
+    .query("orderItems")
+    .withIndex("by_created_at")
+    .order("asc")
+    .paginate({ numItems: CATALOG_BACKFILL_ITEM_CHUNK_SIZE, cursor: args.cursor ?? null });
+  let assignedItemCount = 0;
+  let assignedQuantity = 0;
+  const ordersToNotify = new Map<Id<"orders">, Doc<"orders">>();
+  for (const item of page.page) {
+    const order = await ctx.db.get(item.orderId);
+    if (
+      !order ||
+      order.catalogId !== args.catalogId ||
+      order.source === "ready_stock" ||
+      order.status !== "submitted"
+    ) {
+      continue;
+    }
+    const result = await assignOrderItemToBatch(ctx, item, args.catalogId, batch, args.assignedByUserId);
+    assignedItemCount += result.assignedItemCount;
+    assignedQuantity += result.assignedQuantity;
+    if (result.assignedItemCount > 0) ordersToNotify.set(order._id, order);
+  }
+  await Promise.all(
+    [...ordersToNotify.values()].map((order) =>
+      notifyUser(ctx, order.customerUserId, {
+        surface: "notification",
+        eventType: "batch.opened",
+        title: "Batch PO tersedia",
+        body: `${batch.name} kini memuat buku dari pesananmu.`,
+        destination: `/account/batches/${batch._id}`,
+        relatedEntityType: "batch",
+        relatedEntityId: String(batch._id),
+      }),
+    ),
+  );
+  if (!page.isDone) {
+    await ctx.scheduler.runAfter(0, internal.batches.backfillCatalogOrders, {
+      ...args,
+      cursor: page.continueCursor,
+    });
+  }
+  return { assignedItemCount, assignedQuantity, isDone: page.isDone };
+}
+
+export const backfillCatalogOrders = internalMutation({
+  args: {
+    batchId: v.id("batches"),
+    catalogId: v.id("secretCatalogs"),
+    assignedByUserId: v.id("appUsers"),
+    cursor: v.optional(v.string()),
+  },
+  handler: (ctx, args) => backfillCatalogOrdersChunk(ctx, args),
+});
+
+async function scheduleCatalogBackfill(
+  ctx: MutationCtx,
+  batchId: Id<"batches">,
   catalogId: Id<"secretCatalogs">,
   assignedByUserId: Id<"appUsers">,
 ) {
-  const candidates = await eligibleReceivingBatches(ctx, catalogId);
-  if (candidates.length !== 1) return { candidateCount: candidates.length, assignedItemCount: 0, assignedQuantity: 0 };
-  // ponytail: bounded backfill scan; add a cursor-based job when one Catalog can exceed 200 submitted orders.
-  const orders = await ctx.db
-    .query("orders")
-    .withIndex("by_catalog_and_status", (index) => index.eq("catalogId", catalogId).eq("status", "submitted"))
-    .take(200);
-  let assignedItemCount = 0;
-  let assignedQuantity = 0;
-  for (const order of orders) {
-    const result = await assignOrderItemsToBatch(ctx, order._id, catalogId, candidates[0], assignedByUserId);
-    assignedItemCount += result.assignedItemCount;
-    assignedQuantity += result.assignedQuantity;
-  }
-  return { candidateCount: 1, assignedItemCount, assignedQuantity };
+  return backfillCatalogOrdersChunk(ctx, { batchId, catalogId, assignedByUserId });
 }
 
 async function catalogRosterSummary(ctx: DataCtx, catalogId: Id<"secretCatalogs">) {
-  const orders = await ctx.db
+  const orders = ctx.db
     .query("orders")
-    .withIndex("by_catalog_and_status", (index) => index.eq("catalogId", catalogId).eq("status", "submitted"))
-    .take(200);
+    .withIndex("by_catalog_and_status", (index) => index.eq("catalogId", catalogId).eq("status", "submitted"));
   const customers = new Set<string>();
   const publishers = new Set<string>();
   let eligibleOrderItemCount = 0;
   let eligibleQuantity = 0;
-  for (const order of orders) {
+  for await (const order of orders) {
     if (order.source === "ready_stock") continue;
-    const items = await ctx.db
-      .query("orderItems")
-      .withIndex("by_order", (index) => index.eq("orderId", order._id))
-      .take(200);
-    for (const item of items) {
+    const items = ctx.db.query("orderItems").withIndex("by_order", (index) => index.eq("orderId", order._id));
+    for await (const item of items) {
       const fulfillableQuantity = await fulfillableQuantityForOrderItem(ctx, item);
       if (fulfillableQuantity <= 0) continue;
       customers.add(String(order.customerUserId));
@@ -192,13 +260,14 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     .withIndex("by_batch", (index) => index.eq("batchId", batch._id))
     .take(200);
   const catalogs = await Promise.all(links.map((link) => ctx.db.get(link.catalogId)));
-  const assignments = await ctx.db
+  const assignments = ctx.db
     .query("orderItemBatchAssignments")
-    .withIndex("by_batch", (index) => index.eq("batchId", batch._id))
-    .take(200);
+    .withIndex("by_batch", (index) => index.eq("batchId", batch._id));
   const customerIds = new Set<string>();
   let assignedQuantity = 0;
-  for (const assignment of assignments) {
+  let assignmentCount = 0;
+  for await (const assignment of assignments) {
+    assignmentCount += 1;
     assignedQuantity += assignment.assignedQuantity;
     const orderItem = await ctx.db.get(assignment.orderItemId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
@@ -231,7 +300,7 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
     currentShipmentStage: batch.currentShipmentStage || null,
     rosterLocked: batch.currentShipmentStage !== undefined,
     isArchived: batch.isArchived,
-    assignmentCount: assignments.length,
+    assignmentCount,
     assignedQuantity,
     customerCount: customerIds.size,
     createdAt: new Date(batch.createdAt).toISOString(),
@@ -379,7 +448,7 @@ export const linkCatalog = mutation({
       createdAt: Date.now(),
       createdByUserId: user._id,
     });
-    await autoAssignCatalogOrders(ctx, args.catalogId, user._id);
+    await scheduleCatalogBackfill(ctx, args.batchId, args.catalogId, user._id);
     await recordAudit(ctx, user._id, "batch.catalog_linked", "batch", args.batchId, { catalogId: args.catalogId });
     return getBatchSummary(ctx, args.batchId);
   },
@@ -397,11 +466,10 @@ export const unlinkCatalog = mutation({
       .withIndex("by_catalog_and_batch", (index) => index.eq("catalogId", args.catalogId).eq("batchId", args.batchId))
       .unique();
     if (!link) fail("BATCH_CATALOG_MISMATCH");
-    const assignments = await ctx.db
+    const assignments = ctx.db
       .query("orderItemBatchAssignments")
-      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId))
-      .take(200);
-    for (const assignment of assignments) {
+      .withIndex("by_batch", (index) => index.eq("batchId", args.batchId));
+    for await (const assignment of assignments) {
       const orderItem = await ctx.db.get(assignment.orderItemId);
       const order = orderItem && (await ctx.db.get(orderItem.orderId));
       if (order?.catalogId === args.catalogId) fail("BATCH_ASSIGNMENT_INVALID", "active assignment blocks unlink");

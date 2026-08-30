@@ -1,5 +1,42 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
+
+- Scale target is now 1,000+ Customers and potentially several thousand order
+  items. The old 200-item operational backfill ceiling is superseded.
+- `convex/batches.ts` owns Catalog→Batch backfill. It reads the stable
+  `orderItems.by_created_at` index in 100-item cursor pages, assigns only
+  eligible unassigned items for the linked Catalog/receiving Batch, and queues
+  an internal continuation until `isDone`. Repeated chunks are safe because
+  assignment state is re-read before each write; link, Catalog, Batch, and lock
+  state are revalidated at every continuation.
+- `convex/batchTracking.ts` owns the paginated Batch assignment and unassigned
+  projections. `convex/orders.ts` and `convex/orderExceptions.ts` expose the
+  other growing Admin lists through Convex pagination. `AdminPagination` and
+  `useAdminCursorPagination` own 10/25/50/100 controls, default 25, cursor
+  history, previous/next, and page-size reset. Rows are queried by page; the
+  UI does not fetch-all then slice.
+- `GPE` is not a formula. It means harga modal/supplier cost and maps to the
+  existing `bookVariants.supplierPriceGbpMinor` integer-pence field. The recap
+  owner displays the canonical value as `Harga modal (GBP)` through the GBP
+  formatter. There is no supplier-cost snapshot on `orderItems` today, and no
+  FX conversion or new currency field was introduced.
+- The Admin System root cause was authorization scope, not the primary email:
+  the System navigation and audit route were Owner-only. `appUsers.role` and
+  the shared `audit.read` Admin permission now authorize the read-only audit
+  surface for every active Admin; users/settings and sensitive operations keep
+  their Owner-only or stronger capability guards. No hardcoded email gate was
+  found.
+- Cross-Catalog invoice separation is a fixed business decision and remains
+  unchanged: one active invoice per order, with separate Catalog/cargo-cycle
+  Close PO and payment timing.
+- Regression evidence: 2,000-item, two-items-per-order backfill completes with
+  zero duplicate or cross-Catalog assignments; interruption/resume and locked
+  continuation checks pass; paginated page/cost/role tests, full frontend and
+  Convex suites, TypeScript, ESLint, format, build, Convex check, and rendered
+  390/768/1440 pagination QA pass. Deployment and authenticated Production UAT
+  are recorded after release.
+
 ## Post-diff memory — Batch auto-assignment, operational recap, and assisted-order search — 2026-08-30
 
 - Request: remove the linear Admin assignment step for normal eligible
@@ -75,8 +112,14 @@
   TypeScript, ESLint, format, build, diff, and the rendered matrix pass.
   Behavior commit `0b6d728` is deployed through the canonical Git-integrated
   Vercel Production release; signed-out Production smoke is 39/40 with one
-  unrelated stale Catalog-copy assertion. Authenticated real-cover Admin and
-  Customer acceptance remains an operator gate; no Production data changed.
+  unrelated stale Catalog-copy assertion. Authenticated real-cover Production
+  UAT passed with real Production book media: Admin preview and Secret Catalog
+  Book Detail follow the natural aspect ratio with no top, bottom, left, or
+  right artificial letterbox gap, crop, or distortion. Catalog cards and Ready
+  Stock surfaces remain visually stable; Gallery thumbnails remain unchanged
+  and green.
+  Upload, access, search, variants, and ordering remain green.
+- FINAL VERDICT: CLOSED
 
 ## Post-diff memory — Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
 

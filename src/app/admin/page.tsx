@@ -15,7 +15,10 @@ function AdminOverview() {
   const { state, dataSource, sessionRole, ordersLoading, catalogsLoading } = useProduct();
   const { batchList, adminInvoiceList, adminPaymentQueue } = useOperations();
   const joinRequests = useQuery(api.joinRequests.listForAdmin, dataSource === "convex" ? {} : "skip");
-  const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
+  const exceptions = useQuery(
+    api.orderExceptions.listForAdmin,
+    dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
+  );
   const refunds = useQuery(api.refunds.listForAdmin, dataSource === "convex" ? {} : "skip");
   if (
     ordersLoading ||
@@ -36,7 +39,7 @@ function AdminOverview() {
     adminInvoiceList?.page.filter((invoice) => invoice.status === "issued" && invoice.outstandingAmount > 0).length ||
     0;
   const openExceptions =
-    exceptions?.filter((item) => item.status !== "resolved" && item.status !== "rejected").length || 0;
+    exceptions?.page.filter((item) => item.status !== "resolved" && item.status !== "rejected").length || 0;
   const pendingPayments = adminPaymentQueue?.length || 0;
   const newOrders = state.orders.filter((order) => order.status === "submitted").length;
   const pendingRefunds = refunds.filter((item) => item.status !== "paid").length;

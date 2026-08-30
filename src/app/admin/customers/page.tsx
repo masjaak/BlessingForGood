@@ -2,15 +2,23 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonTable } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 
 function CustomerList() {
   const { dataSource } = useProduct();
-  const customers = useQuery(api.orders.listEligibleCustomers, dataSource === "convex" ? {} : "skip");
+  const pagination = useAdminCursorPagination();
+  const customers = useQuery(
+    api.orders.listEligibleCustomers,
+    dataSource === "convex" ? { paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor } } : "skip",
+  );
+  const customerPage = Array.isArray(customers) ? { page: customers, isDone: true, continueCursor: "" } : customers;
+  const customerRows = customerPage?.page || [];
   return (
     <div className="page admin-page">
       <PageHeader
@@ -25,7 +33,7 @@ function CustomerList() {
             <LoadingRegion label="Memuat pelanggan">
               <SkeletonTable rows={5} />
             </LoadingRegion>
-          ) : customers.length ? (
+          ) : customerRows.length ? (
             <div className="table-wrap">
               <table className="data-table">
                 <caption className="sr-only">Daftar pelanggan aktif</caption>
@@ -37,7 +45,7 @@ function CustomerList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customers.map((customer) => (
+                  {customerRows.map((customer) => (
                     <tr key={customer.customerUserId}>
                       <td>
                         <strong>{customer.displayName}</strong>
@@ -63,6 +71,12 @@ function CustomerList() {
               />
             </Card>
           )}
+          <AdminPagination
+            {...pagination}
+            rowCount={customerRows.length}
+            isDone={customerPage?.isDone ?? true}
+            continueCursor={customerPage?.continueCursor ?? ""}
+          />
         </div>
       </div>
     </div>

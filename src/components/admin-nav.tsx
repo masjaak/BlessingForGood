@@ -7,7 +7,7 @@ import { useContext, useEffect } from "react";
 import { api } from "../../convex/_generated/api";
 import { AdminShellContext } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
-import { roleCanAccess } from "@/domain/prototype/session";
+import { roleCanAccess, type ProductRole } from "@/domain/prototype/session";
 
 type AdminIconName =
   | "dashboard"
@@ -28,7 +28,7 @@ type AdminIconName =
   | "content"
   | "settings";
 
-type AdminNavLink = { href: string; label: string; icon: AdminIconName };
+type AdminNavLink = { href: string; label: string; icon: AdminIconName; requiredRole?: ProductRole };
 type AdminNavGroup = { label: string; links: AdminNavLink[] };
 
 const groups: AdminNavGroup[] = [
@@ -211,20 +211,17 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
     if (!canReadAdminNav || product?.authState !== "authenticated") return;
     void markReadByContext({ destination: pathname }).catch(() => undefined);
   }, [canReadAdminNav, markReadByContext, pathname, product?.authState]);
-  const visibleGroups: AdminNavGroup[] =
-    preview || roleCanAccess(sessionRole || null, "owner")
-      ? [
-          ...groups,
-          {
-            label: "System",
-            links: [
-              { href: "/admin/users", label: "Pengguna", icon: "users" },
-              { href: "/admin/audit", label: "Log aktivitas", icon: "audit" },
-              { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
-            ],
-          },
-        ]
-      : groups;
+  const systemLinks: AdminNavLink[] = [
+    { href: "/admin/users", label: "Pengguna", icon: "users", requiredRole: "owner" },
+    { href: "/admin/audit", label: "Log aktivitas", icon: "audit", requiredRole: "admin" },
+    { href: "/admin/settings", label: "Pengaturan", icon: "settings", requiredRole: "owner" },
+  ];
+  const visibleSystemLinks = systemLinks.filter(
+    (link) => preview || roleCanAccess(sessionRole || null, link.requiredRole || "admin"),
+  );
+  const visibleGroups: AdminNavGroup[] = visibleSystemLinks.length
+    ? [...groups, { label: "System", links: visibleSystemLinks }]
+    : groups;
 
   if (persistent && product?.authState === "authenticated" && !canReadAdminNav) return null;
   if (inPersistentAdminShell && !persistent) return null;

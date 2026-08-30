@@ -426,9 +426,7 @@ export const resolve = mutation({
       createdByUserId: user._id,
     });
     const newRefundObligationAmount =
-      exception.resolution === "no_action"
-        ? 0
-        : Math.max(0, currentOverpaymentAmount - historicalRefundAmount);
+      exception.resolution === "no_action" ? 0 : Math.max(0, currentOverpaymentAmount - historicalRefundAmount);
     if (newRefundObligationAmount > 0) {
       const refundObligationId = await createRefundObligationInternal(ctx, {
         customerUserId: order.customerUserId,
@@ -532,17 +530,27 @@ export const getMine = query({
 });
 
 export const listForAdmin = query({
-  args: { status: v.optional(orderExceptionStatusValidator) },
+  args: {
+    status: v.optional(orderExceptionStatusValidator),
+    paginationOpts: v.optional(paginationOptsValidator),
+  },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "orders.read.all");
-    const exceptions = args.status
+    const page = args.status
       ? await ctx.db
           .query("orderExceptions")
           .withIndex("by_status_and_created_at", (index) => index.eq("status", args.status!))
           .order("desc")
-          .take(100)
-      : await ctx.db.query("orderExceptions").withIndex("by_created_at").order("desc").take(100);
-    return Promise.all(exceptions.map((exception) => orderExceptionView(ctx, exception, true)));
+          .paginate(args.paginationOpts ?? { numItems: 25, cursor: null })
+      : await ctx.db
+          .query("orderExceptions")
+          .withIndex("by_created_at")
+          .order("desc")
+          .paginate(args.paginationOpts ?? { numItems: 25, cursor: null });
+    return {
+      ...page,
+      page: await Promise.all(page.page.map((exception) => orderExceptionView(ctx, exception, true))),
+    };
   },
 });
 

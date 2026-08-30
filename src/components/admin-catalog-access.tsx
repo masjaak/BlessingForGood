@@ -22,7 +22,9 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
   const catalog = useQuery(api.secretCatalogs.getForAdmin, { catalogId: id });
   const access = useQuery(api.catalogAccess.listForAdmin, { catalogId: id });
-  const customers = useQuery(api.orders.listEligibleCustomers, {});
+  const customers = useQuery(api.orders.listEligibleCustomers, {
+    paginationOpts: { numItems: 100, cursor: null },
+  });
   const generate = useMutation(api.catalogAccess.generateCode);
   const revokeCode = useMutation(api.catalogAccess.revokeCode);
   const grant = useMutation(api.catalogAccess.grantMember);
@@ -37,6 +39,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
     text: string;
   } | null>(null);
   const [pending, setPending] = useState("");
+  const customerRows = Array.isArray(customers) ? customers : customers?.page || [];
 
   useEffect(() => {
     if (!copyFeedback) return;
@@ -181,7 +184,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
           <Field label="Pelanggan">
             <BFGSelect value={memberId} onChange={(event) => setMemberId(event.target.value)} required>
               <option value="">Pilih pelanggan</option>
-              {customers.map((customer) => (
+              {customerRows.map((customer) => (
                 <option key={customer.customerUserId} value={customer.customerUserId}>
                   {customer.displayName} · {customer.email || "tanpa email"}
                 </option>

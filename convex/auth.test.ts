@@ -84,7 +84,7 @@ describe("Clerk identity and BFG authorization", () => {
     expect(secondUser.memberCode).not.toBe(firstUser.memberCode);
 
     const eligible = await owner.query(api.orders.listEligibleCustomers, {});
-    expect(eligible).toEqual(
+    expect(eligible.page).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           customerUserId: firstUser.appUserId,

@@ -14,7 +14,9 @@ import { Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from 
 function DepositOperations() {
   const requestedCustomerId = useSearchParams().get("customerId") || "";
   const topUps = useQuery(api.depositTopUps.listForAdmin, {});
-  const customers = useQuery(api.orders.listEligibleCustomers, {});
+  const customers = useQuery(api.orders.listEligibleCustomers, {
+    paginationOpts: { numItems: 100, cursor: null },
+  });
   const startReview = useMutation(api.depositTopUps.startReview);
   const approve = useMutation(api.depositTopUps.approve);
   const reject = useMutation(api.depositTopUps.reject);
@@ -128,7 +130,7 @@ function DepositOperations() {
                 required
               >
                 <option value="">Pilih pelanggan</option>
-                {customers?.map((customer) => (
+                {customers?.page.map((customer) => (
                   <option key={customer.customerUserId} value={customer.customerUserId}>
                     {customer.displayName} · {customer.memberCode || "tanpa kode"} · {customer.email || "—"}
                   </option>

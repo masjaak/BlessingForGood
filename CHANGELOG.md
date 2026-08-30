@@ -8,6 +8,33 @@ source: conversation
 
 # Changelog
 
+## [batch-scale-pagination-admin-system] — 2026-08-31
+
+### Changed
+
+- Replaced the Catalog→Batch 200-item backfill ceiling with an idempotent
+  100-item order-item cursor continuation that rechecks Catalog, Batch, link,
+  eligibility, assignment, and lock state between chunks.
+- Added real Convex pagination to Batch recap/roster and unassigned work,
+  Admin Customers, Orders, and Exceptions. The BFG-native controls offer
+  10/25/50/100 rows per page with a 25-row default and cursor reset on page
+  size or material filter changes.
+- Mapped recap GPE to the existing `bookVariants.supplierPriceGbpMinor`
+  canonical GBP/pence supplier-cost field and labeled it `Harga modal (GBP)`;
+  no formula, FX conversion, or new currency source was added.
+- Made the read-only Admin audit surface visible to every active Admin through
+  the canonical role/capability model. Owner-only users/settings and sensitive
+  operation guards remain unchanged; no personal email allowlist was added.
+
+### QA
+
+- The 2,000-order-item / 1,000-Customer fixture, resume/idempotency, lock
+  revalidation, page/cost/RBAC regressions, full frontend/Convex suite,
+  TypeScript, ESLint, format, build, Convex check, and rendered pagination
+  checks at 390/768/1440 pass. Cross-Catalog invoice separation remains a
+  passing regression. Production release and authenticated UAT are the next
+  release gates.
+
 ## [book-cover-adaptive-natural-frame] — 2026-08-30
 
 ### Fixed
@@ -32,8 +59,14 @@ source: conversation
   `Kode akses katalog` assertion against `Kode akses Secret Catalog`.
 - No separate Convex command, upload/storage/schema/projection/search/access,
   variant/price/quantity/order change, or ProductGallery change was made.
-  Authenticated real-cover Admin/Customer UAT remains an operator gate because
-  no authorized Clerk session or approved live fixture was available.
+- Authenticated real-cover Production UAT passed with real Production book
+  media. Admin Book cover preview and Secret Catalog Book Detail follow the
+  uploaded image's natural aspect ratio with no top, bottom, left, or right
+  artificial letterbox gap, crop, or distortion. Catalog cards and Ready Stock
+  surfaces remain visually stable; Gallery thumbnails remain unchanged and
+  green. Upload,
+  access, search, variants, and ordering remain green.
+- `FINAL VERDICT: CLOSED`.
 
 ## [book-cover-gallery-rendering-polish] — 2026-08-30
 

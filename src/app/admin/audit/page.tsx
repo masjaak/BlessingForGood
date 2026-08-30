@@ -11,7 +11,7 @@ function AuditLog() {
   const events = useQuery(api.auditEvents.list, { paginationOpts: { numItems: 100, cursor: null } });
   return (
     <AdminOperationalPage
-      eyebrow="Keamanan Owner"
+      eyebrow="Keamanan Admin"
       title="Log aktivitas"
       description="Riwayat immutable untuk tindakan operasional dan perubahan akses yang sensitif."
     >
@@ -55,7 +55,7 @@ function AuditLog() {
 export default function AdminAuditPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="owner">
+      <ProductAccessGuard requiredRole="admin">
         <AuditLog />
       </ProductAccessGuard>
     </SiteShell>

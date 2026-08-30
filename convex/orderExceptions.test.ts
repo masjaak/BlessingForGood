@@ -46,7 +46,7 @@ describe("BFG order exception workflow", () => {
   it("starts with zero data and protects cancellation ownership and duplicates", async () => {
     const t = testConvex();
     const { customer, secondCustomer, admin } = await setupUsers(t);
-    expect(await admin.query(api.orderExceptions.listForAdmin, {})).toEqual([]);
+    expect((await admin.query(api.orderExceptions.listForAdmin, {})).page).toEqual([]);
     expect(
       (await customer.query(api.orderExceptions.listMine, { paginationOpts: { numItems: 10, cursor: null } })).page,
     ).toEqual([]);

@@ -85,7 +85,7 @@ describe("BFG membership removal lifecycle", () => {
     expect(await admin.query(api.joinRequests.listForAdmin, { status: "approved" })).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ joinRequestId: requestA })]),
     );
-    expect(await admin.query(api.orders.listEligibleCustomers, {})).not.toEqual(
+    expect((await admin.query(api.orders.listEligibleCustomers, {})).page).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ customerUserId: current.appUserId })]),
     );
 

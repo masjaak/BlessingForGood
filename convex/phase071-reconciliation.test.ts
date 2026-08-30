@@ -170,9 +170,9 @@ describe("Phase 07.1 reconciliation", () => {
     ).rejects.toThrow("NOTIFICATION_ACCESS_DENIED");
     const customerMessage = activity.find((item) => item.title === "Pesan operasional");
     expect(customerMessage?.readAt).toBeNull();
-    await expect(
-      secondCustomer.mutation(api.notifications.markRead, { notificationId: messageId }),
-    ).rejects.toThrow("NOTIFICATION_ACCESS_DENIED");
+    await expect(secondCustomer.mutation(api.notifications.markRead, { notificationId: messageId })).rejects.toThrow(
+      "NOTIFICATION_ACCESS_DENIED",
+    );
     await customer.mutation(api.notifications.markRead, { notificationId: messageId });
     expect(await customer.query(api.notifications.unreadActivityCount, { workspace: "customer" })).toBe(1);
     expect(
@@ -239,7 +239,7 @@ describe("Phase 07.1 reconciliation", () => {
 
   it("returns authorized period reports and immutable audit activity", async () => {
     const t = testConvex();
-    const { owner, admin, customer } = await setupUsers(t);
+    const { owner, admin, customer, secondCustomer } = await setupUsers(t);
     const now = Date.now();
     const report = await admin.query(api.reports.get, { from: now - 86_400_000, to: now + 86_400_000 });
     expect(report).toMatchObject({
@@ -255,9 +255,18 @@ describe("Phase 07.1 reconciliation", () => {
     expect(audit.page.length).toBeGreaterThan(0);
     expect(audit.page[0]).not.toHaveProperty("unsafeMetadata");
     expect(audit.page.map((event) => event.action)).toContain("report.exported");
-    await expect(admin.query(api.auditEvents.list, { paginationOpts: { numItems: 20, cursor: null } })).rejects.toThrow(
-      "PERMISSION_DENIED",
-    );
+    const secondAdminUser = await secondCustomer.query(api.users.current, {});
+    if (!secondAdminUser) throw new Error("second admin fixture missing");
+    await owner.mutation(api.users.updateRole, { userId: secondAdminUser.appUserId, role: "admin" });
+    const adminAudit = await admin.query(api.auditEvents.list, { paginationOpts: { numItems: 20, cursor: null } });
+    expect(adminAudit.page.length).toBeGreaterThan(0);
+    const secondAdminAudit = await secondCustomer.query(api.auditEvents.list, {
+      paginationOpts: { numItems: 20, cursor: null },
+    });
+    expect(secondAdminAudit.page.length).toBeGreaterThan(0);
+    await expect(
+      customer.query(api.auditEvents.list, { paginationOpts: { numItems: 20, cursor: null } }),
+    ).rejects.toThrow("PERMISSION_DENIED");
   });
 
   it("applies the report period before its operational row cap", async () => {
@@ -309,9 +318,9 @@ describe("Phase 07.1 reconciliation", () => {
     await expect(
       admin.mutation(api.batches.updateEtaCargoMonth, { batchId: created.batchId, etaCargoMonth: "Oktober 2026" }),
     ).rejects.toThrow("VALIDATION_FAILED");
-    await expect(admin.mutation(api.batches.create, { name: "Invalid ETA", etaCargoMonth: "Oktober 2026" })).rejects.toThrow(
-      "VALIDATION_FAILED",
-    );
+    await expect(
+      admin.mutation(api.batches.create, { name: "Invalid ETA", etaCargoMonth: "Oktober 2026" }),
+    ).rejects.toThrow("VALIDATION_FAILED");
     await expect(
       admin.mutation(api.batches.create, { name: "Past Batch", poDeadlineAt: Date.now() - 1 }),
     ).rejects.toThrow("VALIDATION_FAILED");

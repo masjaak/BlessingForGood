@@ -65,6 +65,7 @@ const adminPermissions = new Set<Permission>([
   "customers.read",
   "customers.manage",
   "content.manage",
+  "audit.read",
 ]);
 
 const allPermissions = new Set<Permission>([

@@ -22,12 +22,12 @@ describe("BFG batch roster and assisted orders", () => {
     const catalog = await createOpenCatalog(admin, "Roster Catalog", "2001", "roster-code");
     await customer.mutation(api.catalogAccess.unlock, { accessCode: "roster-code" });
     await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "roster-code" });
-    const firstOrder = await customer.mutation(api.orders.submit, {
+    await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Roster Customer A",
       items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
     });
-    const secondOrder = await secondCustomer.mutation(api.orders.submit, {
+    await secondCustomer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Roster Customer B",
       items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
@@ -35,7 +35,7 @@ describe("BFG batch roster and assisted orders", () => {
     const batch = await admin.mutation(api.batches.create, { name: "Roster Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
     const eligibleRoster = await admin.query(api.batchTracking.listUnassignedForAdmin, { batchId: batch.batchId });
-    expect(eligibleRoster).toEqual([]);
+    expect(eligibleRoster.page).toEqual([]);
 
     const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
     expect(detail).toMatchObject({
@@ -54,8 +54,11 @@ describe("BFG batch roster and assisted orders", () => {
         expect.objectContaining({ eventType: "batch.opened", destination: `/account/batches/${batch.batchId}` }),
       ]),
     );
-    const unassigned = await admin.query(api.batchTracking.listUnassignedForAdmin, { batchId: batch.batchId });
-    expect(unassigned).toMatchObject([]);
+    const unassigned = await admin.query(api.batchTracking.listUnassignedForAdmin, {
+      batchId: batch.batchId,
+      paginationOpts: { numItems: 100, cursor: null },
+    });
+    expect(unassigned.page).toEqual([]);
     const actions = await t.run(async (ctx) =>
       (await ctx.db.query("auditEvents").collect()).map((event) => event.action),
     );
@@ -142,7 +145,7 @@ describe("BFG batch roster and assisted orders", () => {
     const customerUser = await customer.query(api.users.current, {});
     if (!adminUser || !customerUser) throw new Error("assisted order users missing");
     const eligible = await admin.query(api.orders.listEligibleCustomers, {});
-    expect(eligible).toEqual(
+    expect(eligible.page).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ customerUserId: customerUser.appUserId, memberCode: customerUser.memberCode }),
       ]),
@@ -238,7 +241,7 @@ describe("BFG batch roster and assisted orders", () => {
       customerName: "Shared Deadline Customer",
       items: catalog.variantIds.map((variantId, index) => ({ variantId, quantity: index === 0 ? 2 : 1 })),
     });
-    const secondOrder = await secondCustomer.mutation(api.orders.submit, {
+    await secondCustomer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Shared Deadline Customer Two",
       items: catalog.variantIds.map((variantId, index) => ({ variantId, quantity: index === 1 ? 2 : 1 })),

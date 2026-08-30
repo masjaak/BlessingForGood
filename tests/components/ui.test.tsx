@@ -225,6 +225,20 @@ describe("public UI foundation", () => {
     expect(screen.queryByText("0")).toBeNull();
   });
 
+  it("shows the System section to active Admin roles without exposing owner links", () => {
+    vi.mocked(useQuery).mockReturnValue(0 as never);
+    render(
+      <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
+        <AdminNav />
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByText("System")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Log aktivitas" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Pengguna" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Pengaturan" })).toBeNull();
+  });
+
   it("keeps one mounted sidebar when Admin routes render through the persistent shell", () => {
     const { rerender } = render(
       <AdminShellContext.Provider value>

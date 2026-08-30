@@ -4,6 +4,19 @@ Reconciled: 2026-08-30
 Authority: canonical Convex records and server projections. Admin UI actions
 never manually patch a customer surface.
 
+## Admin System access correction — 2026-08-31
+
+The System navigation and audit route were previously Owner-only, so an active
+Admin could be authorized for the Admin workspace while receiving no System
+section. The read-only Activity/audit surface now follows the canonical
+`appUsers.role` / `audit.read` permission for every active Admin. Users,
+settings, and any genuinely sensitive sub-action remain Owner-only or guarded
+by their existing stronger capability. No email allowlist is used.
+
+| Domain | Admin Action | Canonical Record | Customer Query | Customer Surface | Expected Consequence | Realtime? | Authorization | Notification? | Production Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Admin System / audit | inspect operational audit history | `auditEvents` | `auditEvents.list` | `/admin/audit` | active Admins see the intended read-only System surface; customers, inactive members, and non-Admins remain denied | yes | active Admin `audit.read`; Owner retains all permissions | no | local role matrix and route/permission regression PASS; Production authenticated UAT after release | SYNCED_PENDING_UAT |
+
 ## Production UAT correction — 2026-08-30
 
 The active global access-code row below now starts a session on the generated

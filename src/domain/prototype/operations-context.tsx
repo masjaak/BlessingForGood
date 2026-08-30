@@ -3,11 +3,12 @@
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { ProductDataSource } from "@/domain/prototype/context";
 import { useOperationsMutations } from "@/domain/prototype/operations-mutations";
+import { useAdminCursorPagination, type AdminCursorPagination } from "@/domain/prototype/pagination";
 import { roleCanAccess } from "@/domain/prototype/session";
 
 export type ShipmentStage =
@@ -20,7 +21,8 @@ export type PaymentConfirmationStatus = "submitted" | "under_review" | "approved
 export type BatchPage = NonNullable<FunctionReturnType<typeof api.batches.listForAdmin>>;
 export type BatchSummary = BatchPage["page"][number];
 export type BatchDetail = NonNullable<FunctionReturnType<typeof api.batchTracking.getForAdmin>>;
-export type UnassignedBatchItem = Awaited<FunctionReturnType<typeof api.batchTracking.listUnassignedForAdmin>>[number];
+export type UnassignedBatchPage = NonNullable<FunctionReturnType<typeof api.batchTracking.listUnassignedForAdmin>>;
+export type UnassignedBatchItem = UnassignedBatchPage["page"][number];
 export type CustomerOrderTracking = NonNullable<FunctionReturnType<typeof api.batchTracking.getMine>>;
 export type AdminOrderTracking = NonNullable<FunctionReturnType<typeof api.batchTracking.getForOrderAdmin>>;
 export type FulfillmentTimeline = NonNullable<FunctionReturnType<typeof api.orderFulfillment.getMine>>;
@@ -54,7 +56,10 @@ export interface OperationsContextValue {
   adminInvoiceList: InvoicePage | undefined;
   customerInvoiceList: InvoicePage | undefined;
   currentBatch: BatchDetail | undefined;
-  currentBatchUnassigned: UnassignedBatchItem[] | undefined;
+  currentBatchUnassigned: UnassignedBatchPage | undefined;
+  batchListPagination: AdminCursorPagination;
+  currentBatchPagination: AdminCursorPagination;
+  currentBatchUnassignedPagination: AdminCursorPagination;
   currentCustomerTracking: CustomerOrderTracking | undefined;
   currentAdminOrderTracking: AdminOrderTracking | undefined;
   currentCustomerFulfillment: FulfillmentTimeline | undefined;
@@ -139,10 +144,24 @@ export function ConvexOperationsProvider({
   const adminWorkspace = pathname?.startsWith("/admin") ?? false;
   const isAdmin = enabled && active && adminWorkspace && roleCanAccess(role, "admin");
   const isCustomer = enabled && active && !adminWorkspace && roleCanAccess(role, "customer");
+  const batchListPagination = useAdminCursorPagination();
+  const currentBatchPagination = useAdminCursorPagination();
+  const currentBatchUnassignedPagination = useAdminCursorPagination();
+  const { reset: resetCurrentBatchPagination } = currentBatchPagination;
+  const { reset: resetCurrentBatchUnassignedPagination } = currentBatchUnassignedPagination;
+  const previousBatchId = useRef(batchId);
+  useEffect(() => {
+    if (previousBatchId.current === batchId) return;
+    previousBatchId.current = batchId;
+    resetCurrentBatchPagination();
+    resetCurrentBatchUnassignedPagination();
+  }, [batchId, resetCurrentBatchPagination, resetCurrentBatchUnassignedPagination]);
 
   const batchList = useQuery(
     api.batches.listForAdmin,
-    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isAdmin
+      ? { paginationOpts: { numItems: batchListPagination.pageSize, cursor: batchListPagination.cursor } }
+      : "skip",
   );
   const adminInvoiceList = useQuery(
     api.invoices.listForAdmin,
@@ -154,11 +173,24 @@ export function ConvexOperationsProvider({
   );
   const currentBatch = useQuery(
     api.batchTracking.getForAdmin,
-    isAdmin && batchId ? { batchId: batchId as Id<"batches"> } : "skip",
+    isAdmin && batchId
+      ? {
+          batchId: batchId as Id<"batches">,
+          paginationOpts: { numItems: currentBatchPagination.pageSize, cursor: currentBatchPagination.cursor },
+        }
+      : "skip",
   );
   const currentBatchUnassigned = useQuery(
     api.batchTracking.listUnassignedForAdmin,
-    isAdmin && batchId ? { batchId: batchId as Id<"batches"> } : "skip",
+    isAdmin && batchId
+      ? {
+          batchId: batchId as Id<"batches">,
+          paginationOpts: {
+            numItems: currentBatchUnassignedPagination.pageSize,
+            cursor: currentBatchUnassignedPagination.cursor,
+          },
+        }
+      : "skip",
   );
   const currentCustomerTracking = useQuery(
     api.batchTracking.getMine,
@@ -235,6 +267,9 @@ export function ConvexOperationsProvider({
       customerInvoiceList,
       currentBatch,
       currentBatchUnassigned,
+      batchListPagination,
+      currentBatchPagination,
+      currentBatchUnassignedPagination,
       currentCustomerTracking,
       currentAdminOrderTracking,
       currentCustomerFulfillment,
@@ -259,6 +294,7 @@ export function ConvexOperationsProvider({
       adminInvoiceList,
       adminTransactions,
       batchList,
+      batchListPagination,
       customerAccount,
       customerAllocations,
       customerPaymentConfirmations,
@@ -268,7 +304,9 @@ export function ConvexOperationsProvider({
       currentAdminInvoice,
       currentAdminOrderTracking,
       currentBatch,
+      currentBatchPagination,
       currentBatchUnassigned,
+      currentBatchUnassignedPagination,
       currentCustomerFulfillment,
       currentCustomerInvoice,
       currentCustomerTracking,
@@ -287,6 +325,9 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
   const unavailable = useCallback(async () => {
     throw new Error("Persistent operational data requires a configured Convex data source.");
   }, []);
+  const batchListPagination = useAdminCursorPagination();
+  const currentBatchPagination = useAdminCursorPagination();
+  const currentBatchUnassignedPagination = useAdminCursorPagination();
   const value = useMemo<OperationsContextValue>(
     () => ({
       enabled: false,
@@ -296,6 +337,9 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
       customerInvoiceList: undefined,
       currentBatch: undefined,
       currentBatchUnassigned: undefined,
+      batchListPagination,
+      currentBatchPagination,
+      currentBatchUnassignedPagination,
       currentCustomerTracking: undefined,
       currentAdminOrderTracking: undefined,
       currentCustomerFulfillment: undefined,
@@ -337,7 +381,7 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
       approvePaymentConfirmation: unavailable,
       rejectPaymentConfirmation: unavailable,
     }),
-    [unavailable],
+    [batchListPagination, currentBatchPagination, currentBatchUnassignedPagination, unavailable],
   );
   return <OperationsContext.Provider value={value}>{children}</OperationsContext.Provider>;
 }

@@ -1,8 +1,30 @@
 # BFG Project Status
 
+## 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
+
+Status: `IMPLEMENTED_LOCAL; PRODUCTION_RELEASE_PENDING`
+
+The previous 200-item Catalog→Batch backfill ceiling is superseded by an
+idempotent 100-item cursor continuation over order items. A 1,000-Customer /
+2,000-item fixture completes with zero duplicates and zero cross-Catalog
+writes; interruption/resume and Batch-lock revalidation pass.
+
+Batch recap/roster, unassigned work, Customers, Orders, and Exceptions now use
+bounded Convex pages with BFG-native 10/25/50/100 controls and a 25 default.
+The recap's `Harga modal (GBP)` reads canonical
+`bookVariants.supplierPriceGbpMinor` integer pence; no FX or formula was
+introduced. Cross-Catalog invoices remain separate.
+
+The System nav/audit root cause was Owner-only scope, not the primary email.
+Active Admins now receive the read-only audit System surface via canonical
+role/capability authority; Owner-only settings/users and sensitive operation
+guards remain protected. Full local regression, build, Convex check, and
+390/768/1440 rendered pagination QA pass. Production deployment and
+authenticated UAT remain pending for this release.
+
 ## Adaptive natural-ratio book cover frame — 2026-08-30
 
-Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PASS`
 
 The remaining cover defect is fixed at the shared geometry owner. Image-backed
 `BookCover` wrappers now follow the uploaded image's intrinsic ratio with
@@ -21,10 +43,15 @@ deployment complete at
 `https://vercel.com/masjaaks-projects/blessing-for-good/FTE6XgijmQtS1cWLVQuxz3yQv1hn`.
 
 Signed-out Production smoke passed 39/40 across customer 390 and admin 1280.
-The remaining failure is the pre-existing stale Catalog copy assertion. Real
-authenticated Admin preview and Customer Secret Catalog detail verification
-still requires an authorized Clerk session and approved non-2:3 Production
-cover; no Production data was created or changed.
+The remaining failure is the pre-existing stale Catalog copy assertion.
+Authenticated real-cover Production UAT passed with real Production book media.
+Admin Book cover preview and Secret Catalog Book Detail follow the uploaded
+image's natural aspect ratio with no top, bottom, left, or right artificial
+letterbox gap, crop, or distortion. Catalog cards and Ready Stock surfaces
+remain visually stable; Gallery thumbnails remain unchanged and green. Upload,
+access, search, variants, and ordering remain green.
+
+FINAL VERDICT: CLOSED
 
 ## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
 

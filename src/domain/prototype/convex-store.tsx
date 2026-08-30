@@ -40,7 +40,7 @@ import type {
 import { useConvexRetry } from "@/providers/convex-provider";
 
 type CatalogView = NonNullable<FunctionReturnType<typeof api.catalogAccess.getUnlocked>>;
-type OrderView = Awaited<FunctionReturnType<typeof api.orders.submit>>;
+export type OrderView = Awaited<FunctionReturnType<typeof api.orders.submit>>;
 type CatalogRecord = {
   id: string;
   name: string;
@@ -115,7 +115,7 @@ function asCatalog(value: CatalogView | null | undefined): SecretCatalog | undef
   };
 }
 
-function asOrder(value: OrderView | null | undefined): Order | undefined {
+export function asOrder(value: OrderView | null | undefined): Order | undefined {
   if (!value) return undefined;
   const record = value as unknown as OrderRecord;
   return {

@@ -486,7 +486,8 @@ export default defineSchema({
   })
     .index("by_order", ["orderId"])
     .index("by_book", ["bookId"])
-    .index("by_variant", ["bookVariantId"]),
+    .index("by_variant", ["bookVariantId"])
+    .index("by_created_at", ["createdAt"]),
 
   orderStatusHistory: defineTable({
     orderId: v.id("orders"),

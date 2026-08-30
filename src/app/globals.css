@@ -1613,6 +1613,36 @@ p {
   min-width: 0;
   gap: 24px;
 }
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.admin-pagination-controls,
+.admin-pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-pagination-size .select {
+  min-width: 84px;
+}
+@media (max-width: 640px) {
+  .admin-pagination,
+  .admin-pagination-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-pagination-controls .button,
+  .admin-pagination-size,
+  .admin-pagination-size .select {
+    width: 100%;
+  }
+}
 .admin-page .two-column {
   align-items: start;
 }

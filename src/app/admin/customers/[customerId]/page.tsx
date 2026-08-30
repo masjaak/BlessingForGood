@@ -40,10 +40,15 @@ function CustomerDetail() {
     api.customerAddresses.listForAdmin,
     dataSource === "convex" ? { userId: customerId as Id<"appUsers"> } : "skip",
   );
-  const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
+  const exceptions = useQuery(
+    api.orderExceptions.listForAdmin,
+    dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
+  );
   const orders = state.orders.filter((order) => order.customerUserId === customerId);
   const invoices = (adminInvoiceList?.page || []).filter((invoice) => String(invoice.customerUserId) === customerId);
-  const customerExceptions = exceptions?.filter((exception) => String(exception.customerUserId) === customerId) || [];
+  const customerExceptions = (Array.isArray(exceptions) ? exceptions : exceptions?.page || []).filter(
+    (exception) => String(exception.customerUserId) === customerId,
+  );
 
   if (
     profile === undefined ||

@@ -5,6 +5,7 @@ import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
 import {
@@ -20,11 +21,13 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
-type AdminException = Awaited<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>[number];
+type AdminExceptionPage = NonNullable<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>;
+type AdminException = AdminExceptionPage["page"][number];
 type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForAdmin>>;
 type AdminOrder = AdminOrdersPage["page"][number];
 type Resolution = "remove_item" | "deposit_release" | "refund_required" | "replacement" | "no_action";
@@ -457,11 +460,15 @@ function ExceptionCard({ exception }: { exception: AdminException }) {
 
 export function AdminExceptions() {
   const { dataSource } = useProduct();
+  const pagination = useAdminCursorPagination();
   const orders = useQuery(
     api.orders.listForAdmin,
     dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
   );
-  const exceptions = useQuery(api.orderExceptions.listForAdmin, dataSource === "convex" ? {} : "skip");
+  const exceptions = useQuery(
+    api.orderExceptions.listForAdmin,
+    dataSource === "convex" ? { paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor } } : "skip",
+  );
   if (dataSource !== "convex") return <div className="state-panel">Antrian masalah belum tersedia.</div>;
   return (
     <AdminOperationalPage
@@ -476,9 +483,9 @@ export function AdminExceptions() {
         </LoadingRegion>
       ) : (
         <>
-          {exceptions.length ? (
+          {exceptions.page.length ? (
             <div className="content-stack">
-              {exceptions.map((exception) => (
+              {exceptions.page.map((exception) => (
                 <ExceptionCard key={exception.exceptionId} exception={exception} />
               ))}
             </div>
@@ -488,6 +495,12 @@ export function AdminExceptions() {
               description="Antrian OOS, defect, dan pembatalan sedang kosong."
             />
           )}
+          <AdminPagination
+            {...pagination}
+            rowCount={exceptions.page.length}
+            isDone={exceptions.isDone}
+            continueCursor={exceptions.continueCursor}
+          />
           <OpenExceptionForm orders={orders.page} />
         </>
       )}

@@ -464,21 +464,23 @@ export const createReadyStock = mutation({
 });
 
 export const listEligibleCustomers = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { paginationOpts: v.optional(paginationOptsValidator) },
+  handler: async (ctx, args) => {
     await requirePermission(ctx, "orders.manage");
-    return (
-      await ctx.db
-        .query("appUsers")
-        .withIndex("by_role_and_status", (index) => index.eq("role", "customer").eq("status", "active"))
-        .order("desc")
-        .take(200)
-    ).map((user) => ({
-      customerUserId: user._id,
-      displayName: user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
-      email: user.emailSnapshot || null,
-      memberCode: user.memberCode || null,
-    }));
+    const page = await ctx.db
+      .query("appUsers")
+      .withIndex("by_role_and_status", (index) => index.eq("role", "customer").eq("status", "active"))
+      .order("desc")
+      .paginate(args.paginationOpts ?? { numItems: 25, cursor: null });
+    return {
+      ...page,
+      page: page.page.map((user) => ({
+        customerUserId: user._id,
+        displayName: user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
+        email: user.emailSnapshot || null,
+        memberCode: user.memberCode || null,
+      })),
+    };
   },
 });
 
