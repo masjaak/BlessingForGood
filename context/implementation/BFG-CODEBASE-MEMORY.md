@@ -36,12 +36,13 @@
 - Evidence: deterministic 100-item backfill/future-order, zero/ambiguous/
   locked-target, recap-finance, invoice-grouping, picker-search, customer
   payment-visibility, full Vitest/Convex/frontend regression, TypeScript,
-  ESLint, format, build, Convex check, and diff check pass. Local browser smoke
-  could not render because the checkout has no Clerk publishable key and the
-  escalated browser could not reach the local loopback server. No Production
-  data was created or changed; deployment and authenticated Production UAT
-  remain pending.
-- FINAL VERDICT: IMPLEMENTED; PRODUCTION GATE PENDING
+  ESLint, format, build, Convex check, and diff check pass. The Git-integrated
+  Vercel Production deployment for `7dcf896` completed and the canonical site
+  returned HTTP 200. Local browser smoke could not render because the
+  checkout has no Clerk publishable key and the escalated browser could not
+  reach the local loopback server. No Production data was created or changed;
+  authenticated Production UAT remains pending.
+- FINAL VERDICT: IMPLEMENTED; AUTHENTICATED UAT PENDING
 
 ## Post-diff memory — Adaptive natural-ratio book cover frame — 2026-08-30
 
