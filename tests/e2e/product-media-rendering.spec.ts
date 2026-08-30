@@ -10,14 +10,25 @@ function svgDataUri(width: number, height: number, color: string) {
 }
 
 test.describe("@customer product media presentation", () => {
-  test("keeps covers contained and thumbnail widths proportional at supported widths", async ({ page }, testInfo) => {
+  test("keeps covers at their intrinsic ratios and thumbnail widths proportional at supported widths", async ({
+    page,
+  }, testInfo) => {
     if (testInfo.project.name !== "customer-390") test.skip(true, "Run the product media matrix once.");
 
     const images = {
-      portrait: svgDataUri(200, 300, "#1c563f"),
-      square: svgDataUri(300, 300, "#d4a763"),
-      landscape: svgDataUri(420, 240, "#e8b7a4"),
+      standardPortrait: svgDataUri(200, 300, "#1c563f"),
+      widerPortrait: svgDataUri(684, 937, "#356c52"),
+      tallPortrait: svgDataUri(600, 1000, "#5f8f78"),
+      square: svgDataUri(800, 800, "#d4a763"),
+      landscape: svgDataUri(1200, 700, "#e8b7a4"),
     };
+    const coverFixtures = [
+      ["standard portrait", images.standardPortrait],
+      ["wider portrait", images.widerPortrait],
+      ["tall portrait", images.tallPortrait],
+      ["square", images.square],
+      ["landscape", images.landscape],
+    ] as const;
 
     for (const viewport of [
       { width: 390, height: 844 },
@@ -32,15 +43,18 @@ test.describe("@customer product media presentation", () => {
         </style>
         <main class="media-qa">
           <div class="media-qa-covers">
-            <div class="book-cover"><img class="book-cover-image" src="${images.portrait}" alt="Portrait cover" /></div>
-            <div class="book-cover"><img class="book-cover-image" src="${images.square}" alt="Square cover" /></div>
-            <div class="book-cover"><img class="book-cover-image is-positioned" style="--cover-zoom:1.35;--cover-x:18%;--cover-y:-12%" src="${images.landscape}" alt="Legacy-positioned cover" /></div>
+            ${coverFixtures
+              .map(
+                ([label, src]) =>
+                  `<div class="book-cover"><img class="book-cover-image" src="${src}" alt="${label} cover" /></div>`,
+              )
+              .join("")}
           </div>
           <section class="product-gallery" aria-label="Galeri produk fixture">
             <div class="product-gallery-controls">
               <button class="button button-secondary button-icon" type="button">←</button>
               <div class="product-gallery-thumbnails" role="list">
-                <button class="button button-secondary product-gallery-thumbnail" type="button"><span class="button-label"><img src="${images.portrait}" alt="" /></span></button>
+                <button class="button button-secondary product-gallery-thumbnail" type="button"><span class="button-label"><img src="${images.standardPortrait}" alt="" /></span></button>
                 <button class="button button-secondary product-gallery-thumbnail" type="button"><span class="button-label"><img src="${images.square}" alt="" /></span></button>
                 <button class="button button-secondary product-gallery-thumbnail" type="button"><span class="button-label"><img src="${images.landscape}" alt="" /></span></button>
               </div>
@@ -50,7 +64,7 @@ test.describe("@customer product media presentation", () => {
         </main>
       `);
 
-      await expect(page.locator(".media-qa .book-cover img")).toHaveCount(3);
+      await expect(page.locator(".media-qa .book-cover img")).toHaveCount(coverFixtures.length);
       await expect
         .poll(() =>
           page.locator(".media-qa img").evaluateAll((items) =>
@@ -67,12 +81,27 @@ test.describe("@customer product media presentation", () => {
         const coverImages = [...root.querySelectorAll<HTMLImageElement>(".book-cover > img")];
         const thumbnails = [...root.querySelectorAll<HTMLElement>(".product-gallery-thumbnail")];
         return {
-          frameWidths: covers.map((cover) => cover.getBoundingClientRect().width),
-          frameHeights: covers.map((cover) => cover.getBoundingClientRect().height),
-          coverImages: coverImages.map((image) => ({
-            objectFit: getComputedStyle(image).objectFit,
-            transform: getComputedStyle(image).transform,
-          })),
+          coverGeometry: covers.map((cover, index) => {
+            const image = coverImages[index];
+            const frame = cover.getBoundingClientRect();
+            const artwork = image.getBoundingClientRect();
+            const style = getComputedStyle(cover);
+            const borderLeft = Number.parseFloat(style.borderLeftWidth);
+            const borderTop = Number.parseFloat(style.borderTopWidth);
+            const borderRight = Number.parseFloat(style.borderRightWidth);
+            const borderBottom = Number.parseFloat(style.borderBottomWidth);
+            return {
+              intrinsicRatio: image.naturalWidth / image.naturalHeight,
+              frameRatio: frame.width / frame.height,
+              imageRatio: artwork.width / artwork.height,
+              topGap: artwork.top - (frame.top + borderTop),
+              rightGap: frame.right - borderRight - artwork.right,
+              bottomGap: frame.bottom - borderBottom - artwork.bottom,
+              leftGap: artwork.left - (frame.left + borderLeft),
+              objectFit: getComputedStyle(image).objectFit,
+              transform: getComputedStyle(image).transform,
+            };
+          }),
           thumbnailWidths: thumbnails.map((thumbnail) => thumbnail.getBoundingClientRect().width),
           thumbnailImageWidths: thumbnails.map(
             (thumbnail) => thumbnail.querySelector("img")?.getBoundingClientRect().width || 0,
@@ -84,13 +113,19 @@ test.describe("@customer product media presentation", () => {
         };
       });
 
-      expect(Math.max(...metrics.frameWidths) - Math.min(...metrics.frameWidths)).toBeLessThanOrEqual(1);
       expect(
-        metrics.frameHeights.every((height, index) => Math.abs(height / metrics.frameWidths[index] - 1.5) < 0.02),
+        metrics.coverGeometry.every(
+          (cover) =>
+            Math.abs(cover.frameRatio - cover.intrinsicRatio) < 0.03 &&
+            Math.abs(cover.imageRatio - cover.intrinsicRatio) < 0.01 &&
+            cover.topGap <= 1 &&
+            cover.rightGap <= 1 &&
+            cover.bottomGap <= 1 &&
+            cover.leftGap <= 1 &&
+            cover.objectFit === "contain" &&
+            cover.transform === "none",
+        ),
       ).toBe(true);
-      expect(metrics.coverImages.every((image) => image.objectFit === "contain" && image.transform === "none")).toBe(
-        true,
-      );
       expect(metrics.thumbnailImageHeights.every((height) => Math.abs(height - 52) <= 1)).toBe(true);
       expect(metrics.thumbnailImageWidths[0]).toBeLessThan(metrics.thumbnailImageWidths[1]);
       expect(metrics.thumbnailImageWidths[1]).toBeLessThan(metrics.thumbnailImageWidths[2]);

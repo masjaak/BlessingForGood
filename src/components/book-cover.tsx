@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 export function BookCover({
@@ -20,25 +19,18 @@ export function BookCover({
   const localSource = src?.startsWith("/") ? src : undefined;
   const storageSource = /^https:\/\/[^/]+\.convex\.cloud\/api\/storage\//.test(src || "") ? src : undefined;
   const previewSource = src?.startsWith("blob:") ? src : undefined;
+  const imageSource = storageSource || previewSource || localSource;
+  const showImage = Boolean(imageSource) && !imageFailed;
 
   return (
-    <div className="book-cover">
-      {(storageSource || previewSource) && !imageFailed ? (
+    <div className={`book-cover${showImage ? "" : " is-empty"}`}>
+      {showImage ? (
         // Convex returns short-lived signed storage URLs whose hostname is deployment-specific.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           className="book-cover-image"
-          src={storageSource || previewSource}
+          src={imageSource}
           alt={alt || `${title} cover`}
-          onError={() => setImageFailed(true)}
-        />
-      ) : localSource && !imageFailed ? (
-        <Image
-          className="book-cover-image"
-          src={localSource}
-          alt={alt || `${title} cover`}
-          fill
-          sizes="(max-width: 640px) 96px, 132px"
           onError={() => setImageFailed(true)}
         />
       ) : (
