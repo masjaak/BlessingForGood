@@ -21,7 +21,7 @@ Local focused and full regression gates pass, including the Convex projection
 regression, copy success/failure/ARIA tests, BFGSelect assertions, rendered
 390/768/1440 form geometry, 75 Vitest files / 434 tests, TypeScript, ESLint,
 format, build, and Convex check. Commit `14e6f105af4483e5a499e5fc494f14b107648710`
-is deployed as Vercel `dpl_7Nwiqh3e8ywWozqsKa4vhJQaeVgr`, aliased to the
+is deployed as Vercel `dpl_CHkP7dRoSs4p2He6jUAWfPaZLviA`, aliased to the
 canonical domain; its configured build deployed Convex Production
 `clean-eel-522` with no deleted indexes. Post-deploy public checks include the
 canonical route shell, Catalog gateway, BFGSelect, and 26/28 selected public

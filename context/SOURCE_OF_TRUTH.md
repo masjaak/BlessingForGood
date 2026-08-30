@@ -26,7 +26,7 @@
   existing access/member/discovery grids and responsive breakpoints remain in
   place. Pelanggan, Produk, and Publisher continue to use `BFGSelect`.
 - The correction is deployed from commit `14e6f105af4483e5a499e5fc494f14b107648710`
-  as Vercel `dpl_7Nwiqh3e8ywWozqsKa4vhJQaeVgr` with Convex Production
+  as Vercel `dpl_CHkP7dRoSs4p2He6jUAWfPaZLviA` with Convex Production
   `clean-eel-522`. Public post-deploy route and Select checks ran; authenticated
   Customer/Admin business UAT remains the release gate because no authorized
   Clerk session was available.

@@ -33,7 +33,7 @@
 - Authenticated Production UAT remains an operator gate because no authorized
   Clerk session or safe business fixture is available in this environment.
   Commit `14e6f105af4483e5a499e5fc494f14b107648710` is deployed as Vercel
-  `dpl_7Nwiqh3e8ywWozqsKa4vhJQaeVgr`, aliased to the canonical domain, and
+  `dpl_CHkP7dRoSs4p2He6jUAWfPaZLviA`, aliased to the canonical domain, and
   deployed Convex Production `clean-eel-522` with no deleted indexes. Public
   post-deploy checks passed for the relevant route shell and BFGSelect; two
   unrelated baseline smoke assertions remain data/copy-text dependent. No

@@ -26,8 +26,8 @@ source: conversation
 
 - Focused and full local tests, TypeScript, ESLint, formatting, build, Convex
   check, and rendered 390/768/1440 geometry pass. Commit
-  `14e6f105af4483e5a499e5fc494f14b107648710` is deployed as Vercel
-  `dpl_7Nwiqh3e8ywWozqsKa4vhJQaeVgr`; its configured build deployed Convex
+  `52a5cb7` is deployed as Vercel
+  `dpl_CHkP7dRoSs4p2He6jUAWfPaZLviA`; its configured build deployed Convex
   Production `clean-eel-522` with no deleted indexes. Public post-deploy route
   and BFGSelect checks ran; authenticated business UAT remains pending. No
   credentials or Production business data were introduced.
