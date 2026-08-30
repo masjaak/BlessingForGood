@@ -42,8 +42,8 @@
   `tests/components/admin-catalog-discoverability.test.tsx`,
   `tests/domain/logic.test.ts`, and `convex/catalog-discovery.test.ts`.
   Responsive geometry was checked at 390/768/1440 with the real stylesheet.
-  Commit `a3459f9d622895044466a8c72f1f520964d623c1` is deployed to Vercel
-  Production as `dpl_6y2hNS3LURYwf7dTFABc1mj9Azwf`, aliased to the canonical
+  Commit `45ac1bb` is deployed to Vercel Production as
+  `dpl_ETVTjVtvB6RdKRBcRNR4SJgRwjXv`, aliased to the canonical
   domain; the existing build path deployed Convex Production `clean-eel-522`.
   Public smoke passes. Authenticated app rendering and Production business UAT
   remain operator gates when no Clerk key/session or safe fixture is available.

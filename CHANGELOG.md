@@ -28,8 +28,8 @@ source: conversation
 - Focused and full deterministic checks pass locally: 75 Vitest files / 431
   tests, TypeScript, ESLint, format, Convex check, audit, build, and diff
   checks. Responsive stylesheet geometry passes at 390/768/1440.
-- Commit `a3459f9d622895044466a8c72f1f520964d623c1` is deployed to Vercel
-  Production as `dpl_6y2hNS3LURYwf7dTFABc1mj9Azwf`, aliased to the canonical
+- Commit `45ac1bb` is deployed to Vercel Production as
+  `dpl_ETVTjVtvB6RdKRBcRNR4SJgRwjXv`, aliased to the canonical
   domain; the existing build path deployed Convex Production `clean-eel-522`.
   Public homepage, Catalog gateway, robots, and sitemap smoke checks pass.
 - Authenticated application rendering and Production business UAT remain

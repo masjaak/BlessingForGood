@@ -14,9 +14,9 @@ identity without an active BFG member cannot redeem it.
 
 Local gates are green: 75 Vitest files / 431 tests, TypeScript, ESLint, format,
 Convex check, audit, production build, and diff checks. Responsive stylesheet
-geometry passes at 390/768/1440. Commit `a3459f9d622895044466a8c72f1f520964d623c1`
-is on `main` and `origin/main`, deployed to Vercel Production as
-`dpl_6y2hNS3LURYwf7dTFABc1mj9Azwf`, and aliased to
+geometry passes at 390/768/1440. Commit `45ac1bb` is on `main` and
+`origin/main`, deployed to Vercel Production as
+`dpl_ETVTjVtvB6RdKRBcRNR4SJgRwjXv`, and aliased to
 `https://www.blessingforgood.com`. The existing Vercel build path deployed the
 changed Convex functions to Production `clean-eel-522` with schema validation.
 Canonical public smoke checks pass. Authenticated app rendering and business
