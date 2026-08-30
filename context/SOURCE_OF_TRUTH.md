@@ -22,8 +22,10 @@
   hacks. Pelanggan, Produk, and Publisher remain `BFGSelect` controls.
 - Component coverage and rendered fixtures protect single/multi-format card
   states, selected-price switching, order payloads, and Catalog/Admin geometry
-  at 390/768/1440. Production deployment and authenticated UAT are recorded
-  after release verification.
+  at 390/768/1440. Commit `a96feb0` is deployed as Vercel
+  `dpl_FuFKC9pre5SqSJCFNsZ3z9Kqmaga` and aliased to the canonical domain using
+  prebuilt frontend output; Convex was not deployed because no backend source
+  changed. Authenticated business UAT remains the operator gate.
 
 ## Production UAT bugfix — 2026-08-30
 

@@ -24,8 +24,14 @@ source: conversation
 
 ### QA
 
-- Component and rendered card/form checks pass at 390/768/1440. Full release
-  and Production verification are recorded after deployment.
+- Component and rendered card/form checks pass at 390/768/1440. Commit
+  `a96feb0` is deployed as Vercel
+  `dpl_FuFKC9pre5SqSJCFNsZ3z9Kqmaga` and aliased to the canonical domain via
+  prebuilt frontend output. Convex was not deployed because no backend source
+  changed; selected signed-out Production smoke passed 39/40 routes. The one
+  failure is an existing stale `Kode akses katalog` assertion against the
+  current `Kode akses Secret Catalog` copy; authenticated business UAT remains
+  pending.
 
 ## [secret-catalog-production-uat-bugfix] — 2026-08-30
 

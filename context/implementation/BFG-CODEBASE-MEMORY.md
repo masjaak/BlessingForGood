@@ -25,8 +25,14 @@
   `tests/e2e/secret-catalog-access-forms.spec.ts` cover the 390/768/1440
   presentation and geometry contract.
 - This ticket did not change access, projection, search, variant persistence,
-  quantity logic, or order mutations. Production release and authenticated
-  UAT are recorded after deployment; no Production data is created.
+  quantity logic, or order mutations. Commit `a96feb0` is deployed as Vercel
+  `dpl_FuFKC9pre5SqSJCFNsZ3z9Kqmaga` and aliased to the canonical domain via
+  prebuilt frontend output; Convex was intentionally not deployed because no
+  backend source changed. Authenticated business UAT remains an operator gate;
+  no Production data was created. Selected signed-out Production smoke passed
+  39/40 routes; the one failure is a pre-existing stale `Kode akses katalog`
+  assertion against the current `Kode akses Secret Catalog` copy and is
+  backlog-only.
 
 ## Post-diff memory — Secret Catalog Production UAT bugfix — 2026-08-30
 

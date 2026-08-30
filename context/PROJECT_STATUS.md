@@ -2,7 +2,7 @@
 
 ## Catalog UI polish and adaptive format presentation — 2026-08-30
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The Customer Book card now presents one eligible format as static metadata and
 two or three eligible formats as compact quiet choices. The existing selected
@@ -11,8 +11,15 @@ order payload behavior remain unchanged. Scoped Catalog Admin settings,
 Book Picker, and current-Catalog discovery geometry uses the existing grid and
 spacing system; no business or search owner changed.
 
-Focused component and rendered 390/768/1440 checks pass. Production release
-verification and authenticated Customer/Admin UAT remain pending.
+Focused component and rendered 390/768/1440 checks pass. Commit `a96feb0` is
+deployed as Vercel `dpl_FuFKC9pre5SqSJCFNsZ3z9Kqmaga` and aliased to the
+canonical domain through prebuilt frontend output. Convex was not deployed
+because no backend source changed. Authenticated Customer/Admin UAT remains
+pending because no authorized Clerk session or safe business fixture is
+available; no Production data was introduced. Selected signed-out Production
+smoke passed 39/40 routes; the one failure is an existing stale assertion for
+`Kode akses katalog` while the current source copy is `Kode akses Secret
+Catalog`, and was not changed in this UI ticket.
 
 ## Secret Catalog Production UAT bugfix — 2026-08-30
 
