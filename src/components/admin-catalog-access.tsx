@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
@@ -32,7 +32,17 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
   const [grantExpiry, setGrantExpiry] = useState("");
   const [oneTimeCode, setOneTimeCode] = useState("");
   const [message, setMessage] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState<{
+    kind: "success" | "error";
+    text: string;
+  } | null>(null);
   const [pending, setPending] = useState("");
+
+  useEffect(() => {
+    if (!copyFeedback) return;
+    const timer = window.setTimeout(() => setCopyFeedback(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [copyFeedback]);
 
   if (catalog === undefined || access === undefined || customers === undefined)
     return (
@@ -54,6 +64,16 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
       setMessage("Aksi akses ditolak. Periksa status katalog, pelanggan, dan tanggal berakhir.");
     } finally {
       setPending("");
+    }
+  }
+
+  async function copyCode() {
+    setCopyFeedback(null);
+    try {
+      await navigator.clipboard.writeText(oneTimeCode);
+      setCopyFeedback({ kind: "success", text: "Kode akses berhasil disalin." });
+    } catch {
+      setCopyFeedback({ kind: "error", text: "Kode akses gagal disalin. Coba salin secara manual." });
     }
   }
 
@@ -114,10 +134,7 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
             <div className="catalog-code-result" role="status">
               <strong>Kode baru — tampil sekali</strong>
               <code>{oneTimeCode}</code>
-              <Button
-                variant="secondary"
-                onClick={() => void navigator.clipboard.writeText(oneTimeCode).then(() => setMessage("Kode disalin."))}
-              >
+              <Button variant="secondary" onClick={() => void copyCode()}>
                 Salin kode
               </Button>
             </div>
@@ -229,6 +246,15 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
       {message ? (
         <p className="success-banner" role="status">
           {message}
+        </p>
+      ) : null}
+      {copyFeedback ? (
+        <p
+          aria-live={copyFeedback.kind === "success" ? "polite" : "assertive"}
+          className={`catalog-copy-toast catalog-copy-toast-${copyFeedback.kind}`}
+          role={copyFeedback.kind === "success" ? "status" : "alert"}
+        >
+          {copyFeedback.text}
         </p>
       ) : null}
     </AdminOperationalPage>

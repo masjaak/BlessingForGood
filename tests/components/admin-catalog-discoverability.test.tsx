@@ -208,6 +208,83 @@ describe("Secret Catalog operational discoverability", () => {
     expect(screen.queryByRole("button", { name: /Buat periode/i })).toBeNull();
     expect(document.querySelector(".catalog-access-code-form")).toBeTruthy();
     expect(document.querySelector(".catalog-member-form")).toBeTruthy();
+    expect(document.querySelector(".catalog-member-form .bfg-select-trigger")).toBeTruthy();
+    expect(document.querySelector(".catalog-member-form select")).toBeNull();
+  });
+
+  it("shows copy success only after the clipboard write resolves", async () => {
+    let resolveWrite: () => void = () => {};
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveWrite = resolve;
+        }),
+    );
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    const generate = vi.fn().mockResolvedValue({ code: "BFG-ONE-TIME" });
+    vi.mocked(useMutation).mockReturnValue(generate as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "Spring",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      { codes: [], grants: [] },
+      [],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogAccess catalogId="catalog-1" />);
+    fireEvent.click(screen.getByRole("button", { name: "Buat kode akses" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Salin kode" })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "Salin kode" }));
+    expect(writeText).toHaveBeenCalledWith("BFG-ONE-TIME");
+    expect(screen.queryByText("Kode akses berhasil disalin.")).toBeNull();
+
+    resolveWrite();
+    await waitFor(() => {
+      const toast = screen.getByText("Kode akses berhasil disalin.");
+      expect(toast.closest("[role='status']")?.getAttribute("aria-live")).toBe("polite");
+    });
+  });
+
+  it("shows copy failure feedback without a false success", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("clipboard unavailable"));
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    const generate = vi.fn().mockResolvedValue({ code: "BFG-ONE-TIME" });
+    vi.mocked(useMutation).mockReturnValue(generate as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "Spring",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      { codes: [], grants: [] },
+      [],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogAccess catalogId="catalog-1" />);
+    fireEvent.click(screen.getByRole("button", { name: "Buat kode akses" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Salin kode" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Salin kode" }));
+
+    await waitFor(() => expect(screen.getByText("Kode akses gagal disalin. Coba salin secara manual.")).toBeTruthy());
+    expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("assertive");
+    expect(screen.queryByText("Kode akses berhasil disalin.")).toBeNull();
   });
 
   it("searches eligible assignment records and current Catalog records without changing mutations", async () => {
@@ -266,6 +343,12 @@ describe("Secret Catalog operational discoverability", () => {
     vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    expect(document.querySelector(".admin-catalog-picker-controls .bfg-select-trigger")).toBeTruthy();
+    expect(document.querySelector(".admin-catalog-tracking-controls .bfg-select-trigger")).toBeTruthy();
+    expect(
+      document.querySelectorAll(".admin-catalog-picker-controls select, .admin-catalog-tracking-controls select"),
+    ).toHaveLength(0);
 
     const pickerSearch = screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[0];
     fireEvent.change(pickerSearch, { target: { value: "lovelace" } });

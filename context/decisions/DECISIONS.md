@@ -1,5 +1,21 @@
 # Decisions
 
+## Secret Catalog Production UAT bugfix — 2026-08-30
+
+- Global Secret Catalog access remains one secure generated code for multiple
+  eligible open/unexpired Catalogs. The initial session Catalog is the Catalog
+  recorded on the generated code when it is still eligible; falling back to
+  the first eligible Catalog is only a compatibility case when that source is
+  no longer eligible.
+- Customer books continue through `catalogAccess.getUnlocked` and
+  `catalogView`; the fix does not load Book Master directly, remove server
+  guards, change search, or return records from another Catalog.
+- Copy success feedback waits for the Clipboard API, reports rejection as an
+  error, auto-dismisses, and is not a business Activity event.
+- Catalog/Admin alignment is CSS-only in the scoped Catalog grid owners.
+  Touched selects remain the existing `BFGSelect`; no native or third-party
+  dropdown was introduced.
+
 ## Minor stability tuning — 2026-08-29
 
 - GBP supplier cost remains stored as integer pence at Book Variant level. Admin

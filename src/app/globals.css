@@ -7182,6 +7182,32 @@ p {
   margin-bottom: 1px;
 }
 
+.catalog-copy-toast {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 90;
+  max-width: min(360px, calc(100vw - 32px));
+  margin: 0;
+  padding: 12px 16px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  font-weight: var(--font-weight-bold);
+}
+
+.catalog-copy-toast-success {
+  color: var(--color-success);
+  border-color: var(--color-success);
+  background: var(--mint);
+}
+
+.catalog-copy-toast-error {
+  color: var(--danger);
+}
+
 .catalog-result-count {
   margin: 0;
   color: var(--ink-muted);
@@ -7212,6 +7238,22 @@ p {
 
 .catalog-member-form {
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+}
+
+@media (min-width: 641px) {
+  .catalog-settings-grid {
+    grid-template-rows: repeat(3, auto);
+  }
+
+  .catalog-settings-grid > .field {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    align-items: start;
+  }
+
+  .catalog-settings-grid > .field > .input {
+    grid-row: 3;
+  }
 }
 
 .catalog-access-code-form > .field,
@@ -7274,5 +7316,12 @@ p {
   .catalog-member-form > .button {
     width: 100%;
     justify-self: stretch;
+  }
+
+  .catalog-copy-toast {
+    right: var(--space-4);
+    bottom: var(--space-4);
+    left: var(--space-4);
+    max-width: none;
   }
 }

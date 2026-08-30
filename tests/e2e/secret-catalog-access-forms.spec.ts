@@ -20,8 +20,8 @@ test.describe("@admin Secret Catalog form alignment", () => {
             <section class="card form-card">
               <div class="form-grid form-grid-wide catalog-settings-grid">
                 <label class="field"><span class="field-label">Nama</span><input class="input" /></label>
-                <label class="field"><span class="field-label">Batas pemesanan</span><input class="input" type="date" /></label>
-                <label class="field"><span class="field-label">Estimasi kedatangan</span><input class="input" type="month" /></label>
+                <label class="field"><span class="field-label">Batas pemesanan</span><span class="field-hint">Customer dapat melakukan preorder sampai tanggal ini.</span><input class="input" type="date" /></label>
+                <label class="field"><span class="field-label">Estimasi kedatangan</span><span class="field-hint">Bulan dan tahun perkiraan tiba untuk Customer.</span><input class="input" type="month" /></label>
               </div>
               <div class="catalog-access-code-section">
                 <div class="catalog-access-code-form">
@@ -33,7 +33,7 @@ test.describe("@admin Secret Catalog form alignment", () => {
                 </div>
               </div>
               <form class="form-actions catalog-member-form">
-                <label class="field"><span class="field-label">Pelanggan</span><select class="select"><option>Member</option></select></label>
+                <label class="field"><span class="field-label">Pelanggan</span><button class="select bfg-select-trigger" type="button" role="combobox" aria-label="Pelanggan"><span class="bfg-select-value">Member</span><span class="bfg-select-trailing"><span class="bfg-select-chevron"></span></span></button></label>
                 <label class="field"><span class="field-label">Berlaku sampai</span><input class="input" type="datetime-local" /></label>
                 <button class="button button-primary">Berikan akses</button>
               </form>
@@ -54,20 +54,33 @@ test.describe("@admin Secret Catalog form alignment", () => {
         const access = element(".catalog-access-code-form");
         const member = element(".catalog-member-form");
         const settingsFields = fields(".catalog-settings-grid > .field");
+        const settingsControls = fields(".catalog-settings-grid > .field > .input");
         const accessField = element(".catalog-access-code-form > .field");
         const accessActions = element(".catalog-access-code-form > .action-group");
         const memberFields = fields(".catalog-member-form > .field");
         const memberButton = element(".catalog-member-form > .button");
+        const memberControls = fields(
+          ".catalog-member-form .input, .catalog-member-form .bfg-select-trigger, .catalog-member-form > .button",
+        );
+        const rectTop = (item: HTMLElement) => item.getBoundingClientRect().top;
+        const rectHeight = (item: HTMLElement) => item.getBoundingClientRect().height;
         return {
           documentWidth: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth),
           settingsColumns: getComputedStyle(settings).gridTemplateColumns.split(" ").length,
           settingsLefts: new Set(settingsFields.map((field) => Math.round(field.getBoundingClientRect().left))).size,
+          settingsControlTopDelta:
+            Math.max(...settingsControls.map(rectTop)) - Math.min(...settingsControls.map(rectTop)),
+          settingsControlBottomDelta:
+            Math.max(...settingsControls.map((control) => control.getBoundingClientRect().bottom)) -
+            Math.min(...settingsControls.map((control) => control.getBoundingClientRect().bottom)),
           accessColumns: getComputedStyle(access).gridTemplateColumns.split(" ").length,
           accessBottomDelta: Math.abs(bottom(accessField) - bottom(accessActions)),
           memberColumns: getComputedStyle(member).gridTemplateColumns.split(" ").length,
           memberBottomDelta:
             Math.max(...[...memberFields, memberButton].map(bottom)) -
             Math.min(...[...memberFields, memberButton].map(bottom)),
+          memberControlHeightDelta:
+            Math.max(...memberControls.map(rectHeight)) - Math.min(...memberControls.map(rectHeight)),
           memberFieldLefts: new Set(memberFields.map((field) => Math.round(field.getBoundingClientRect().left))).size,
         };
       });
@@ -82,10 +95,13 @@ test.describe("@admin Secret Catalog form alignment", () => {
       } else {
         expect(geometry.settingsColumns).toBe(3);
         expect(geometry.settingsLefts).toBe(3);
+        expect(geometry.settingsControlTopDelta).toBeLessThanOrEqual(1);
+        expect(geometry.settingsControlBottomDelta).toBeLessThanOrEqual(1);
         expect(geometry.accessColumns).toBe(2);
         expect(geometry.accessBottomDelta).toBeLessThanOrEqual(1);
         expect(geometry.memberColumns).toBe(3);
         expect(geometry.memberBottomDelta).toBeLessThanOrEqual(1);
+        expect(geometry.memberControlHeightDelta).toBeLessThanOrEqual(1);
       }
       await page.screenshot({
         path: testInfo.outputPath(`catalog-access-forms-${viewport.width}.png`),

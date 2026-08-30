@@ -26,6 +26,55 @@ describe("Secret Catalog discovery and global access", () => {
     expect(second.catalogId).not.toBe(first.catalogId);
   });
 
+  it("starts global access on the Catalog that generated the code", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const olderEmptyCatalog = await createOpenCatalog(admin, "Older Empty Catalog", "1201", "older-empty-code");
+    await admin.mutation(api.books.update, {
+      bookId: olderEmptyCatalog.bookId,
+      publicationStatus: "archived",
+    });
+    const target = await createOpenCatalog(admin, "Target Catalog", "1202", "target-legacy-code");
+
+    for (const [index, title, isbn] of [
+      [1, "Target Book Two", "978000012021"],
+      [2, "Target Book Three", "978000012022"],
+    ] as const) {
+      const publisherId = await admin.mutation(api.publishers.create, { name: `Target Publisher ${index}` });
+      const bookId = await admin.mutation(api.books.create, { publisherId, title });
+      await admin.mutation(api.books.update, { bookId, publicationStatus: "special" });
+      const variantId = await admin.mutation(api.bookVariants.create, {
+        bookId,
+        format: "PB",
+        isbn,
+        priceAmount: 125000,
+      });
+      await admin.mutation(api.catalogItems.add, { catalogId: target.catalogId, bookVariantId: variantId });
+    }
+
+    const adminView = await admin.query(api.secretCatalogs.getForAdmin, { catalogId: target.catalogId });
+    expect(adminView?.view.books).toHaveLength(3);
+
+    const generated = await admin.mutation(api.catalogAccess.generateCode, { catalogId: target.catalogId });
+    const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: generated.code });
+    if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
+
+    expect(unlocked.catalogId).toBe(target.catalogId);
+    expect(unlocked.catalog).toMatchObject({ id: target.catalogId, titleCount: 3 });
+    expect(unlocked.catalog.books.map((book) => book.title)).toEqual(
+      expect.arrayContaining(["Target Catalog Book", "Target Book Two", "Target Book Three"]),
+    );
+    expect(unlocked.catalogs.map((catalog) => catalog.id)).toEqual(
+      expect.arrayContaining([olderEmptyCatalog.catalogId, target.catalogId]),
+    );
+    await expect(
+      customer.query(api.catalogAccess.getUnlocked, {
+        catalogId: olderEmptyCatalog.catalogId,
+        sessionToken: unlocked.sessionToken,
+      }),
+    ).resolves.toMatchObject({ id: olderEmptyCatalog.catalogId, titleCount: 0, books: [] });
+  });
+
   it("shares one generated code across eligible Catalogs without exposing ineligible Catalogs", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);

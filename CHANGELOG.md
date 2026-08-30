@@ -8,6 +8,27 @@ source: conversation
 
 # Changelog
 
+## [secret-catalog-production-uat-bugfix] — 2026-08-30
+
+### Fixed
+
+- Corrected global Secret Catalog unlock to start on the eligible Catalog that
+  generated the code, restoring that Catalog's existing customer-safe books
+  while preserving the global eligible-Catalog set and strict per-Catalog
+  reads. Customer search/filter/order behavior is unchanged.
+- Added a local BFG copy toast that appears only after Clipboard API success;
+  rejected writes show error feedback without a false success or Activity row.
+- Aligned the scoped Catalog settings row using the existing BFG grid grammar
+  and verified access/member/discovery controls at the required breakpoints.
+  Pelanggan, Produk, and Publisher remain BFGSelect controls.
+
+### QA
+
+- Focused and full local tests, TypeScript, ESLint, formatting, build, Convex
+  check, and rendered 390/768/1440 geometry pass. Production deployment and
+  authenticated business UAT remain pending; no credentials or Production
+  business data were introduced.
+
 ## [secret-catalog-global-access-code] — 2026-08-30
 
 ### Changed

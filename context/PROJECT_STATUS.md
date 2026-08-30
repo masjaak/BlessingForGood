@@ -1,5 +1,29 @@
 # BFG Project Status
 
+## Secret Catalog Production UAT bugfix — 2026-08-30
+
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+Production UAT isolated the remaining customer defect at the global unlock
+initial-Catalog boundary. A generated global code now starts on its source
+Catalog when eligible, while retaining the full eligible Catalog selector and
+server-side Catalog scoping. The Customer safe projection, title/ISBN search,
+Publisher filter, Book Detail, and order flow were not rewritten.
+
+The Admin copy action now waits for `navigator.clipboard.writeText` before
+showing `Kode akses berhasil disalin.`; failures show
+`Kode akses gagal disalin. Coba salin secara manual.` with no false success.
+Scoped Catalog settings alignment is owned by the existing CSS grid/subgrid
+rule; access/member/discovery layout primitives remain unchanged, and all
+touched Catalog selects use BFGSelect.
+
+Local focused and full regression gates pass, including the Convex projection
+regression, copy success/failure/ARIA tests, BFGSelect assertions, rendered
+390/768/1440 form geometry, 75 Vitest files / 434 tests, TypeScript, ESLint,
+format, build, and Convex check. Authenticated Production UAT still requires
+an authorized Clerk session and safe business fixture; no credentials or
+Production records were introduced.
+
 ## Secret Catalog access simplification and form alignment — 2026-08-30
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

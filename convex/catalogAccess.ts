@@ -440,10 +440,14 @@ export const unlock = mutation({
       if (!constantTimeEqual(expected, record.codeDigest)) return reject("ACCESS_CODE_INVALID");
       const catalogs = await eligibleGlobalCatalogs(ctx);
       if (!catalogs.length) return reject("CATALOG_NOT_OPEN");
+      const initialCatalogIndex = Math.max(
+        0,
+        catalogs.findIndex((catalog) => catalog._id === record.catalogId),
+      );
       const expiresAt = Math.min(record.expiresAt || OPEN_ENDED_TIMESTAMP_MS, now + CATALOG_SESSION_TTL_MS);
       const sessionToken = randomCatalogSessionToken();
       await ctx.db.insert("catalogAccessSessions", {
-        catalogId: catalogs[0]._id,
+        catalogId: catalogs[initialCatalogIndex]._id,
         accessCodeId: record._id,
         sessionDigest: await catalogSessionDigest(sessionToken),
         createdAt: now,
@@ -465,10 +469,10 @@ export const unlock = mutation({
       }
       const views = await Promise.all(catalogs.map((catalog) => getCatalogView(ctx, catalog._id)));
       return {
-        catalogId: catalogs[0]._id,
+        catalogId: catalogs[initialCatalogIndex]._id,
         expiresAt,
         sessionToken,
-        catalog: views[0],
+        catalog: views[initialCatalogIndex],
         catalogs: views.map(catalogAccessSummary),
       };
     }

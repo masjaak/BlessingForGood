@@ -1,5 +1,39 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Secret Catalog Production UAT bugfix — 2026-08-30
+
+- First wrong boundary: `convex/catalogAccess.ts:unlock` previously stored
+  `eligibleGlobalCatalogs[0]` as the initial session/current Catalog and
+  returned its view. It now selects the generated code's `record.catalogId`
+  when present in the eligible set, with the existing first-eligible fallback
+  if the source Catalog is no longer eligible.
+- `convex/lib/catalogView.ts` remains the customer-safe item projection owner;
+  its active/available/published-or-special filters were not changed. The
+  corrected initial Catalog is why Admin-linked real products now appear
+  without weakening cross-Catalog authorization.
+- `src/domain/prototype/convex-store.tsx` still persists and switches the
+  session Catalog ID; `src/components/customer-catalog.tsx` still owns
+  title/ISBN search, Publisher filtering, cards, detail, quantity, and order.
+  Search was not changed.
+- `src/components/admin-catalog-access.tsx` owns Clipboard copy feedback.
+  It awaits `navigator.clipboard.writeText`, renders a local auto-dismissing
+  status/alert toast, and does not write Activity records.
+- `src/components/admin-catalog-detail.tsx` owns Catalog settings and the
+  Book Picker/current-Catalog discovery forms. `src/app/globals.css` owns the
+  scoped settings subgrid plus existing access/member/discovery alignment;
+  `BFGSelect` remains the select owner for Pelanggan, Produk, Publisher, and
+  the Customer Publisher filter.
+- Regression owners: `convex/catalog-discovery.test.ts` covers source-Catalog
+  selection, same-session multi-Catalog scoping, and ineligible protection;
+  `tests/components/admin-catalog-discoverability.test.tsx` covers copy
+  success/failure/ARIA and scoped BFGSelect usage; and
+  `tests/e2e/secret-catalog-access-forms.spec.ts` covers rendered alignment at
+  390/768/1440. Full local gates pass: 75 Vitest files / 434 tests,
+  TypeScript, ESLint, format, build, Convex check, and diff check.
+- Authenticated Production UAT remains an operator gate because no authorized
+  Clerk session or safe business fixture is available in this environment.
+  No Production credentials or business records were created or changed.
+
 ## Post-diff memory — Secret Catalog global access code and form alignment — 2026-08-30
 
 - `src/components/customer-catalog.tsx` owns the Customer discovery workspace:

@@ -1,5 +1,31 @@
 # BFG SOURCE OF TRUTH
 
+## Production UAT bugfix — 2026-08-30
+
+- Real Production UAT supersedes the earlier partial closure for Secret Catalog
+  discovery: the global access gate and search remain green, but a code could
+  start its session on the first eligible Catalog rather than the Catalog that
+  generated it. That made a real Catalog with three Admin-linked products
+  render as a correct header with zero customer-safe books.
+- `convex/catalogAccess.ts` now uses the generated code's source
+  `catalogAccessCodes.catalogId` as the initial Catalog when that Catalog is
+  still eligible. The same session still exposes only the existing eligible
+  Catalog set, and `getUnlocked` still rechecks the requested Catalog server
+  side; no global data projection or authorization weakening was introduced.
+- The Customer projection remains owned by `convex/lib/catalogView.ts`, and
+  Customer title/ISBN search plus Publisher filtering remain unchanged. Admin
+  assignment/current-Catalog search and Customer order controls consume the
+  corrected scoped projection.
+- Admin copy feedback is local to `src/components/admin-catalog-access.tsx`:
+  a successful Clipboard API resolution shows the BFG-native
+  `Kode akses berhasil disalin.` toast; rejection shows error feedback and
+  never reports false success. It is client UX only and creates no Activity
+  event.
+- Scoped Catalog/Admin field alignment is owned by the existing Catalog grid
+  CSS. The settings row uses a shared label/helper/control grid on desktop;
+  existing access/member/discovery grids and responsive breakpoints remain in
+  place. Pelanggan, Produk, and Publisher continue to use `BFGSelect`.
+
 ## Secret Catalog discovery and global access code — 2026-08-30
 
 - Secret Catalog is a customer discovery workspace. The customer surface

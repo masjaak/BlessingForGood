@@ -8,8 +8,18 @@ the active decision index.
 
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-073 | 2026-08-30 / Production UAT bugfix | A global code could choose the first eligible Catalog as the initial session Catalog. | When the generated code's source Catalog is eligible, global unlock starts there; the session still exposes only the eligible Catalog set and each requested Catalog is rechecked server-side. | Authenticated Production UAT; `convex/catalogAccess.ts`; deterministic regression | Preserves the one-code/multi-Catalog decision while keeping the Admin-generated Catalog and Customer projection on the same initial context. | ACTIVE |
 | BFG-DEC-072 | 2026-08-30 / Secret Catalog access simplification | Shared Access Period plus manual period code duplicated the existing generated-code concept and made Admins configure period names, codes, dates, and Catalog links. | Remove the active period UX and use one current secure generated Secret Catalog code for all Catalogs eligible under the existing access contract. Preserve digest-only storage, one-time raw display, expiry, revoke, sessions, grants, authorization, and the already-green search/discovery/order paths. | Latest explicit user/client decision; Production object trace; focused access tests | Simplifies Admin access without introducing a second authority or redefining Catalog eligibility. | ACTIVE |
 | BFG-DEC-071 | 2026-08-30 / Secret Catalog discovery | Customers and Admins manually scrolled long Catalog lists; each Catalog owned an isolated access code. | Customer Catalogs expose header context, title/ISBN search, a canonical Publisher filter, result/empty states, and clean cards. Admin assignment/current tracking expose bounded title/Publisher/ISBN/author search. The later global-code decision supersedes the shared-period portion; discovery/search remains unchanged. | Latest explicit user/client decision; current Catalog/access trace | Makes tens or hundreds of books operable without adding taxonomy, global search, or a second security authority. | SUPERSEDED |
+
+### Production UAT feedback contract — 2026-08-30
+
+- Copy confirmation is client feedback only: Clipboard API success produces a
+  BFG success toast, and rejection produces error feedback without an Activity
+  record or false success.
+- Catalog/Admin field alignment is a local presentation correction. Existing
+  values, validation, mutations, authorization, search behavior, and
+  BFGSelect ownership remain unchanged.
 
 | ID          | Date / Phase                         | Old Decision                                                                                                                                    | New Decision                                                                                                                                                                            | Source                                                                                         | Reason                                                                                        | Status     |
 | ----------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------- |
