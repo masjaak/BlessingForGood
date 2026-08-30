@@ -60,7 +60,6 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
         <BookCover
           title={book.title}
           publisher={book.publisher.name}
-          presentation={book.coverPresentation}
           src={book.coverImageUrl || undefined}
           alt={`Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`}
         />

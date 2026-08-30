@@ -28,7 +28,6 @@ import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { getConvexErrorCode } from "@/domain/prototype/context";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
-import type { CoverPresentation } from "@/components/book-cover";
 import { ProductGallery } from "@/components/product-gallery";
 import { formatGbpMinor, normalizeGbpInput, parseGbpMinor } from "@/lib/gbp";
 import { uploadBfgFile } from "@/lib/upload-file";
@@ -178,7 +177,6 @@ function BookEditor({ book }: { book: AdminBook }) {
   const removeBook = useMutation(api.books.remove);
   const createVariant = useMutation(api.bookVariants.create);
   const attachCover = useAction(api.books.attachCover);
-  const updateCoverPresentation = useMutation(api.books.updateCoverPresentation);
   const attachGalleryImage = useAction(api.books.attachGalleryImage);
   const removeGalleryImage = useMutation(api.books.removeGalleryImage);
   const moveGalleryImage = useMutation(api.books.moveGalleryImage);
@@ -263,7 +261,7 @@ function BookEditor({ book }: { book: AdminBook }) {
     }
   }
 
-  async function saveCover(presentation: CoverPresentation) {
+  async function saveCover() {
     setCoverMessage("");
     setCoverError("");
     setPendingAction("cover");
@@ -280,16 +278,12 @@ function BookEditor({ book }: { book: AdminBook }) {
           storageId,
           fileName: coverFile.name,
           mimeType: coverFile.type,
-          presentation,
         });
         setCoverFile(null);
-        setCoverMessage("Cover dan tampilannya tersimpan.");
-      } else {
-        await updateCoverPresentation({ bookId: book._id, presentation });
-        setCoverMessage("Tampilan cover tersimpan.");
+        setCoverMessage("Cover tersimpan.");
       }
     } catch {
-      setCoverError("Cover atau tampilannya belum tersimpan. Coba lagi.");
+      setCoverError("Cover belum tersimpan. Coba lagi.");
     } finally {
       setPendingAction(null);
     }
@@ -573,13 +567,12 @@ function BookEditor({ book }: { book: AdminBook }) {
               </section>
               <CoverUploadField
                 currentSrc={book.coverUrl || undefined}
-                currentPresentation={book.coverPresentation || null}
                 error={coverError}
                 file={coverFile}
                 format={book.variants[0]?.format}
                 message={coverMessage}
                 onFileChange={handleCoverFileChange}
-                onUpload={(presentation) => void saveCover(presentation)}
+                onUpload={() => void saveCover()}
                 loading={pendingAction === "cover"}
                 publisher={book.publisher?.name || "BFG"}
                 title={book.title}

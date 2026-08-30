@@ -243,15 +243,12 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     expect(coverGeometry).not.toBeNull();
     expect(coverGeometry?.artwork.objectFit).toBe("contain");
     expect(coverGeometry?.overflow).toBe("hidden");
-    // A saved coverPresentation intentionally transforms the artwork inside the clipped frame.
-    if (coverGeometry?.positioned) {
-      expect(coverGeometry.transform).not.toBe("none");
-    } else {
-      expect(coverGeometry?.artwork.left).toBeGreaterThanOrEqual((coverGeometry?.frame.left ?? 0) - 1);
-      expect(coverGeometry?.artwork.top).toBeGreaterThanOrEqual((coverGeometry?.frame.top ?? 0) - 1);
-      expect(coverGeometry?.artwork.right).toBeLessThanOrEqual((coverGeometry?.frame.right ?? 0) + 1);
-      expect(coverGeometry?.artwork.bottom).toBeLessThanOrEqual((coverGeometry?.frame.bottom ?? 0) + 1);
-    }
+    expect(coverGeometry?.positioned).toBe(false);
+    expect(coverGeometry?.transform).toBe("none");
+    expect(coverGeometry?.artwork.left).toBeGreaterThanOrEqual((coverGeometry?.frame.left ?? 0) - 1);
+    expect(coverGeometry?.artwork.top).toBeGreaterThanOrEqual((coverGeometry?.frame.top ?? 0) - 1);
+    expect(coverGeometry?.artwork.right).toBeLessThanOrEqual((coverGeometry?.frame.right ?? 0) + 1);
+    expect(coverGeometry?.artwork.bottom).toBeLessThanOrEqual((coverGeometry?.frame.bottom ?? 0) + 1);
     const viewportWidth = page.viewportSize()?.width || 0;
     expect(
       await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth)),

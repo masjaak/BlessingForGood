@@ -183,12 +183,7 @@ export function SecretCatalogBookDetail() {
         }
       />
       <div className="ready-stock-detail">
-        <BookCover
-          title={book.title}
-          publisher={book.publisher}
-          presentation={book.coverPresentation}
-          src={book.coverImageUrl || undefined}
-        />
+        <BookCover title={book.title} publisher={book.publisher} src={book.coverImageUrl || undefined} />
         <div className="content-stack">
           {book.description ? <p>{book.description}</p> : <p className="subtle">Deskripsi belum ditambahkan.</p>}
           {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}

@@ -44,10 +44,9 @@ describe("BookCover", () => {
     expect(screen.getByRole("img", { name: "A Quiet Book cover" }).getAttribute("src")).toContain("blob:");
   });
 
-  it("applies non-destructive presentation metadata without changing the source", () => {
+  it("keeps the cover image free of manual framing styles", () => {
     render(
       <BookCover
-        presentation={{ zoom: 1.35, x: 12, y: -8 }}
         publisher="BFG Press"
         src="https://example.convex.cloud/api/storage/example-id"
         title="A Quiet Book"
@@ -55,8 +54,8 @@ describe("BookCover", () => {
     );
 
     const image = screen.getByRole("img", { name: "A Quiet Book cover" });
-    expect(image.className).toContain("is-positioned");
+    expect(image.className).not.toContain("is-positioned");
     expect(image.getAttribute("src")).toContain("example-id");
-    expect(image.getAttribute("style")).toContain("1.35");
+    expect(image.getAttribute("style")).toBeNull();
   });
 });

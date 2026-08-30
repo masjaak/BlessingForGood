@@ -118,7 +118,6 @@ function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStock
                 title={book.title}
                 publisher={book.publisher.name}
                 format={book.variants[0]?.format}
-                presentation={book.coverPresentation}
                 src={book.coverImageUrl || undefined}
                 alt={`Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`}
               />
