@@ -1,5 +1,20 @@
 # Decisions
 
+## Catalog UI polish and adaptive format presentation — 2026-08-30
+
+- A customer-projected Book has at least one eligible variant; the canonical
+  format enum allows at most three unique formats. One eligible format is
+  displayed as static metadata. Two or more eligible formats retain explicit
+  selection with compact BFG-styled radio semantics rather than a large card or
+  radio-dot treatment.
+- The Book card exposes one price near Book identity, derived from the current
+  selected variant and its existing Catalog price. Format choices do not repeat
+  prices. The existing selected variant ID, quantity map, and order submit
+  payload remain authoritative.
+- `Buka detail buku` uses the existing compact framed secondary `LinkButton`.
+  Catalog Admin alignment is owned by the existing scoped grid and spacing
+  rules; touched selects remain `BFGSelect` and no new control system exists.
+
 ## Secret Catalog Production UAT bugfix — 2026-08-30
 
 - Global Secret Catalog access remains one secure generated code for multiple

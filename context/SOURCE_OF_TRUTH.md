@@ -1,5 +1,30 @@
 # BFG SOURCE OF TRUTH
 
+## Catalog UI polish and adaptive format presentation — 2026-08-30
+
+- This is a presentation-only correction. Secret Catalog access, the
+  customer-safe Catalog projection, search/filter behavior, variant
+  persistence, quantity handling, and order payloads remain unchanged.
+- Customer Books with one eligible variant show the format as static metadata;
+  they do not show a selector or radio treatment. Books with two or three
+  eligible variants keep explicit compact radio semantics using BFG borders,
+  spacing, focus, and selected-state tokens.
+- The card has one current-price area near Book identity. It reads from the
+  existing selected variant, so a selected format's Catalog price is the price
+  shown to the Customer. Variant options identify formats only and do not
+  duplicate prices.
+- `Buka detail buku` uses the existing compact framed secondary `LinkButton`;
+  its route and navigation behavior are unchanged. Quantity and Add To Order
+  continue to use the existing selected variant ID and quantity state.
+- Scoped Catalog Admin settings, Book Picker, and current-Catalog discovery
+  rows use the existing Catalog grid owners and BFG spacing tokens. Supporting
+  result text is separated from the next section without per-field positioning
+  hacks. Pelanggan, Produk, and Publisher remain `BFGSelect` controls.
+- Component coverage and rendered fixtures protect single/multi-format card
+  states, selected-price switching, order payloads, and Catalog/Admin geometry
+  at 390/768/1440. Production deployment and authenticated UAT are recorded
+  after release verification.
+
 ## Production UAT bugfix — 2026-08-30
 
 - Real Production UAT supersedes the earlier partial closure for Secret Catalog

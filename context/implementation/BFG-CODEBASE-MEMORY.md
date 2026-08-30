@@ -1,5 +1,33 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Catalog UI polish and adaptive format presentation — 2026-08-30
+
+- `src/components/customer-catalog.tsx` still owns Customer discovery,
+  selection, quantity, detail navigation, and order submission. The card now
+  branches only on the projected eligible variant count: one format is static;
+  multiple formats use compact radio semantics. `selectedVariant.price` is the
+  sole card price and therefore follows format selection; the existing first
+  variant fallback and `{ variantId, quantity }` order payload are unchanged.
+- `src/app/globals.css` owns the scoped card hierarchy, quiet option treatment,
+  framed detail action, and Catalog Admin picker/tracking/result spacing. It
+  reuses existing BFG variables, Button heights, border/radius, focus, and
+  responsive breakpoints. No shared Button, BFGSelect, search, access, or
+  order primitive changed.
+- `src/components/admin-catalog-detail.tsx` remains the Admin Catalog settings,
+  Book Picker, and current-Catalog discovery owner. Existing `BFGSelect`
+  instances remain the owners for Pelanggan, Produk, Publisher, and Customer
+  Publisher selection; format presentation intentionally uses compact native
+  radio semantics because the model is bounded at three options.
+- `tests/components/customer-catalog.test.tsx` protects static single-format
+  presentation, compact multi-format choices, selected-price switching, and
+  the unchanged selected-variant order payload. The rendered fixtures in
+  `tests/e2e/customer-catalog-card-polish.spec.ts` and
+  `tests/e2e/secret-catalog-access-forms.spec.ts` cover the 390/768/1440
+  presentation and geometry contract.
+- This ticket did not change access, projection, search, variant persistence,
+  quantity logic, or order mutations. Production release and authenticated
+  UAT are recorded after deployment; no Production data is created.
+
 ## Post-diff memory — Secret Catalog Production UAT bugfix — 2026-08-30
 
 - First wrong boundary: `convex/catalogAccess.ts:unlock` previously stored

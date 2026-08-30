@@ -8,6 +8,25 @@ source: conversation
 
 # Changelog
 
+## [catalog-ui-polish-adaptive-formats] — 2026-08-30
+
+### Changed
+
+- Customer Book cards now show a single eligible format as quiet static
+  metadata and multiple formats as compact explicit choices. The existing
+  selected variant supplies one prominent current price; option-level price
+  duplication and the large radio/card treatment are removed.
+- Framed the existing `Buka detail buku` navigation action with the compact
+  secondary BFG Button treatment without changing its route.
+- Tightened scoped Catalog Admin control alignment and result/section rhythm
+  using the existing grid and spacing system. Existing BFGSelect ownership is
+  preserved.
+
+### QA
+
+- Component and rendered card/form checks pass at 390/768/1440. Full release
+  and Production verification are recorded after deployment.
+
 ## [secret-catalog-production-uat-bugfix] — 2026-08-30
 
 ### Fixed

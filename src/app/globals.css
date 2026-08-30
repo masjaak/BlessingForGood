@@ -2685,6 +2685,62 @@ p {
   gap: 12px;
 }
 
+.customer-shell .book-card-header {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.customer-shell .book-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.customer-shell .book-card-heading {
+  min-width: 0;
+}
+
+.customer-shell .book-card-price {
+  display: grid;
+  min-width: max-content;
+  gap: var(--space-1);
+  justify-items: end;
+  padding-top: 2px;
+  text-align: right;
+}
+
+.customer-shell .book-card-price-label,
+.customer-shell .book-format-label {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.customer-shell .book-card-price .money {
+  font-size: 1.12rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.customer-shell .book-format-selection,
+.customer-shell .book-format-summary {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.customer-shell .book-format-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.customer-shell .book-format-value {
+  color: var(--ink);
+  font-weight: var(--font-weight-bold);
+}
+
 .customer-shell .book-meta h2 {
   margin-bottom: 4px;
   font-size: 1.15rem;
@@ -2702,20 +2758,52 @@ p {
 }
 
 .customer-shell .variant-list {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .customer-shell .variant-option {
-  min-height: 92px;
-  padding: 11px;
+  position: relative;
+  display: inline-flex;
+  min-height: var(--button-height-compact);
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-3);
   border-color: var(--line);
-  border-radius: 10px;
+  border-radius: var(--button-radius);
+  color: var(--ink);
+  font-weight: var(--font-weight-bold);
 }
 
 .customer-shell .variant-option:has(input:checked) {
   border-color: var(--accent);
-  background: #f2f7ee;
+  color: var(--accent-dark);
+  background: var(--mint);
   box-shadow: none;
+}
+
+.customer-shell .variant-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.customer-shell .variant-option:has(input:focus-visible) {
+  box-shadow: var(--focus);
+}
+
+.customer-shell .variant-option:has(input:disabled) {
+  color: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .customer-shell .order-summary {
@@ -3067,6 +3155,16 @@ p {
     gap: 12px;
   }
 
+  .customer-shell .book-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .book-card-price {
+    justify-items: start;
+    padding-top: 0;
+    text-align: left;
+  }
+
   .customer-shell .ready-stock-card {
     grid-template-columns: 92px minmax(0, 1fr);
     gap: 12px;
@@ -3084,6 +3182,10 @@ p {
 
   .customer-shell .variant-list {
     grid-template-columns: 1fr;
+  }
+
+  .customer-shell .variant-option {
+    min-height: var(--button-height-default);
   }
 
   .customer-shell .success-card,
@@ -7182,6 +7284,12 @@ p {
   margin-bottom: 1px;
 }
 
+.admin-catalog-picker-controls > .button,
+.admin-catalog-tracking-controls > .button {
+  align-self: end;
+  margin-bottom: 0;
+}
+
 .catalog-copy-toast {
   position: fixed;
   right: var(--space-5);
@@ -7212,6 +7320,15 @@ p {
   margin: 0;
   color: var(--ink-muted);
   font-size: 0.86rem;
+}
+
+.admin-catalog-picker-controls + .catalog-result-count,
+.admin-catalog-tracking-controls + .catalog-result-count {
+  margin-top: var(--space-1);
+}
+
+.admin-catalog-picker-controls + .catalog-result-count + .catalog-tracking {
+  margin-top: var(--space-2);
 }
 
 .catalog-session-switcher {

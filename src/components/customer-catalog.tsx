@@ -321,7 +321,9 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             filteredBooks.map((book) => {
               const selectedVariantId = selectedVariants[book.id] || book.variants[0]?.id;
               const selectedQuantity = selectedVariantId ? quantities[selectedVariantId] || 0 : 0;
-              const selectedFormat = book.variants.find((variant) => variant.id === selectedVariantId)?.format;
+              const selectedVariant = book.variants.find((variant) => variant.id === selectedVariantId);
+              const selectedFormat = selectedVariant?.format;
+              const hasMultipleVariants = book.variants.length > 1;
               return (
                 <Card frame="list" className="book-card" key={book.id}>
                   <div className="book-card-layout">
@@ -333,35 +335,59 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                       src={book.coverImageUrl || undefined}
                     />
                     <div className="book-card-details">
-                      <div className="book-meta">
-                        <div>
-                          <h2>{book.title}</h2>
-                          <p className="book-card-isbn">
-                            ISBN: {book.variants.map((variant) => variant.isbn).join(" · ")}
-                          </p>
-                          <LinkButton href={`/catalog/${catalog.id}/${book.id}`} variant="tertiary" size="compact">
-                            Buka detail buku
-                          </LinkButton>
+                      <div className="book-card-header">
+                        <div className="book-meta">
+                          <div className="book-card-heading">
+                            <h2>{book.title}</h2>
+                            <p className="book-card-isbn">
+                              ISBN: {book.variants.map((variant) => variant.isbn).join(" · ")}
+                            </p>
+                            <LinkButton
+                              href={`/catalog/${catalog.id}/${book.id}`}
+                              variant="secondary"
+                              size="compact"
+                              className="book-detail-action"
+                            >
+                              Buka detail buku
+                            </LinkButton>
+                          </div>
+                          {selectedVariant ? (
+                            <div className="book-card-price">
+                              <span className="book-card-price-label">Harga</span>
+                              <Money amount={selectedVariant.price} />
+                            </div>
+                          ) : null}
                         </div>
-                        <span className="subtle">Pilih satu format</span>
-                      </div>
-                      <div className="variant-list" role="radiogroup" aria-label={`Format untuk ${book.title}`}>
-                        {book.variants.map((variant) => (
-                          <label className="variant-option" key={variant.id}>
-                            <input
-                              type="radio"
-                              name={book.id}
-                              value={variant.id}
-                              checked={selectedVariantId === variant.id}
-                              onChange={() => setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))}
-                              disabled={variant.availability !== "available"}
-                            />
-                            <strong>{variant.format}</strong>
-                            <span>
-                              <Money amount={variant.price} />
-                            </span>
-                          </label>
-                        ))}
+                        {hasMultipleVariants ? (
+                          <div className="book-format-selection">
+                            <span className="book-format-label">Pilih format</span>
+                            <div className="variant-list" role="radiogroup" aria-label={`Format untuk ${book.title}`}>
+                              {book.variants.map((variant) => (
+                                <label className="variant-option" key={variant.id}>
+                                  <input
+                                    type="radio"
+                                    name={book.id}
+                                    value={variant.id}
+                                    checked={selectedVariantId === variant.id}
+                                    onChange={() =>
+                                      setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))
+                                    }
+                                    disabled={variant.availability !== "available"}
+                                  />
+                                  <span className="variant-option-format">{variant.format}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="book-format-summary"
+                            aria-label={`Format ${selectedFormat || "tidak tersedia"}`}
+                          >
+                            <span className="book-format-label">Format</span>
+                            <strong className="book-format-value">{selectedFormat || "—"}</strong>
+                          </div>
+                        )}
                       </div>
                       <div className="quantity-row">
                         <span>Jumlah</span>

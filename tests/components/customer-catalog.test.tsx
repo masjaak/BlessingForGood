@@ -8,6 +8,156 @@ vi.mock("@/domain/prototype/store", () => ({
 }));
 
 describe("CustomerCatalog projection", () => {
+  it("keeps one-format books static and frames the detail action", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-single",
+        name: "Single Format Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-single",
+            title: "Book A",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-hb",
+                format: "HB",
+                isbn: "9780000000001",
+                price: 325000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    const card = screen.getByRole("heading", { name: "Book A" }).closest(".book-card");
+    expect(card).toBeTruthy();
+    expect(card?.querySelector(".variant-list")).toBeNull();
+    expect(card?.querySelector("input[type='radio']")).toBeNull();
+    expect(card?.querySelector(".book-format-summary .book-format-value")?.textContent).toBe("HB");
+    expect(card?.querySelector(".book-card-price .money")?.textContent).toMatch(/325[.]000/);
+
+    const detail = within(card as HTMLElement).getByRole("link", { name: "Buka detail buku" });
+    expect(detail.className).toContain("button-secondary");
+    expect(detail.className).toContain("button-size-compact");
+    expect(detail.getAttribute("href")).toBe("/catalog/catalog-single/book-single");
+  });
+
+  it("uses compact multi-format choices and submits the selected variant price and id", async () => {
+    const submitOrder = vi.fn().mockResolvedValue({
+      id: "order-1",
+      catalogId: "catalog-multi",
+      customerName: "Ada Customer",
+      customerEmail: null,
+      source: "preorder",
+      items: [
+        {
+          id: "order-item-1",
+          bookId: "book-multi",
+          bookTitle: "Book B",
+          publisher: "BFG Press",
+          variantId: "variant-pb",
+          format: "PB",
+          isbn: "9780000000003",
+          unitPrice: 245000,
+          quantity: 1,
+          subtotal: 245000,
+        },
+      ],
+      total: 245000,
+      depositRequirement: { kind: "unset" },
+      status: "submitted",
+      statusHistory: [{ status: "submitted", at: "2030-08-15T00:00:00.000Z" }],
+      createdAt: "2030-08-15T00:00:00.000Z",
+      updatedAt: "2030-08-15T00:00:00.000Z",
+    });
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-multi",
+        name: "Multi Format Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-multi",
+            title: "Book B",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-hb",
+                format: "HB",
+                isbn: "9780000000002",
+                price: 325000,
+                currency: "IDR",
+                availability: "available",
+              },
+              {
+                id: "variant-pb",
+                format: "PB",
+                isbn: "9780000000003",
+                price: 245000,
+                currency: "IDR",
+                availability: "available",
+              },
+              {
+                id: "variant-bb",
+                format: "BB",
+                isbn: "9780000000004",
+                price: 275000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder,
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    const card = screen.getByRole("heading", { name: "Book B" }).closest(".book-card");
+    expect(card).toBeTruthy();
+    expect(within(card as HTMLElement).getByRole("radiogroup", { name: "Format untuk Book B" })).toBeTruthy();
+    expect(within(card as HTMLElement).getAllByRole("radio")).toHaveLength(3);
+    expect(card?.querySelectorAll(".variant-option .money")).toHaveLength(0);
+    expect(card?.querySelector(".book-card-price .money")?.textContent).toMatch(/325[.]000/);
+
+    fireEvent.click(within(card as HTMLElement).getByRole("radio", { name: "PB" }));
+    expect(card?.querySelector(".book-card-price .money")?.textContent).toMatch(/245[.]000/);
+
+    fireEvent.click(within(card as HTMLElement).getByRole("button", { name: "Tambah jumlah Book B" }));
+    fireEvent.change(screen.getByLabelText("Nama"), { target: { value: "Ada Customer" } });
+    fireEvent.click(screen.getByRole("button", { name: "Catat preorder" }));
+
+    await waitFor(() =>
+      expect(submitOrder).toHaveBeenCalledWith("catalog-multi", {
+        customerName: "Ada Customer",
+        customerEmail: "",
+        items: [{ variantId: "variant-pb", quantity: 1 }],
+      }),
+    );
+  });
+
   it("renders the persisted Convex cover for an unlocked catalog book", () => {
     vi.mocked(useProduct).mockReturnValue({
       unlockedCatalog: {

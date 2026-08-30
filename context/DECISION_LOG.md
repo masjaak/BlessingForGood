@@ -4,6 +4,12 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Catalog UI polish and adaptive format presentation — 2026-08-30
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-074 | 2026-08-30 / Catalog UI polish | Every Book card could present a format choice as a large selectable block with a repeated price. | One eligible variant is static format metadata; two or three eligible variants use compact explicit choices; one current price follows the selected variant; detail uses the existing framed secondary action; scoped Admin rows use existing grid/spacing owners. | Latest explicit UI decision; Book variant model; component and rendered geometry regressions | Removes redundant choice weight and clarifies the purchase decision without changing variant, price, quantity, search, access, or order behavior. | ACTIVE |
+
 ## Secret Catalog discovery and global access code — 2026-08-30
 
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |

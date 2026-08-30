@@ -1,5 +1,19 @@
 # BFG Project Status
 
+## Catalog UI polish and adaptive format presentation — 2026-08-30
+
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING`
+
+The Customer Book card now presents one eligible format as static metadata and
+two or three eligible formats as compact quiet choices. The existing selected
+variant drives the single header price, while detail navigation, quantity, and
+order payload behavior remain unchanged. Scoped Catalog Admin settings,
+Book Picker, and current-Catalog discovery geometry uses the existing grid and
+spacing system; no business or search owner changed.
+
+Focused component and rendered 390/768/1440 checks pass. Production release
+verification and authenticated Customer/Admin UAT remain pending.
+
 ## Secret Catalog Production UAT bugfix — 2026-08-30
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
