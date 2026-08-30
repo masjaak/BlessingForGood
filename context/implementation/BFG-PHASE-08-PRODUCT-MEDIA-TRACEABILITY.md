@@ -3,9 +3,25 @@
 Status: `PRODUCTION_DEPLOYED — AUTHENTICATED_ADMIN_EVIDENCE — EXTERNAL_PREVIEW_ALIGNMENT_CLOSED`
 Reconciled: 2026-08-21 (Asia/Jakarta)
 
+## Rendering addendum — 2026-08-30
+
+- `src/components/book-cover.tsx` is the shared Book Cover image owner. The
+  default is now contained rendering inside the existing consistent frame;
+  legacy `coverPresentation` remains compatibility data and no longer changes
+  the image transform. `CoverUploadField` exposes no manual framing controls.
+- `src/components/product-gallery.tsx` retains the existing gallery interaction
+  while `.product-gallery-thumbnails` uses normalized image height and
+  intrinsic-ratio widths bounded by the existing cover maximum. This removes
+  the equal-width landscape shell that made portrait images look too small.
+- The local portrait/square/landscape matrix passes at 390/768/1440 and the
+  public customer surface check passes 9/9 at 390px. No upload, storage,
+  schema, projection, authorization, or business logic changed. No separate
+  Convex command was issued; the existing Git-integrated Vercel build remains
+  coupled to its configured `convex deploy` command.
+
 | Requirement | Source trace | Current implementation | Decision/status |
 | --- | --- | --- | --- |
-| Public Ready Stock detail gallery | Original scope, Ready Stock rules, public Ready Stock feature, Ready Stock detail screen | `bookMedia` projection from `readyStock.getBySlug`; contained shared gallery with thumbnails and previous/next controls | `GREEN_DETERMINISTIC` |
+| Public Ready Stock detail gallery | Original scope, Ready Stock rules, public Ready Stock feature, Ready Stock detail screen | `bookMedia` projection from `readyStock.getBySlug`; contained shared gallery with intrinsic-ratio thumbnails and previous/next controls | `GREEN_DETERMINISTIC` |
 | Separate cover and gallery | Admin upload mockup 3 | `books.coverStorageId` remains separate from `bookMedia`; gallery never promotes or replaces cover | `GREEN_DETERMINISTIC` |
 | Gallery max count | Admin mockup 3 says `Maks. 8 gambar` | Server rejects the ninth item; Admin displays `n/8` | `GREEN_DETERMINISTIC` |
 | Gallery ownership | Latest user decision; Book Master recommendation | `bookMedia.bookId`; no Ready Stock listing media entity | `LOCKED: BOOK MASTER` |

@@ -1,5 +1,29 @@
 # BFG SOURCE OF TRUTH
 
+## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
+
+- This is a presentation-only maintenance correction. Upload validation,
+  Convex storage, `books.coverStorageId`, gallery ownership, projections,
+  search, access, variants, pricing, quantity, and ordering remain unchanged.
+- `src/components/book-cover.tsx` is the shared cover renderer. It now always
+  uses the existing contained image treatment inside the consistent BFG cover
+  frame; legacy `coverPresentation` data is compatibility-only and does not
+  apply a transform or crop. Admin no longer manages cover framing.
+- `src/components/product-gallery.tsx` owns the gallery interaction. Its
+  thumbnail row keeps the existing navigation and uses normalized image height
+  with intrinsic-ratio thumbnail widths, bounded by the existing cover width
+  token and horizontal overflow.
+- The representative portrait, square, and landscape fixture matrix passes at
+  390/768/1440. Full frontend and Convex suites, TypeScript, ESLint, format,
+  build, and diff checks pass. Behavior commit `d87585d` is Ready in Vercel
+  Production as `dpl_3nkrZ6ibD7JgvqRiy5VhYFcDnX65` and aliased to the
+  canonical domain; the public customer surface check passes 9/9 at 390px.
+- No separate Convex command was issued for this ticket and no Convex source
+  changed. The existing Git-integrated Vercel build still includes the
+  repository's configured `convex deploy` command; that release-path coupling
+  is recorded for operations rather than treated as a product/data change.
+  Authenticated real-media Customer/Admin UAT remains an operator gate.
+
 ## Catalog UI polish and adaptive format presentation — 2026-08-30
 
 - This is a presentation-only correction. Secret Catalog access, the
@@ -999,9 +1023,10 @@ mobile bottom navigation.
   tool inside a narrower internal wrapper; the page container is unchanged.
 - **Mengenal BFG:** `Satu cerita, beberapa langkah kecil.` uses the canonical
   high-contrast primary heading hierarchy on the approved surfaces.
-- **Book Cover:** the original uploaded media remains untouched; optional
-  `{ zoom, x, y }` presentation metadata controls framing inside the canonical
-  cover card without distortion or a second destructive source image.
+- **Book Cover:** the original uploaded media remains untouched; the shared
+  renderer always preserves the full image with `object-fit: contain` inside
+  the canonical cover frame. Legacy `{ zoom, x, y }` metadata remains
+  compatibility data and does not alter the default rendering.
 
 ## Responsive Rules
 

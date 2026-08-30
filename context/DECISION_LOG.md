@@ -4,6 +4,12 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-075 | 2026-08-30 / image presentation maintenance | Admin-managed cover zoom/position metadata could change artwork inside a clipped frame, and every gallery thumbnail occupied an equal-width track. | Book covers always render the full uploaded image with preserved aspect ratio inside the existing consistent frame; Admin does not manage framing. Legacy `coverPresentation` remains compatibility data but is ignored by the renderer. Gallery thumbnails retain existing navigation and use normalized height with intrinsic-ratio widths within bounded horizontal overflow. | Latest explicit user decision; `BookCover`/`ProductGallery` source trace; rendered portrait/square/landscape matrix | Makes safe image defaults canonical, removes the source of cover crop pain, and reduces portrait thumbnail side-space without changing upload/storage/schema/business contracts. This supersedes only the cover-rendering clause of BFG-DEC-046. | ACTIVE |
+
 ## Catalog UI polish and adaptive format presentation — 2026-08-30
 
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |

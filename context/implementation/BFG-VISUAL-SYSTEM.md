@@ -147,7 +147,16 @@ consequence remains in `src/components/admin-book-detail.tsx`:
 `books.generateCoverUploadUrl` → validated Convex storage upload →
 `books.attachCover` → durable customer-safe URL. Supported files are JPG, PNG,
 or WebP up to 5 MB. Replacement attaches the new reference before deleting the
-previous object.
+previous object. `BookCover` presents the uploaded source with preserved ratio
+inside the consistent cover frame; Admin does not manage zoom or position.
+
+## Product Gallery Thumbnails
+
+`src/components/product-gallery.tsx` owns the existing stage, previous/next
+controls, and thumbnail selection. Thumbnail images use a normalized height and
+intrinsic-ratio width within the existing BFG maximum, with horizontal
+overflow for a tidy row. Portrait, square, and landscape assets are not forced
+into a shared wide crop shell.
 
 ## Visual Acceptance
 

@@ -1,5 +1,45 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
+
+- Request: make safe image defaults canonical. Book covers must show the whole
+  uploaded image without Admin framing work; gallery thumbnails must respect
+  portrait, square, and landscape proportions without excessive side-space.
+- Root cause: `src/components/book-cover.tsx` applied optional zoom/position
+  transforms inside the clipped `.book-cover` frame, while
+  `src/app/globals.css` gave every `ProductGallery` thumbnail an equal-width
+  grid track and full-width image rule. The first wrong boundaries were shared
+  rendering primitives, not upload, storage, projection, or business logic.
+- Final Book Cover contract: `BookCover` always uses the existing contained
+  image treatment in the consistent BFG `2 / 3` frame with preserved ratio;
+  no default transform or crop. `coverPresentation` backend fields and
+  projections remain compatibility data, but the renderer and Admin surface no
+  longer use them for manual framing.
+- Final Gallery contract: `ProductGallery` retains its stage, previous/next
+  controls, and selection behavior. Thumbnail images use normalized `52px`
+  height, intrinsic-ratio width, an existing `132px` maximum, and horizontal
+  overflow for a compact, scan-friendly row.
+- Code owners: `BookCover` in `src/components/book-cover.tsx` plus the
+  `.book-cover` rule in `src/app/globals.css`; `ProductGallery` in
+  `src/components/product-gallery.tsx` plus the thumbnail rules in the same
+  stylesheet. `CoverUploadField` and `admin-book-detail.tsx` retain the
+  existing file-picker/upload consequence with no framing controls.
+- Test owners: `tests/components/book-cover.test.tsx`,
+  `tests/components/cover-upload-field.test.tsx`,
+  `tests/e2e/product-media-rendering.spec.ts`, and the shared
+  `tests/e2e/phase071-surface.spec.ts` cover default containment, the removed
+  Admin controls, portrait/square/landscape fixtures, and responsive geometry.
+- Local evidence: 75 frontend files / 436 tests, 30 Convex files / 188 tests,
+  TypeScript, ESLint, format, build, diff, and the rendered 390/768/1440
+  matrix pass. Behavior commit `d87585d` is Ready in Vercel Production as
+  `dpl_3nkrZ6ibD7JgvqRiy5VhYFcDnX65`; the public customer surface check passes
+  9/9 at 390px. No separate Convex command was issued and no Convex source,
+  schema, upload, storage, or business data changed; the existing Vercel Git
+  build remains coupled to its configured `convex deploy` command.
+- Authenticated real-media Customer/Admin UAT remains an operator gate because
+  no authorized Clerk session or safe Production image fixture was available;
+  no Production business record was created or mutated.
+
 ## Post-diff memory — Catalog UI polish and adaptive format presentation — 2026-08-30
 
 - `src/components/customer-catalog.tsx` still owns Customer discovery,

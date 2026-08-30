@@ -8,6 +8,31 @@ source: conversation
 
 # Changelog
 
+## [book-cover-gallery-rendering-polish] — 2026-08-30
+
+### Fixed
+
+- Book covers now use the existing consistent BFG frame with contained image
+  rendering, so the full uploaded artwork remains visible at its natural ratio.
+  Admin no longer needs to save manual zoom or position values; legacy
+  `coverPresentation` data remains compatibility-only.
+- Gallery thumbnails retain the existing navigation but use normalized height
+  and intrinsic image-ratio widths, reducing empty side-space for portrait
+  uploads while keeping landscape and square assets undistorted.
+- Updated the shared cover geometry regression to target a real or explicit
+  image fixture when the public Ready Stock seed renders a placeholder first.
+
+### QA
+
+- Cover/gallery component checks, the portrait/square/landscape rendered matrix
+  at 390/768/1440, full frontend/Convex suites, TypeScript, ESLint, format,
+  build, and diff checks pass. Behavior commit `d87585d` is Ready in Vercel
+  Production as `dpl_3nkrZ6ibD7JgvqRiy5VhYFcDnX65`; the public customer surface
+  check passes 9/9 at 390px. No Convex source, schema, upload, storage, or
+  business logic changed; no separate Convex command was issued. The existing
+  Git-integrated Vercel build remains configured to include `convex deploy`.
+  Authenticated real-media Customer/Admin UAT remains pending.
+
 ## [catalog-ui-polish-adaptive-formats] — 2026-08-30
 
 ### Changed

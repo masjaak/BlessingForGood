@@ -1,5 +1,28 @@
 # BFG Project Status
 
+## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
+
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+The shared `BookCover` renderer now shows the full uploaded image in the
+existing consistent cover frame with preserved aspect ratio and no default
+transform/crop. The Admin cover surface no longer exposes manual zoom/position
+controls. `ProductGallery` keeps its existing navigation while thumbnail
+buttons use normalized image height and intrinsic image-ratio widths, reducing
+empty side-space for portrait uploads without distorting landscape or square
+assets.
+
+No upload, storage, schema, projection, search, access, variant, price,
+quantity, or order logic changed. The portrait/square/landscape rendered matrix
+passes at 390/768/1440; the full frontend suite is 75 files / 436 tests and
+the Convex suite is 30 files / 188 tests. TypeScript, ESLint, format, build,
+and diff checks pass. Behavior commit `d87585d` is Ready in Vercel Production
+as `dpl_3nkrZ6ibD7JgvqRiy5VhYFcDnX65`; the public customer surface check passes
+9/9 at 390px. No separate Convex command was issued and no Convex source
+changed, although the existing Git-integrated Vercel build remains configured
+to include `convex deploy`. Authenticated real-media UAT remains pending because
+no authorized Clerk session or safe Production image fixture was available.
+
 ## Catalog UI polish and adaptive format presentation — 2026-08-30
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
@@ -807,9 +830,10 @@ roots:
   reads as one compact orientation tool without shrinking the page container.
 - Mengenal BFG keeps the approved palette and restores the canonical high-
   contrast heading hierarchy.
-- BookCover keeps the original uploaded storage object and applies optional
-  `{ zoom, x, y }` presentation metadata through the shared customer renderers;
-  existing covers without metadata use the safe default.
+- BookCover keeps the original uploaded storage object and always renders the
+  full image with preserved ratio inside the shared contained frame. Legacy
+  `{ zoom, x, y }` metadata remains compatibility data and does not alter the
+  default renderer.
 
 Production evidence:
 
