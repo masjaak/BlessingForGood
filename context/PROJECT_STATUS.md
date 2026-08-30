@@ -2,7 +2,7 @@
 
 ## Secret Catalog discovery and access period — 2026-08-30
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The existing Secret Catalog path now has Catalog header context, Customer
 title/ISBN search and Publisher filtering, Admin Book Master/current-Catalog
@@ -14,9 +14,14 @@ identity without an active BFG member cannot redeem it.
 
 Local gates are green: 75 Vitest files / 431 tests, TypeScript, ESLint, format,
 Convex check, audit, production build, and diff checks. Responsive stylesheet
-geometry passes at 390/768/1440. Authenticated app rendering is blocked by the
-absent local Clerk publishable key; no credentials or Production business data
-were introduced.
+geometry passes at 390/768/1440. Commit `a3459f9d622895044466a8c72f1f520964d623c1`
+is on `main` and `origin/main`, deployed to Vercel Production as
+`dpl_6y2hNS3LURYwf7dTFABc1mj9Azwf`, and aliased to
+`https://www.blessingforgood.com`. The existing Vercel build path deployed the
+changed Convex functions to Production `clean-eel-522` with schema validation.
+Canonical public smoke checks pass. Authenticated app rendering and business
+UAT remain pending because this runtime has no Clerk publishable key/session;
+no credentials or Production business data were introduced.
 
 ## Admin action and deadline tuning — 2026-08-29
 
