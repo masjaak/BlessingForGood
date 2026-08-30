@@ -25,6 +25,11 @@
   CSS. The settings row uses a shared label/helper/control grid on desktop;
   existing access/member/discovery grids and responsive breakpoints remain in
   place. Pelanggan, Produk, and Publisher continue to use `BFGSelect`.
+- The correction is deployed from commit `14e6f105af4483e5a499e5fc494f14b107648710`
+  as Vercel `dpl_7Nwiqh3e8ywWozqsKa4vhJQaeVgr` with Convex Production
+  `clean-eel-522`. Public post-deploy route and Select checks ran; authenticated
+  Customer/Admin business UAT remains the release gate because no authorized
+  Clerk session was available.
 
 ## Secret Catalog discovery and global access code — 2026-08-30
 

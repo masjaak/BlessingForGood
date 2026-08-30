@@ -2,7 +2,7 @@
 
 ## Secret Catalog Production UAT bugfix — 2026-08-30
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 Production UAT isolated the remaining customer defect at the global unlock
 initial-Catalog boundary. A generated global code now starts on its source
@@ -20,9 +20,15 @@ touched Catalog selects use BFGSelect.
 Local focused and full regression gates pass, including the Convex projection
 regression, copy success/failure/ARIA tests, BFGSelect assertions, rendered
 390/768/1440 form geometry, 75 Vitest files / 434 tests, TypeScript, ESLint,
-format, build, and Convex check. Authenticated Production UAT still requires
-an authorized Clerk session and safe business fixture; no credentials or
-Production records were introduced.
+format, build, and Convex check. Commit `14e6f105af4483e5a499e5fc494f14b107648710`
+is deployed as Vercel `dpl_7Nwiqh3e8ywWozqsKa4vhJQaeVgr`, aliased to the
+canonical domain; its configured build deployed Convex Production
+`clean-eel-522` with no deleted indexes. Post-deploy public checks include the
+canonical route shell, Catalog gateway, BFGSelect, and 26/28 selected public
+smoke checks; two existing checks remain unrelated baseline failures (stale
+Catalog copy assertion and an empty Ready Stock cover selector). Authenticated
+Production UAT still requires an authorized Clerk session and safe business
+fixture; no credentials or Production records were introduced.
 
 ## Secret Catalog access simplification and form alignment — 2026-08-30
 
