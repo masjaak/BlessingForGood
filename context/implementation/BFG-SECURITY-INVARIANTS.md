@@ -1,6 +1,6 @@
 # BFG SECURITY INVARIANTS
 
-Reconciled: 2026-08-30
+Reconciled: 2026-08-31
 These invariants are mandatory before any security-sensitive change. The
 client may hide or show controls; only Convex guards grant authority.
 

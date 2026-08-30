@@ -34,8 +34,12 @@
   zero duplicate or cross-Catalog assignments; interruption/resume and locked
   continuation checks pass; paginated page/cost/role tests, full frontend and
   Convex suites, TypeScript, ESLint, format, build, Convex check, and rendered
-  390/768/1440 pagination QA pass. Deployment and authenticated Production UAT
-  are recorded after release.
+  390/768/1440 pagination QA pass. Commit `571bcae` is live through Vercel
+  Production deployment `52t1CV6Fwqah8znMESKS4FfihNEv`; the configured build
+  path also deploys linked Convex Production `clean-eel-522`. Canonical public
+  route checks and signed-out protected-route redirects pass. Authenticated
+  Admin-vs-Admin/non-Admin Production UAT remains pending without Clerk QA
+  credentials.
 
 ## Post-diff memory — Batch auto-assignment, operational recap, and assisted-order search — 2026-08-30
 

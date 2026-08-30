@@ -2,7 +2,7 @@
 
 ## 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
 
-Status: `IMPLEMENTED_LOCAL; PRODUCTION_RELEASE_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The previous 200-item Catalog→Batch backfill ceiling is superseded by an
 idempotent 100-item cursor continuation over order items. A 1,000-Customer /
@@ -20,7 +20,15 @@ Active Admins now receive the read-only audit System surface via canonical
 role/capability authority; Owner-only settings/users and sensitive operation
 guards remain protected. Full local regression, build, Convex check, and
 390/768/1440 rendered pagination QA pass. Production deployment and
-authenticated UAT remain pending for this release.
+authenticated UAT remain separate gates. Commit `571bcae` is live through the
+Git-integrated Vercel Production deployment
+`52t1CV6Fwqah8znMESKS4FfihNEv`; its configured build command also deploys the
+linked Convex Production project `clean-eel-522`. Canonical `/` returns HTTP
+200, and signed-out Batch/Audit/Orders routes correctly redirect to Clerk.
+Signed-out Production smoke is 39/40; the one failure is the pre-existing
+stale `Kode akses katalog` assertion against current `Kode akses Secret
+Catalog` copy. No authenticated QA credential is available in this workspace,
+so real Admin-vs-Admin and non-Admin Production UAT remains pending.
 
 ## Adaptive natural-ratio book cover frame — 2026-08-30
 

@@ -2,7 +2,7 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-30
+last_updated: 2026-08-31
 source: conversation
 ---
 
@@ -32,8 +32,13 @@ source: conversation
   revalidation, page/cost/RBAC regressions, full frontend/Convex suite,
   TypeScript, ESLint, format, build, Convex check, and rendered pagination
   checks at 390/768/1440 pass. Cross-Catalog invoice separation remains a
-  passing regression. Production release and authenticated UAT are the next
-  release gates.
+  passing regression. Commit `571bcae` is live in Vercel Production as
+  deployment `52t1CV6Fwqah8znMESKS4FfihNEv`; the configured release path also
+  deploys linked Convex Production `clean-eel-522`. Canonical `/` returns 200
+  and signed-out protected-route redirects pass. Production smoke is 39/40;
+  the one failure is the unrelated stale `Kode akses katalog` assertion.
+  Authenticated Admin-vs-Admin/non-Admin UAT remains pending because no safe
+  Clerk QA credentials are available.
 
 ## [book-cover-adaptive-natural-frame] — 2026-08-30
 

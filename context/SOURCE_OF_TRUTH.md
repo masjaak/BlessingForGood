@@ -34,6 +34,14 @@
   `src/components/admin-nav.tsx`, and `/admin/audit` own the System access
   path.
 
+- Evidence: 2,000-item / 1,000-Customer backfill, resume, lock, cost,
+  invoice-separation, role-matrix, full regression, build, Convex check, and
+  rendered 390/768/1440 pagination QA pass. Commit `571bcae` is deployed by
+  the Git-integrated Vercel Production release
+  `52t1CV6Fwqah8znMESKS4FfihNEv`, with the configured Convex Production
+  deployment path. Signed-out Production route checks pass; authenticated
+  Admin-vs-Admin/non-Admin UAT remains pending without Clerk QA credentials.
+
 The 2026-08-30 Batch section below remains the historical baseline; its
 statement that GPE is unavailable and that backfill is only bounded by the
 original link mutation is superseded by this decision.
