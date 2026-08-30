@@ -38,6 +38,9 @@ describe("Secret Catalog discovery and access periods", () => {
       accessCode: "BFGSEP26",
       endsAt: Date.now() + 86_400_000,
     });
+    await expect(
+      admin.mutation(api.catalogAccess.setCode, { catalogId: outside.catalogId, accessCode: "BFGSEP26" }),
+    ).rejects.toThrow();
     await admin.mutation(api.catalogAccess.attachPeriod, { catalogId: second.catalogId, periodId: period.periodId });
 
     const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: "BFGSEP26" });

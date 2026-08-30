@@ -200,11 +200,17 @@ export const setCode = mutation({
       .query("catalogAccessCodes")
       .withIndex("by_catalog_and_active", (query) => query.eq("catalogId", args.catalogId).eq("isActive", true))
       .take(10);
-    const duplicateLookup = await ctx.db
-      .query("catalogAccessCodes")
-      .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", digests.lookupDigest))
-      .first();
-    if (duplicateLookup && duplicateLookup.catalogId !== args.catalogId)
+    const [duplicateLookup, duplicatePeriod] = await Promise.all([
+      ctx.db
+        .query("catalogAccessCodes")
+        .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", digests.lookupDigest))
+        .first(),
+      ctx.db
+        .query("catalogAccessPeriods")
+        .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", digests.lookupDigest))
+        .first(),
+    ]);
+    if ((duplicateLookup && duplicateLookup.catalogId !== args.catalogId) || duplicatePeriod)
       fail("VALIDATION_FAILED", "access code is in use");
     for (const record of active) await ctx.db.patch(record._id, { isActive: false, updatedAt: Date.now() });
     const now = Date.now();
