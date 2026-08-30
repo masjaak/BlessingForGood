@@ -16,7 +16,8 @@ books: by_slug, by_publication_status, by_created_at
 bookVariants: by_book, by_isbn, by_book_and_format
 readyStockInventory: by_book_variant_id
 secretCatalogs: by_slug, by_status, by_closes_at, by_created_at
-catalogAccessCodes: by_catalog, by_catalog_and_active, by_lookup_digest, by_expiration
+catalogAccessCodes: by_catalog, by_catalog_and_active, by_scope_and_active,
+                    by_lookup_digest, by_expiration
 catalogItems: by_catalog, by_variant, by_catalog_and_variant
 catalogAccessGrants: by_app_user_id, by_app_user_id_and_catalog_id, by_catalog, by_expiration
 orders: by_customer_user_id, by_catalog, by_status, by_catalog_and_status,

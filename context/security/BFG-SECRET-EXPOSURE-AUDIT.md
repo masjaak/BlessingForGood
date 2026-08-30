@@ -51,13 +51,14 @@ Canonical Production HTML and 17 browser-delivered JavaScript files were
 inspected. The Clerk browser SDK and public Next chunks are present as
 expected. No server secret value, deployment credential, access token, or
 Owner bootstrap value was found. The application stores only the intended
-catalog-scoped opaque session and catalog ID in sessionStorage; it does not
+opaque session and current Catalog ID in sessionStorage; the server validates
+that session against the current eligible Catalog set. It does not
 manually store Clerk session tokens, admin keys, or deployment credentials.
 
-The scoped catalog token is a bearer capability within its documented catalog,
-TTL, code-status, and revocation checks. It is not classified as a server
+The Catalog token is a bearer capability within its documented eligible-Catalog
+set, TTL, code-status, and revocation checks. It is not classified as a server
 secret exposure because the anonymous gateway intentionally needs a browser
-handle; it must remain short-lived, catalog-scoped, digest-only at rest, and
+handle; it must remain short-lived, server-validated, digest-only at rest, and
 never appear in logs/errors/audit.
 
 ## Vercel Environment Metadata

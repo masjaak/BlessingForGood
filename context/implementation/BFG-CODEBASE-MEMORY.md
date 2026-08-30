@@ -1,12 +1,12 @@
 # BFG CODEBASE MEMORY
 
-## Post-diff memory — Secret Catalog discovery and shared access period — 2026-08-30
+## Post-diff memory — Secret Catalog global access code and form alignment — 2026-08-30
 
 - `src/components/customer-catalog.tsx` owns the Customer discovery workspace:
   Catalog header, Jakarta-derived deadline label, title/ISBN search, current
   Catalog Publisher filter, count/reset/empty states, and the existing variant,
   quantity, detail-link, and order controls. The workspace remounts on Catalog
-  ID changes so selections cannot bleed between period Catalogs.
+  ID changes so selections cannot bleed between eligible Catalogs.
 - `convex/lib/catalogView.ts` remains the Customer projection owner. It returns
   only the requested Catalog's eligible published/special books plus canonical
   publisher, ISBN, variants, Catalog ETA, and title count. The current
@@ -21,32 +21,48 @@
   eligibility, `add`, `remove`, Catalog lifecycle, and variant ownership rules
   remain authoritative and unchanged. Tracking counts unique titles while
   preserving variant rows and existing management actions.
-- `src/components/admin-catalog-period.tsx` owns the small Admin period UI.
-  `convex/catalogAccess.ts` owns period create/attach/detach/revoke, linked
-  Catalog summaries, period-scoped sessions, and session Catalog switching.
-  `catalogAccessPeriods` stores the keyed lookup digest and anchor-scoped code
-  digest only; the plaintext code is returned once on create and is not
-  recoverable from the database. Legacy per-Catalog code/session paths remain
-  compatible. The existing signed-out scoped browsing gateway remains; an
-  authenticated identity without an active BFG member cannot redeem a code.
+- `convex/catalogAccess.ts` remains the single access-code owner. Admin
+  `generateCode` uses the existing random/digest/one-time-raw-display flow and
+  writes `catalogAccessCodes.scope="global"`; one current global code opens all
+  existing eligible open/unexpired Catalogs. `getUnlocked` and
+  `listForSession` re-check that eligibility for every private Catalog read.
+  Revoke and expiry remain server-side; active member grants are updated for
+  the eligible set on redemption.
+- `src/components/admin-catalog-access.tsx` owns the simplified Access page:
+  one generated-code section plus the unchanged member grant controls. The
+  deleted `src/components/admin-catalog-period.tsx` and removed period Admin
+  mutations are no longer active product paths. Historical per-Catalog code
+  rows, `catalogAccessPeriods`, Catalog links, and valid period sessions remain
+  compatibility data; global access does not require them.
 - `src/lib/calendar-date.ts` remains the `Asia/Jakarta` date authority and
   `catalogDeadlineLabel` in `src/domain/prototype/logic.ts` derives the
   Customer status copy from the canonical Close Order timestamp. Catalog ETA
   is the new Catalog-level `estimatedArrivalMonth`; Batch ETA remains separate.
-- `src/domain/prototype/convex-store.tsx` maps period summaries into the Product
-  context and updates only the selected session Catalog ID. The period path
-  validates that the requested Catalog is linked to the same active period and
-  is still open on the server.
+- `src/domain/prototype/convex-store.tsx` maps current session summaries into
+  the Product context and updates only the selected session Catalog ID. The
+  existing customer selector is retained with neutral Secret Catalog copy so
+  one global session can open another eligible Catalog without another code.
+- `src/components/admin-catalog-detail.tsx` owns the local Catalog settings
+  three-column grid (`catalog-settings-grid`); `admin-catalog-access.tsx` owns
+  the local access-code and member-form grids. Shared BFG inputs, buttons,
+  spacing, breakpoints, and colors remain unchanged.
+- Production read-only preflight found one inactive historical access-period
+  row, no current `secretCatalogs.accessPeriodId` links in the inspected
+  Catalog set, and legacy per-Catalog codes/sessions/grants that must not be
+  destructively migrated in this ticket. New global rows are the active path;
+  old rows remain compatibility data until normal expiry/revoke behavior.
 - Protection coverage: `tests/lib/catalog-discovery.test.ts`,
   `tests/components/customer-catalog.test.tsx`,
   `tests/components/admin-catalog-discoverability.test.tsx`,
   `tests/domain/logic.test.ts`, and `convex/catalog-discovery.test.ts`.
-  Responsive geometry was checked at 390/768/1440 with the real stylesheet.
-  Commit `45ac1bb` is deployed to Vercel Production as
-  `dpl_ETVTjVtvB6RdKRBcRNR4SJgRwjXv`, aliased to the canonical
-  domain; the existing build path deployed Convex Production `clean-eel-522`.
-  Public smoke passes. Authenticated app rendering and Production business UAT
-  remain operator gates when no Clerk key/session or safe fixture is available.
+  Global-code coverage includes multi-Catalog eligibility, ineligible Catalog
+  denial, wrong-code failure, rotation, revoke, digest-only storage, and a
+  Catalog carrying a historical period relation. Admin component coverage
+  asserts the period controls are absent and local form owners remain present.
+  Full Convex/frontend coverage, TypeScript, ESLint, formatting, build, Convex
+  check, diff checks, and the rendered 390/768/1440 form fixture pass locally.
+  Production deployment and authenticated Production UAT remain release work
+  for this correction.
 - No category taxonomy, global search, fuzzy/semantic search, Batch rewrite,
   Ready Stock rewrite, Book Detail rewrite, or order-business change belongs to
   this diff. The category discussion remains backlog.

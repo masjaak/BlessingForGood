@@ -354,6 +354,8 @@ export default defineSchema({
 
   catalogAccessCodes: defineTable({
     catalogId: v.id("secretCatalogs"),
+    // Omitted on historical per-Catalog records; generated Admin codes use the global gate.
+    scope: v.optional(v.literal("global")),
     codeDigest: v.string(),
     lookupDigest: v.string(),
     isActive: v.boolean(),
@@ -363,6 +365,7 @@ export default defineSchema({
   })
     .index("by_catalog", ["catalogId"])
     .index("by_catalog_and_active", ["catalogId", "isActive"])
+    .index("by_scope_and_active", ["scope", "isActive"])
     .index("by_lookup_digest", ["lookupDigest"])
     .index("by_expiration", ["expiresAt"]),
 

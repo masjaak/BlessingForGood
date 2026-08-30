@@ -40,6 +40,15 @@ identity or ownership. One `appUsers` document exists per Clerk subject.
 Customer reads use indexed server queries; React does not fetch all rows and
 filter ownership locally.
 
+Secret Catalog access has one current generated-code authority. The existing
+server generator creates a random code, stores only its keyed digest, returns
+the raw value once, and supports expiry, rotation, and revoke. A current row
+with `catalogAccessCodes.scope="global"` creates one opaque session spanning
+all eligible open/unexpired Catalogs; `catalogAccess.getUnlocked` and
+`listForSession` recheck that eligibility. Historical per-Catalog code rows,
+period records, and valid legacy sessions remain compatibility data and do not
+change the current Admin mental model or authorize an ineligible Catalog.
+
 Activity is one presentation over Notification and Inbox records. Each notice
 has an optional `audience` projection (`admin` or `customer`); older rows infer
 the audience from their safe destination. Customer Activity queries enforce

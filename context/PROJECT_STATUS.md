@@ -1,27 +1,24 @@
 # BFG Project Status
 
-## Secret Catalog discovery and access period — 2026-08-30
+## Secret Catalog access simplification and form alignment — 2026-08-30
 
-Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING`
 
-The existing Secret Catalog path now has Catalog header context, Customer
-title/ISBN search and Publisher filtering, Admin Book Master/current-Catalog
-search, and an additive shared access-period relation. Catalog authorization,
-active-membership/order guards, Book Detail, variants, Batch, Ready Stock, and
-the existing V3.1 anonymous scoped browsing session remain unchanged. The
-period code is digest-only and opens only linked Catalogs; an authenticated
-identity without an active BFG member cannot redeem it.
+The active Admin access path now has one generated Secret Catalog code concept:
+the existing secure generator creates a global gate for currently eligible
+open/unexpired Catalogs. The period form and period mutations are removed from
+the active path. Historical per-Catalog code rows, period rows, and valid
+period-scoped sessions remain compatibility data where existing guards need
+them; global-code access does not require period relations. Catalog
+authorization, active-membership/order guards, search/discovery, Book Detail,
+variants, Batch, Ready Stock, and the existing anonymous scoped session
+mechanism remain unchanged.
 
-Local gates are green: 75 Vitest files / 431 tests, TypeScript, ESLint, format,
-Convex check, audit, production build, and diff checks. Responsive stylesheet
-geometry passes at 390/768/1440. Commit `45ac1bb` is on `main` and
-`origin/main`, deployed to Vercel Production as
-`dpl_ETVTjVtvB6RdKRBcRNR4SJgRwjXv`, and aliased to
-`https://www.blessingforgood.com`. The existing Vercel build path deployed the
-changed Convex functions to Production `clean-eel-522` with schema validation.
-Canonical public smoke checks pass. Authenticated app rendering and business
-UAT remain pending because this runtime has no Clerk publishable key/session;
-no credentials or Production business data were introduced.
+Focused access/UI tests and the full Convex/frontend suites pass locally;
+TypeScript, ESLint, formatting, build, Convex check, diff, and the rendered
+form fixture pass at 390/768/1440. Production deployment and authenticated
+Production UAT remain pending for this correction. No credentials or
+Production business data were introduced.
 
 ## Admin action and deadline tuning — 2026-08-29
 

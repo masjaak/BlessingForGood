@@ -7112,7 +7112,7 @@ p {
   }
 }
 
-/* Secret Catalog discovery keeps the shared period context and primary controls above the book list. */
+/* Secret Catalog discovery keeps the current session's Catalog controls above the book list. */
 .catalog-header {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
@@ -7137,23 +7137,20 @@ p {
   line-height: 1.05;
 }
 
-.catalog-header-metrics,
-.catalog-period-meta {
+.catalog-header-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
   margin: 0;
 }
 
-.catalog-header-metrics > div,
-.catalog-period-meta > div {
+.catalog-header-metrics > div {
   min-width: 0;
   padding-left: var(--space-3);
   border-left: 1px solid var(--line);
 }
 
-.catalog-header-metrics dt,
-.catalog-period-meta dt {
+.catalog-header-metrics dt {
   color: var(--ink-muted);
   font-size: 0.74rem;
   font-weight: 800;
@@ -7161,8 +7158,7 @@ p {
   text-transform: uppercase;
 }
 
-.catalog-header-metrics dd,
-.catalog-period-meta dd {
+.catalog-header-metrics dd {
   margin: var(--space-2) 0 0;
   color: var(--ink);
   font-weight: 800;
@@ -7170,8 +7166,6 @@ p {
 }
 
 .catalog-discovery,
-.catalog-period-card,
-.catalog-period-attach,
 .catalog-tracking {
   display: grid;
   gap: var(--space-3);
@@ -7194,40 +7188,39 @@ p {
   font-size: 0.86rem;
 }
 
-.catalog-period-switcher {
+.catalog-session-switcher {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
   gap: var(--space-4);
   align-items: end;
 }
 
-.catalog-period-switcher h2,
-.catalog-period-card h2 {
+.catalog-session-switcher h2 {
   margin: 0;
 }
 
-.catalog-period-catalogs {
+.catalog-access-code-form,
+.catalog-member-form {
   display: grid;
-  gap: var(--space-2);
-}
-
-.catalog-period-catalogs ul {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding-left: 20px;
-  color: var(--ink-muted);
-}
-
-.catalog-period-attach {
-  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
+  gap: var(--form-field-field-gap);
 }
 
-.catalog-period-attach > .button {
-  margin-bottom: 1px;
+.catalog-access-code-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.catalog-member-form {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+}
+
+.catalog-access-code-form > .field,
+.catalog-member-form > .field {
+  min-width: 0;
+}
+
+.catalog-access-code-form > .action-group {
+  align-self: end;
 }
 
 .book-card-isbn {
@@ -7251,7 +7244,7 @@ p {
     justify-self: start;
   }
 
-  .catalog-period-switcher {
+  .catalog-session-switcher {
     grid-template-columns: 1fr;
   }
 }
@@ -7262,23 +7255,23 @@ p {
     padding: var(--space-4);
   }
 
-  .catalog-header-metrics,
-  .catalog-period-meta {
+  .catalog-header-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .catalog-header-metrics > div:last-child,
-  .catalog-period-meta > div:last-child {
+  .catalog-header-metrics > div:last-child {
     grid-column: 1 / -1;
   }
 
   .catalog-discovery-controls,
-  .catalog-period-attach {
+  .catalog-access-code-form,
+  .catalog-member-form {
     grid-template-columns: 1fr;
   }
 
   .catalog-discovery-controls > .button,
-  .catalog-period-attach > .button {
+  .catalog-access-code-form > .action-group,
+  .catalog-member-form > .button {
     width: 100%;
     justify-self: stretch;
   }

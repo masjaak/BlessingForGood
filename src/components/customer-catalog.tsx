@@ -203,10 +203,10 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
           <PageHeader
             eyebrow="Secret Catalog"
             title="Buka katalog privatmu."
-            description="Masukkan kode akses yang dibagikan admin BFG. Kode ini langsung membuka katalog yang sesuai."
+            description="Masukkan satu kode akses yang dibagikan admin BFG. Kode ini membuka Secret Catalog yang sedang tersedia."
           />
           <form onSubmit={handleUnlock} className="form-card">
-            <Field label="Kode akses katalog" hint="Gunakan kode yang dibagikan oleh BFG.">
+            <Field label="Kode akses Secret Catalog" hint="Gunakan satu kode yang dibagikan oleh BFG.">
               <input
                 className="input"
                 value={accessCode}
@@ -259,9 +259,9 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     <div className="content-stack">
       <CatalogHeader catalog={catalog} />
       {catalogOptions.length > 1 ? (
-        <Card frame="list" className="catalog-period-switcher">
+        <Card frame="list" className="catalog-session-switcher">
           <div>
-            <span className="card-kicker">Periode akses</span>
+            <span className="card-kicker">Secret Catalog tersedia</span>
             <h2>Pilih katalog yang ingin dijelajahi.</h2>
           </div>
           <BFGSelect

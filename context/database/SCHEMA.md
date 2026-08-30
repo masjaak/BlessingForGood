@@ -54,11 +54,19 @@ Ready Stock orders use the canonical order and order-item records without a
 catalog item and require an existing active customer `appUsers` row. Assisted
 orders still require an existing active customer `appUsers` row.
 
-Catalog grants use `appUserId` and catalog ID. Token-only sessions use a
-catalog-scoped session digest and source-code reference. Orders use
+Catalog grants use `appUserId` and catalog ID. Token-only sessions use an
+opaque session digest and source-code reference; the stored Catalog ID is the
+current navigation reference, not the global access boundary. Orders use
 `customerUserId`; order items retain immutable product and price snapshots.
 Access codes and session credentials remain keyed digests and are never stored
-as plaintext.
+as plaintext. Current Admin-generated rows in `catalogAccessCodes` carry
+`scope="global"`; one active global row is the current Secret Catalog gate for
+all eligible open/unexpired Catalogs. Historical per-Catalog rows may omit
+`scope` and remain compatibility-only. `catalogAccessPeriods` and optional
+`secretCatalogs.accessPeriodId` remain retained historical data; the active
+global-code path does not require them. Global sessions reuse
+`catalogAccessSessions.accessCodeId` and are rechecked against current Catalog
+eligibility on every private read.
 
 ## Operations and finance tables
 

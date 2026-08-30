@@ -300,16 +300,19 @@ Phase 04.1 records the following approved implementation decisions:
   `catalogAccess.revokeCode` prevents new grants; existing grants retain the
   current expiry/closed-catalog behavior until their authoritative checks fail.
 - V3.1 supersedes the customer prerequisite of `authenticated member + code`:
-  `/catalog` is a public gateway, valid codes create catalog-scoped opaque
-  sessions without Clerk, and `getUnlocked` validates that session on every
-  private query. Existing member grants remain for backward-compatible owned
-  preorder authorization; token-only browse does not create customer identity.
+  `/catalog` is a public gateway, valid codes create opaque sessions without
+  Clerk, and `getUnlocked` validates that session on every private query.
+  Current generated codes open all eligible Secret Catalogs through one global
+  gate; existing per-Catalog/period sessions remain compatible where their
+  existing guards still accept them. Existing member grants remain for
+  backward-compatible owned preorder authorization; token-only browse does not
+  create customer identity.
 - Join captures name, email, normalized phone, area/city, one primary book
   interest, and optional note. `BFG_JOIN_WHATSAPP_GROUP_URL` is returned only
   after the request mutation commits; missing configuration produces a safe
   continuation message rather than a dummy link.
 
-## Secret Catalog discovery and access period — 2026-08-30
+## Secret Catalog discovery and global access code — 2026-08-30
 
 - Customer Secret Catalog discovery is scoped to the current authorized
   Catalog: title/ISBN query, Publisher filter, result count, reset, and an
@@ -322,11 +325,13 @@ Phase 04.1 records the following approved implementation decisions:
 - Catalog header Close Order and countdown are derived from the canonical
   `Asia/Jakarta` date contract. Catalog Estimated Arrival is separate planning
   metadata and never replaces Batch ETA.
-- An active digest-only access period may associate multiple Catalogs with one
-  shared access code. A period session can switch only among its associated
-  Catalogs; Clerk authentication, active membership, Catalog authorization,
-  and server-side session checks remain authoritative. The V3.1 signed-out
-  gateway remains available for backward compatibility.
+- One current Admin-generated digest-only code can open all Catalogs that are
+  currently eligible under the existing open/unexpired Catalog contract. The
+  raw code is shown only once; session validation, Clerk authentication, active
+  membership, Catalog authorization, and server-side eligibility remain
+  authoritative. Shared Access Period is superseded in the active Admin path;
+  historical period data and valid period sessions remain compatibility-only.
+  The V3.1 signed-out gateway remains available for backward compatibility.
 - Category taxonomy, global/fuzzy/semantic search, Batch redesign, and Ready
   Stock search changes are backlog, not part of this decision.
 

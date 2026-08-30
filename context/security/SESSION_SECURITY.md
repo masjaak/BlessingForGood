@@ -32,7 +32,8 @@ source, or Production fallback.
 | `NEXT_PUBLIC_BFG_PREVIEW_DEMO_MODE` | temporary Preview presentation/feature flag; never auth    |
 
 The active catalog code path uses configured server-side secret material. A
-public code redemption creates an opaque, catalog-scoped expiring session;
-active members may also receive the backward-compatible app-user grant. The
-customer gateway no longer requires Clerk authentication, and the path no
+public code redemption creates one opaque expiring session over the current
+eligible Catalog set; active members may also receive the backward-compatible
+app-user grants. The customer gateway no longer requires Clerk authentication,
+and the path no
 longer requires the legacy Preview flag.

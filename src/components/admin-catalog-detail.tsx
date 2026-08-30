@@ -131,7 +131,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             );
           }}
         >
-          <div className="form-grid">
+          <div className="form-grid form-grid-wide catalog-settings-grid">
             <Field label="Nama">
               <input
                 className="input"

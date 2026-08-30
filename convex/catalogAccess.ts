@@ -43,9 +43,20 @@ async function allPeriodCatalogs(ctx: AccessContext, periodId: Id<"catalogAccess
     .take(PERIOD_CATALOG_LIMIT);
 }
 
+async function eligibleGlobalCatalogs(ctx: AccessContext) {
+  const now = Date.now();
+  const catalogs = await ctx.db
+    .query("secretCatalogs")
+    .withIndex("by_status", (query) => query.eq("status", "open"))
+    .collect();
+  return catalogs.filter((catalog) => !catalog.closesAt || catalog.closesAt > now);
+}
+
 async function periodCatalogs(ctx: AccessContext, periodId: Id<"catalogAccessPeriods">) {
   const catalogs = await allPeriodCatalogs(ctx, periodId);
-  return catalogs.filter((catalog) => catalog.status === "open" && (!catalog.closesAt || catalog.closesAt > Date.now()));
+  return catalogs.filter(
+    (catalog) => catalog.status === "open" && (!catalog.closesAt || catalog.closesAt > Date.now()),
+  );
 }
 
 function catalogAccessSummary(view: Awaited<ReturnType<typeof getCatalogView>>) {
@@ -156,12 +167,27 @@ async function clearUnlockAttempts(
   }
 }
 
-async function deactivateCatalogCodes(ctx: MutationCtx, catalogId: Id<"secretCatalogs">, now: number) {
+async function deactivateGlobalCodes(ctx: MutationCtx, now: number) {
   const active = await ctx.db
     .query("catalogAccessCodes")
-    .withIndex("by_catalog_and_active", (query) => query.eq("catalogId", catalogId).eq("isActive", true))
-    .take(10);
+    .withIndex("by_scope_and_active", (query) => query.eq("scope", "global").eq("isActive", true))
+    .collect();
   for (const record of active) await ctx.db.patch(record._id, { isActive: false, updatedAt: now });
+}
+
+async function activeGlobalCodes(ctx: AccessContext) {
+  return ctx.db
+    .query("catalogAccessCodes")
+    .withIndex("by_scope_and_active", (query) => query.eq("scope", "global").eq("isActive", true))
+    .take(10);
+}
+
+async function globalCodeHistory(ctx: AccessContext) {
+  return ctx.db
+    .query("catalogAccessCodes")
+    .withIndex("by_scope_and_active", (query) => query.eq("scope", "global"))
+    .order("desc")
+    .take(10);
 }
 
 async function upsertCatalogGrant(
@@ -192,7 +218,6 @@ export const setCode = mutation({
     const user = await requirePermission(ctx, "catalog.manage");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
-    if (catalog.accessPeriodId) fail("VALIDATION_FAILED", "catalog uses an access period");
     if (args.expiresAt !== undefined && args.expiresAt <= Date.now()) fail("VALIDATION_FAILED", "expiry is invalid");
     const code = requiredText(args.accessCode, "access code");
     const digests = await accessCodeDigests(args.catalogId, code);
@@ -210,8 +235,7 @@ export const setCode = mutation({
         .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", digests.lookupDigest))
         .first(),
     ]);
-    if ((duplicateLookup && duplicateLookup.catalogId !== args.catalogId) || duplicatePeriod)
-      fail("VALIDATION_FAILED", "access code is in use");
+    if (duplicateLookup || duplicatePeriod) fail("VALIDATION_FAILED", "access code is in use");
     for (const record of active) await ctx.db.patch(record._id, { isActive: false, updatedAt: Date.now() });
     const now = Date.now();
     const codeId = await ctx.db.insert("catalogAccessCodes", {
@@ -233,18 +257,14 @@ export const generateCode = mutation({
     const user = await requirePermission(ctx, "catalog.manage");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
-    if (catalog.accessPeriodId) fail("VALIDATION_FAILED", "catalog uses an access period");
     if (catalog.status === "archived" || catalog.status === "closed") fail("CATALOG_CLOSED");
     if (args.expiresAt !== undefined && args.expiresAt <= Date.now()) fail("VALIDATION_FAILED", "expiry is invalid");
     const code = randomAccessCode();
     const now = Date.now();
-    const active = await ctx.db
-      .query("catalogAccessCodes")
-      .withIndex("by_catalog_and_active", (query) => query.eq("catalogId", args.catalogId).eq("isActive", true))
-      .take(10);
-    for (const record of active) await ctx.db.patch(record._id, { isActive: false, updatedAt: now });
+    await deactivateGlobalCodes(ctx, now);
     const codeId = await ctx.db.insert("catalogAccessCodes", {
       catalogId: args.catalogId,
+      scope: "global",
       ...(await accessCodeDigests(args.catalogId, code)),
       isActive: true,
       createdAt: now,
@@ -263,18 +283,19 @@ export const listForAdmin = query({
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     const now = Date.now();
-    const codes = await ctx.db
-      .query("catalogAccessCodes")
-      .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
-      .order("desc")
-      .take(100);
+    const globalCodes = await globalCodeHistory(ctx);
+    const codes = globalCodes.length
+      ? globalCodes
+      : await ctx.db
+          .query("catalogAccessCodes")
+          .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
+          .order("desc")
+          .take(10);
     const grants = await ctx.db
       .query("catalogAccessGrants")
       .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
       .order("desc")
       .take(200);
-    const period = catalog.accessPeriodId ? await ctx.db.get(catalog.accessPeriodId) : null;
-    const linkedPeriodCatalogs = period ? await allPeriodCatalogs(ctx, period._id) : [];
     return {
       codes: codes.map((code) => ({
         codeId: code._id,
@@ -298,151 +319,7 @@ export const listForAdmin = query({
           };
         }),
       ),
-      period: period
-        ? {
-            periodId: period._id,
-            label: period.label,
-            status: accessPeriodStatus(period, now),
-            startsAt: period.startsAt ?? null,
-            endsAt: period.endsAt ?? null,
-            catalogs: linkedPeriodCatalogs.map((linkedCatalog) => ({
-              catalogId: linkedCatalog._id,
-              name: linkedCatalog.name,
-              status: linkedCatalog.status,
-            })),
-          }
-        : null,
     };
-  },
-});
-
-export const listPeriodsForAdmin = query({
-  args: {},
-  handler: async (ctx) => {
-    await requirePermission(ctx, "catalog.manage");
-    const periods = await ctx.db.query("catalogAccessPeriods").withIndex("by_created_at").order("desc").take(100);
-    return Promise.all(
-      periods.map(async (period) => ({
-        periodId: period._id,
-        label: period.label,
-        status: accessPeriodStatus(period),
-        startsAt: period.startsAt ?? null,
-        endsAt: period.endsAt ?? null,
-        catalogs: (await ctx.db
-          .query("secretCatalogs")
-          .withIndex("by_access_period", (query) => query.eq("accessPeriodId", period._id))
-          .take(PERIOD_CATALOG_LIMIT)
-        ).map((catalog) => ({ catalogId: catalog._id, name: catalog.name, status: catalog.status })),
-      })),
-    );
-  },
-});
-
-export const createPeriod = mutation({
-  args: {
-    catalogId: v.id("secretCatalogs"),
-    label: v.string(),
-    accessCode: v.string(),
-    startsAt: v.optional(v.number()),
-    endsAt: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requirePermission(ctx, "catalog.manage");
-    const catalog = await ctx.db.get(args.catalogId);
-    if (!catalog) fail("CATALOG_NOT_FOUND");
-    if (catalog.accessPeriodId) fail("VALIDATION_FAILED", "catalog already uses an access period");
-    const label = requiredText(args.label, "access period label");
-    const code = requiredText(args.accessCode, "access code");
-    const now = Date.now();
-    const startsAt = args.startsAt ?? now;
-    if (args.endsAt !== undefined && args.endsAt <= startsAt) {
-      fail("VALIDATION_FAILED", "access period end is invalid");
-    }
-    const digests = await accessCodeDigests(args.catalogId, code);
-    const [duplicateCode, duplicatePeriod] = await Promise.all([
-      ctx.db
-        .query("catalogAccessCodes")
-        .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", digests.lookupDigest))
-        .first(),
-      ctx.db
-        .query("catalogAccessPeriods")
-        .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", digests.lookupDigest))
-        .first(),
-    ]);
-    if (duplicateCode || duplicatePeriod) fail("VALIDATION_FAILED", "access code is in use");
-    await deactivateCatalogCodes(ctx, args.catalogId, now);
-    const periodId = await ctx.db.insert("catalogAccessPeriods", {
-      anchorCatalogId: args.catalogId,
-      label,
-      ...digests,
-      isActive: true,
-      startsAt,
-      endsAt: args.endsAt,
-      createdAt: now,
-      updatedAt: now,
-      createdByUserId: user._id,
-    });
-    await ctx.db.patch(catalog._id, { accessPeriodId: periodId, updatedAt: now });
-    await recordAudit(ctx, user._id, "catalog.access_period_created", "catalog", args.catalogId, {
-      periodId: String(periodId),
-    });
-    return {
-      periodId,
-      catalogId: args.catalogId,
-      label,
-      code,
-      startsAt,
-      endsAt: args.endsAt ?? null,
-    };
-  },
-});
-
-export const attachPeriod = mutation({
-  args: { catalogId: v.id("secretCatalogs"), periodId: v.id("catalogAccessPeriods") },
-  handler: async (ctx, args) => {
-    const user = await requirePermission(ctx, "catalog.manage");
-    const [catalog, period] = await Promise.all([ctx.db.get(args.catalogId), ctx.db.get(args.periodId)]);
-    if (!catalog || !period) fail("CATALOG_NOT_FOUND");
-    if (accessPeriodStatus(period) !== "active") fail("VALIDATION_FAILED", "access period is not active");
-    if (catalog.accessPeriodId && catalog.accessPeriodId !== period._id) {
-      fail("VALIDATION_FAILED", "catalog already uses another access period");
-    }
-    const now = Date.now();
-    await deactivateCatalogCodes(ctx, args.catalogId, now);
-    await ctx.db.patch(catalog._id, { accessPeriodId: period._id, updatedAt: now });
-    await recordAudit(ctx, user._id, "catalog.access_period_attached", "catalog", args.catalogId, {
-      periodId: String(period._id),
-    });
-    return { attached: true };
-  },
-});
-
-export const detachPeriod = mutation({
-  args: { catalogId: v.id("secretCatalogs"), periodId: v.id("catalogAccessPeriods") },
-  handler: async (ctx, args) => {
-    const user = await requirePermission(ctx, "catalog.manage");
-    const catalog = await ctx.db.get(args.catalogId);
-    if (!catalog) fail("CATALOG_NOT_FOUND");
-    if (catalog.accessPeriodId !== args.periodId) fail("VALIDATION_FAILED", "catalog period does not match");
-    await ctx.db.patch(catalog._id, { accessPeriodId: undefined, updatedAt: Date.now() });
-    await recordAudit(ctx, user._id, "catalog.access_period_detached", "catalog", args.catalogId, {
-      periodId: String(args.periodId),
-    });
-    return { detached: true };
-  },
-});
-
-export const revokePeriod = mutation({
-  args: { periodId: v.id("catalogAccessPeriods") },
-  handler: async (ctx, args) => {
-    const user = await requirePermission(ctx, "catalog.manage");
-    const period = await ctx.db.get(args.periodId);
-    if (!period) fail("CATALOG_NOT_FOUND");
-    if (period.isActive) await ctx.db.patch(period._id, { isActive: false, updatedAt: Date.now() });
-    await recordAudit(ctx, user._id, "catalog.access_period_revoked", "catalog", period.anchorCatalogId, {
-      periodId: String(period._id),
-    });
-    return { revoked: true };
   },
 });
 
@@ -512,11 +389,13 @@ export const revokeCode = mutation({
     const user = await requirePermission(ctx, "catalog.manage");
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
-    if (catalog.accessPeriodId) fail("VALIDATION_FAILED", "catalog uses an access period");
-    const active = await ctx.db
-      .query("catalogAccessCodes")
-      .withIndex("by_catalog_and_active", (query) => query.eq("catalogId", args.catalogId).eq("isActive", true))
-      .take(10);
+    const global = await activeGlobalCodes(ctx);
+    const active = global.length
+      ? global
+      : await ctx.db
+          .query("catalogAccessCodes")
+          .withIndex("by_catalog_and_active", (query) => query.eq("catalogId", args.catalogId).eq("isActive", true))
+          .take(10);
     const now = Date.now();
     for (const record of active) await ctx.db.patch(record._id, { isActive: false, updatedAt: now });
     await recordAudit(ctx, user._id, "catalog.access_code_revoked", "catalog", args.catalogId);
@@ -545,34 +424,27 @@ export const unlock = mutation({
       "catalog-access-lookup",
       code,
     );
-    const [record, period] = await Promise.all([
-      ctx.db
-        .query("catalogAccessCodes")
-        .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", lookupDigest))
-        .first(),
-      ctx.db
-        .query("catalogAccessPeriods")
-        .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", lookupDigest))
-        .first(),
-    ]);
+    const record = await ctx.db
+      .query("catalogAccessCodes")
+      .withIndex("by_lookup_digest", (query) => query.eq("lookupDigest", lookupDigest))
+      .first();
     const now = Date.now();
-    if (period) {
-      const status = accessPeriodStatus(period, now);
-      if (status === "expired") return reject("ACCESS_CODE_EXPIRED");
-      if (status !== "active") return reject("ACCESS_CODE_INVALID");
+    if (record?.scope === "global") {
+      if (!record.isActive) return reject("ACCESS_CODE_INVALID");
+      if (record.expiresAt && record.expiresAt <= now) return reject("ACCESS_CODE_EXPIRED");
       const expected = await keyedDigest(
         requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"),
         "catalog-access",
-        `${period.anchorCatalogId}:${code}`,
+        `${record.catalogId}:${code}`,
       );
-      if (!constantTimeEqual(expected, period.codeDigest)) return reject("ACCESS_CODE_INVALID");
-      const catalogs = await periodCatalogs(ctx, period._id);
+      if (!constantTimeEqual(expected, record.codeDigest)) return reject("ACCESS_CODE_INVALID");
+      const catalogs = await eligibleGlobalCatalogs(ctx);
       if (!catalogs.length) return reject("CATALOG_NOT_OPEN");
-      const expiresAt = Math.min(period.endsAt || OPEN_ENDED_TIMESTAMP_MS, now + CATALOG_SESSION_TTL_MS);
+      const expiresAt = Math.min(record.expiresAt || OPEN_ENDED_TIMESTAMP_MS, now + CATALOG_SESSION_TTL_MS);
       const sessionToken = randomCatalogSessionToken();
       await ctx.db.insert("catalogAccessSessions", {
         catalogId: catalogs[0]._id,
-        accessPeriodId: period._id,
+        accessCodeId: record._id,
         sessionDigest: await catalogSessionDigest(sessionToken),
         createdAt: now,
         expiresAt,
@@ -601,6 +473,7 @@ export const unlock = mutation({
       };
     }
     if (!record || !record.isActive) return reject("ACCESS_CODE_INVALID");
+    if ((await globalCodeHistory(ctx)).length) return reject("ACCESS_CODE_INVALID");
     if (record.expiresAt && record.expiresAt <= now) return reject("ACCESS_CODE_EXPIRED");
     const expected = await keyedDigest(
       requireConfiguredSecret("BFG_CATALOG_CODE_PEPPER"),
@@ -652,6 +525,15 @@ export const getUnlocked = query({
       if (!session || session.revokedAt || session.expiresAt <= Date.now()) {
         return null;
       }
+      if (session.accessCodeId) {
+        const code = await ctx.db.get(session.accessCodeId);
+        if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return null;
+        if (code.scope === "global") {
+          const catalogs = await eligibleGlobalCatalogs(ctx);
+          if (!catalogs.some((catalog) => catalog._id === args.catalogId)) return null;
+          return getCatalogView(ctx, args.catalogId);
+        }
+      }
       if (session.accessPeriodId) {
         const period = await ctx.db.get(session.accessPeriodId);
         const catalog = await ctx.db.get(args.catalogId);
@@ -669,7 +551,8 @@ export const getUnlocked = query({
       if (session.catalogId !== args.catalogId) return null;
       if (!session.accessCodeId) return null;
       const code = await ctx.db.get(session.accessCodeId);
-      if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return null;
+      if (!code || code.scope === "global" || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now()))
+        return null;
       if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
       return getCatalogView(ctx, args.catalogId);
     }
@@ -695,6 +578,15 @@ export const listForSession = query({
       .withIndex("by_session_digest", (query) => query.eq("sessionDigest", sessionDigest))
       .first();
     if (!session || session.revokedAt || session.expiresAt <= Date.now()) return [];
+    if (session.accessCodeId) {
+      const code = await ctx.db.get(session.accessCodeId);
+      if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return [];
+      if (code.scope === "global") {
+        const catalogs = await eligibleGlobalCatalogs(ctx);
+        const views = await Promise.all(catalogs.map((catalog) => getCatalogView(ctx, catalog._id)));
+        return views.map(catalogAccessSummary);
+      }
+    }
     if (session.accessPeriodId) {
       const period = await ctx.db.get(session.accessPeriodId);
       if (!period || accessPeriodStatus(period) !== "active") return [];
@@ -704,7 +596,8 @@ export const listForSession = query({
     }
     if (!session.accessCodeId) return [];
     const code = await ctx.db.get(session.accessCodeId);
-    if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return [];
+    if (!code || code.scope === "global" || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now()))
+      return [];
     if (!(await catalogIsOpen(ctx, session.catalogId))) return [];
     return [catalogAccessSummary(await getCatalogView(ctx, session.catalogId))];
   },

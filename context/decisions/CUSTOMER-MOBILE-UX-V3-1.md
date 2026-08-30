@@ -35,9 +35,10 @@ catalog code or read the authorized catalog projection.
 
 ## Security boundary
 
-Catalog codes remain server-generated, catalog-scoped, pepper-hashed, and
-revocable/expiring. The plaintext code is returned only from the immediate
-admin generation mutation. Redemption returns an opaque session credential;
+Current Catalog codes remain server-generated, global across eligible
+open/unexpired Catalogs, pepper-hashed, and revocable/expiring. The plaintext
+code is returned only from the immediate admin generation mutation. Redemption
+returns one opaque session credential;
 the original code is not retained as browser authorization state. The
 catalog query returns no private products until the server validates that
 session or an existing member grant.

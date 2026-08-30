@@ -49,8 +49,9 @@ OTP secrets, or reset tokens. `requireIdentity` and `requireCurrentUser`
 resolve provider identity to `appUsers`; `requireActiveUser` rejects suspended
 rows before permission evaluation. Application code does not store Clerk
 tokens in localStorage or query strings. The catalog gateway uses a separate,
-catalog-scoped opaque session token in sessionStorage; it is not a Clerk
-session token and is rejected after catalog/code revocation or expiry.
+opaque session token in sessionStorage; it is not a Clerk session token and is
+rejected after catalog/code revocation or expiry. The server rechecks each
+requested Catalog against the current eligible Secret Catalog set.
 
 ## Authorization
 

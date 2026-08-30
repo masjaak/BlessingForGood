@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminCatalogsPage from "@/app/admin/catalogs/page";
 import { AdminCatalogAccess } from "@/components/admin-catalog-access";
 import { AdminCatalogDetail } from "@/components/admin-catalog-detail";
-import { AdminCatalogPeriod } from "@/components/admin-catalog-period";
 import { useMutation, useQuery } from "convex/react";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -163,6 +162,7 @@ describe("Secret Catalog operational discoverability", () => {
     const deadlineInput = screen.getByText("Batas pemesanan").closest("label")?.querySelector("input");
     expect(deadlineInput?.getAttribute("type")).toBe("date");
     expect((deadlineInput as HTMLInputElement | null)?.value).toBe("2030-08-30");
+    expect(document.querySelector(".catalog-settings-grid.form-grid-wide")).toBeTruthy();
   });
 
   it("keeps Buat kode akses actionable only after a catalog exists", () => {
@@ -187,32 +187,27 @@ describe("Secret Catalog operational discoverability", () => {
     ).toHaveLength(2);
   });
 
-  it("creates a shared access period and shows the one-time code", async () => {
-    const create = vi.fn().mockResolvedValue({ code: "BFGSEP26" });
-    vi.mocked(useMutation).mockReturnValue(create as never);
-    vi.mocked(useQuery).mockReturnValueOnce([] as never);
+  it("keeps one global access-code concept and removes period controls", () => {
+    vi.mocked(useQuery)
+      .mockReturnValueOnce({
+        id: "catalog-1",
+        name: "Spring",
+        status: "open",
+        description: null,
+        closesAt: null,
+      } as never)
+      .mockReturnValueOnce({ codes: [], grants: [] } as never)
+      .mockReturnValueOnce([] as never);
 
-    render(<AdminCatalogPeriod catalogId="catalog-1" currentPeriod={null} />);
+    render(<AdminCatalogAccess catalogId="catalog-1" />);
 
-    const periodLabel = screen.getByText("Nama periode").closest("label");
-    const codeLabel = screen.getByText("Kode akses").closest("label");
-    const periodInput = periodLabel?.querySelector<HTMLInputElement>("input");
-    const codeInput = codeLabel?.querySelector<HTMLInputElement>("input");
-    if (!periodInput || !codeInput) throw new Error("period form inputs not found");
-    fireEvent.change(periodInput, { target: { value: "September 2026" } });
-    fireEvent.change(codeInput, { target: { value: "BFGSEP26" } });
-    fireEvent.click(screen.getByRole("button", { name: "Buat periode dan kode" }));
-
-    await waitFor(() =>
-      expect(create).toHaveBeenCalledWith({
-        catalogId: "catalog-1",
-        label: "September 2026",
-        accessCode: "BFGSEP26",
-        endsAt: undefined,
-      }),
-    );
-    expect(screen.getByText("BFGSEP26")).toBeTruthy();
-    expect(screen.getByText("Kode periode — tampil sekali")).toBeTruthy();
+    expect(screen.getByText("Kode akses Secret Catalog")).toBeTruthy();
+    expect(screen.getByText("Satu kode untuk Secret Catalog yang tersedia.")).toBeTruthy();
+    expect(screen.queryByText(/Periode/i)).toBeNull();
+    expect(screen.queryByText("Nama periode")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Buat periode/i })).toBeNull();
+    expect(document.querySelector(".catalog-access-code-form")).toBeTruthy();
+    expect(document.querySelector(".catalog-member-form")).toBeTruthy();
   });
 
   it("searches eligible assignment records and current Catalog records without changing mutations", async () => {

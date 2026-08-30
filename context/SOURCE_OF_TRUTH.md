@@ -1,6 +1,6 @@
 # BFG SOURCE OF TRUTH
 
-## Secret Catalog discovery and access period — 2026-08-30
+## Secret Catalog discovery and global access code — 2026-08-30
 
 - Secret Catalog is a customer discovery workspace. The customer surface
   keeps catalog title, derived close status/countdown, date-only Close Order,
@@ -14,11 +14,17 @@
   case-insensitive matching across title, Publisher, ISBN, and author. Existing
   eligibility, add/remove mutations, and Catalog authorization remain the
   authority.
-- One active access period may be associated with multiple eligible open
-  Catalogs and one shared code. The period code is digest-only at rest and
-  creates a period-scoped session/grants; authentication, active BFG
-  membership, Catalog authorization, and server-side scope checks remain
-  authoritative. The existing signed-out Catalog gateway remains supported.
+- One current secure generated access code can unlock all currently eligible
+  Secret Catalogs: open Catalogs whose existing close-time rule has not elapsed.
+  The code is digest-only at rest, shown raw only in the existing one-time
+  generation response, and creates one opaque session that can switch among
+  those eligible Catalogs. Authentication, active BFG membership, Catalog
+  authorization, and server-side eligibility checks remain authoritative. The
+  existing signed-out Catalog gateway remains supported.
+- Shared Access Period is superseded in the active product path. Historical
+  period rows, Catalog links, and period-scoped sessions remain compatibility
+  data only when needed by existing guards; they are not required for normal
+  global-code access and have no active Admin UI.
 - Catalog Estimated Arrival is planning metadata on `secretCatalogs`; it is
   not Batch ETA or shipment tracking. Category taxonomy, global search, fuzzy
   search, and Batch/Ready Stock redesign remain backlog.
@@ -289,10 +295,10 @@ Catalog-to-Batch linking exposes derived eligible-order counts, while Roster,
 Assignment, Purchase Summary, and the existing Batch tracking state machine
 remain canonical. The first PO lock requires a non-empty assignment.
 
-Secret Catalog Book Detail reads the authorized catalog projection and reuses
+Secret Catalog Book Detail reads the authorized Catalog projection and reuses
 Book Master cover, gallery, description, preview, and selling variants. It
 does not expose supplier cost or other Admin-only data and cannot be reached
-without valid catalog-scoped access.
+without valid Catalog access.
 
 Hard deletion is limited to unused draft/pristine records at server boundaries;
 operational, financial, customer-history, and audit records retain lifecycle
@@ -775,14 +781,18 @@ Final canonical model is hybrid:
 
 - Admin creates, edits, opens, closes, assigns products, and manages Access
   Management from `/admin/catalogs/[catalogId]/access`.
-- A generated code is digest-only at rest, expiring, revocable, rate-limited,
-  catalog-scoped, and shown in plaintext only in the immediate generation
-  response.
-- A valid code creates an opaque anonymous catalog browsing session. The
-  server validates the session on every private catalog query.
+- One current generated code is digest-only at rest, expiring, revocable,
+  rate-limited, and scoped to all currently eligible open/unexpired Catalogs.
+  It is shown in plaintext only in the immediate generation response.
+- A valid code creates an opaque anonymous browsing session. The server
+  validates the session and current Catalog eligibility on every private
+  Catalog query; the same session can select another eligible Catalog.
 - An active customer may receive an explicit member grant/revoke. Customer
   identity and ownership are still required for an owned order/account
   consequence.
+- Historical per-Catalog codes and Shared Access Period records/sessions are
+  compatibility-only. The active Admin path exposes no period controls and
+  does not require period data for global-code access.
 - Catalog items reference Book Master variants; Admin can apply a catalog price
   override. Draft/archived products are excluded from customer projection.
 
@@ -1010,6 +1020,9 @@ supersessions are:
   member grant;
 - anonymous-only Secret Catalog management → Admin-visible code and member
   access management;
+- Shared Access Period plus manual period code → one current secure generated
+  Secret Catalog code for all Catalogs eligible under the existing access
+  contract;
 - open Ready Stock contact/CTA-only behavior → canonical order/reservation;
 - raw external cover URL as the only operator media path → validated durable
   storage upload;

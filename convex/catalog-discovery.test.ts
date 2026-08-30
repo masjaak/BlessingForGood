@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
-describe("Secret Catalog discovery and access periods", () => {
+describe("Secret Catalog discovery and global access", () => {
   beforeEach(configureTestEnvironment);
 
   it("keeps the customer projection scoped and exposes Catalog ETA metadata", async () => {
@@ -26,30 +26,47 @@ describe("Secret Catalog discovery and access periods", () => {
     expect(second.catalogId).not.toBe(first.catalogId);
   });
 
-  it("shares one active period code across associated Catalogs without widening session scope", async () => {
+  it("shares one generated code across eligible Catalogs without exposing ineligible Catalogs", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);
-    const first = await createOpenCatalog(admin, "Period A", "1101", "period-a-legacy");
-    const second = await createOpenCatalog(admin, "Period B", "1102", "period-b-legacy");
-    const outside = await createOpenCatalog(admin, "Outside Period", "1103", "outside-period");
-    const period = await admin.mutation(api.catalogAccess.createPeriod, {
-      catalogId: first.catalogId,
-      label: "September 2026",
-      accessCode: "BFGSEP26",
-      endsAt: Date.now() + 86_400_000,
+    const first = await createOpenCatalog(admin, "Global A", "1101", "global-a-legacy");
+    const second = await createOpenCatalog(admin, "Global B", "1102", "global-b-legacy");
+    const closed = await createOpenCatalog(admin, "Closed Catalog", "1103", "closed-legacy");
+    await admin.mutation(api.secretCatalogs.close, { catalogId: closed.catalogId });
+    const legacySession = await customer.mutation(api.catalogAccess.unlock, { accessCode: "global-a-legacy" });
+    if ("errorCode" in legacySession) throw new Error(legacySession.errorCode);
+    const draft = await admin.mutation(api.secretCatalogs.create, { name: "Draft Catalog" });
+    const adminUser = await admin.query(api.users.current, {});
+    if (!adminUser) throw new Error("admin fixture missing");
+    const historicalPeriodId = await t.run(async (ctx) => {
+      const now = Date.now();
+      const periodId = await ctx.db.insert("catalogAccessPeriods", {
+        anchorCatalogId: first.catalogId,
+        label: "Deprecated period",
+        codeDigest: "deprecated-code-digest",
+        lookupDigest: "deprecated-lookup-digest",
+        isActive: true,
+        startsAt: now,
+        createdAt: now,
+        updatedAt: now,
+        createdByUserId: adminUser.appUserId,
+      });
+      await ctx.db.patch(first.catalogId, { accessPeriodId: periodId });
+      return periodId;
     });
-    await expect(
-      admin.mutation(api.catalogAccess.setCode, { catalogId: outside.catalogId, accessCode: "BFGSEP26" }),
-    ).rejects.toThrow();
-    await admin.mutation(api.catalogAccess.attachPeriod, { catalogId: second.catalogId, periodId: period.periodId });
+    const generated = await admin.mutation(api.catalogAccess.generateCode, { catalogId: first.catalogId });
 
-    const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: "BFGSEP26" });
+    const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: generated.code });
     if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
-    expect(unlocked.catalogId).toBe(first.catalogId);
-    expect(unlocked.catalogs.map((catalog) => catalog.id)).toEqual([first.catalogId, second.catalogId]);
+    expect(unlocked.catalogs.map((catalog) => catalog.id)).toEqual(
+      expect.arrayContaining([first.catalogId, second.catalogId]),
+    );
+    expect(historicalPeriodId).toBeTruthy();
+    expect(unlocked.catalogs.map((catalog) => catalog.id)).not.toContain(closed.catalogId);
+    expect(unlocked.catalogs.map((catalog) => catalog.id)).not.toContain(draft);
     expect(
       await customer.query(api.catalogAccess.listForSession, { sessionToken: unlocked.sessionToken }),
-    ).toHaveLength(2);
+    ).toHaveLength(unlocked.catalogs.length);
     await expect(
       customer.query(api.catalogAccess.getUnlocked, {
         catalogId: second.catalogId,
@@ -58,34 +75,45 @@ describe("Secret Catalog discovery and access periods", () => {
     ).resolves.toMatchObject({ id: second.catalogId });
     await expect(
       customer.query(api.catalogAccess.getUnlocked, {
-        catalogId: outside.catalogId,
+        catalogId: closed.catalogId,
         sessionToken: unlocked.sessionToken,
       }),
     ).resolves.toBeNull();
-    await expect(secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "wrong-period-code" })).resolves.toMatchObject(
-      { errorCode: "ACCESS_CODE_INVALID" },
-    );
+    await expect(
+      secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "wrong-global-code" }),
+    ).resolves.toMatchObject({ errorCode: "ACCESS_CODE_INVALID" });
 
-    await t.run(async (ctx) => {
-      const customerUser = await ctx.db
-        .query("appUsers")
-        .withIndex("by_clerk_user_id", (query) => query.eq("clerkUserId", "phase041-customer-test"))
-        .unique();
-      if (!customerUser) throw new Error("customer missing");
-      await ctx.db.patch(customerUser._id, { status: "suspended" });
-    });
-    await expect(customer.mutation(api.catalogAccess.unlock, { accessCode: "BFGSEP26" })).resolves.toMatchObject({
+    const storedGlobalCode = await t.run(async (ctx) =>
+      ctx.db
+        .query("catalogAccessCodes")
+        .withIndex("by_scope_and_active", (query) => query.eq("scope", "global").eq("isActive", true))
+        .first(),
+    );
+    expect(storedGlobalCode).toMatchObject({ scope: "global", isActive: true });
+    expect(storedGlobalCode).not.toHaveProperty("accessCode");
+
+    const replacement = await admin.mutation(api.catalogAccess.generateCode, { catalogId: second.catalogId });
+    await expect(customer.mutation(api.catalogAccess.unlock, { accessCode: generated.code })).resolves.toMatchObject({
       errorCode: "ACCESS_CODE_INVALID",
     });
+    const replacementUnlock = await customer.mutation(api.catalogAccess.unlock, { accessCode: replacement.code });
+    if ("errorCode" in replacementUnlock) throw new Error(replacementUnlock.errorCode);
+    expect(replacementUnlock.catalogs.map((catalog) => catalog.id)).toEqual(
+      expect.arrayContaining([first.catalogId, second.catalogId]),
+    );
 
-    await admin.mutation(api.catalogAccess.revokePeriod, { periodId: period.periodId });
+    await admin.mutation(api.catalogAccess.revokeCode, { catalogId: second.catalogId });
     await expect(
       secondCustomer.query(api.catalogAccess.getUnlocked, {
         catalogId: second.catalogId,
-        sessionToken: unlocked.sessionToken,
+        sessionToken: replacementUnlock.sessionToken,
       }),
     ).resolves.toBeNull();
-    const storedPeriod = await t.run((ctx) => ctx.db.get(period.periodId));
-    expect(storedPeriod).not.toHaveProperty("accessCode");
+    await expect(
+      customer.query(api.catalogAccess.getUnlocked, {
+        catalogId: first.catalogId,
+        sessionToken: legacySession.sessionToken,
+      }),
+    ).resolves.toMatchObject({ id: first.catalogId });
   });
 });

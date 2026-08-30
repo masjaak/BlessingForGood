@@ -6,7 +6,6 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
-import { AdminCatalogPeriod } from "@/components/admin-catalog-period";
 import {
   ActionGroup,
   Button,
@@ -62,99 +61,97 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
     <AdminOperationalPage
       eyebrow="Secret Catalog"
       title={`Kelola akses · ${catalog.name}`}
-      description="Kode mentah hanya ditampilkan sekali. Server menyimpan digest, status, masa berlaku, dan metadata pemberian akses."
+      description="Satu kode aman dapat membuka Secret Catalog yang sedang tersedia. Kode mentah hanya ditampilkan sekali; server menyimpan digest, status, dan masa berlaku."
       actions={
         <LinkButton href={`/admin/catalogs/${catalogId}`} variant="secondary">
           Kembali ke katalog
         </LinkButton>
       }
     >
-      <AdminCatalogPeriod catalogId={catalogId} currentPeriod={access.period ?? null} />
-      {!access.period ? (
-        <Card frame="form">
-          <span className="card-kicker">Kode akses aman</span>
-          <h2>Buat, salin, lalu bagikan secara manual</h2>
-          <div className="catalog-access-code-section">
-            <div className="form-actions">
-              <Field label="Kode berakhir (opsional)">
-                <input
-                  className="input"
-                  type="datetime-local"
-                  value={codeExpiry}
-                  onChange={(event) => setCodeExpiry(event.target.value)}
-                />
-              </Field>
-              <ActionGroup variant="responsive">
-                <Button
-                  loading={pending === "generate"}
-                  loadingLabel="Membuat…"
-                  onClick={() =>
-                    void run(
-                      "generate",
-                      () => generate({ catalogId: id, expiresAt: codeExpiry ? Date.parse(codeExpiry) : undefined }),
-                      "Kode baru dibuat. Salin sekarang.",
-                    ).then((result) => {
-                      if (result) setOneTimeCode((result as { code: string }).code);
-                    })
-                  }
-                >
-                  Buat kode akses
-                </Button>
-                <Button
-                  variant="danger"
-                  loading={pending === "revoke-code"}
-                  loadingLabel="Mencabut…"
-                  onClick={() => void run("revoke-code", () => revokeCode({ catalogId: id }), "Kode aktif dicabut.")}
-                >
-                  Cabut kode aktif
-                </Button>
-              </ActionGroup>
-            </div>
-            {oneTimeCode ? (
-              <div className="catalog-code-result" role="status">
-                <strong>Kode baru — tampil sekali</strong>
-                <code>{oneTimeCode}</code>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    void navigator.clipboard.writeText(oneTimeCode).then(() => setMessage("Kode disalin."))
-                  }
-                >
-                  Salin kode
-                </Button>
-              </div>
-            ) : null}
+      <Card frame="form">
+        <span className="card-kicker">Kode akses Secret Catalog</span>
+        <h2>Satu kode untuk Secret Catalog yang tersedia.</h2>
+        <p className="subtle">
+          Buat, salin, lalu bagikan ke pelanggan. Kode ini mengikuti akses Catalog yang sedang terbuka.
+        </p>
+        <div className="catalog-access-code-section">
+          <div className="catalog-access-code-form">
+            <Field label="Berlaku sampai (opsional)">
+              <input
+                className="input"
+                type="datetime-local"
+                value={codeExpiry}
+                onChange={(event) => setCodeExpiry(event.target.value)}
+              />
+            </Field>
+            <ActionGroup variant="responsive">
+              <Button
+                loading={pending === "generate"}
+                loadingLabel="Membuat…"
+                onClick={() =>
+                  void run(
+                    "generate",
+                    () => generate({ catalogId: id, expiresAt: codeExpiry ? Date.parse(codeExpiry) : undefined }),
+                    "Kode baru dibuat. Salin sekarang.",
+                  ).then((result) => {
+                    if (result) setOneTimeCode((result as { code: string }).code);
+                  })
+                }
+              >
+                Buat kode akses
+              </Button>
+              <Button
+                variant="danger"
+                loading={pending === "revoke-code"}
+                loadingLabel="Mencabut…"
+                onClick={() => void run("revoke-code", () => revokeCode({ catalogId: id }), "Kode aktif dicabut.")}
+              >
+                Cabut kode aktif
+              </Button>
+            </ActionGroup>
           </div>
-          {access.codes.length ? (
-            <div className="content-stack">
-              {access.codes.map((code) => (
-                <div className="summary-line" key={code.codeId}>
-                  <span>
-                    {new Date(code.createdAt).toLocaleString("id-ID")} ·{" "}
-                    {code.expiresAt
-                      ? `berakhir ${new Date(code.expiresAt).toLocaleString("id-ID")}`
-                      : "tanpa masa berlaku eksplisit"}
-                  </span>
-                  <StatusBadge tone={code.status === "active" ? "positive" : "neutral"}>
-                    {code.status === "active" ? "Aktif" : "Dicabut"}
-                  </StatusBadge>
-                </div>
-              ))}
+          {oneTimeCode ? (
+            <div className="catalog-code-result" role="status">
+              <strong>Kode baru — tampil sekali</strong>
+              <code>{oneTimeCode}</code>
+              <Button
+                variant="secondary"
+                onClick={() => void navigator.clipboard.writeText(oneTimeCode).then(() => setMessage("Kode disalin."))}
+              >
+                Salin kode
+              </Button>
             </div>
-          ) : (
-            <EmptyState
-              title="Belum ada kode akses"
-              description="Buat kode akses untuk dibagikan sekali kepada pelanggan yang dituju."
-              mascotVariant={false}
-            />
-          )}
-        </Card>
-      ) : null}
+          ) : null}
+        </div>
+        {access.codes.length ? (
+          <div className="content-stack">
+            {access.codes.map((code) => (
+              <div className="summary-line" key={code.codeId}>
+                <span>
+                  {new Date(code.createdAt).toLocaleString("id-ID")} ·{" "}
+                  {code.expiresAt
+                    ? `berakhir ${new Date(code.expiresAt).toLocaleString("id-ID")}`
+                    : "tanpa masa berlaku eksplisit"}
+                </span>
+                <StatusBadge tone={code.status === "active" ? "positive" : "neutral"}>
+                  {code.status === "active" ? "Aktif" : "Dicabut"}
+                </StatusBadge>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="Belum ada kode akses"
+            description="Buat satu kode aman untuk Secret Catalog yang sedang tersedia."
+            mascotVariant={false}
+          />
+        )}
+      </Card>
       <Card frame="list">
         <span className="card-kicker">Akses anggota</span>
         <h2>Berikan atau cabut akses pelanggan aktif</h2>
         <form
-          className="form-actions"
+          className="form-actions catalog-member-form"
           onSubmit={(event) => {
             event.preventDefault();
             void run(

@@ -8,7 +8,33 @@ source: conversation
 
 # Changelog
 
+## [secret-catalog-global-access-code] — 2026-08-30
+
+### Changed
+
+- Removed the active `Periode Akses Bersama` Admin path and its manual period
+  configuration. Historical period rows and valid legacy sessions remain only
+  for compatibility; no migration deletes persisted data.
+- Extended the existing secure generated access-code path with a global scope:
+  one current digest-only code opens all eligible open/unexpired Secret
+  Catalogs, with existing one-time raw display, expiry, rotation, revoke,
+  session, membership, authorization, and rate-limit behavior preserved.
+- Kept the existing Customer Catalog selector with neutral Secret Catalog copy
+  so one validated session can move among eligible Catalogs. Aligned only the
+  affected Catalog settings, access-code, and member form grids with existing
+  BFG primitives and breakpoints.
+
+### QA
+
+- Focused access/UI checks and the full Convex/frontend suites pass locally;
+  TypeScript, ESLint, formatting, build, Convex check, diff checks, and the
+  rendered form fixture pass at 390/768/1440. Production deployment and
+  authenticated business UAT remain pending for this correction.
+
 ## [secret-catalog-discovery-access-period] — 2026-08-30
+
+> Historical record: the shared access-period model in this entry is
+> superseded by the global generated-code decision above.
 
 ### Added
 
