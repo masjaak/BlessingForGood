@@ -1,7 +1,40 @@
 # BFG SOURCE OF TRUTH
 
+## Adaptive natural-ratio book cover frame — 2026-08-30
+
+- This is a frontend-only presentation correction. The previous `contain` fix
+  preserved the whole image but left a universal `2 / 3` wrapper around
+  non-`2 / 3` uploads, producing visible letterboxing.
+- `src/components/book-cover.tsx` and the `.book-cover` rule in
+  `src/app/globals.css` remain the owners. Image-backed covers now use normal
+  flow with `width: 100%` and `height: auto`; `align-self: start` prevents CSS
+  Grid from stretching the wrapper to a row/card height. `object-fit: contain`
+  remains as a no-crop safeguard. The `2 / 3` ratio is limited to the
+  no-image/error placeholder state only.
+- Admin `CoverUploadField`, Secret Catalog Book Detail, Ready Stock detail,
+  Catalog cards, and Ready Stock cards all use the same natural image geometry.
+  Existing width/max-width, card min-height, borders, radius, and spacing stay
+  in place; no presentation-mode API was needed. `ProductGallery` and its
+  thumbnail geometry are unchanged.
+- The geometry harness covers 200x300, 684x937, 600x1000, 800x800, and
+  1200x700 fixtures at 390/768/1440. Full frontend and Convex suites,
+  TypeScript, ESLint, format, build, and diff checks pass. Behavior commit
+  `0b6d728` is deployed by the Git-integrated Vercel Production release; its
+  GitHub deployment target is
+  `https://vercel.com/masjaaks-projects/blessing-for-good/FTE6XgijmQtS1cWLVQuxz3yQv1hn`.
+- No separate Convex command was issued and no Convex source changed. The
+  existing Vercel build configuration still owns its release-path Convex
+  coupling. Signed-out Production smoke passed 39/40 at customer 390 and
+  admin 1280; the one unrelated failure is the stale `Kode akses katalog`
+  assertion against current `Kode akses Secret Catalog` copy. Authenticated
+  real-cover Admin/Customer UAT remains an operator gate because no authorized
+  Clerk session or approved live cover fixture was available.
+
 ## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
 
+- **SUPERSEDED for image-backed cover geometry:** the fixed-frame wording below
+  is historical evidence for the preceding `contain` fix. Its Gallery
+  thumbnail decision remains active.
 - This is a presentation-only maintenance correction. Upload validation,
   Convex storage, `books.coverStorageId`, gallery ownership, projections,
   search, access, variants, pricing, quantity, and ordering remain unchanged.

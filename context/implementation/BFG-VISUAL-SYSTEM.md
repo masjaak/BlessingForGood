@@ -147,8 +147,11 @@ consequence remains in `src/components/admin-book-detail.tsx`:
 `books.generateCoverUploadUrl` → validated Convex storage upload →
 `books.attachCover` → durable customer-safe URL. Supported files are JPG, PNG,
 or WebP up to 5 MB. Replacement attaches the new reference before deleting the
-previous object. `BookCover` presents the uploaded source with preserved ratio
-inside the consistent cover frame; Admin does not manage zoom or position.
+previous object. `BookCover` presents the uploaded source at its intrinsic
+ratio in normal flow (`width: 100%; height: auto`) inside the existing border,
+radius, and width constraints; Admin does not manage zoom, position, or frame
+ratio. The old fixed 2:3 frame is superseded for image-backed covers; only the
+no-image placeholder keeps placeholder geometry.
 
 ## Product Gallery Thumbnails
 

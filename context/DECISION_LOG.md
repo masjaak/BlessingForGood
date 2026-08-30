@@ -4,7 +4,16 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Adaptive natural-ratio book cover frame — 2026-08-30
+
+| ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| BFG-DEC-076 | 2026-08-30 / image presentation maintenance | A universal fixed `2 / 3` BookCover frame plus `contain` could be the default for every uploaded ratio. | Image-backed BookCover surfaces follow the uploaded image's intrinsic aspect ratio with full image, no crop, no distortion, and no artificial letterbox. Admin has no framing controls. The existing width/max-size and card layout constraints remain; only the no-image/error placeholder may use the historical `2 / 3` geometry. ProductGallery is unchanged. | Latest explicit user decision; `BookCover`/CSS source trace; five-shape rendered geometry fixture matrix | Removes the remaining letterbox root cause while preserving the existing image safety and commerce boundaries. | ACTIVE |
+
 ## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
+
+- **SUPERSEDED FOR COVER GEOMETRY:** BFG-DEC-075's fixed-frame cover clause is
+  superseded by BFG-DEC-076; its Gallery thumbnail clause remains active.
 
 | ID | Date / Phase | Old Decision | New Decision | Source | Reason | Status |
 | --- | --- | --- | --- | --- | --- | --- |

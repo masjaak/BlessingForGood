@@ -1,5 +1,19 @@
 # Decisions
 
+## Adaptive natural-ratio book cover frame — 2026-08-30
+
+- The universal fixed `2 / 3` BookCover frame is **SUPERSEDED** for
+  image-backed covers. The uploaded image supplies the presentation ratio;
+  the full image remains visible without crop, distortion, or artificial
+  letterboxing.
+- `src/components/book-cover.tsx` owns the shared renderer and
+  `src/app/globals.css` owns the wrapper/image geometry. Admin preview,
+  Secret Catalog detail, Ready Stock detail, and card consumers use the same
+  natural image flow. Existing layout width/max-size constraints remain, and
+  only the no-image/error placeholder keeps the old placeholder geometry.
+- `ProductGallery`, upload/storage, schema, projections, search, access,
+  variants, pricing, quantity, and ordering are unchanged.
+
 ## Catalog UI polish and adaptive format presentation — 2026-08-30
 
 - A customer-projected Book has at least one eligible variant; the canonical

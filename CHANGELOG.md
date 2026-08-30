@@ -8,6 +8,33 @@ source: conversation
 
 # Changelog
 
+## [book-cover-adaptive-natural-frame] — 2026-08-30
+
+### Fixed
+
+- Removed the universal image-backed 2:3 BookCover frame that left visible
+  letterboxing after the earlier `contain` safety fix. Trusted/local cover
+  images now render in normal flow at their intrinsic ratio with no crop,
+  distortion, or artificial gap; only the no-image placeholder retains its
+  placeholder geometry.
+- Kept the existing width/max-size constraints and card layout behavior. Admin
+  preview, Secret Catalog detail, Ready Stock detail, Catalog cards, and Ready
+  Stock cards all use the shared geometry owner; no presentation-mode API or
+  framing controls were added.
+
+### QA
+
+- The 200x300, 684x937, 600x1000, 800x800, and 1200x700 fixture matrix passes
+  at 390/768/1440. Frontend `436/436`, Convex `188/188`, TypeScript, ESLint,
+  format, build, and diff checks pass. Commit `0b6d728` is deployed through
+  the canonical Git-integrated Vercel Production release. Signed-out
+  Production smoke is `39/40`; the one failure is the unrelated stale
+  `Kode akses katalog` assertion against `Kode akses Secret Catalog`.
+- No separate Convex command, upload/storage/schema/projection/search/access,
+  variant/price/quantity/order change, or ProductGallery change was made.
+  Authenticated real-cover Admin/Customer UAT remains an operator gate because
+  no authorized Clerk session or approved live fixture was available.
+
 ## [book-cover-gallery-rendering-polish] — 2026-08-30
 
 ### Fixed

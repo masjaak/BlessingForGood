@@ -1,7 +1,44 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Adaptive natural-ratio book cover frame — 2026-08-30
+
+- Request: remove the remaining visible top/bottom or side gap around uploaded
+  covers while keeping the complete artwork visible and requiring no Admin
+  adjustment.
+- First wrong visual boundary: `src/app/globals.css` forced every
+  `.book-cover` to `aspect-ratio: 2 / 3` and its child image to `height: 100%`.
+  `object-fit: contain` correctly prevented crop but necessarily letterboxed
+  any uploaded ratio that differed from 2:3. CSS Grid could also stretch an
+  auto-height wrapper to its row/card height, so the shared wrapper needed
+  `align-self: start`.
+- Final contract: `src/components/book-cover.tsx` renders trusted storage,
+  blob-preview, and local image sources as one normal-flow `<img>`; the shared
+  image rule is `width: 100%; height: auto; object-fit: contain`. The
+  image-backed wrapper has no forced aspect ratio. `.book-cover.is-empty`
+  retains 2:3 only for the typographic no-image/error placeholder, never for
+  an uploaded cover. No natural/card API split was needed.
+- Consumers: `CoverUploadField` is the Admin preview owner; Secret Catalog
+  Book Detail and Ready Stock detail are adaptive large surfaces; Catalog and
+  Ready Stock listings keep their existing column widths, card min-height,
+  spacing, and borders while the actual cover bounds follow the source image.
+  `ProductGallery` is not part of this diff.
+- Regression owner: `tests/e2e/product-media-rendering.spec.ts` now measures
+  wrapper/image ratios and all four content edges against intrinsic dimensions
+  for 200x300, 684x937, 600x1000, 800x800, and 1200x700 fixtures at 390, 768,
+  and 1440px. `tests/components/book-cover.test.tsx` remains green for source
+  allowlisting and fallback behavior.
+- Evidence: 75 frontend files / 436 tests, 30 Convex files / 188 tests,
+  TypeScript, ESLint, format, build, diff, and the rendered matrix pass.
+  Behavior commit `0b6d728` is deployed through the canonical Git-integrated
+  Vercel Production release; signed-out Production smoke is 39/40 with one
+  unrelated stale Catalog-copy assertion. Authenticated real-cover Admin and
+  Customer acceptance remains an operator gate; no Production data changed.
+
 ## Post-diff memory — Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
 
+- **SUPERSEDED for image-backed geometry:** the fixed `2 / 3` frame statement
+  below is retained as historical evidence of the previous `contain` fix. Its
+  Gallery statements remain active.
 - Request: make safe image defaults canonical. Book covers must show the whole
   uploaded image without Admin framing work; gallery thumbnails must respect
   portrait, square, and landscape proportions without excessive side-space.
@@ -10,11 +47,12 @@
   `src/app/globals.css` gave every `ProductGallery` thumbnail an equal-width
   grid track and full-width image rule. The first wrong boundaries were shared
   rendering primitives, not upload, storage, projection, or business logic.
-- Final Book Cover contract: `BookCover` always uses the existing contained
-  image treatment in the consistent BFG `2 / 3` frame with preserved ratio;
-  no default transform or crop. `coverPresentation` backend fields and
-  projections remain compatibility data, but the renderer and Admin surface no
-  longer use them for manual framing.
+- Historical prior Book Cover contract (**SUPERSEDED for image-backed
+  geometry**): `BookCover` used the existing contained image treatment in a
+  consistent BFG `2 / 3` frame with preserved ratio; no default transform or
+  crop. `coverPresentation` backend fields and projections remain
+  compatibility data, but the renderer and Admin surface no longer use them
+  for manual framing.
 - Final Gallery contract: `ProductGallery` retains its stage, previous/next
   controls, and selection behavior. Thumbnail images use normalized `52px`
   height, intrinsic-ratio width, an existing `132px` maximum, and horizontal

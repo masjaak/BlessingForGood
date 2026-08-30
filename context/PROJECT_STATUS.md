@@ -1,7 +1,36 @@
 # BFG Project Status
 
+## Adaptive natural-ratio book cover frame — 2026-08-30
+
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+The remaining cover defect is fixed at the shared geometry owner. Image-backed
+`BookCover` wrappers now follow the uploaded image's intrinsic ratio with
+normal-flow `width: 100%` / `height: auto`; the wrapper no longer uses a
+universal 2:3 ratio and no longer stretches with grid rows. Full image,
+no-crop, no-distortion, and no-artificial-letterbox behavior is covered by the
+200x300, 684x937, 600x1000, 800x800, and 1200x700 fixture matrix.
+
+Admin preview, Secret Catalog detail, Ready Stock detail, Catalog cards, and
+Ready Stock cards use the shared fix. Upload, storage, schema, projection,
+search, access, variants, price, quantity, order, and ProductGallery paths did
+not change. Local rendered QA passes at 390/768/1440; 75 frontend files / 436
+tests, 30 Convex files / 188 tests, TypeScript, ESLint, format, build, and diff
+checks pass. Commit `0b6d728` is live in Vercel Production; GitHub reports the
+deployment complete at
+`https://vercel.com/masjaaks-projects/blessing-for-good/FTE6XgijmQtS1cWLVQuxz3yQv1hn`.
+
+Signed-out Production smoke passed 39/40 across customer 390 and admin 1280.
+The remaining failure is the pre-existing stale Catalog copy assertion. Real
+authenticated Admin preview and Customer Secret Catalog detail verification
+still requires an authorized Clerk session and approved non-2:3 Production
+cover; no Production data was created or changed.
+
 ## Book cover auto-fit + gallery thumbnail rendering — 2026-08-30
 
+- **SUPERSEDED for image-backed cover geometry:** this prior entry documented
+  contained artwork inside a universal frame. Gallery thumbnail behavior stays
+  unchanged.
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The shared `BookCover` renderer now shows the full uploaded image in the

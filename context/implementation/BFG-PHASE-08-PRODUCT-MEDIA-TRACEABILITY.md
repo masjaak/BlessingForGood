@@ -1,12 +1,35 @@
 # BFG PHASE 08 PRODUCT MEDIA TRACEABILITY
 
-Status: `PRODUCTION_DEPLOYED — AUTHENTICATED_ADMIN_EVIDENCE — EXTERNAL_PREVIEW_ALIGNMENT_CLOSED`
+Status: `PRODUCTION_DEPLOYED — ADAPTIVE_COVER_GEOMETRY_CLOSED — AUTHENTICATED_REAL_COVER_UAT_PENDING`
 Reconciled: 2026-08-21 (Asia/Jakarta)
+
+## Cover geometry addendum — 2026-08-30
+
+- Fixed-frame letterboxing was isolated to the shared `.book-cover` CSS
+  wrapper: `aspect-ratio: 2 / 3` plus `height: 100%` around `contain` artwork.
+  The wrapper now follows the intrinsic image ratio; normal-flow images use
+  `width: 100%; height: auto`, and `align-self: start` prevents row stretching.
+- Owner chain: `BookCover` in `src/components/book-cover.tsx` → `.book-cover`
+  and `.book-cover > img` in `src/app/globals.css` → `CoverUploadField` Admin
+  preview, Secret Catalog/Ready Stock detail, and Catalog/Ready Stock cards.
+  The image-backed surfaces share natural geometry; no explicit mode API was
+  needed. The empty/error fallback alone retains a 2:3 placeholder shape.
+- The five-shape geometry fixture matrix (200x300, 684x937, 600x1000,
+  800x800, 1200x700) passes at 390/768/1440 with zero measured content gaps
+  within border tolerance. ProductGallery, thumbnail sizing, upload, storage,
+  schema, projections, authorization, and business logic are unchanged.
+- Behavior commit `0b6d728` is live through the Git-integrated Vercel
+  Production release; GitHub's completed deployment target is
+  `https://vercel.com/masjaaks-projects/blessing-for-good/FTE6XgijmQtS1cWLVQuxz3yQv1hn`.
+  Authenticated Admin/Customer real-cover UAT remains pending for lack of an
+  authorized Clerk session and approved live fixture.
 
 ## Rendering addendum — 2026-08-30
 
 - `src/components/book-cover.tsx` is the shared Book Cover image owner. The
-  default is now contained rendering inside the existing consistent frame;
+  previous default was contained rendering inside the existing fixed frame;
+  that image-backed frame geometry is now superseded by the cover-geometry
+  addendum above;
   legacy `coverPresentation` remains compatibility data and no longer changes
   the image transform. `CoverUploadField` exposes no manual framing controls.
 - `src/components/product-gallery.tsx` retains the existing gallery interaction
