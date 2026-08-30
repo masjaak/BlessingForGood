@@ -16,6 +16,13 @@ const variantInput = v.object({
   priceAmount: v.number(),
 });
 
+function normalizeEstimatedArrivalMonth(value: string | undefined): string | undefined {
+  if (value === undefined || value.trim() === "") return undefined;
+  const month = value.trim();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) fail("VALIDATION_FAILED", "estimated arrival month is invalid");
+  return month;
+}
+
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
@@ -45,6 +52,7 @@ export const update = mutation({
     name: v.string(),
     description: v.optional(v.string()),
     closesAt: v.optional(v.number()),
+    estimatedArrivalMonth: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "catalog.manage");
@@ -57,6 +65,7 @@ export const update = mutation({
       name: requiredText(args.name, "catalog name"),
       description: args.description?.trim() || undefined,
       closesAt: args.closesAt,
+      estimatedArrivalMonth: normalizeEstimatedArrivalMonth(args.estimatedArrivalMonth),
       updatedAt: Date.now(),
     });
     await recordAudit(ctx, user._id, "catalog.updated", "catalog", catalog._id);
@@ -70,6 +79,7 @@ export const create = mutation({
     slug: v.optional(v.string()),
     description: v.optional(v.string()),
     closesAt: v.optional(v.number()),
+    estimatedArrivalMonth: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "catalog.manage");
@@ -90,6 +100,7 @@ export const create = mutation({
       description: args.description?.trim() || undefined,
       status: "draft",
       closesAt: args.closesAt,
+      estimatedArrivalMonth: normalizeEstimatedArrivalMonth(args.estimatedArrivalMonth),
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,
@@ -200,6 +211,7 @@ export const remove = mutation({
         .first(),
     ]);
     if (item || link || order) fail("ENTITY_IN_USE", "catalog has product, batch, or order history");
+    if (catalog.accessPeriodId) fail("ENTITY_IN_USE", "catalog uses an access period");
     const [code, grant, session] = await Promise.all([
       ctx.db
         .query("catalogAccessCodes")
@@ -229,6 +241,7 @@ export const createBundle = mutation({
     accessCode: v.optional(v.string()),
     accessCodeExpiresAt: v.optional(v.number()),
     closesAt: v.optional(v.number()),
+    estimatedArrivalMonth: v.optional(v.string()),
     variants: v.array(variantInput),
   },
   handler: async (ctx, args) => {
@@ -309,6 +322,7 @@ export const createBundle = mutation({
       slug: catalogSlug,
       status: "draft",
       closesAt: args.closesAt,
+      estimatedArrivalMonth: normalizeEstimatedArrivalMonth(args.estimatedArrivalMonth),
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,

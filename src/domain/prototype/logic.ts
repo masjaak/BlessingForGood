@@ -13,6 +13,7 @@ import type {
   PrototypeState,
   SecretCatalog,
 } from "@/domain/prototype/types";
+import { calendarDateKey } from "@/lib/calendar-date";
 
 export const catalogStatusLabels: Record<CatalogStatus, string> = {
   draft: "Draf",
@@ -116,6 +117,22 @@ export async function createCatalogFromInput(input: CreateCatalogInput, now = ne
 
 export function isCatalogOpen(catalog: SecretCatalog, now = new Date()): boolean {
   return catalog.status === "open" && (!catalog.closingAt || now < new Date(catalog.closingAt));
+}
+
+export function catalogDeadlineLabel(
+  closingAt: number | string | Date | null,
+  status: CatalogStatus = "open",
+  now = new Date(),
+): string {
+  if (status !== "open") return "Pemesanan ditutup";
+  if (!closingAt) return "Pemesanan terbuka";
+  const today = Date.parse(`${calendarDateKey(now)}T00:00:00.000Z`);
+  const deadline = Date.parse(`${calendarDateKey(closingAt)}T00:00:00.000Z`);
+  const remainingDays = Math.round((deadline - today) / 86_400_000);
+  if (remainingDays < 0) return "Pemesanan ditutup";
+  if (remainingDays === 0) return "Ditutup hari ini";
+  if (remainingDays === 1) return "Besok ditutup";
+  return `${remainingDays} hari lagi`;
 }
 
 export async function unlockCatalog(catalogs: SecretCatalog[], accessCode: string): Promise<SecretCatalog | undefined> {

@@ -10,11 +10,12 @@ export async function catalogIsOpen(ctx: QueryCtx, catalogId: Id<"secretCatalogs
 export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalogs">) {
   const catalog = await ctx.db.get(catalogId);
   if (!catalog) fail("CATALOG_NOT_FOUND");
+  // ponytail: bounded 500-item customer projection for the requested hundreds-scale Catalog; paginate if a Catalog exceeds 500 items.
   const items = await ctx.db
     .query("catalogItems")
     .withIndex("by_catalog", (query) => query.eq("catalogId", catalogId))
     .order("asc")
-    .take(200);
+    .take(500);
   const variantIds = items.map((item) => item.bookVariantId);
   const variants = await Promise.all(variantIds.map((variantId) => ctx.db.get(variantId)));
   const books = await Promise.all(variants.map((variant) => (variant ? ctx.db.get(variant.bookId) : null)));
@@ -114,6 +115,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
     name: catalog.name,
     status: catalog.status === "open" && catalog.closesAt && catalog.closesAt <= Date.now() ? "closed" : catalog.status,
     closingAt: catalog.closesAt ? new Date(catalog.closesAt).toISOString() : null,
+    estimatedArrivalMonth: catalog.estimatedArrivalMonth ?? null,
     titleCount: bookMap.size,
     books: Array.from(bookMap.values()),
     createdAt: new Date(catalog.createdAt).toISOString(),

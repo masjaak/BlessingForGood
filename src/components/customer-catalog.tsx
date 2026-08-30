@@ -4,11 +4,15 @@ import { useMemo, useState } from "react";
 import { formatBfgCalendarDate } from "@/lib/calendar-date";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
+import { BFGSelect } from "@/components/bfg-select";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
-import { formatIdr } from "@/domain/prototype/logic";
+import { catalogDeadlineLabel, formatIdr } from "@/domain/prototype/logic";
+import { formatCargoEta } from "@/domain/prototype/operations";
+import type { ProductContextValue } from "@/domain/prototype/context";
 import { useProduct } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
+import { matchesCustomerCatalogBook } from "@/lib/catalog-discovery";
 import {
   Button,
   Card,
@@ -20,12 +24,58 @@ import {
   Money,
   PageHeader,
   SkeletonCard,
+  StatusBadge,
 } from "@/components/ui";
 
+function CatalogHeader({ catalog }: { catalog: NonNullable<ReturnType<typeof useProduct>["unlockedCatalog"]> }) {
+  const availableBooks = catalog.titleCount ?? catalog.books.length;
+  return (
+    <header className="catalog-header" aria-labelledby="catalog-title">
+      <div className="catalog-header-main">
+        <span className="eyebrow">Secret Catalog</span>
+        <h1 id="catalog-title">{catalog.name}</h1>
+        <StatusBadge tone={catalog.status === "open" ? "positive" : "neutral"}>
+          {catalogDeadlineLabel(catalog.closingAt, catalog.status)}
+        </StatusBadge>
+      </div>
+      <dl className="catalog-header-metrics">
+        <div>
+          <dt>Close Order</dt>
+          <dd>{catalog.closingAt ? formatBfgCalendarDate(catalog.closingAt) : "Belum ditentukan"}</dd>
+        </div>
+        <div>
+          <dt>Est. Arrival</dt>
+          <dd>{formatCargoEta(catalog.estimatedArrivalMonth)}</dd>
+        </div>
+        <div>
+          <dt>Total tersedia</dt>
+          <dd>{availableBooks} buku tersedia</dd>
+        </div>
+      </dl>
+    </header>
+  );
+}
+
 export function CustomerCatalog() {
-  const { unlockedCatalog: catalog, catalogLoading, unlockCatalog, submitOrder, sessionRole, authState } = useProduct();
+  const product = useProduct();
+  return <CustomerCatalogView key={product.unlockedCatalog?.id ?? "locked"} product={product} />;
+}
+
+function CustomerCatalogView({ product }: { product: ProductContextValue }) {
+  const {
+    unlockedCatalog: catalog,
+    catalogLoading,
+    unlockCatalog,
+    submitOrder,
+    sessionRole,
+    authState,
+    catalogOptions = [],
+    selectCatalog = () => undefined,
+  } = product;
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [publisherFilter, setPublisherFilter] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [customerName, setCustomerName] = useState("");
@@ -53,6 +103,30 @@ export function CustomerCatalog() {
         return sum + (variant?.price || 0) * item.quantity;
       }, 0)
     : 0;
+
+  const publishers = useMemo(
+    () =>
+      catalog
+        ? Array.from(new Set(catalog.books.map((book) => book.publisher))).sort((left, right) =>
+            left.localeCompare(right),
+          )
+        : [],
+    [catalog],
+  );
+  const filteredBooks = useMemo(
+    () =>
+      catalog?.books.filter(
+        (book) =>
+          matchesCustomerCatalogBook(book, searchQuery) && (!publisherFilter || book.publisher === publisherFilter),
+      ) || [],
+    [catalog, publisherFilter, searchQuery],
+  );
+  const hasFilters = Boolean(searchQuery.trim() || publisherFilter);
+
+  function resetDiscovery() {
+    setSearchQuery("");
+    setPublisherFilter("");
+  }
 
   async function handleUnlock(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -167,11 +241,7 @@ export function CustomerCatalog() {
   if (catalog.books.length === 0) {
     return (
       <div className="content-stack">
-        <PageHeader
-          eyebrow="Katalog terbuka"
-          title={catalog.name}
-          description="Katalog ini sudah terbuka, tetapi belum memiliki buku yang dapat dipilih."
-        />
+        <CatalogHeader catalog={catalog} />
         <EmptyState
           title="Belum ada buku di katalog"
           description="Admin BFG perlu menambahkan judul dan varian nyata sebelum preorder dapat dicatat."
@@ -187,96 +257,159 @@ export function CustomerCatalog() {
 
   return (
     <div className="content-stack">
-      <PageHeader
-        eyebrow="Katalog terbuka"
-        title={catalog.name}
-        description={
-          catalog.closingAt
-            ? `Batas pemesanan: ${formatBfgCalendarDate(catalog.closingAt)}. Customer dapat melakukan preorder sampai tanggal ini.`
-            : "Katalog ini sedang terbuka."
-        }
-      />
+      <CatalogHeader catalog={catalog} />
+      {catalogOptions.length > 1 ? (
+        <Card frame="list" className="catalog-period-switcher">
+          <div>
+            <span className="card-kicker">Periode akses</span>
+            <h2>Pilih katalog yang ingin dijelajahi.</h2>
+          </div>
+          <BFGSelect
+            aria-label="Katalog dalam periode"
+            value={catalog.id}
+            onChange={(event) => selectCatalog(event.target.value)}
+          >
+            {catalogOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </BFGSelect>
+        </Card>
+      ) : null}
+      <section className="catalog-discovery" aria-label="Cari buku di katalog">
+        <div className="catalog-discovery-controls">
+          <Field label="Cari buku">
+            <input
+              className="input"
+              type="search"
+              aria-label="Cari judul atau ISBN"
+              placeholder="Cari judul atau ISBN"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </Field>
+          <Field label="Publisher">
+            <BFGSelect
+              aria-label="Publisher"
+              value={publisherFilter}
+              onChange={(event) => setPublisherFilter(event.target.value)}
+            >
+              <option value="">Semua Publisher</option>
+              {publishers.map((publisher) => (
+                <option key={publisher} value={publisher}>
+                  {publisher}
+                </option>
+              ))}
+            </BFGSelect>
+          </Field>
+          {hasFilters ? (
+            <Button type="button" variant="tertiary" onClick={resetDiscovery}>
+              Reset pencarian
+            </Button>
+          ) : null}
+        </div>
+        <p className="catalog-result-count" role="status" aria-live="polite">
+          {hasFilters
+            ? `${filteredBooks.length} buku ditemukan`
+            : `${catalog.titleCount ?? catalog.books.length} buku tersedia`}
+        </p>
+      </section>
       <div className="catalog-grid">
         <div className="book-list">
-          {catalog.books.map((book) => {
-            const selectedVariantId = selectedVariants[book.id] || book.variants[0]?.id;
-            const selectedQuantity = selectedVariantId ? quantities[selectedVariantId] || 0 : 0;
-            const selectedFormat = book.variants.find((variant) => variant.id === selectedVariantId)?.format;
-            return (
-              <Card frame="list" className="book-card" key={book.id}>
-                <div className="book-card-layout">
-                  <BookCover
-                    title={book.title}
-                    publisher={book.publisher}
-                    format={selectedFormat}
-                    presentation={book.coverPresentation}
-                    src={book.coverImageUrl || undefined}
-                  />
-                  <div className="book-card-details">
-                    <div className="book-meta">
-                      <div>
-                        <span className="card-kicker">{book.publisher}</span>
-                        <h2>{book.title}</h2>
-                        <LinkButton href={`/catalog/${catalog.id}/${book.id}`} variant="tertiary" size="compact">
-                          Buka detail buku
-                        </LinkButton>
+          {filteredBooks.length ? (
+            filteredBooks.map((book) => {
+              const selectedVariantId = selectedVariants[book.id] || book.variants[0]?.id;
+              const selectedQuantity = selectedVariantId ? quantities[selectedVariantId] || 0 : 0;
+              const selectedFormat = book.variants.find((variant) => variant.id === selectedVariantId)?.format;
+              return (
+                <Card frame="list" className="book-card" key={book.id}>
+                  <div className="book-card-layout">
+                    <BookCover
+                      title={book.title}
+                      publisher={book.publisher}
+                      format={selectedFormat}
+                      presentation={book.coverPresentation}
+                      src={book.coverImageUrl || undefined}
+                    />
+                    <div className="book-card-details">
+                      <div className="book-meta">
+                        <div>
+                          <h2>{book.title}</h2>
+                          <p className="book-card-isbn">
+                            ISBN: {book.variants.map((variant) => variant.isbn).join(" · ")}
+                          </p>
+                          <LinkButton href={`/catalog/${catalog.id}/${book.id}`} variant="tertiary" size="compact">
+                            Buka detail buku
+                          </LinkButton>
+                        </div>
+                        <span className="subtle">Pilih satu format</span>
                       </div>
-                      <span className="subtle">Pilih satu format</span>
-                    </div>
-                    <div className="variant-list" role="radiogroup" aria-label={`Format untuk ${book.title}`}>
-                      {book.variants.map((variant) => (
-                        <label className="variant-option" key={variant.id}>
-                          <input
-                            type="radio"
-                            name={book.id}
-                            value={variant.id}
-                            checked={selectedVariantId === variant.id}
-                            onChange={() => setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))}
-                            disabled={variant.availability !== "available"}
-                          />
-                          <strong>{variant.format}</strong>
-                          <span>
-                            <Money amount={variant.price} />
-                          </span>
-                          <small>{variant.isbn}</small>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="quantity-row">
-                      <span>Jumlah</span>
-                      <div className="quantity-control">
-                        <IconButton
-                          variant="secondary"
-                          aria-label={`Kurangi jumlah ${book.title}`}
-                          disabled={!selectedVariantId || selectedQuantity === 0}
-                          onClick={() =>
-                            selectedVariantId &&
-                            setQuantities((current) => ({
-                              ...current,
-                              [selectedVariantId]: Math.max(0, selectedQuantity - 1),
-                            }))
-                          }
-                        >
-                          −
-                        </IconButton>
-                        <output aria-label={`Jumlah ${book.title}`}>{selectedQuantity}</output>
-                        <IconButton
-                          variant="secondary"
-                          aria-label={`Tambah jumlah ${book.title}`}
-                          onClick={() =>
-                            selectedVariantId &&
-                            setQuantities((current) => ({ ...current, [selectedVariantId]: selectedQuantity + 1 }))
-                          }
-                        >
-                          +
-                        </IconButton>
+                      <div className="variant-list" role="radiogroup" aria-label={`Format untuk ${book.title}`}>
+                        {book.variants.map((variant) => (
+                          <label className="variant-option" key={variant.id}>
+                            <input
+                              type="radio"
+                              name={book.id}
+                              value={variant.id}
+                              checked={selectedVariantId === variant.id}
+                              onChange={() => setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))}
+                              disabled={variant.availability !== "available"}
+                            />
+                            <strong>{variant.format}</strong>
+                            <span>
+                              <Money amount={variant.price} />
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="quantity-row">
+                        <span>Jumlah</span>
+                        <div className="quantity-control">
+                          <IconButton
+                            variant="secondary"
+                            aria-label={`Kurangi jumlah ${book.title}`}
+                            disabled={!selectedVariantId || selectedQuantity === 0}
+                            onClick={() =>
+                              selectedVariantId &&
+                              setQuantities((current) => ({
+                                ...current,
+                                [selectedVariantId]: Math.max(0, selectedQuantity - 1),
+                              }))
+                            }
+                          >
+                            −
+                          </IconButton>
+                          <output aria-label={`Jumlah ${book.title}`}>{selectedQuantity}</output>
+                          <IconButton
+                            variant="secondary"
+                            aria-label={`Tambah jumlah ${book.title}`}
+                            onClick={() =>
+                              selectedVariantId &&
+                              setQuantities((current) => ({ ...current, [selectedVariantId]: selectedQuantity + 1 }))
+                            }
+                          >
+                            +
+                          </IconButton>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            );
-          })}
+                </Card>
+              );
+            })
+          ) : (
+            <EmptyState
+              title="Tidak ada buku yang cocok."
+              description="Coba kata kunci lain atau hapus filter Publisher."
+              mascotVariant={false}
+              action={
+                <Button type="button" variant="secondary" onClick={resetDiscovery}>
+                  Reset pencarian
+                </Button>
+              }
+            />
+          )}
         </div>
         <Card frame="detail" className="order-summary">
           <div>

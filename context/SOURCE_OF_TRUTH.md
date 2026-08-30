@@ -1,5 +1,28 @@
 # BFG SOURCE OF TRUTH
 
+## Secret Catalog discovery and access period — 2026-08-30
+
+- Secret Catalog is a customer discovery workspace. The customer surface
+  keeps catalog title, derived close status/countdown, date-only Close Order,
+  Catalog-level Estimated Arrival, and available-book count above the grid.
+- Customer discovery is scoped to the unlocked Catalog. Free-text matching is
+  limited to title and ISBN; Publisher is a separate filter derived from the
+  current Catalog's canonical Book Master data. Cards keep cover, title, ISBN,
+  and the existing format/quantity/order controls. Book Detail and ordering
+  remain unchanged.
+- Admin Book Master assignment and current-Catalog tracking support bounded,
+  case-insensitive matching across title, Publisher, ISBN, and author. Existing
+  eligibility, add/remove mutations, and Catalog authorization remain the
+  authority.
+- One active access period may be associated with multiple eligible open
+  Catalogs and one shared code. The period code is digest-only at rest and
+  creates a period-scoped session/grants; authentication, active BFG
+  membership, Catalog authorization, and server-side scope checks remain
+  authoritative. The existing signed-out Catalog gateway remains supported.
+- Catalog Estimated Arrival is planning metadata on `secretCatalogs`; it is
+  not Batch ETA or shipment tracking. Category taxonomy, global search, fuzzy
+  search, and Batch/Ready Stock redesign remain backlog.
+
 ## Admin action and deadline tuning — 2026-08-29
 
 - Operational Admin mutations use a visibly framed existing BFG `Button`

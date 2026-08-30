@@ -20,6 +20,7 @@ import {
 } from "@/components/ui";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { matchesAdminCatalogRecord } from "@/lib/catalog-discovery";
 import { calendarDateInputValue, calendarDateToEndTimestamp } from "@/lib/calendar-date";
 
 export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
@@ -40,7 +41,11 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const [name, setName] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [closesAt, setClosesAt] = useState<string | null>(null);
+  const [estimatedArrivalMonth, setEstimatedArrivalMonth] = useState<string | null>(null);
   const [variantId, setVariantId] = useState("");
+  const [assignableSearch, setAssignableSearch] = useState("");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogPublisher, setCatalogPublisher] = useState("");
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [pending, setPending] = useState("");
@@ -64,6 +69,18 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const effectiveName = name ?? catalog.name;
   const effectiveDescription = description ?? catalog.description ?? "";
   const effectiveClosesAt = closesAt ?? calendarDateInputValue(catalog.closesAt);
+  const effectiveEstimatedArrivalMonth = estimatedArrivalMonth ?? catalog.estimatedArrivalMonth ?? "";
+  const filteredAssignable = assignable.filter((item) => matchesAdminCatalogRecord(item, assignableSearch));
+  const catalogPublishers = Array.from(
+    new Set(items.map((item) => item.publisherName).filter((publisher): publisher is string => Boolean(publisher))),
+  ).sort((left, right) => left.localeCompare(right));
+  const filteredCatalogItems = items.filter(
+    (item) =>
+      matchesAdminCatalogRecord(item, catalogSearch) && (!catalogPublisher || item.publisherName === catalogPublisher),
+  );
+  const catalogTitleCount = (records: typeof items) =>
+    new Set(records.map((item) => String(item.bookId || item.title))).size;
+  const hasCatalogFilters = Boolean(catalogSearch.trim() || catalogPublisher);
 
   async function run(key: string, action: () => Promise<unknown>, success: string) {
     setPending(key);
@@ -108,6 +125,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                   name: effectiveName,
                   description: effectiveDescription || undefined,
                   closesAt: effectiveClosesAt ? calendarDateToEndTimestamp(effectiveClosesAt) : undefined,
+                  estimatedArrivalMonth: effectiveEstimatedArrivalMonth || undefined,
                 }),
               "Katalog tersimpan.",
             );
@@ -128,6 +146,14 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 type="date"
                 value={effectiveClosesAt}
                 onChange={(event) => setClosesAt(event.target.value)}
+              />
+            </Field>
+            <Field label="Estimasi kedatangan" hint="Bulan dan tahun perkiraan tiba untuk Customer.">
+              <input
+                className="input"
+                type="month"
+                value={effectiveEstimatedArrivalMonth}
+                onChange={(event) => setEstimatedArrivalMonth(event.target.value)}
               />
             </Field>
           </div>
@@ -259,7 +285,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           </div>
         </div>
         <form
-          className="form-actions"
+          className="catalog-discovery-controls admin-catalog-picker-controls"
           onSubmit={(event) => {
             event.preventDefault();
             if (variantId)
@@ -270,28 +296,95 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
               ).then(() => setVariantId(""));
           }}
         >
+          <Field label="Cari buku yang dapat ditambahkan">
+            <input
+              className="input"
+              type="search"
+              placeholder="Cari judul, publisher, ISBN, atau penulis"
+              value={assignableSearch}
+              onChange={(event) => {
+                setAssignableSearch(event.target.value);
+                setVariantId("");
+              }}
+            />
+          </Field>
           <Field label="Produk yang dapat ditambahkan">
             <BFGSelect
-              className="select"
+              aria-label="Produk yang dapat ditambahkan"
               value={variantId}
               onChange={(event) => setVariantId(event.target.value)}
               required
             >
               <option value="">Pilih buku / format</option>
-              {assignable.map((item) => (
-                <option key={item.variantId} value={item.variantId}>
-                  {item.title} · {item.format} · {item.isbn}
+              {filteredAssignable.length ? (
+                filteredAssignable.map((item) => (
+                  <option key={item.variantId} value={item.variantId}>
+                    {item.title} · {item.format} · {item.isbn}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>
+                  Tidak ada buku yang cocok
                 </option>
-              ))}
+              )}
             </BFGSelect>
           </Field>
           <Button loading={pending === "add"} loadingLabel="Menambahkan…">
             Tambah produk
           </Button>
         </form>
-        {items.length ? (
+        <p className="catalog-result-count" role="status" aria-live="polite">
+          {assignableSearch.trim()
+            ? `${filteredAssignable.length} buku/format ditemukan`
+            : `${assignable.length} buku/format tersedia`}
+        </p>
+        <section className="catalog-tracking" aria-label="Cari buku dalam katalog">
+          <div className="catalog-discovery-controls admin-catalog-tracking-controls">
+            <Field label="Cari buku dalam Catalog">
+              <input
+                className="input"
+                type="search"
+                placeholder="Cari judul, publisher, ISBN, atau penulis"
+                value={catalogSearch}
+                onChange={(event) => setCatalogSearch(event.target.value)}
+              />
+            </Field>
+            <Field label="Publisher">
+              <BFGSelect
+                aria-label="Publisher dalam Catalog"
+                value={catalogPublisher}
+                onChange={(event) => setCatalogPublisher(event.target.value)}
+              >
+                <option value="">Semua Publisher</option>
+                {catalogPublishers.map((publisher) => (
+                  <option key={publisher} value={publisher}>
+                    {publisher}
+                  </option>
+                ))}
+              </BFGSelect>
+            </Field>
+            {hasCatalogFilters ? (
+              <Button
+                type="button"
+                variant="tertiary"
+                onClick={() => {
+                  setCatalogSearch("");
+                  setCatalogPublisher("");
+                }}
+              >
+                Reset pencarian
+              </Button>
+            ) : null}
+          </div>
+          <p className="catalog-result-count" role="status" aria-live="polite">
+            {hasCatalogFilters
+              ? `${catalogTitleCount(filteredCatalogItems)} judul ditemukan`
+              : `${catalogTitleCount(items)} judul di Catalog`}
+          </p>
+        </section>
+        {items.length && filteredCatalogItems.length ? (
           <div className="content-stack">
-            {items.map((item) => (
+            {filteredCatalogItems.map((item) => (
               <div className="summary-line" key={item._id}>
                 <span>
                   <strong>{item.title}</strong>
@@ -324,6 +417,24 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
               </div>
             ))}
           </div>
+        ) : items.length ? (
+          <EmptyState
+            title="Tidak ada buku yang cocok."
+            description="Coba kata kunci lain atau hapus filter Publisher."
+            mascotVariant={false}
+            action={
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setCatalogSearch("");
+                  setCatalogPublisher("");
+                }}
+              >
+                Reset pencarian
+              </Button>
+            }
+          />
         ) : (
           <EmptyState
             title="Belum ada produk"

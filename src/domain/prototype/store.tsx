@@ -27,6 +27,8 @@ function UnavailableProductProvider({ children }: { children: ReactNode }) {
       retryAuth,
       state: emptyPrototypeState(),
       unlockedCatalog: undefined,
+      catalogOptions: [],
+      selectCatalog: () => undefined,
       createCatalog: unavailable,
       unlockCatalog: unavailable,
       submitOrder: unavailable,

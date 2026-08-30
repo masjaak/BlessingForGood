@@ -5,6 +5,7 @@ import type {
   CreateCatalogInput,
   CreateCatalogResult,
   CreateOrderInput,
+  CatalogAccessOption,
   Order,
   OrderStatus,
   PrototypeState,
@@ -141,6 +142,8 @@ export interface ProductContextValue {
   retryAuth: () => void;
   state: PrototypeState;
   unlockedCatalog: SecretCatalog | undefined;
+  catalogOptions: CatalogAccessOption[];
+  selectCatalog: (catalogId: string) => void;
   createCatalog: (input: CreateCatalogInput) => Promise<CreateCatalogResult>;
   unlockCatalog: (accessCode: string) => Promise<SecretCatalog | undefined>;
   submitOrder: (catalogId: string, input: CreateOrderInput) => Promise<Order>;

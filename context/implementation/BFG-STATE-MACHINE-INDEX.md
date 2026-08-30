@@ -1,6 +1,6 @@
 # BFG STATE MACHINE INDEX
 
-Reconciled: 2026-08-29
+Reconciled: 2026-08-30
 This is an index, not a second implementation. The named Convex validators,
 transition helpers, mutations, and tests are canonical.
 
@@ -16,8 +16,9 @@ transition helpers, mutations, and tests are canonical.
 | Shipment tracking | `po_closed`, `ordered_to_supplier`, `shipped_internationally`, `customs`, `to_indonesia_warehouse`, `at_store` | update stage | no backward transition; no skip unless explicit `allowSkip` path | `convex/lib/shipmentTransitions.ts`, `batchTracking.ts` | transition tests |
 | Fulfillment tracking | `awaiting_payment`, `awaiting_address`, `packing`, `shipped`, `completed` | update stage | sequential helper and exception guard; this phase has no payment-settlement guard; completion triggers Ready Stock consume | `convex/lib/fulfillmentTransitions.ts`, `orderFulfillment.ts` | fulfillment/policy tests |
 | Secret Catalog | `draft`, `open`, `closed`, `archived` | create/open/close/reopen/archive/restore behavior; `closed → open` remains the existing guarded reopen, while `archived → draft` is the authorized restore | archived restores only to draft; restore from non-archived is rejected; effective close time still denies access and Customer access is not reopened by restore | `convex/secretCatalogs.ts`, `convex/lib/catalogView.ts` | `convex/destructive-actions.test.ts`, catalog tests |
-| Catalog access code | active, revoked, expired/invalid | generate, redeem, revoke, expiry | digest/pepper; no plaintext persistence; rate limit; catalog scope | `convex/catalogAccess.ts`, `convex/lib/accessCodes.ts` | security/access tests |
-| Catalog access session | active, expired, revoked | issue on unlock, validate per query | session digest/expiry/revocation; no cross-catalog use | `convex/catalogAccess.ts`, `convex/lib/sessions.ts` | access/session tests |
+| Catalog access code | active, revoked, expired/invalid | generate, redeem, revoke, expiry; legacy per-Catalog path remains available when no period is attached | digest/pepper; no plaintext persistence; rate limit; Catalog scope | `convex/catalogAccess.ts`, `convex/lib/accessCodes.ts` | security/access tests |
+| Catalog access period | active, inactive, expired | create/attach/detach/revoke; one period code can open its linked Catalogs | Admin/Owner permission; digest-only code; active period; linked open Catalog; existing membership and scoped-session guards remain | `convex/catalogAccess.ts`, `convex/schema.ts`, `src/components/admin-catalog-period.tsx` | `convex/catalog-discovery.test.ts`, access/security tests |
+| Catalog access session | active, expired, revoked | issue on unlock; period sessions select only linked Catalogs; legacy sessions remain single-Catalog | session digest/expiry/revocation; period relation must match requested Catalog; no cross-period/Catalog use | `convex/catalogAccess.ts`, `convex/lib/sessions.ts` | access/session tests, `convex/catalog-discovery.test.ts` |
 | Member catalog grant | active, revoked, expired/closed effective | grant, revoke, expiry/close | active customer target; Admin/Owner mutation; ownership still required for order | `convex/catalogAccess.ts`, schema grants | access/ownership tests |
 | Invoice | `draft`, `issued`, `void` | create, issue, void | no issue void; controlled relation/order; snapshot immutable | `convex/invoices.ts`, `convex/lib/invoiceProjection.ts` | invoice tests |
 | Invoice payment | `unpaid`, `payment_submitted`, `partially_paid`, `paid` | submit proof, approve payment, allocate deposit | derived from approved/pending consequence; no manual settlement | `convex/paymentConfirmations.ts`, `convex/lib/invoiceCalculations.ts` | payment/financial tests |

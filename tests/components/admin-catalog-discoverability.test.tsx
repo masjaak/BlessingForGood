@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminCatalogsPage from "@/app/admin/catalogs/page";
 import { AdminCatalogAccess } from "@/components/admin-catalog-access";
 import { AdminCatalogDetail } from "@/components/admin-catalog-detail";
+import { AdminCatalogPeriod } from "@/components/admin-catalog-period";
 import { useMutation, useQuery } from "convex/react";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -184,5 +185,114 @@ describe("Secret Catalog operational discoverability", () => {
     expect(
       screen.getByRole("button", { name: "Buat kode akses" }).closest(".action-group")?.querySelectorAll(".button"),
     ).toHaveLength(2);
+  });
+
+  it("creates a shared access period and shows the one-time code", async () => {
+    const create = vi.fn().mockResolvedValue({ code: "BFGSEP26" });
+    vi.mocked(useMutation).mockReturnValue(create as never);
+    vi.mocked(useQuery).mockReturnValueOnce([] as never);
+
+    render(<AdminCatalogPeriod catalogId="catalog-1" currentPeriod={null} />);
+
+    const periodLabel = screen.getByText("Nama periode").closest("label");
+    const codeLabel = screen.getByText("Kode akses").closest("label");
+    const periodInput = periodLabel?.querySelector<HTMLInputElement>("input");
+    const codeInput = codeLabel?.querySelector<HTMLInputElement>("input");
+    if (!periodInput || !codeInput) throw new Error("period form inputs not found");
+    fireEvent.change(periodInput, { target: { value: "September 2026" } });
+    fireEvent.change(codeInput, { target: { value: "BFGSEP26" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buat periode dan kode" }));
+
+    await waitFor(() =>
+      expect(create).toHaveBeenCalledWith({
+        catalogId: "catalog-1",
+        label: "September 2026",
+        accessCode: "BFGSEP26",
+        endsAt: undefined,
+      }),
+    );
+    expect(screen.getByText("BFGSEP26")).toBeTruthy();
+    expect(screen.getByText("Kode periode — tampil sekali")).toBeTruthy();
+  });
+
+  it("searches eligible assignment records and current Catalog records without changing mutations", async () => {
+    const add = vi.fn().mockResolvedValue("catalog-item-new");
+    vi.mocked(useMutation).mockReturnValue(add as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "September",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      [
+        {
+          _id: "catalog-item-forest",
+          title: "Forest Stories",
+          publisherName: "Nosy Crow",
+          author: "Bea Reader",
+          format: "BB",
+          isbn: "978-0-02-2222-22-2",
+        },
+        {
+          _id: "catalog-item-history",
+          title: "History Atlas",
+          publisherName: "Usborne",
+          author: "Cleo Curious",
+          format: "PB",
+          isbn: "978-0-03-3333-33-3",
+        },
+      ],
+      [
+        {
+          variantId: "variant-science",
+          bookId: "book-science",
+          title: "Science Around Us",
+          publisherName: "DK",
+          author: "Ada Lovelace",
+          format: "PB",
+          isbn: "978-0-01-1111-11-1",
+          priceAmount: 125000,
+        },
+        {
+          variantId: "variant-forest",
+          bookId: "book-forest",
+          title: "Forest Stories",
+          publisherName: "Nosy Crow",
+          author: "Bea Reader",
+          format: "BB",
+          isbn: "978-0-02-2222-22-2",
+          priceAmount: 135000,
+        },
+      ],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    const pickerSearch = screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[0];
+    fireEvent.change(pickerSearch, { target: { value: "lovelace" } });
+    expect(screen.getByText("1 buku/format ditemukan")).toBeTruthy();
+    fireEvent.click(screen.getByRole("combobox", { name: "Produk yang dapat ditambahkan" }));
+    expect(screen.getByRole("option", { name: /Science Around Us/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("option", { name: /Science Around Us/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah produk" }));
+    await waitFor(() => expect(add).toHaveBeenCalledWith({ catalogId: "catalog-1", bookVariantId: "variant-science" }));
+
+    const trackingSearch = screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[1];
+    fireEvent.change(trackingSearch, { target: { value: "9780033333333" } });
+    expect(screen.getByText("1 judul ditemukan")).toBeTruthy();
+    expect(screen.getByText("History Atlas")).toBeTruthy();
+    expect(screen.queryByText("Forest Stories")).toBeNull();
+
+    fireEvent.change(trackingSearch, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("combobox", { name: "Publisher dalam Catalog" }));
+    await waitFor(() => expect(screen.getByRole("option", { name: "Nosy Crow" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("option", { name: "Nosy Crow" }));
+    expect(screen.getByText("1 judul ditemukan")).toBeTruthy();
+    expect(screen.getByText("Forest Stories")).toBeTruthy();
+    expect(screen.queryByText("History Atlas")).toBeNull();
   });
 });

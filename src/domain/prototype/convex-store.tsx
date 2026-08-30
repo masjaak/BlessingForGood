@@ -28,6 +28,7 @@ import {
 import { normalizeCatalogStatus } from "@/domain/prototype/logic";
 import type {
   BookFormat,
+  CatalogAccessOption,
   CreateCatalogInput,
   CreateCatalogResult,
   CreateOrderInput,
@@ -45,6 +46,7 @@ type CatalogRecord = {
   name: string;
   status: string;
   closingAt: string | null;
+  estimatedArrivalMonth?: string | null;
   createdAt: string;
   titleCount?: number;
   books: Array<{
@@ -106,6 +108,7 @@ function asCatalog(value: CatalogView | null | undefined): SecretCatalog | undef
     accessCodeHash: "convex-managed",
     status: normalizeCatalogStatus(record.status),
     closingAt: record.closingAt,
+    estimatedArrivalMonth: record.estimatedArrivalMonth,
     createdAt: record.createdAt,
     titleCount: record.titleCount,
     books: record.books,
@@ -206,6 +209,10 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
         ? { catalogId: unlockedCatalogId as Id<"secretCatalogs"> }
         : "skip",
   );
+  const sessionCatalogs = useQuery(
+    api.catalogAccess.listForSession,
+    catalogSession ? { sessionToken: catalogSession.sessionToken } : "skip",
+  );
   const customerOrders = useQuery(
     api.orders.listMine,
     isCustomer ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
@@ -290,6 +297,30 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
         : [asCatalog(unlocked as CatalogView | null | undefined)].filter(Boolean),
     [adminCatalogs, isAdmin, unlocked],
   ) as SecretCatalog[];
+  const catalogOptions = useMemo<CatalogAccessOption[]>(() => {
+    const sessionOptions = (sessionCatalogs || []).map((option) => ({
+      id: option.id,
+      name: option.name,
+      status: normalizeCatalogStatus(option.status),
+      closingAt: option.closingAt,
+      estimatedArrivalMonth: option.estimatedArrivalMonth,
+      titleCount: option.titleCount,
+    }));
+    if (sessionOptions.length) return sessionOptions;
+    const current = asCatalog(unlocked as CatalogView | null | undefined);
+    return current
+      ? [
+          {
+            id: current.id,
+            name: current.name,
+            status: current.status,
+            closingAt: current.closingAt,
+            estimatedArrivalMonth: current.estimatedArrivalMonth,
+            titleCount: current.titleCount,
+          },
+        ]
+      : [];
+  }, [sessionCatalogs, unlocked]);
   const orders = useMemo(
     () =>
       (isAdmin ? pageOf(adminOrders) : pageOf(customerOrders))
@@ -347,6 +378,20 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       return catalog;
     },
     [unlock],
+  );
+
+  const selectCatalog = useCallback(
+    (catalogId: string) => {
+      if (catalogSession) {
+        const nextSession = { ...catalogSession, catalogId };
+        setCatalogSession(nextSession);
+        setStoredCatalogSession(nextSession);
+        return;
+      }
+      setUnlockedCatalogId(catalogId);
+      setStoredUnlockedCatalogId(catalogId);
+    },
+    [catalogSession],
   );
 
   const submitOrder = useCallback(
@@ -446,6 +491,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       retryAuth,
       state,
       unlockedCatalog: asCatalog(unlocked as CatalogView | null | undefined),
+      catalogOptions,
+      selectCatalog,
       createCatalog,
       unlockCatalog,
       submitOrder,
@@ -456,6 +503,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     [
       closeCatalog,
       createCatalog,
+      catalogOptions,
       editOrder,
       authState,
       catalogLoading,
@@ -468,6 +516,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       provisionError,
       retryAuth,
       state,
+      selectCatalog,
       submitOrder,
       unlockCatalog,
       unlocked,

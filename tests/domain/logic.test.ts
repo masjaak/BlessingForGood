@@ -10,6 +10,7 @@ import {
   emptyPrototypeState,
   calculateDepositRequired,
   calculateLedgerBalance,
+  catalogDeadlineLabel,
   normalizeCatalogStatus,
   transitionOrderStatus,
   unlockCatalog,
@@ -56,6 +57,17 @@ describe("order domain logic", () => {
       "archived",
     ]);
     expect(normalizeCatalogStatus("unknown")).toBe("closed");
+  });
+
+  it("derives the customer countdown from the Jakarta calendar date", () => {
+    const now = new Date("2030-09-27T10:00:00.000Z");
+
+    expect(catalogDeadlineLabel("2030-09-30T16:59:59.999Z", "open", now)).toBe("3 hari lagi");
+    expect(catalogDeadlineLabel("2030-09-28T16:59:59.999Z", "open", now)).toBe("Besok ditutup");
+    expect(catalogDeadlineLabel("2030-09-27T16:59:59.999Z", "open", now)).toBe("Ditutup hari ini");
+    expect(catalogDeadlineLabel("2030-09-26T16:59:59.999Z", "open", now)).toBe("Pemesanan ditutup");
+    expect(catalogDeadlineLabel(null, "open", now)).toBe("Pemesanan terbuka");
+    expect(catalogDeadlineLabel("2030-09-30T16:59:59.999Z", "closed", now)).toBe("Pemesanan ditutup");
   });
 
   it("unlocks only with the catalog access code", async () => {

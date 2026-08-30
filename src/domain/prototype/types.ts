@@ -53,9 +53,19 @@ export interface SecretCatalog {
   accessCodeHash: string;
   status: CatalogStatus;
   closingAt: string | null;
+  estimatedArrivalMonth?: string | null;
   books: Book[];
   titleCount?: number;
   createdAt: string;
+}
+
+export interface CatalogAccessOption {
+  id: string;
+  name: string;
+  status: CatalogStatus;
+  closingAt: string | null;
+  estimatedArrivalMonth?: string | null;
+  titleCount?: number;
 }
 
 export type Catalog = SecretCatalog;

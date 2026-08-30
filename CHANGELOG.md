@@ -8,6 +8,29 @@ source: conversation
 
 # Changelog
 
+## [secret-catalog-discovery-access-period] — 2026-08-30
+
+### Added
+
+- Added Customer Catalog context with title, derived Jakarta deadline status,
+  date-only Close Order, Catalog ETA, and available-book count.
+- Added scoped Customer title/ISBN search, canonical Publisher filtering,
+  result counts, reset/empty states, and clean cover/title/ISBN card hierarchy
+  while preserving existing format, quantity, detail, and preorder controls.
+- Added Admin Book Master search by title, Publisher, ISBN, and author plus
+  current-Catalog search/filter tracking without changing add/remove mutations.
+- Added an additive shared access-period model so multiple linked Catalogs can
+  use one digest-only code; existing authentication, membership, authorization,
+  and signed-out scoped gateway boundaries remain in force.
+
+### QA
+
+- Focused and full deterministic checks pass locally: 75 Vitest files / 431
+  tests, TypeScript, ESLint, format, Convex check, audit, build, and diff
+  checks. Responsive stylesheet geometry passes at 390/768/1440.
+- Authenticated application rendering and Production business UAT remain
+  pending without a Clerk publishable key/session or safe business fixture.
+
 ## [admin-action-deadline-tuning] — 2026-08-29
 
 ### Fixed

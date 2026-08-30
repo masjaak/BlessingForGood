@@ -309,6 +309,27 @@ Phase 04.1 records the following approved implementation decisions:
   after the request mutation commits; missing configuration produces a safe
   continuation message rather than a dummy link.
 
+## Secret Catalog discovery and access period — 2026-08-30
+
+- Customer Secret Catalog discovery is scoped to the current authorized
+  Catalog: title/ISBN query, Publisher filter, result count, reset, and an
+  intentional empty state. Book cards remain cover/title/ISBN plus the
+  existing transactional format, quantity, and order controls.
+- Admin Catalog curation searches eligible Book Master records by title,
+  Publisher, ISBN, or author, and current Catalog tracking uses the same
+  bounded search plus Publisher filter. Search does not change add/remove
+  mutations or eligibility.
+- Catalog header Close Order and countdown are derived from the canonical
+  `Asia/Jakarta` date contract. Catalog Estimated Arrival is separate planning
+  metadata and never replaces Batch ETA.
+- An active digest-only access period may associate multiple Catalogs with one
+  shared access code. A period session can switch only among its associated
+  Catalogs; Clerk authentication, active membership, Catalog authorization,
+  and server-side session checks remain authoritative. The V3.1 signed-out
+  gateway remains available for backward compatibility.
+- Category taxonomy, global/fuzzy/semantic search, Batch redesign, and Ready
+  Stock search changes are backlog, not part of this decision.
+
 The remaining prototype decisions below are historical and do not override the
 Phase 04.1 identity boundary.
 

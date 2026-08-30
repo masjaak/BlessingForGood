@@ -1,5 +1,53 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Secret Catalog discovery and shared access period — 2026-08-30
+
+- `src/components/customer-catalog.tsx` owns the Customer discovery workspace:
+  Catalog header, Jakarta-derived deadline label, title/ISBN search, current
+  Catalog Publisher filter, count/reset/empty states, and the existing variant,
+  quantity, detail-link, and order controls. The workspace remounts on Catalog
+  ID changes so selections cannot bleed between period Catalogs.
+- `convex/lib/catalogView.ts` remains the Customer projection owner. It returns
+  only the requested Catalog's eligible published/special books plus canonical
+  publisher, ISBN, variants, Catalog ETA, and title count. The current
+  hundreds-scale ceiling is 500 Catalog items; paginate if that ceiling is
+  reached.
+- `src/lib/catalog-discovery.ts` is the small shared pure matcher. Customer
+  matching is title/ISBN only with trimmed, case-insensitive, hyphen/space-safe
+  ISBN comparison. Admin matching adds canonical publisher and author.
+- `src/components/admin-catalog-detail.tsx` owns Admin Book Master assignment
+  search and current-Catalog tracking search/filter. `convex/catalogItems.ts`
+  adds only the canonical publisher/author/book projection fields; existing
+  eligibility, `add`, `remove`, Catalog lifecycle, and variant ownership rules
+  remain authoritative and unchanged. Tracking counts unique titles while
+  preserving variant rows and existing management actions.
+- `src/components/admin-catalog-period.tsx` owns the small Admin period UI.
+  `convex/catalogAccess.ts` owns period create/attach/detach/revoke, linked
+  Catalog summaries, period-scoped sessions, and session Catalog switching.
+  `catalogAccessPeriods` stores the keyed lookup digest and anchor-scoped code
+  digest only; the plaintext code is returned once on create and is not
+  recoverable from the database. Legacy per-Catalog code/session paths remain
+  compatible. The existing signed-out scoped browsing gateway remains; an
+  authenticated identity without an active BFG member cannot redeem a code.
+- `src/lib/calendar-date.ts` remains the `Asia/Jakarta` date authority and
+  `catalogDeadlineLabel` in `src/domain/prototype/logic.ts` derives the
+  Customer status copy from the canonical Close Order timestamp. Catalog ETA
+  is the new Catalog-level `estimatedArrivalMonth`; Batch ETA remains separate.
+- `src/domain/prototype/convex-store.tsx` maps period summaries into the Product
+  context and updates only the selected session Catalog ID. The period path
+  validates that the requested Catalog is linked to the same active period and
+  is still open on the server.
+- Protection coverage: `tests/lib/catalog-discovery.test.ts`,
+  `tests/components/customer-catalog.test.tsx`,
+  `tests/components/admin-catalog-discoverability.test.tsx`,
+  `tests/domain/logic.test.ts`, and `convex/catalog-discovery.test.ts`.
+  Responsive geometry was checked at 390/768/1440 with the real stylesheet.
+  Authenticated app rendering and Production business UAT remain operator
+  gates when no Clerk key/session or safe fixture is available.
+- No category taxonomy, global search, fuzzy/semantic search, Batch rewrite,
+  Ready Stock rewrite, Book Detail rewrite, or order-business change belongs to
+  this diff. The category discussion remains backlog.
+
 ## Post-diff memory — Admin action and deadline tuning — 2026-08-29
 
 - Confirmed frameless operational Admin mutations are owned by their existing

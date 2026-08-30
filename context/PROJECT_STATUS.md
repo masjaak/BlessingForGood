@@ -1,5 +1,23 @@
 # BFG Project Status
 
+## Secret Catalog discovery and access period — 2026-08-30
+
+Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING`
+
+The existing Secret Catalog path now has Catalog header context, Customer
+title/ISBN search and Publisher filtering, Admin Book Master/current-Catalog
+search, and an additive shared access-period relation. Catalog authorization,
+active-membership/order guards, Book Detail, variants, Batch, Ready Stock, and
+the existing V3.1 anonymous scoped browsing session remain unchanged. The
+period code is digest-only and opens only linked Catalogs; an authenticated
+identity without an active BFG member cannot redeem it.
+
+Local gates are green: 75 Vitest files / 431 tests, TypeScript, ESLint, format,
+Convex check, audit, production build, and diff checks. Responsive stylesheet
+geometry passes at 390/768/1440. Authenticated app rendering is blocked by the
+absent local Clerk publishable key; no credentials or Production business data
+were introduced.
+
 ## Admin action and deadline tuning — 2026-08-29
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

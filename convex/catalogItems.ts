@@ -9,17 +9,22 @@ export const listForCatalog = query({
   args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "catalog.manage");
+    // ponytail: bounded 500-item Admin tracking projection; paginate when a Catalog exceeds 500 items.
     const items = await ctx.db
       .query("catalogItems")
       .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
-      .take(200);
+      .take(500);
     return Promise.all(
       items.map(async (item) => {
         const variant = await ctx.db.get(item.bookVariantId);
         const book = variant ? await ctx.db.get(variant.bookId) : null;
+        const publisher = book ? await ctx.db.get(book.publisherId) : null;
         return {
           ...item,
+          bookId: book?._id ?? null,
           title: book?.title || "Unknown book",
+          publisherName: publisher?.name ?? null,
+          author: book?.author ?? null,
           format: variant?.format || null,
           isbn: variant?.isbn || null,
           priceAmount: item.priceOverrideAmount ?? variant?.priceAmount ?? 0,
@@ -37,7 +42,7 @@ export const listAssignable = query({
     const assigned = await ctx.db
       .query("catalogItems")
       .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
-      .take(200);
+      .take(500);
     const assignedIds = new Set(assigned.map((item) => String(item.bookVariantId)));
     const variants = await ctx.db.query("bookVariants").take(500);
     return (
@@ -46,6 +51,7 @@ export const listAssignable = query({
           .filter((variant) => variant.isAvailable && !assignedIds.has(String(variant._id)))
           .map(async (variant) => {
             const book = await ctx.db.get(variant.bookId);
+            const publisher = book ? await ctx.db.get(book.publisherId) : null;
             if (
               !book ||
               !book.isActive ||
@@ -58,6 +64,8 @@ export const listAssignable = query({
               variantId: variant._id,
               bookId: book._id,
               title: book.title,
+              publisherName: publisher?.name ?? null,
+              author: book.author ?? null,
               format: variant.format,
               isbn: variant.isbn,
               priceAmount: variant.priceAmount,

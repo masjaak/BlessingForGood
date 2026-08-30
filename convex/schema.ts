@@ -324,6 +324,8 @@ export default defineSchema({
     status: catalogStatus,
     opensAt: v.optional(v.number()),
     closesAt: v.optional(v.number()),
+    estimatedArrivalMonth: v.optional(v.string()),
+    accessPeriodId: v.optional(v.id("catalogAccessPeriods")),
     createdAt: v.number(),
     updatedAt: v.number(),
     createdByUserId: v.id("appUsers"),
@@ -331,6 +333,23 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_status", ["status"])
     .index("by_closes_at", ["closesAt"])
+    .index("by_access_period", ["accessPeriodId"])
+    .index("by_created_at", ["createdAt"]),
+
+  catalogAccessPeriods: defineTable({
+    anchorCatalogId: v.id("secretCatalogs"),
+    label: v.string(),
+    codeDigest: v.string(),
+    lookupDigest: v.string(),
+    isActive: v.boolean(),
+    startsAt: v.optional(v.number()),
+    endsAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_lookup_digest", ["lookupDigest"])
+    .index("by_active", ["isActive"])
     .index("by_created_at", ["createdAt"]),
 
   catalogAccessCodes: defineTable({
@@ -374,7 +393,8 @@ export default defineSchema({
 
   catalogAccessSessions: defineTable({
     catalogId: v.id("secretCatalogs"),
-    accessCodeId: v.id("catalogAccessCodes"),
+    accessCodeId: v.optional(v.id("catalogAccessCodes")),
+    accessPeriodId: v.optional(v.id("catalogAccessPeriods")),
     sessionDigest: v.string(),
     createdAt: v.number(),
     expiresAt: v.number(),
