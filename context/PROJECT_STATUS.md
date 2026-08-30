@@ -2,7 +2,7 @@
 
 ## Secret Catalog access simplification and form alignment — 2026-08-30
 
-Status: `IMPLEMENTED_LOCALLY; PRODUCTION_DEPLOYMENT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The active Admin access path now has one generated Secret Catalog code concept:
 the existing secure generator creates a global gate for currently eligible
@@ -16,9 +16,13 @@ mechanism remain unchanged.
 
 Focused access/UI tests and the full Convex/frontend suites pass locally;
 TypeScript, ESLint, formatting, build, Convex check, diff, and the rendered
-form fixture pass at 390/768/1440. Production deployment and authenticated
-Production UAT remain pending for this correction. No credentials or
-Production business data were introduced.
+form fixture pass at 390/768/1440. Commit `42339ab3f493f7588ce9fa169a18a39937a33483`
+is deployed as Vercel `dpl_CcQAaYQCH32oiKy7zoPR3ARqaGk6`, aliased to the
+canonical domain; the configured build path deployed Convex Production
+`clean-eel-522` with no deleted indexes. Public smoke checks pass. Authenticated
+Admin/customer Production UAT remains pending because no authorized Clerk
+session or safe business fixture was available. No credentials or Production
+business data were introduced.
 
 ## Admin action and deadline tuning — 2026-08-29
 

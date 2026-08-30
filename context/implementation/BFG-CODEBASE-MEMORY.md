@@ -61,8 +61,9 @@
   asserts the period controls are absent and local form owners remain present.
   Full Convex/frontend coverage, TypeScript, ESLint, formatting, build, Convex
   check, diff checks, and the rendered 390/768/1440 form fixture pass locally.
-  Production deployment and authenticated Production UAT remain release work
-  for this correction.
+  Commit `42339ab3f493f7588ce9fa169a18a39937a33483` is deployed as Vercel
+  `dpl_CcQAaYQCH32oiKy7zoPR3ARqaGk6` with Convex Production `clean-eel-522`;
+  public smoke passes and authenticated Production UAT remains pending.
 - No category taxonomy, global search, fuzzy/semantic search, Batch rewrite,
   Ready Stock rewrite, Book Detail rewrite, or order-business change belongs to
   this diff. The category discussion remains backlog.

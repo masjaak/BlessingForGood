@@ -2,7 +2,7 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-29
+last_updated: 2026-08-30
 source: conversation
 ---
 
@@ -28,8 +28,10 @@ source: conversation
 
 - Focused access/UI checks and the full Convex/frontend suites pass locally;
   TypeScript, ESLint, formatting, build, Convex check, diff checks, and the
-  rendered form fixture pass at 390/768/1440. Production deployment and
-  authenticated business UAT remain pending for this correction.
+  rendered form fixture pass at 390/768/1440. Commit `42339ab` is deployed as
+  Vercel `dpl_CcQAaYQCH32oiKy7zoPR3ARqaGk6`, aliased to the canonical domain;
+  the configured build path deployed Convex Production `clean-eel-522` and
+  public smoke checks pass. Authenticated business UAT remains pending.
 
 ## [secret-catalog-discovery-access-period] — 2026-08-30
 
