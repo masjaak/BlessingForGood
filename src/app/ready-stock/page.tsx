@@ -3,8 +3,8 @@ import { ReadyStockCatalog } from "@/components/ready-stock-catalog";
 import { SiteShell } from "@/components/site-shell";
 import { getPublicReadyStockList, createPageMetadata } from "@/lib/seo";
 
-// ponytail: five-second ISR bounds repeated public Convex fan-out; shorten or invalidate it if stock freshness requires it.
-export const revalidate = 5;
+// ponytail: one-minute ISR bounds repeated public Convex fan-out; live client query keeps stock current after hydration.
+export const revalidate = 60;
 
 export const metadata: Metadata = createPageMetadata({
   title: "Ready Stock — Buku Tersedia Sekarang | Blessing For Goods",
