@@ -69,7 +69,7 @@ describe("BFG destructive action guards", () => {
 
   it("deletes only an unused draft Book and its empty stock setup", async () => {
     const t = testConvex();
-    const { admin } = await setupUsers(t);
+    const { admin, customer } = await setupUsers(t);
     const publisherId = await admin.mutation(api.publishers.create, { name: "Unused Publisher" });
     const bookId = await admin.mutation(api.books.create, { publisherId, title: "Unused Draft" });
     const variantId = await admin.mutation(api.bookVariants.create, {
@@ -80,12 +80,14 @@ describe("BFG destructive action guards", () => {
     });
     await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 0 });
 
+    await expect(customer.mutation(api.books.remove, { bookId })).rejects.toThrow("PERMISSION_DENIED");
     await expect(admin.mutation(api.books.remove, { bookId })).resolves.toEqual({ removed: true });
     await expect(admin.query(api.books.getForAdmin, { bookId })).resolves.toBeNull();
     await expect(admin.mutation(api.publishers.remove, { publisherId })).resolves.toEqual({ removed: true });
+    await expect(admin.mutation(api.books.remove, { bookId })).rejects.toThrow("BOOK_NOT_FOUND");
   });
 
-  it("keeps a referenced Book and Catalog from hard deletion", async () => {
+  it("hard deletes a referenced Book while removing its active catalog surface", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
     const publisherId = await admin.mutation(api.publishers.create, { name: "Referenced Publisher" });
@@ -99,13 +101,15 @@ describe("BFG destructive action guards", () => {
     const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Referenced Draft Catalog" });
     await admin.mutation(api.catalogItems.add, { catalogId, bookVariantId: variantId });
 
-    await expect(admin.mutation(api.books.remove, { bookId })).rejects.toThrow("ENTITY_IN_USE");
-    await expect(admin.mutation(api.publishers.remove, { publisherId })).rejects.toThrow("ENTITY_IN_USE");
-    await expect(admin.mutation(api.secretCatalogs.remove, { catalogId })).rejects.toThrow("ENTITY_IN_USE");
-    await expect(admin.query(api.books.getForAdmin, { bookId })).resolves.not.toBeNull();
+    await expect(admin.mutation(api.books.remove, { bookId })).resolves.toEqual({ removed: true });
+    await expect(admin.query(api.books.getForAdmin, { bookId })).resolves.toBeNull();
+    await expect(admin.query(api.catalogItems.listForCatalog, { catalogId })).resolves.toEqual([]);
+    await expect(admin.query(api.bookVariants.listForBook, { bookId })).resolves.toEqual([]);
+    await expect(admin.mutation(api.publishers.remove, { publisherId })).resolves.toEqual({ removed: true });
+    await expect(admin.mutation(api.secretCatalogs.remove, { catalogId })).resolves.toEqual({ removed: true });
   });
 
-  it("keeps physical Ready Stock from hard deletion", async () => {
+  it("hard deletes a Book with Ready Stock and cleans active stock setup", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
     const publisherId = await admin.mutation(api.publishers.create, { name: "Stock Publisher" });
@@ -122,7 +126,157 @@ describe("BFG destructive action guards", () => {
     await expect(admin.mutation(api.bookVariants.remove, { bookVariantId: variantId })).rejects.toThrow(
       "ENTITY_IN_USE",
     );
-    await expect(admin.mutation(api.books.remove, { bookId })).rejects.toThrow("ENTITY_IN_USE");
+    await expect(admin.mutation(api.books.remove, { bookId })).resolves.toEqual({ removed: true });
+    await expect(admin.query(api.books.getForAdmin, { bookId })).resolves.toBeNull();
+    await expect(admin.query(api.bookVariants.listForBook, { bookId })).resolves.toEqual([]);
+    await expect(admin.query(api.readyStock.list, {})).resolves.toMatchObject({ items: [] });
+  });
+
+  it("reconciles only the deleted Book from an active unissued Batch commitment", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const first = await createOpenCatalog(admin, "Active Delete Catalog A", "0004", "active-delete-a");
+    const second = await createOpenCatalog(admin, "Active Delete Catalog B", "0005", "active-delete-b");
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+    const firstOrder = await admin.mutation(api.orders.createAssisted, {
+      customerUserId: customerUser.appUserId,
+      catalogId: first.catalogId,
+      submissionKey: "active-delete-order-a",
+      items: [{ variantId: first.variantIds[0], quantity: 1 }],
+    });
+    const secondOrder = await admin.mutation(api.orders.createAssisted, {
+      customerUserId: customerUser.appUserId,
+      catalogId: second.catalogId,
+      submissionKey: "active-delete-order-b",
+      items: [{ variantId: second.variantIds[0], quantity: 1 }],
+    });
+    const batch = await admin.mutation(api.batches.create, { name: "Active Delete Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: first.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: second.catalogId });
+
+    await expect(admin.mutation(api.books.remove, { bookId: first.bookId })).resolves.toEqual({ removed: true });
+    expect(await admin.query(api.orders.getForAdmin, { orderId: firstOrder.orderId })).toMatchObject({
+      status: "cancelled",
+      totalAmount: 0,
+      items: [],
+    });
+    expect(await admin.query(api.orders.getForAdmin, { orderId: secondOrder.orderId })).toMatchObject({
+      status: "submitted",
+      totalAmount: 125000,
+      items: [expect.objectContaining({ bookTitleSnapshot: "Active Delete Catalog B Book" })],
+    });
+    const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
+    expect(detail).toMatchObject({ assignmentCount: 1, assignedQuantity: 1 });
+    expect(detail.purchaseSummary).toEqual([
+      expect.objectContaining({ bookTitle: "Active Delete Catalog B Book", quantity: 1 }),
+    ]);
+    await expect(admin.query(api.books.getForAdmin, { bookId: first.bookId })).resolves.toBeNull();
+    await expect(admin.query(api.books.getForAdmin, { bookId: second.bookId })).resolves.not.toBeNull();
+  });
+
+  it("preserves historical Order, Batch, Invoice, Payment, and Buku Saya truth after Book deletion", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const bundle = await createOpenCatalog(admin, "Historical Delete Catalog", "0006", "historical-delete-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "historical-delete-code" });
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: bundle.catalogId,
+      customerName: "Historical Delete Customer",
+      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+    });
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+    const batch = await admin.mutation(api.batches.create, { name: "Historical Delete Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: bundle.catalogId });
+    await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
+    const invoice = await admin.mutation(api.invoices.issueCustomerBatch, {
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+      depositRequirementMode: "none",
+    });
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      amount: 125000,
+      paymentMethod: "Bank transfer",
+      transferReference: "HISTORICAL-DELETE-PAYMENT",
+      paidAt: Date.now() - 1_000,
+    });
+    await admin.mutation(api.paymentConfirmations.startReview, { confirmationId: confirmation.confirmationId });
+    await admin.mutation(api.paymentConfirmations.approve, { confirmationId: confirmation.confirmationId });
+    const invoiceBefore = await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId });
+    const paymentBefore = await admin.query(api.paymentConfirmations.getForAdmin, {
+      confirmationId: confirmation.confirmationId,
+    });
+
+    await expect(admin.mutation(api.books.remove, { bookId: bundle.bookId })).resolves.toEqual({ removed: true });
+    await expect(admin.query(api.books.getForAdmin, { bookId: bundle.bookId })).resolves.toBeNull();
+    expect(await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).toMatchObject({
+      status: "submitted",
+      items: [
+        expect.objectContaining({
+          bookTitleSnapshot: "Historical Delete Catalog Book",
+          publisherNameSnapshot: "Historical Delete Catalog Publisher",
+          formatSnapshot: "PB",
+          isbnSnapshot: "97800000006",
+          quantity: 1,
+          unitPriceAmountSnapshot: 125000,
+        }),
+      ],
+    });
+    expect(await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).toMatchObject({
+      invoiceId: invoiceBefore.invoiceId,
+      batchId: batch.batchId,
+      totalAmount: invoiceBefore.totalAmount,
+      adjustedTotalAmount: invoiceBefore.adjustedTotalAmount,
+      verifiedPaymentAmount: invoiceBefore.verifiedPaymentAmount,
+      outstandingAmount: invoiceBefore.outstandingAmount,
+      items: [
+        expect.objectContaining({
+          bookTitleSnapshot: "Historical Delete Catalog Book",
+          publisherNameSnapshot: "Historical Delete Catalog Publisher",
+          formatSnapshot: "PB",
+          isbnSnapshot: "97800000006",
+          quantity: 1,
+          unitPriceAmountSnapshot: 125000,
+        }),
+      ],
+    });
+    expect(
+      await admin.query(api.paymentConfirmations.getForAdmin, {
+        confirmationId: confirmation.confirmationId,
+      }),
+    ).toMatchObject({
+      confirmationId: paymentBefore.confirmationId,
+      status: "approved",
+      amount: 125000,
+      invoiceId: invoice.invoiceId,
+    });
+    const overview = await customer.query(api.batchTracking.getBookOverview, {
+      startAt: Date.now() - 86_400_000,
+      endAt: Date.now() + 1_000,
+    });
+    expect(overview).toMatchObject({ totalSpending: 125000, pendingPayment: 0 });
+    expect(overview.batches[0]?.items[0]).toMatchObject({
+      title: "Historical Delete Catalog Book",
+      publisher: "Historical Delete Catalog Publisher",
+      format: "PB",
+      isbn: "97800000006",
+      quantity: 1,
+      unitPriceAmount: 125000,
+    });
+    expect((await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId }))?.items).toEqual([
+      expect.objectContaining({ title: "Historical Delete Catalog Book", quantity: 1 }),
+    ]);
+    expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).assignments).toEqual([
+      expect.objectContaining({ bookTitle: "Historical Delete Catalog Book", assignedQuantity: 1 }),
+    ]);
+    expect(
+      await t.run(async (ctx) =>
+        (await ctx.db.query("auditEvents").collect()).some((event) => event.action === "book.deleted"),
+      ),
+    ).toBe(true);
+    await expect(admin.mutation(api.books.remove, { bookId: bundle.bookId })).rejects.toThrow("BOOK_NOT_FOUND");
   });
 
   it("deletes a pristine draft Catalog and Batch, but keeps linked batches operational", async () => {

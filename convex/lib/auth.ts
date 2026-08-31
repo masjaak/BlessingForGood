@@ -65,6 +65,7 @@ const adminPermissions = new Set<Permission>([
   "customers.read",
   "customers.manage",
   "users.read",
+  "users.manage_roles",
   "users.suspend",
   "settings.manage",
   "content.manage",

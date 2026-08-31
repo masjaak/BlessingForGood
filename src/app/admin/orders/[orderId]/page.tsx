@@ -153,7 +153,7 @@ function AdminOrderDetail() {
               <div className="action-region">
                 <p className="subtle">Belum ada invoice untuk pesanan ini.</p>
                 <ActionGroup>
-                  <LinkButton href={`/admin/invoices?orderId=${orderId}`} variant="primary">
+                  <LinkButton href={`/admin/invoices?customerId=${order.customerUserId}`} variant="primary">
                     Terbitkan invoice
                   </LinkButton>
                 </ActionGroup>

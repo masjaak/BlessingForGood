@@ -105,8 +105,10 @@ describe("BFG Phase 06.7 business policy closure", () => {
       variantId: first.variantId,
       quantity: 1,
     });
-    const request = await first.customer.mutation(api.orderExceptions.requestCancellation, {
+    const request = await first.admin.mutation(api.orderExceptions.open, {
       orderItemId: cancelled.items[0]._id,
+      type: "admin_cancellation",
+      affectedQuantity: 1,
       reason: "Tidak jadi membutuhkan buku.",
     });
     await first.admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exceptionId });
@@ -154,8 +156,10 @@ describe("BFG Phase 06.7 business policy closure", () => {
       assignedQuantity: 1,
     });
     await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
-    const request = await customer.mutation(api.orderExceptions.requestCancellation, {
+    const request = await admin.mutation(api.orderExceptions.open, {
       orderItemId: order.items[0]._id,
+      type: "admin_cancellation",
+      affectedQuantity: 1,
       reason: "Mohon tinjau pembatalan setelah proses supplier.",
     });
     await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exceptionId });

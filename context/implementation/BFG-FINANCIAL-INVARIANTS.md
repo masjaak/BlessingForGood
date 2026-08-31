@@ -27,6 +27,9 @@ inventory-financial change.
 | FIN-18 | Fulfillment cannot complete with unresolved exceptions; payment/address/stock guards apply. | `orderFulfillment`, exception state helpers | fulfilment before resolution |
 | FIN-19 | Price or catalog changes never rewrite existing order/invoice snapshots. | server-side order/invoice insertion and projection | historical inconsistency |
 | FIN-20 | No payment gateway, automatic bank settlement, manual customer identity, or dummy Production settlement is part of the contract. | out-of-scope policy and release rules | unauthorized financial scope expansion |
+| FIN-21 | Total Spending is the sum of committed OrderItem selling-price snapshots in the selected date range, independent of payment, deposit, or invoice state; each economic commitment is counted once. | `convex/batchTracking.ts:getBookOverview`, `orderItems` snapshots | paid history disappearing from Customer Books or current Book Master repricing history |
+| FIN-22 | Pending Payment is the sum of current outstanding balances on issued invoices only; open/uninvoiced Batch items are not pending payment. Total Deposit is the canonical available Customer deposit balance, not a blind sum of top-ups. | `convex/batchTracking.ts:getBookOverview`, `invoices`, `depositAccounts` | conflating commitment, invoice, and deposit balances |
+| FIN-23 | New Batch invoice totals use assigned quantity and immutable OrderItem selling-price snapshots, with at most one active non-void invoice per Customer × Batch; existing issued history is not blindly migrated. | `convex/invoices.ts`, `invoices.batchId`, `invoiceItems` | duplicate invoices, repricing, or destructive historical migration |
 
 ## Financial Closure Rule
 

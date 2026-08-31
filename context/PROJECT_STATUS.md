@@ -1,5 +1,27 @@
 # BFG Project Status
 
+## Final client contract — My Books 2.0 / Customer × Batch Pool / Admin Users / Book Hard Delete — 2026-08-31
+
+Status: `IMPLEMENTED_LOCALLY; FULL_REGRESSION_AND_DELIVERY_IN_PROGRESS`
+
+The requested implementation is present in the canonical Order, Batch,
+Invoice, Auth/RBAC, membership, and Book Master boundaries. Focused tests cover
+percentage conversion, Batch pooling/all-item search, Customer-only
+cancellation denial, assisted Customer search, Customer × Batch invoice
+uniqueness and idempotent issue, Admin role/status/member actions with Owner
+protection, and ordered/active/issued-invoice Book deletion compatibility.
+
+The current source contract is: Customer sees one pooled context per Batch;
+Admin retains historical Orders; new invoice identity is Customer × Batch with
+explicit Admin issuance; Total Spending is committed selling value rather than
+cash paid; active Admins manage normal active non-owner users; and hard delete
+removes active Book Master data without deleting immutable transaction truth.
+
+Authenticated Production Admin/Customer QA and real business UAT remain open
+until safe Clerk QA identities and approved disposable deletion fixtures are
+available. No Production business write is authorized merely to create UAT
+evidence.
+
 ## 750 public performance + Admin System RBAC follow-up — 2026-08-31
 
 Status: `PARTIAL_IMPLEMENTATION; PERFORMANCE_CONTRACT_NOT_MET; AUTHENTICATED_PRODUCTION_UAT_PENDING`

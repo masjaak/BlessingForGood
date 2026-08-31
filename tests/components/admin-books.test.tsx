@@ -75,7 +75,7 @@ describe("Admin Books list actions", () => {
 
     render(<AdminBooks />);
     fireEvent.click(screen.getByRole("button", { name: "Hapus" }));
-    expect(screen.getByRole("heading", { name: "Hapus buku ini?" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Hapus buku secara permanen?" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Hapus buku" }));
 
@@ -101,7 +101,7 @@ describe("Admin Books list actions", () => {
     await waitFor(() => expect(screen.queryByRole("row", { name: /Unused Draft Book/ })).toBeNull());
   });
 
-  it("keeps protected deletion safe and offers archive guidance", async () => {
+  it("keeps a failed hard delete safe", async () => {
     mockList({ ...draftBook, publicationStatus: "published" });
     const removeBook = vi.fn().mockRejectedValue({ data: { code: "ENTITY_IN_USE" } });
     vi.mocked(useMutation).mockReturnValue(removeBook as never);
@@ -110,9 +110,8 @@ describe("Admin Books list actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hapus" }));
     fireEvent.click(screen.getByRole("button", { name: "Hapus buku" }));
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Buku tidak dapat dihapus" })).toBeTruthy());
-    expect(screen.getByText(/riwayat operasional.*Gunakan Arsipkan buku/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Arsipkan buku" })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
+    expect(screen.queryByRole("heading", { name: "Buku tidak dapat dihapus" })).toBeNull();
     expect(screen.queryByText("ENTITY_IN_USE")).toBeNull();
   });
 });

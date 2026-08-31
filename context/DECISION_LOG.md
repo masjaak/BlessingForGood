@@ -4,6 +4,17 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Final client contract — 2026-08-31
+
+| ID | Old decision | New decision | Source / owner | Status |
+|---|---|---|---|---|
+| BFG-DEC-080 | Customer Books were primarily Order-centric; invoice issuance was one active invoice per Order; normal user administration was Owner-only. | Customer Books are grouped by `customerUserId × batchId`; new eligible invoice identity is one active non-void invoice per Customer × Batch with explicit Admin issuance; active Admins manage normal active non-owner roles/status/membership while Owner remains protected. Human deposit percentage input is `0–100%` and storage remains basis points. Customer cancellation is denied at both UI and server mutation boundaries. Book hard delete removes active Book Master data without deleting immutable transaction history. | Latest explicit client decision; `convex/batchTracking.ts`, `convex/invoices.ts`, `convex/lib/auth.ts`, `convex/users.ts`, `convex/joinRequests.ts`, `convex/books.ts`; focused regression suite | ACTIVE / DELIVERY + AUTHENTICATED UAT PENDING |
+
+The batch pool is an aggregation/projection layer, not destructive Order
+merging. Historical submissions, IDs, dates, invoice/payment records, and
+audit evidence remain traceable. Existing issued invoices are compatibility
+history and are not blindly migrated into the new identity.
+
 ## 750 performance and Admin System RBAC — 2026-08-31
 
 | ID | Old decision | New decision | Source / owner | Status |

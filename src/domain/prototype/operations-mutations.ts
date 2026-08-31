@@ -10,6 +10,7 @@ import type {
   PaymentConfirmationInput,
   ShipmentStage,
 } from "@/domain/prototype/operations-context";
+import { percentageToBasisPoints } from "@/lib/percentage";
 
 export function useOperationsMutations() {
   const createBatchMutation = useMutation(api.batches.create);
@@ -134,7 +135,12 @@ export function useOperationsMutations() {
       createInvoiceMutation({
         orderId: orderId as Id<"orders">,
         depositRequirementMode: mode,
-        depositRequirementValue: mode === "none" ? undefined : value,
+        depositRequirementValue:
+          mode === "none" || value === undefined
+            ? undefined
+            : mode === "percentage"
+              ? percentageToBasisPoints(value)
+              : value,
       }),
     [createInvoiceMutation],
   );

@@ -229,8 +229,10 @@ function OrderTable() {
 function ConvexAssistedOrderForm() {
   const { state } = useProduct();
   const customerPagination = useAdminCursorPagination();
+  const [customerSearch, setCustomerSearch] = useState("");
   const customers = useQuery(api.orders.listEligibleCustomers, {
     paginationOpts: { numItems: customerPagination.pageSize, cursor: customerPagination.cursor },
+    search: customerSearch.trim() || undefined,
   });
   const readyStockRows = useQuery(api.readyStock.listForAdmin, {});
   const createAssisted = useMutation(api.orders.createAssisted);
@@ -342,6 +344,19 @@ function ConvexAssistedOrderForm() {
         <>
           <form className="form-card" onSubmit={submit}>
             <div className="form-grid">
+              <Field label="Cari pelanggan">
+                <input
+                  className="input"
+                  type="search"
+                  value={customerSearch}
+                  onChange={(event) => {
+                    setCustomerSearch(event.target.value);
+                    setCustomerId("");
+                    customerPagination.reset();
+                  }}
+                  placeholder="Nama, potongan nama, atau nomor telepon"
+                />
+              </Field>
               <label className="field">
                 <span className="field-label">Pelanggan</span>
                 <BFGSelect
@@ -353,7 +368,8 @@ function ConvexAssistedOrderForm() {
                   <option value="">Pilih pelanggan…</option>
                   {customerRows.map((customer) => (
                     <option value={customer.customerUserId} key={customer.customerUserId}>
-                      {customer.displayName} · {customer.memberCode || "tanpa kode"}
+                      {customer.displayName} ·{" "}
+                      {customer.phoneLast4 ? `•••• ${customer.phoneLast4}` : customer.memberCode || "tanpa kode"}
                     </option>
                   ))}
                 </BFGSelect>

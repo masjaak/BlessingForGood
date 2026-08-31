@@ -138,12 +138,14 @@ describe("Clerk identity and BFG authorization", () => {
     await owner.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "admin" });
     const admin = t.withIdentity(customerIdentity);
     await expect(admin.mutation(api.publishers.create, { name: "Admin Publisher" })).resolves.toBeDefined();
-    await expect(admin.query(api.users.list, { paginationOpts: { numItems: 10, cursor: null } })).resolves.toMatchObject({
+    await expect(
+      admin.query(api.users.list, { paginationOpts: { numItems: 10, cursor: null } }),
+    ).resolves.toMatchObject({
       page: expect.arrayContaining([expect.objectContaining({ appUserId: secondCustomerUser.appUserId })]),
     });
     await expect(
       admin.mutation(api.users.updateRole, { userId: secondCustomerUser.appUserId, role: "admin" }),
-    ).rejects.toThrow("PERMISSION_DENIED");
+    ).resolves.toMatchObject({ role: "admin" });
     await expect(
       owner.mutation(api.users.updateRole, { userId: secondCustomerUser.appUserId, role: "admin" }),
     ).resolves.toMatchObject({ role: "admin" });
@@ -153,7 +155,7 @@ describe("Clerk identity and BFG authorization", () => {
     const ownerUser = await owner.query(api.users.current, {});
     if (!ownerUser) throw new Error("owner fixture missing");
     await expect(admin.mutation(api.users.updateRole, { userId: ownerUser.appUserId, role: "admin" })).rejects.toThrow(
-      "PERMISSION_DENIED",
+      "OWNER_PROTECTED",
     );
     await expect(admin.mutation(api.users.suspend, { userId: ownerUser.appUserId })).rejects.toThrow("OWNER_PROTECTED");
     await expect(admin.mutation(api.users.suspend, { userId: customerUser.appUserId })).rejects.toThrow(
@@ -162,9 +164,11 @@ describe("Clerk identity and BFG authorization", () => {
     await expect(admin.mutation(api.users.suspend, { userId: secondCustomerUser.appUserId })).resolves.toMatchObject({
       status: "suspended",
     });
-    await expect(admin.mutation(api.users.reactivate, { userId: secondCustomerUser.appUserId })).resolves.toMatchObject({
-      status: "active",
-    });
+    await expect(admin.mutation(api.users.reactivate, { userId: secondCustomerUser.appUserId })).resolves.toMatchObject(
+      {
+        status: "active",
+      },
+    );
     await expect(owner.mutation(api.users.suspend, { userId: customerUser.appUserId })).resolves.toMatchObject({
       status: "suspended",
     });
@@ -223,7 +227,7 @@ describe("Clerk identity and BFG authorization", () => {
     ).rejects.toThrow("PERMISSION_DENIED");
     await expect(
       admin.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "admin" }),
-    ).rejects.toThrow("PERMISSION_DENIED");
+    ).resolves.toMatchObject({ role: "admin" });
     await expect(
       owner.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "customer" }),
     ).resolves.toMatchObject({ role: "customer" });

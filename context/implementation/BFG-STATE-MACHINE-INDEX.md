@@ -4,6 +4,18 @@ Reconciled: 2026-08-30
 This is an index, not a second implementation. The named Convex validators,
 transition helpers, mutations, and tests are canonical.
 
+## Final ticket state boundaries — 2026-08-31
+
+- Customer Batch Pool is a derived view keyed by `customerUserId × batchId`;
+  it does not change the Order state machine or historical Order IDs.
+- Invoice identity for new Batch-ready cycles is one active non-void record per
+  `customerUserId × batchId`. `draft → issued → void` remains the invoice
+  lifecycle; only Admin issuance advances a draft to issued, and repeated
+  Customer × Batch issue returns the existing issued record.
+- Book Master hard delete is a destructive live-entity transition. It may
+  reconcile an open submitted test item before deletion, but it never deletes
+  historical OrderItem/InvoiceItem/Payment/Batch/Audit records.
+
 | Domain | States | Events / transitions | Guards / invalid transitions | Canonical implementation | Tests |
 |---|---|---|---|---|---|
 | Admission | `submitted`, `under_review`, `approved`, `rejected`; derived `invitation_pending`, `invitation_failed`, `active`, `removed` | submit, start review, approve, send/reuse handoff, retry/resend, authenticate, reconcile | duplicate active request; review only from expected state; current approved non-removed admission is required; Clerk identity alone cannot admit; only canonical active Customer is `active` | `convex/joinRequests.ts`, `convex/joinRequestInvitations.ts`, `convex/users.ts`, `validators.ts` | `convex/joinRequests.test.ts`, `convex/joinRequestInvitations.test.ts`, membership/auth tests |

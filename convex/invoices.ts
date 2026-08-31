@@ -16,10 +16,21 @@ import {
 import { fail } from "./lib/errors";
 import { depositRequirementModeValidator } from "./validators";
 import { notifyUser } from "./lib/notifications";
+import { exceptionsForOrderItem, needsResolution } from "./lib/orderExceptionState";
 
 type DataCtx = QueryCtx | MutationCtx;
 
 const MAX_BACKFILL_SCAN = 2000;
+const MAX_BATCH_INVOICE_ITEMS = 2000;
+
+type BatchInvoiceLine = {
+  item: Doc<"orderItems">;
+  order: Doc<"orders">;
+  quantity: number;
+  subtotal: number;
+};
+
+type BatchInvoiceEligibility = { eligible: true } | { eligible: false; reason: string };
 
 function legacyInvoiceNumber(value: string): boolean {
   return !isCanonicalInvoiceNumber(value);
@@ -32,9 +43,10 @@ function backfillLimit(value: number | undefined): number {
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
-  const [order, customer, items] = await Promise.all([
+  const [order, customer, batch, items] = await Promise.all([
     ctx.db.get(invoice.orderId),
     ctx.db.get(invoice.customerUserId),
+    invoice.batchId ? ctx.db.get(invoice.batchId) : Promise.resolve(null),
     ctx.db
       .query("invoiceItems")
       .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
@@ -45,11 +57,13 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     invoiceId: invoice._id,
     id: invoice._id,
     customerUserId: invoice.customerUserId,
-    customerName: order?.customerName || "Pelanggan BFG",
-    customerEmail: order?.customerEmail || null,
+    customerName: order?.customerName || customer?.displayNameSnapshot || "Pelanggan BFG",
+    customerEmail: order?.customerEmail || customer?.emailSnapshot || null,
     customerMemberCode: customer?.memberCode ?? null,
     orderId: invoice.orderId,
     orderCode: order?.orderCode || null,
+    batchId: invoice.batchId ?? null,
+    batchName: batch?.name ?? null,
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,
     currency: invoice.currency,
@@ -83,6 +97,87 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
       subtotalAmount: item.subtotalAmount,
     })),
   };
+}
+
+async function activeInvoiceForCustomerBatch(ctx: DataCtx, customerUserId: Id<"appUsers">, batchId: Id<"batches">) {
+  const invoices = await ctx.db
+    .query("invoices")
+    .withIndex("by_customer_user_id_and_batch_id", (index) =>
+      index.eq("customerUserId", customerUserId).eq("batchId", batchId),
+    )
+    .take(50);
+  return invoices.find((invoice) => invoice.status !== "void") || null;
+}
+
+async function invoiceLinesForCustomerBatch(
+  ctx: MutationCtx | QueryCtx,
+  customerUserId: Id<"appUsers">,
+  batchId: Id<"batches">,
+): Promise<{ lines: BatchInvoiceLine[]; total: number; orderIds: Id<"orders">[] }> {
+  const assignments = await ctx.db
+    .query("orderItemBatchAssignments")
+    .withIndex("by_batch", (index) => index.eq("batchId", batchId))
+    .take(MAX_BATCH_INVOICE_ITEMS);
+  // ponytail: bounded batch invoice scan; materialize per-batch counters if a roster exceeds 2,000 assignments.
+  const lines: BatchInvoiceLine[] = [];
+  const orderIds = new Set<Id<"orders">>();
+  const seenItems = new Set<Id<"orderItems">>();
+  let total = 0;
+  for (const assignment of assignments) {
+    const item = await ctx.db.get(assignment.orderItemId);
+    const order = item ? await ctx.db.get(item.orderId) : null;
+    if (!item || !order || order.customerUserId !== customerUserId || order.status === "cancelled") continue;
+    if (seenItems.has(item._id)) continue;
+    const eligibility = await batchInvoiceEligibility(ctx, item, order, batchId, assignment.assignedQuantity);
+    if (!eligibility.eligible) fail("INVOICE_INVALID_STATE", eligibility.reason);
+    const subtotal = item.unitPriceAmountSnapshot * assignment.assignedQuantity;
+    if (!Number.isSafeInteger(subtotal)) fail("INVOICE_TOTAL_INVALID");
+    lines.push({ item, order, quantity: assignment.assignedQuantity, subtotal });
+    seenItems.add(item._id);
+    orderIds.add(order._id);
+    total += subtotal;
+    if (!Number.isSafeInteger(total)) fail("INVOICE_TOTAL_INVALID");
+  }
+  if (!lines.length) fail("INVOICE_TOTAL_INVALID");
+  return { lines, total, orderIds: [...orderIds] };
+}
+
+async function batchInvoiceEligibility(
+  ctx: DataCtx,
+  item: Doc<"orderItems">,
+  order: Doc<"orders">,
+  batchId: Id<"batches">,
+  quantity: number,
+): Promise<BatchInvoiceEligibility> {
+  if (order.status !== "submitted") return { eligible: false, reason: "order is not ready for invoicing" };
+  if (
+    !Number.isSafeInteger(quantity) ||
+    quantity < 1 ||
+    quantity > item.quantity ||
+    !Number.isSafeInteger(item.quantity) ||
+    item.quantity < 1 ||
+    !Number.isSafeInteger(item.unitPriceAmountSnapshot) ||
+    item.unitPriceAmountSnapshot < 0
+  ) {
+    return { eligible: false, reason: "batch item snapshot is invalid" };
+  }
+  if ((await exceptionsForOrderItem(ctx, item._id)).some(needsResolution)) {
+    return { eligible: false, reason: "batch item has an unresolved exception" };
+  }
+  const links = await ctx.db
+    .query("invoiceItems")
+    .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+    .take(50);
+  for (const link of links) {
+    const invoice = await ctx.db.get(link.invoiceId);
+    if (invoice && invoice.status !== "void" && !invoice.batchId) {
+      return { eligible: false, reason: "batch item already belongs to a legacy invoice" };
+    }
+    if (invoice && invoice.status !== "void" && invoice.batchId === batchId) {
+      return { eligible: false, reason: "batch item already belongs to this invoice" };
+    }
+  }
+  return { eligible: true };
 }
 
 function requiredAmount(totalAmount: number, mode: "none" | "fixed" | "percentage", value?: number): number {
@@ -119,11 +214,21 @@ async function invoiceItemsForOrder(ctx: MutationCtx, orderId: Id<"orders">) {
   return { items, total };
 }
 
-async function applyExistingExceptionAdjustments(ctx: MutationCtx, invoice: Doc<"invoices">) {
-  const adjustments = await ctx.db
-    .query("orderExceptionFinancialAdjustments")
-    .withIndex("by_order", (index) => index.eq("orderId", invoice.orderId))
-    .take(200);
+async function applyExistingExceptionAdjustments(
+  ctx: MutationCtx,
+  invoice: Doc<"invoices">,
+  orderIds: Id<"orders">[] = [invoice.orderId],
+) {
+  const adjustments = (
+    await Promise.all(
+      orderIds.map((orderId) =>
+        ctx.db
+          .query("orderExceptionFinancialAdjustments")
+          .withIndex("by_order", (index) => index.eq("orderId", orderId))
+          .take(200),
+      ),
+    )
+  ).flat();
   let financialAdjustmentAmount = 0;
   for (const adjustment of adjustments) {
     if (adjustment.invoiceId && adjustment.invoiceId !== invoice._id) {
@@ -155,6 +260,27 @@ export const create = mutation({
     const user = await requirePermission(ctx, "invoices.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
+    const orderItems = await ctx.db
+      .query("orderItems")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(200);
+    const batchIds = new Set<Id<"batches">>();
+    for (const item of orderItems) {
+      const assignments = await ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+        .take(200);
+      for (const assignment of assignments) batchIds.add(assignment.batchId);
+    }
+    if (batchIds.size === 1) {
+      return createCustomerBatchDraft(ctx, user, {
+        customerUserId: order.customerUserId,
+        batchId: [...batchIds][0],
+        depositRequirementMode: args.depositRequirementMode,
+        depositRequirementValue: args.depositRequirementValue,
+      });
+    }
+    if (batchIds.size > 1) fail("INVOICE_INVALID_STATE", "select one Batch before issuing a split order");
     const existing = await ctx.db
       .query("invoices")
       .withIndex("by_order", (index) => index.eq("orderId", order._id))
@@ -213,6 +339,107 @@ export const create = mutation({
   },
 });
 
+async function createCustomerBatchDraft(
+  ctx: MutationCtx,
+  user: Doc<"appUsers">,
+  args: {
+    customerUserId: Id<"appUsers">;
+    batchId: Id<"batches">;
+    depositRequirementMode: "none" | "fixed" | "percentage";
+    depositRequirementValue?: number;
+  },
+) {
+  const customer = await ctx.db.get(args.customerUserId);
+  if (!customer || customer.status !== "active" || customer.role !== "customer") fail("CUSTOMER_REQUIRED");
+  const existing = await activeInvoiceForCustomerBatch(ctx, args.customerUserId, args.batchId);
+  if (existing) fail("INVOICE_ALREADY_EXISTS");
+  const snapshot = await invoiceLinesForCustomerBatch(ctx, args.customerUserId, args.batchId);
+  const requirementValue = args.depositRequirementMode === "none" ? undefined : args.depositRequirementValue;
+  const depositRequiredAmount = requiredAmount(snapshot.total, args.depositRequirementMode, requirementValue);
+  const now = Date.now();
+  const invoiceNumber = await nextInvoiceNumber(ctx, now);
+  const representative = snapshot.lines[0].order;
+  const invoiceId = await ctx.db.insert("invoices", {
+    orderId: representative._id,
+    customerUserId: args.customerUserId,
+    batchId: args.batchId,
+    invoiceNumber,
+    status: "draft",
+    currency: "IDR",
+    subtotalAmount: snapshot.total,
+    totalAmount: snapshot.total,
+    adjustedTotalAmount: snapshot.total,
+    financialAdjustmentAmount: 0,
+    depositRequirementMode: args.depositRequirementMode,
+    depositRequirementValue: requirementValue,
+    depositRequiredAmount,
+    allocatedDepositAmount: 0,
+    verifiedPaymentAmount: 0,
+    outstandingAmount: snapshot.total,
+    overpaymentAmount: 0,
+    refundObligationAmount: 0,
+    refundObligationStatus: "none",
+    paymentStatus: "unpaid",
+    createdAt: now,
+    updatedAt: now,
+    createdByUserId: user._id,
+  });
+  for (const line of snapshot.lines) {
+    await ctx.db.insert("invoiceItems", {
+      invoiceId,
+      orderItemId: line.item._id,
+      descriptionSnapshot: `${line.item.bookTitleSnapshot} · ${line.item.formatSnapshot} · ${line.item.isbnSnapshot}`,
+      bookTitleSnapshot: line.item.bookTitleSnapshot,
+      publisherNameSnapshot: line.item.publisherNameSnapshot,
+      formatSnapshot: line.item.formatSnapshot,
+      isbnSnapshot: line.item.isbnSnapshot,
+      quantity: line.quantity,
+      unitPriceAmountSnapshot: line.item.unitPriceAmountSnapshot,
+      subtotalAmount: line.subtotal,
+      createdAt: now,
+    });
+  }
+  const createdInvoice = await ctx.db.get(invoiceId);
+  if (!createdInvoice) fail("INVOICE_NOT_FOUND");
+  await applyExistingExceptionAdjustments(ctx, createdInvoice, snapshot.orderIds);
+  await recordAudit(ctx, user._id, "invoice.created", "invoice", invoiceId, {
+    customerUserId: String(args.customerUserId),
+    batchId: String(args.batchId),
+  });
+  return invoiceView(ctx, invoiceId);
+}
+
+export const createForCustomerBatch = mutation({
+  args: {
+    customerUserId: v.id("appUsers"),
+    batchId: v.id("batches"),
+    depositRequirementMode: depositRequirementModeValidator,
+    depositRequirementValue: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "invoices.manage");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch || batch.isArchived) fail("BATCH_NOT_FOUND");
+    return createCustomerBatchDraft(ctx, user, args);
+  },
+});
+
+async function issueInvoiceRecord(ctx: MutationCtx, user: Doc<"appUsers">, invoice: Doc<"invoices">) {
+  const now = Date.now();
+  await ctx.db.patch(invoice._id, { status: "issued", issuedAt: now, updatedAt: now });
+  await notifyUser(ctx, invoice.customerUserId, {
+    surface: "notification",
+    eventType: "invoice.issued",
+    title: "Tagihan baru diterbitkan",
+    body: `Tagihan ${invoice.invoiceNumber} sudah tersedia.`,
+    destination: `/account/invoices/${invoice._id}`,
+    relatedEntityType: "invoice",
+    relatedEntityId: String(invoice._id),
+  });
+  await recordAudit(ctx, user._id, "invoice.issued", "invoice", invoice._id);
+  return invoiceView(ctx, invoice._id);
+}
+
 export const issue = mutation({
   args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
@@ -221,19 +448,29 @@ export const issue = mutation({
     if (!invoice) fail("INVOICE_NOT_FOUND");
     if (invoice.status === "issued") fail("INVOICE_ALREADY_ISSUED");
     if (invoice.status === "void") fail("INVOICE_VOID");
-    const now = Date.now();
-    await ctx.db.patch(args.invoiceId, { status: "issued", issuedAt: now, updatedAt: now });
-    await notifyUser(ctx, invoice.customerUserId, {
-      surface: "notification",
-      eventType: "invoice.issued",
-      title: "Tagihan baru diterbitkan",
-      body: `Tagihan ${invoice.invoiceNumber} sudah tersedia.`,
-      destination: `/account/invoices/${args.invoiceId}`,
-      relatedEntityType: "invoice",
-      relatedEntityId: String(args.invoiceId),
-    });
-    await recordAudit(ctx, user._id, "invoice.issued", "invoice", args.invoiceId);
-    return invoiceView(ctx, args.invoiceId);
+    return issueInvoiceRecord(ctx, user, invoice);
+  },
+});
+
+export const issueCustomerBatch = mutation({
+  args: {
+    customerUserId: v.id("appUsers"),
+    batchId: v.id("batches"),
+    depositRequirementMode: depositRequirementModeValidator,
+    depositRequirementValue: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "invoices.manage");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch || batch.isArchived) fail("BATCH_NOT_FOUND");
+    if (!batch.currentShipmentStage) fail("INVOICE_INVALID_STATE", "Batch belum final untuk invoice");
+    const existing = await activeInvoiceForCustomerBatch(ctx, args.customerUserId, args.batchId);
+    if (existing?.status === "issued") return invoiceView(ctx, existing._id);
+    if (existing?.status === "draft") return issueInvoiceRecord(ctx, user, existing);
+    const draft = await createCustomerBatchDraft(ctx, user, args);
+    const invoice = await ctx.db.get(draft.invoiceId);
+    if (!invoice) fail("INVOICE_NOT_FOUND");
+    return issueInvoiceRecord(ctx, user, invoice);
   },
 });
 
@@ -262,6 +499,95 @@ export const voidInvoice = mutation({
     await ctx.db.patch(args.invoiceId, { status: "void", voidedAt: now, updatedAt: now });
     await recordAudit(ctx, user._id, "invoice.voided", "invoice", args.invoiceId);
     return invoiceView(ctx, args.invoiceId);
+  },
+});
+
+export const listReadyForIssuance = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    customerUserId: v.optional(v.id("appUsers")),
+  },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "invoices.read.all");
+    const batchPage = await ctx.db
+      .query("batches")
+      .withIndex("by_created_at")
+      .order("desc")
+      .paginate(args.paginationOpts);
+    const rows = [];
+    for (const batch of batchPage.page) {
+      if (batch.isArchived || !batch.currentShipmentStage) continue;
+      const assignments = await ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_batch", (index) => index.eq("batchId", batch._id))
+        .take(MAX_BATCH_INVOICE_ITEMS);
+      const groups = new Map<
+        Id<"appUsers">,
+        {
+          totalAmount: number;
+          bookCount: number;
+          orderIds: Set<Id<"orders">>;
+          order: Doc<"orders">;
+          eligible: boolean;
+          eligibilityReason: string | null;
+        }
+      >();
+      for (const assignment of assignments) {
+        const item = await ctx.db.get(assignment.orderItemId);
+        const order = item ? await ctx.db.get(item.orderId) : null;
+        if (!item || !order || order.status === "cancelled") continue;
+        if (args.customerUserId && order.customerUserId !== args.customerUserId) continue;
+        const customer = await ctx.db.get(order.customerUserId);
+        if (!customer || customer.status !== "active" || customer.role !== "customer") continue;
+        const eligibility = await batchInvoiceEligibility(ctx, item, order, batch._id, assignment.assignedQuantity);
+        const subtotal =
+          Number.isSafeInteger(item.unitPriceAmountSnapshot) && Number.isSafeInteger(assignment.assignedQuantity)
+            ? item.unitPriceAmountSnapshot * assignment.assignedQuantity
+            : 0;
+        const validSubtotal = Number.isSafeInteger(subtotal) && subtotal >= 0;
+        const group = groups.get(order.customerUserId) || {
+          totalAmount: 0,
+          bookCount: 0,
+          orderIds: new Set<Id<"orders">>(),
+          order,
+          eligible: true,
+          eligibilityReason: null,
+        };
+        if (!eligibility.eligible || !validSubtotal) {
+          group.eligible = false;
+          group.eligibilityReason = eligibility.eligible ? "batch item snapshot is invalid" : eligibility.reason;
+        }
+        if (validSubtotal && assignment.assignedQuantity > 0) {
+          group.totalAmount += subtotal;
+          group.bookCount += assignment.assignedQuantity;
+        }
+        group.orderIds.add(order._id);
+        groups.set(order.customerUserId, group);
+      }
+      for (const [customerUserId, group] of groups) {
+        const existing = await activeInvoiceForCustomerBatch(ctx, customerUserId, batch._id);
+        rows.push({
+          customerUserId,
+          customerName: group.order.customerName,
+          customerMemberCode: (await ctx.db.get(customerUserId))?.memberCode ?? null,
+          batchId: batch._id,
+          batchName: batch.name,
+          currentShipmentStage: batch.currentShipmentStage,
+          bookCount: group.bookCount,
+          orderCount: group.orderIds.size,
+          totalAmount: group.totalAmount,
+          invoiceId: existing?._id ?? null,
+          invoiceStatus: existing?.status ?? null,
+          eligible: !existing && group.eligible,
+          eligibilityReason: existing ? "customer × batch invoice already exists" : group.eligibilityReason,
+        });
+      }
+    }
+    rows.sort(
+      (left, right) =>
+        left.customerName.localeCompare(right.customerName) || left.batchName.localeCompare(right.batchName),
+    );
+    return { ...batchPage, page: rows };
   },
 });
 
@@ -306,12 +632,32 @@ export const getForOrderAdmin = query({
   handler: async (ctx, args) => {
     await requirePermission(ctx, "invoices.read.all");
     if (!(await ctx.db.get(args.orderId))) fail("ORDER_NOT_FOUND");
-    const invoice = (
+    const directInvoice = (
       await ctx.db
         .query("invoices")
         .withIndex("by_order", (index) => index.eq("orderId", args.orderId))
         .take(50)
     ).find((candidate) => candidate.status !== "void");
+    const invoice =
+      directInvoice ||
+      (
+        await Promise.all(
+          (
+            await ctx.db
+              .query("orderItems")
+              .withIndex("by_order", (index) => index.eq("orderId", args.orderId))
+              .take(200)
+          ).map(async (item) => {
+            const links = await ctx.db
+              .query("invoiceItems")
+              .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+              .take(50);
+            return Promise.all(links.map((link) => ctx.db.get(link.invoiceId)));
+          }),
+        )
+      )
+        .flat()
+        .find((candidate): candidate is Doc<"invoices"> => Boolean(candidate && candidate.status !== "void"));
     return invoice ? invoiceView(ctx, invoice._id) : null;
   },
 });

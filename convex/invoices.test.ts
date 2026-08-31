@@ -137,6 +137,138 @@ describe("BFG invoice persistence", () => {
     );
   });
 
+  it("aggregates one final invoice per Customer × Batch across submissions and catalogs", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const firstCatalog = await createOpenCatalog(admin, "Pooled Invoice Catalog A", "2351", "pooled-invoice-code-a");
+    const secondCatalog = await createOpenCatalog(admin, "Pooled Invoice Catalog B", "2352", "pooled-invoice-code-b");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "pooled-invoice-code-a" });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "pooled-invoice-code-b" });
+    const firstOrder = await customer.mutation(api.orders.submit, {
+      catalogId: firstCatalog.catalogId,
+      customerName: "Pooled Invoice Customer",
+      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1 }],
+    });
+    const secondOrder = await customer.mutation(api.orders.submit, {
+      catalogId: secondCatalog.catalogId,
+      customerName: "Pooled Invoice Customer",
+      items: [{ variantId: secondCatalog.variantIds[0], quantity: 2 }],
+    });
+    await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "pooled-invoice-code-a" });
+    const secondCustomerOrder = await secondCustomer.mutation(api.orders.submit, {
+      catalogId: firstCatalog.catalogId,
+      customerName: "Second Pooled Customer",
+      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1 }],
+    });
+    const customerUser = await customer.query(api.users.current, {});
+    const secondCustomerUser = await secondCustomer.query(api.users.current, {});
+    if (!customerUser || !secondCustomerUser) throw new Error("invoice customer fixture missing");
+    const batch = await admin.mutation(api.batches.create, { name: "Invoice PO Lavender" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: firstCatalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: secondCatalog.catalogId });
+    await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
+    const ready = await admin.query(api.invoices.listReadyForIssuance, {
+      paginationOpts: { numItems: 25, cursor: null },
+    });
+    expect(ready.page).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          customerUserId: customerUser.appUserId,
+          batchId: batch.batchId,
+          bookCount: 3,
+          orderCount: 2,
+          totalAmount: 375000,
+          eligible: true,
+        }),
+        expect.objectContaining({
+          customerUserId: secondCustomerUser.appUserId,
+          batchId: batch.batchId,
+          bookCount: 1,
+          orderCount: 1,
+          totalAmount: 125000,
+          eligible: true,
+        }),
+      ]),
+    );
+
+    const draft = await admin.mutation(api.invoices.create, {
+      orderId: firstOrder.orderId,
+      depositRequirementMode: "percentage",
+      depositRequirementValue: 2500,
+    });
+    expect(draft).toMatchObject({
+      batchId: batch.batchId,
+      totalAmount: 375000,
+      depositRequiredAmount: 93750,
+      items: expect.arrayContaining([
+        expect.objectContaining({ bookTitleSnapshot: "Pooled Invoice Catalog A Book", quantity: 1 }),
+        expect.objectContaining({ bookTitleSnapshot: "Pooled Invoice Catalog B Book", quantity: 2 }),
+      ]),
+    });
+    const issued = await admin.mutation(api.invoices.issueCustomerBatch, {
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+      depositRequirementMode: "percentage",
+      depositRequirementValue: 2500,
+    });
+    expect(issued).toMatchObject({ invoiceId: draft.invoiceId, status: "issued", totalAmount: 375000 });
+    await expect(
+      admin.mutation(api.invoices.issueCustomerBatch, {
+        customerUserId: customerUser.appUserId,
+        batchId: batch.batchId,
+        depositRequirementMode: "none",
+      }),
+    ).resolves.toMatchObject({ invoiceId: draft.invoiceId, status: "issued" });
+    await expect(
+      admin.mutation(api.invoices.create, { orderId: secondOrder.orderId, depositRequirementMode: "none" }),
+    ).rejects.toThrow("INVOICE_ALREADY_EXISTS");
+    expect(await admin.query(api.invoices.getForOrderAdmin, { orderId: secondOrder.orderId })).toMatchObject({
+      invoiceId: draft.invoiceId,
+      batchId: batch.batchId,
+    });
+    expect(
+      (await t.run((ctx) => ctx.db.query("invoices").collect())).filter(
+        (invoice) => invoice.customerUserId === customerUser.appUserId && invoice.status !== "void",
+      ),
+    ).toHaveLength(1);
+
+    const secondCustomerInvoice = await admin.mutation(api.invoices.issueCustomerBatch, {
+      customerUserId: secondCustomerUser.appUserId,
+      batchId: batch.batchId,
+      depositRequirementMode: "none",
+    });
+    expect(secondCustomerInvoice).toMatchObject({ status: "issued", totalAmount: 125000 });
+    expect(secondCustomerInvoice.invoiceId).not.toBe(issued.invoiceId);
+    expect(secondCustomerOrder.items).toHaveLength(1);
+
+    const otherCatalog = await createOpenCatalog(admin, "Separate Invoice Catalog", "2353", "separate-invoice-code");
+    const otherOrder = await admin.mutation(api.orders.createAssisted, {
+      customerUserId: customerUser.appUserId,
+      catalogId: otherCatalog.catalogId,
+      submissionKey: "separate-invoice-order",
+      items: [{ variantId: otherCatalog.variantIds[0], quantity: 1 }],
+    });
+    const otherBatch = await admin.mutation(api.batches.create, { name: "Invoice PO Magic Cat" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: otherBatch.batchId, catalogId: otherCatalog.catalogId });
+    await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: otherBatch.batchId, toStage: "po_closed" });
+    const otherInvoice = await admin.mutation(api.invoices.issueCustomerBatch, {
+      customerUserId: customerUser.appUserId,
+      batchId: otherBatch.batchId,
+      depositRequirementMode: "none",
+    });
+    expect(otherInvoice).toMatchObject({ status: "issued", batchId: otherBatch.batchId });
+    expect(otherInvoice.invoiceId).not.toBe(issued.invoiceId);
+    expect(
+      await customer.query(api.invoices.listMine, { paginationOpts: { numItems: 10, cursor: null } }),
+    ).toMatchObject({
+      page: expect.arrayContaining([
+        expect.objectContaining({ invoiceId: issued.invoiceId, batchId: batch.batchId }),
+        expect.objectContaining({ invoiceId: otherInvoice.invoiceId, batchId: otherBatch.batchId }),
+      ]),
+    });
+    expect(otherOrder.items).toHaveLength(1);
+  });
+
   it("backfills legacy invoice references without changing invoice identity or money", async () => {
     const t = testConvex();
     const { admin, order } = await createOrder(t);

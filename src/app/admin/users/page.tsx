@@ -4,13 +4,15 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { Button, Card, ConfirmationDialog, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { roleCanAccess } from "@/domain/prototype/session";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 
 const roleLabels = { owner: "Pemilik", admin: "Admin", customer: "Pelanggan" } as const;
 const userStatusLabels = {
@@ -22,19 +24,27 @@ const userStatusLabels = {
 
 function UserManagement() {
   const { sessionRole } = useProduct();
-  const canManageRoles = roleCanAccess(sessionRole, "owner");
+  const canManageUsers = roleCanAccess(sessionRole, "admin");
+  const canManageInvitations = roleCanAccess(sessionRole, "owner");
+  const pagination = useAdminCursorPagination();
   const [role, setRole] = useState<"owner" | "admin" | "customer" | undefined>();
   const [status, setStatus] = useState<"active" | "suspended" | "removed" | undefined>();
-  const users = useQuery(api.users.list, { role, status, paginationOpts: { numItems: 100, cursor: null } });
+  const users = useQuery(api.users.list, {
+    role,
+    status,
+    paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
+  });
   const invitations = useQuery(api.users.listStaffInvitations, {});
   const updateRole = useMutation(api.users.updateRole);
   const suspend = useMutation(api.users.suspend);
   const reactivate = useMutation(api.users.reactivate);
+  const removeMember = useMutation(api.joinRequests.removeMemberForUser);
   const inviteStaff = useMutation(api.users.inviteStaff);
   const revokeStaffInvitation = useMutation(api.users.revokeStaffInvitation);
   const [staffEmail, setStaffEmail] = useState("");
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [removeUserId, setRemoveUserId] = useState<Id<"appUsers"> | null>(null);
 
   async function run(action: Promise<unknown>, actionId: string) {
     setMessage("");
@@ -54,7 +64,7 @@ function UserManagement() {
       <PageHeader
         eyebrow="Keamanan Admin"
         title="Kelola pengguna BFG"
-        description="Admin mengelola status operasional; perubahan role dan undangan staf tetap dilindungi Owner."
+        description="Admin aktif dapat mengelola role dan status pengguna biasa. Owner tetap dilindungi untuk urusan kepemilikan dan undangan staf."
       />
       <div className="admin-workspace">
         <AdminNav />
@@ -62,7 +72,7 @@ function UserManagement() {
           <Card>
             <span className="card-kicker">Penyiapan Admin</span>
             <h2>Undangan staf</h2>
-            {canManageRoles ? (
+            {canManageInvitations ? (
               <>
                 <p className="subtle">
                   Bagikan link masuk BFG secara manual. Saat email yang sama masuk lewat Clerk, role Admin diklaim
@@ -104,7 +114,7 @@ function UserManagement() {
                   <span className="status-badge">
                     {userStatusLabels[invitation.status as keyof typeof userStatusLabels] || invitation.status}
                   </span>
-                  {canManageRoles && invitation.status === "pending" ? (
+                  {canManageInvitations && invitation.status === "pending" ? (
                     <Button
                       variant="danger"
                       onClick={() =>
@@ -127,7 +137,10 @@ function UserManagement() {
               <BFGSelect
                 className="select"
                 value={role || ""}
-                onChange={(event) => setRole((event.target.value || undefined) as typeof role)}
+                onChange={(event) => {
+                  setRole((event.target.value || undefined) as typeof role);
+                  pagination.reset();
+                }}
               >
                 <option value="">Semua</option>
                 <option value="owner">Pemilik</option>
@@ -140,7 +153,10 @@ function UserManagement() {
               <BFGSelect
                 className="select"
                 value={status || ""}
-                onChange={(event) => setStatus((event.target.value || undefined) as typeof status)}
+                onChange={(event) => {
+                  setStatus((event.target.value || undefined) as typeof status);
+                  pagination.reset();
+                }}
               >
                 <option value="">Semua</option>
                 <option value="active">Aktif</option>
@@ -168,7 +184,7 @@ function UserManagement() {
               </div>
               {user.role !== "owner" ? (
                 <div className="form-actions">
-                  {canManageRoles ? (
+                  {canManageUsers && user.status === "active" ? (
                     <Button
                       variant="secondary"
                       onClick={() =>
@@ -211,6 +227,17 @@ function UserManagement() {
                       Aktifkan kembali
                     </Button>
                   ) : null}
+                  {canManageUsers && user.status !== "removed" ? (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      loading={pendingAction === `remove:${user.appUserId}`}
+                      loadingLabel="Menghapus…"
+                      onClick={() => setRemoveUserId(user.appUserId as Id<"appUsers">)}
+                    >
+                      Hapus dari BFG
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </Card>
@@ -221,6 +248,26 @@ function UserManagement() {
               <SkeletonCard />
             </LoadingRegion>
           ) : null}
+          <AdminPagination
+            {...pagination}
+            rowCount={users?.page.length ?? 0}
+            isDone={users?.isDone ?? true}
+            continueCursor={users?.continueCursor ?? ""}
+          />
+          <ConfirmationDialog
+            open={removeUserId !== null}
+            title="Hapus pengguna dari BFG?"
+            description="Akses akun akan dicabut. Orders, invoices, payments, deposit history, dan audit tetap disimpan."
+            confirmLabel="Hapus pengguna"
+            danger
+            onCancel={() => setRemoveUserId(null)}
+            onConfirm={() => {
+              if (!removeUserId) return;
+              const targetId = removeUserId;
+              setRemoveUserId(null);
+              void run(removeMember({ userId: targetId }), `remove:${targetId}`);
+            }}
+          />
         </div>
       </div>
     </div>

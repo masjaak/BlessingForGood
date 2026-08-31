@@ -57,21 +57,34 @@ describe("BFG order exception workflow", () => {
       decision: "eligible",
       reasonCode: null,
     });
-    const exception = await customer.mutation(api.orderExceptions.requestCancellation, {
+    await expect(
+      customer.mutation(api.orderExceptions.requestCancellation, {
+        orderItemId: item._id,
+        affectedQuantity: 1,
+        reason: "Please cancel one copy.",
+      }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    const exception = await admin.mutation(api.orderExceptions.open, {
       orderItemId: item._id,
+      type: "admin_cancellation",
       affectedQuantity: 1,
       reason: "Please cancel one copy.",
     });
-    expect(exception).toMatchObject({ type: "customer_cancellation", status: "opened", affectedQuantity: 1 });
+    expect(exception).toMatchObject({ type: "admin_cancellation", status: "opened", affectedQuantity: 1 });
     await expect(
-      customer.mutation(api.orderExceptions.requestCancellation, { orderItemId: item._id, reason: "Again" }),
-    ).rejects.toThrow("CANCELLATION_NOT_ELIGIBLE");
+      admin.mutation(api.orderExceptions.open, {
+        orderItemId: item._id,
+        type: "admin_cancellation",
+        affectedQuantity: 1,
+        reason: "Again",
+      }),
+    ).rejects.toThrow("EXCEPTION_ACTIVE_EXISTS");
     await expect(
       secondCustomer.query(api.orderExceptions.getMine, { exceptionId: exception.exceptionId }),
     ).rejects.toThrow("EXCEPTION_ACCESS_DENIED");
     await expect(
       secondCustomer.mutation(api.orderExceptions.requestCancellation, { orderItemId: item._id, reason: "Not mine" }),
-    ).rejects.toThrow("ORDER_ACCESS_DENIED");
+    ).rejects.toThrow("PERMISSION_DENIED");
     expect(catalog.catalogId).toBe(order.catalogId);
   });
 
@@ -215,8 +228,10 @@ describe("BFG order exception workflow", () => {
       decision: "requires_admin_review",
       reasonCode: "PAYMENT_RECONCILIATION_REQUIRED",
     });
-    const request = await customer.mutation(api.orderExceptions.requestCancellation, {
+    const request = await admin.mutation(api.orderExceptions.open, {
       orderItemId: order.items[0]._id,
+      type: "admin_cancellation",
+      affectedQuantity: 1,
       reason: "The customer no longer needs the item.",
     });
     await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exceptionId });
@@ -254,7 +269,7 @@ describe("BFG order exception workflow", () => {
     expect(await customer.query(api.orderExceptions.listMineForOrder, { orderId: order.orderId })).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          type: "customer_cancellation",
+          type: "admin_cancellation",
           status: "resolved",
           financialImpact: expect.objectContaining({ refundObligationStatus: "refund_due" }),
         }),
@@ -322,8 +337,10 @@ describe("BFG order exception workflow", () => {
       decision: "requires_admin_review",
       reasonCode: "BATCH_LOCKED",
     });
-    const request = await customer.mutation(api.orderExceptions.requestCancellation, {
+    const request = await admin.mutation(api.orderExceptions.open, {
       orderItemId: order.items[0]._id,
+      type: "admin_cancellation",
+      affectedQuantity: 1,
       reason: "Please review this cancellation after PO lock.",
     });
     await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exceptionId });

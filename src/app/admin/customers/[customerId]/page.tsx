@@ -132,7 +132,7 @@ function CustomerDetail() {
                           Buka invoice
                         </LinkButton>
                       ) : (
-                        <LinkButton href={`/admin/invoices?orderId=${order.id}`} variant="secondary">
+                        <LinkButton href={`/admin/invoices?customerId=${customerId}`} variant="secondary">
                           Buat invoice
                         </LinkButton>
                       )}

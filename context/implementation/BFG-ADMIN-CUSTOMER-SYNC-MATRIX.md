@@ -4,6 +4,20 @@ Reconciled: 2026-08-31
 Authority: canonical Convex records and server projections. Admin UI actions
 never manually patch a customer surface.
 
+## Final ticket sync boundary — 2026-08-31
+
+Customer Books and Batch detail read `orderItems`/assignment snapshots through
+`batchTracking`; the Customer projection groups by `customerUserId × batchId`
+while Admin Orders remain separate. Invoice issuance reads the same assigned
+snapshot set through `invoices` and writes one `batchId` invoice context per
+Customer. Customer cancellation is intentionally absent from the UI and denied
+by its mutation; Admin exception correction remains the canonical mutation.
+Active Admin Users actions write `appUsers`/membership status through the
+existing capability guards, and Book hard delete writes only live Book Master
+and active catalog/stock/media references while preserving transaction rows.
+The detailed focused/full regression and Production/UAT status is maintained in
+the top sections of `SOURCE_OF_TRUTH.md` and `PROJECT_STATUS.md`.
+
 ## Admin System access correction — 2026-08-31
 
 The System navigation and its routes were previously Owner-only, so an active

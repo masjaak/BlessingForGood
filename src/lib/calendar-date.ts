@@ -35,3 +35,10 @@ export function calendarDateToEndTimestamp(value: string): number {
   if (Number.isNaN(timestamp) || calendarDateKey(timestamp) !== value) throw new Error("Tanggal tidak valid.");
   return timestamp;
 }
+
+export function calendarDateToStartTimestamp(value: string): number {
+  if (!CALENDAR_DATE_PATTERN.test(value)) throw new Error("Tanggal harus menggunakan format YYYY-MM-DD.");
+  const timestamp = Date.parse(`${value}T00:00:00${BFG_TIME_ZONE_OFFSET}`);
+  if (Number.isNaN(timestamp) || calendarDateKey(timestamp) !== value) throw new Error("Tanggal tidak valid.");
+  return timestamp;
+}

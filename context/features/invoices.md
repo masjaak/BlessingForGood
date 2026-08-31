@@ -1,7 +1,8 @@
 # Invoices
 
-Status: [REPOSITORY] implemented on the Phase 05.1 feature branch; runtime
-integration QA is deferred to stable staging.
+Status: [REPOSITORY] implemented; new Customer × Batch issuance is covered by
+focused local Convex regressions. Authenticated Production/UAT remains a
+separate release gate.
 
 An admin creates a draft invoice from the authoritative persistent order-item
 snapshots. Invoice items store title, publisher, format, ISBN, quantity, unit
@@ -14,15 +15,24 @@ Lifecycle:
 draft → issued → void
 ```
 
-One non-void invoice is allowed per order. Voiding preserves the prior record;
-a future revision must create a new invoice. Invoice numbers are generated
-from the unique Convex invoice ID inside the mutation and are collision-safe
-for this Preview prototype, not final accounting policy.
+For new Batch-assigned cycles, at most one active non-void invoice is allowed
+per `customerUserId × batchId`; the representative `orderId` is retained for
+compatibility and `invoiceItems` preserve every historical line. Admin remains
+the only issuer, and repeated Customer × Batch issue returns the existing
+issued invoice. Voiding preserves the prior record. Existing issued
+per-Order invoices remain historical compatibility records and are not blindly
+migrated. Unbatched legacy creation remains only as a compatibility path.
+
+Invoice numbers are generated from the unique Convex invoice ID inside the
+mutation and are collision-safe for this Preview prototype, not final
+accounting policy.
 
 Deposit requirements are explicitly selected as `none`, fixed Rupiah, or
-integer basis points. Percentage calculation uses integer arithmetic and
-rounds to the nearest whole Rupiah. Shipping, customs, tax, discount,
-exchange-rate, and arbitrary manual lines are not calculated.
+percentage. Admin UI accepts human `0–100%` (including supported decimals) and
+converts at the boundary to canonical `0–10000` basis points. Percentage
+calculation uses integer arithmetic and rounds to the nearest whole Rupiah.
+Shipping, customs, tax, discount, exchange-rate, and arbitrary manual lines are
+not calculated.
 
 Customers can query only owned invoices and see line snapshots, requirement,
 allocated deposit, verified manual payment, payment state, and outstanding

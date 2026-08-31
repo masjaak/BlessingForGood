@@ -464,9 +464,48 @@ export const createReadyStock = mutation({
 });
 
 export const listEligibleCustomers = query({
-  args: { paginationOpts: v.optional(paginationOptsValidator) },
+  args: { paginationOpts: v.optional(paginationOptsValidator), search: v.optional(v.string()) },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "orders.manage");
+    const search = args.search?.trim().toLowerCase();
+    if (search) {
+      const candidates = await ctx.db
+        .query("appUsers")
+        .withIndex("by_role_and_status", (index) => index.eq("role", "customer").eq("status", "active"))
+        .order("desc")
+        .take(2000);
+      // ponytail: bounded assisted-search scan; add a normalized phone index if the active member list exceeds 2,000.
+      const rows = [];
+      const digitsQuery = search.replace(/\D/g, "");
+      for (const user of candidates) {
+        const profile = await ctx.db
+          .query("customerProfiles")
+          .withIndex("by_user_id", (index) => index.eq("userId", user._id))
+          .unique();
+        const name = profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer";
+        const phoneDigits = [profile?.phone, profile?.whatsappNumber]
+          .filter((value): value is string => Boolean(value))
+          .map((value) => value.replace(/\D/g, ""));
+        const matchesPhone = digitsQuery.length >= 4 && phoneDigits.some((value) => value.includes(digitsQuery));
+        if (
+          !name.toLowerCase().includes(search) &&
+          !(user.emailSnapshot || "").toLowerCase().includes(search) &&
+          !(user.memberCode || "").toLowerCase().includes(search) &&
+          !matchesPhone
+        ) {
+          continue;
+        }
+        const primaryPhone = phoneDigits.find((value) => value.length >= 4);
+        rows.push({
+          customerUserId: user._id,
+          displayName: name,
+          email: user.emailSnapshot || null,
+          memberCode: user.memberCode || null,
+          phoneLast4: primaryPhone ? primaryPhone.slice(-4) : null,
+        });
+      }
+      return { page: rows.slice(0, 100), isDone: true, continueCursor: "" };
+    }
     const page = await ctx.db
       .query("appUsers")
       .withIndex("by_role_and_status", (index) => index.eq("role", "customer").eq("status", "active"))
@@ -474,12 +513,25 @@ export const listEligibleCustomers = query({
       .paginate(args.paginationOpts ?? { numItems: 25, cursor: null });
     return {
       ...page,
-      page: page.page.map((user) => ({
-        customerUserId: user._id,
-        displayName: user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
-        email: user.emailSnapshot || null,
-        memberCode: user.memberCode || null,
-      })),
+      page: await Promise.all(
+        page.page.map(async (user) => {
+          const profile = await ctx.db
+            .query("customerProfiles")
+            .withIndex("by_user_id", (index) => index.eq("userId", user._id))
+            .unique();
+          const phoneDigits = [profile?.phone, profile?.whatsappNumber]
+            .filter((value): value is string => Boolean(value))
+            .map((value) => value.replace(/\D/g, ""));
+          const primaryPhone = phoneDigits.find((value) => value.length >= 4);
+          return {
+            customerUserId: user._id,
+            displayName: profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
+            email: user.emailSnapshot || null,
+            memberCode: user.memberCode || null,
+            phoneLast4: primaryPhone ? primaryPhone.slice(-4) : null,
+          };
+        }),
+      ),
     };
   },
 });

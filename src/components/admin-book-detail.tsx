@@ -26,7 +26,6 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
-import { getConvexErrorCode } from "@/domain/prototype/context";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import { ProductGallery } from "@/components/product-gallery";
 import { formatGbpMinor, normalizeGbpInput, parseGbpMinor } from "@/lib/gbp";
@@ -205,7 +204,6 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [galleryPendingMediaId, setGalleryPendingMediaId] = useState<string | null>(null);
   const [confirmGalleryMedia, setConfirmGalleryMedia] = useState<GalleryImage | null>(null);
   const [confirmDeleteBook, setConfirmDeleteBook] = useState(false);
-  const [deleteBlocked, setDeleteBlocked] = useState(false);
   const [previewLabel, setPreviewLabel] = useState(book.externalPreviewLabel || "");
   const [previewUrl, setPreviewUrl] = useState(book.externalPreviewUrl || "");
   const [previewMessage, setPreviewMessage] = useState("");
@@ -334,27 +332,12 @@ function BookEditor({ book }: { book: AdminBook }) {
   async function deleteBook() {
     setBookMessage("");
     setBookError("");
-    setDeleteBlocked(false);
     setPendingAction("delete");
     try {
       await removeBook({ bookId: book._id });
       router.push("/admin/books");
     } catch (reason) {
-      const code = getConvexErrorCode(reason);
-      const rawMessage = reason instanceof Error ? reason.message : "";
-      if (
-        code === "ENTITY_IN_USE" ||
-        code === "ENTITY_DELETE_NOT_ALLOWED" ||
-        rawMessage.includes("ENTITY_IN_USE") ||
-        rawMessage.includes("ENTITY_DELETE_NOT_ALLOWED")
-      ) {
-        setDeleteBlocked(true);
-        setBookError(
-          "Buku tidak dapat dihapus. Buku ini sudah memiliki riwayat pesanan atau masih digunakan dalam operasional BFG. Gunakan Arsipkan buku sebagai gantinya.",
-        );
-      } else {
-        setBookError(productErrorMessage(reason, "Buku belum dapat dihapus."));
-      }
+      setBookError(productErrorMessage(reason, "Buku belum dapat dihapus."));
     } finally {
       setPendingAction(null);
       setConfirmDeleteBook(false);
@@ -368,7 +351,6 @@ function BookEditor({ book }: { book: AdminBook }) {
     try {
       await updateBook(bookInput("archived"));
       setPublicationStatus("archived");
-      setDeleteBlocked(false);
       setBookMessage("Buku diarsipkan.");
     } catch {
       setBookError("Buku belum dapat diarsipkan. Silakan coba lagi.");
@@ -457,18 +439,16 @@ function BookEditor({ book }: { book: AdminBook }) {
             <LinkButton href="#book-editor" variant="secondary">
               Edit
             </LinkButton>
-            {book.publicationStatus === "draft" && !deleteBlocked ? (
-              <Button
-                type="button"
-                variant="danger"
-                loading={pendingAction === "delete"}
-                disabled={pendingAction !== null}
-                loadingLabel="Menghapus…"
-                onClick={() => setConfirmDeleteBook(true)}
-              >
-                Hapus buku
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              variant="danger"
+              loading={pendingAction === "delete"}
+              disabled={pendingAction !== null}
+              loadingLabel="Menghapus…"
+              onClick={() => setConfirmDeleteBook(true)}
+            >
+              Hapus buku
+            </Button>
             {book.publicationStatus !== "draft" && book.publicationStatus !== "archived" ? (
               <Button
                 type="button"
@@ -480,23 +460,6 @@ function BookEditor({ book }: { book: AdminBook }) {
               >
                 Arsipkan buku
               </Button>
-            ) : null}
-            {deleteBlocked ? (
-              <>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  loading={pendingAction === "archive"}
-                  loadingLabel="Mengarsipkan…"
-                  disabled={pendingAction !== null}
-                  onClick={() => void archiveBook()}
-                >
-                  Arsipkan buku
-                </Button>
-                <span className="subtle action-support" role="alert">
-                  Buku tidak dapat dihapus karena sudah memiliki riwayat operasional.
-                </span>
-              </>
             ) : null}
             <StatusBadge tone={book.publicationStatus === "published" ? "positive" : "neutral"}>
               {publicationLabels[book.publicationStatus]}
@@ -869,8 +832,8 @@ function BookEditor({ book }: { book: AdminBook }) {
           />
           <ConfirmationDialog
             open={confirmDeleteBook}
-            title="Hapus buku ini?"
-            description="Buku hanya dapat dihapus jika masih draf dan belum memiliki pesanan atau riwayat operasional. Tindakan ini tidak dapat dibatalkan."
+            title="Hapus buku secara permanen?"
+            description={`Book Master ${book.title} (${book.publisher?.name || "penerbit tidak diketahui"}; ISBN ${book.variants.map((variant) => variant.isbn).join(", ") || "tidak tersedia"}) akan dihapus. Riwayat Order, Invoice, Payment, Batch, dan Audit tetap disimpan.`}
             confirmLabel="Hapus buku"
             danger
             onCancel={() => setConfirmDeleteBook(false)}

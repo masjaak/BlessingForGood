@@ -22,7 +22,6 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
-import { getConvexErrorCode } from "@/domain/prototype/context";
 import { productErrorMessage } from "@/domain/prototype/errors";
 
 type PublicationStatus = "draft" | "published" | "special" | "archived";
@@ -60,8 +59,7 @@ function ConnectedAdminBooks() {
   const updatePublisher = useMutation(api.publishers.update);
   const createBook = useMutation(api.books.create);
   const removeBook = useMutation(api.books.remove);
-  const updateBook = useMutation(api.books.update);
-  const [deleteState, setDeleteState] = useState<{ bookId: Id<"books">; blocked: boolean } | null>(null);
+  const [deleteState, setDeleteState] = useState<{ bookId: Id<"books"> } | null>(null);
   const [deletePendingBookId, setDeletePendingBookId] = useState<Id<"books"> | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
@@ -101,7 +99,7 @@ function ConnectedAdminBooks() {
 
   function openDeleteDialog(bookId: Id<"books">) {
     setDeleteError("");
-    setDeleteState({ bookId, blocked: false });
+    setDeleteState({ bookId });
   }
 
   async function deleteBook() {
@@ -113,34 +111,7 @@ function ConnectedAdminBooks() {
       await removeBook({ bookId });
       setDeleteState(null);
     } catch (reason) {
-      const code = getConvexErrorCode(reason);
-      const rawMessage = reason instanceof Error ? reason.message : "";
-      if (
-        code === "ENTITY_IN_USE" ||
-        code === "ENTITY_DELETE_NOT_ALLOWED" ||
-        rawMessage.includes("ENTITY_IN_USE") ||
-        rawMessage.includes("ENTITY_DELETE_NOT_ALLOWED")
-      ) {
-        setDeleteState({ bookId, blocked: true });
-      } else {
-        setDeleteError(productErrorMessage(reason, "Buku belum dapat dihapus."));
-        setDeleteState(null);
-      }
-    } finally {
-      setDeletePendingBookId(null);
-    }
-  }
-
-  async function archiveBook() {
-    if (!deleteState) return;
-    const bookId = deleteState.bookId;
-    setDeleteError("");
-    setDeletePendingBookId(bookId);
-    try {
-      await updateBook({ bookId, publicationStatus: "archived" });
-      setDeleteState(null);
-    } catch (reason) {
-      setDeleteError(productErrorMessage(reason, "Buku belum dapat diarsipkan. Silakan coba lagi."));
+      setDeleteError(productErrorMessage(reason, "Buku belum dapat dihapus."));
       setDeleteState(null);
     } finally {
       setDeletePendingBookId(null);
@@ -148,9 +119,6 @@ function ConnectedAdminBooks() {
   }
 
   const selectedBook = books?.find((book) => book._id === deleteState?.bookId);
-  const canArchiveSelectedBook = Boolean(selectedBook && selectedBook.publicationStatus !== "archived");
-  const deleteBlocked = deleteState?.blocked === true;
-
   return (
     <div className="page admin-page">
       <PageHeader
@@ -372,24 +340,12 @@ function ConnectedAdminBooks() {
           ) : null}
           <ConfirmationDialog
             open={deleteState !== null}
-            title={deleteBlocked ? "Buku tidak dapat dihapus" : "Hapus buku ini?"}
-            description={
-              deleteBlocked
-                ? "Buku ini sudah memiliki riwayat operasional atau masih digunakan dalam proses BFG. Gunakan Arsipkan buku sebagai gantinya."
-                : "Buku hanya dapat dihapus jika belum memiliki pesanan atau riwayat operasional. Tindakan ini tidak dapat dibatalkan."
-            }
-            confirmLabel={
-              deleteBlocked && canArchiveSelectedBook ? "Arsipkan buku" : deleteBlocked ? "Tutup" : "Hapus buku"
-            }
-            danger={!deleteBlocked}
+            title="Hapus buku secara permanen?"
+            description={`Book Master ${selectedBook?.title || "ini"} (${selectedBook?.publisherName || "penerbit tidak diketahui"}; ISBN ${selectedBook?.variants.map((variant) => variant.isbn).join(", ") || "tidak tersedia"}) akan dihapus, termasuk referensi katalog aktif. Riwayat Order, Invoice, Payment, Batch, dan Audit tetap disimpan.`}
+            confirmLabel="Hapus buku"
+            danger
             onCancel={() => setDeleteState(null)}
-            onConfirm={() => {
-              if (deleteBlocked && !canArchiveSelectedBook) {
-                setDeleteState(null);
-                return;
-              }
-              void (deleteBlocked ? archiveBook() : deleteBook());
-            }}
+            onConfirm={() => void deleteBook()}
           />
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
 import { IMAGE_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
@@ -502,8 +502,7 @@ export const remove = mutation({
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
     if (!book) fail("BOOK_NOT_FOUND");
-    if (book.publicationStatus !== "draft") fail("ENTITY_DELETE_NOT_ALLOWED", "only draft books may be deleted");
-    const [variants, media, orderItem] = await Promise.all([
+    const [variants, media] = await Promise.all([
       ctx.db
         .query("bookVariants")
         .withIndex("by_book", (query) => query.eq("bookId", book._id))
@@ -512,31 +511,153 @@ export const remove = mutation({
         .query("bookMedia")
         .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
         .collect(),
-      ctx.db
-        .query("orderItems")
-        .withIndex("by_book", (query) => query.eq("bookId", book._id))
-        .first(),
     ]);
-    if (orderItem) fail("ENTITY_IN_USE", "book has order history");
+
+    const orderAdjustments = new Map<Id<"orders">, Doc<"orders">>();
+    const removableItems = new Set<Id<"orderItems">>();
+    for (const item of await ctx.db
+      .query("orderItems")
+      .withIndex("by_book", (query) => query.eq("bookId", book._id))
+      .take(2000)) {
+      const order = await ctx.db.get(item.orderId);
+      if (!order) continue;
+      const linkedInvoices = await ctx.db
+        .query("invoiceItems")
+        .withIndex("by_order_item", (query) => query.eq("orderItemId", item._id))
+        .take(50);
+      let preserveItem = order.status !== "submitted";
+      for (const linkedInvoice of linkedInvoices) {
+        const invoice = await ctx.db.get(linkedInvoice.invoiceId);
+        if (!invoice || invoice.status === "void") continue;
+        if (invoice.status !== "draft") {
+          preserveItem = true;
+          continue;
+        }
+        const confirmations = await ctx.db
+          .query("paymentConfirmations")
+          .withIndex("by_invoice", (query) => query.eq("invoiceId", invoice._id))
+          .take(200);
+        if (
+          invoice.allocatedDepositAmount > 0 ||
+          invoice.verifiedPaymentAmount > 0 ||
+          confirmations.some(
+            (confirmation) => confirmation.status === "submitted" || confirmation.status === "under_review",
+          )
+        ) {
+          fail("ENTITY_IN_USE", "book has an unsettled invoice");
+        }
+        const now = Date.now();
+        await ctx.db.patch(invoice._id, { status: "void", voidedAt: now, updatedAt: now });
+        await recordAudit(ctx, user._id, "invoice.voided_for_book_delete", "invoice", invoice._id, {
+          bookId: String(book._id),
+        });
+      }
+      const exceptions = await ctx.db
+        .query("orderExceptions")
+        .withIndex("by_order_item", (query) => query.eq("orderItemId", item._id))
+        .take(1);
+      if (exceptions.length) preserveItem = true;
+      const adjustments = await ctx.db
+        .query("orderExceptionFinancialAdjustments")
+        .withIndex("by_order_item", (query) => query.eq("orderItemId", item._id))
+        .take(1);
+      if (adjustments.length) preserveItem = true;
+      if (preserveItem) continue;
+      removableItems.add(item._id);
+      orderAdjustments.set(order._id, order);
+    }
+
     for (const variant of variants) {
-      const [catalogItem, reservation] = await Promise.all([
-        ctx.db
-          .query("catalogItems")
-          .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
-          .first(),
-        ctx.db
-          .query("readyStockReservations")
-          .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
-          .first(),
-      ]);
-      if (catalogItem || reservation) fail("ENTITY_IN_USE", "book has catalog or stock history");
+      const reservations = await ctx.db
+        .query("readyStockReservations")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+        .take(200);
+      for (const reservation of reservations) {
+        if (reservation.status !== "active") continue;
+        const inventory = await ctx.db
+          .query("readyStockInventory")
+          .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
+          .unique();
+        const reservedQuantity = inventory?.reservedQuantity ?? 0;
+        if (!inventory || reservedQuantity < reservation.quantity) {
+          fail("ENTITY_IN_USE", "book has an invalid active stock reservation");
+        }
+        await ctx.db.patch(inventory._id, {
+          reservedQuantity: reservedQuantity - reservation.quantity,
+          updatedAt: Date.now(),
+          updatedByUserId: user._id,
+        });
+        await ctx.db.patch(reservation._id, {
+          status: "released",
+          releasedAt: Date.now(),
+          updatedAt: Date.now(),
+          changedByUserId: user._id,
+        });
+        await recordAudit(
+          ctx,
+          user._id,
+          "ready_stock.reservation_released_for_book_delete",
+          "readyStockReservation",
+          reservation._id,
+          {
+            bookId: String(book._id),
+          },
+        );
+      }
+    }
+
+    for (const itemId of removableItems) {
+      const assignments = await ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_order_item", (query) => query.eq("orderItemId", itemId))
+        .take(200);
+      for (const assignment of assignments) await ctx.db.delete(assignment._id);
+      await ctx.db.delete(itemId);
+    }
+    for (const order of orderAdjustments.values()) {
+      const remainingItems = await ctx.db
+        .query("orderItems")
+        .withIndex("by_order", (query) => query.eq("orderId", order._id))
+        .take(200);
+      const total = remainingItems.reduce((sum, item) => sum + item.subtotalAmount, 0);
+      if (!Number.isSafeInteger(total) || total < 0) fail("ENTITY_IN_USE", "book removal would corrupt order totals");
+      const now = Date.now();
+      if (!remainingItems.length) {
+        await ctx.db.patch(order._id, {
+          status: "cancelled",
+          cancelledAt: order.cancelledAt ?? now,
+          subtotalAmount: 0,
+          totalAmount: 0,
+          updatedAt: now,
+        });
+        await ctx.db.insert("orderStatusHistory", {
+          orderId: order._id,
+          fromStatus: order.status,
+          toStatus: "cancelled",
+          changedAt: now,
+          changedByUserId: user._id,
+          note: "Active item reconciled because its Book Master was deleted.",
+        });
+      } else {
+        await ctx.db.patch(order._id, {
+          subtotalAmount: total,
+          totalAmount: total,
+          updatedAt: now,
+        });
+      }
+    }
+
+    for (const variant of variants) {
+      const catalogItems = await ctx.db
+        .query("catalogItems")
+        .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
+        .take(500);
+      for (const catalogItem of catalogItems) await ctx.db.delete(catalogItem._id);
       const inventory = await ctx.db
         .query("readyStockInventory")
         .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
         .unique();
-      if (inventory && (inventory.quantity > 0 || (inventory.reservedQuantity ?? 0) > 0)) {
-        fail("ENTITY_IN_USE", "book has ready stock history");
-      }
+      if (inventory) await ctx.db.delete(inventory._id);
     }
     const coverStorageId = book.coverStorageId;
     for (const image of media) {

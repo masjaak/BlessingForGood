@@ -1,8 +1,11 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import { useState } from "react";
+import { api } from "../../../../convex/_generated/api";
+import { ProductAccessGuard } from "@/components/product-access-guard";
+import { SiteShell } from "@/components/site-shell";
 import {
-  Button,
   Card,
   EmptyState,
   Field,
@@ -13,159 +16,181 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
-import { isCatalogOpen, orderStatusLabels } from "@/domain/prototype/logic";
-import { useProduct } from "@/domain/prototype/store";
-import { ProductAccessGuard } from "@/components/product-access-guard";
-import { SiteShell } from "@/components/site-shell";
-import { orderReference } from "@/domain/prototype/order-reference";
-import { productErrorMessage } from "@/domain/prototype/errors";
+import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
+import {
+  calendarDateKey,
+  calendarDateToEndTimestamp,
+  calendarDateToStartTimestamp,
+  formatBfgCalendarDate,
+} from "@/lib/calendar-date";
 
-function EditOrderForm({ orderId }: { orderId: string }) {
-  const { state, editOrder } = useProduct();
-  const order = state.orders.find((candidate) => candidate.id === orderId);
-  const catalog = order && state.catalogs.find((candidate) => candidate.id === order.catalogId);
-  const [name, setName] = useState(order?.customerName || "");
-  const [email, setEmail] = useState(order?.customerEmail || "");
-  const [quantities, setQuantities] = useState<Record<string, number>>(() =>
-    Object.fromEntries(order?.items.map((item) => [item.variantId, item.quantity]) || []),
-  );
-  const [message, setMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  if (!order || !catalog || order.status !== "submitted" || !isCatalogOpen(catalog))
-    return <p className="subtle">Preorder tidak dapat diubah setelah tahap pemrosesan dimulai atau katalog ditutup.</p>;
-  const editableOrder = order;
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    setIsSaving(true);
-    try {
-      const updated = await editOrder(editableOrder.id, {
-        customerName: name,
-        customerEmail: email,
-        items: editableOrder.items.map((item) => ({
-          variantId: item.variantId,
-          quantity: quantities[item.variantId] || 0,
-        })),
-      });
-      setMessage(`Pesanan ${orderReference(updated)} diperbarui.`);
-    } catch (reason) {
-      setMessage(productErrorMessage(reason, "Preorder belum dapat diperbarui"));
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  return (
-    <details className="edit-order">
-      <summary>Ubah sebelum katalog ditutup</summary>
-      <form className="form-card" onSubmit={handleSubmit}>
-        <Field label="Nama">
-          <input className="input" value={name} onChange={(event) => setName(event.target.value)} required />
-        </Field>
-        <Field label="Email">
-          <input className="input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-        </Field>
-        {order.items.map((item) => (
-          <Field label={`${item.bookTitle} · ${item.format}`} key={item.id}>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              step="1"
-              value={quantities[item.variantId] || 0}
-              onChange={(event) =>
-                setQuantities((current) => ({ ...current, [item.variantId]: Number(event.target.value) }))
-              }
-            />
-          </Field>
-        ))}
-        <Button type="submit" loading={isSaving} loadingLabel="Menyimpan…">
-          Simpan perubahan
-        </Button>
-        {message ? (
-          <span className="subtle" role="status">
-            {message}
-          </span>
-        ) : null}
-      </form>
-    </details>
-  );
+function defaultRange() {
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1);
+  return { start: calendarDateKey(start), end: calendarDateKey(Date.now()) };
 }
 
-function CustomerOrders() {
-  const { state, ordersLoading } = useProduct();
+function CustomerBooks() {
+  const initialRange = defaultRange();
+  const [startDate, setStartDate] = useState(initialRange.start);
+  const [endDate, setEndDate] = useState(initialRange.end);
+  const validRange = Boolean(startDate && endDate && startDate <= endDate);
+  const overview = useQuery(
+    api.batchTracking.getBookOverview,
+    validRange
+      ? { startAt: calendarDateToStartTimestamp(startDate), endAt: calendarDateToEndTimestamp(endDate) }
+      : "skip",
+  );
+
   return (
-    <div className="page narrow-page">
+    <div className="page">
       <PageHeader
-        eyebrow="Pesanan saya"
-        title="Ikuti langkah berikutnya dengan mudah."
-        description="Setiap pesanan menyimpan pilihan buku, harga, status, dan perjalanan terbaru khusus untuk akunmu."
+        eyebrow="Buku Saya"
+        title="Buku apa aja yang udah gue fix?"
+        description="Lihat nilai buku, tagihan berjalan, deposit, dan perjalanan setiap Batch dalam satu tempat."
         actions={
           <LinkButton href="/catalog" variant="secondary">
             Kembali ke katalog
           </LinkButton>
         }
       />
-      {ordersLoading ? (
-        <LoadingRegion label="Memuat pesanan">
-          <SkeletonCard variant="order" />
-          <SkeletonCard variant="order" />
-        </LoadingRegion>
-      ) : state.orders.length === 0 ? (
-        <EmptyState
-          title="Belum ada pesanan"
-          description="Pesananmu akan tampil di sini setelah berhasil dicatat."
-          action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
-        />
-      ) : (
-        <div className="content-stack">
-          {state.orders.map((order) => (
-            <Card key={order.id}>
-              <div className="split-heading">
-                <div>
-                  <span className="card-kicker">{orderReference(order)}</span>
-                  <h2>{order.items[0]?.bookTitle || "Pesanan BFG"}</h2>
-                </div>
-                <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
-              </div>
-              <div className="summary-line">
-                <span>
-                  {order.customerName} · {order.items.reduce((total, item) => total + item.quantity, 0)} item
-                </span>
-                <Money amount={order.total} />
-              </div>
-              <LinkButton href={`/account/orders/${order.id}`} variant="secondary">
-                Lihat detail & pelacakan
-              </LinkButton>
-              <EditOrderForm orderId={order.id} />
-              <ul className="timeline">
-                {order.statusHistory.map((event) => (
-                  <li key={`${event.status}-${event.at}`}>
-                    <span className="timeline-dot" aria-hidden="true" />
-                    <div>
-                      <strong>{orderStatusLabels[event.status]}</strong>
-                      <time dateTime={event.at}>{new Date(event.at).toLocaleString("id-ID")}</time>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <p className="subtle">Detail dan status pesanan tersimpan di akun BFG-mu.</p>
-            </Card>
-          ))}
+      <Card>
+        <span className="card-kicker">Rentang waktu</span>
+        <div className="form-grid">
+          <Field label="Dari">
+            <input
+              className="input"
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+            />
+          </Field>
+          <Field label="Sampai">
+            <input className="input" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+          </Field>
         </div>
-      )}
+        {!validRange ? (
+          <p className="error-text" role="alert">
+            Pilih rentang tanggal yang valid.
+          </p>
+        ) : null}
+      </Card>
+      {overview === undefined ? (
+        <LoadingRegion label="Memuat Buku Saya">
+          <SkeletonCard />
+          <SkeletonCard />
+        </LoadingRegion>
+      ) : overview ? (
+        <>
+          <div className="account-metrics">
+            <Card frame="summary">
+              <span className="card-kicker">Total spending</span>
+              <strong className="metric-money">
+                <Money amount={overview.totalSpending} />
+              </strong>
+              <span className="subtle">Nilai jual buku yang sudah fix</span>
+            </Card>
+            <Card frame="summary">
+              <span className="card-kicker">Pending payment</span>
+              <strong className="metric-money">
+                <Money amount={overview.pendingPayment} />
+              </strong>
+              <span className="subtle">Sisa invoice yang sudah terbit</span>
+            </Card>
+            <Card frame="summary">
+              <span className="card-kicker">Total deposit</span>
+              <strong className="metric-money">
+                <Money amount={overview.totalDeposit} />
+              </strong>
+              <span className="subtle">Saldo deposit yang bisa digunakan</span>
+            </Card>
+          </div>
+          <div className="content-stack">
+            <div className="split-heading">
+              <div>
+                <span className="card-kicker">Batch buku</span>
+                <h2>Semua buku yang sudah fix, dikelompokkan per Batch</h2>
+              </div>
+              <span className="subtle">
+                {startDate} – {endDate}
+              </span>
+            </div>
+            {overview.batches.length ? (
+              overview.batches.map((batch) => (
+                <Card key={batch.batchId || "unassigned"}>
+                  <div className="split-heading">
+                    <div>
+                      <span className="card-kicker">
+                        {batch.referenceCode || (batch.batchId ? "Batch PO" : "Pengecualian")}
+                      </span>
+                      <h2>{batch.name}</h2>
+                    </div>
+                    <StatusBadge tone={batch.currentShipmentStage ? "positive" : "neutral"}>
+                      {batch.currentShipmentStage
+                        ? shipmentStageLabels[batch.currentShipmentStage]
+                        : batch.batchId
+                          ? "PO terbuka"
+                          : "Belum masuk Batch"}
+                    </StatusBadge>
+                  </div>
+                  <div className="summary-line">
+                    <span>
+                      {batch.bookCount} buku · {batch.orderCount} submission
+                    </span>
+                    <strong>
+                      <Money amount={batch.totalAmount} />
+                    </strong>
+                  </div>
+                  {!batch.batchId && batch.items.length ? (
+                    <div className="content-stack">
+                      {batch.items.map((item) => (
+                        <div className="summary-line" key={item.assignmentId}>
+                          <span>
+                            <strong>{item.title}</strong>
+                            <br />
+                            <span className="subtle">
+                              {item.publisher} · {item.format} · {item.quantity} buku
+                            </span>
+                          </span>
+                          <Money amount={item.subtotalAmount} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {batch.poDeadlineAt ? (
+                    <p className="subtle">Close PO: {formatBfgCalendarDate(batch.poDeadlineAt)}</p>
+                  ) : null}
+                  <p className="subtle">ETA cargo: {formatCargoEta(batch.etaCargoMonth)}</p>
+                  {batch.batchId ? (
+                    <LinkButton href={`/account/batches/${batch.batchId}`} variant="secondary">
+                      Buka detail Batch
+                    </LinkButton>
+                  ) : (
+                    <p className="subtle">Admin akan memasukkan buku ini ke Batch yang sesuai.</p>
+                  )}
+                </Card>
+              ))
+            ) : (
+              <EmptyState
+                title="Belum ada buku yang fix"
+                description="Buku yang sudah dicatat dalam pesanan akan tampil di sini."
+                action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
+              />
+            )}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
 
-function SignedOutOrders() {
+function SignedOutBooks() {
   return (
     <div className="page narrow-page account-gate-page">
       <EmptyState
         eyebrow="Buku Saya"
         title="Belum ada buku yang bisa ditampilkan."
-        description="Masuk lewat Akun untuk melihat pesanan, perjalanan batch, dan buku milikmu."
+        description="Masuk lewat Akun untuk melihat buku, Batch, dan nilai pesananmu."
         mascotVariant="default"
         action={<LinkButton href="/account">Ke Akun</LinkButton>}
       />
@@ -176,8 +201,8 @@ function SignedOutOrders() {
 export default function CustomerOrdersPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutOrders />}>
-        <CustomerOrders />
+      <ProductAccessGuard requiredRole="customer" signedOutContent={<SignedOutBooks />}>
+        <CustomerBooks />
       </ProductAccessGuard>
     </SiteShell>
   );

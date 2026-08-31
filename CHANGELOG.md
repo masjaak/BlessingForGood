@@ -8,6 +8,30 @@ source: conversation
 
 # Changelog
 
+## [my-books-2-pool-invoice-admin-book-delete] — 2026-08-31
+
+### Changed
+
+- Added human-facing 0–100% deposit input conversion to canonical basis points,
+  Batch-centric Buku Saya overview/detail/search, Customer × Batch pooling, and
+  one active final invoice per Customer × Batch with selected bulk issuance.
+- Disabled Customer cancellation at both the UI and mutation boundary; added
+  assisted Order Customer search by name fragments and normalized phone digits.
+- Extended ordinary active Admin user management while preserving Owner-only
+  ownership protections, and added safe hard-delete Book Master cleanup that
+  preserves historical Order, Invoice, Payment, Batch, and Audit truth.
+- Recorded the superseded Order-centric Customer, per-Order invoice, and
+  Owner-only operational user-management decisions in canonical context memory.
+
+### QA and status
+
+- 454 frontend/Convex tests, TypeScript, ESLint, format, production build,
+  `git diff --check`, and Convex typecheck pass.
+- Customer route rendering passes for all non-auth routes at 390, 768, and
+  1440px. Local signed-out auth probes are blocked by the keyless Clerk
+  handshake/JWKS mismatch; authenticated Production QA and real UAT remain
+  release gates.
+
 ## [750-performance-admin-system-rbac] — 2026-08-31
 
 ### Changed

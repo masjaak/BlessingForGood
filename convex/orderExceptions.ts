@@ -177,6 +177,7 @@ export const requestCancellation = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "orders.read.own");
+    if (user.role === "customer") fail("PERMISSION_DENIED", "customer cancellation is disabled");
     const { orderItem, order } = await orderItemContext(ctx, args.orderItemId);
     await requireOwnedResource(ctx, order.customerUserId, "ORDER_ACCESS_DENIED");
     const eligibility = await evaluateCancellationEligibility(ctx, orderItem._id);

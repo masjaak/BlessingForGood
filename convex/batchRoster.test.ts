@@ -77,11 +77,15 @@ describe("BFG batch roster and assisted orders", () => {
     const toBatch = await admin.mutation(api.batches.create, { name: "Move To" });
     await admin.mutation(api.batches.linkCatalog, { batchId: fromBatch.batchId, catalogId: catalog.catalogId });
     await admin.mutation(api.batches.linkCatalog, { batchId: toBatch.batchId, catalogId: catalog.catalogId });
-    const order = await customer.mutation(api.orders.submit, {
+    await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Move Customer",
       items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
     });
+    const order = await customer.query(api.orders.listMine, {
+      paginationOpts: { numItems: 10, cursor: null },
+    }).then((result) => result.page[0]);
+    if (!order) throw new Error("move order missing");
     await admin.mutation(api.batchTracking.assignOrderItem, {
       orderItemId: order.items[0]._id,
       batchId: fromBatch.batchId,
@@ -150,6 +154,15 @@ describe("BFG batch roster and assisted orders", () => {
         expect.objectContaining({ customerUserId: customerUser.appUserId, memberCode: customerUser.memberCode }),
       ]),
     );
+    await customer.mutation(api.customerProfiles.upsertMine, {
+      displayName: "Madina Astrid",
+      phone: "081234567754",
+    });
+    for (const search of ["madina", "astrid", "dina", "7754", "567754"]) {
+      await expect(admin.query(api.orders.listEligibleCustomers, { search })).resolves.toMatchObject({
+        page: [expect.objectContaining({ displayName: "Madina Astrid", phoneLast4: "7754" })],
+      });
+    }
     await expect(customer.query(api.orders.listEligibleCustomers, {})).rejects.toThrow("PERMISSION_DENIED");
     const order = await admin.mutation(api.orders.createAssisted, {
       customerUserId: customerUser.appUserId,
@@ -198,6 +211,152 @@ describe("BFG batch roster and assisted orders", () => {
       (await ctx.db.query("auditEvents").collect()).map((event) => event.action),
     );
     expect(actions).toContain("order.admin_assisted_created");
+  });
+
+  it("pools same-customer submissions by Batch while preserving separate Batch contexts", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const catalogs = await Promise.all([
+      createOpenCatalog(admin, "Pooling Catalog A", "2011", "pooling-code-a"),
+      createOpenCatalog(admin, "Pooling Catalog B", "2012", "pooling-code-b"),
+      createOpenCatalog(admin, "Pooling Catalog C", "2013", "pooling-code-c"),
+    ]);
+    const orders = [];
+    for (const [index, catalog] of catalogs.entries()) {
+      if (index === 0) {
+        await customer.mutation(api.catalogAccess.unlock, { accessCode: "pooling-code-a" });
+        orders.push(
+          await customer.mutation(api.orders.submit, {
+            catalogId: catalog.catalogId,
+            customerName: "Pooled Customer",
+            items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+          }),
+        );
+      } else {
+        orders.push(
+          await admin.mutation(api.orders.createAssisted, {
+            customerUserId: (await customer.query(api.users.current, {}))!.appUserId,
+            catalogId: catalog.catalogId,
+            submissionKey: `pooling-assisted-${index}`,
+            items: [{ variantId: catalog.variantIds[0], quantity: index === 1 ? 2 : 1 }],
+          }),
+        );
+      }
+    }
+    const batch = await admin.mutation(api.batches.create, { name: "PO Lavender" });
+    for (const catalog of catalogs) {
+      await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    }
+
+    const otherCatalog = await createOpenCatalog(admin, "Pooling Other Catalog", "2014", "pooling-code-other");
+    const otherOrder = await admin.mutation(api.orders.createAssisted, {
+      customerUserId: (await customer.query(api.users.current, {}))!.appUserId,
+      catalogId: otherCatalog.catalogId,
+      submissionKey: "pooling-assisted-other",
+      items: [{ variantId: otherCatalog.variantIds[0], quantity: 1 }],
+    });
+    const otherBatch = await admin.mutation(api.batches.create, { name: "PO Magic Cat" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: otherBatch.batchId, catalogId: otherCatalog.catalogId });
+
+    const overview = await customer.query(api.batchTracking.getBookOverview, {
+      startAt: Date.now() - 86_400_000,
+      endAt: Date.now() + 1_000,
+    });
+    expect(overview.totalSpending).toBe(625000);
+    const lavender = overview.batches.find((candidate) => candidate.batchId === batch.batchId);
+    const magicCat = overview.batches.find((candidate) => candidate.batchId === otherBatch.batchId);
+    expect(lavender).toMatchObject({ totalAmount: 500000, bookCount: 4, orderCount: 3 });
+    expect(lavender?.items).toHaveLength(3);
+    expect(new Set(lavender?.items.map((item) => item.title))).toEqual(
+      new Set(["Pooling Catalog A Book", "Pooling Catalog B Book", "Pooling Catalog C Book"]),
+    );
+    expect(magicCat).toMatchObject({ batchId: otherBatch.batchId, totalAmount: 125000, bookCount: 1, orderCount: 1 });
+    expect(overview.batches).toHaveLength(2);
+    expect(orders).toHaveLength(3);
+    expect(otherOrder.items).toHaveLength(1);
+
+    const detail = await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId });
+    expect(detail).toMatchObject({ batchId: batch.batchId, items: expect.any(Array) });
+    expect(detail?.items).toHaveLength(3);
+    const filtered = await customer.query(api.batchTracking.getBatchMine, {
+      batchId: batch.batchId,
+      search: "pooling catalog b",
+    });
+    expect(filtered?.items).toEqual([expect.objectContaining({ title: "Pooling Catalog B Book", quantity: 2 })]);
+    await expect(secondCustomer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId })).resolves.toBeNull();
+  });
+
+  it("derives Buku Saya finance cards from committed snapshots, current balance, and usable deposit", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Overview Catalog", "2015", "overview-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "overview-code" });
+    await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Overview Customer",
+      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+    });
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("overview customer fixture missing");
+    const batch = await admin.mutation(api.batches.create, { name: "Overview Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
+    const invoice = await admin.mutation(api.invoices.issueCustomerBatch, {
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+      depositRequirementMode: "none",
+    });
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 50000 });
+
+    const recentStart = Date.now() - 86_400_000;
+    const recent = await customer.query(api.batchTracking.getBookOverview, {
+      startAt: recentStart,
+      endAt: Date.now() + 1_000,
+    });
+    expect(recent).toMatchObject({ totalSpending: 250000, pendingPayment: 250000, totalDeposit: 50000 });
+    expect(recent.batches).toEqual([
+      expect.objectContaining({ batchId: batch.batchId, totalAmount: 250000, bookCount: 2, orderCount: 1 }),
+    ]);
+
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      amount: 250000,
+      paymentMethod: "Bank transfer",
+      transferReference: "OVERVIEW-FULL-PAYMENT",
+      paidAt: Date.now() - 1_000,
+    });
+    await admin.mutation(api.paymentConfirmations.startReview, { confirmationId: confirmation.confirmationId });
+    await admin.mutation(api.paymentConfirmations.approve, { confirmationId: confirmation.confirmationId });
+    const paidOverview = await customer.query(api.batchTracking.getBookOverview, {
+      startAt: recentStart,
+      endAt: Date.now() + 1_000,
+    });
+    expect(paidOverview).toMatchObject({ totalSpending: 250000, pendingPayment: 0, totalDeposit: 50000 });
+
+    const oldSubmittedAt = Date.now() - 2 * 365 * 86_400_000;
+    const oldOrder = await admin.mutation(api.orders.createAssisted, {
+      customerUserId: customerUser.appUserId,
+      catalogId: catalog.catalogId,
+      submissionKey: "overview-old-order",
+      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+    });
+    await t.run((ctx) => ctx.db.patch(oldOrder.orderId, { submittedAt: oldSubmittedAt, updatedAt: oldSubmittedAt }));
+    const oldRange = await customer.query(api.batchTracking.getBookOverview, {
+      startAt: oldSubmittedAt - 1,
+      endAt: oldSubmittedAt + 1,
+    });
+    expect(oldRange.totalSpending).toBe(125000);
+    expect(oldRange.batches).toEqual([
+      expect.objectContaining({ batchId: null, name: "Belum masuk Batch", totalAmount: 125000, bookCount: 1 }),
+    ]);
+    expect(oldRange.batches[0]?.items[0]).toMatchObject({
+      title: "Overview Catalog Book",
+      publisher: "Overview Catalog Publisher",
+      format: "PB",
+      isbn: "97800002015",
+      quantity: 1,
+      unitPriceAmount: 125000,
+    });
   });
 
   it("allows multi-publisher Batch items with one shared close date and protects the customer projection", async () => {

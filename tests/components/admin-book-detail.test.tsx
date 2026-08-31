@@ -99,21 +99,21 @@ describe("Admin Book Detail lifecycle actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hapus buku" }));
 
     expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Hapus buku ini?" })).toBeTruthy();
-    expect(screen.getByText(/belum memiliki pesanan atau riwayat operasional/i)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Hapus buku secara permanen?" })).toBeTruthy();
+    expect(screen.getByText(/riwayat Order, Invoice, Payment, Batch, dan Audit tetap disimpan/i)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Batal" }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("shows an explicit archive fallback for a protected lifecycle state", () => {
+  it("keeps archive alongside hard delete for an active lifecycle state", () => {
     mockBook({ ...draftBook, publicationStatus: "published" });
 
     render(<AdminBookDetail bookId="book-1" />);
 
     expect(screen.getByRole("link", { name: "Edit" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Arsipkan buku" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Hapus buku" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Hapus buku" })).toBeTruthy();
   });
 
   it("accepts decimal pounds and keeps the variant creation grid aligned", async () => {

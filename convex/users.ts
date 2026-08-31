@@ -82,10 +82,7 @@ async function findApprovedJoinRequest(ctx: MutationCtx | QueryCtx, normalizedEm
     .take(50);
   return (
     requests.find(
-      (request) =>
-        request.status === "approved" &&
-        request.invitationStatus !== "not_ready" &&
-        !request.removedAt,
+      (request) => request.status === "approved" && request.invitationStatus !== "not_ready" && !request.removedAt,
     ) ?? null
   );
 }
@@ -567,9 +564,10 @@ async function targetUser(ctx: QueryCtx | MutationCtx, userId: Id<"appUsers">) {
 export const updateRole = mutation({
   args: { userId: v.id("appUsers"), role: v.union(v.literal("admin"), v.literal("customer")) },
   handler: async (ctx, args) => {
-    const actor = await requireOwner(ctx);
+    const actor = await requirePermission(ctx, "users.manage_roles");
     const target = await targetUser(ctx, args.userId);
     if (target.role === "owner") fail("OWNER_PROTECTED");
+    if (target.status !== "active") fail("INVALID_ROLE_TRANSITION");
     if (target.role === args.role) return appUserView(target);
     await ctx.db.patch(target._id, { role: args.role, updatedAt: Date.now() });
     await recordAudit(ctx, actor._id, args.role === "admin" ? "user.promoted" : "user.demoted", "appUser", target._id, {

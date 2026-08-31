@@ -66,7 +66,7 @@ describe("Admin customer detail actions", () => {
       "/admin/deposits?customerId=customer-1",
     );
     expect(screen.getAllByRole("link", { name: /^Buat invoice$/ }).map((link) => link.getAttribute("href"))).toContain(
-      "/admin/invoices?orderId=order-1",
+      "/admin/invoices?customerId=customer-1",
     );
   });
 });

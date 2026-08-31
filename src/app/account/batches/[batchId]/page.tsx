@@ -2,15 +2,29 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
+import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonCard, StatusBadge } from "@/components/ui";
+import { BookCover } from "@/components/book-cover";
+import {
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonCard,
+  StatusBadge,
+} from "@/components/ui";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
+import { orderStatusLabels } from "@/domain/prototype/logic";
 
 function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
-  const batch = useQuery(api.batchTracking.getBatchMine, { batchId });
+  const [search, setSearch] = useState("");
+  const batch = useQuery(api.batchTracking.getBatchMine, { batchId, search: search.trim() || undefined });
   if (batch === undefined)
     return (
       <LoadingRegion label="Memuat detail batch">
@@ -48,17 +62,40 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
       <Card>
         <span className="card-kicker">Buku milikmu</span>
         <h2>Roster pelanggan</h2>
+        <Field label="Cari buku">
+          <input
+            className="input"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Cari berdasarkan judul…"
+          />
+        </Field>
         {batch.items.length ? (
           batch.items.map((item) => (
-            <div className="summary-line" key={item.assignmentId}>
-              <span>
-                {item.title} · {item.format}
-              </span>
-              <strong>{item.quantity}</strong>
+            <div className="book-row" key={item.assignmentId}>
+              <BookCover
+                title={item.title}
+                publisher={item.publisher}
+                format={item.format}
+                src={item.coverUrl || undefined}
+              />
+              <div className="content-stack">
+                <strong>{item.title}</strong>
+                <span className="subtle">
+                  {item.publisher} · {item.format} · ISBN {item.isbn}
+                </span>
+                <span>
+                  {item.quantity} × <Money amount={item.unitPriceAmount} />
+                </span>
+              </div>
+              <StatusBadge tone={item.batchStatus ? "positive" : "neutral"}>
+                {item.batchStatus ? shipmentStageLabels[item.batchStatus] : orderStatusLabels[item.orderStatus]}
+              </StatusBadge>
             </div>
           ))
         ) : (
-          <p className="subtle">Belum ada item yang ditugaskan ke pesananmu.</p>
+          <p className="subtle">Tidak ada buku yang cocok dengan pencarian ini.</p>
         )}
       </Card>
       {batch.availableItems.length ? (

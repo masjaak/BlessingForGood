@@ -16,6 +16,15 @@ Orders remain customer purchase intent. Assignments remain operational
 quantity records. Batch shipment and customer fulfillment use separate
 timelines. Invoice and payment functions remain authoritative for finance.
 
+## Customer Batch Pool
+
+Admin/audit retains every historical Order and OrderItem submission. Customer
+projection and new invoice grouping use `customerUserId × batchId`, so multiple
+submissions from the same Customer into the same Batch appear as one logical
+Batch context without changing source Order IDs or submitted dates. Different
+Batches remain separate; unresolved/unassigned items remain visible as a
+Customer exception group rather than disappearing.
+
 ## Batch state and locking
 
 The existing `batches.currentShipmentStage` remains the only batch state

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
@@ -21,13 +23,13 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
-import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/operations-context";
-import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { percentageToBasisPoints } from "@/lib/percentage";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 
 export function PersistentRequirementForm({ orderId }: { orderId: string }) {
   const { createInvoice, issueInvoice } = useOperations();
@@ -43,7 +45,9 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
     setPendingAction(issue ? "issue" : "draft");
     let invoiceId: string | null = null;
     try {
-      const draft = await createInvoice(orderId, mode, mode === "none" ? undefined : Number(value));
+      const numericValue = mode === "none" ? undefined : Number(value);
+      if (mode === "percentage" && numericValue !== undefined) percentageToBasisPoints(numericValue);
+      const draft = await createInvoice(orderId, mode, numericValue);
       invoiceId = draft.invoiceId;
       setCreatedInvoiceId(invoiceId);
       if (issue) {
@@ -81,17 +85,17 @@ export function PersistentRequirementForm({ orderId }: { orderId: string }) {
         >
           <option value="none">Tidak ada</option>
           <option value="fixed">Nominal tetap (IDR)</option>
-          <option value="percentage">Persentase (basis poin)</option>
+          <option value="percentage">Persentase (%)</option>
         </BFGSelect>
       </label>
       {mode !== "none" ? (
-        <Field label={mode === "fixed" ? "Nominal (IDR)" : "Basis poin (0–10000)"}>
+        <Field label={mode === "fixed" ? "Nominal (IDR)" : "Persentase (0–100%)"}>
           <input
             className="input"
             type="number"
             min="0"
-            max={mode === "percentage" ? 10000 : undefined}
-            step="1"
+            max={mode === "percentage" ? 100 : undefined}
+            step={mode === "percentage" ? "0.01" : "1"}
             value={value}
             onChange={(event) => setValue(event.target.value)}
             required
@@ -171,11 +175,197 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
   );
 }
 
+function CustomerBatchInvoiceQueue({ customerId }: { customerId: string | null }) {
+  const pagination = useAdminCursorPagination();
+  const rows = useQuery(api.invoices.listReadyForIssuance, {
+    paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
+    customerUserId: customerId ? (customerId as Id<"appUsers">) : undefined,
+  });
+  const issueCustomerBatch = useMutation(api.invoices.issueCustomerBatch);
+  const [mode, setMode] = useState<InvoiceRequirementMode>("none");
+  const [value, setValue] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [pending, setPending] = useState<string | null>(null);
+  const [report, setReport] = useState("");
+  const pageRows = rows?.page || [];
+
+  function requirementValue() {
+    if (mode === "none") return undefined;
+    const numericValue = Number(value);
+    return mode === "percentage" ? percentageToBasisPoints(numericValue) : numericValue;
+  }
+
+  async function issueRow(row: (typeof pageRows)[number]) {
+    setPending(`${row.batchId}:${row.customerUserId}`);
+    setReport("");
+    try {
+      await issueCustomerBatch({
+        customerUserId: row.customerUserId,
+        batchId: row.batchId,
+        depositRequirementMode: mode,
+        depositRequirementValue: requirementValue(),
+      });
+      setReport("Invoice diterbitkan.");
+    } catch (reason) {
+      setReport(productErrorMessage(reason, "Invoice tidak dapat diterbitkan."));
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function issueSelected() {
+    const targets = pageRows.filter((row) => row.eligible && selected.includes(`${row.batchId}:${row.customerUserId}`));
+    if (!targets.length) {
+      setReport("Pilih Customer yang eligible terlebih dahulu.");
+      return;
+    }
+    if (targets.length > 100) {
+      setReport("Maksimal 100 Customer per proses.");
+      return;
+    }
+    setPending("bulk");
+    setReport("");
+    try {
+      const results = await Promise.allSettled(
+        targets.map((row) =>
+          issueCustomerBatch({
+            customerUserId: row.customerUserId,
+            batchId: row.batchId,
+            depositRequirementMode: mode,
+            depositRequirementValue: requirementValue(),
+          }),
+        ),
+      );
+      const successCount = results.filter((result) => result.status === "fulfilled").length;
+      const failedCount = results.length - successCount;
+      setReport(
+        `${successCount} berhasil${failedCount ? `, ${failedCount} gagal — pilih ulang untuk mencoba lagi.` : "."}`,
+      );
+      setSelected(
+        targets
+          .filter((_, index) => results[index].status === "rejected")
+          .map((row) => `${row.batchId}:${row.customerUserId}`),
+      );
+    } catch (reason) {
+      setReport(productErrorMessage(reason, "Bulk invoice tidak dapat diproses."));
+    } finally {
+      setPending(null);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="split-heading">
+        <div>
+          <span className="card-kicker">Customer × Batch</span>
+          <h2>Antrian invoice siap terbit</h2>
+        </div>
+        <StatusBadge>{pageRows.filter((row) => row.eligible).length} eligible</StatusBadge>
+      </div>
+      <p className="subtle">
+        Satu Customer dalam satu Batch hanya memiliki satu invoice aktif. Pilih Customer secara eksplisit untuk bulk.
+      </p>
+      <div className="form-grid">
+        <label className="field">
+          <span className="field-label">Syarat deposit</span>
+          <BFGSelect
+            className="select"
+            value={mode}
+            onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
+          >
+            <option value="none">Tidak ada</option>
+            <option value="fixed">Nominal tetap (IDR)</option>
+            <option value="percentage">Persentase (%)</option>
+          </BFGSelect>
+        </label>
+        {mode !== "none" ? (
+          <Field label={mode === "fixed" ? "Nominal (IDR)" : "Persentase (0–100%)"}>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              max={mode === "percentage" ? 100 : undefined}
+              step={mode === "percentage" ? "0.01" : "1"}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              required
+            />
+          </Field>
+        ) : null}
+      </div>
+      <ActionGroup variant="responsive">
+        <Button type="button" variant="primary" loading={pending === "bulk"} onClick={() => void issueSelected()}>
+          Terbitkan invoice terpilih
+        </Button>
+        {report ? (
+          <span className="subtle action-support" role="status">
+            {report}
+          </span>
+        ) : null}
+      </ActionGroup>
+      {rows === undefined ? <p className="subtle">Memuat pool Customer × Batch…</p> : null}
+      {pageRows.length ? (
+        <div className="content-stack">
+          {pageRows.map((row) => {
+            const rowKey = `${row.batchId}:${row.customerUserId}`;
+            return (
+              <div className="invoice-issue-row" key={rowKey}>
+                <label className="form-actions">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(rowKey)}
+                    disabled={!row.eligible || pending !== null}
+                    onChange={(event) =>
+                      setSelected((current) =>
+                        event.target.checked ? [...current, rowKey] : current.filter((key) => key !== rowKey),
+                      )
+                    }
+                  />
+                  <span>
+                    <strong>{row.customerName}</strong>
+                    <br />
+                    <span className="subtle">
+                      {row.batchName} · {row.bookCount} buku · <Money amount={row.totalAmount} />
+                    </span>
+                  </span>
+                </label>
+                <span className="form-actions">
+                  {row.invoiceStatus ? (
+                    <StatusBadge>{row.invoiceStatus === "issued" ? "Sudah terbit" : row.invoiceStatus}</StatusBadge>
+                  ) : !row.eligible ? (
+                    <StatusBadge tone="warning">Perlu ditinjau</StatusBadge>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={!row.eligible || pending !== null}
+                    loading={pending === rowKey}
+                    loadingLabel="Menerbitkan…"
+                    onClick={() => void issueRow(row)}
+                  >
+                    Terbitkan invoice
+                  </Button>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : rows ? (
+        <p className="subtle">Belum ada pool final yang siap diterbitkan.</p>
+      ) : null}
+      <AdminPagination
+        {...pagination}
+        rowCount={pageRows.length}
+        isDone={rows?.isDone ?? true}
+        continueCursor={rows?.continueCursor ?? ""}
+      />
+    </Card>
+  );
+}
+
 function PersistentAdminInvoices() {
-  const { state } = useProduct();
   const { adminInvoiceList } = useOperations();
   const searchParams = useSearchParams();
-  const requestedOrderId = searchParams.get("orderId");
   const requestedCustomerId = searchParams.get("customerId");
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const searchedInvoice = useQuery(
@@ -191,12 +381,6 @@ function PersistentAdminInvoices() {
       </LoadingRegion>
     );
   }
-  const ordersWithoutInvoices = state.orders.filter(
-    (order) =>
-      (!requestedOrderId || order.id === requestedOrderId) &&
-      (!requestedCustomerId || order.customerUserId === requestedCustomerId) &&
-      !invoices.some((invoice) => invoice.orderId === order.id && invoice.status !== "void"),
-  );
   const visibleInvoices = invoiceSearch.trim() ? (searchedInvoice ? [searchedInvoice] : []) : invoices;
   return (
     <div className="page admin-page">
@@ -229,23 +413,7 @@ function PersistentAdminInvoices() {
               </p>
             ) : null}
           </Card>
-          {ordersWithoutInvoices.length ? (
-            <Card>
-              <span className="card-kicker">Pesanan yang membutuhkan invoice</span>
-              <h2>Simpan draf berikutnya.</h2>
-              {ordersWithoutInvoices.map((order) => (
-                <div className="invoice-issue-row" key={order.id}>
-                  <div>
-                    <strong>{order.customerName}</strong>
-                    <span className="subtle">
-                      {orderReference(order)} · <Money amount={order.total} />
-                    </span>
-                  </div>
-                  <PersistentRequirementForm orderId={order.id} />
-                </div>
-              ))}
-            </Card>
-          ) : null}
+          <CustomerBatchInvoiceQueue customerId={requestedCustomerId} />
           {visibleInvoices.length ? (
             <div className="content-stack">
               {visibleInvoices.map((invoice) => (

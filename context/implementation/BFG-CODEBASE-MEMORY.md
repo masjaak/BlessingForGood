@@ -1,5 +1,51 @@
 # BFG CODEBASE MEMORY
 
+## Final client contract and source map — My Books 2.0 / Customer × Batch Pool / Admin Users / Book Hard Delete — 2026-08-31
+
+This section is the current memory boundary for the explicit ticket above.
+
+- Orders and `orderItems` remain the immutable historical source. Their title,
+  publisher, format, ISBN, quantity, unit-price, subtotal, Customer, and
+  submission date snapshots are never merged or rewritten for Customer pooling.
+- `convex/batchTracking.ts` owns the Customer projection. `getBookOverview`
+  groups committed items by Batch and keeps unassigned remainder visible;
+  `getBatchMine` scopes detail/search to the active Customer and selected Batch.
+  `src/app/account/orders/page.tsx` owns the landing summary and date controls;
+  `src/app/account/batches/[batchId]/page.tsx` owns the all-item detail.
+- `convex/invoices.ts` owns Customer × Batch aggregation. Batch-assigned
+  invoice items use immutable OrderItem price/text snapshots, `batchId` is the
+  grouping identity, Admin issuance is explicit, and active non-void duplicate
+  creation is rejected/idempotently reused. Legacy per-Order records remain
+  compatibility history. `src/lib/percentage.ts` is the human percentage
+  boundary; Finance calculations continue to consume basis points.
+- `convex/orderExceptions.ts` owns cancellation authorization. Customer
+  cancellation is denied; Admin `open`/review/resolution remains available.
+- `convex/lib/auth.ts`, `convex/users.ts`, and `convex/joinRequests.ts` own
+  active Admin role/status/remove capability. Owner targets, self-removal,
+  ownership transfer, staff invitation, and invitation revocation retain
+  stronger guards. Membership removal tombstones access and leaves business
+  history intact.
+- `convex/books.ts` owns hard delete. Live Book Master, variants, Catalog
+  membership, Ready Stock setup, and exclusively-owned media are cleaned only
+  as required. Historical OrderItems, InvoiceItems, payments, assignments,
+  refunds, and Audit rows are preserved; historical renderers use snapshots or
+  optional live lookups.
+
+Root causes recorded: first-title-only behavior came from Order-centric
+Customer projections that exposed one assignment section instead of a Batch
+pool; incomplete Admin user actions came from the shared `users.manage_roles`
+capability remaining Owner-only; and Book deletion was blocked by a draft-only
+and any-order-history guard instead of separating live master cleanup from
+immutable transaction history.
+
+Required regression anchors are `convex/batchRoster.test.ts`,
+`convex/invoices.test.ts`, `convex/destructive-actions.test.ts`,
+`convex/orderExceptions.test.ts`, `convex/auth.test.ts`,
+`convex/membershipRemoval.test.ts`, and `tests/lib/percentage.test.ts`.
+Authenticated Production Admin/Customer UAT must be recorded separately when
+safe Clerk QA identities and approved disposable deletion fixtures are
+available.
+
 ## Post-diff memory — 750 performance + Admin System RBAC — 2026-08-31
 
 - The ticket started from capacity commit `0266465`; the capacity harness and

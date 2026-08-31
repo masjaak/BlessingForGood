@@ -1,13 +1,11 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Button, Card, Field, LoadingRegion, Money, SkeletonText, StatusBadge } from "@/components/ui";
+import { Card, LoadingRegion, Money, SkeletonText, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
-import { productErrorMessage } from "@/domain/prototype/errors";
 
 type CustomerException = Awaited<FunctionReturnType<typeof api.orderExceptions.listMineForOrder>>[number];
 type CustomerRefund = Awaited<FunctionReturnType<typeof api.refunds.listMine>>[number];
@@ -32,63 +30,6 @@ function statusTone(status: CustomerException["status"]): "neutral" | "positive"
   if (status === "resolved") return "positive";
   if (status === "rejected") return "warning";
   return "neutral";
-}
-
-function CancellationAction({ item, enabled }: { item: Item; enabled: boolean }) {
-  const eligibility = useQuery(
-    api.orderExceptions.getCancellationEligibility,
-    enabled ? { orderItemId: item.id as Id<"orderItems"> } : "skip",
-  );
-  const request = useMutation(api.orderExceptions.requestCancellation);
-  const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!eligibility || eligibility.decision === "not_eligible") return null;
-  if (!open) {
-    return (
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-        {eligibility.decision === "eligible" ? "Ajukan pembatalan" : "Minta tinjauan admin"}
-      </Button>
-    );
-  }
-  return (
-    <form
-      className="form-card"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        setMessage("");
-        setIsSubmitting(true);
-        try {
-          await request({ orderItemId: item.id as Id<"orderItems">, reason });
-          setMessage("Permintaan pembatalan sudah dikirim untuk ditinjau.");
-          setReason("");
-        } catch (error) {
-          setMessage(productErrorMessage(error, "Permintaan belum dapat dikirim."));
-        } finally {
-          setIsSubmitting(false);
-        }
-      }}
-    >
-      <Field label={`Alasan untuk ${item.title}`}>
-        <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} required />
-      </Field>
-      <div className="form-actions">
-        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…">
-          Kirim permintaan
-        </Button>
-        <Button type="button" variant="tertiary" onClick={() => setOpen(false)}>
-          Tutup
-        </Button>
-        {message ? (
-          <span className="subtle" role="status">
-            {message}
-          </span>
-        ) : null}
-      </div>
-    </form>
-  );
 }
 
 function ExceptionCard({ exception }: { exception: CustomerException }) {
@@ -161,7 +102,7 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
       <div className="split-heading">
         <div>
           <span className="card-kicker">Masalah pesanan</span>
-          <h2>Penanganan dan permintaan</h2>
+          <h2>Penanganan dan riwayat</h2>
         </div>
         <StatusBadge>{exceptions.length ? `${exceptions.length} tercatat` : "Tidak ada masalah"}</StatusBadge>
       </div>
@@ -194,15 +135,11 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
             </span>
             <span>
               <Money amount={item.subtotal} />
-              <br />
-              <CancellationAction item={item} enabled={dataSource === "convex"} />
             </span>
           </div>
         ))}
       </div>
-      <p className="subtle">
-        Permintaan pembatalan ditinjau oleh admin BFG. Pengembalian dana tidak dijalankan otomatis.
-      </p>
+      <p className="subtle">Perubahan atau pembatalan pesanan ditangani oleh admin BFG. Riwayat tetap tersimpan.</p>
     </Card>
   );
 }

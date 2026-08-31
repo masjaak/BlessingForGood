@@ -12,8 +12,10 @@ import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { positiveQuantity } from "./lib/validation";
 import { notifyUser } from "./lib/notifications";
 import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
+import { findDepositAccount } from "./depositAccounts";
 
 type DataCtx = QueryCtx | MutationCtx;
+const MAX_CUSTOMER_BOOK_INVOICES = 2000;
 
 async function linkedCatalog(ctx: DataCtx, catalogId: Id<"secretCatalogs">, batchId: Id<"batches">) {
   return ctx.db
@@ -376,7 +378,38 @@ export const getMine = query({
   },
 });
 
-async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"appUsers">) {
+async function customerBatchItemView(
+  ctx: QueryCtx,
+  assignmentId: string,
+  quantity: number,
+  item: Doc<"orderItems">,
+  order: Doc<"orders">,
+  batchStage: Doc<"batches">["currentShipmentStage"],
+) {
+  const book = await ctx.db.get(item.bookId);
+  return {
+    assignmentId,
+    orderId: order._id,
+    orderCode: order.orderCode || null,
+    submittedAt: new Date(order.submittedAt).toISOString(),
+    title: item.bookTitleSnapshot,
+    publisher: item.publisherNameSnapshot,
+    format: item.formatSnapshot,
+    isbn: item.isbnSnapshot,
+    quantity,
+    unitPriceAmount: item.unitPriceAmountSnapshot,
+    subtotalAmount: item.unitPriceAmountSnapshot * quantity,
+    orderStatus: order.status,
+    batchStatus: batchStage || null,
+    coverUrl: book
+      ? book.coverStorageId
+        ? await ctx.storage.getUrl(book.coverStorageId)
+        : (book.coverImageUrl ?? null)
+      : null,
+  };
+}
+
+async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"appUsers">, search?: string) {
   const batch = await ctx.db.get(batchId);
   if (!batch) return null;
   const links = await ctx.db
@@ -420,17 +453,21 @@ async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"
         const item = await ctx.db.get(assignment.orderItemId);
         const order = item ? await ctx.db.get(item.orderId) : null;
         return item && order?.customerUserId === userId
-          ? {
-              assignmentId: assignment._id,
-              title: item.bookTitleSnapshot,
-              format: item.formatSnapshot,
-              quantity: assignment.assignedQuantity,
-            }
+          ? customerBatchItemView(
+              ctx,
+              String(assignment._id),
+              assignment.assignedQuantity,
+              item,
+              order,
+              batch.currentShipmentStage,
+            )
           : null;
       }),
     )
-  ).filter((item) => item !== null);
-  if (!owned.length && !availableItems.length) return null;
+  )
+    .filter((item) => item !== null)
+    .filter((item) => !search || item.title.toLowerCase().includes(search.trim().toLowerCase()));
+  if (!owned.length && !availableItems.length && !search) return null;
   return {
     batchId: batch._id,
     name: batch.name,
@@ -471,10 +508,153 @@ export const listMine = query({
 });
 
 export const getBatchMine = query({
-  args: { batchId: v.id("batches") },
+  args: { batchId: v.id("batches"), search: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await requireActiveUser(ctx);
-    return batchMineView(ctx, args.batchId, user._id);
+    return batchMineView(ctx, args.batchId, user._id, args.search);
+  },
+});
+
+export const getBookOverview = query({
+  args: { startAt: v.number(), endAt: v.number() },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "tracking.read.own");
+    if (!Number.isSafeInteger(args.startAt) || !Number.isSafeInteger(args.endAt) || args.startAt > args.endAt) {
+      fail("VALIDATION_FAILED", "date range is invalid");
+    }
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_customer_user_id_and_created_at", (index) => index.eq("customerUserId", user._id))
+      .order("asc")
+      .take(2000);
+    // ponytail: bounded personal history scan; materialize customer totals if one account exceeds 2,000 orders.
+    const groups = new Map<
+      string,
+      {
+        batch: Doc<"batches"> | null;
+        totalAmount: number;
+        bookCount: number;
+        orderIds: Set<Id<"orders">>;
+        rows: Array<{
+          item: Doc<"orderItems">;
+          order: Doc<"orders">;
+          quantity: number;
+          batchStage: Doc<"batches">["currentShipmentStage"];
+        }>;
+      }
+    >();
+    let totalSpending = 0;
+    for (const order of orders) {
+      if (order.status === "cancelled" || order.submittedAt < args.startAt || order.submittedAt > args.endAt) continue;
+      const items = await ctx.db
+        .query("orderItems")
+        .withIndex("by_order", (index) => index.eq("orderId", order._id))
+        .take(200);
+      for (const item of items) {
+        const itemTotal = item.unitPriceAmountSnapshot * item.quantity;
+        if (
+          !Number.isSafeInteger(item.unitPriceAmountSnapshot) ||
+          item.unitPriceAmountSnapshot < 0 ||
+          !Number.isSafeInteger(item.quantity) ||
+          item.quantity < 1 ||
+          !Number.isSafeInteger(itemTotal)
+        ) {
+          fail("INVOICE_TOTAL_INVALID");
+        }
+        totalSpending += itemTotal;
+        if (!Number.isSafeInteger(totalSpending)) fail("INVOICE_TOTAL_INVALID");
+        const assignments = await ctx.db
+          .query("orderItemBatchAssignments")
+          .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+          .take(200);
+        let assignedQuantity = 0;
+        for (const assignment of assignments) {
+          if (assignment.assignedQuantity < 1 || assignment.assignedQuantity > item.quantity) continue;
+          const batch = await ctx.db.get(assignment.batchId);
+          if (!batch) continue;
+          assignedQuantity += assignment.assignedQuantity;
+          const key = String(batch._id);
+          const group = groups.get(key) || {
+            batch,
+            totalAmount: 0,
+            bookCount: 0,
+            orderIds: new Set<Id<"orders">>(),
+            rows: [],
+          };
+          group.totalAmount += item.unitPriceAmountSnapshot * assignment.assignedQuantity;
+          group.bookCount += assignment.assignedQuantity;
+          group.orderIds.add(order._id);
+          group.rows.push({
+            item,
+            order,
+            quantity: assignment.assignedQuantity,
+            batchStage: batch.currentShipmentStage,
+          });
+          groups.set(key, group);
+        }
+        if (assignedQuantity < item.quantity) {
+          const key = "unassigned";
+          const group = groups.get(key) || {
+            batch: null,
+            totalAmount: 0,
+            bookCount: 0,
+            orderIds: new Set<Id<"orders">>(),
+            rows: [],
+          };
+          const quantity = item.quantity - assignedQuantity;
+          group.totalAmount += item.unitPriceAmountSnapshot * quantity;
+          group.bookCount += quantity;
+          group.orderIds.add(order._id);
+          group.rows.push({ item, order, quantity, batchStage: undefined });
+          groups.set(key, group);
+        }
+      }
+    }
+    const invoices = await ctx.db
+      .query("invoices")
+      .withIndex("by_customer_user_id", (index) => index.eq("customerUserId", user._id))
+      .take(MAX_CUSTOMER_BOOK_INVOICES);
+    const pendingPayment = invoices
+      .filter((invoice) => invoice.status === "issued")
+      .reduce((total, invoice) => total + invoice.outstandingAmount, 0);
+    const deposit = await findDepositAccount(ctx, user._id);
+    const batches = await Promise.all(
+      [...groups.values()]
+        .sort((left, right) =>
+          (left.batch?.name || "Belum masuk Batch").localeCompare(right.batch?.name || "Belum masuk Batch"),
+        )
+        .map(async (group) => ({
+          batchId: group.batch?._id ?? null,
+          name: group.batch?.name || "Belum masuk Batch",
+          referenceCode: group.batch?.referenceCode ?? null,
+          poDeadlineAt: group.batch?.poDeadlineAt ?? null,
+          etaCargoMonth: group.batch?.etaCargoMonth ?? null,
+          currentShipmentStage: group.batch?.currentShipmentStage ?? null,
+          totalAmount: group.totalAmount,
+          bookCount: group.bookCount,
+          orderCount: group.orderIds.size,
+          items: await Promise.all(
+            group.rows.map((row) =>
+              customerBatchItemView(
+                ctx,
+                `${String(row.item._id)}:${String(group.batch?._id || "unassigned")}`,
+                row.quantity,
+                row.item,
+                row.order,
+                row.batchStage,
+              ),
+            ),
+          ),
+        })),
+    );
+    return {
+      startAt: new Date(args.startAt).toISOString(),
+      endAt: new Date(args.endAt).toISOString(),
+      totalSpending,
+      pendingPayment,
+      totalDeposit: deposit?.availableAmount ?? 0,
+      batches,
+    };
   },
 });
 

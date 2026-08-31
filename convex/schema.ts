@@ -148,7 +148,8 @@ export default defineSchema({
     .index("by_submitted_at", ["submittedAt"])
     .index("by_normalized_email", ["normalizedEmail"])
     .index("by_normalized_contact", ["normalizedContact"])
-    .index("by_applicant_clerk_user_id", ["applicantClerkUserId"]),
+    .index("by_applicant_clerk_user_id", ["applicantClerkUserId"])
+    .index("by_admitted_app_user_id", ["admittedAppUserId"]),
 
   customerAddresses: defineTable({
     userId: v.id("appUsers"),
@@ -638,6 +639,7 @@ export default defineSchema({
   invoices: defineTable({
     orderId: v.id("orders"),
     customerUserId: v.id("appUsers"),
+    batchId: v.optional(v.id("batches")),
     invoiceNumber: v.string(),
     status: invoiceStatusValidator,
     currency: v.literal("IDR"),
@@ -665,6 +667,7 @@ export default defineSchema({
     .index("by_customer_user_id", ["customerUserId"])
     .index("by_status", ["status"])
     .index("by_invoice_number", ["invoiceNumber"])
+    .index("by_customer_user_id_and_batch_id", ["customerUserId", "batchId"])
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_created_at", ["createdAt"]),
 

@@ -1,5 +1,50 @@
 # BFG SOURCE OF TRUTH
 
+## Final client contract — My Books 2.0, Customer × Batch invoice pool, Admin users, and Book hard delete — 2026-08-31
+
+Status: `IMPLEMENTED_LOCALLY; DELIVERY_AND_AUTHENTICATED_UAT_PENDING`
+
+This is the current explicit product decision for this ticket and supersedes
+only the older Order-centric Customer Books projection, invoice-per-Order
+issuance assumption, and Owner-only normal user-management assumption.
+
+- Customer Buku Saya is a one-year-default, custom-date-range projection of
+  committed order-item selling-price snapshots, grouped by `customerUserId ×
+  batchId`. Total Spending is payment-independent; Pending Payment is the
+  current outstanding balance of issued invoices; Total Deposit is the
+  canonical available deposit balance. Unassigned submitted items remain in a
+  visible `Belum masuk Batch` exception group.
+- Customer Batch detail reads only the authenticated customer's assignments in
+  the selected Batch, shows every assigned item with historical snapshots,
+  cover when still available, quantity, price, status, and case-insensitive
+  title search. Admin Orders remain separate historical submissions.
+- New batch-assigned invoice contexts are `customerUserId × batchId`: Admin
+  issues them explicitly, repeated issue is idempotent, and at most one active
+  non-void invoice exists for that pair. Existing issued historical invoices
+  are not blindly migrated. Deposit percentage input is human `0–100%`; the
+  canonical stored value remains `0–10000` basis points.
+- Customer cancellation UI and Customer cancellation mutation access are
+  disabled. Admin/internal exception correction remains the canonical path.
+- Assisted Customer lookup searches normalized full/partial/name-fragment
+  text and phone digits, with privacy-conscious last-four display.
+- Active Admins can list users, change active Customer/Admin roles, suspend,
+  reactivate, and remove ordinary members. Owner targets, ownership transfer,
+  invitations, and revocations retain their stronger Owner boundary. Remove
+  preserves Orders, Invoices, Payments, Deposits, Batch history, and Audit.
+- Admin hard delete removes the active Book Master and active Catalog/Ready
+  Stock references after deterministic cleanup. Immutable historical
+  OrderItem/Invoice/Payment/Batch/Audit data survives through snapshots;
+  active unissued test items may be reconciled before deletion. Customer access
+  is denied and repeated deletion returns not-found safely.
+
+Code owners are `convex/batchTracking.ts` for Customer Books/Batch projection,
+`convex/invoices.ts` for Customer × Batch invoice identity and issuance,
+`convex/lib/invoiceCalculations.ts` plus `src/lib/percentage.ts` for monetary
+percentage semantics, `convex/lib/auth.ts`, `convex/users.ts`, and
+`convex/joinRequests.ts` for Admin user authority, and `convex/books.ts` for
+Book deletion. Existing Order, Batch lifecycle, Finance ledger, payment,
+refund, Catalog access, media, and shipment authorities remain in place.
+
 ## 750 public performance + Admin System RBAC follow-up — 2026-08-31
 
 Status: `NOT_CLOSED`

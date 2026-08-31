@@ -339,6 +339,55 @@ export const approve = mutation({
   },
 });
 
+async function removeMemberRequest(
+  ctx: MutationCtx,
+  actor: Doc<"appUsers">,
+  request: Doc<"joinRequests">,
+  removalReason: string | undefined,
+) {
+  if (request.removedAt) return requestView(ctx, request);
+  requireStatus(request, "approved");
+  const target = await linkedAppUser(ctx, request);
+  if (target?.role === "owner" || target?._id === actor._id) fail("MEMBERSHIP_REMOVAL_NOT_ALLOWED");
+  const now = Date.now();
+  if (target) {
+    await ctx.db.patch(target._id, {
+      status: "removed",
+      removedAt: target.removedAt ?? now,
+      removedByUserId: target.removedByUserId ?? actor._id,
+      removalReason: target.removalReason ?? removalReason,
+      suspendedAt: undefined,
+      suspendedByUserId: undefined,
+      updatedAt: now,
+    });
+  }
+  await ctx.db.patch(request._id, {
+    removedAt: now,
+    removedByUserId: actor._id,
+    removalReason,
+    updatedAt: now,
+  });
+  await recordAudit(
+    ctx,
+    actor._id,
+    "membership.removed",
+    target ? "appUser" : "join_request",
+    target?._id ?? request._id,
+    {
+      email: maskedEmail(request.normalizedEmail),
+      joinRequestId: String(request._id),
+      ...(target ? { appUserId: String(target._id) } : {}),
+      ...(removalReason ? { reason: removalReason } : {}),
+    },
+  );
+  if (request.invitationStatus === "pending" || request.invitationStatus === "sent") {
+    await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.revoke, { joinRequestId: request._id });
+  }
+  const updated = await ctx.db.get(request._id);
+  if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
+  return requestView(ctx, updated);
+}
+
 export const removeMember = mutation({
   args: {
     joinRequestId: v.id("joinRequests"),
@@ -347,48 +396,44 @@ export const removeMember = mutation({
   handler: async (ctx, args) => {
     const actor = await requirePermission(ctx, "customers.manage");
     const request = await getRequest(ctx, args.joinRequestId);
-    if (request.removedAt) return requestView(ctx, request);
-    requireStatus(request, "approved");
-    const removalReason = optionalText(args.removalReason, "removal reason", 500);
-    const target = await linkedAppUser(ctx, request);
-    if (target && target.role !== "customer") fail("MEMBERSHIP_REMOVAL_NOT_ALLOWED");
-    const now = Date.now();
-    if (target) {
-      await ctx.db.patch(target._id, {
-        status: "removed",
-        removedAt: target.removedAt ?? now,
-        removedByUserId: target.removedByUserId ?? actor._id,
-        removalReason: target.removalReason ?? removalReason,
-        suspendedAt: undefined,
-        suspendedByUserId: undefined,
-        updatedAt: now,
-      });
+    return removeMemberRequest(ctx, actor, request, optionalText(args.removalReason, "removal reason", 500));
+  },
+});
+
+export const removeMemberForUser = mutation({
+  args: {
+    userId: v.id("appUsers"),
+    removalReason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requirePermission(ctx, "customers.manage");
+    const target = await ctx.db.get(args.userId);
+    if (!target) fail("USER_NOT_FOUND");
+    if (target.role === "owner" || target._id === actor._id) fail("MEMBERSHIP_REMOVAL_NOT_ALLOWED");
+    const request = await ctx.db
+      .query("joinRequests")
+      .withIndex("by_admitted_app_user_id", (index) => index.eq("admittedAppUserId", target._id))
+      .order("desc")
+      .first();
+    if (request) {
+      return removeMemberRequest(ctx, actor, request, optionalText(args.removalReason, "removal reason", 500));
     }
-    await ctx.db.patch(request._id, {
+    if (target.status === "removed") return { appUserId: target._id, status: target.status, removed: false as const };
+    const now = Date.now();
+    await ctx.db.patch(target._id, {
+      status: "removed",
       removedAt: now,
       removedByUserId: actor._id,
-      removalReason,
+      removalReason: optionalText(args.removalReason, "removal reason", 500),
+      suspendedAt: undefined,
+      suspendedByUserId: undefined,
       updatedAt: now,
     });
-    await recordAudit(
-      ctx,
-      actor._id,
-      "membership.removed",
-      target ? "appUser" : "join_request",
-      target?._id ?? request._id,
-      {
-        email: maskedEmail(request.normalizedEmail),
-        joinRequestId: String(request._id),
-        ...(target ? { appUserId: String(target._id) } : {}),
-        ...(removalReason ? { reason: removalReason } : {}),
-      },
-    );
-    if (request.invitationStatus === "pending" || request.invitationStatus === "sent") {
-      await ctx.scheduler.runAfter(0, internal.joinRequestInvitations.revoke, { joinRequestId: request._id });
-    }
-    const updated = await ctx.db.get(request._id);
-    if (!updated) fail("JOIN_REQUEST_NOT_FOUND");
-    return requestView(ctx, updated);
+    await recordAudit(ctx, actor._id, "membership.removed", "appUser", target._id, {
+      appUserId: String(target._id),
+      ...(args.removalReason ? { reason: args.removalReason.trim() } : {}),
+    });
+    return { appUserId: target._id, status: "removed" as const, removed: true as const };
   },
 });
 

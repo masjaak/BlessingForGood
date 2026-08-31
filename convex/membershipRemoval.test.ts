@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
-  ADMIN_SUBJECT,
   CUSTOMER_SUBJECT,
   configureTestEnvironment,
   setupUsers,
@@ -230,18 +229,29 @@ describe("BFG membership removal lifecycle", () => {
     expect(await t.run(async (ctx) => ctx.db.get(current.appUserId))).toMatchObject({ status: "removed" });
   });
 
-  it("keeps active memberships and privileged accounts from using the removal flow", async () => {
+  it("lets an active Admin remove another Admin while protecting self and Owner", async () => {
     const t = testConvex();
-    const { owner, admin } = await setupUsers(t);
+    const { owner, admin, customer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
     const adminUser = await admin.query(api.users.current, {});
-    if (!adminUser) throw new Error("admin fixture missing");
-    const request = await seedApprovedMembership(t, adminUser.appUserId, "admin-target@example.com", ADMIN_SUBJECT);
-    await expect(admin.mutation(api.joinRequests.removeMember, { joinRequestId: request })).rejects.toThrow(
+    const ownerUser = await owner.query(api.users.current, {});
+    if (!customerUser || !adminUser || !ownerUser) throw new Error("user fixture missing");
+    await owner.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "admin" });
+    const request = await seedApprovedMembership(
+      t,
+      customerUser.appUserId,
+      "admin-target@example.com",
+      CUSTOMER_SUBJECT,
+    );
+    await expect(admin.mutation(api.joinRequests.removeMember, { joinRequestId: request })).resolves.toMatchObject({
+      admissionStatus: "removed",
+    });
+    expect(await customer.query(api.users.current, {})).toMatchObject({ status: "removed", role: "admin" });
+    await expect(admin.mutation(api.joinRequests.removeMemberForUser, { userId: adminUser.appUserId })).rejects.toThrow(
       "MEMBERSHIP_REMOVAL_NOT_ALLOWED",
     );
-    expect(await admin.query(api.users.current, {})).toMatchObject({ status: "active", role: "admin" });
-    expect(await owner.query(api.joinRequests.listForAdmin, { status: "approved" })).toEqual(
-      expect.arrayContaining([expect.objectContaining({ joinRequestId: request, admissionStatus: "pending" })]),
+    await expect(admin.mutation(api.joinRequests.removeMemberForUser, { userId: ownerUser.appUserId })).rejects.toThrow(
+      "MEMBERSHIP_REMOVAL_NOT_ALLOWED",
     );
   });
 

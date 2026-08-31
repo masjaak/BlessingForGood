@@ -22,6 +22,23 @@ describe("Admin invoice issue entry", () => {
     expect(screen.getByRole("status").textContent).toContain("Invoice diterbitkan.");
   });
 
+  it("keeps percentage entry human-scaled while passing the value to operations", async () => {
+    const createInvoice = vi.fn().mockResolvedValue({ invoiceId: "invoice-1" });
+    const issueInvoice = vi.fn().mockResolvedValue({ invoiceId: "invoice-1", status: "issued" });
+    vi.mocked(useOperations).mockReturnValue({ createInvoice, issueInvoice } as never);
+
+    render(<PersistentRequirementForm orderId="order-1" />);
+    const requirementSelect = screen.getByRole("combobox");
+    fireEvent.keyDown(requirementSelect, { key: "ArrowDown" });
+    fireEvent.keyDown(requirementSelect, { key: "ArrowDown" });
+    fireEvent.keyDown(requirementSelect, { key: "ArrowDown" });
+    fireEvent.keyDown(requirementSelect, { key: "Enter" });
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan draf" }));
+
+    await waitFor(() => expect(createInvoice).toHaveBeenCalledWith("order-1", "percentage", 25));
+  });
+
   it("fills the remaining allocation when deposit availability arrives after the form mounts", async () => {
     const allocateDeposit = vi.fn().mockResolvedValue({});
     const { rerender } = render(
