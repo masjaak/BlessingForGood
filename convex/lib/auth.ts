@@ -64,18 +64,14 @@ const adminPermissions = new Set<Permission>([
   "refunds.manage",
   "customers.read",
   "customers.manage",
+  "users.read",
+  "users.suspend",
+  "settings.manage",
   "content.manage",
   "audit.read",
 ]);
 
-const allPermissions = new Set<Permission>([
-  ...adminPermissions,
-  "users.read",
-  "users.manage_roles",
-  "users.suspend",
-  "settings.manage",
-  "audit.read",
-]);
+const allPermissions = new Set<Permission>([...adminPermissions, "users.manage_roles"]);
 
 export async function requireIdentity(ctx: AuthCtx): Promise<UserIdentity> {
   const identity = await ctx.auth.getUserIdentity();

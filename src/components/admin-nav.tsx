@@ -212,9 +212,9 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
     void markReadByContext({ destination: pathname }).catch(() => undefined);
   }, [canReadAdminNav, markReadByContext, pathname, product?.authState]);
   const systemLinks: AdminNavLink[] = [
-    { href: "/admin/users", label: "Pengguna", icon: "users", requiredRole: "owner" },
+    { href: "/admin/users", label: "Pengguna", icon: "users", requiredRole: "admin" },
     { href: "/admin/audit", label: "Log aktivitas", icon: "audit", requiredRole: "admin" },
-    { href: "/admin/settings", label: "Pengaturan", icon: "settings", requiredRole: "owner" },
+    { href: "/admin/settings", label: "Pengaturan", icon: "settings", requiredRole: "admin" },
   ];
   const visibleSystemLinks = systemLinks.filter(
     (link) => preview || roleCanAccess(sessionRole || null, link.requiredRole || "admin"),

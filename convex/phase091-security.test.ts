@@ -128,15 +128,21 @@ describe("Phase 09.1 adversarial authorization", () => {
     await expect(customer.mutation(api.users.inviteStaff, { email: "attacker@example.com" })).rejects.toThrow(
       "PERMISSION_DENIED",
     );
+    await expect(admin.query(api.users.list, { paginationOpts: { numItems: 10, cursor: null } })).resolves.toBeDefined();
+    await expect(admin.query(api.settings.getForAdmin, {})).resolves.toBeDefined();
     await expect(
       admin.mutation(api.users.updateRole, { userId: customerUser.appUserId, role: "admin" }),
     ).rejects.toThrow("PERMISSION_DENIED");
-    await expect(admin.mutation(api.users.suspend, { userId: customerUser.appUserId })).rejects.toThrow(
-      "PERMISSION_DENIED",
-    );
     await expect(admin.mutation(api.users.inviteStaff, { email: "admin-bypass@example.com" })).rejects.toThrow(
       "PERMISSION_DENIED",
     );
+    const ownerUser = await owner.query(api.users.current, {});
+    if (!ownerUser) throw new Error("owner fixture missing");
+    await expect(admin.mutation(api.users.updateRole, { userId: ownerUser.appUserId, role: "admin" })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    await expect(admin.mutation(api.users.suspend, { userId: ownerUser.appUserId })).rejects.toThrow("OWNER_PROTECTED");
+    await expect(admin.mutation(api.users.suspend, { userId: adminUser.appUserId })).rejects.toThrow("SELF_SUSPENSION");
 
     await owner.mutation(api.users.suspend, { userId: customerUser.appUserId });
     await expect(

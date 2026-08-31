@@ -194,9 +194,9 @@ export function adminConfig(pathname: string): SkeletonConfig {
   if (pathname === "/admin/users") {
     return {
       kind: "settings",
-      eyebrow: "Keamanan Owner",
+      eyebrow: "Keamanan Admin",
       title: "Kelola pengguna BFG",
-      description: "Perubahan role dan penangguhan ditegakkan oleh Convex.",
+      description: "Status operasional tersedia untuk Admin; perubahan role dan undangan staf tetap dilindungi Owner.",
       variant: "users",
     };
   }

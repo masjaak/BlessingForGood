@@ -15,7 +15,7 @@ function SettingsEditor() {
   const [pending, setPending] = useState(false);
   return (
     <AdminOperationalPage
-      eyebrow="Kontrol Owner"
+      eyebrow="Kontrol operasional"
       title="Pengaturan"
       description="Instruksi penting untuk toko, kontak, dan pembayaran. Ini tidak mengaktifkan otomasi WhatsApp API atau gateway pembayaran."
     >
@@ -110,7 +110,7 @@ function SettingsEditor() {
 export default function AdminSettingsPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="owner">
+      <ProductAccessGuard requiredRole="admin">
         <SettingsEditor />
       </ProductAccessGuard>
     </SiteShell>

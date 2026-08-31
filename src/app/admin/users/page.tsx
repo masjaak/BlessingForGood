@@ -9,6 +9,8 @@ import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { useProduct } from "@/domain/prototype/store";
+import { roleCanAccess } from "@/domain/prototype/session";
 
 const roleLabels = { owner: "Pemilik", admin: "Admin", customer: "Pelanggan" } as const;
 const userStatusLabels = {
@@ -19,6 +21,8 @@ const userStatusLabels = {
 } as const;
 
 function UserManagement() {
+  const { sessionRole } = useProduct();
+  const canManageRoles = roleCanAccess(sessionRole, "owner");
   const [role, setRole] = useState<"owner" | "admin" | "customer" | undefined>();
   const [status, setStatus] = useState<"active" | "suspended" | "removed" | undefined>();
   const users = useQuery(api.users.list, { role, status, paginationOpts: { numItems: 100, cursor: null } });
@@ -48,43 +52,49 @@ function UserManagement() {
   return (
     <div className="page admin-page">
       <PageHeader
-        eyebrow="Keamanan Owner"
+        eyebrow="Keamanan Admin"
         title="Kelola pengguna BFG"
-        description="Perubahan role dan penangguhan ditegakkan oleh Convex."
+        description="Admin mengelola status operasional; perubahan role dan undangan staf tetap dilindungi Owner."
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content content-stack">
           <Card>
             <span className="card-kicker">Penyiapan Admin</span>
-            <h2>Praotorisasi email staf</h2>
-            <p className="subtle">
-              Bagikan link masuk BFG secara manual. Saat email yang sama masuk lewat Clerk, role Admin diklaim otomatis;
-              tidak ada password atau token yang disimpan BFG.
-            </p>
-            <form
-              className="form-actions"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void run(
-                  inviteStaff({ email: staffEmail }).then(() => setStaffEmail("")),
-                  "invite",
-                );
-              }}
-            >
-              <Field label="Email Admin">
-                <input
-                  className="input"
-                  type="email"
-                  value={staffEmail}
-                  onChange={(event) => setStaffEmail(event.target.value)}
-                  required
-                />
-              </Field>
-              <Button loading={pendingAction === "invite"} loadingLabel="Membuat…">
-                Buat undangan
-              </Button>
-            </form>
+            <h2>Undangan staf</h2>
+            {canManageRoles ? (
+              <>
+                <p className="subtle">
+                  Bagikan link masuk BFG secara manual. Saat email yang sama masuk lewat Clerk, role Admin diklaim
+                  otomatis; tidak ada password atau token yang disimpan BFG.
+                </p>
+                <form
+                  className="form-actions"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void run(
+                      inviteStaff({ email: staffEmail }).then(() => setStaffEmail("")),
+                      "invite",
+                    );
+                  }}
+                >
+                  <Field label="Email Admin">
+                    <input
+                      className="input"
+                      type="email"
+                      value={staffEmail}
+                      onChange={(event) => setStaffEmail(event.target.value)}
+                      required
+                    />
+                  </Field>
+                  <Button loading={pendingAction === "invite"} loadingLabel="Membuat…">
+                    Buat undangan
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <p className="subtle">Undangan staf dikelola Owner. Admin tetap dapat melihat status undangan.</p>
+            )}
             {invitations?.map((invitation) => (
               <div className="summary-line" key={invitation.invitationId}>
                 <span>
@@ -94,7 +104,7 @@ function UserManagement() {
                   <span className="status-badge">
                     {userStatusLabels[invitation.status as keyof typeof userStatusLabels] || invitation.status}
                   </span>
-                  {invitation.status === "pending" ? (
+                  {canManageRoles && invitation.status === "pending" ? (
                     <Button
                       variant="danger"
                       onClick={() =>
@@ -158,22 +168,24 @@ function UserManagement() {
               </div>
               {user.role !== "owner" ? (
                 <div className="form-actions">
-                  <Button
-                    variant="secondary"
-                    onClick={() =>
-                      void run(
-                        updateRole({
-                          userId: user.appUserId as Id<"appUsers">,
-                          role: user.role === "admin" ? "customer" : "admin",
-                        }),
-                        `role:${user.appUserId}`,
-                      )
-                    }
-                    loading={pendingAction === `role:${user.appUserId}`}
-                    loadingLabel="Memperbarui…"
-                  >
-                    {user.role === "admin" ? "Turunkan ke pelanggan" : "Jadikan Admin"}
-                  </Button>
+                  {canManageRoles ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        void run(
+                          updateRole({
+                            userId: user.appUserId as Id<"appUsers">,
+                            role: user.role === "admin" ? "customer" : "admin",
+                          }),
+                          `role:${user.appUserId}`,
+                        )
+                      }
+                      loading={pendingAction === `role:${user.appUserId}`}
+                      loadingLabel="Memperbarui…"
+                    >
+                      {user.role === "admin" ? "Turunkan ke pelanggan" : "Jadikan Admin"}
+                    </Button>
+                  ) : null}
                   {user.status === "active" ? (
                     <Button
                       variant="danger"
@@ -218,7 +230,7 @@ function UserManagement() {
 export default function AdminUsersPage() {
   return (
     <SiteShell>
-      <ProductAccessGuard requiredRole="owner">
+      <ProductAccessGuard requiredRole="admin">
         <UserManagement />
       </ProductAccessGuard>
     </SiteShell>

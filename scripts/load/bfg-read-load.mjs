@@ -32,6 +32,24 @@ function percentile(values, ratio) {
   return values[Math.min(values.length - 1, Math.ceil(values.length * ratio) - 1)];
 }
 
+function routeSummary(route, rows, elapsedMs) {
+  const latencies = rows.map((result) => result.latencyMs).sort((a, b) => a - b);
+  const errors = rows.filter((result) => !result.ok).length;
+  return {
+    route,
+    requests: rows.length,
+    rps: Number((rows.length / (Math.max(1, elapsedMs) / 1000)).toFixed(2)),
+    p50Ms: Math.round(percentile(latencies, 0.5)),
+    p95Ms: Math.round(percentile(latencies, 0.95)),
+    p99Ms: Math.round(percentile(latencies, 0.99)),
+    fourXX: rows.filter((result) => result.status >= 400 && result.status < 500).length,
+    throttles429: rows.filter((result) => result.status === 429).length,
+    errors5xx: rows.filter((result) => result.status >= 500).length,
+    timeouts: rows.filter((result) => result.timeout).length,
+    errorPercent: Number(((errors / Math.max(1, rows.length)) * 100).toFixed(2)),
+  };
+}
+
 function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -110,6 +128,10 @@ async function runLevel(baseUrl, profile, routes, users, durationMs, intervalMs,
         status,
         rows.length,
       ]),
+    ),
+    // ponytail: per-route filters are bounded by this five-route public profile; use a single-pass map if it grows.
+    routes: Object.fromEntries(
+      routes.map((route) => [route, routeSummary(route, results.filter((result) => result.route === route), elapsedMs)]),
     ),
     queue: "not_observable_from_edge_harness",
     stopReasons,

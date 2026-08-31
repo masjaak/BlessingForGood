@@ -129,7 +129,7 @@ function AdminOverview() {
               <LinkButton href="/admin/invoices" variant="secondary">
                 Invoice & deposit
               </LinkButton>
-              {roleCanAccess(sessionRole, "owner") ? (
+              {roleCanAccess(sessionRole, "admin") ? (
                 <LinkButton href="/admin/users" variant="secondary">
                   Pengguna
                 </LinkButton>

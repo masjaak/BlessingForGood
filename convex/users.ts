@@ -451,7 +451,7 @@ export const inviteStaff = mutation({
 export const listStaffInvitations = query({
   args: {},
   handler: async (ctx) => {
-    await requireOwner(ctx);
+    await requirePermission(ctx, "users.read");
     const rows = await ctx.db.query("staffInvitations").take(100);
     return rows
       .sort((a, b) => b.createdAt - a.createdAt)
@@ -519,7 +519,7 @@ export const list = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    await requireOwner(ctx);
+    await requirePermission(ctx, "users.read");
     if (args.role && args.status) {
       const page = await ctx.db
         .query("appUsers")
@@ -584,7 +584,7 @@ export const updateRole = mutation({
 export const suspend = mutation({
   args: { userId: v.id("appUsers") },
   handler: async (ctx, args) => {
-    const actor = await requireOwner(ctx);
+    const actor = await requirePermission(ctx, "users.suspend");
     const target = await targetUser(ctx, args.userId);
     if (target._id === actor._id) fail("SELF_SUSPENSION");
     if (target.role === "owner") fail("OWNER_PROTECTED");
@@ -607,7 +607,7 @@ export const suspend = mutation({
 export const reactivate = mutation({
   args: { userId: v.id("appUsers") },
   handler: async (ctx, args) => {
-    const actor = await requireOwner(ctx);
+    const actor = await requirePermission(ctx, "users.suspend");
     const target = await targetUser(ctx, args.userId);
     if (target.role === "owner") fail("OWNER_PROTECTED");
     if (target.status === "removed") fail("USER_REMOVED");

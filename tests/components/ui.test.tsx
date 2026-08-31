@@ -225,7 +225,7 @@ describe("public UI foundation", () => {
     expect(screen.queryByText("0")).toBeNull();
   });
 
-  it("shows the System section to active Admin roles without exposing owner links", () => {
+  it("shows the full System section to active Admin roles", () => {
     vi.mocked(useQuery).mockReturnValue(0 as never);
     render(
       <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
@@ -235,8 +235,8 @@ describe("public UI foundation", () => {
 
     expect(screen.getByText("System")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Log aktivitas" })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Pengguna" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Pengaturan" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Pengguna" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Pengaturan" })).toBeTruthy();
   });
 
   it("keeps one mounted sidebar when Admin routes render through the persistent shell", () => {

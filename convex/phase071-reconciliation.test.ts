@@ -472,7 +472,7 @@ describe("Phase 07.1 reconciliation", () => {
     ).rejects.toThrow("PAYMENT_CONFIRMATION_ACCESS_DENIED");
   });
 
-  it("publishes audited community content and keeps critical settings Owner-only", async () => {
+  it("publishes audited community content and keeps operational settings Admin-accessible", async () => {
     const t = testConvex();
     const { owner, admin, customer } = await setupUsers(t);
     await admin.mutation(api.contentBlocks.upsert, {
@@ -489,19 +489,22 @@ describe("Phase 07.1 reconciliation", () => {
     await expect(
       customer.mutation(api.contentBlocks.upsert, { key: "community", eyebrow: "No", title: "No", body: "No" }),
     ).rejects.toThrow("PERMISSION_DENIED");
-    await owner.mutation(api.settings.update, {
+    await admin.mutation(api.settings.update, {
       storeName: "Blessing For Goods",
       whatsappNumber: "+628111111111",
       paymentInstructions: "Transfer only after an invoice is issued.",
     });
+    expect(await admin.query(api.settings.getForAdmin, {})).toMatchObject({ storeName: "Blessing For Goods" });
     expect(await owner.query(api.settings.getForAdmin, {})).toMatchObject({ storeName: "Blessing For Goods" });
     expect(await customer.query(api.settings.getForCustomer, {})).toMatchObject({
       paymentInstructions: "Transfer only after an invoice is issued.",
     });
-    await expect(admin.query(api.settings.getForAdmin, {})).rejects.toThrow("PERMISSION_DENIED");
+    await expect(admin.query(api.settings.getForAdmin, {})).resolves.toMatchObject({
+      paymentInstructions: "Transfer only after an invoice is issued.",
+    });
   });
 
-  it("lets the Owner pre-authorize a staff email and claims the Admin role on sign-in", async () => {
+  it("keeps staff authority Owner-only while Admins can read invitations", async () => {
     const t = testConvex();
     const { owner, admin } = await setupUsers(t);
     const invitation = await owner.mutation(api.users.inviteStaff, { email: "new-admin@example.com" });
@@ -515,7 +518,7 @@ describe("Phase 07.1 reconciliation", () => {
       name: "New Admin",
     });
     expect(await invited.mutation(api.users.ensureCurrentUser, {})).toMatchObject({ role: "admin", status: "active" });
-    expect(await owner.query(api.users.listStaffInvitations, {})).toEqual([
+    expect(await admin.query(api.users.listStaffInvitations, {})).toEqual([
       expect.objectContaining({
         invitationId: invitation.invitationId,
         status: "claimed",

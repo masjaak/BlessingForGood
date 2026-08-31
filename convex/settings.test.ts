@@ -7,19 +7,11 @@ import { configureTestEnvironment, setupUsers, testConvex } from "../tests/conve
 describe("BFG bounded operational settings", () => {
   beforeEach(configureTestEnvironment);
 
-  it("persists only owner-managed operational fields and exposes safe customer values", async () => {
+  it("lets active Admins manage bounded operational fields and exposes safe customer values", async () => {
     const t = testConvex();
     const { owner, admin, customer } = await setupUsers(t);
 
-    await expect(
-      admin.mutation(api.settings.update, {
-        storeName: "Denied",
-        whatsappNumber: "0812",
-        paymentInstructions: "Denied",
-      }),
-    ).rejects.toThrow("PERMISSION_DENIED");
-
-    await owner.mutation(api.settings.update, {
+    await admin.mutation(api.settings.update, {
       storeName: "BFG Store",
       whatsappNumber: "0812",
       paymentInstructions: "Transfer sebelum batas waktu.",
@@ -30,6 +22,8 @@ describe("BFG bounded operational settings", () => {
       bankAccountName: "Blessing For Goods",
     });
 
+    expect(await admin.query(api.settings.getForAdmin, {})).toMatchObject({ storeName: "BFG Store" });
+    expect(await owner.query(api.settings.getForAdmin, {})).toMatchObject({ storeName: "BFG Store" });
     expect(await customer.query(api.settings.getForCustomer, {})).toEqual({
       storeName: "BFG Store",
       whatsappNumber: "0812",
