@@ -129,4 +129,77 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
     expect(account.account?.availableAmount).toBeGreaterThanOrEqual(0);
     expect(account.account?.reservedAmount).toBeLessThanOrEqual(100000);
   });
+
+  it("keeps concurrent preorder writes and automatic Batch assignments aligned", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Preorder Concurrency", "0914", "preorder-concurrency-code");
+    const batch = await admin.mutation(api.batches.create, { name: "Preorder Concurrency Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+
+    const customers = [];
+    const customerUserIds = new Set<string>();
+    for (let index = 0; index < 25; index += 1) {
+      const subject = `phase091-preorder-${index}`;
+      await seedApprovedJoinRequest(t, `${subject}@example.com`);
+      const customer = asUser(t, subject);
+      await customer.mutation(api.users.ensureCurrentUser, {});
+      await customer.mutation(api.catalogAccess.unlock, { accessCode: "preorder-concurrency-code" });
+      const user = await customer.query(api.users.current, {});
+      if (!user) throw new Error("preorder concurrency customer missing");
+      customerUserIds.add(String(user.appUserId));
+      customers.push(customer);
+    }
+
+    const attempts = await Promise.allSettled(
+      customers.map((customer) =>
+        customer.mutation(api.orders.submit, {
+          catalogId: catalog.catalogId,
+          customerName: "Concurrent Customer",
+          items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+        }),
+      ),
+    );
+    expect(attempts.filter((attempt) => attempt.status === "fulfilled")).toHaveLength(25);
+
+    const snapshot = await t.run(async (ctx) => ({
+      orders: await ctx.db.query("orders").collect(),
+      items: await ctx.db.query("orderItems").collect(),
+      assignments: await ctx.db.query("orderItemBatchAssignments").collect(),
+      invoices: await ctx.db.query("invoices").collect(),
+      catalogItems: await ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog", (index) => index.eq("catalogId", catalog.catalogId))
+        .collect(),
+    }));
+    expect(snapshot.orders).toHaveLength(25);
+    expect(snapshot.items).toHaveLength(25);
+    expect(snapshot.assignments).toHaveLength(25);
+    expect(snapshot.invoices).toEqual([]);
+    expect(snapshot.catalogItems).toHaveLength(1);
+    expect(new Set(snapshot.orders.map((order) => String(order.orderCode))).size).toBe(25);
+    expect(new Set(snapshot.orders.map((order) => String(order.customerUserId)))).toEqual(customerUserIds);
+    expect(
+      snapshot.orders.every(
+        (order) =>
+          order.catalogId === catalog.catalogId &&
+          customerUserIds.has(String(order.customerUserId)) &&
+          order.status === "submitted",
+      ),
+    ).toBe(true);
+    expect(new Set(snapshot.items.map((item) => String(item.orderId)))).toEqual(
+      new Set(snapshot.orders.map((order) => String(order._id))),
+    );
+    const catalogItemIds = new Set(snapshot.catalogItems.map((item) => String(item._id)));
+    expect(
+      snapshot.items.every(
+        (item) =>
+          item.catalogItemId !== undefined && catalogItemIds.has(String(item.catalogItemId)) && item.quantity === 1,
+      ),
+    ).toBe(true);
+    expect(new Set(snapshot.assignments.map((assignment) => String(assignment.orderItemId)))).toEqual(
+      new Set(snapshot.items.map((item) => String(item._id))),
+    );
+    expect(snapshot.assignments.every((assignment) => assignment.batchId === batch.batchId)).toBe(true);
+  }, 60000);
 });

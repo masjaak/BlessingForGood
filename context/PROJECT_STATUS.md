@@ -1,5 +1,22 @@
 # BFG Project Status
 
+## Concurrent load & capacity validation — 2026-08-31
+
+Status: `NOT_YET_PROVEN_FOR_1000_CONCURRENT_USERS`
+
+The safe public HTTP read profile was revalidated against canonical Production
+at 1/5/10/100/250/500 users. The 500-user stage reached 429.68 measured RPS
+with p95 1,143 ms, p99 1,233 ms, and 0% HTTP errors. The latest 750-user
+stage had 0×429, 0×5xx, and 0% request errors but p95 2,264 ms, so the harness
+stopped before 1,000. Maximum proven public read-heavy concurrency is 500; 1,000
+active authenticated users and the Close PO mix remain unproven.
+
+Protected Convex fixtures now cover 25 concurrent preorder writes: 25 orders,
+25 items, 25 unique references, and 25 correct single-Batch assignments, with
+no lost, duplicate, cross-Catalog, or ownership error. No Production write,
+application bottleneck fix, provider-plan change, or authenticated QA identity
+was introduced. See the canonical performance contract and load report.
+
 ## 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

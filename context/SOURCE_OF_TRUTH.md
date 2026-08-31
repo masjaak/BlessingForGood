@@ -1,5 +1,29 @@
 # BFG SOURCE OF TRUTH
 
+## Concurrent load & capacity validation — 2026-08-31
+
+- Capacity and data scale remain separate contracts. The 1,000+ Customer /
+  2,000+ order-item fixture does not prove 1,000 concurrent sessions.
+- The safe public HTTP profile was revalidated against canonical Production at
+  1/5/10/100/250/500 users. The latest 500 stage reached 429.68 measured RPS
+  with p95 1,143 ms, p99 1,233 ms, and 0% HTTP errors.
+- The latest 750 stage returned 1,508 HTTP 200 responses with 0×429, 0×5xx,
+  and 0% request errors, but p95 was 2,264 ms, so the harness stopped before 1,000.
+  Maximum proven public read-heavy concurrency is 500; 1,000 is not proven.
+- The protected Convex fixture suite adds 25 concurrent preorder submissions:
+  25 orders, 25 items, 25 unique references, and 25 single-Batch assignments,
+  with no lost/duplicate/cross-Catalog write. Invoice creation remains a later
+  Admin mutation and is not part of `orders.submit`.
+- No application bottleneck fix, provider-plan change, authenticated identity,
+  Production mutation, or Production business fixture was introduced. The
+  first observed bottleneck is the measured edge latency boundary at 750;
+  Vercel queue/function telemetry and the Convex deployment tier remain
+  unavailable to this local account.
+- Canonical evidence: [`BFG-SCALABILITY-CONTRACT.md`](performance/BFG-SCALABILITY-CONTRACT.md),
+  [`BFG-LOAD-TEST-REPORT.md`](performance/BFG-LOAD-TEST-REPORT.md),
+  `scripts/load/bfg-read-load.mjs`, and
+  `convex/phase091-concurrency.test.ts`.
+
 ## 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
 
 - Scale contract: the previous 100-Customer harness and 200-item Catalog-link

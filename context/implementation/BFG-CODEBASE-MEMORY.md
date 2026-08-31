@@ -1,5 +1,25 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — concurrent load & capacity validation — 2026-08-31
+
+- Capacity and data scale remain separate: the 1,000+ Customer / 2,000+
+  order-item fixture does not prove 1,000 concurrent sessions.
+- The safe public HTTP profile passed through 500 users at 429.68 measured RPS,
+  p95 1,143 ms, p99 1,233 ms, and 0% HTTP errors. At 750 users it returned
+  1,508 successful responses with 0×429 and 0×5xx, but p95 reached 2,264 ms;
+  the harness stopped before 1,000. The bounded proven ceiling is 500.
+- The 25-user protected Convex preorder fixture produced 25 orders, 25 items,
+  25 unique order references, and 25 correct single-Batch assignments. Invoice
+  creation is a later Admin mutation, not part of `orders.submit`.
+- No application optimization was justified: the first observed boundary is
+  edge request latency at 750, while Vercel telemetry and the Convex deployment
+  tier are unavailable to this account. Authenticated realtime, Close PO, and
+  Production writes remain unproven.
+- Evidence owners: `scripts/load/bfg-read-load.mjs`,
+  `convex/phase091-concurrency.test.ts`, and
+  `context/performance/BFG-SCALABILITY-CONTRACT.md` plus
+  `context/performance/BFG-LOAD-TEST-REPORT.md`.
+
 ## Post-diff memory — 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
 
 - Scale target is now 1,000+ Customers and potentially several thousand order

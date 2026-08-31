@@ -1,15 +1,16 @@
 # BFG SCALABILITY CONTRACT
 
 Status: `VALIDATED_TO_CAPACITY_500` for the measured Profile A public HTTP
-workload; 750 reached but failed the p95 target; reviewed 2026-08-22.
+workload; 750 reached and stopped on the p95 target; 1,000 remains unproven.
+Revalidated 2026-08-31.
 
 ## Current Platform
 
 | Platform | Actual evidence                                                                                              | Capacity interpretation                                                                                                                                                                             |
 | -------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel   | Project `blessing-for-good`, Production plan `hobby`, Fluid Compute metadata observed; default region `iad1` | Vercel documents tier-dependent function concurrency and execution/body limits. The account's live queue/function metrics were not available because the metrics query returned `payment_required`. |
-| Convex   | Production deployment `clean-eel-522`; Development `content-snake-214`                                       | Exact plan/performance tier and deployment usage limits are `BLOCKED_BY_ACCOUNT_ACCESS`; do not infer them from old reports.                                                                        |
-| Clerk    | Canonical identity/session provider                                                                          | Authentication provider capacity was not stress-tested or credential-stuffed.                                                                                                                       |
+| Vercel   | Project `blessing-for-good`, Production plan `hobby`, Fluid Compute metadata observed; default region `iad1` | Official docs list autoscaled Function concurrency up to 30,000 for Hobby/Pro, but the account's live queue/function metrics were unavailable because the metrics query returned `payment_required`; platform maximum is not BFG capacity evidence. |
+| Convex   | Production deployment `clean-eel-522`; Development `content-snake-214`                                       | Official deployment classes list 1,000 concurrent sessions on S16 and 10,000 on S256, with different function-execution limits; the BFG deployment class, usage limits, and current utilization are `BLOCKED_BY_ACCOUNT_ACCESS`. |
+| Clerk    | Canonical identity/session provider                                                                          | Official docs publish endpoint rate limits (Production Backend API 1,000 requests/10 seconds; Development 100/10 seconds), not a BFG session-concurrency guarantee. Authentication capacity was not stress-tested or credential-stuffed. |
 
 Current official references used for this contract:
 
@@ -18,6 +19,7 @@ Current official references used for this contract:
 - [Vercel plans](https://vercel.com/docs/plans)
 - [Convex production limits](https://docs.convex.dev/production/state/limits)
 - [Convex usage limits](https://docs.convex.dev/production/usage-limits)
+- [Clerk rate limits](https://clerk.com/docs/guides/how-clerk-works/system-limits)
 
 ## Capacity Target
 
@@ -30,9 +32,10 @@ latency/errors/queueing, and all stop criteria staying clear.
 
 | Profile                 | Workload                                                                                                    | Environment / status                                                                           |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| A — Read Heavy          | Public homepage/how-to-order/join/catalog/Ready Stock HTTP reads; safe, non-mutating                        | Production bounded edge test; passed through 500, stopped at 750 latency target                |
+| A — Read Heavy          | Public homepage/how-to-order/join/catalog/Ready Stock HTTP reads; safe, non-mutating                        | Production revalidation passed 1/5/10/100/250/500; 750 stopped on p95; 1,000 not launched       |
 | B — Authenticated Mixed | Customer dashboard, Buku Saya, invoices, activity, catalog access, profile reads, occasional safe mutations | Deterministic Convex fixtures and existing permission suites; no 1,000-identity Production run |
 | C — Operational Burst   | Order submission, catalog unlock, payment confirmation, Admin review patterns, bulk/import boundaries       | Development deterministic tests only; no unsafe Production write burst                         |
+| F — Close PO            | Read-heavy Customer pressure with a smaller authenticated order-write share; Admin 1–5 session overlay       | Not run: no authorized session or isolated Production fixture; public read pressure and deterministic writes are reported separately |
 
 ## Application Query Design
 
@@ -62,7 +65,7 @@ For the measured public HTTP profile:
 - p95 ≤ 2,000 ms;
 - p99 ≤ 5,000 ms;
 - 5xx = 0;
-- error rate < 5%;
+- error rate < 1%;
 - 429s only when an intentional limiter is exercised;
 - no unexpected authorization failure, data mutation, or financial
   consequence;
@@ -75,9 +78,9 @@ These are Phase 09.1 operational targets, not original functional PRD SLOs.
 Stop a ramp if any of the following occurs: unexpected 5xx spike, unexpected
 authorization failure, continuously growing queue, critical latency breach,
 service unavailability, unsafe cost/usage signal, Production error spike, or
-any unexpected state-changing mutation. The harness stops at 5xx or ≥5% error
-rate, and the operator also stops when the documented p95/p99 target is
-breached. The post-deployment 750 stop was triggered by p95 latency.
+any unexpected state-changing mutation. The harness stops at 5xx, ≥1% error
+rate, p95 >2,000 ms, or p99 >5,000 ms. The 2026-08-31 750 stop was triggered
+by p95 latency.
 
 ## Cost Guardrails
 
@@ -89,15 +92,16 @@ breached. The post-deployment 750 stop was triggered by p95 latency.
   do not use absence of metrics as evidence of absence of queueing.
 - Load runs are short, progressive, bounded, and abortable. The repeatable
   harness contains no credentials and sends only GET requests in Profile A.
+- The latest 2026-08-31 staged run passed 1/5/10/100/250/500; 500 reached
+  1,500 requests at measured 429.68 RPS with p95 1,143 ms and p99 1,233 ms.
 
 ## Observed Bottleneck
 
-The post-deployment public HTTP test passed 10, 50, 100, 300, and 500 users.
-At 750 it returned 1,396 HTTP 200 responses with 0 request errors, 0 5xx, and
-0 429, but p95 was 2.552 seconds and p99 was 2.702 seconds against the 2.000-
-and 5.000-second targets. The earlier pre-deployment run had connection
-failures, but the current evidence is a latency stop rather than an HTTP
-failure stop. Because Vercel function metrics were unavailable and Convex was
+The 2026-08-31 public revalidation passed 1/5/10/100/250/500 users.
+At 750 it returned 1,508 HTTP 200 responses with 0 request errors, 0 5xx, and
+0 429, but p95 was 2,264 ms and p99 was 2,416 ms against the 2,000-
+and 5,000-ms targets. Two earlier same-day repetitions also crossed or
+approached p95. Because Vercel function metrics were unavailable and Convex was
 not in the Profile A path, the exact edge/network/Vercel bottleneck cannot be
 isolated. Classification: `BOTTLENECK_AT_750 /
 PLATFORM_LIMIT_OBSERVABILITY_UNAVAILABLE`.
@@ -114,9 +118,10 @@ authenticated realtime test, not an application rewrite.
 
 ```text
 READ-HEAVY PUBLIC HTTP: VALIDATED_TO_CAPACITY_500
-750: REACHED / P95 LATENCY STOP
+750: REACHED / P95 LATENCY STOP (p95 2,264 ms; 0% HTTP errors)
 1,000: NOT VALIDATED
 AUTHENTICATED REALTIME: NOT VALIDATED
 WRITE-HEAVY PRODUCTION: NOT RUN BY SAFETY CONTRACT
 APPLICATION CORRECTNESS UNDER DETERMINISTIC CONTENTION: GREEN_EVIDENCE
+DETERMINISTIC ORDER/BATCH INTEGRITY: GREEN AT 25 CONCURRENT SUBMISSIONS
 ```
