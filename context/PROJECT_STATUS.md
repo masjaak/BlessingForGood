@@ -2,7 +2,7 @@
 
 ## Final client contract — My Books 2.0 / Customer × Batch Pool / Admin Users / Book Hard Delete — 2026-08-31
 
-Status: `IMPLEMENTED_LOCALLY; FULL_REGRESSION_AND_DELIVERY_IN_PROGRESS`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 The requested implementation is present in the canonical Order, Batch,
 Invoice, Auth/RBAC, membership, and Book Master boundaries. Focused tests cover
@@ -20,7 +20,9 @@ removes active Book Master data without deleting immutable transaction truth.
 Authenticated Production Admin/Customer QA and real business UAT remain open
 until safe Clerk QA identities and approved disposable deletion fixtures are
 available. No Production business write is authorized merely to create UAT
-evidence.
+evidence. Commit `ecd4dece` is live through the Git-integrated Vercel
+Production deployment `6180999646`; the canonical domain returns HTTP 200 and
+the configured release path targets Convex Production `clean-eel-522`.
 
 ## 750 public performance + Admin System RBAC follow-up — 2026-08-31
 

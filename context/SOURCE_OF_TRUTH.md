@@ -2,7 +2,7 @@
 
 ## Final client contract — My Books 2.0, Customer × Batch invoice pool, Admin users, and Book hard delete — 2026-08-31
 
-Status: `IMPLEMENTED_LOCALLY; DELIVERY_AND_AUTHENTICATED_UAT_PENDING`
+Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
 This is the current explicit product decision for this ticket and supersedes
 only the older Order-centric Customer Books projection, invoice-per-Order
@@ -44,6 +44,10 @@ percentage semantics, `convex/lib/auth.ts`, `convex/users.ts`, and
 `convex/joinRequests.ts` for Admin user authority, and `convex/books.ts` for
 Book deletion. Existing Order, Batch lifecycle, Finance ledger, payment,
 refund, Catalog access, media, and shipment authorities remain in place.
+
+Delivery evidence: commit `ecd4dece` is live through Git-integrated Vercel
+Production deployment `6180999646`; the canonical domain returns HTTP 200 and
+the configured release path targets Convex Production `clean-eel-522`.
 
 ## 750 public performance + Admin System RBAC follow-up — 2026-08-31
 

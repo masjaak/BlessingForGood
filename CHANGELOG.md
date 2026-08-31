@@ -31,6 +31,10 @@ source: conversation
   1440px. Local signed-out auth probes are blocked by the keyless Clerk
   handshake/JWKS mismatch; authenticated Production QA and real UAT remain
   release gates.
+- Commit `ecd4dece` is live through Git-integrated Vercel Production
+  deployment `6180999646`; the canonical domain returns HTTP 200. The linked
+  Convex Production target is handled by the existing `vercel.json` release
+  command. No authenticated mutation UAT was performed without safe fixtures.
 
 ## [750-performance-admin-system-rbac] — 2026-08-31
 

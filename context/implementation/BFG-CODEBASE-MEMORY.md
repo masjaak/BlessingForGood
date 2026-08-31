@@ -44,7 +44,10 @@ Required regression anchors are `convex/batchRoster.test.ts`,
 `convex/membershipRemoval.test.ts`, and `tests/lib/percentage.test.ts`.
 Authenticated Production Admin/Customer UAT must be recorded separately when
 safe Clerk QA identities and approved disposable deletion fixtures are
-available.
+available. Post-diff delivery: commit `ecd4dece` is live through the
+Git-integrated Vercel Production deployment `6180999646`; the canonical domain
+returns HTTP 200. No authenticated mutation UAT was performed without safe
+fixtures.
 
 ## Post-diff memory — 750 performance + Admin System RBAC — 2026-08-31
 
