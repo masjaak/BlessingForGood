@@ -4,6 +4,16 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## 750 performance and Admin System RBAC — 2026-08-31
+
+| ID | Old decision | New decision | Source / owner | Status |
+|---|---|---|---|---|
+| BFG-DEC-079 | Public 750 latency was only documented as a failure; Admin System visibility treated Users/Settings as Owner-only and Audit as the only Admin section. | Measure and isolate the unchanged public profile, keep the 750 gate at p95 ≤2,000 ms / p99 ≤5,000 ms / errors <1% / 5xx=0, and stop before 1,000 while repeated Production runs remain outside the target. Public Clerk middleware and Ready Stock dynamic SSR were removed at their measured application boundaries; residual static/edge latency remains unresolved without provider telemetry. Active Admins receive Users, operational Settings, and Audit; Owner retains role/invitation/revocation and ownership-critical authority. | Latest explicit ticket decision; `scripts/load/bfg-read-load.mjs`, `src/proxy.ts`, `src/app/ready-stock/page.tsx`, `convex/lib/auth.ts`, `convex/users.ts`; commits `845ead6`, `1f3839c`, `1697e97` | ACTIVE / NOT CLOSED |
+
+The previous `BFG-DEC-078` System wording is superseded only for Admin System
+capability scope. Its Batch, pagination, cost, and invoice decisions remain
+active. Owner transfer to the actual BFG owner is a separate future operation.
+
 ## 1000+ Batch scale, pagination, cost basis, and Admin System access — 2026-08-31
 
 | ID | Old decision | New decision | Source / owner | Status |

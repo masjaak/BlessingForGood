@@ -26,7 +26,7 @@
 | Order management           | `/admin/orders`, `/admin/orders/[orderId]`          | admin/owner                             | order/tracking all permissions                                      | implemented; runtime QA pending          |
 | Batch management           | `/admin/batches`, `/admin/batches/[batchId]`        | admin/owner                             | batch/tracking permissions                                          | implemented; runtime QA pending          |
 | Invoice management         | `/admin/invoices`, `/admin/invoices/[invoiceId]`    | admin/owner                             | invoice/deposit permissions                                         | implemented; runtime QA pending          |
-| User management            | `/admin/users`                                      | owner                                   | owner-only Convex functions                                         | implemented; runtime QA pending          |
+| User management            | `/admin/users`                                      | admin/owner                             | Admin read/status; Owner-only role/invitation Convex functions       | implemented; runtime QA pending          |
 
 Navigation is not authorization. Every protected screen remains backed by
 server-side Convex checks.

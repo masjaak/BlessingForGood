@@ -3,17 +3,28 @@
 ## Roles
 
 - `customer`: own account and business data.
-- `admin`: operational management without user-role management.
-- `owner`: admin permissions plus user/security management.
+- `admin`: operational management plus Users read/status operations,
+  operational Settings, and read-only Activity/Audit; no role, invitation,
+  revocation, or ownership authority.
+- `owner`: all Admin permissions plus user/security operations that are
+  explicitly Owner-only.
 
 Roles and status are server-owned Convex fields. New non-owner users default to
 `customer`. Only the configured owner Clerk subject can bootstrap `owner`.
 
+## Admin System access
+
+Active Admins can open `/admin/users`, `/admin/settings`, and `/admin/audit`.
+Users provides paginated/filterable listing plus eligible non-owner
+suspension/reactivation. Settings is limited to the current operational
+allowlist. Audit is read-only.
+
 ## Owner controls
 
-`/admin/users` supports paginated/filterable user listing, customer/admin role
-changes, suspension, and reactivation. It does not send invitations, delete
-Clerk users, reset passwords, enforce MFA, or change owner roles.
+Owners additionally manage customer/admin role changes and staff
+invitation/revocation. Neither role can delete Clerk users, reset passwords,
+enforce MFA, change Owner roles, self-promote, or transfer ownership in this
+phase.
 
 Suspension blocks protected Convex functions while preserving public browsing
 and sign-out. Owners cannot suspend themselves or another owner.

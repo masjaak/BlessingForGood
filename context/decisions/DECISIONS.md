@@ -1,5 +1,24 @@
 # Decisions
 
+## 750 public performance and Admin System RBAC — 2026-08-31
+
+- The 750 public read-heavy contract remains p95 ≤2,000 ms, p99 ≤5,000 ms,
+  error rate <1%, and zero 5xx. The unchanged harness/profile was reproduced
+  after each measured application fix; repeated Production runs still failed
+  p95, so 1,000 was not attempted and the ticket is not closed.
+- Public routes no longer pay Clerk middleware work. Ready Stock's initial
+  public projection uses one-minute ISR while its hydrated live query remains
+  intact. These are bounded fixes at the measured application boundaries;
+  no new infrastructure or provider plan was added. Remaining latency is
+  static/edge/client-path evidence that cannot be assigned to a function or
+  queue without the unavailable Vercel metrics.
+- Active Admin means operational administration: `Pengguna`, `Pengaturan`,
+  and `Log Aktivitas`, plus the existing Admin capabilities. Admin user reads
+  and eligible status operations use `users.read`/`users.suspend`; operational
+  settings use `settings.manage`; role changes, invitations, revocations, and
+  Owner-target operations remain Owner-only. Owner remains Admin plus
+  ownership-critical authority. Owner transfer is not part of this decision.
+
 ## Adaptive natural-ratio book cover frame — 2026-08-30
 
 - The universal fixed `2 / 3` BookCover frame is **SUPERSEDED** for

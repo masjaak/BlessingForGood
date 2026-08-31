@@ -26,7 +26,7 @@ authentication, BFG `appUsers` authorization, customer onboarding, or Phase
 | Refund payout create/start/record | Admin/Owner + refund permission | Reverification; staff MFA policy candidate | External money movement |
 | Deposit refund or financial adjustment | Admin/Owner + deposit permission | Reverification | Customer balance consequence |
 | Grant or remove Admin | Owner only | Reverification + staff MFA policy | Privilege escalation/reduction |
-| Suspend or reactivate user | Owner only | Reverification | Account availability change |
+| Suspend or reactivate user | Admin/Owner for eligible non-owner targets | Reverification; staff MFA policy candidate | Account availability change |
 | Other high-risk access/configuration changes if added later | Owner policy to be defined | Reverification + staff MFA | Security control change |
 
 ## Deferred design questions

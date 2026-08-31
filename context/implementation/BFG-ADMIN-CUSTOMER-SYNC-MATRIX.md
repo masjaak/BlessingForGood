@@ -6,16 +6,19 @@ never manually patch a customer surface.
 
 ## Admin System access correction — 2026-08-31
 
-The System navigation and audit route were previously Owner-only, so an active
+The System navigation and its routes were previously Owner-only, so an active
 Admin could be authorized for the Admin workspace while receiving no System
-section. The read-only Activity/audit surface now follows the canonical
-`appUsers.role` / `audit.read` permission for every active Admin. Users,
-settings, and any genuinely sensitive sub-action remain Owner-only or guarded
-by their existing stronger capability. No email allowlist is used.
+section. `Pengguna`, `Pengaturan`, and `Log Aktivitas` now follow canonical
+active-Admin role/capability authority. Users read/status operations and the
+current operational settings are Admin-accessible; role/invitation/revocation,
+Owner targets, and any genuinely ownership-critical action retain stronger
+Owner guards. No email allowlist is used.
 
 | Domain | Admin Action | Canonical Record | Customer Query | Customer Surface | Expected Consequence | Realtime? | Authorization | Notification? | Production Evidence | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Admin System / audit | inspect operational audit history | `auditEvents` | `auditEvents.list` | `/admin/audit` | active Admins see the intended read-only System surface; customers, inactive members, and non-Admins remain denied | yes | active Admin `audit.read`; Owner retains all permissions | no | local role matrix and route/permission regression PASS; commit `571bcae` deployed through Vercel `52t1CV6Fwqah8znMESKS4FfihNEv`; authenticated Production UAT pending | SYNCED_PENDING_UAT |
+| Admin System / audit | inspect operational audit history | `auditEvents` | `auditEvents.list` | `/admin/audit` | active Admins see the intended read-only System surface; customers, inactive members, and non-Admins remain denied | yes | active Admin `audit.read`; Owner retains all permissions | no | local role matrix and route/permission regression PASS; code `845ead6`/`1697e97` deployed through Git-integrated Vercel Production; authenticated Production UAT pending | SYNCED_PENDING_UAT |
+| Users/access | list users and suspend/reactivate eligible non-owner targets | `appUsers`, `auditEvents` | `users.list`, `listStaffInvitations` | `/admin/users` | active Admins can inspect and operate eligible status changes; self and Owner targets remain denied | yes | Admin `users.read`/`users.suspend`; role/invitation/revocation remains Owner-only | access event only | focused/full Convex auth tests PASS; authenticated Production UAT pending | SYNCED_PENDING_UAT |
+| Settings | update current operational store/contact/payment instructions | `appSettings`, `auditEvents` | `settings.getForCustomer` | `/admin/settings` | active Admins and Owners can maintain the allowlisted operational settings; future owner-critical actions need separate guards | yes | Admin/Owner `settings.manage`; ownership-critical additions remain Owner-only | no | focused settings tests and build PASS; authenticated Production UAT pending | SYNCED_PENDING_UAT |
 
 ## Production UAT correction — 2026-08-30
 
@@ -52,10 +55,10 @@ and Convex `clean-eel-522`; authenticated business UAT remains pending.
 | Refund | create/start/record payout | refund obligations/payouts and ledger holds | `refunds.listMine/getMine` | customer account/order projection | pending/processing/paid/failed/partial payout without overpayment | yes | Admin payout; customer own view | refund event | local partial-safe tests; supplied baseline | SYNCED |
 | Notification | event writer/read/mark read | `notifications` | `notifications.listMine/unreadCount` | `/account/notifications`, Aktivitas | recipient-scoped unread/read attention | yes | recipient ownership; Admin permission | itself | supplied invoice/notification PASS | SYNCED |
 | Inbox | write/read/mark read | `notifications` with `surface=inbox` | same query with surface scope | `/account/inbox`, `/admin/inbox` | persistent operational message, not social chat | yes | recipient/role scope | itself | local ownership tests; supplied activity baseline | SYNCED |
-| Users/access | invite/role/suspend/reactivate | `appUsers`, `staffInvitations`, `auditEvents` | `users.current` and gated queries | customer/Admin shells | access changes are reflected on next query/session | yes | Owner/Admin server guards; Owner-only role changes | access event only | supplied ownership/admin baseline | SYNCED |
+| Users/access | invite/role/suspend/reactivate | `appUsers`, `staffInvitations`, `auditEvents` | `users.current` and gated queries | customer/Admin shells | access changes are reflected on next query/session | yes | Admin read/status permissions; Owner-only invitation/revocation/role changes | access event only | local role/permission regression PASS; authenticated UAT pending | SYNCED_PENDING_UAT |
 | Activity/audit | inspect safe event history | `auditEvents` | Admin audit query | `/admin/audit` | operational evidence; not fake customer feed | yes | audit permission | no | supplied baseline; local audit tests | SYNCED |
 | Content | save draft/publish | `contentBlocks` | `contentBlocks.getPublished` | public content routes | published content only reaches customer surface | yes | Admin content permission | no | current local/content baseline | SYNCED |
-| Settings | update store/contact/payment instructions | `appSettings` | `settings.getForCustomer` | customer-safe instructions | customers see current approved instruction projection | yes | Owner mutation; customer-safe read | no gateway/WA automation | current local/settings baseline | SYNCED |
+| Settings | update store/contact/payment instructions | `appSettings` | `settings.getForCustomer` | customer-safe instructions | customers see current approved instruction projection | yes | Admin/Owner `settings.manage`; customer-safe read | no gateway/WA automation | current local/settings regression PASS; authenticated UAT pending | SYNCED_PENDING_UAT |
 | Reports/export | query period/export | bounded report rows, export audit | none (Admin-only) | `/admin/reports` | operational visibility without customer data leakage | yes | Admin/Owner report permission | no | current local/report baseline | SYNCED |
 
 ## Contract

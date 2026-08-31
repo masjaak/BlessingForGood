@@ -15,7 +15,7 @@ older workflow implied by a mockup.
 | `/admin/books`, `/admin/catalogs`, `/admin/ready-stock` | Admin dashboard 1–10 | Catalog-management hierarchy, compact forms, list/table comparison                       | Secret Catalog security remains canonical; Ready Stock uses on-hand/reserved/available                             |
 | `/admin/orders`, `/admin/batches`, `/admin/exceptions`  | Admin dashboard 1–10 | Operational queues, detail context, clear next action                                    | Final Phase 06.7 cancellation and defect policies are authoritative; no invented transitions                       |
 | `/admin/invoices`, `/admin/payments`, `/admin/refunds`  | Admin dashboard 1–10 | Finance queue/table density, explicit record state, context before action                | No revenue analytics or gateway; invoice snapshot, payment history, obligation, payout, and ledger remain separate |
-| `/admin/users`                                          | Admin dashboard 1–10 | Quiet system-management treatment and clear role state                                   | Existing RBAC, owner-only role operations, and suspension boundaries remain unchanged                              |
+| `/admin/users`                                          | Admin dashboard 1–10 | Quiet system-management treatment and clear role/state access                            | Admin owns eligible status operations; Owner-only role/invitation boundaries remain unchanged                      |
 
 ## Decision
 

@@ -1,6 +1,40 @@
 # BFG CODEBASE MEMORY
 
-## Post-diff memory — concurrent load & capacity validation — 2026-08-31
+## Post-diff memory — 750 performance + Admin System RBAC — 2026-08-31
+
+- The ticket started from capacity commit `0266465`; the capacity harness and
+  its historical evidence remain preserved. Code commits are `845ead6`
+  (public middleware boundary and Admin System capability), `1f3839c`
+  (Ready Stock ISR), and `1697e97` (one-minute ISR window).
+- Public request flow: `src/proxy.ts` now matches `/admin`, Clerk auth and
+  invitation paths, and API paths only. Public `/`, `/how-to-order`, `/join`,
+  `/catalog`, and `/ready-stock` no longer execute Clerk middleware. The
+  Ready Stock page still hydrates its live Convex query, but its initial
+  bounded projection is revalidated every 60 seconds instead of invoking the
+  publisher/variant/inventory/storage fan-out on every request.
+- `scripts/load/bfg-read-load.mjs` remains the authority for Profile A and now
+  reports per-route request count, p50/p95/p99, RPS, 4xx/429/5xx, timeouts, and
+  error rate. The latest Production 750 result after the fixes was 1,166
+  requests, 336.12 RPS, p95 3,147 ms, p99 3,232 ms, and 0% errors. Vercel
+  logs showed static cache hits, while detailed metrics returned
+  `payment_required`; the residual shared edge/client boundary is not
+  attributed to Convex or a specific route. Do not claim 750 or run 1,000
+  until a repeatable pass exists.
+- Admin capability flow: `src/components/admin-nav.tsx` and the three Admin
+  pages use `roleCanAccess(..., "admin")` for System visibility. `convex/lib/auth.ts`
+  grants active Admin `users.read`, `users.suspend`, `settings.manage`, and
+  `audit.read`; `convex/users.ts` uses those permissions for list/status work.
+  `users.updateRole`, invitation, and revocation operations remain
+  `requireOwner`; self/Owner status targets remain rejected. Owner is Admin
+  plus the stronger role/access boundary. No owner transfer was executed.
+- Focused, full isolated frontend/Convex, TypeScript, ESLint, format, build,
+  and Convex checks passed. Authenticated Production Admin A/B/Owner UAT is
+  not evidenced because no safe Clerk QA sessions are available.
+
+## Historical memory — concurrent load & capacity validation — 2026-08-31
+
+The following entry is retained as the original baseline; the current
+post-diff memory is the ticket follow-up above.
 
 - Capacity and data scale remain separate: the 1,000+ Customer / 2,000+
   order-item fixture does not prove 1,000 concurrent sessions.

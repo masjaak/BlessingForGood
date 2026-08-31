@@ -1,8 +1,24 @@
 # BFG SCALABILITY CONTRACT
 
-Status: `VALIDATED_TO_CAPACITY_500` for the measured Profile A public HTTP
-workload; 750 reached and stopped on the p95 target; 1,000 remains unproven.
-Revalidated 2026-08-31.
+Status: `750_NOT_PASSING` for the measured Profile A public HTTP workload;
+500 remains evidenced, and 1,000 remains unproven. Revalidated 2026-08-31.
+
+## Ticket follow-up — 2026-08-31
+
+The unchanged harness/profile was reproduced and decomposed by route. Two
+application-owned costs were reduced: public routes no longer execute Clerk
+middleware, and the Ready Stock initial projection now uses one-minute ISR.
+The latest 750 Production sample still returned 1,166 requests at 336.12 RPS,
+p95 3,147 ms, p99 3,232 ms, and 0% errors. Three repeat samples immediately
+after the initial ISR change also failed p95 (2,173/2,802/2,373 ms), so the
+single warm 1,605-ms sample is not accepted as the contract result.
+
+Vercel request logs showed static cache hits for all five Profile A routes and
+no 429/5xx. Detailed queue/function metrics are unavailable because the live
+metrics query returned `payment_required`. The remaining degradation is a
+shared edge/client-path boundary, not a route-specific Convex query proven by
+the available evidence. No speculative infrastructure or provider change was
+made. Sustained 750 and 1,000 were not run after the short-run stop.
 
 ## Current Platform
 
@@ -32,7 +48,7 @@ latency/errors/queueing, and all stop criteria staying clear.
 
 | Profile                 | Workload                                                                                                    | Environment / status                                                                           |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| A — Read Heavy          | Public homepage/how-to-order/join/catalog/Ready Stock HTTP reads; safe, non-mutating                        | Production revalidation passed 1/5/10/100/250/500; 750 stopped on p95; 1,000 not launched       |
+| A — Read Heavy          | Public homepage/how-to-order/join/catalog/Ready Stock HTTP reads; safe, non-mutating                        | Production 500 remains aggregate-green; repeated 750 runs fail p95 after application fixes; 1,000 not launched |
 | B — Authenticated Mixed | Customer dashboard, Buku Saya, invoices, activity, catalog access, profile reads, occasional safe mutations | Deterministic Convex fixtures and existing permission suites; no 1,000-identity Production run |
 | C — Operational Burst   | Order submission, catalog unlock, payment confirmation, Admin review patterns, bulk/import boundaries       | Development deterministic tests only; no unsafe Production write burst                         |
 | F — Close PO            | Read-heavy Customer pressure with a smaller authenticated order-write share; Admin 1–5 session overlay       | Not run: no authorized session or isolated Production fixture; public read pressure and deterministic writes are reported separately |
@@ -40,7 +56,8 @@ latency/errors/queueing, and all stop criteria staying clear.
 ## Application Query Design
 
 - Public Ready Stock uses publication/index filters and a 200-book ceiling,
-  returns at most 100 items, and omits private inventory fields.
+  returns at most 100 items, omits private inventory fields, and uses one-minute
+  ISR for the initial public projection; the hydrated live query remains.
 - Customer lists use current-user ownership indexes and pagination/take caps.
 - Admin queues and reports use pagination or explicit operational ceilings.
 - Bulk Import caps file/rows/cell length and confirms atomically.
@@ -97,28 +114,30 @@ by p95 latency.
 
 ## Observed Bottleneck
 
-The 2026-08-31 public revalidation passed 1/5/10/100/250/500 users.
-At 750 it returned 1,508 HTTP 200 responses with 0 request errors, 0 5xx, and
-0 429, but p95 was 2,264 ms and p99 was 2,416 ms against the 2,000-
-and 5,000-ms targets. Two earlier same-day repetitions also crossed or
-approached p95. Because Vercel function metrics were unavailable and Convex was
-not in the Profile A path, the exact edge/network/Vercel bottleneck cannot be
-isolated. Classification: `BOTTLENECK_AT_750 /
+The original 750 result was 1,508 HTTP 200 responses with p95 2,264 ms and
+p99 2,416 ms. Route isolation then showed all five public routes degrading,
+with Ready Stock carrying an avoidable dynamic Convex projection. Narrowing
+public Clerk middleware and making Ready Stock ISR reduced application work;
+Vercel logs subsequently showed static cache hits for every Profile A route.
+The latest 750 still measured p95 3,147 ms with 0% errors. Because detailed
+Vercel function/queue metrics remain unavailable, the residual edge/client
+boundary cannot be assigned to a more specific provider component. Current
+classification: `750_NOT_PASSING /
 PLATFORM_LIMIT_OBSERVABILITY_UNAVAILABLE`.
 
 ## Recommended Headroom
 
 Treat **500 Profile A users** as the currently evidenced supported ceiling for
-this harness, with 750 outside the latency target until a platform-tier and
-edge-metrics review is available. Do not promise 1,000 authenticated realtime
-users. The next safe action is platform/account access and a controlled
-authenticated realtime test, not an application rewrite.
+this harness. Keep 750 open until a repeated sample meets the latency target
+and provider edge metrics explain the residual boundary. Do not promise 1,000
+authenticated realtime users. The next safe action is authorized platform
+observability/edge review, not an application rewrite or speculative service.
 
 ## Verdict
 
 ```text
 READ-HEAVY PUBLIC HTTP: VALIDATED_TO_CAPACITY_500
-750: REACHED / P95 LATENCY STOP (p95 2,264 ms; 0% HTTP errors)
+750: NOT PASSING / REPEATED P95 LATENCY STOP (latest p95 3,147 ms; 0% HTTP errors)
 1,000: NOT VALIDATED
 AUTHENTICATED REALTIME: NOT VALIDATED
 WRITE-HEAVY PRODUCTION: NOT RUN BY SAFETY CONTRACT

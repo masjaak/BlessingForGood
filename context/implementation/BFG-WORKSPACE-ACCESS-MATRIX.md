@@ -64,7 +64,9 @@ receive only their owned customer projections.
 | Payments | `/admin/payments` | sign-in gate | denied | allowed | allowed | denied | denied | Admin sidebar | allowed only after auth/role resolution | Admin workspace or denial | `invoices.manage` | PASS |
 | Exceptions | `/admin/exceptions` | sign-in gate | denied | allowed | allowed | denied | denied | Admin sidebar | allowed only after auth/role resolution | Admin workspace or denial | `orders.read.all` / `orders.manage` | PASS |
 | Refunds | `/admin/refunds` | sign-in gate | denied | allowed | allowed | denied | denied | Admin sidebar | allowed only after auth/role resolution | Admin workspace or denial | `refunds.*` / deposit permissions | PASS |
-| Users / Access | `/admin/users` | sign-in gate | denied | denied | allowed | denied | denied | Admin sidebar, owner only | allowed only after auth/role resolution | Owner workspace or denial | `requireOwner` / `users.*` | PASS |
+| Users / Access | `/admin/users` | sign-in gate | denied | denied | allowed | denied | denied | Admin sidebar | allowed only after auth/role resolution | Admin workspace or denial | `users.read` / `users.suspend`; Owner-only role/invitation operations | PASS |
+| Settings | `/admin/settings` | sign-in gate | denied | denied | allowed | denied | denied | Admin sidebar | allowed only after auth/role resolution | Admin workspace or denial | `settings.manage` operational fields | PASS |
+| Audit | `/admin/audit` | sign-in gate | denied | denied | allowed | denied | denied | Admin sidebar | allowed only after auth/role resolution | Admin workspace or denial | `audit.read` read-only | PASS |
 
 ## Evidence and open gate
 

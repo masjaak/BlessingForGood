@@ -47,7 +47,8 @@ Clerk login, email address, URL, or visible navigation item never grants Admin.
    `src/app/admin/layout.tsx`, which calls Clerk `auth()` and
    `redirectToSignIn()` when no Clerk user exists. Each Admin page then mounts
    its data component behind `ProductAccessGuard` with `requiredRole="admin"`;
-   `/admin/users` uses `requiredRole="owner"`.
+   `/admin/users`, `/admin/settings`, and `/admin/audit` use
+   `requiredRole="admin"`; Owner still passes the Admin role boundary.
 2. `roleCanAccess(role, "admin")` allows exactly `admin` and `owner`.
 3. An active customer cannot render Admin children through direct navigation;
    the shared guard returns the access-denied state first.
@@ -61,17 +62,19 @@ Clerk login, email address, URL, or visible navigation item never grants Admin.
    `requireOwner` before its protected read or write.
 8. No Admin-specific Convex API relies only on a frontend guard. No public
    Convex action exists in the current repository.
-9. `users.list`, `users.updateRole`, `users.suspend`, and `users.reactivate`
-   are Owner-only through `requireOwner`.
+9. `users.list` and eligible `users.suspend`/`users.reactivate` use Admin
+   permissions. `users.updateRole`, staff invitation, and invitation
+   revocation remain Owner-only through `requireOwner`; self/Owner status
+   targets remain rejected.
 10. Changing customer-role behavior affects `ProductAccessGuard` callers on
     account, order, invoice, profile, and address routes. The route-aware data
     providers now select owned customer queries outside `/admin`, preventing
     operational Admin collections from leaking into the customer presentation.
 11. `roleCanAccess` affects only client presentation/query selection.
-    `requirePermission` affects 21 Convex domain modules. Composing
-    `adminPermissions` from `customerPermissions` adds only owned customer
-    reads to Admin; customer, Owner-only, and operational permissions are not
-    broadened.
+    `requirePermission` affects the Convex domain modules. `adminPermissions`
+    includes the existing operational set plus `users.read`,
+    `users.suspend`, `settings.manage`, and `audit.read`; Owner-only role,
+    invitation, and revocation operations are not broadened to Admin.
 
 ## Surface and operation inventory
 
@@ -94,7 +97,9 @@ Authorization values below are the required and observed local behavior.
 | Invoices and deposits | `/admin/invoices`, `/admin/invoices/[invoiceId]`; `invoices.listForAdmin`, `getForAdmin`, `create`, `issue`, `voidInvoice`; `depositAccounts.getForInvoice`; `depositTransactions.listForInvoice`, `recordCredit`, `reverse`; `invoiceDepositAllocations.listForAdmin`, `allocate`, `release`, `reverse` | DENY | DENY | DENY | DENY | ALLOW | ALLOW | Admin guard | `invoices.read.all/manage`, `deposits.read.all/manage` | YES | YES | Admin/Owner | Matches; append-only financial and audit consequences preserved | None local | PASS |
 | Payments | `/admin/payments`; `paymentConfirmations.listPendingForAdmin`, `listForAdmin`, `getForAdmin`, `startReview`, `approve`, `reject` | DENY | DENY | DENY | DENY | ALLOW | ALLOW | Admin guard | `invoices.read.all` / `invoices.manage` | YES | YES | Admin/Owner | Matches; invalid review transitions and audit preserved | None local | PASS |
 | Refunds | `/admin/refunds`; `refunds.listForAdmin`, `getForAdmin`, `requestDepositRefundForAdmin`, `createPayout`, `startPayout`, `recordPayout` | DENY | DENY | DENY | DENY | ALLOW | ALLOW | Admin guard | `refunds.read.all/manage`, `deposits.manage` | YES | YES | Admin/Owner | Matches; payout/ledger state guards and audit preserved | None local | PASS |
-| Users / Access | `/admin/users`; `users.list`, `updateRole`, `suspend`, `reactivate` | DENY | DENY | DENY | DENY | DENY | ALLOW | Owner guard; nav hidden for non-Owner | `requireOwner` | YES | YES | Owner only | Matches; self/Owner protection and audit preserved | Production Owner session unverified | PASS LOCAL |
+| Users / Access | `/admin/users`; `users.list`, `listStaffInvitations`, `updateRole`, `suspend`, `reactivate` | DENY | DENY | DENY | DENY | ALLOW read/status; DENY role/invitation | ALLOW | Admin guard; Owner-only controls remain scoped | `users.read`/`users.suspend`; `requireOwner` for role/invitation | YES | YES | Admin operational access; Owner-only role/access changes | Matches; self/Owner protection and audit preserved | Authenticated Production session unverified | PASS LOCAL |
+| Settings | `/admin/settings`; `settings.getForAdmin`, `settings.update` | DENY | DENY | DENY | DENY | ALLOW current operational fields | ALLOW | Admin guard | `settings.manage` | YES | YES | Admin/Owner operational settings; separate Owner guard for future critical actions | Matches allowlisted fields | Authenticated Production session unverified | PASS LOCAL |
+| Audit | `/admin/audit`; `auditEvents.list` | DENY | DENY | DENY | DENY | ALLOW | ALLOW | Admin guard | `audit.read` | YES | NO | Admin/Owner read-only audit | Matches; append-only boundary preserved | Authenticated Production session unverified | PASS LOCAL |
 
 ## Direct backend bypass evidence
 

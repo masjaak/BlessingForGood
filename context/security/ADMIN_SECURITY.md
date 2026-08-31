@@ -3,8 +3,10 @@
 ## Boundary
 
 `/admin/*` requires a Clerk session in the Next.js admin layout, an active
-Convex `appUsers` record, and an admin or owner permission. `/admin/users` is
-owner-only both in the UI guard and in every Convex user-management function.
+Convex `appUsers` record, and an admin or owner permission. Active Admins may
+use `/admin/users`, `/admin/settings`, and `/admin/audit` for their intended
+operational capabilities. User role/invitation/revocation actions and
+ownership-critical settings remain Owner-only at the specific server boundary.
 `/admin/join-requests` is available to active admins and owners for admission
 review; it does not create Clerk accounts or grant catalog access.
 
@@ -23,16 +25,28 @@ active-user/suspension checks. Slug, ISBN, format, integer price, stock, and
 reference validity are checked server-side. Privileged mutations write safe
 audit events; public reads write no audit rows.
 
-## Owner user management
+## Admin user/access operations
 
 Implemented at `/admin/users`:
 
 - paginated listing;
 - role/status filters;
-- customer → admin promotion;
-- admin → customer demotion;
-- customer/admin suspension;
-- customer/admin reactivation.
+- eligible customer/admin suspension;
+- eligible customer/admin reactivation.
+
+These reads/status operations use `users.read` and `users.suspend`, so an
+active Admin can operate them. Customer/admin role changes, staff invitations,
+and invitation revocation remain Owner-only; Admin cannot self-promote,
+change an Owner, or transfer ownership.
+
+## Operational settings
+
+`/admin/settings` is available to active Admins and Owners. The current page
+contains only the allowlisted store/contact/manual-payment settings and uses
+`settings.manage`. Any future ownership transfer, billing ownership,
+provider-credential replacement, destructive reset, or equivalent authority
+change must receive a separate Owner-only guard rather than hiding the whole
+Settings section.
 
 Not implemented in this phase: invitation sending/resending/revocation,
 Clerk-user deletion, password reset, owner promotion/demotion, and MFA

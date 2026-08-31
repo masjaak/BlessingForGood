@@ -1,6 +1,43 @@
 # BFG SOURCE OF TRUTH
 
-## Concurrent load & capacity validation — 2026-08-31
+## 750 public performance + Admin System RBAC follow-up — 2026-08-31
+
+Status: `NOT_CLOSED`
+
+- The prior 750 result remains historical evidence: 1,508 HTTP 200 responses,
+  0% errors, p95 2,264 ms, p99 2,416 ms. It is superseded by the repeated
+  post-fix measurements in `BFG-LOAD-TEST-REPORT.md`, not deleted.
+- Measured application boundaries were fixed in the smallest existing owners:
+  `src/proxy.ts` now excludes public routes from Clerk middleware, and
+  `src/app/ready-stock/page.tsx` uses one-minute ISR instead of per-request
+  dynamic Convex SSR. The public harness now emits bounded per-route summaries.
+- The latest Production 750 run after those fixes still failed the p95 target
+  (1,166 requests, 336.12 RPS, p50 2,749 ms, p95 3,147 ms, p99 3,232 ms,
+  0% errors, 0×429, 0×5xx). Vercel logs showed static cache hits for the
+  profile routes; detailed queue/function metrics returned `payment_required`.
+  The remaining boundary is therefore not attributable to a route-specific
+  Convex/rendering bottleneck with the available telemetry. A sustained 750
+  run and 1,000 run were correctly not attempted.
+- Active Admin is now the canonical operational System role: `Pengguna`,
+  `Pengaturan`, and `Log Aktivitas` are visible and routable. Admin users may
+  read users and suspend/reactivate eligible non-owner targets; operational
+  settings are Admin-accessible; role changes, invitations, revocations, and
+  Owner-target operations remain Owner-only. Owner transfer is a separate
+  future task.
+- Code owners are `convex/lib/auth.ts` and `convex/users.ts` for server
+  capability, `src/components/admin-nav.tsx` and the Admin pages for route
+  presentation, and `src/proxy.ts` / Ready Stock for the public request path.
+  Code commits are `845ead6`, `1f3839c`, and `1697e97`; authenticated
+  Production role UAT remains pending because no safe Clerk QA sessions are
+  available in this workspace.
+
+The earlier same-day sections below remain preserved historical records. This
+section is the current decision and evidence boundary for this ticket.
+
+## Historical baseline — concurrent load & capacity validation — 2026-08-31
+
+This baseline is preserved for comparison. The current performance and Admin
+System contract is the follow-up section above.
 
 - Capacity and data scale remain separate contracts. The 1,000+ Customer /
   2,000+ order-item fixture does not prove 1,000 concurrent sessions.

@@ -56,7 +56,9 @@ Branch-specific Preview deployments are optional diagnostics only.
 
 - Owner can use approved operational and user-management routes.
 - Customer cannot use admin or owner-only actions.
-- Admin can use operational routes but not owner-only user management.
+- Admin can use operational routes, Users read/status operations, Settings,
+  and Audit; role/invitation/revocation and ownership-critical actions remain
+  Owner-only.
 - Suspension denies protected BFG queries and mutations.
 - Reactivation restores access.
 - Self-suspension and removal of the last active owner are denied.

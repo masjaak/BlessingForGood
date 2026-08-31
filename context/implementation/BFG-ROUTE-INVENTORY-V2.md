@@ -59,9 +59,9 @@ route to UI, state, backend, consequence, tests, and Production evidence.
 | `/admin/content` | ADMIN | sidebar |
 | `/admin/notifications` | ADMIN | authenticated header bell |
 | `/admin/inbox` | ADMIN | authenticated header Inbox |
-| `/admin/users` | OWNER | Owner sidebar |
-| `/admin/audit` | OWNER | Owner sidebar/dashboard activity link |
-| `/admin/settings` | OWNER | Owner sidebar |
+| `/admin/users` | ADMIN | Admin System sidebar; Owner-only role/invitation controls |
+| `/admin/audit` | ADMIN | Admin System sidebar/dashboard activity link |
+| `/admin/settings` | ADMIN | Admin System sidebar; future critical fields need Owner guard |
 
 ## Conceptual Route Adaptations
 
@@ -87,8 +87,9 @@ route to UI, state, backend, consequence, tests, and Production evidence.
   expose Admin payloads.
 - Admin: `/admin/*` operational routes use Admin/Owner route guards and direct
   server authorization.
-- Owner: `/admin/users`, `/admin/audit`, `/admin/settings` retain Owner-only
-  mutations/queries where defined.
+- Owner: `/admin/users`, `/admin/audit`, and `/admin/settings` retain all Admin
+  access plus Owner-only role/invitation and future ownership-critical actions
+  where defined.
 - Secret Catalog session: `/catalog` accepts the scoped anonymous session or
   active member grant; an order still requires an active customer.
 - Deprecated: invitation-only `/sign-up`; it is not public self-registration.

@@ -6,13 +6,13 @@ no designated Owner/Admin browser identity is configured.
 
 | Mockup | Visible Control | Intended Meaning | Route | Component | Query/Mutation | Authorization | Current Status | Production Status | Visual Match | Functional Match | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A-01–10 | Sidebar/logo/icons/active state | Reach every operation | `/admin/*` | `AdminNav`, `SiteShell` | route-specific | Admin/Owner; Owner system links | ACTIVE_LOCAL | pending deploy | SOURCE-MAPPED | PASS | authenticated rendered compare pending |
+| A-01–10 | Sidebar/logo/icons/active state | Reach every operation | `/admin/*` | `AdminNav`, `SiteShell` | route-specific | Admin/Owner; Admin System links, Owner-only sub-actions | ACTIVE_LOCAL | pending deploy | SOURCE-MAPPED | PASS | authenticated rendered compare pending |
 | A-01–10 | Notification bell + badge | Event attention | `/admin/notifications` | `WorkspaceActions`, `ActivityCenter` | list/count/markRead | recipient | ACTIVE_LOCAL | absent old release | SOURCE-MAPPED | PASS | real event UAT |
 | A-01–10 | Inbox button + badge | Persistent operational submissions | `/admin/inbox` | same | list/count/markRead | recipient | ACTIVE_LOCAL | absent old release | SOURCE-MAPPED | PASS | real Join Inbox UAT |
 | A-01–10 | Account/workspace controls | Identity and customer-side switch | header | Clerk `UserButton`, links | Clerk | signed in | ACTIVE | old release live | PARTIAL | PASS | authenticated fidelity only |
 | A-01–10 | Global search | Cross-domain search | n/a | intentionally omitted | n/a | n/a | INTENTIONAL_NON_ACTION | n/a | DIFFERENT | n/a | no approved global result/security contract; route search is canonical |
 | A-01 | KPI/attention cards | Real queues | `/admin` | dashboard | canonical queue queries | Admin/Owner | ACTIVE | old release live | SOURCE-MAPPED | PASS | populated render pending |
-| A-01 | Latest activity / See all | Immutable audit history | `/admin/audit` | audit page | `auditEvents.listForOwner` | Owner | ACTIVE_LOCAL | not deployed | SOURCE-MAPPED | PASS | real Owner render |
+| A-01 | Latest activity / See all | Immutable audit history | `/admin/audit` | audit page | `auditEvents.list` | Admin/Owner `audit.read` | ACTIVE_LOCAL | not deployed | SOURCE-MAPPED | PASS | real Admin/Owner render |
 | A-01 | Quick actions | Books/catalog/batch/invoice | domain routes | dashboard links | existing mutations | permission-specific | ACTIVE | old release live | SOURCE-MAPPED | PASS | none found |
 | A-02 | Add/edit/search/filter book | Book Master operations | `/admin/books*` | `AdminBooks`, detail | books/publishers/variants | `books.manage` | ACTIVE | old release partial | SOURCE-MAPPED | PASS | real product UAT |
 | A-02 | Publisher maintenance | Create/rename/activate | `/admin/books` | publisher form/list | publisher mutations | `books.manage` | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real operator UAT |
@@ -33,14 +33,14 @@ no designated Owner/Admin browser identity is configured.
 | A-07/08 | Durable proof link | Inspect private proof | `/admin/payments`, `/admin/deposits` | external safe storage link | storage URL | finance permissions | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | Production proof privacy |
 | A-07/08 | Deposit top-up verify/reject/adjust | Deposit operations | `/admin/deposits` | deposit page | top-up/ledger mutations | deposit permission | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real/empty UAT |
 | A-07 | WhatsApp blast | Automated outbound blast | n/a | omitted | none | n/a | EXCLUDED | absent | n/a | n/a | explicit exclusion |
-| A-08/A-10 | Payment/store settings | Critical first-run config | `/admin/settings` | settings form | settings query/update | Owner | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real Owner edit |
+| A-08/A-10 | Payment/store settings | Operational first-run config | `/admin/settings` | settings form | settings query/update | Admin/Owner `settings.manage`; future critical actions Owner-only | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real Admin/Owner edit |
 | A-09 | Period/search/export | Operational report | `/admin/reports` | reports | report query/audit export | Admin | ACTIVE_LOCAL | not deployed | SOURCE-MAPPED | PASS | Production download |
 | A-09 | Sales/batch metrics | Minimum real analytics | same | metric cards/batch statuses | `reports.get` | Admin | ACTIVE_LOCAL | not deployed | SOURCE-MAPPED | PASS | populated correctness |
 | A-10 | Content draft/publish | No-code public content | `/admin/content` | content forms | content mutations | `content.manage` | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real publish UAT |
 | Access | Create/edit/open/close/assign/remove | Catalog operations | `/admin/catalogs/[id]` | `AdminCatalogDetail` | catalog/item mutations | `catalog.manage` | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real catalog UAT |
 | Access | Generate/copy/revoke/expiry/history | Code lifecycle | `/admin/catalogs/[id]/access` | `AdminCatalogAccess` | access query/mutations | `catalog.manage` | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real one-time secret flow |
 | Access | Member grant/revoke | Customer-scoped access | same | customer picker/grant list | grant/revoke | `catalog.manage` | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real member UAT |
-| Users | Invite/roles/status | Multi-Admin controls | `/admin/users` | users page | invitations/user mutations | Owner | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real invitation claim |
+| Users | Invite/roles/status | Multi-Admin controls | `/admin/users` | users page | users read/status; invitations/roles | Admin read/status; Owner invitation/role | ACTIVE_LOCAL | not deployed | PROPORTIONAL | PASS | real Admin/Owner claim |
 
 Required visible controls: `UNKNOWN=0`, `DEAD_ACTION=0`. Controls not backed by the source contract are explicitly
 `INTENTIONAL_NON_ACTION`; they are not rendered as dead buttons.

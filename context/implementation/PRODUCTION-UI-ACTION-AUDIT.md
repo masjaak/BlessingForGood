@@ -32,7 +32,7 @@ existing Convex operations. Hidden controls are never treated as authorization.
 | `/admin/payments`               | Review / approve / reject                        | Existing payment review operations                 | Admin/owner                                                   | Current-state and evidence guards                        | Preserved payment history and audit               |
 | `/admin/exceptions`             | Open/review/select/resolve/reject                | Phase 06.4 exception mutations                     | Admin/owner                                                   | Current-state/idempotency guards                         | Financial consequence + audit feedback            |
 | `/admin/customers`              | Lihat detail                                     | Customer operations navigation                     | Admin/owner                                                   | N/A                                                      | Bounded customer-safe operational view            |
-| `/admin/users`                  | Role / suspend / reactivate                      | Existing identity mutations                        | Owner only                                                    | Owner/current-state guards                               | Status/error feedback and audit                   |
+| `/admin/users`                  | Role / suspend / reactivate                      | Existing identity mutations                        | Admin status; Owner role/invitation                           | Owner/current-state guards plus Admin status permission  | Status/error feedback and audit                   |
 
 ## Form verdict
 

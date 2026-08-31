@@ -280,9 +280,9 @@ record is available for mutation; no record is fabricated.
 - **Root Cause:** The previous surface exposed only the smallest initial fields.
 - **Affected Route:** `/admin/settings` and customer invoice payment information.
 - **Affected Domain:** Settings/manual payment.
-- **State Machine Impact:** None; owner authorization and validation remain enforced.
+- **State Machine Impact:** None; Admin/Owner authorization and validation remain enforced, with future ownership-critical settings separately guarded.
 - **Fix:** Preserve additive, backward-safe fields with fallbacks and customer payment-panel consumption; no dead settings or credentials.
-- **Regression:** `convex/settings.test.ts` covers owner-only writes, validation, persistence, and customer-safe projection.
+- **Regression:** `convex/settings.test.ts` covers Admin/Owner operational writes, validation, persistence, and customer-safe projection.
 - **Production Evidence:** Current authenticated Production Settings and customer payment panel consume the bounded configuration.
 - **Status:** `GREEN`.
 

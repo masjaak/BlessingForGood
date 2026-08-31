@@ -27,7 +27,8 @@ Phase 08: `NOT STARTED`
 - Deposit top-up submission/review/approve/reject, atomic ledger credit, audited manual adjustment, and owned history.
 - Order search/status filter, bounded order/invoice/batch report, Excel-compatible UTF-8 CSV export with formula-injection
   protection, sales overview, batch status/performance view, and period filter.
-- Owner-only staff invitations/claim, role/status controls, immutable audit view, settings, and Admin-managed published
+- Admin System access with Owner-only staff invitations/claim and role controls,
+  immutable audit view, operational settings, and Admin-managed published
   content.
 - Publisher maintenance and canonical Draft catalog creation now reuse existing domain mutations. Duplicate inline
   catalog code controls and the legacy product-creating catalog bundle form were removed from the Admin list surface.

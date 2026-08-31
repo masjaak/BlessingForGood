@@ -1,7 +1,7 @@
 # BFG AUTHORIZATION TEST MATRIX
 
-Status: `GREEN_EVIDENCE` · deterministic Convex adversarial tests run
-2026-08-22. All rows below were evaluated server-side; no UI hiding was used
+Status: `GREEN_EVIDENCE` · deterministic Convex adversarial tests run through
+2026-08-31. All rows below were evaluated server-side; no UI hiding was used
 as a security assertion.
 
 ## Cross-Customer Customer A → Customer B
@@ -52,15 +52,16 @@ Successful unauthorized reads: **0**. Successful unauthorized writes: **0**.
 The Phase 09.1 suite directly invokes representative functions; the full
 function inventory maps every sibling function to the same shared guard.
 
-## Admin → Owner-Only
+## Admin → Owner-Only boundaries
 
 | Attack                               | Expected | Observed | Guard                              |
 | ------------------------------------ | -------- | -------- | ---------------------------------- |
 | Invite privileged staff              | DENIED   | DENIED   | `requireOwner`                     |
 | Promote/demote a role                | DENIED   | DENIED   | `requireOwner`                     |
-| Suspend/reactivate staff             | DENIED   | DENIED   | `requireOwner`                     |
-| Modify Owner-only settings           | DENIED   | DENIED   | `settings.manage` / owner boundary |
-| Access audit/user-management surface | DENIED   | DENIED   | `audit.read`/`users.read`          |
+| Suspend/reactivate self or an Owner | DENIED   | DENIED   | `users.suspend` target invariant  |
+| Modify a future ownership-critical setting | DENIED | DENIED | explicit Owner boundary when added |
+| Access Admin Users/status, operational Settings, and Audit | ALLOWED | ALLOWED | `users.read`/`users.suspend`/`settings.manage`/`audit.read` |
+| Access role/invitation/revocation controls | DENIED | DENIED | `requireOwner` |
 
 ## Suspended Identity
 

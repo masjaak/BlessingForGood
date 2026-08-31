@@ -37,7 +37,7 @@
 | `/admin/payments` | Manual payment review | implemented |
 | `/admin/exceptions` | OOS, defect and cancellation queue | implemented |
 | `/admin/customers`, `/admin/customers/[customerId]` | Customer operational context | implemented in Production V1 convergence |
-| `/admin/users` | Owner-only role and suspension management | implemented |
+| `/admin/users` | Admin user/status operations; Owner-only role and invitation management | implemented |
 
 Reporting, Content, Settings and Excel routes are not linked because their
 product scope is not implemented. Navigation is never the authorization

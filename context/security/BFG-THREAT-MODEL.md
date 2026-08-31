@@ -76,7 +76,7 @@ the enforcement boundary.
 | ------------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | Customer reads another customer by ID/reference  | `requireOwnedResource`, owner-derived queries, indexed lookups            | `phase091-security.test.ts`; 0 successful attacks                        |
 | Customer invokes Admin mutation directly         | `requirePermission` on Convex function                                    | Direct calls denied in Phase 09.1 suite                                  |
-| Admin invokes Owner-only action                  | `requireOwner` and no email/domain shortcut                               | Admin role/suspend/invite attempts denied                                |
+| Admin invokes Owner-only action                  | `requireOwner` and no email/domain shortcut                               | Admin role/invite/revoke, self-escalation, and Owner-target status attempts denied; eligible operational status work is allowed |
 | Suspended user reuses session/ID                 | `requireActiveUser` precedes protected access                             | Suspended query/mutation attempts denied                                 |
 | Revoked Catalog code/session reused              | Digest-only code/session checks, catalog/code status and expiry           | Existing core tests + Phase 09.1 checks                                  |
 | Catalog code brute force                         | Shared global and per-user limiter; constant-time digest compare          | Component-backed limiter; deterministic invalid burst test               |

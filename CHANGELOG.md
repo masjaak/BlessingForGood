@@ -8,6 +8,33 @@ source: conversation
 
 # Changelog
 
+## [750-performance-admin-system-rbac] — 2026-08-31
+
+### Changed
+
+- Narrowed `src/proxy.ts` so public pages do not execute Clerk middleware;
+  Admin, auth, invitation, and API paths remain protected.
+- Changed Ready Stock's initial public projection from per-request dynamic SSR
+  to one-minute ISR while preserving the hydrated live Convex query.
+- Added per-route metrics to the existing public load harness without changing
+  its five-route profile or thresholds.
+- Made active Admin System access canonical: `Pengguna`, `Pengaturan`, and
+  `Log Aktivitas` are available to Admin and Owner. Admin user reads and
+  eligible status operations use `users.read`/`users.suspend`; operational
+  settings use `settings.manage`; role/invitation/revocation remains Owner-only.
+
+### QA and status
+
+- Local isolated frontend/Convex suites, TypeScript, ESLint, format, build,
+  and Convex checks pass. Signed-out protected-route Production checks pass.
+- The latest unchanged-profile Production 750 run still failed p95: 1,166
+  requests, 336.12 RPS, p95 3,147 ms, p99 3,232 ms, 0% errors, 0×429, 0×5xx.
+  Repeated runs and the full evidence are recorded in
+  `context/performance/BFG-LOAD-TEST-REPORT.md`; 1,000 was not attempted.
+- No provider plan, cache service, database, or auth replacement was added.
+  Authenticated Production role UAT remains pending without safe Clerk QA
+  sessions. Owner transfer remains a separate future task.
+
 ## [batch-scale-pagination-admin-system] — 2026-08-31
 
 ### Changed

@@ -69,7 +69,7 @@ passed” label.
 | `admin dashboard 7.png`  | `/admin/invoices` and detail      | 1440 × 900 | Invoice/deposit/adjustment/refund operations retained        | invoice routes; financial tests                 | PARTIAL        | Authenticated finance render blocked                                    |
 | `admin dashboard 8.png`  | `/admin/payments`                 | 1440 × 900 | Manual review and immutable payment history retained         | payment route; payment regression               | PARTIAL        | Authenticated payment queue render blocked                              |
 | `admin dashboard 9.png`  | Reporting                         | 1440 × 900 | Reporting-ready canonical records only                       | PRD coverage matrix                             | FAIL           | Reporting and Excel export are post-V1 backlog                          |
-| `admin dashboard 10.png` | Settings / `/admin/users`         | 1440 × 900 | Owner-only role and suspension controls retained             | users route; owner authorization tests          | EXTENDED       | Store/settings product remains unapproved backlog                       |
+| `admin dashboard 10.png` | Settings / `/admin/users`         | 1440 × 900 | Admin System access with Owner-only role/invitation controls retained | users route; Admin/Owner authorization tests | EXTENDED | Store/settings product remains unapproved backlog |
 
 ## Rendered reference evidence
 

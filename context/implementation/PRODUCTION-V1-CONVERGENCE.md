@@ -52,7 +52,9 @@ notes/actors, and creates no new database source of truth.
 `/admin/customers` reuses the active customer selector already required by
 admin-assisted orders. Customer detail reads profiles, addresses, canonical
 orders, invoices, and exceptions through existing admin-authorized functions.
-Role/suspension management remains owner-only at `/admin/users`.
+Operational user listing and eligible status management are Admin-accessible at
+`/admin/users`; role changes, invitations, revocations, and Owner-target
+operations remain Owner-only. Owner transfer remains a separate future task.
 
 ## Known limitations
 

@@ -374,12 +374,12 @@ canonical Convex/Vercel and authorized-user gates pass.
 | --- | --- |
 | Route | `/admin/users`, `/admin/catalogs/[catalogId]/access` |
 | Mockup | A-01 system controls; latest Secret Catalog Access Management |
-| Purpose | Owner-managed staff access and Admin-managed catalog access. |
+| Purpose | Admin-managed operational access; Owner-managed role/invitation authority and Admin-managed catalog access. |
 | Required Data | App user role/status/invitation; catalog code/grant metadata and expiry. |
-| Primary Action | Owner invites/claims staff; Admin generates/revokes code or grants/revokes member. |
+| Primary Action | Admin reads users and operates eligible status; Owner invites/claims staff; Admin generates/revokes code or grants/revokes member. |
 | Secondary Actions | Filter users, change role, suspend/reactivate, copy one-time code, inspect metadata. |
 | Allowed Create | Staff invitation, access code, member grant. |
-| Allowed Edit | Role/status only Owner; access metadata through state-safe mutations. |
+| Allowed Edit | Eligible user status for Admin; role only Owner; access metadata through state-safe mutations. |
 | Allowed Delete/Archive/Void | Revoke invitation/code/grant; no user/customer delete. |
 | Forbidden Actions | Email whitelist authority, client role authority, plaintext secret persistence, arbitrary access. |
 | Filters | User role/status; catalog access status in projection. |
@@ -389,7 +389,7 @@ canonical Convex/Vercel and authorized-user gates pass.
 | State Machine | Staff pending→claimed/revoked; user active↔suspended; code/grant active→revoked/expired. |
 | Query | `users.list/listStaffInvitations`, `catalogAccess.listForAdmin`, eligible customer query. |
 | Mutation | `users.inviteStaff/revokeStaffInvitation/updateRole/suspend/reactivate`, access generate/revoke/grant/revoke. |
-| Authorization | Owner-only role/status/invitation; `catalog.manage` for catalog access. |
+| Authorization | Admin `users.read`/`users.suspend` for eligible read/status operations; Owner-only role/invitation; `catalog.manage` for catalog access. |
 | Loading | User/access skeletons. |
 | Empty State | No invitations/grants/codes. |
 | Error State | Duplicate email, protected owner, invalid expiry/state. |
@@ -419,10 +419,10 @@ canonical Convex/Vercel and authorized-user gates pass.
 | State Machine | Append-only event history. |
 | Query | `auditEvents.list`. |
 | Mutation | None from UI; domain mutations call `recordAudit`. |
-| Authorization | Owner-only. |
+| Authorization | Admin/Owner `audit.read`; read-only. |
 | Loading | Table skeleton. |
 | Empty State | No activity yet. |
-| Error State | Owner denial/query error. |
+| Error State | Admin/Owner denial/query error. |
 | Success State | New audited event appears after reactive mutation. |
 | Customer Consequence | None directly. |
 | Notification Consequence | None directly; event-backed notices are separate records. |
@@ -509,7 +509,7 @@ canonical Convex/Vercel and authorized-user gates pass.
 | State Machine | Versioned/audited settings update. |
 | Query | `settings.getForAdmin`; customer-safe `settings.getForCustomer`. |
 | Mutation | `settings.update`. |
-| Authorization | Owner-only. |
+| Authorization | Admin/Owner `settings.manage` for the current operational allowlist; future ownership-critical fields require a separate Owner guard. |
 | Loading | Form loading/disabled state. |
 | Empty State | Required fields prompt for first setup. |
 | Error State | Validation/permission error. |

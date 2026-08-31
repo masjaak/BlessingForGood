@@ -7,10 +7,11 @@ Roles are stored in Convex `appUsers.role`:
 - `customer`: catalog access plus own orders, tracking, invoices, deposits,
   payment confirmations, profile, and addresses.
 - `admin`: operational catalog, book, order, batch, tracking, invoice, and
-  deposit, and payment-confirmation management. Admin cannot manage roles or
-  owner security.
-- `owner`: all admin permissions plus user listing, role changes, suspension,
-  reactivation, settings, and audit access.
+  deposit, and payment-confirmation management, plus Users read/status,
+  operational Settings, and read-only Audit access. Admin cannot manage roles,
+  invitations, revocations, or ownership authority.
+- `owner`: all Admin permissions plus user role changes, staff
+  invitations/revocations, and other ownership-critical access.
 
 The permission sets are centralized in `convex/lib/auth.ts`. Raw role checks do
 not define authorization in feature functions.
@@ -27,9 +28,11 @@ users.read         users.manage_roles   users.suspend       settings.manage
 audit.read
 ```
 
-`owner` receives the union of the admin and customer sets plus security
-permissions. `admin` receives operational permissions without user-management
-permissions. `customer` receives only own-data permissions.
+`owner` receives the union of the admin and customer sets plus
+`users.manage_roles` and the Owner-only invitation/access operations. `admin`
+receives operational permissions plus `users.read`, `users.suspend`,
+`settings.manage`, and `audit.read`, but not role/invitation authority.
+`customer` receives only own-data permissions.
 
 ## Server helpers
 
@@ -79,14 +82,25 @@ They expose only the server-derived published/positive-stock projection.
 Book Master, variants, publication state, and inventory mutations require
 `books.manage`; customers cannot use the former broad book/variant admin reads.
 
+## Admin System boundary
+
+Active Admins see and may enter `/admin/users`, `/admin/settings`, and
+`/admin/audit`. Users listing and eligible non-owner suspend/reactivate use
+`users.read`/`users.suspend`; settings update is limited to the existing
+operational allowlist; audit is read-only. Staff invitations, invitation
+revocation, role changes, Owner targets, self-escalation, and any future
+ownership transfer remain Owner-only. The entire Settings section is not a
+proxy for a future owner-critical action; such actions must receive their own
+capability guard.
+
 ## Owner protections
 
 - The owner bootstrap subject is server-only and is never returned to the
   client.
 - `users.updateRole` accepts only `customer` and `admin` targets; owners cannot
   be promoted, demoted, or replaced through this phase.
-- Owners cannot suspend themselves or any owner. This preserves at least one
-  active owner because owner suspension/demotion is unavailable.
+- Admins and Owners cannot suspend themselves or any Owner. This preserves at
+  least one active Owner because Owner suspension/demotion is unavailable.
 - Privileged changes write audit events with safe metadata only.
 
 ## Evidence

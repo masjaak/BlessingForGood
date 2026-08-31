@@ -48,7 +48,7 @@ in the current baseline documents without exposing secrets.
 | Multi-Admin invitation/role/status | YES | Owner + valid email/state | forms/clicks | invitation/user lifecycle | mutations | Owner | YES | YES | status reacts | access changes | users | NO | PARTIAL |
 | Audit log | YES | Owner | navigation | immutable list | audit query | Owner | YES | empty state | rows | privileged visibility | audit | NO | PARTIAL |
 | Content save/publish | YES | valid text | form/click | content lifecycle | mutations | content manage | YES | YES | state copy | public content changes | public routes | NO | PARTIAL |
-| Critical settings save | YES | valid fields | form | settings update | mutation | Owner | YES | YES | confirmation | payment/public copy | settings/invoice | NO | PARTIAL |
+| Critical settings save | YES | valid fields | form | settings update | mutation | Admin/Owner operational fields; future critical fields Owner-only | YES | YES | confirmation | payment/public copy | settings/invoice | NO | PARTIAL |
 | WhatsApp API blast | NO | n/a | none | none | none | n/a | n/a | n/a | n/a | intentionally absent | n/a | YES | EXCLUDED |
 | Payment gateway | NO | n/a | none | none | none | n/a | n/a | n/a | n/a | intentionally absent | n/a | YES | EXCLUDED |
 

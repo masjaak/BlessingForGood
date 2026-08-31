@@ -28,7 +28,7 @@ Groups follow operator intent rather than database tables:
 | Catalog    | Books, Catalogs, Ready Stock          |
 | Operations | Orders, Batch PO, Exceptions          |
 | Finance    | Invoices & Deposit, Payments, Refunds |
-| System     | Users; owner only                     |
+| System     | Users, Settings, Audit; Admin operational access; Owner-only role/invitation sub-actions |
 
 The active route is indicated by a green-tinted surface, border, icon, and
 `aria-current="page"`. Customer-side navigation is a separate final link.

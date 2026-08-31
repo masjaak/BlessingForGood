@@ -1,6 +1,36 @@
 # BFG Project Status
 
-## Concurrent load & capacity validation — 2026-08-31
+## 750 public performance + Admin System RBAC follow-up — 2026-08-31
+
+Status: `PARTIAL_IMPLEMENTATION; PERFORMANCE_CONTRACT_NOT_MET; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+The measured public request path was reduced at two application-owned
+boundaries: public routes no longer run Clerk middleware, and Ready Stock now
+uses one-minute ISR for its initial projection. Route-level harness summaries
+and Production logs confirm the profile is serving static cache hits, but the
+latest same-profile 750 run still measured 1,166 requests at 336.12 RPS,
+p95 3,147 ms, p99 3,232 ms, and 0% errors. The p95 contract therefore remains
+open; detailed Vercel queue/function metrics are unavailable
+(`payment_required`). No sustained 750 or 1,000 run was launched.
+
+Active Admins now receive `Pengguna`, `Pengaturan`, and `Log Aktivitas` through
+canonical role/capability authority. Admin user reads and eligible status
+operations work in Convex tests; operational settings are Admin-accessible;
+role/invitation/revocation and Owner-target operations remain Owner-only.
+Owner transfer was not performed and remains a separate future operation.
+
+Local frontend/Convex suites, TypeScript, ESLint, format, build, and Convex
+checks pass in isolated runs. Signed-out Production protected-route checks
+pass. Authenticated Admin A/B, Owner, and Customer Production UAT remains
+pending without safe Clerk QA credentials.
+
+The detailed evidence is in the existing performance, security, and codebase
+memory documents; the preceding 2026-08-31 capacity entry remains historical.
+
+## Historical baseline — concurrent load & capacity validation — 2026-08-31
+
+This baseline is preserved for comparison; the current ticket status is the
+follow-up section above.
 
 Status: `NOT_YET_PROVEN_FOR_1000_CONCURRENT_USERS`
 
