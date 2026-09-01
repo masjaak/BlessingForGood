@@ -279,7 +279,7 @@ export function ClerkInvitationAcceptance({
     authState === "authenticated" &&
     sessionRole === "customer" &&
     ((invitationEmail && invitationEmail === currentVerifiedEmail) ||
-      (!invitationEmail && (sameSessionInvite || phase === "finishing"))),
+      (!invitationEmail && (sameSessionInvite || phase === "finishing" || finalizeStarted.current))),
   );
   if (activeInvitation) activeInvitationRef.current = true;
 

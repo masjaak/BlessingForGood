@@ -1,25 +1,29 @@
 # BFG Project Status
 
-## Invitation recovery audit + additive Book formats — 2026-09-01
+## Invitation terminal-success precedence hotfix — 2026-09-01
 
 Status: `IMPLEMENTED_LOCALLY; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
-The auth audit reproduced the recoverable Username-error contract in the
-current component harness and traced the historical first wrong boundary to
-the `cda2890` existing-Clerk-identity admission branch. Current `main` already
-contains the smallest recovery/session/active-membership fixes, so no auth
-implementation file was changed. The format extension adds six variant values
-through the Convex validator, shared frontend type, Admin selector, bulk
-import, Catalog projection, and order snapshot path; existing `BB`, `PB`, and
-`HB` remain valid.
+Real Production evidence exposed a false terminal failure: the new Customer
+completed Username/Password and could later log in, but a stale Clerk
+finalization/ticket result left the invitation page on `Aktivasi belum selesai.`
+The acceptance component now treats an already-started completion plus a
+verified current identity and active BFG Customer membership as terminal
+success even when Clerk has cleared the invitation email. Late invitation
+errors cannot reverse that state. No Convex source or membership authority
+changed.
 
-Focused auth/format tests pass. Real invitation, wrong-account, future-login,
-and authenticated Production UAT still require an approved disposable Clerk
-QA identity and mailbox; no business data was created for this audit.
-The non-mutating fake-ticket invitation check passed at Production widths 390,
-768, and 1440. Local rendered QA is blocked by missing local Clerk keys; the
-Production signed-out smoke was 54/57, with three existing Secret Catalog copy
-assertion mismatches kept out of scope.
+The historical first wrong boundary remains the `cda2890` existing-Clerk-
+identity admission branch; the current race owner is the acceptance
+component's no-email active predicate versus its late `phase="error"` writes.
+The format extension adds six variant values through its existing owners;
+existing `BB`, `PB`, and `HB` remain valid.
+
+Focused auth/format tests, full deterministic suites, build, Convex check, and
+the non-mutating fake-ticket Production check at 390/768/1440 pass. Real
+invitation, wrong-account, Remove→Reinvite, future-login, and authenticated
+Production UAT still require an approved disposable Clerk QA identity and
+mailbox; no business data was created.
 
 ## Final client contract — My Books 2.0 / Customer × Batch Pool / Admin Users / Book Hard Delete — 2026-08-31
 

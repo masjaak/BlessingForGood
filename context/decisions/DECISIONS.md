@@ -1,5 +1,19 @@
 # Decisions
 
+## Invitation terminal-success precedence — 2026-09-01
+
+- Real Production evidence is authoritative: a Customer can complete
+  Username/Password and have an active BFG membership even when a late Clerk
+  invitation/finalization result reports failure.
+- For the current verified Clerk identity, `appUsers.status=active` with the
+  Customer role is monotonic terminal success for invitation routing. If Clerk
+  has consumed or cleared the invitation email after completion started, the
+  existing completion signal may establish the safe continuation; stale ticket
+  errors cannot set the visible activation failure afterward.
+- The existing verified-email mismatch guard, incomplete-membership path,
+  genuine invalid-invitation path, field-level recovery, and server-side
+  membership authority remain unchanged.
+
 ## Additive Book Variant formats — 2026-09-01
 
 - The canonical Book Variant format set is `BB`, `PB`, `HB`, `Cards`, `Pack`,

@@ -4,6 +4,15 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Invitation terminal-success precedence — 2026-09-01
+
+| ID | Old decision | New decision | Source / owner | Status |
+|---|---|---|---|---|
+| BFG-DEC-082 | Deterministic invitation tests treated active-membership routing as sufficient evidence, although a late Clerk failure could still leave the UI in `Aktivasi belum selesai.`. | A verified current Clerk identity with active BFG Customer membership is irreversible terminal success. When completion has started and Clerk has cleared the invitation email, `finalizeStarted` preserves the narrow continuation signal; late ticket/finalization errors cannot override `/account`. | Real Production regression; `src/components/clerk-invitation-acceptance.tsx` and its focused race harness | IMPLEMENTED LOCALLY / AUTHENTICATED PRODUCTION UAT PENDING |
+
+Wrong-account mismatch, incomplete membership, genuine invalid invitations,
+and recoverable Username/Password field errors remain unchanged.
+
 ## Invitation recovery + additive Book formats — 2026-09-01
 
 | ID | Old decision | New decision | Source / owner | Status |

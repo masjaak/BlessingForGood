@@ -941,6 +941,40 @@ describe("BFG application invitation acceptance", () => {
     expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
   });
 
+  it("lets active membership win after a stale finalization error without a ticket email", async () => {
+    const signUp = {
+      status: "complete",
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn(),
+      finalize: vi.fn().mockResolvedValue({ error: { code: "session_already_active" } }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    const view = render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Aktivasi belum selesai." })).toBeTruthy());
+
+    vi.mocked(useAuth).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      sessionId: "session-customer",
+      userId: "user-customer",
+    } as never);
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "customer@example.com",
+          verification: { status: "verified" },
+        },
+      },
+    } as never);
+    productState = { authState: "authenticated", sessionRole: "customer" };
+    view.rerender(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+    expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
+  });
+
   it("continues a completed invitation for the same active Clerk session", async () => {
     const signUp = {
       status: "complete",

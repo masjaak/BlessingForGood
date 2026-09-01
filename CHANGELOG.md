@@ -2,30 +2,33 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-08-31
+last_updated: 2026-09-01
 source: conversation
 ---
 
 # Changelog
 
-## [invitation-recovery-format-extension] — 2026-09-01
+## [invitation-terminal-success-hotfix] — 2026-09-01
 
 ### Changed
 
-- Audited the Clerk invitation/account-completion regression without changing
-  the current auth architecture. The recoverable Username validation contract,
-  existing-identity continuation, recipient mismatch guard, removed-member
-  tombstone, reinvite reconciliation, and active-membership terminal route
-  remain in their existing owners.
+- Fixed the Clerk invitation/account-completion precedence race: once the
+  current verified identity has an active BFG Customer membership, a stale
+  ticket/finalization failure cannot leave the UI on `Aktivasi belum selesai.`
+  after completion has started, even when Clerk has cleared the ticket email.
+- Preserved recoverable Username validation, existing-identity continuation,
+  recipient mismatch, removed-member tombstones, reinvite reconciliation, and
+  server-side active-membership authority.
 - Added `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and
   `Boxset HB` additively to Book Variant validation, Admin selection, bulk
   import, Catalog projection, and order snapshot typing.
 
 ### QA and status
 
-- Focused auth/format tests pass locally; existing `BB`, `PB`, and `HB` paths
-  remain covered by the existing suite. Authenticated Production invitation
-  UAT is still pending safe QA identity/mailbox access.
+- Focused race/auth/format tests and the full deterministic suite pass locally;
+  existing `BB`, `PB`, and `HB` paths remain covered by the existing suite.
+  Authenticated Production invitation UAT is still pending safe QA
+  identity/mailbox access.
 - Production fake-ticket invitation rendering passed at 390/768/1440. The
   local app could not render without Clerk keys; 54/57 signed-out Production
   smoke checks passed, with three pre-existing Secret Catalog copy assertion

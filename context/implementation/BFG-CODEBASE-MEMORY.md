@@ -1,23 +1,44 @@
 # BFG CODEBASE MEMORY
 
-## Invitation recovery audit + additive Book formats — 2026-09-01
+## Invitation terminal-success precedence hotfix — 2026-09-01
 
+- Real Production regression: a new Customer completed Username/Password and
+  could log in successfully, while a late invitation/finalization result left
+  the acceptance page on `Aktivasi belum selesai.`. Deterministic sequential
+  coverage had not exercised the failure-after-completion ordering with Clerk
+  having cleared the invitation email.
+- Root cause: `src/components/clerk-invitation-acceptance.tsx` allowed a late
+  error callback to set `phase="error"`, and its active-membership predicate
+  only accepted the no-email continuation while `phase="finishing"` or the
+  Clerk resource still exposed the same session. `finalizeStarted` is now the
+  smallest retained completion signal for that path. The existing predicate
+  still requires a loaded, signed-in, verified current identity with
+  `authState="authenticated"` and `sessionRole="customer"`.
 - Auth state owners remain split: Clerk owns identity, invitation ticket
   consumption, session, Username/Password requirements, and verified email;
-  `src/components/clerk-invitation-acceptance.tsx` owns the BFG invitation
-  ticket/form/router continuation; `convex/users.ts` owns admission and
-  active/removed BFG membership; `convex/joinRequests.ts` owns approval,
-  removal tombstones, retry, and reapply; `convex/joinRequestInvitations.ts`
-  owns Clerk delivery/replacement/revocation. The current audit found no
-  auth implementation change required.
-- The historical regression boundary was recorded as `cda2890`'s
-  existing-Clerk-identity admission branch. The protected recovery invariant
-  is: a recoverable Clerk field error changes only field/form state; it never
-  invalidates the ticket, changes recipient ownership, mutates membership, or
-  wins over active membership terminal success. A removed customer retains the
-  tombstone and can reactivate through a newly approved same-email request,
-  reusing the existing Clerk subject or safely reconciling a replacement
-  subject under the existing guards.
+  the acceptance component owns ticket/form/router continuation;
+  `convex/users.ts` owns admission and active/removed BFG membership;
+  `convex/joinRequests.ts` owns approval, removal tombstones, retry, and
+  reapply; `convex/joinRequestInvitations.ts` owns Clerk delivery,
+  replacement, and revocation. ACTIVE BFG MEMBERSHIP OUTRANKS ALL STALE
+  INVITATION STATE for the matching authenticated identity.
+- Terminal-success invariant: matching active BFG membership clears any
+  stale UI error and routes to `/account`. Late consumed, expired, or invalid
+  ticket state cannot reverse it. Wrong-account mismatch, incomplete
+  membership, genuine invalid invitations, and field-level recovery remain
+  protected.
+- Focused proof covers active-membership-first/late-ticket failure,
+  failure-first/active-membership-later with and without a retained ticket
+  email, wrong-account protection, active old-link routing, invalid Username
+  recovery, and finalization after corrected input. Full deterministic
+  frontend/Convex suites, build, typecheck, lint, format, diff, and Convex
+  check pass. Authenticated Production UAT is still pending an approved safe
+  Clerk identity and mailbox; no business data was created.
+
+## Invitation recovery audit + additive Book formats — 2026-09-01
+
+- The additive Book Variant format extension remains owned by the existing
+  validation, type, import, Catalog, Admin, ordering, and snapshot paths.
 - Canonical Book Variant formats are `BB`, `PB`, `HB`, `Cards`, `Pack`,
   `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and `Boxset HB`. Owners are
   `convex/validators.ts` and `convex/lib/productDomain.ts` for backend
@@ -25,7 +46,7 @@
   UI labels, and `convex/lib/bulkImport.ts` for case-insensitive import
   canonicalization. Catalog, OrderItem, InvoiceItem, Batch, and Buku Saya
   consumers pass the variant/snapshot label without a format whitelist.
-- Focused proof covers the exact `Angelina Admin Invoice` invalid-character
+- Focused format proof covers the exact `Angelina Admin Invoice` invalid-character
   recovery, all nine format values in import and Catalog, Admin selection, and
   an order `formatSnapshot`. Authenticated Production UAT remains pending
   without an approved safe Clerk identity/mailbox.

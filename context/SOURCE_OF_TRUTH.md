@@ -1,17 +1,25 @@
 # BFG SOURCE OF TRUTH
 
-## Invitation regression audit + additive Book formats — 2026-09-01
+## Invitation terminal-success precedence hotfix — 2026-09-01
 
 Status: `IMPLEMENTED_LOCALLY; AUTHENTICATED_PRODUCTION_UAT_PENDING`
 
-- The current Clerk/BFG admission contract remains unchanged. A recoverable
-  Clerk account-completion field error stays on `Lengkapi akun`; it does not
-  consume or invalidate BFG context, mutate membership, or route to a false
-  activation failure. The first wrong boundary identified in the historical
-  regression was the existing-Clerk-identity admission branch introduced by
-  `cda2890`; current `main` contains the later single-route, ticket-recovery,
-  session-continuity, and active-membership terminal fixes. No auth
-  implementation change is required by this audit.
+- Real Production evidence now supersedes the earlier deterministic-only
+  confidence: a new Customer could complete Username/Password, reach an
+  active BFG membership, and later see `Aktivasi belum selesai.` while the
+  same Clerk account could log in successfully.
+- The root cause is in the existing acceptance component's async precedence:
+  a stale Clerk finalization/ticket failure could move the component to
+  `phase="error"`; when Clerk had already consumed/cleared the invitation
+  email, the active-membership predicate no longer recognized the established
+  completion continuation. The fix keeps `finalizeStarted` as that narrow
+  continuation signal. It still requires the verified current Clerk identity,
+  `authState="authenticated"`, and `sessionRole="customer"`.
+- A matching active BFG membership is monotonic terminal success for the
+  current invited identity. It clears the error state and routes to `/account`;
+  late consumed, expired, or stale invitation state cannot overwrite it.
+  Wrong-account email mismatch, incomplete membership, genuine invalid
+  invitation, and recoverable field errors remain unchanged.
 - Book Variant `format` is additive and stores the display value directly:
   `BB`, `PB`, `HB`, `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`,
   and `Boxset HB`. Format remains a variant-level identity with independent
