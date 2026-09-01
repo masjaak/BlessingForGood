@@ -1,5 +1,40 @@
 # BFG CODEBASE MEMORY
 
+## Invitation recovery audit + additive Book formats — 2026-09-01
+
+- Auth state owners remain split: Clerk owns identity, invitation ticket
+  consumption, session, Username/Password requirements, and verified email;
+  `src/components/clerk-invitation-acceptance.tsx` owns the BFG invitation
+  ticket/form/router continuation; `convex/users.ts` owns admission and
+  active/removed BFG membership; `convex/joinRequests.ts` owns approval,
+  removal tombstones, retry, and reapply; `convex/joinRequestInvitations.ts`
+  owns Clerk delivery/replacement/revocation. The current audit found no
+  auth implementation change required.
+- The historical regression boundary was recorded as `cda2890`'s
+  existing-Clerk-identity admission branch. The protected recovery invariant
+  is: a recoverable Clerk field error changes only field/form state; it never
+  invalidates the ticket, changes recipient ownership, mutates membership, or
+  wins over active membership terminal success. A removed customer retains the
+  tombstone and can reactivate through a newly approved same-email request,
+  reusing the existing Clerk subject or safely reconciling a replacement
+  subject under the existing guards.
+- Canonical Book Variant formats are `BB`, `PB`, `HB`, `Cards`, `Pack`,
+  `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and `Boxset HB`. Owners are
+  `convex/validators.ts` and `convex/lib/productDomain.ts` for backend
+  validation/creation, `src/domain/prototype/types.ts` for frontend types and
+  UI labels, and `convex/lib/bulkImport.ts` for case-insensitive import
+  canonicalization. Catalog, OrderItem, InvoiceItem, Batch, and Buku Saya
+  consumers pass the variant/snapshot label without a format whitelist.
+- Focused proof covers the exact `Angelina Admin Invoice` invalid-character
+  recovery, all nine format values in import and Catalog, Admin selection, and
+  an order `formatSnapshot`. Authenticated Production UAT remains pending
+  without an approved safe Clerk identity/mailbox.
+- Rendered proof: the non-mutating fake-ticket invitation check passed 3/3 at
+  390/768/1440 against Production. Local browser rendering is unavailable
+  without Clerk environment keys. Production signed-out smoke passed 54/57;
+  the three failures are an existing test-copy mismatch for `Kode akses
+  katalog` versus the live Secret Catalog copy and are outside this ticket.
+
 ## Final client contract and source map — My Books 2.0 / Customer × Batch Pool / Admin Users / Book Hard Delete — 2026-08-31
 
 This section is the current memory boundary for the explicit ticket above.

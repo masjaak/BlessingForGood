@@ -1,4 +1,14 @@
-export const BOOK_FORMATS = ["BB", "PB", "HB"] as const;
+export const BOOK_FORMATS = [
+  "BB",
+  "PB",
+  "HB",
+  "Cards",
+  "Pack",
+  "Slipcase HB",
+  "Slipcase PB",
+  "Boxset PB",
+  "Boxset HB",
+] as const;
 
 export type BookFormat = (typeof BOOK_FORMATS)[number];
 export type CatalogStatus = "draft" | "open" | "closed" | "archived";

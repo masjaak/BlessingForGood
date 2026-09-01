@@ -8,6 +8,29 @@ source: conversation
 
 # Changelog
 
+## [invitation-recovery-format-extension] — 2026-09-01
+
+### Changed
+
+- Audited the Clerk invitation/account-completion regression without changing
+  the current auth architecture. The recoverable Username validation contract,
+  existing-identity continuation, recipient mismatch guard, removed-member
+  tombstone, reinvite reconciliation, and active-membership terminal route
+  remain in their existing owners.
+- Added `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and
+  `Boxset HB` additively to Book Variant validation, Admin selection, bulk
+  import, Catalog projection, and order snapshot typing.
+
+### QA and status
+
+- Focused auth/format tests pass locally; existing `BB`, `PB`, and `HB` paths
+  remain covered by the existing suite. Authenticated Production invitation
+  UAT is still pending safe QA identity/mailbox access.
+- Production fake-ticket invitation rendering passed at 390/768/1440. The
+  local app could not render without Clerk keys; 54/57 signed-out Production
+  smoke checks passed, with three pre-existing Secret Catalog copy assertion
+  mismatches left as backlog.
+
 ## [my-books-2-pool-invoice-admin-book-delete] — 2026-08-31
 
 ### Changed

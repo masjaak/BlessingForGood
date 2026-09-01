@@ -1,5 +1,6 @@
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
+import type { BookFormat } from "../validators";
 import { recordAudit } from "./audit";
 import { fail } from "./errors";
 import { normalizedCategories, positiveMoney, requiredText, slugify } from "./validation";
@@ -71,7 +72,7 @@ export async function insertVariant(
   actorUserId: Id<"appUsers">,
   input: {
     bookId: Id<"books">;
-    format: "BB" | "PB" | "HB";
+    format: BookFormat;
     isbn: string;
     priceAmount: number;
     supplierPriceGbpMinor?: number;

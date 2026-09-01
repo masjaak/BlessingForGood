@@ -452,8 +452,8 @@ describe("BFG application invitation acceptance", () => {
         if (attempts === 1) {
           return Promise.resolve({
             error: {
-              code: "form_identifier_exists",
-              longMessage: "This username is already taken.",
+              code: "form_username_invalid_character",
+              longMessage: "This username contains unsupported characters.",
             },
           });
         }
@@ -470,11 +470,11 @@ describe("BFG application invitation acceptance", () => {
     const passwordInput = screen.getByLabelText("Password");
     expect(passwordInput.getAttribute("type")).toBe("password");
     expect(passwordInput.getAttribute("autocomplete")).toBe("new-password");
-    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "Angelina Admin Invoice" } });
     fireEvent.change(passwordInput, { target: { value: "safe-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
 
-    await waitFor(() => expect(screen.getByText("Username ini sudah digunakan. Pilih username lain.")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Username berisi karakter yang tidak didukung Clerk.")).toBeTruthy());
     expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
 

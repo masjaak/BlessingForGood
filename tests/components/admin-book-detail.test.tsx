@@ -116,6 +116,19 @@ describe("Admin Book Detail lifecycle actions", () => {
     expect(screen.getByRole("button", { name: "Hapus buku" })).toBeTruthy();
   });
 
+  it("offers every canonical Book format for a new variant", () => {
+    mockBook();
+
+    render(<AdminBookDetail bookId="book-1" />);
+    fireEvent.click(screen.getByLabelText("Format"));
+
+    expect(
+      Array.from(screen.getByRole("listbox").querySelectorAll('[role="option"]')).map(
+        (option) => option.querySelector("span")?.textContent,
+      ),
+    ).toEqual(["BB", "PB", "HB", "Cards", "Pack", "Slipcase HB", "Slipcase PB", "Boxset PB", "Boxset HB"]);
+  });
+
   it("accepts decimal pounds and keeps the variant creation grid aligned", async () => {
     const mutation = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useMutation).mockReturnValue(mutation as never);

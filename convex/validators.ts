@@ -1,6 +1,19 @@
 import { v } from "convex/values";
 
-export const bookFormatValidator = v.union(v.literal("BB"), v.literal("PB"), v.literal("HB"));
+export type BookFormat =
+  "BB" | "PB" | "HB" | "Cards" | "Pack" | "Slipcase HB" | "Slipcase PB" | "Boxset PB" | "Boxset HB";
+
+export const bookFormatValidator = v.union(
+  v.literal("BB"),
+  v.literal("PB"),
+  v.literal("HB"),
+  v.literal("Cards"),
+  v.literal("Pack"),
+  v.literal("Slipcase HB"),
+  v.literal("Slipcase PB"),
+  v.literal("Boxset PB"),
+  v.literal("Boxset HB"),
+);
 export const bookPublicationStatusValidator = v.union(
   v.literal("draft"),
   v.literal("published"),

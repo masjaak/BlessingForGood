@@ -4,6 +4,15 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Invitation recovery + additive Book formats — 2026-09-01
+
+| ID | Old decision | New decision | Source / owner | Status |
+|---|---|---|---|---|
+| BFG-DEC-081 | Book Variant format was limited to `BB`, `PB`, and `HB`; an auth audit could be satisfied by a static field test alone. | Keep the existing Clerk/BFG invitation state machine and security boundaries. Recoverable account-completion errors remain on the same form and active membership is terminal success. Add `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and `Boxset HB` as additive variant values through validation, Admin selection, import, Catalog, ordering, and snapshots. | Latest explicit ticket; `src/components/clerk-invitation-acceptance.tsx`, `convex/joinRequests.ts`, `convex/users.ts`, `convex/validators.ts`, `convex/lib/bulkImport.ts`; focused auth/format harness | ACTIVE / AUTHENTICATED PRODUCTION UAT PENDING |
+
+No username sanitization, recipient-match weakening, membership-model change,
+or pricing/inventory/taxonomy change is authorized by this decision.
+
 ## Final client contract — 2026-08-31
 
 | ID | Old decision | New decision | Source / owner | Status |

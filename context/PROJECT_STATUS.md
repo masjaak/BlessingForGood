@@ -1,5 +1,26 @@
 # BFG Project Status
 
+## Invitation recovery audit + additive Book formats — 2026-09-01
+
+Status: `IMPLEMENTED_LOCALLY; AUTHENTICATED_PRODUCTION_UAT_PENDING`
+
+The auth audit reproduced the recoverable Username-error contract in the
+current component harness and traced the historical first wrong boundary to
+the `cda2890` existing-Clerk-identity admission branch. Current `main` already
+contains the smallest recovery/session/active-membership fixes, so no auth
+implementation file was changed. The format extension adds six variant values
+through the Convex validator, shared frontend type, Admin selector, bulk
+import, Catalog projection, and order snapshot path; existing `BB`, `PB`, and
+`HB` remain valid.
+
+Focused auth/format tests pass. Real invitation, wrong-account, future-login,
+and authenticated Production UAT still require an approved disposable Clerk
+QA identity and mailbox; no business data was created for this audit.
+The non-mutating fake-ticket invitation check passed at Production widths 390,
+768, and 1440. Local rendered QA is blocked by missing local Clerk keys; the
+Production signed-out smoke was 54/57, with three existing Secret Catalog copy
+assertion mismatches kept out of scope.
+
 ## Final client contract — My Books 2.0 / Customer × Batch Pool / Admin Users / Book Hard Delete — 2026-08-31
 
 Status: `IMPLEMENTED_AND_DEPLOYED; AUTHENTICATED_PRODUCTION_UAT_PENDING`

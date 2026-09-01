@@ -325,7 +325,8 @@ an import-job table.
   checks.
 - `price_idr` is a positive safe integer with no currency symbol, decimal,
   thousands separator, sign, or non-numeric text.
-- `format` is one of the current canonical values: `BB`, `PB`, or `HB`.
+- `format` is one of the current canonical values: `BB`, `PB`, `HB`, `Cards`,
+  `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`, or `Boxset HB`.
 - Publisher and title are required; optional author, description, and category
   values are bounded and stored as text, never interpreted as HTML.
 - Exact duplicate ISBNs within one file fail. Repeated publisher/title rows

@@ -30,11 +30,11 @@ import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-f
 import { ProductGallery } from "@/components/product-gallery";
 import { formatGbpMinor, normalizeGbpInput, parseGbpMinor } from "@/lib/gbp";
 import { uploadBfgFile } from "@/lib/upload-file";
+import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
 type GalleryImage = AdminBook["gallery"][number];
-type BookFormat = "BB" | "PB" | "HB";
 type PublicationStatus = "draft" | "published" | "special" | "archived";
 
 const publicationLabels: Record<PublicationStatus, string> = {
@@ -774,9 +774,11 @@ function BookEditor({ book }: { book: AdminBook }) {
                   value={format}
                   onChange={(event) => setFormat(event.target.value as BookFormat)}
                 >
-                  <option value="BB">BB</option>
-                  <option value="PB">PB</option>
-                  <option value="HB">HB</option>
+                  {BOOK_FORMATS.map((value) => (
+                    <option value={value} key={value}>
+                      {value}
+                    </option>
+                  ))}
                 </BFGSelect>
               </Field>
               <Field label="ISBN">

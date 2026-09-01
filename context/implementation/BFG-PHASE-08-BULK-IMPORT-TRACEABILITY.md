@@ -36,7 +36,7 @@ known acceptance gaps.
 | `author`      | `books.author`             | Optional text; existing metadata conflicts, never silent overwrite          |
 | `description` | `books.description`        | Optional bounded plain text; quoted/newline CSV content remains text        |
 | `categories`  | `books.categories`         | Optional semicolon-separated normalized set; no category entity mutation    |
-| `format`      | `bookVariants.format`      | Required allowlist: `BB`, `PB`, `HB`                                        |
+| `format`      | `bookVariants.format`      | Required allowlist: `BB`, `PB`, `HB`, `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`, `Boxset HB` |
 | `isbn`        | `bookVariants.isbn`        | Required normalized ISBN-10/ISBN-13 with check digit; global conflict fails |
 | `price_idr`   | `bookVariants.priceAmount` | Required positive safe integer digits only; currency is canonical `IDR`     |
 

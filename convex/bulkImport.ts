@@ -3,6 +3,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import {
+  BOOK_FORMAT_VALUES,
   BULK_IMPORT_LIMITS,
   equalCategories,
   equalOptionalText,
@@ -220,7 +221,7 @@ function publicRow(row: PlannedRow) {
     rowNumber: row.normalized.rowNumber,
     publisher: row.normalized.publisher,
     title: row.normalized.title,
-    format: ["BB", "PB", "HB"].includes(row.normalized.format) ? row.normalized.format : "—",
+    format: BOOK_FORMAT_VALUES.includes(row.normalized.format) ? row.normalized.format : "—",
     isbn: row.normalized.isbn,
     priceIdr: row.normalized.priceIdr || null,
     status: row.status,

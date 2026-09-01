@@ -1,5 +1,16 @@
 # Decisions
 
+## Additive Book Variant formats — 2026-09-01
+
+- The canonical Book Variant format set is `BB`, `PB`, `HB`, `Cards`, `Pack`,
+  `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and `Boxset HB`. Existing values
+  remain valid; the six new values are additive and are stored/displayed as
+  these exact labels.
+- The existing one-format static presentation and compact explicit selection
+  behavior remain in place for any number of eligible variants. Variant price,
+  availability, inventory, Catalog assignment, ordering, invoice, Batch, and
+  Customer snapshot ownership are unchanged.
+
 ## 750 public performance and Admin System RBAC — 2026-08-31
 
 - The 750 public read-heavy contract remains p95 ≤2,000 ms, p99 ≤5,000 ms,
@@ -36,8 +47,8 @@
 ## Catalog UI polish and adaptive format presentation — 2026-08-30
 
 - A customer-projected Book has at least one eligible variant; the canonical
-  format enum allows at most three unique formats. One eligible format is
-  displayed as static metadata. Two or more eligible formats retain explicit
+  format enum now includes the additive values recorded above. One eligible
+  format is displayed as static metadata. Two or more eligible formats retain explicit
   selection with compact BFG-styled radio semantics rather than a large card or
   radio-dot treatment.
 - The Book card exposes one price near Book identity, derived from the current

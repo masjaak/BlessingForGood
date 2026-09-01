@@ -19,9 +19,9 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
+import type { BookFormat } from "@/domain/prototype/types";
 import type { PublicReadyStockList } from "@/lib/seo";
 
-type BookFormat = "BB" | "PB" | "HB";
 type Sort = "newest" | "title" | "price";
 
 function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStockList }) {

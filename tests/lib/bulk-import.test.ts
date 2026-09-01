@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BOOK_FORMAT_VALUES,
   BULK_IMPORT_HEADERS,
   BULK_IMPORT_LIMITS,
   bulkImportTransition,
@@ -119,6 +120,15 @@ describe("bulk import parser and contract", () => {
       priceIdr: 305000,
       categories: ["Children Books", "Picture Book"],
     });
+  });
+
+  it("accepts every canonical Book format and preserves its display label", () => {
+    for (const format of BOOK_FORMAT_VALUES) {
+      const result = normalizeBulkImportRow({ ...validRow, format: format.toLowerCase() }, 2);
+
+      expect(result.errors.filter((error) => error.field === "format")).toEqual([]);
+      expect(result.format).toBe(format);
+    }
   });
 
   it("rejects invalid ISBN, money syntax, required fields, and forbidden control values", () => {

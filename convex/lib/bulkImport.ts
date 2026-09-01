@@ -10,7 +10,18 @@ export const BULK_IMPORT_HEADERS = [
 ] as const;
 
 export type BulkImportHeader = (typeof BULK_IMPORT_HEADERS)[number];
-export type BulkImportFormat = "BB" | "PB" | "HB";
+export const BOOK_FORMAT_VALUES = [
+  "BB",
+  "PB",
+  "HB",
+  "Cards",
+  "Pack",
+  "Slipcase HB",
+  "Slipcase PB",
+  "Boxset PB",
+  "Boxset HB",
+] as const;
+export type BulkImportFormat = (typeof BOOK_FORMAT_VALUES)[number];
 export type BulkImportFields = Record<BulkImportHeader, string>;
 
 export const BULK_IMPORT_LIMITS = {
@@ -441,7 +452,9 @@ export function normalizeBulkImportRow(fields: BulkImportFields, rowNumber: numb
         .filter(Boolean),
     ),
   ];
-  const formatValue = normalizeBulkText(fields.format).toUpperCase();
+  const formatInput = normalizeBulkText(fields.format);
+  const canonicalFormat = BOOK_FORMAT_VALUES.find((format) => format.toUpperCase() === formatInput.toUpperCase());
+  const formatValue = canonicalFormat ?? formatInput;
   const isbn = normalizeIsbn(fields.isbn);
   const priceText = fields.price_idr.trim();
   const priceIdr = /^\d+$/u.test(priceText) ? Number(priceText) : 0;
@@ -526,15 +539,15 @@ export function normalizeBulkImportRow(fields: BulkImportFields, rowNumber: numb
       ),
     );
   }
-  if (!["BB", "PB", "HB"].includes(formatValue))
+  if (!canonicalFormat)
     errors.push(
       error(
         rowNumber,
         "format",
         fields.format,
         "INVALID_FORMAT",
-        "format must be BB, PB, or HB",
-        "enter BB, PB, or HB",
+        `format must be ${BOOK_FORMAT_VALUES.join(", ")}`,
+        `enter one of: ${BOOK_FORMAT_VALUES.join(", ")}`,
       ),
     );
   if (!isbn)

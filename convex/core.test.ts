@@ -45,6 +45,45 @@ describe("BFG Convex core persistence", () => {
     expect(catalog?.books[0].variants).toHaveLength(1);
   });
 
+  it("accepts additive Book formats and preserves the selected format in the order snapshot", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const formats = [
+      "BB",
+      "PB",
+      "HB",
+      "Cards",
+      "Pack",
+      "Slipcase HB",
+      "Slipcase PB",
+      "Boxset PB",
+      "Boxset HB",
+    ] as const;
+    const bundle = await admin.mutation(api.secretCatalogs.createBundle, {
+      name: "Additive Formats Catalog",
+      publisherName: "Additive Formats Publisher",
+      bookTitle: "Additive Formats Book",
+      accessCode: "additive-formats-code",
+      variants: formats.map((format, index) => ({
+        format,
+        isbn: `978${String(index + 1).padStart(10, "0")}`,
+        priceAmount: 100000 + index,
+      })),
+    });
+    await admin.mutation(api.secretCatalogs.open, { catalogId: bundle.catalogId });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "additive-formats-code" });
+
+    const catalog = await customer.query(api.catalogAccess.getUnlocked, { catalogId: bundle.catalogId });
+    expect(new Set(catalog?.books[0]?.variants.map((variant) => variant.format))).toEqual(new Set(formats));
+
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: bundle.catalogId,
+      customerName: "Format Customer",
+      items: [{ variantId: bundle.variantIds[5], quantity: 1 }],
+    });
+    expect(order.items[0]).toMatchObject({ formatSnapshot: "Slipcase HB" });
+  });
+
   it("allows anonymous token redemption only through a scoped expiring session", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
