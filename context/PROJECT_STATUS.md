@@ -2,7 +2,7 @@
 
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
-Status: `IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 The active scope is a smallest-safe-diff polish of the Customer Buku Saya,
 invoice summary, Batch list/detail, and Secret Catalog preorder form, plus
@@ -22,6 +22,9 @@ Clerk identities and disposable business fixtures are available; the local
 Next route probe is blocked by the environment's missing Clerk publishable key.
 Customer-facing display/accessibility copy is now canonical `Blessing For Good`;
 SEO metadata and protected historical/identifier wording remain unchanged.
+Preorder default-name authority is now BFG Profile `displayName`, followed by
+Clerk full name, username, and an empty editable field; no profile sync or
+historical-order rewrite is introduced.
 
 ## Invitation terminal-success precedence hotfix — 2026-09-01
 

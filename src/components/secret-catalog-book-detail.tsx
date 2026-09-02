@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { BookCover } from "@/components/book-cover";
@@ -10,17 +11,26 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { useProduct } from "@/domain/prototype/store";
 import type { Book } from "@/domain/prototype/types";
+import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 
 function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book }) {
-  const { authState, sessionRole, submitOrder } = useProduct();
+  const { authState, sessionRole, submitOrder, dataSource, customerProfileDisplayName } = useProduct();
+  const { isLoaded: clerkUserLoaded, user } = useUser();
   const [variantId, setVariantId] = useState(book.variants[0]?.id || "");
   const [quantity, setQuantity] = useState("1");
-  const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [message, setMessage] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const selected = book.variants.find((variant) => variant.id === variantId);
+  const { customerName, onCustomerNameChange } = usePreorderCustomerName({
+    enabled: authState === "authenticated" && sessionRole === "customer",
+    profileLoaded: dataSource !== "convex" || customerProfileDisplayName !== undefined,
+    bfgDisplayName: customerProfileDisplayName,
+    clerkLoaded: clerkUserLoaded,
+    clerkFullName: user?.fullName,
+    clerkUsername: user?.username,
+  });
 
   if (authState === "authenticated" && sessionRole === "customer") {
     if (orderId) {
@@ -81,7 +91,7 @@ function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book })
           <input
             className="input"
             value={customerName}
-            onChange={(event) => setCustomerName(event.target.value)}
+            onChange={(event) => onCustomerNameChange(event.target.value)}
             required
           />
         </Field>

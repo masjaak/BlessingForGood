@@ -9,10 +9,17 @@
   `src/app/account/orders/page.tsx` for Buku Saya, the Customer Batch routes
   for Batch presentation, and `src/app/account/invoices/page.tsx` for the
   separate finance rows. No money formula or invoice mutation is needed.
-- The preorder form remains in `src/components/customer-catalog.tsx`.
-  Autofill is presentation state only: active Clerk full display name wins,
-  username is the fallback, and an empty result preserves an editable blank
-  field. The `orders.submit` payload and validation are not changed.
+- Preorder entry points are `src/components/customer-catalog.tsx` and
+  `src/components/secret-catalog-book-detail.tsx`. The
+  `ConvexProductProvider` reads the authenticated Customer's own
+  `customerProfiles.displayName`; the shared
+  `src/lib/preorder-customer-name.ts` resolver applies BFG display name →
+  Clerk full name → Clerk username → blank. Initialization waits for the BFG
+  profile query, preserves capitalization after trimming surrounding
+  whitespace, and never overwrites a manually edited current form during a
+  profile refresh. The `orders.submit` payload and validation are unchanged;
+  submitted `orders.customerName` values remain historical snapshots. No
+  first-time seed or two-way profile synchronization exists.
 - Catalog ordering already has the optional `catalogItems.sortOrder` field;
   it remains the sole authority. `convex/catalogItems.ts` is the
   mutation/query owner. Its one move mutation accepts the existing `up` /

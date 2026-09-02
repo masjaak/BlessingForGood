@@ -2,7 +2,7 @@
 
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
-Status: `IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 This is a scoped maintenance enhancement. It does not reopen finance,
 invoice, auth, membership, Batch assignment, search, SEO, media, or RBAC
@@ -24,10 +24,14 @@ architecture.
   `src/app/account/batches/[batchId]/page.tsx` own customer Batch spacing.
   Desktop may use balanced columns; mobile stacks the same metadata without
   changing the underlying Batch projection or search.
-- `src/components/customer-catalog.tsx` owns the preorder form. `Nama` is
-  initialized once from Clerk full display name, then username, and remains
-  editable. Empty account data falls back to the current blank required field;
-  email, quantity, variant, and submission behavior are unchanged.
+- `src/components/customer-catalog.tsx` and
+  `src/components/secret-catalog-book-detail.tsx` own the two preorder entry
+  forms. `ConvexProductProvider` loads the authenticated Customer's own
+  `customerProfiles.displayName` through `customerProfiles.getMine`; the shared
+  resolver initializes editable `Nama` once with BFG display name first, then
+  Clerk full name, then Clerk username, then blank. A later profile refresh
+  cannot overwrite a name edited in the current form. Email, quantity,
+  variant, submission behavior, and Clerk/BFG ownership remain unchanged.
 - `convex/catalogItems.ts` owns Admin Catalog item ordering. The existing
   optional `catalogItems.sortOrder` field remains the only authority. Its one
   move mutation accepts either the existing `direction` fallback or a

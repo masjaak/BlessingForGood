@@ -226,6 +226,38 @@ describe("BFG Convex core persistence", () => {
     ).toHaveLength(1);
   });
 
+  it("reads back the BFG profile name and preserves submitted order snapshots", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const bundle = await createOpenCatalog(admin, "Profile Name Catalog", "0005", "profile-name-code");
+
+    await customer.mutation(api.customerProfiles.upsertMine, { displayName: "MULIA KAH" });
+    await expect(customer.query(api.customerProfiles.getMine, {})).resolves.toMatchObject({
+      displayName: "MULIA KAH",
+    });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "profile-name-code" });
+
+    const firstOrder = await customer.mutation(api.orders.submit, {
+      catalogId: bundle.catalogId,
+      customerName: "MULIA KAH",
+      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+    });
+    await customer.mutation(api.customerProfiles.upsertMine, { displayName: "Mulia Raya Updated" });
+    await expect(customer.query(api.customerProfiles.getMine, {})).resolves.toMatchObject({
+      displayName: "Mulia Raya Updated",
+    });
+    await expect(customer.query(api.orders.getMine, { orderId: firstOrder.orderId })).resolves.toMatchObject({
+      customerName: "MULIA KAH",
+    });
+
+    const secondOrder = await customer.mutation(api.orders.submit, {
+      catalogId: bundle.catalogId,
+      customerName: "Mulia Raya Updated",
+      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+    });
+    expect(secondOrder.customerName).toBe("Mulia Raya Updated");
+  });
+
   it("edits only before catalog close", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

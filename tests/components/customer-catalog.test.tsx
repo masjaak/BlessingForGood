@@ -17,12 +17,14 @@ beforeEach(() => {
 });
 
 describe("CustomerCatalog projection", () => {
-  it("prefills the editable preorder name from the active display name", async () => {
+  it("prefills the editable preorder name from the BFG Profile display name", async () => {
     vi.mocked(useUser).mockReturnValue({
       isLoaded: true,
-      user: { fullName: "Ibu Sari", username: "sari_bfg" },
+      user: { fullName: "Mulia Raya", username: "muliaraya" },
     } as never);
     vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      customerProfileDisplayName: "MULIA KAH",
       unlockedCatalog: {
         id: "catalog-name",
         name: "Name Catalog",
@@ -58,7 +60,7 @@ describe("CustomerCatalog projection", () => {
     render(<CustomerCatalog />);
 
     const name = await screen.findByLabelText("Nama");
-    await waitFor(() => expect((name as HTMLInputElement).value).toBe("Ibu Sari"));
+    await waitFor(() => expect((name as HTMLInputElement).value).toBe("MULIA KAH"));
     fireEvent.change(name, { target: { value: "Nama pilihan" } });
     expect((name as HTMLInputElement).value).toBe("Nama pilihan");
   });
@@ -69,6 +71,8 @@ describe("CustomerCatalog projection", () => {
       user: { fullName: "", username: "sari_bfg" },
     } as never);
     vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      customerProfileDisplayName: null,
       unlockedCatalog: {
         id: "catalog-username",
         name: "Username Catalog",
@@ -106,6 +110,8 @@ describe("CustomerCatalog projection", () => {
 
     vi.mocked(useUser).mockReturnValue({ isLoaded: true, user: null } as never);
     vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      customerProfileDisplayName: null,
       unlockedCatalog: {
         id: "catalog-blank",
         name: "Blank Catalog",
@@ -224,6 +230,8 @@ describe("CustomerCatalog projection", () => {
       updatedAt: "2030-08-15T00:00:00.000Z",
     });
     vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      customerProfileDisplayName: null,
       unlockedCatalog: {
         id: "catalog-multi",
         name: "Multi Format Catalog",

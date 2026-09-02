@@ -15,6 +15,9 @@ source: conversation
 - Corrected active customer-facing brand copy from `Blessing For Goods` to
   `Blessing For Good`; SEO metadata and historical/identifier wording remain
   protected.
+- Corrected new preorder `Nama` initialization to use the authenticated
+  Customer's BFG Profile display name before Clerk full name and username;
+  current manual edits and historical order snapshots remain protected.
 - Upgraded the existing Admin Catalog ordering UI from move-only controls to
   an explicit pointer drag handle with visible dragging feedback and an
   insertion indicator. Mouse, trackpad, and touch use the same interaction;
@@ -34,8 +37,8 @@ source: conversation
   cross-Catalog isolation coverage. The full deterministic suite is 469 tests;
   responsive rendered QA passes at 390, 768, and 1440.
 - Bulk upload, Book Master, variants, Catalog membership, Secret Catalog
-  access, Customer search, preorder, Order, Invoice, Batch, Ready Stock,
-  Finance, Auth, RBAC, Buku Saya, SEO, and media remain unchanged.
+  access, Customer search, preorder submission, Order, Invoice, Batch, Ready
+  Stock, Finance, Auth, RBAC, Buku Saya, SEO, and media remain unchanged.
 
 ## [my-books-ui-order-form-catalog-ordering] — 2026-09-02
 
@@ -52,10 +55,10 @@ source: conversation
 - Split `Deposit teralokasi`, `Sisa tagihan`, `Status pembayaran`, and
   `Terverifikasi` into distinct customer invoice rows without changing
   finance or invoice calculations.
-- Initialized the editable Secret Catalog preorder `Nama` from the active
-  Clerk full display name, then username, with a blank fallback when account
-  names are unavailable. Existing quantity, variant, email, validation, and
-  submission flow remain unchanged.
+- Initialized the editable Secret Catalog preorder `Nama` from the BFG Profile
+  display name, then Clerk full name and username, with a blank fallback when
+  account names are unavailable. Existing quantity, variant, email,
+  validation, and submission flow remain unchanged.
 - Reused the existing optional `catalogItems.sortOrder` field. Admin can move
   a catalog item up or down; the bounded normalized order is used by both the
   Admin list and customer Catalog projection, so series display remains stable

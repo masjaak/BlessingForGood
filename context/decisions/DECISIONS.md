@@ -2,7 +2,7 @@
 
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
-Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 - Customer-facing BFG display copy is `Blessing For Good` without a trailing
   `s`; SEO metadata, historical records, and identifiers remain outside this
@@ -19,10 +19,13 @@ Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
 - Customer Batch list/detail uses the existing BFG tokens with deliberate
   two-line or stacked metadata where one line is cramped. Search, cover,
   snapshot, assignment, shipment, and CTA behavior remain unchanged.
-- Secret Catalog preorder `Nama` is initialized from the active Clerk
-  identity's full display name, then username. A missing identity name leaves
-  the existing editable required field blank; submission and validation stay
-  unchanged.
+- Secret Catalog preorder `Nama` is initialized once by the shared resolver
+  from BFG `customerProfiles.displayName`, then Clerk full name, then Clerk
+  username, then blank. BFG Profile is the operational authority after a
+  Customer edits it; Clerk remains identity/fallback only. A profile refresh
+  cannot overwrite a Customer's current manual edit, and a profile change
+  affects newly opened forms only. No BFG→Clerk sync, Clerk→BFG sync, seed,
+  schema change, submission change, or historical-order backfill is added.
 - Catalog item `sortOrder` is the sole deterministic customer display
   sequence. Admin uses an explicit pointer/touch drag handle as the primary
   interaction; its destination is persisted through the existing move

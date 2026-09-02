@@ -190,6 +190,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const adminWorkspace = pathname.startsWith("/admin");
   const isAdmin = activeUser && adminWorkspace && roleCanAccess(me?.role || null, "admin");
   const isCustomer = activeUser && !adminWorkspace && roleCanAccess(me?.role || null, "customer");
+  const customerProfile = useQuery(api.customerProfiles.getMine, isCustomer ? {} : "skip");
+  const customerProfileDisplayName = customerProfile === undefined ? undefined : (customerProfile?.displayName ?? null);
   const adminCatalogs = useQuery(
     api.secretCatalogs.list,
     isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
@@ -483,6 +485,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       dataSource: "convex",
       sessionRole: me?.role || null,
       userStatus: me?.status || null,
+      customerProfileDisplayName,
       authState,
       membershipState,
       catalogLoading,
@@ -504,6 +507,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       closeCatalog,
       createCatalog,
       catalogOptions,
+      customerProfileDisplayName,
       editOrder,
       authState,
       catalogLoading,

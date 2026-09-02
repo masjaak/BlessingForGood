@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { formatBfgCalendarDate } from "@/lib/calendar-date";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
@@ -14,6 +14,7 @@ import type { ProductContextValue } from "@/domain/prototype/context";
 import { useProduct } from "@/domain/prototype/store";
 import type { Order } from "@/domain/prototype/types";
 import { matchesCustomerCatalogBook } from "@/lib/catalog-discovery";
+import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 import {
   Button,
   Card,
@@ -70,6 +71,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     submitOrder,
     sessionRole,
     authState,
+    customerProfileDisplayName,
     catalogOptions = [],
     selectCatalog = () => undefined,
   } = product;
@@ -80,20 +82,19 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   const [publisherFilter, setPublisherFilter] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const nameWasInitialized = useRef(false);
-  const accountName = user?.fullName?.trim() || user?.username?.trim() || "";
-
-  useEffect(() => {
-    if (!clerkUserLoaded || nameWasInitialized.current || !accountName) return;
-    setCustomerName(accountName);
-    nameWasInitialized.current = true;
-  }, [accountName, clerkUserLoaded]);
+  const { customerName, onCustomerNameChange } = usePreorderCustomerName({
+    enabled: authState === "authenticated" && sessionRole === "customer",
+    profileLoaded: product.dataSource !== "convex" || customerProfileDisplayName !== undefined,
+    bfgDisplayName: customerProfileDisplayName,
+    clerkLoaded: clerkUserLoaded,
+    clerkFullName: user?.fullName,
+    clerkUsername: user?.username,
+  });
 
   const selectedItems = useMemo(() => {
     if (!catalog) return [];
@@ -465,7 +466,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                 <input
                   className="input"
                   value={customerName}
-                  onChange={(event) => setCustomerName(event.target.value)}
+                  onChange={(event) => onCustomerNameChange(event.target.value)}
                   required
                 />
               </Field>

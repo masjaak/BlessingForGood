@@ -134,6 +134,7 @@ export interface ProductContextValue {
   dataSource: ProductDataSource;
   sessionRole: ProductRole | null;
   userStatus: "active" | "suspended" | "removed" | null;
+  customerProfileDisplayName: string | null | undefined;
   authState: ProductAuthState;
   membershipState: ProductMembershipState;
   catalogLoading: boolean;
