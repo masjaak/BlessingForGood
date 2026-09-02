@@ -119,10 +119,10 @@ async function verifyRoute(route: string, page: Page, project: string) {
     } else {
       await expect(page.getByRole("navigation", { name: "Navigasi utama" })).toBeVisible();
     }
-    await expect(page.getByRole("link", { name: "Blessing For Goods home" }).getByRole("img")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Blessing For Good home" }).getByRole("img")).toBeVisible();
   } else if (authRoutes.has(route)) {
     await expect(page).toHaveURL(/\/sign-in/);
-    await expect(page.getByRole("img", { name: "Blessing For Goods" })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Blessing For Good" })).toBeVisible();
     await expect(page.getByText(/khusus Blessfriends/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("[data-clerk-component]")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/sign up|buat akun/i)).toBeHidden();
@@ -155,7 +155,7 @@ async function verifyRoute(route: string, page: Page, project: string) {
         expect(new URL(page.url()).searchParams.get("redirect_url")).toMatch(/\/account\/invoices$/);
       }
     }
-    await expect(page.getByRole("img", { name: "Blessing For Goods" })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Blessing For Good" })).toBeVisible();
     await expect(page.locator("[data-clerk-component]")).toBeVisible({ timeout: 15_000 });
   }
 

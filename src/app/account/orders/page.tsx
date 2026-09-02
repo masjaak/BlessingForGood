@@ -43,20 +43,28 @@ function CustomerBooks() {
   );
 
   return (
-    <div className="page">
+    <div className="page my-books-page">
       <PageHeader
         eyebrow="Buku Saya"
-        title="Buku apa aja yang udah gue fix?"
-        description="Lihat nilai buku, tagihan berjalan, deposit, dan perjalanan setiap Batch dalam satu tempat."
+        title="Buku yang sudah kamu fix"
+        description="Lihat total tagihan, sisa pembayaran, deposit, dan perjalanan setiap Batch dalam satu tempat."
         actions={
           <LinkButton href="/catalog" variant="secondary">
             Kembali ke katalog
           </LinkButton>
         }
       />
-      <Card>
-        <span className="card-kicker">Rentang waktu</span>
-        <div className="form-grid">
+      <Card className="my-books-date-range-card">
+        <div className="my-books-date-range-heading">
+          <span className="card-kicker">Rentang waktu</span>
+          {validRange ? (
+            <span className="subtle my-books-date-range-display">
+              {formatBfgCalendarDate(calendarDateToStartTimestamp(startDate))} –{" "}
+              {formatBfgCalendarDate(calendarDateToEndTimestamp(endDate))}
+            </span>
+          ) : null}
+        </div>
+        <div className="form-grid my-books-date-range-fields">
           <Field label="Dari">
             <input
               className="input"
@@ -82,43 +90,44 @@ function CustomerBooks() {
         </LoadingRegion>
       ) : overview ? (
         <>
-          <div className="account-metrics">
-            <Card frame="summary">
-              <span className="card-kicker">Total spending</span>
-              <strong className="metric-money">
+          <div className="account-metrics my-books-summary-grid">
+            <Card frame="summary" className="my-books-summary-card">
+              <span className="card-kicker my-books-summary-label">TOTAL SPENDING</span>
+              <strong className="metric-money my-books-summary-value">
                 <Money amount={overview.totalSpending} />
               </strong>
-              <span className="subtle">Nilai jual buku yang sudah fix</span>
+              <span className="subtle my-books-summary-help">Total tagihan buku yang sudah di-fix</span>
             </Card>
-            <Card frame="summary">
-              <span className="card-kicker">Pending payment</span>
-              <strong className="metric-money">
+            <Card frame="summary" className="my-books-summary-card">
+              <span className="card-kicker my-books-summary-label">PENDING PAYMENT</span>
+              <strong className="metric-money my-books-summary-value">
                 <Money amount={overview.pendingPayment} />
               </strong>
-              <span className="subtle">Sisa invoice yang sudah terbit</span>
+              <span className="subtle my-books-summary-help">Sisa tagihan keseluruhan dari invoice terbit</span>
             </Card>
-            <Card frame="summary">
-              <span className="card-kicker">Total deposit</span>
-              <strong className="metric-money">
+            <Card frame="summary" className="my-books-summary-card">
+              <span className="card-kicker my-books-summary-label">DEPOSIT</span>
+              <strong className="metric-money my-books-summary-value">
                 <Money amount={overview.totalDeposit} />
               </strong>
-              <span className="subtle">Saldo deposit yang bisa digunakan</span>
+              <span className="subtle my-books-summary-help">Top up credit</span>
             </Card>
           </div>
-          <div className="content-stack">
-            <div className="split-heading">
+          <div className="content-stack my-books-batch-list">
+            <div className="split-heading my-books-batch-list-heading">
               <div>
                 <span className="card-kicker">Batch buku</span>
                 <h2>Semua buku yang sudah fix, dikelompokkan per Batch</h2>
               </div>
-              <span className="subtle">
-                {startDate} – {endDate}
+              <span className="subtle my-books-batch-range">
+                {formatBfgCalendarDate(calendarDateToStartTimestamp(startDate))} –{" "}
+                {formatBfgCalendarDate(calendarDateToEndTimestamp(endDate))}
               </span>
             </div>
             {overview.batches.length ? (
               overview.batches.map((batch) => (
-                <Card key={batch.batchId || "unassigned"}>
-                  <div className="split-heading">
+                <Card className="my-books-batch-card" key={batch.batchId || "unassigned"}>
+                  <div className="split-heading my-books-batch-heading">
                     <div>
                       <span className="card-kicker">
                         {batch.referenceCode || (batch.batchId ? "Batch PO" : "Pengecualian")}
@@ -133,18 +142,18 @@ function CustomerBooks() {
                           : "Belum masuk Batch"}
                     </StatusBadge>
                   </div>
-                  <div className="summary-line">
+                  <div className="summary-line my-books-batch-summary">
                     <span>
-                      {batch.bookCount} buku · {batch.orderCount} submission
+                      {batch.bookCount} buku · {batch.orderCount} pesanan
                     </span>
                     <strong>
                       <Money amount={batch.totalAmount} />
                     </strong>
                   </div>
                   {!batch.batchId && batch.items.length ? (
-                    <div className="content-stack">
+                    <div className="content-stack my-books-unassigned-items">
                       {batch.items.map((item) => (
-                        <div className="summary-line" key={item.assignmentId}>
+                        <div className="summary-line my-books-unassigned-row" key={item.assignmentId}>
                           <span>
                             <strong>{item.title}</strong>
                             <br />
@@ -157,17 +166,32 @@ function CustomerBooks() {
                       ))}
                     </div>
                   ) : null}
-                  {batch.poDeadlineAt ? (
-                    <p className="subtle">Close PO: {formatBfgCalendarDate(batch.poDeadlineAt)}</p>
-                  ) : null}
-                  <p className="subtle">ETA cargo: {formatCargoEta(batch.etaCargoMonth)}</p>
-                  {batch.batchId ? (
-                    <LinkButton href={`/account/batches/${batch.batchId}`} variant="secondary">
-                      Buka detail Batch
-                    </LinkButton>
-                  ) : (
-                    <p className="subtle">Admin akan memasukkan buku ini ke Batch yang sesuai.</p>
-                  )}
+                  <div className="my-books-batch-footer">
+                    <div className="my-books-batch-meta">
+                      {batch.poDeadlineAt ? (
+                        <p className="subtle">
+                          <span className="my-books-batch-meta-label">Batas PO</span>
+                          <span>{formatBfgCalendarDate(batch.poDeadlineAt)}</span>
+                        </p>
+                      ) : null}
+                      <p className="subtle">
+                        <span className="my-books-batch-meta-label">Perkiraan tiba</span>
+                        <span>{formatCargoEta(batch.etaCargoMonth)}</span>
+                      </p>
+                      {!batch.batchId ? (
+                        <p className="subtle">Admin akan memasukkan buku ini ke Batch yang sesuai.</p>
+                      ) : null}
+                    </div>
+                    {batch.batchId ? (
+                      <LinkButton
+                        href={`/account/batches/${batch.batchId}`}
+                        variant="secondary"
+                        className="my-books-batch-cta"
+                      >
+                        Buka detail Batch
+                      </LinkButton>
+                    ) : null}
+                  </div>
                 </Card>
               ))
             ) : (

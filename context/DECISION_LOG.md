@@ -4,6 +4,16 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
+
+| ID | Old decision | New decision | Source / owner | Status |
+|---|---|---|---|---|
+| BFG-DEC-083 | Summary cards and invoice finance values favored dense one-line presentation; preorder name started manual-only; customer Catalog order followed the default item query order. | Use the three-level Buku Saya summary contract and separate invoice finance rows. Initialize editable preorder `Nama` from Clerk full display name, then username. Keep `catalogItems.sortOrder` as the sole authority. Make drag-and-drop on an explicit Admin handle the primary Catalog ordering interaction; route the destination through the existing `catalogItems.move` mutation with `targetPosition`, retain Naik/Turun as fallback, disable all reorder actions in filtered partial views, and apply the same deterministic order to the customer Catalog. | Explicit tickets; `src/app/account/orders/page.tsx`, `src/app/account/invoices/page.tsx`, `src/components/customer-catalog.tsx`, `src/components/admin-catalog-detail.tsx`, `convex/catalogItems.ts`, `convex/lib/catalogView.ts`; focused frontend/Convex tests | IMPLEMENTED LOCALLY / AUTHENTICATED PRODUCTION UAT PENDING |
+
+Series are solved by ordering, not bulk upload. Finance formulas, invoice
+logic, authentication, membership/RBAC, Batch assignment, search, media,
+schema shape, and upload flow remain unchanged.
+
 ## Invitation terminal-success precedence — 2026-09-01
 
 | ID | Old decision | New decision | Source / owner | Status |

@@ -17,7 +17,7 @@ export default function HomePage() {
               Semua bisa dimulai dari satu buku yang tepat.
             </h1>
             <p className="lede">
-              Blessing For Goods adalah community-led imported bookstore yang membantu Blessfriends menemukan buku impor
+              Blessing For Good adalah community-led imported bookstore yang membantu Blessfriends menemukan buku impor
               berbahasa Inggris—dari Ready Stock sampai preorder—sedikit demi sedikit.
             </p>
             <div className="home-hero-actions" aria-label="Akses buku">
@@ -142,7 +142,7 @@ export default function HomePage() {
             </div>
             <p>Geser untuk bertemu dengan alasan, orang, dan teman kecil di balik BFG.</p>
           </div>
-          <div className="story-scroller" aria-label="Cerita Blessing For Goods">
+          <div className="story-scroller" aria-label="Cerita Blessing For Good">
             <article className="story-card story-card-opening">
               <span className="eyebrow">Kenapa BFG ada?</span>
               <h3>Semua bisa dimulai dari satu buku.</h3>

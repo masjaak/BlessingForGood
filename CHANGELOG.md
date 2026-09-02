@@ -2,11 +2,74 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 source: conversation
 ---
 
 # Changelog
+
+## [catalog-drag-ordering] — 2026-09-02
+
+### Changed
+
+- Corrected active customer-facing brand copy from `Blessing For Goods` to
+  `Blessing For Good`; SEO metadata and historical/identifier wording remain
+  protected.
+- Upgraded the existing Admin Catalog ordering UI from move-only controls to
+  an explicit pointer drag handle with visible dragging feedback and an
+  insertion indicator. Mouse, trackpad, and touch use the same interaction;
+  the rest of each item remains scroll-safe.
+- Extended the existing `catalogItems.move` mutation with a validated
+  destination index. It still owns Naik/Turun fallback behavior and rewrites
+  the same bounded `sortOrder` sequence; no second ordering field, drag model,
+  Book relation, or schema migration was introduced.
+- Disabled drag and fallback movement while Admin search or Publisher filters
+  show a partial list, with a concise reset explanation to avoid ambiguous
+  global order changes.
+
+### QA and scope
+
+- Added pointer/touch component coverage and Convex destination-index,
+  first-to-last, last-to-first, refresh, Customer projection, and
+  cross-Catalog isolation coverage. The full deterministic suite is 469 tests;
+  responsive rendered QA passes at 390, 768, and 1440.
+- Bulk upload, Book Master, variants, Catalog membership, Secret Catalog
+  access, Customer search, preorder, Order, Invoice, Batch, Ready Stock,
+  Finance, Auth, RBAC, Buku Saya, SEO, and media remain unchanged.
+
+## [my-books-ui-order-form-catalog-ordering] — 2026-09-02
+
+### Changed
+
+- Fixed the scoped Customer presentation root causes: the shared joined
+  summary frame made metric hierarchy and date context hard to scan, invoice
+  values were joined with punctuation, Batch metadata used dense sequential
+  blocks, and Customer Batch book rows had no balanced layout owner.
+- Applied the final three-level Buku Saya cards and copy: `TOTAL SPENDING`,
+  `PENDING PAYMENT`, and `DEPOSIT`, each with a dominant Rupiah value and the
+  approved helper text. Batch metadata now uses readable two-line/stacked
+  presentation on small screens.
+- Split `Deposit teralokasi`, `Sisa tagihan`, `Status pembayaran`, and
+  `Terverifikasi` into distinct customer invoice rows without changing
+  finance or invoice calculations.
+- Initialized the editable Secret Catalog preorder `Nama` from the active
+  Clerk full display name, then username, with a blank fallback when account
+  names are unavailable. Existing quantity, variant, email, validation, and
+  submission flow remain unchanged.
+- Reused the existing optional `catalogItems.sortOrder` field. Admin can move
+  a catalog item up or down; the bounded normalized order is used by both the
+  Admin list and customer Catalog projection, so series display remains stable
+  after refresh. The series solution is ordering, not bulk upload.
+
+### QA and scope
+
+- 469 deterministic tests, focused frontend tests, Catalog ordering Convex
+  proof, format, lint, TypeScript, build, Convex check, and static rendered
+  checks at 390/768/1440 pass locally.
+- No invoice logic, finance core, auth, membership/RBAC, Batch assignment,
+  search, SEO, media pipeline, Book Master relation, variant relation, upload
+  flow, or bulk upload was changed. Authenticated Production UAT remains
+  pending safe Clerk identities and disposable business fixtures.
 
 ## [invitation-terminal-success-hotfix] — 2026-09-01
 

@@ -195,7 +195,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <main>{children}</main>
         <footer className="site-footer">
           <div>
-            <span>Blessing For Goods</span>
+            <span>Blessing For Good</span>
             <span>Buku pilihan untuk Blessfriends</span>
           </div>
           <nav className="footer-nav" aria-label="Navigasi bantuan">

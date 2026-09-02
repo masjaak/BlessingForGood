@@ -1,5 +1,40 @@
 # Decisions
 
+## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
+
+Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- Customer-facing BFG display copy is `Blessing For Good` without a trailing
+  `s`; SEO metadata, historical records, and identifiers remain outside this
+  display-copy correction.
+- Buku Saya keeps the existing one-year default and custom date range. Its
+  summary cards use three readable levels: metric title, dominant `Rp` value,
+  and one short helper line. The final customer copy is `TOTAL SPENDING` /
+  `Total tagihan buku yang sudah di-fix`, `PENDING PAYMENT` /
+  `Sisa tagihan keseluruhan dari invoice terbit`, and `DEPOSIT` / `Top up
+  credit`.
+- Invoice summary renders `Deposit teralokasi`, `Sisa tagihan`, `Status
+  pembayaran`, and `Terverifikasi` as separate label/value rows. Finance
+  calculations and invoice authority do not change.
+- Customer Batch list/detail uses the existing BFG tokens with deliberate
+  two-line or stacked metadata where one line is cramped. Search, cover,
+  snapshot, assignment, shipment, and CTA behavior remain unchanged.
+- Secret Catalog preorder `Nama` is initialized from the active Clerk
+  identity's full display name, then username. A missing identity name leaves
+  the existing editable required field blank; submission and validation stay
+  unchanged.
+- Catalog item `sortOrder` is the sole deterministic customer display
+  sequence. Admin uses an explicit pointer/touch drag handle as the primary
+  interaction; its destination is persisted through the existing move
+  mutation, while Naik/Turun remains the keyboard/accessibility fallback.
+  Drag and fallback movement are disabled while search or Publisher filters
+  show only a partial list. Customer Catalog projections and Admin lists use
+  the same ordering. Series are solved by ordering, not bulk upload. Book
+  Master, variant, upload, search semantics, invoice, Batch, and RBAC
+  contracts are out of scope.
+- This supersedes the dense summary-card copy, combined invoice finance rows,
+  manual-only preorder name, and creation/upload-only Catalog display order.
+
 ## Invitation terminal-success precedence — 2026-09-01
 
 - Real Production evidence is authoritative: a Customer can complete

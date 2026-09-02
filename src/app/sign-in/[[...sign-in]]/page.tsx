@@ -30,7 +30,7 @@ export default async function SignInPage({
       <BackButton fallback={backFallback} />
       <div className="auth-shell">
         <BrandLogo linkToHome={false} />
-        <p className="auth-invite-note">Blessing For Goods khusus untuk anggota yang telah menerima undangan.</p>
+        <p className="auth-invite-note">Blessing For Good khusus untuk anggota yang telah menerima undangan.</p>
         <ClerkAuthForm key={String(params.account ?? "default")} mode="sign-in" redirectUrl={redirectUrl} />
         <div className="auth-secondary-actions" aria-label="Pilihan akses BFG">
           <span>Belum terdaftar sebagai Blessfriend?</span>

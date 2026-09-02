@@ -1,6 +1,7 @@
 import type { QueryCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { fail } from "./errors";
+import { sortCatalogItems } from "./catalogOrdering";
 
 export async function catalogIsOpen(ctx: QueryCtx, catalogId: Id<"secretCatalogs">): Promise<boolean> {
   const catalog = await ctx.db.get(catalogId);
@@ -11,11 +12,13 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
   const catalog = await ctx.db.get(catalogId);
   if (!catalog) fail("CATALOG_NOT_FOUND");
   // ponytail: bounded 500-item customer projection for the requested hundreds-scale Catalog; paginate if a Catalog exceeds 500 items.
-  const items = await ctx.db
-    .query("catalogItems")
-    .withIndex("by_catalog", (query) => query.eq("catalogId", catalogId))
-    .order("asc")
-    .take(500);
+  const items = sortCatalogItems(
+    await ctx.db
+      .query("catalogItems")
+      .withIndex("by_catalog", (query) => query.eq("catalogId", catalogId))
+      .order("asc")
+      .take(500),
+  );
   const variantIds = items.map((item) => item.bookVariantId);
   const variants = await Promise.all(variantIds.map((variantId) => ctx.db.get(variantId)));
   const books = await Promise.all(variants.map((variant) => (variant ? ctx.db.get(variant.bookId) : null)));

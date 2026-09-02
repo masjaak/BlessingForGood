@@ -39,7 +39,7 @@ export const bfgClerkLocalization = {
   locale: "id-ID",
   signIn: {
     start: {
-      title: "Masuk ke Blessing For Goods",
+      title: "Masuk ke Blessing For Good",
       subtitle: "Khusus Blessfriends yang telah menerima undangan.",
     },
   },

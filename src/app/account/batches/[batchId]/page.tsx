@@ -43,7 +43,7 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
       </div>
     );
   return (
-    <div className="page">
+    <div className="page customer-batch-detail-page">
       <PageHeader
         eyebrow={batch.referenceCode || "Batch PO"}
         title={batch.name}
@@ -54,56 +54,62 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
           </StatusBadge>
         }
       />
-      <Card>
+      <Card className="customer-batch-detail-eta-card">
         <span className="card-kicker">Estimasi cargo</span>
         <h2>Estimasi tiba</h2>
         <p className="subtle">{formatCargoEta(batch.etaCargoMonth)} · Bukan tanggal kedatangan yang dijamin.</p>
       </Card>
-      <Card>
+      <Card className="customer-batch-detail-roster-card">
         <span className="card-kicker">Buku milikmu</span>
         <h2>Roster pelanggan</h2>
-        <Field label="Cari buku">
-          <input
-            className="input"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cari berdasarkan judul…"
-          />
-        </Field>
+        <div className="customer-batch-detail-search">
+          <Field label="Cari buku">
+            <input
+              className="input"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Cari berdasarkan judul…"
+            />
+          </Field>
+        </div>
         {batch.items.length ? (
-          batch.items.map((item) => (
-            <div className="book-row" key={item.assignmentId}>
-              <BookCover
-                title={item.title}
-                publisher={item.publisher}
-                format={item.format}
-                src={item.coverUrl || undefined}
-              />
-              <div className="content-stack">
-                <strong>{item.title}</strong>
-                <span className="subtle">
-                  {item.publisher} · {item.format} · ISBN {item.isbn}
-                </span>
-                <span>
-                  {item.quantity} × <Money amount={item.unitPriceAmount} />
+          <div className="customer-batch-detail-book-list">
+            {batch.items.map((item) => (
+              <div className="book-row customer-batch-book-row" key={item.assignmentId}>
+                <BookCover
+                  title={item.title}
+                  publisher={item.publisher}
+                  format={item.format}
+                  src={item.coverUrl || undefined}
+                />
+                <div className="content-stack customer-batch-book-copy">
+                  <strong>{item.title}</strong>
+                  <span className="subtle customer-batch-book-meta">
+                    {item.publisher} · {item.format} · ISBN {item.isbn}
+                  </span>
+                  <span className="customer-batch-book-price">
+                    {item.quantity} × <Money amount={item.unitPriceAmount} />
+                  </span>
+                </div>
+                <span className="customer-batch-book-status">
+                  <StatusBadge tone={item.batchStatus ? "positive" : "neutral"}>
+                    {item.batchStatus ? shipmentStageLabels[item.batchStatus] : orderStatusLabels[item.orderStatus]}
+                  </StatusBadge>
                 </span>
               </div>
-              <StatusBadge tone={item.batchStatus ? "positive" : "neutral"}>
-                {item.batchStatus ? shipmentStageLabels[item.batchStatus] : orderStatusLabels[item.orderStatus]}
-              </StatusBadge>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
           <p className="subtle">Tidak ada buku yang cocok dengan pencarian ini.</p>
         )}
       </Card>
       {batch.availableItems.length ? (
-        <Card>
+        <Card className="customer-batch-detail-available-card">
           <span className="card-kicker">Buku dalam Batch</span>
           <h2>Item yang dapat dipesan</h2>
           {batch.availableItems.map((item) => (
-            <div className="summary-line" key={`${item.catalogId}-${item.bookId}`}>
+            <div className="summary-line customer-batch-available-row" key={`${item.catalogId}-${item.bookId}`}>
               <span>
                 <strong>{item.title}</strong>
                 <br />
@@ -116,7 +122,7 @@ function BatchDetail({ batchId }: { batchId: Id<"batches"> }) {
           ))}
         </Card>
       ) : null}
-      <Card>
+      <Card className="customer-batch-detail-timeline-card">
         <span className="card-kicker">Pelacakan</span>
         <h2>Linimasa batch</h2>
         {batch.history.length ? (

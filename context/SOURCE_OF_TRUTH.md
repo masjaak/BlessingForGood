@@ -1,5 +1,60 @@
 # BFG SOURCE OF TRUTH
 
+## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
+
+Status: `IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+
+This is a scoped maintenance enhancement. It does not reopen finance,
+invoice, auth, membership, Batch assignment, search, SEO, media, or RBAC
+architecture.
+
+- Customer-facing display and accessibility copy use the canonical brand
+  `Blessing For Good`; SEO metadata, historical records, and external/internal
+  identifiers that still carry legacy wording are not renamed by this pass.
+- `src/app/account/orders/page.tsx` owns the Buku Saya summary and date-range
+  presentation. Summary cards are vertical and use the exact customer-facing
+  copy `TOTAL SPENDING` / `Total tagihan buku yang sudah di-fix`, `PENDING
+  PAYMENT` / `Sisa tagihan keseluruhan dari invoice terbit`, and `DEPOSIT` /
+  `Top up credit`; the nominal `Rp` value is the dominant level.
+- `src/app/account/invoices/page.tsx` owns the invoice-list presentation.
+  `Deposit teralokasi`, `Sisa tagihan`, `Status pembayaran`, and `Terverifikasi`
+  are separate rows. Existing invoice calculations, payment status, verified
+  amount, and deposit authority remain canonical.
+- `src/app/account/batches/page.tsx` and
+  `src/app/account/batches/[batchId]/page.tsx` own customer Batch spacing.
+  Desktop may use balanced columns; mobile stacks the same metadata without
+  changing the underlying Batch projection or search.
+- `src/components/customer-catalog.tsx` owns the preorder form. `Nama` is
+  initialized once from Clerk full display name, then username, and remains
+  editable. Empty account data falls back to the current blank required field;
+  email, quantity, variant, and submission behavior are unchanged.
+- `convex/catalogItems.ts` owns Admin Catalog item ordering. The existing
+  optional `catalogItems.sortOrder` field remains the only authority. Its one
+  move mutation accepts either the existing `direction` fallback or a
+  `targetPosition` from the explicit Admin drag handle, then normalizes the
+  bounded list. `convex/lib/catalogView.ts` and the Admin list apply the same
+  deterministic comparator, so the customer projection follows the Admin
+  sequence after refresh. Search/Publisher-filtered partial views disable
+  both drag and fallback movement until reset.
+- The Admin primary interaction is pointer-based drag-and-drop on a dedicated
+  handle with a visible insertion indicator and dragging state. The handle
+  supports mouse, trackpad, and touch without capturing scroll gestures on the
+  rest of the item. Existing Naik/Turun buttons remain the keyboard,
+  assistive-technology, and precision fallback; no second ordering field or
+  drag-specific data model exists. No drag-and-drop package was present in
+  the stack, so native Pointer Events are the interaction primitive.
+- New items keep the existing append behavior: `catalogItems.add` leaves the
+  optional position unset, and the deterministic comparator places that newer
+  item after normalized entries. Catalog bundle creation continues to seed
+  explicit zero-based positions.
+- The series problem is deliberately solved through ordering, not bulk
+  upload. No Book Master, variant relation, upload flow, finance core, auth,
+  search, invoice, Batch assignment, or media pipeline changes are included.
+
+Superseded rules: dense one-line summary cards; combined deposit/outstanding/
+payment/verified invoice rows; manual-only preorder names; and default
+creation/upload order as the intended customer Catalog sequence.
+
 ## Invitation terminal-success precedence hotfix — 2026-09-01
 
 Status: `IMPLEMENTED_LOCALLY; AUTHENTICATED_PRODUCTION_UAT_PENDING`

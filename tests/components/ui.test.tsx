@@ -55,12 +55,12 @@ describe("public UI foundation", () => {
       </div>,
     );
 
-    expect(screen.getByRole("img", { name: "Blessing For Goods" }).getAttribute("src")).toContain("Logo-1");
-    expect(screen.getByRole("img", { name: "Blessing For Goods operational mark" }).getAttribute("src")).toContain(
+    expect(screen.getByRole("img", { name: "Blessing For Good" }).getAttribute("src")).toContain("Logo-1");
+    expect(screen.getByRole("img", { name: "Blessing For Good operational mark" }).getAttribute("src")).toContain(
       "Logo-1",
     );
-    expect(screen.getByRole("img", { name: "Blessing For Goods symbol" }).getAttribute("src")).toContain("Logo-2.png");
-    expect(screen.getByRole("img", { name: "Blessing For Goods mascot celebrating" }).getAttribute("src")).toContain(
+    expect(screen.getByRole("img", { name: "Blessing For Good symbol" }).getAttribute("src")).toContain("Logo-2.png");
+    expect(screen.getByRole("img", { name: "Blessing For Good mascot celebrating" }).getAttribute("src")).toContain(
       "Mascott-3.png",
     );
     expect(document.querySelector(".brand-logo-frame-primary")).toBeTruthy();
@@ -143,7 +143,7 @@ describe("public UI foundation", () => {
   it("keeps homepage jobs distinct while preserving supported routes", () => {
     render(<HomePage />);
 
-    expect(screen.getAllByRole("img", { name: "Blessing For Goods mascot with hearts" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("img", { name: "Blessing For Good mascot with hearts" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: "Lihat Ready Stock" })[0].getAttribute("href")).toBe("/ready-stock");
     expect(screen.getAllByRole("link", { name: "Buka Secret Catalog" })[0].getAttribute("href")).toBe("/catalog");
     expect(screen.getByRole("link", { name: "Gabung sekarang" }).getAttribute("href")).toBe("/join");

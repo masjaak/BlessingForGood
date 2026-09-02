@@ -7457,3 +7457,470 @@ p {
     max-width: none;
   }
 }
+
+/* Scoped maintenance polish: My Books, customer Batch detail, and Catalog order controls. */
+.customer-shell .my-books-page,
+.customer-shell .customer-batch-detail-page {
+  display: grid;
+  row-gap: var(--space-lg);
+}
+
+.customer-shell .my-books-page > .page-header,
+.customer-shell .customer-batch-detail-page > .page-header {
+  margin-bottom: 0;
+}
+
+.customer-shell .my-books-date-range-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.customer-shell .my-books-date-range-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-xs) var(--space-lg);
+}
+
+.customer-shell .my-books-date-range-heading .card-kicker {
+  margin-bottom: 0;
+}
+
+.customer-shell .my-books-date-range-display,
+.customer-shell .my-books-batch-range {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.customer-shell .my-books-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-bottom: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.customer-shell .my-books-summary-grid .my-books-summary-card {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.customer-shell .my-books-summary-card .my-books-summary-label,
+.customer-shell .my-books-summary-card .my-books-summary-value,
+.customer-shell .my-books-summary-card .my-books-summary-help {
+  display: block;
+  margin: 0;
+}
+
+.customer-shell .my-books-summary-card .my-books-summary-label {
+  color: var(--ink-muted);
+  font-size: var(--type-label-size);
+  letter-spacing: 0.08em;
+}
+
+.customer-shell .my-books-summary-card .my-books-summary-value {
+  color: var(--bfg-rust);
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .my-books-summary-card .my-books-summary-help {
+  max-width: 28ch;
+  font-size: var(--type-label-size);
+  line-height: 1.45;
+}
+
+.customer-shell .my-books-batch-list {
+  gap: var(--space-md);
+}
+
+.customer-shell .my-books-batch-list-heading,
+.customer-shell .my-books-batch-heading,
+.customer-shell .customer-batch-list-heading {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.customer-shell .my-books-batch-list-heading > div,
+.customer-shell .my-books-batch-heading > div,
+.customer-shell .customer-batch-list-heading > div {
+  min-width: 0;
+}
+
+.customer-shell .my-books-batch-list-heading h2,
+.customer-shell .my-books-batch-heading h2,
+.customer-shell .customer-batch-list-heading h2 {
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .my-books-batch-list-heading .my-books-batch-range {
+  flex: 0 1 auto;
+  padding-top: 2px;
+}
+
+.customer-shell .my-books-batch-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.customer-shell .my-books-batch-card .split-heading,
+.customer-shell .my-books-batch-card .summary-line {
+  margin-bottom: 0;
+}
+
+.customer-shell .my-books-batch-summary > span,
+.customer-shell .my-books-unassigned-row > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .my-books-unassigned-items {
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.customer-shell .my-books-unassigned-row {
+  padding: var(--space-sm) 0;
+}
+
+.customer-shell .my-books-unassigned-row:last-child {
+  border-bottom: 0;
+}
+
+.customer-shell .my-books-batch-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-md) var(--space-lg);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--line);
+}
+
+.customer-shell .my-books-batch-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+}
+
+.customer-shell .my-books-batch-meta p,
+.customer-shell .customer-batch-list-meta p {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.customer-shell .my-books-batch-meta-label,
+.customer-shell .customer-batch-meta-label {
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.customer-shell .my-books-batch-cta,
+.customer-shell .customer-batch-list-cta {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.customer-shell .customer-batch-list-page {
+  display: grid;
+  row-gap: var(--space-lg);
+}
+
+.customer-shell .customer-batch-list-page > .page-header {
+  margin-bottom: 0;
+}
+
+.customer-shell .customer-batch-list {
+  gap: var(--space-md);
+}
+
+.customer-shell .customer-batch-list-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.customer-shell .customer-batch-list-card .split-heading {
+  margin-bottom: 0;
+}
+
+.customer-shell .customer-batch-list-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-lg);
+}
+
+.customer-shell .customer-batch-list-meta > p:first-child {
+  flex: 1 1 100%;
+}
+
+.customer-shell .customer-batch-detail-page > .card {
+  margin: 0;
+}
+
+.customer-shell .customer-batch-detail-search {
+  margin-bottom: var(--space-lg);
+}
+
+.customer-shell .customer-batch-detail-book-list {
+  display: grid;
+  gap: 0;
+}
+
+.customer-shell .customer-batch-book-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 112px) minmax(0, 1fr) minmax(112px, max-content);
+  align-items: start;
+  column-gap: var(--space-lg);
+  min-width: 0;
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.customer-shell .customer-batch-book-row:first-child {
+  padding-top: 0;
+}
+
+.customer-shell .customer-batch-book-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.customer-shell .customer-batch-book-row > .book-cover {
+  width: 100%;
+  max-width: 112px;
+}
+
+.customer-shell .customer-batch-book-copy {
+  display: grid;
+  align-content: start;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.customer-shell .customer-batch-book-copy > strong,
+.customer-shell .customer-batch-book-meta {
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .customer-batch-book-meta {
+  line-height: 1.5;
+}
+
+.customer-shell .customer-batch-book-price {
+  color: var(--bfg-rust);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.4;
+}
+
+.customer-shell .customer-batch-book-status {
+  justify-self: end;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.customer-shell .customer-batch-available-row {
+  align-items: flex-start;
+}
+
+.customer-shell .customer-invoice-list-page .content-stack {
+  gap: var(--space-md);
+}
+
+.customer-shell .invoice-finance-row {
+  grid-template-columns: minmax(0, 1fr) max-content;
+  display: grid;
+  align-items: baseline;
+}
+
+.customer-shell .invoice-finance-row > span,
+.customer-shell .invoice-finance-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-shell .catalog-ordering-hint {
+  max-width: 62ch;
+  margin: var(--space-xs) 0 0;
+  line-height: 1.45;
+}
+
+.admin-shell .catalog-ordering-filter-hint {
+  margin: var(--space-xs) 0 0;
+}
+
+.admin-shell .catalog-item-list {
+  gap: 0;
+}
+
+.admin-shell .catalog-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-md) var(--space-lg);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-shell .catalog-item-row:first-child {
+  padding-top: 0;
+}
+
+.admin-shell .catalog-item-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.admin-shell .catalog-item-copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-xxs);
+}
+
+.admin-shell .catalog-item-copy strong,
+.admin-shell .catalog-item-copy small {
+  overflow-wrap: anywhere;
+}
+
+.admin-shell .catalog-item-copy small {
+  color: var(--ink-muted);
+}
+
+.admin-shell .catalog-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+}
+
+.admin-shell .catalog-item-drag-handle {
+  display: inline-grid;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: var(--space-2);
+  color: var(--ink-muted);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.admin-shell .catalog-item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.admin-shell .catalog-item-drag-handle:disabled {
+  cursor: not-allowed;
+}
+
+.admin-shell .catalog-item-drag-handle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.2;
+}
+
+.admin-shell .catalog-item-row.is-dragging {
+  opacity: 0.55;
+}
+
+.admin-shell .catalog-item-drop-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  color: var(--accent-dark);
+  font-size: var(--type-label-size);
+  font-weight: 700;
+}
+
+.admin-shell .catalog-item-drop-indicator span {
+  flex: 1;
+  height: 2px;
+  background: var(--accent);
+}
+
+.admin-shell .catalog-item-position {
+  color: var(--ink-muted);
+  font-size: var(--type-label-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 800px) {
+  .customer-shell .customer-batch-book-row {
+    grid-template-columns: minmax(80px, 96px) minmax(0, 1fr);
+    column-gap: var(--space-md);
+    row-gap: var(--space-sm);
+  }
+
+  .customer-shell .customer-batch-book-row > .book-cover {
+    max-width: 96px;
+  }
+
+  .customer-shell .customer-batch-book-status {
+    grid-column: 2;
+    justify-self: start;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .customer-shell .my-books-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .my-books-summary-grid .my-books-summary-card {
+    padding: var(--space-md);
+  }
+
+  .customer-shell .my-books-date-range-display,
+  .customer-shell .my-books-batch-range {
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .customer-shell .my-books-batch-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .my-books-batch-cta,
+  .customer-shell .customer-batch-list-cta {
+    justify-self: start;
+  }
+
+  .customer-shell .my-books-batch-meta,
+  .customer-shell .customer-batch-list-meta {
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .admin-shell .catalog-item-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .admin-shell .catalog-item-actions {
+    justify-content: flex-start;
+  }
+}

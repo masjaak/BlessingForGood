@@ -373,4 +373,189 @@ describe("Secret Catalog operational discoverability", () => {
     expect(screen.getByText("Forest Stories")).toBeTruthy();
     expect(screen.queryByText("History Atlas")).toBeNull();
   });
+
+  it("exposes scoped move controls for deterministic Catalog item order", async () => {
+    const move = vi.fn().mockResolvedValue({ moved: true, position: 1 });
+    const mutationFns = Array.from({ length: 9 }, () => vi.fn());
+    mutationFns.push(move);
+    let mutationIndex = 0;
+    vi.mocked(useMutation).mockImplementation(() => mutationFns[mutationIndex++] as never);
+    vi.mocked(useQuery)
+      .mockReturnValueOnce({
+        id: "catalog-1",
+        name: "Series Catalog",
+        status: "open",
+        description: null,
+        closesAt: null,
+      } as never)
+      .mockReturnValueOnce([
+        { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
+        { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
+      ] as never)
+      .mockReturnValueOnce([] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    expect(screen.getByText(/Geser pegangan di setiap buku/)).toBeTruthy();
+    expect(screen.getByText("Urutan 1")).toBeTruthy();
+    expect(screen.getByText("Urutan 2")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Naikkan Series Two" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Turunkan Series One" }));
+
+    await waitFor(() => expect(move).toHaveBeenCalledWith({ catalogItemId: "item-one", direction: "down" }));
+  });
+
+  it("reorders from an explicit drag handle and uses a destination index", async () => {
+    const move = vi.fn().mockResolvedValue({ moved: true, position: 2 });
+    vi.mocked(useMutation).mockReturnValue(move as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "Series Catalog",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      [
+        { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
+        { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
+        { _id: "item-three", title: "Series Three", format: "PB", isbn: "9780000000003" },
+        { _id: "item-four", title: "Series Four", format: "PB", isbn: "9780000000004" },
+      ],
+      [],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".catalog-item-row"));
+    rows.forEach((row, index) => {
+      Object.defineProperty(row, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({ top: index * 80, bottom: index * 80 + 80, height: 80 }),
+      });
+    });
+    const handle = screen.getByRole("button", { name: "Atur urutan Series Four" });
+    expect(handle.getAttribute("data-drag-handle")).toBe("true");
+    expect(handle.closest(".catalog-item-row")?.getAttribute("draggable")).toBeNull();
+
+    fireEvent.pointerDown(handle, { pointerId: 7, pointerType: "touch", clientY: 280 });
+    fireEvent.pointerMove(handle, { pointerId: 7, pointerType: "touch", clientY: 90 });
+    await waitFor(() => expect(document.querySelector(".catalog-item-row.is-dragging")).toBeTruthy());
+    fireEvent.pointerUp(handle, { pointerId: 7, pointerType: "touch", clientY: 90 });
+
+    await waitFor(() => expect(move).toHaveBeenCalledWith({ catalogItemId: "item-four", targetPosition: 1 }));
+  });
+
+  it("shows the drop target after the final remaining item", async () => {
+    const move = vi.fn().mockResolvedValue({ moved: true, position: 2 });
+    vi.mocked(useMutation).mockReturnValue(move as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "Series Catalog",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      [
+        { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
+        { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
+      ],
+      [],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".catalog-item-row"));
+    rows.forEach((row, index) => {
+      Object.defineProperty(row, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({ top: index * 80, bottom: index * 80 + 80, height: 80 }),
+      });
+    });
+    const handle = screen.getByRole("button", { name: "Atur urutan Series One" });
+    fireEvent.pointerDown(handle, { pointerId: 9, pointerType: "mouse", clientY: 40 });
+    fireEvent.pointerMove(handle, { pointerId: 9, pointerType: "mouse", clientY: 200 });
+
+    await waitFor(() => expect(screen.getByText("Lepas di sini")).toBeTruthy());
+    expect(Array.from(document.querySelectorAll(".catalog-item-row")).at(-1)?.textContent).toContain("Series Two");
+  });
+
+  it("shows an accessible error when a drag reorder cannot be persisted", async () => {
+    const move = vi.fn().mockRejectedValue(new Error("reorder failed"));
+    vi.mocked(useMutation).mockReturnValue(move as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "Series Catalog",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      [
+        { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
+        { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
+      ],
+      [],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".catalog-item-row"));
+    rows.forEach((row, index) => {
+      Object.defineProperty(row, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({ top: index * 80, bottom: index * 80 + 80, height: 80 }),
+      });
+    });
+    const handle = screen.getByRole("button", { name: "Atur urutan Series Two" });
+    fireEvent.pointerDown(handle, { pointerId: 8, pointerType: "mouse", clientY: 120 });
+    fireEvent.pointerMove(handle, { pointerId: 8, pointerType: "mouse", clientY: 10 });
+    fireEvent.pointerUp(handle, { pointerId: 8, pointerType: "mouse", clientY: 10 });
+
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("Perubahan katalog ditolak"));
+    expect(move).toHaveBeenCalledWith({ catalogItemId: "item-two", targetPosition: 0 });
+  });
+
+  it("keeps drag and fallback reorder actions disabled while the list is filtered", () => {
+    const mutationFns = Array.from({ length: 10 }, () => vi.fn());
+    let mutationIndex = 0;
+    vi.mocked(useMutation).mockImplementation(() => mutationFns[mutationIndex++] as never);
+    const queryResults = [
+      {
+        id: "catalog-1",
+        name: "Series Catalog",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      [
+        { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
+        { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
+      ],
+      [],
+    ];
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    fireEvent.change(screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[1], {
+      target: { value: "Series One" },
+    });
+
+    expect(screen.getByText("Reset pencarian atau Publisher untuk mengatur ulang urutan.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Atur urutan Series One" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Naikkan Series One" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Turunkan Series One" }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset pencarian" }));
+    expect((screen.getByRole("button", { name: "Atur urutan Series One" }) as HTMLButtonElement).disabled).toBe(false);
+  });
 });

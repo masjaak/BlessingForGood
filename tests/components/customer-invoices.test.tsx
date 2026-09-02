@@ -77,5 +77,11 @@ describe("Customer invoice payment visibility", () => {
     expect(screen.getByText(/Perlu dibayar/)).toBeTruthy();
     expect(screen.getByText(/Dibayar sebagian/)).toBeTruthy();
     expect(screen.getByText(/Lunas terverifikasi/)).toBeTruthy();
+    expect(screen.getAllByText("Deposit teralokasi")).toHaveLength(3);
+    expect(screen.getAllByText("Sisa tagihan")).toHaveLength(3);
+    expect(screen.getAllByText("Status pembayaran")).toHaveLength(3);
+    expect(screen.getAllByText("Terverifikasi")).toHaveLength(3);
+    expect(screen.queryByText("Deposit teralokasi · sisa tagihan")).toBeNull();
+    expect(screen.queryByText("Status pembayaran · terverifikasi")).toBeNull();
   });
 });

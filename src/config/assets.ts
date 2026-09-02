@@ -10,19 +10,19 @@ export const brandAssets = {
   logos: {
     primary: {
       src: "/brand/logos/Logo-1",
-      alt: "Blessing For Goods",
+      alt: "Blessing For Good",
       width: 4000,
       height: 4000,
     },
     admin: {
       src: "/brand/logos/Logo-1",
-      alt: "Blessing For Goods operational mark",
+      alt: "Blessing For Good operational mark",
       width: 4000,
       height: 4000,
     },
     symbol: {
       src: "/brand/logos/Logo-2.png",
-      alt: "Blessing For Goods symbol",
+      alt: "Blessing For Good symbol",
       width: 4000,
       height: 4000,
     },
@@ -30,19 +30,19 @@ export const brandAssets = {
   mascots: {
     default: {
       src: "/brand/mascot/Mascott-1.png",
-      alt: "Blessing For Goods mascot",
+      alt: "Blessing For Good mascot",
       width: 5000,
       height: 5000,
     },
     success: {
       src: "/brand/mascot/Mascott-3.png",
-      alt: "Blessing For Goods mascot celebrating",
+      alt: "Blessing For Good mascot celebrating",
       width: 5000,
       height: 5000,
     },
     warm: {
       src: "/brand/mascot/Mascott-4.png",
-      alt: "Blessing For Goods mascot with hearts",
+      alt: "Blessing For Good mascot with hearts",
       width: 5000,
       height: 5000,
     },

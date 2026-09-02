@@ -29,7 +29,7 @@ function PersistentCustomerInvoices() {
     );
   }
   return (
-    <div className="page narrow-page">
+    <div className="page narrow-page customer-invoice-list-page">
       <PageHeader
         eyebrow="Invoice & deposit"
         title="Lihat jumlah yang perlu diselesaikan."
@@ -76,17 +76,21 @@ function PersistentCustomerInvoices() {
                 <span>Deposit yang diperlukan</span>
                 <strong>{formatIdr(invoice.depositRequiredAmount)}</strong>
               </div>
-              <div className="summary-line">
-                <span>Deposit teralokasi · sisa tagihan</span>
-                <strong>
-                  {formatIdr(invoice.allocatedDepositAmount)} · {formatIdr(invoice.outstandingAmount)}
-                </strong>
+              <div className="summary-line invoice-finance-row">
+                <span>Deposit teralokasi</span>
+                <strong>{formatIdr(invoice.allocatedDepositAmount)}</strong>
               </div>
-              <div className="summary-line">
-                <span>Status pembayaran · terverifikasi</span>
-                <strong>
-                  {invoicePaymentStatusLabel(invoice.paymentStatus)} · {formatIdr(invoice.verifiedPaymentAmount)}
-                </strong>
+              <div className="summary-line invoice-finance-row">
+                <span>Sisa tagihan</span>
+                <strong>{formatIdr(invoice.outstandingAmount)}</strong>
+              </div>
+              <div className="summary-line invoice-finance-row">
+                <span>Status pembayaran</span>
+                <strong>{invoicePaymentStatusLabel(invoice.paymentStatus)}</strong>
+              </div>
+              <div className="summary-line invoice-finance-row">
+                <span>Terverifikasi</span>
+                <strong>{formatIdr(invoice.verifiedPaymentAmount)}</strong>
               </div>
               <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">
                 Buka invoice dan riwayat

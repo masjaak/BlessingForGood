@@ -31,7 +31,7 @@ export function BrandLogo({
   );
 
   return linkToHome ? (
-    <Link className="brand-logo-link" href="/" aria-label="Blessing For Goods home">
+    <Link className="brand-logo-link" href="/" aria-label="Blessing For Good home">
       {image}
     </Link>
   ) : (

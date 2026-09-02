@@ -24,7 +24,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
       await page.setContent(`
         <style>${globalsCss}</style>
         <div class="customer-shell account-qa-shell">
-          <header class="site-header"><span> Blessing For Goods </span></header>
+          <header class="site-header"><span> Blessing For Good </span></header>
           <main>
             <div class="page account-dashboard">
               <section class="account-metrics"><div class="card metric"><h2>Ringkasan akun</h2></div></section>

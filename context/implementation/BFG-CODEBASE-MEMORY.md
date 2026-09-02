@@ -1,5 +1,52 @@
 # BFG CODEBASE MEMORY
 
+## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
+
+- Active customer-facing brand copy is `Blessing For Good`; legacy `Goods`
+  wording remains only in protected SEO, historical, fixture, or identifier
+  contexts.
+- The existing Customer projection remains authoritative. UI owners are
+  `src/app/account/orders/page.tsx` for Buku Saya, the Customer Batch routes
+  for Batch presentation, and `src/app/account/invoices/page.tsx` for the
+  separate finance rows. No money formula or invoice mutation is needed.
+- The preorder form remains in `src/components/customer-catalog.tsx`.
+  Autofill is presentation state only: active Clerk full display name wins,
+  username is the fallback, and an empty result preserves an editable blank
+  field. The `orders.submit` payload and validation are not changed.
+- Catalog ordering already has the optional `catalogItems.sortOrder` field;
+  it remains the sole authority. `convex/catalogItems.ts` is the
+  mutation/query owner. Its one move mutation accepts the existing `up` /
+  `down` fallback or a validated zero-based `targetPosition` for drag/drop,
+  then normalizes the bounded list. The shared deterministic order is applied
+  before both Admin item rendering and `convex/lib/catalogView.ts` customer
+  projection. A bounded 500-item normalization is an intentional maintenance
+  ceiling; paginate before a larger Catalog is supported.
+- `src/components/admin-catalog-detail.tsx` exposes a dedicated pointer drag
+  handle with visible dragging/drop states. `touch-action: none` is limited to
+  that handle so the item/card remains scrollable on touch. Naik/Turun stays
+  available as the keyboard/assistive-technology fallback. Admin reorder is
+  disabled while search or Publisher filters create a partial list; no
+  filtered-list reorder semantics are invented. No DnD dependency was already
+  installed, so native Pointer Events are used for mouse/trackpad/touch and
+  the existing buttons cover keyboard/assistive technology.
+- `catalogItems.add` keeps new items appended by leaving `sortOrder` unset;
+  the comparator's explicit-position-first and created-time fallback preserves
+  that behavior. `secretCatalogs.createBundle` continues to seed initial
+  zero-based positions.
+- Superseded presentation rules are the dense summary-card row, combined
+  invoice finance row, manual-only preorder name, and unspecified
+  creation/upload order. Bulk upload, schema redesign, Book/variant relations,
+  finance, auth, search, Batch assignment, and media remain deliberately
+  untouched.
+- Focused frontend coverage verifies vertical summary hierarchy, separate
+  invoice labels, editable name autofill plus username/blank fallback, Admin
+  drag handle/pointer-touch destination behavior, filtered-state disabling,
+  fallback controls, and Batch detail regions. The Convex proof moves a
+  destination-index series, checks first/last moves, refresh persistence,
+  Customer projection, and second-Catalog isolation. Full deterministic
+  tests (469 total), format, lint, typecheck, build, Convex check, and the
+  390/768/1440 rendered matrix remain required after this interaction upgrade.
+
 ## Invitation terminal-success precedence hotfix — 2026-09-01
 
 - Real Production regression: a new Customer completed Username/Password and

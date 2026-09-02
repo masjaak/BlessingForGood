@@ -4,16 +4,19 @@ import { fail } from "./lib/errors";
 import { requirePermission } from "./lib/auth";
 import { nonNegativeMoney } from "./lib/validation";
 import { recordAudit } from "./lib/audit";
+import { sortCatalogItems } from "./lib/catalogOrdering";
 
 export const listForCatalog = query({
   args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "catalog.manage");
     // ponytail: bounded 500-item Admin tracking projection; paginate when a Catalog exceeds 500 items.
-    const items = await ctx.db
-      .query("catalogItems")
-      .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
-      .take(500);
+    const items = sortCatalogItems(
+      await ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
+        .take(500),
+    );
     return Promise.all(
       items.map(async (item) => {
         const variant = await ctx.db.get(item.bookVariantId);
@@ -130,5 +133,58 @@ export const remove = mutation({
       variantId: String(item.bookVariantId),
     });
     return { removed: true };
+  },
+});
+
+export const move = mutation({
+  args: {
+    catalogItemId: v.id("catalogItems"),
+    direction: v.optional(v.union(v.literal("up"), v.literal("down"))),
+    targetPosition: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "catalog.manage");
+    const item = await ctx.db.get(args.catalogItemId);
+    if (!item) fail("VALIDATION_FAILED", "catalog item does not exist");
+    if ((args.direction === undefined) === (args.targetPosition === undefined)) {
+      fail("VALIDATION_FAILED", "provide one reorder direction or destination position");
+    }
+    // ponytail: bounded 500-item reorder normalization; paginate/segment if a Catalog exceeds this ceiling.
+    const items = sortCatalogItems(
+      await ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", item.catalogId))
+        .take(500),
+    );
+    const currentIndex = items.findIndex((candidate) => candidate._id === item._id);
+    if (currentIndex < 0) fail("VALIDATION_FAILED", "catalog item is outside the ordering window");
+    if (
+      args.targetPosition !== undefined &&
+      (!Number.isInteger(args.targetPosition) || args.targetPosition < 0 || args.targetPosition >= items.length)
+    ) {
+      fail("VALIDATION_FAILED", "catalog item destination position is invalid");
+    }
+    const nextIndex = args.targetPosition ?? (args.direction === "up" ? currentIndex - 1 : currentIndex + 1);
+    if (nextIndex < 0 || nextIndex >= items.length || nextIndex === currentIndex) {
+      return { moved: false, position: currentIndex + 1 };
+    }
+
+    const reordered = [...items];
+    if (args.targetPosition !== undefined) {
+      const [movedItem] = reordered.splice(currentIndex, 1);
+      reordered.splice(nextIndex, 0, movedItem);
+    } else {
+      [reordered[currentIndex], reordered[nextIndex]] = [reordered[nextIndex], reordered[currentIndex]];
+    }
+    const now = Date.now();
+    for (const [index, catalogItem] of reordered.entries()) {
+      await ctx.db.patch(catalogItem._id, { sortOrder: index, updatedAt: now });
+    }
+    await recordAudit(ctx, user._id, "catalog.item_reordered", "catalog", item.catalogId, {
+      direction: args.direction ?? "drag",
+      position: String(nextIndex + 1),
+      variantId: String(item.bookVariantId),
+    });
+    return { moved: true, position: nextIndex + 1 };
   },
 });

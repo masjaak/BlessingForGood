@@ -35,6 +35,7 @@ import type * as lib_auth_config from "../lib/auth_config.js";
 import type * as lib_batchNumbers from "../lib/batchNumbers.js";
 import type * as lib_bulkImport from "../lib/bulkImport.js";
 import type * as lib_cancellationEligibility from "../lib/cancellationEligibility.js";
+import type * as lib_catalogOrdering from "../lib/catalogOrdering.js";
 import type * as lib_catalogView from "../lib/catalogView.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_depositLedger from "../lib/depositLedger.js";
@@ -107,6 +108,7 @@ declare const fullApi: ApiFromModules<{
   "lib/batchNumbers": typeof lib_batchNumbers;
   "lib/bulkImport": typeof lib_bulkImport;
   "lib/cancellationEligibility": typeof lib_cancellationEligibility;
+  "lib/catalogOrdering": typeof lib_catalogOrdering;
   "lib/catalogView": typeof lib_catalogView;
   "lib/crypto": typeof lib_crypto;
   "lib/depositLedger": typeof lib_depositLedger;

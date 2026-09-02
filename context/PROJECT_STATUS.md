@@ -1,5 +1,28 @@
 # BFG Project Status
 
+## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
+
+Status: `IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The active scope is a smallest-safe-diff polish of the Customer Buku Saya,
+invoice summary, Batch list/detail, and Secret Catalog preorder form, plus
+Admin Catalog drag-and-drop ordering. The existing `catalogItems.sortOrder`
+field remains sufficient and is the only ordering authority; no schema
+migration, duplicate drag field, or bulk upload is planned. The series
+requirement is handled by a persisted destination position through the same
+reorder mutation. The explicit handle supports pointer/touch, shows a drop
+indicator, preserves scroll outside the handle, and keeps Naik/Turun as the
+fallback. Reordering is disabled while the Admin list is search/Publisher
+filtered so partial-list movement cannot corrupt global order.
+
+Focused frontend/Convex tests, the existing regression suite (469 tests),
+TypeScript, ESLint, format, build, Convex check, and the rendered static
+spacing/interaction matrix at 390/768/1440 pass. Authenticated route UAT remains a separate gate when safe
+Clerk identities and disposable business fixtures are available; the local
+Next route probe is blocked by the environment's missing Clerk publishable key.
+Customer-facing display/accessibility copy is now canonical `Blessing For Good`;
+SEO metadata and protected historical/identifier wording remain unchanged.
+
 ## Invitation terminal-success precedence hotfix — 2026-09-01
 
 Status: `IMPLEMENTED_LOCALLY; AUTHENTICATED_PRODUCTION_UAT_PENDING`

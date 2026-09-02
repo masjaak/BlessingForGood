@@ -11,7 +11,7 @@ import { formatBfgCalendarDate } from "@/lib/calendar-date";
 function CustomerBatches() {
   const batches = useQuery(api.batchTracking.listMine, {});
   return (
-    <div className="page">
+    <div className="page customer-batch-list-page">
       <PageHeader
         eyebrow="Batch PO"
         title="Perjalanan batch bukumu"
@@ -23,10 +23,10 @@ function CustomerBatches() {
           <SkeletonCard />
         </LoadingRegion>
       ) : batches.length ? (
-        <div className="content-stack">
+        <div className="content-stack customer-batch-list">
           {batches.map((batch) => (
-            <Card key={batch.batchId}>
-              <div className="split-heading">
+            <Card className="customer-batch-list-card" key={batch.batchId}>
+              <div className="split-heading customer-batch-list-heading">
                 <div>
                   <span className="card-kicker">{batch.referenceCode || "Batch BFG"}</span>
                   <h2>{batch.name}</h2>
@@ -35,16 +35,28 @@ function CustomerBatches() {
                   {batch.currentShipmentStage ? shipmentStageLabels[batch.currentShipmentStage] : "PO terbuka"}
                 </StatusBadge>
               </div>
-              <p>
-                {batch.items.length
-                  ? `${batch.items.reduce((total, item) => total + item.quantity, 0)} buku di pesananmu.`
-                  : `${batch.availableItems.length} item tersedia melalui akses katalog.`}
-              </p>
-              {batch.poDeadlineAt ? (
-                <p className="subtle">Deadline PO: {formatBfgCalendarDate(batch.poDeadlineAt)}</p>
-              ) : null}
-              <p className="subtle">Estimasi tiba: {formatCargoEta(batch.etaCargoMonth)}</p>
-              <LinkButton href={`/account/batches/${batch.batchId}`} variant="secondary">
+              <div className="customer-batch-list-meta">
+                <p>
+                  {batch.items.length
+                    ? `${batch.items.reduce((total, item) => total + item.quantity, 0)} buku di pesananmu.`
+                    : `${batch.availableItems.length} item tersedia melalui akses katalog.`}
+                </p>
+                {batch.poDeadlineAt ? (
+                  <p className="subtle">
+                    <span className="customer-batch-meta-label">Deadline PO</span>
+                    <span>{formatBfgCalendarDate(batch.poDeadlineAt)}</span>
+                  </p>
+                ) : null}
+                <p className="subtle">
+                  <span className="customer-batch-meta-label">Estimasi tiba</span>
+                  <span>{formatCargoEta(batch.etaCargoMonth)}</span>
+                </p>
+              </div>
+              <LinkButton
+                href={`/account/batches/${batch.batchId}`}
+                variant="secondary"
+                className="customer-batch-list-cta"
+              >
                 Lihat detail batch
               </LinkButton>
             </Card>

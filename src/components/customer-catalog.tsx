@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatBfgCalendarDate } from "@/lib/calendar-date";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
@@ -72,6 +73,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     catalogOptions = [],
     selectCatalog = () => undefined,
   } = product;
+  const { isLoaded: clerkUserLoaded, user } = useUser();
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +86,14 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const nameWasInitialized = useRef(false);
+  const accountName = user?.fullName?.trim() || user?.username?.trim() || "";
+
+  useEffect(() => {
+    if (!clerkUserLoaded || nameWasInitialized.current || !accountName) return;
+    setCustomerName(accountName);
+    nameWasInitialized.current = true;
+  }, [accountName, clerkUserLoaded]);
 
   const selectedItems = useMemo(() => {
     if (!catalog) return [];

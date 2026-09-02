@@ -1,13 +1,148 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useUser } from "@clerk/nextjs";
 import { CustomerCatalog } from "@/components/customer-catalog";
 import { useProduct } from "@/domain/prototype/store";
+
+vi.mock("@clerk/nextjs", () => ({
+  useUser: vi.fn(),
+}));
 
 vi.mock("@/domain/prototype/store", () => ({
   useProduct: vi.fn(),
 }));
 
+beforeEach(() => {
+  vi.mocked(useUser).mockReturnValue({ isLoaded: true, user: null } as never);
+});
+
 describe("CustomerCatalog projection", () => {
+  it("prefills the editable preorder name from the active display name", async () => {
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: { fullName: "Ibu Sari", username: "sari_bfg" },
+    } as never);
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-name",
+        name: "Name Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-name",
+            title: "Book Name",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-name",
+                format: "PB",
+                isbn: "9780000000009",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    const name = await screen.findByLabelText("Nama");
+    await waitFor(() => expect((name as HTMLInputElement).value).toBe("Ibu Sari"));
+    fireEvent.change(name, { target: { value: "Nama pilihan" } });
+    expect((name as HTMLInputElement).value).toBe("Nama pilihan");
+  });
+
+  it("falls back to username and leaves the field blank when account names are unavailable", async () => {
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: { fullName: "", username: "sari_bfg" },
+    } as never);
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-username",
+        name: "Username Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-username",
+            title: "Book Username",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-username",
+                format: "PB",
+                isbn: "9780000000010",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+    await waitFor(() => expect((screen.getByLabelText("Nama") as HTMLInputElement).value).toBe("sari_bfg"));
+
+    vi.mocked(useUser).mockReturnValue({ isLoaded: true, user: null } as never);
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-blank",
+        name: "Blank Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-blank",
+            title: "Book Blank",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-blank",
+                format: "PB",
+                isbn: "9780000000011",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+    const blankName = screen.getAllByLabelText("Nama").slice(-1)[0] as HTMLInputElement;
+    expect(blankName.value).toBe("");
+  });
+
   it("keeps one-format books static and frames the detail action", () => {
     vi.mocked(useProduct).mockReturnValue({
       unlockedCatalog: {
@@ -57,6 +192,10 @@ describe("CustomerCatalog projection", () => {
   });
 
   it("uses compact multi-format choices and submits the selected variant price and id", async () => {
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      user: { fullName: "Ada Customer", username: "ada_customer" },
+    } as never);
     const submitOrder = vi.fn().mockResolvedValue({
       id: "order-1",
       catalogId: "catalog-multi",
@@ -146,7 +285,7 @@ describe("CustomerCatalog projection", () => {
     expect(card?.querySelector(".book-card-price .money")?.textContent).toMatch(/245[.]000/);
 
     fireEvent.click(within(card as HTMLElement).getByRole("button", { name: "Tambah jumlah Book B" }));
-    fireEvent.change(screen.getByLabelText("Nama"), { target: { value: "Ada Customer" } });
+    await waitFor(() => expect((screen.getByLabelText("Nama") as HTMLInputElement).value).toBe("Ada Customer"));
     fireEvent.click(screen.getByRole("button", { name: "Catat preorder" }));
 
     await waitFor(() =>
