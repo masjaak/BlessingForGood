@@ -32,6 +32,15 @@ machine. An unset stage is an editable roster; `po_closed` and every later
 shipment stage lock catalog links and assignment changes. `isArchived` keeps
 historical batches readable and blocks operational mutations.
 
+### Disposable draft cleanup
+
+Admin `batches.remove` may physically remove only an unarchived Batch with an
+unset shipment stage and no Catalog links, order-item assignments, or status
+history. The server rechecks those relationships and records the deletion.
+Operational, archived, or historical Batches are preserved and use the
+existing archive lifecycle where applicable. Removal never cascades into
+Orders, Invoices, Payments, Customers, Deposits, Refunds, or Audit history.
+
 ## Roster
 
 `batchTracking.getForAdmin` derives the operational roster from canonical

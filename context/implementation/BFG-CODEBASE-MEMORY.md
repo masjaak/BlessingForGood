@@ -1,5 +1,31 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Customer mobile clearance and destructive actions — 2026-09-03
+
+- `src/components/site-shell.tsx` remains the shared Customer shell and
+  `CustomerBottomNav` owner. `src/app/globals.css` now exposes the shell-local
+  `--customer-bottom-clearance`, derived from the fixed bar's effective
+  geometry plus safe area and existing page-bottom spacing. All current
+  `src/app/account/**` pages consume the same `<main>` boundary; no route-level
+  padding or nested scroll owner was added. Desktop navigation and layout are
+  unchanged.
+- `src/app/admin/batches/[batchId]/page.tsx` exposes `Hapus batch` only for a
+  pristine editable Batch, while `convex/batches.ts:remove` remains the final
+  Admin/Owner guard for no Catalog links, assignments, or status history. The
+  existing archive action remains the operational alternative; deletion is
+  Batch-row-only and audited.
+- `src/app/admin/invoices/[invoiceId]/page.tsx` exposes the existing
+  `Batalkan invoice` confirmation, while `convex/invoices.ts:voidInvoice`
+  remains the canonical server guard. It preserves immutable invoice/order
+  snapshots and payment, deposit, refund, and audit history; no physical
+  Invoice deletion path was added.
+- Regression anchors are
+  `tests/e2e/customer-bottom-nav-clearance.spec.ts`,
+  `tests/components/admin-batch-detail.test.tsx`,
+  `tests/components/admin-invoices.test.tsx`,
+  `convex/destructive-actions.test.ts`, and `convex/invoices.test.ts`.
+  Authenticated Production UAT remains separate and was not fabricated.
+
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
 - Active customer-facing brand copy is `Blessing For Good`; legacy `Goods`

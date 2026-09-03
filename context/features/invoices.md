@@ -23,6 +23,13 @@ issued invoice. Voiding preserves the prior record. Existing issued
 per-Order invoices remain historical compatibility records and are not blindly
 migrated. Unbatched legacy creation remains only as a compatibility path.
 
+Admin `invoices.voidInvoice` is the canonical destructive resolution for an
+Invoice that must leave the active workflow. Physical Invoice deletion is not
+supported. Voiding is server-guarded while allocated or verified settlement is
+present, or while a payment confirmation is submitted or under review, and it
+preserves the Invoice, Order, InvoiceItem, payment proof, Deposit, Refund, and
+Audit history.
+
 Invoice numbers are generated from the unique Convex invoice ID inside the
 mutation and are collision-safe for this Preview prototype, not final
 accounting policy.

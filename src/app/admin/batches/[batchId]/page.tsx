@@ -295,7 +295,8 @@ function AdminBatchDetail() {
                 {!currentBatch.isArchived &&
                 !currentBatch.currentShipmentStage &&
                 !currentBatch.catalogLinks.length &&
-                !currentBatch.assignmentCount ? (
+                !currentBatch.assignmentCount &&
+                !currentBatch.history.length ? (
                   <Button
                     type="button"
                     variant="danger"

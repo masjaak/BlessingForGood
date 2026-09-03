@@ -31,6 +31,11 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
     },
     {
+      name: "customer-android",
+      grep: /@customer-bottom-nav/,
+      use: { ...devices["Pixel 7"] },
+    },
+    {
       name: "customer-430",
       grep: /@customer/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 430, height: 932 } },

@@ -281,7 +281,7 @@ describe("BFG destructive action guards", () => {
 
   it("deletes a pristine draft Catalog and Batch, but keeps linked batches operational", async () => {
     const t = testConvex();
-    const { admin } = await setupUsers(t);
+    const { admin, customer } = await setupUsers(t);
     const draftCatalogId = await admin.mutation(api.secretCatalogs.create, { name: "Unused Catalog" });
     await expect(admin.mutation(api.secretCatalogs.remove, { catalogId: draftCatalogId })).resolves.toEqual({
       removed: true,
@@ -292,10 +292,22 @@ describe("BFG destructive action guards", () => {
     await expect(admin.mutation(api.batches.remove, { batchId: pristineBatch.batchId })).resolves.toEqual({
       removed: true,
     });
+    await expect(customer.mutation(api.batches.remove, { batchId: pristineBatch.batchId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
 
     const linkedBatch = await admin.mutation(api.batches.create, { name: "Operational Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: linkedBatch.batchId, catalogId });
     await expect(admin.mutation(api.batches.remove, { batchId: linkedBatch.batchId })).rejects.toThrow("ENTITY_IN_USE");
+
+    const stagedBatch = await admin.mutation(api.batches.create, { name: "Staged Batch" });
+    await t.run(async (ctx) => {
+      await ctx.db.patch(stagedBatch.batchId, { currentShipmentStage: "po_closed", updatedAt: Date.now() });
+    });
+    await expect(admin.mutation(api.batches.remove, { batchId: stagedBatch.batchId })).rejects.toThrow(
+      "ENTITY_DELETE_NOT_ALLOWED",
+    );
+    await expect(t.run(async (ctx) => ctx.db.get(stagedBatch.batchId))).resolves.not.toBeNull();
   });
 
   it("allows a closed Catalog to reopen until linked procurement is locked", async () => {

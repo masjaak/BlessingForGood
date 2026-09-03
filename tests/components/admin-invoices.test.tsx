@@ -1,14 +1,79 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PersistentRequirementForm } from "@/app/admin/invoices/page";
-import { AllocationForm, invoiceVoidBlockReason } from "@/app/admin/invoices/[invoiceId]/page";
+import AdminInvoiceDetailPage, { AllocationForm, invoiceVoidBlockReason } from "@/app/admin/invoices/[invoiceId]/page";
 import { useOperations } from "@/domain/prototype/operations-context";
+import { useProduct } from "@/domain/prototype/store";
+
+vi.mock("next/navigation", () => ({
+  useParams: vi.fn(() => ({ invoiceId: "invoice-1" })),
+}));
 
 vi.mock("@/domain/prototype/operations-context", () => ({
   useOperations: vi.fn(),
 }));
 
+vi.mock("@/domain/prototype/store", () => ({
+  useProduct: vi.fn(),
+}));
+
+vi.mock("@/components/product-access-guard", () => ({
+  ProductAccessGuard: ({ children }: { children: import("react").ReactNode }) => children,
+}));
+
+vi.mock("@/components/site-shell", () => ({
+  SiteShell: ({ children }: { children: import("react").ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock("@/components/admin-nav", () => ({
+  AdminNav: () => <nav aria-label="Admin navigation" />,
+}));
+
+const invoice = {
+  invoiceId: "invoice-1",
+  invoiceNumber: "INV-2026-001",
+  customerName: "A Customer",
+  customerMemberCode: "BFG-1234",
+  orderId: "order-1",
+  orderCode: "BFG-ORD-001",
+  currency: "IDR",
+  totalAmount: 100000,
+  status: "issued",
+  items: [{ invoiceItemId: "invoice-item-1", quantity: 1, description: "A Book", subtotalAmount: 100000 }],
+  depositRequiredAmount: 0,
+  allocatedDepositAmount: 0,
+  outstandingAmount: 100000,
+  paymentStatus: "unpaid",
+  verifiedPaymentAmount: 0,
+};
+
+function setup(currentInvoice = invoice) {
+  vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+  const voidInvoice = vi.fn().mockResolvedValue({ ...currentInvoice, status: "void" });
+  vi.mocked(useOperations).mockReturnValue({
+    currentAdminInvoice: currentInvoice,
+    adminAccount: { account: { availableAmount: 0, reservedAmount: 0 } },
+    adminTransactions: { page: [] },
+    adminAllocations: [],
+    issueInvoice: vi.fn().mockResolvedValue({}),
+    voidInvoice,
+    recordCredit: vi.fn().mockResolvedValue({}),
+    allocateDeposit: vi.fn().mockResolvedValue({}),
+    releaseAllocation: vi.fn().mockResolvedValue({}),
+    reverseAllocation: vi.fn().mockResolvedValue({}),
+    reverseTransaction: vi.fn().mockResolvedValue({}),
+  } as never);
+  return { voidInvoice };
+}
+
 describe("Admin invoice issue entry", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+  });
+
   it("creates the canonical draft and issues it from the same operator flow", async () => {
     const createInvoice = vi.fn().mockResolvedValue({ invoiceId: "invoice-1" });
     const issueInvoice = vi.fn().mockResolvedValue({ invoiceId: "invoice-1", status: "issued" });
@@ -91,5 +156,29 @@ describe("Admin invoice issue entry", () => {
         paymentStatus: "unpaid",
       }),
     ).toBeNull();
+  });
+
+  it("exposes the canonical void action and preserves the financial-history explanation", async () => {
+    const { voidInvoice } = setup();
+
+    render(<AdminInvoiceDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Batalkan invoice" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Batalkan invoice ini?" })).toBeTruthy();
+    expect(within(dialog).getByText(/Riwayat pembayaran dan ledger tetap tersimpan/i)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Batalkan invoice" }));
+
+    await waitFor(() => expect(voidInvoice).toHaveBeenCalledWith("invoice-1"));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Invoice dibatalkan."));
+  });
+
+  it("keeps void unavailable while settlement history still requires resolution", () => {
+    setup({ ...invoice, allocatedDepositAmount: 50000, paymentStatus: "partially_paid" });
+
+    render(<AdminInvoiceDetailPage />);
+
+    expect(screen.getByRole("button", { name: "Batalkan invoice" })).toHaveProperty("disabled", true);
+    expect(screen.getByText(/Lepaskan atau balikkan pembayaran/i)).toBeTruthy();
   });
 });

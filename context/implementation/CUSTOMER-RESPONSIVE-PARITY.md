@@ -5,7 +5,7 @@ Desktop is an expansion of the mobile BFG system, not a second visual product.
 | Component                | 390px behavior                                                                | 1440px behavior                                                    | Shared visual grammar                                                      | Structural difference                                           | Reason for difference                       |
 | ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------- |
 | Customer header          | Compact, centered logo with access control at the edge; horizontal nav hidden | Left logo, quiet horizontal nav, access control at the edge        | Same logo artwork, paper canvas, tan line, muted links, green active state | Nav moves from fixed-width mobile shell to inline desktop shell | More horizontal space is available          |
-| Bottom nav               | Fixed five-item bar with icon and label; main gets bottom clearance           | Hidden; header nav carries the same destinations                   | Same labels, icon language, active green                                   | Mobile-only presentation                                        | Prevents duplicate navigation on desktop    |
+| Bottom nav               | Fixed five-item bar with icon and label; main gets shared `--customer-bottom-clearance` | Hidden; header nav carries the same destinations                   | Same labels, icon language, active green                                   | Mobile-only presentation                                        | Prevents duplicate navigation on desktop    |
 | Page content             | 16px gutters and single-column flow                                           | Max-width centered content with 2-column/grid opportunities        | Same titles, gaps, cards, borders, colors                                  | Columns widen only where content already supports it            | Preserves reading order while using space   |
 | PageHeader               | Title stacks above actions and stays compact                                  | Title and actions may sit on one row                               | Same serif title and sans metadata                                         | Flex direction changes                                          | Avoids crowding narrow screens              |
 | Cards                    | 16px padding, 12px gaps, near-full-width                                      | 20-24px padding, same radius/border, more columns                  | Same surface, line, shadow restraint, and semantic color                   | Density changes with available width                            | Readability and scan speed                  |
@@ -28,6 +28,8 @@ the operational Account cards in mobile reading order. It does not introduce a
 second destination, horizontal sub-navigation, or a mobile desktop header.
 
 The five-item customer bottom navigation remains unchanged. Customer main
-content keeps the existing page-bottom and safe-area clearance so the final
-Account action remains tappable above the fixed bar. Desktop keeps the existing
-header navigation and UserButton presentation.
+content uses the shared `--customer-bottom-clearance`, which includes the
+fixed bar's effective border/padding/link height, `env(safe-area-inset-bottom)`,
+and the existing page-bottom spacing so the final Account action remains
+tappable above the fixed bar. Desktop keeps the existing header navigation and
+UserButton presentation.

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminBatchDetailPage from "@/app/admin/batches/[batchId]/page";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -89,6 +89,7 @@ function setup(currentBatch = batch) {
   const linkCatalog = vi.fn().mockResolvedValue({});
   const assignOrderItem = vi.fn().mockResolvedValue({});
   const updateShipmentStage = vi.fn().mockResolvedValue({});
+  const removeBatch = vi.fn().mockResolvedValue({});
   vi.mocked(useProduct).mockReturnValue({
     dataSource: "convex",
     state: {
@@ -109,14 +110,14 @@ function setup(currentBatch = batch) {
     linkCatalog,
     unlinkCatalog: vi.fn().mockResolvedValue({}),
     archiveBatch: vi.fn().mockResolvedValue({}),
-    removeBatch: vi.fn().mockResolvedValue({}),
+    removeBatch,
     updateEtaCargoMonth: vi.fn().mockResolvedValue({}),
     assignOrderItem,
     unassignOrderItem: vi.fn().mockResolvedValue({}),
     moveOrderItem: vi.fn().mockResolvedValue({}),
     updateShipmentStage,
   } as never);
-  return { linkCatalog, assignOrderItem, updateShipmentStage };
+  return { linkCatalog, assignOrderItem, updateShipmentStage, removeBatch };
 }
 
 describe("Admin Batch Detail rendered workflow", () => {
@@ -191,5 +192,31 @@ describe("Admin Batch Detail rendered workflow", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Kunci PO" }));
     await waitFor(() => expect(updateShipmentStage).toHaveBeenCalledWith("batch-1", "po_closed"));
+  });
+
+  it("exposes the guarded Hapus batch action and confirms the disposable-record explanation", async () => {
+    const { removeBatch } = setup();
+
+    render(<AdminBatchDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Hapus batch" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Hapus batch ini?" })).toBeTruthy();
+    expect(within(dialog).getByText(/tanpa tautan, assignment, atau riwayat/i)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hapus batch" }));
+
+    await waitFor(() => expect(removeBatch).toHaveBeenCalledWith("batch-1"));
+  });
+
+  it("keeps physical deletion unavailable once the Batch has entered operations", () => {
+    setup({
+      ...batch,
+      history: [{ toStage: "po_closed", at: "2026-08-27T00:00:00.000Z" }] as never,
+    });
+
+    render(<AdminBatchDetailPage />);
+
+    expect(screen.queryByRole("button", { name: "Hapus batch" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Arsipkan batch" })).toBeTruthy();
   });
 });

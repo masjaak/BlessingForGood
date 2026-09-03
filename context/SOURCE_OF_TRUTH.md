@@ -1,5 +1,29 @@
 # BFG SOURCE OF TRUTH
 
+## Customer mobile clearance and destructive-action closure — 2026-09-03
+
+This is a scoped maintenance closure. It keeps the existing Customer shell,
+Batch lifecycle, Invoice lifecycle, authorization, audit, and financial
+retention contracts unchanged.
+
+- `src/components/site-shell.tsx` remains the Customer shell and fixed
+  `CustomerBottomNav` owner. `src/app/globals.css` owns the shared mobile
+  `--customer-bottom-clearance`, calculated from the fixed bar's effective
+  border/padding/link height, safe-area inset, and existing page-bottom
+  spacing. Customer routes consume that main-flow clearance; they do not add
+  route-specific nav padding.
+- `convex/batches.ts:remove` is server-authoritative and only removes an
+  unarchived, editable Batch with no Catalog links, assignments, or status
+  history. Operational, archived, or historical Batches remain preserved and
+  use the existing archive lifecycle where applicable. The mutation never
+  cascades into Orders, Invoices, Payments, Customers, Deposits, Refunds, or
+  Audit.
+- `convex/invoices.ts:voidInvoice` is the canonical Admin destructive
+  resolution. Physical Invoice deletion is not a supported cleanup path;
+  voiding is blocked while settlement or pending payment confirmation needs
+  resolution and preserves invoice snapshots, Order, Payment, Deposit, Refund,
+  and Audit history.
+
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

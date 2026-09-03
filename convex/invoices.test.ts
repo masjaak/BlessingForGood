@@ -71,6 +71,17 @@ describe("BFG invoice persistence", () => {
       "INVOICE_ALREADY_ISSUED",
     );
     await admin.mutation(api.invoices.voidInvoice, { invoiceId: invoice.invoiceId });
+    expect(await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).toMatchObject({
+      invoiceId: invoice.invoiceId,
+      status: "void",
+      totalAmount: invoice.totalAmount,
+      items: [expect.objectContaining({ quantity: 2, subtotalAmount: invoice.totalAmount })],
+    });
+    expect(await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).toMatchObject({
+      orderId: order.orderId,
+      status: "submitted",
+      totalAmount: invoice.totalAmount,
+    });
     await expect(admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId })).rejects.toThrow("INVOICE_VOID");
     const replacement = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,
