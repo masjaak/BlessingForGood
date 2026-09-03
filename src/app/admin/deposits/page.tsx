@@ -5,11 +5,22 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { AdminPagination } from "@/components/admin-pagination";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
+import { ActionGroup, Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
+import { formatIdr } from "@/domain/prototype/logic";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
+
+function customerOptionLabel(customer: { displayName: string; memberCode: string | null }) {
+  return `${customer.displayName} · ${customer.memberCode || "tanpa kode"}`;
+}
+
+function historyDate(value: string) {
+  return new Date(value).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+}
 
 function DepositOperations() {
   const requestedCustomerId = useSearchParams().get("customerId") || "";
@@ -17,6 +28,7 @@ function DepositOperations() {
   const customers = useQuery(api.orders.listEligibleCustomers, {
     paginationOpts: { numItems: 100, cursor: null },
   });
+  const historyPagination = useAdminCursorPagination();
   const startReview = useMutation(api.depositTopUps.startReview);
   const approve = useMutation(api.depositTopUps.approve);
   const reject = useMutation(api.depositTopUps.reject);
@@ -27,6 +39,14 @@ function DepositOperations() {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState("");
+  const [historyCustomerId, setHistoryCustomerId] = useState(requestedCustomerId);
+  const [historyDirection, setHistoryDirection] = useState<"" | "in" | "out">("");
+  const history = useQuery(api.depositTransactions.listForAdmin, {
+    paginationOpts: { numItems: historyPagination.pageSize, cursor: historyPagination.cursor },
+    customerUserId: historyCustomerId ? (historyCustomerId as Id<"appUsers">) : undefined,
+    direction: historyDirection || undefined,
+  });
+  const historyRows = history?.page || [];
   async function run(key: string, action: () => Promise<unknown>, success: string) {
     setPending(key);
     setMessage("");
@@ -45,7 +65,7 @@ function DepositOperations() {
       title="Deposit & top-up"
       description="Verifikasi bukti top-up, lihat status, dan catat penyesuaian manual yang selalu masuk activity log."
     >
-      <Card>
+      <Card className="deposit-topup-card">
         <span className="card-kicker">Antrian top-up</span>
         <h2>Bukti menunggu verifikasi</h2>
         {topUps?.length ? (
@@ -107,11 +127,11 @@ function DepositOperations() {
           <EmptyState title="Tidak ada top-up" description="Permintaan pelanggan akan tampil di sini." />
         )}
       </Card>
-      <Card>
+      <Card className="deposit-adjustment-card">
         <span className="card-kicker">Penyesuaian manual</span>
         <h2>Koreksi saldo dengan alasan wajib</h2>
         <form
-          className="form-card"
+          className="form-card deposit-adjustment-form"
           onSubmit={(event) => {
             event.preventDefault();
             void run(
@@ -121,7 +141,7 @@ function DepositOperations() {
             );
           }}
         >
-          <div className="form-grid">
+          <div className="form-grid deposit-adjustment-fields">
             <Field label="Pelanggan">
               <BFGSelect
                 className="select"
@@ -132,7 +152,7 @@ function DepositOperations() {
                 <option value="">Pilih pelanggan</option>
                 {customers?.page.map((customer) => (
                   <option key={customer.customerUserId} value={customer.customerUserId}>
-                    {customer.displayName} · {customer.memberCode || "tanpa kode"} · {customer.email || "—"}
+                    {customerOptionLabel(customer)} · {customer.email || "—"}
                   </option>
                 ))}
               </BFGSelect>
@@ -162,10 +182,105 @@ function DepositOperations() {
           <Field label="Alasan">
             <textarea className="textarea" value={note} onChange={(event) => setNote(event.target.value)} required />
           </Field>
-          <Button loading={pending === "adjust"} loadingLabel="Mencatat…">
-            Catat penyesuaian
-          </Button>
+          <ActionGroup className="deposit-adjustment-actions">
+            <Button type="submit" loading={pending === "adjust"} loadingLabel="Mencatat…">
+              Catat penyesuaian
+            </Button>
+          </ActionGroup>
         </form>
+      </Card>
+      <Card className="deposit-history-card">
+        <div className="split-heading">
+          <div>
+            <span className="card-kicker">Riwayat deposit</span>
+            <h2>Mutasi masuk & keluar</h2>
+          </div>
+        </div>
+        <p className="subtle">
+          Riwayat perubahan saldo Customer dari top-up, alokasi, penyesuaian, dan transaksi terkait.
+        </p>
+        <div className="deposit-history-filters">
+          <Field label="Pelanggan">
+            <BFGSelect
+              aria-label="Pelanggan riwayat deposit"
+              className="select"
+              value={historyCustomerId}
+              onChange={(event) => {
+                setHistoryCustomerId(event.target.value);
+                historyPagination.reset();
+              }}
+            >
+              <option value="">Semua pelanggan</option>
+              {customers?.page.map((customer) => (
+                <option key={customer.customerUserId} value={customer.customerUserId}>
+                  {customerOptionLabel(customer)}
+                </option>
+              ))}
+            </BFGSelect>
+          </Field>
+          <Field label="Arah">
+            <BFGSelect
+              aria-label="Arah riwayat deposit"
+              className="select"
+              value={historyDirection}
+              onChange={(event) => {
+                setHistoryDirection(event.target.value as "" | "in" | "out");
+                historyPagination.reset();
+              }}
+            >
+              <option value="">Semua</option>
+              <option value="in">Masuk</option>
+              <option value="out">Keluar</option>
+            </BFGSelect>
+          </Field>
+        </div>
+        {history === undefined ? <p className="subtle">Memuat riwayat deposit…</p> : null}
+        {historyRows.length ? (
+          <div className="deposit-history-list">
+            <div className="deposit-history-heading" aria-hidden="true">
+              <span>Tanggal / Customer</span>
+              <span>Arah / Jumlah</span>
+              <span>Sumber / Keterangan</span>
+              <span>Konteks / Aktor</span>
+            </div>
+            {historyRows.map((row) => (
+              <div className="deposit-history-row" key={row.transactionId}>
+                <div className="deposit-history-primary">
+                  <time dateTime={row.createdAt}>{historyDate(row.createdAt)}</time>
+                  <strong>{row.customerName || "Pelanggan tidak dikenal"}</strong>
+                  <span className="subtle">{row.customerMemberCode || "tanpa kode"}</span>
+                </div>
+                <div className="deposit-history-amount">
+                  <span className={`deposit-direction deposit-direction-${row.direction}`}>
+                    {row.direction === "in" ? "Masuk" : "Keluar"}
+                  </span>
+                  <strong>
+                    {row.direction === "in" ? "+" : "−"} {formatIdr(row.amount)}
+                  </strong>
+                </div>
+                <div className="deposit-history-description">
+                  <strong>{row.source}</strong>
+                  <span>{row.description || "—"}</span>
+                </div>
+                <div className="deposit-history-context">
+                  <span>Top-up: {row.topUpReference || "—"}</span>
+                  <span>Invoice: {row.invoiceNumber || "—"}</span>
+                  <span>Pesanan: {row.orderCode || "—"}</span>
+                  <span>Batch / Cargo: {row.batchName || "—"}</span>
+                  <span>Admin: {row.actorName || "—"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : history ? (
+          <EmptyState title="Belum ada riwayat deposit" description="Mutasi saldo Customer akan tampil di sini." />
+        ) : null}
+        <AdminPagination
+          {...historyPagination}
+          rowCount={historyRows.length}
+          isDone={history?.isDone ?? true}
+          continueCursor={history?.continueCursor ?? ""}
+        />
       </Card>
       {message ? (
         <p className="success-banner" role="status">

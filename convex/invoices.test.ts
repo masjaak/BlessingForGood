@@ -201,6 +201,30 @@ describe("BFG invoice persistence", () => {
         }),
       ]),
     );
+    const onlyCustomer = await admin.query(api.invoices.listReadyForIssuance, {
+      paginationOpts: { numItems: 25, cursor: null },
+      customerUserId: customerUser.appUserId,
+    });
+    expect(onlyCustomer.page).toEqual(
+      expect.arrayContaining([expect.objectContaining({ customerUserId: customerUser.appUserId })]),
+    );
+    expect(onlyCustomer.page.every((row) => row.customerUserId === customerUser.appUserId)).toBe(true);
+
+    const onlyBatch = await admin.query(api.invoices.listReadyForIssuance, {
+      paginationOpts: { numItems: 25, cursor: null },
+      batchId: batch.batchId,
+    });
+    expect(onlyBatch.page.length).toBeGreaterThan(0);
+    expect(onlyBatch.page.every((row) => row.batchId === batch.batchId)).toBe(true);
+
+    const customerAndBatch = await admin.query(api.invoices.listReadyForIssuance, {
+      paginationOpts: { numItems: 25, cursor: null },
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+    });
+    expect(customerAndBatch.page).toEqual([
+      expect.objectContaining({ customerUserId: customerUser.appUserId, batchId: batch.batchId }),
+    ]);
 
     const draft = await admin.mutation(api.invoices.create, {
       orderId: firstOrder.orderId,

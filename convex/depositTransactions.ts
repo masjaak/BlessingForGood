@@ -1,7 +1,7 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Id, Doc } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { accountView, applyLedgerDeltas, findDepositAccount, getOrCreateDepositAccount } from "./depositAccounts";
 import { requirePermission } from "./lib/auth";
@@ -11,6 +11,10 @@ import { inverseLedgerDeltas, ledgerDeltas, type LedgerTransactionType } from ".
 import { notifyUser } from "./lib/notifications";
 
 export type DepositTransactionType = LedgerTransactionType | "reversal";
+type DepositHistoryDirection = "in" | "out";
+type DataCtx = MutationCtx | QueryCtx;
+
+const MAX_HISTORY_SCAN = 500;
 
 type TransactionInput = {
   accountId: Id<"depositAccounts">;
@@ -59,6 +63,82 @@ export function transactionView(transaction: Doc<"depositTransactions">, include
   };
 }
 
+function historyDirection(transaction: Doc<"depositTransactions">): DepositHistoryDirection {
+  return transaction.availableDelta > 0 ? "in" : "out";
+}
+
+function historySource(
+  transaction: Doc<"depositTransactions">,
+  hasTopUp: boolean,
+  hasInvoice: boolean,
+  hasRefundObligation: boolean,
+) {
+  if (hasTopUp) return "Top-up disetujui";
+  if (transaction.type === "reservation") return hasInvoice ? "Alokasi ke invoice" : "Penahanan deposit";
+  if (transaction.type === "release") return hasRefundObligation ? "Pelepasan refund" : "Pelepasan alokasi";
+  if (transaction.type === "debit") return hasRefundObligation ? "Pengembalian deposit" : "Penyesuaian manual";
+  if (transaction.type === "reversal") return "Pembalikan transaksi";
+  return hasInvoice ? "Kredit terkait invoice" : "Penyesuaian manual";
+}
+
+async function historyView(ctx: DataCtx, transaction: Doc<"depositTransactions">) {
+  const account = await ctx.db.get(transaction.accountId);
+  const [customer, actor, profile, topUp, obligation] = await Promise.all([
+    account ? ctx.db.get(account.userId) : Promise.resolve(null),
+    ctx.db.get(transaction.createdByUserId),
+    account
+      ? ctx.db
+          .query("customerProfiles")
+          .withIndex("by_user_id", (index) => index.eq("userId", account.userId))
+          .unique()
+      : Promise.resolve(null),
+    ctx.db
+      .query("depositTopUps")
+      .withIndex("by_deposit_transaction", (index) => index.eq("depositTransactionId", transaction._id))
+      .first(),
+    transaction.refundObligationId ? ctx.db.get(transaction.refundObligationId) : Promise.resolve(null),
+  ]);
+  const invoiceId = transaction.invoiceId ?? obligation?.invoiceId;
+  const invoice = invoiceId ? await ctx.db.get(invoiceId) : null;
+  const order = invoice
+    ? await ctx.db.get(invoice.orderId)
+    : obligation?.orderId
+      ? await ctx.db.get(obligation.orderId)
+      : null;
+  const batch = invoice?.batchId ? await ctx.db.get(invoice.batchId) : null;
+  return {
+    ...transactionView(transaction, true),
+    direction: historyDirection(transaction),
+    customerUserId: account?.userId ?? null,
+    customerName: profile?.displayName || customer?.displayNameSnapshot || customer?.emailSnapshot || null,
+    customerMemberCode: customer?.memberCode ?? null,
+    source: historySource(transaction, Boolean(topUp), Boolean(invoice), Boolean(obligation)),
+    description: transaction.note ?? null,
+    topUpReference: topUp?.bankReference ?? null,
+    invoiceNumber: invoice?.invoiceNumber ?? null,
+    orderCode: order?.orderCode ?? null,
+    batchName: batch?.name ?? null,
+    actorName: actor?.displayNameSnapshot || actor?.emailSnapshot || null,
+  };
+}
+
+function decodeHistoryCursor(value: string | null): { cursor: string | null; skip: number } {
+  if (!value) return { cursor: null, skip: 0 };
+  try {
+    const decoded = JSON.parse(value) as { cursor?: unknown; skip?: unknown };
+    if (typeof decoded.cursor === "string" || decoded.cursor === null) {
+      return { cursor: decoded.cursor, skip: typeof decoded.skip === "number" ? Math.max(0, decoded.skip) : 0 };
+    }
+  } catch {
+    // A stale Convex cursor can still resume the canonical index from its raw value.
+  }
+  return { cursor: value, skip: 0 };
+}
+
+function encodeHistoryCursor(cursor: string | null, skip = 0) {
+  return JSON.stringify({ cursor, skip });
+}
+
 export const recordCredit = mutation({
   args: {
     invoiceId: v.id("invoices"),
@@ -78,6 +158,7 @@ export const recordCredit = mutation({
       type: "credit",
       amount: args.amount,
       ...deltas,
+      invoiceId: invoice._id,
       note: noteValue(args.note),
       createdAt: now,
       createdByUserId: user._id,
@@ -225,5 +306,51 @@ export const listForInvoice = query({
       .order("desc")
       .paginate(args.paginationOpts);
     return { ...page, page: page.page.map((transaction) => transactionView(transaction, true)) };
+  },
+});
+
+export const listForAdmin = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    customerUserId: v.optional(v.id("appUsers")),
+    direction: v.optional(v.union(v.literal("in"), v.literal("out"))),
+  },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "deposits.read.all");
+    const account = args.customerUserId ? await findDepositAccount(ctx, args.customerUserId) : null;
+    if (args.customerUserId && !account) return { page: [], isDone: true, continueCursor: "" };
+
+    const requested = Math.min(Math.max(Math.floor(args.paginationOpts.numItems), 1), 100);
+    const decoded = decodeHistoryCursor(args.paginationOpts.cursor);
+    // ponytail: bounded filtered scan (500 ledger rows/query); the cursor resumes after this raw page.
+    const sourcePage = account
+      ? await ctx.db
+          .query("depositTransactions")
+          .withIndex("by_account_and_created_at", (index) => index.eq("accountId", account._id))
+          .order("desc")
+          .paginate({ numItems: MAX_HISTORY_SCAN, cursor: decoded.cursor })
+      : await ctx.db
+          .query("depositTransactions")
+          .withIndex("by_created_at")
+          .order("desc")
+          .paginate({ numItems: MAX_HISTORY_SCAN, cursor: decoded.cursor });
+    const matchingTransactions = args.direction
+      ? sourcePage.page.filter((transaction) => historyDirection(transaction) === args.direction)
+      : sourcePage.page;
+    const visibleTransactions = matchingTransactions.slice(decoded.skip, decoded.skip + requested);
+    const nextSkip = decoded.skip + visibleTransactions.length;
+    const hasMoreMatchesInPage = matchingTransactions.length > nextSkip;
+    const rows = await Promise.all(visibleTransactions.map((transaction) => historyView(ctx, transaction)));
+    const isDone = !hasMoreMatchesInPage && sourcePage.isDone;
+    return {
+      page: rows,
+      isDone,
+      continueCursor: isDone
+        ? ""
+        : encodeHistoryCursor(
+            hasMoreMatchesInPage ? decoded.cursor : sourcePage.continueCursor,
+            hasMoreMatchesInPage ? nextSkip : 0,
+          ),
+    };
   },
 });

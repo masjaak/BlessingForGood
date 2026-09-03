@@ -713,7 +713,8 @@ export default defineSchema({
     depositTransactionId: v.optional(v.id("depositTransactions")),
   })
     .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
-    .index("by_status_and_created_at", ["status", "createdAt"]),
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_deposit_transaction", ["depositTransactionId"]),
 
   invoiceItems: defineTable({
     invoiceId: v.id("invoices"),
@@ -802,7 +803,8 @@ export default defineSchema({
     .index("by_account", ["accountId"])
     .index("by_account_and_created_at", ["accountId", "createdAt"])
     .index("by_invoice", ["invoiceId"])
-    .index("by_reference_transaction", ["referenceTransactionId"]),
+    .index("by_reference_transaction", ["referenceTransactionId"])
+    .index("by_created_at", ["createdAt"]),
 
   invoiceDepositAllocations: defineTable({
     invoiceId: v.id("invoices"),

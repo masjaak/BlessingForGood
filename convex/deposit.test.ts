@@ -25,6 +25,87 @@ async function createIssuedInvoice(t: ReturnType<typeof testConvex>) {
 describe("BFG append-only deposit ledger", () => {
   beforeEach(configureTestEnvironment);
 
+  it("projects the canonical ledger into bounded admin history with context", async () => {
+    const t = testConvex();
+    const { admin, customer, invoice } = await createIssuedInvoice(t);
+    const currentCustomer = await customer.query(api.users.current, {});
+    if (!currentCustomer) throw new Error("deposit customer fixture missing");
+
+    await admin.mutation(api.depositTransactions.recordCredit, {
+      invoiceId: invoice.invoiceId,
+      amount: 100000,
+      note: "Invoice deposit credit",
+    });
+    await admin.mutation(api.invoiceDepositAllocations.allocate, {
+      invoiceId: invoice.invoiceId,
+      amount: 50000,
+    });
+    await admin.mutation(api.depositTransactions.adjust, {
+      customerUserId: currentCustomer.appUserId,
+      direction: "credit",
+      amount: 25000,
+      note: "Manual credit correction",
+    });
+    await admin.mutation(api.depositTransactions.adjust, {
+      customerUserId: currentCustomer.appUserId,
+      direction: "debit",
+      amount: 10000,
+      note: "Manual debit correction",
+    });
+
+    const history = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 25, cursor: null },
+    });
+    expect(history.page).toHaveLength(4);
+    expect(history.page.map((row) => row.direction)).toEqual(["out", "in", "out", "in"]);
+    expect(history.page.map((row) => row.amount)).toEqual([10000, 25000, 50000, 100000]);
+    expect(history.page.map((row) => row.description)).toEqual([
+      "Manual debit correction",
+      "Manual credit correction",
+      "invoice deposit allocation",
+      "Invoice deposit credit",
+    ]);
+    expect(history.page.every((row) => row.customerUserId === currentCustomer.appUserId)).toBe(true);
+    expect(history.page[0]).toMatchObject({
+      source: "Penyesuaian manual",
+      actorName: expect.any(String),
+      invoiceNumber: null,
+      orderCode: null,
+      batchName: null,
+    });
+    expect(history.page[2]).toMatchObject({
+      source: "Alokasi ke invoice",
+      invoiceNumber: expect.any(String),
+      orderCode: expect.any(String),
+      batchName: null,
+    });
+
+    const credits = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 25, cursor: null },
+      direction: "in",
+    });
+    expect(credits.page).toHaveLength(2);
+    expect(credits.page.every((row) => row.direction === "in")).toBe(true);
+
+    const firstCreditPage = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 1, cursor: null },
+      direction: "in",
+    });
+    const secondCreditPage = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 1, cursor: firstCreditPage.continueCursor },
+      direction: "in",
+    });
+    expect(firstCreditPage.page.map((row) => row.amount)).toEqual([25000]);
+    expect(secondCreditPage.page.map((row) => row.amount)).toEqual([100000]);
+    expect(secondCreditPage.isDone).toBe(true);
+
+    const customerHistory = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 25, cursor: null },
+      customerUserId: currentCustomer.appUserId,
+    });
+    expect(customerHistory.page).toHaveLength(4);
+  });
+
   it("starts empty and records admin credit for the invoice customer", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer, invoice } = await createIssuedInvoice(t);

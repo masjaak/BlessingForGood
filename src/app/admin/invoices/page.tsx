@@ -175,11 +175,20 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
   );
 }
 
-function CustomerBatchInvoiceQueue({ customerId }: { customerId: string | null }) {
+function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { customerId: string | null }) {
   const pagination = useAdminCursorPagination();
+  const [customerId, setCustomerId] = useState(requestedCustomerId || "");
+  const [batchId, setBatchId] = useState("");
+  const customers = useQuery(api.orders.listEligibleCustomers, {
+    paginationOpts: { numItems: 100, cursor: null },
+  });
+  const batches = useQuery(api.batches.listForAdmin, {
+    paginationOpts: { numItems: 100, cursor: null },
+  });
   const rows = useQuery(api.invoices.listReadyForIssuance, {
     paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
     customerUserId: customerId ? (customerId as Id<"appUsers">) : undefined,
+    batchId: batchId ? (batchId as Id<"batches">) : undefined,
   });
   const issueCustomerBatch = useMutation(api.invoices.issueCustomerBatch);
   const [mode, setMode] = useState<InvoiceRequirementMode>("none");
@@ -188,6 +197,14 @@ function CustomerBatchInvoiceQueue({ customerId }: { customerId: string | null }
   const [pending, setPending] = useState<string | null>(null);
   const [report, setReport] = useState("");
   const pageRows = rows?.page || [];
+  const hasFilters = Boolean(customerId || batchId);
+
+  function updateFilter(setter: (value: string) => void, value: string) {
+    setter(value);
+    pagination.reset();
+    setSelected([]);
+    setReport("");
+  }
 
   function requirementValue() {
     if (mode === "none") return undefined;
@@ -265,6 +282,55 @@ function CustomerBatchInvoiceQueue({ customerId }: { customerId: string | null }
       <p className="subtle">
         Satu Customer dalam satu Batch hanya memiliki satu invoice aktif. Pilih Customer secara eksplisit untuk bulk.
       </p>
+      <div className="admin-finance-filter-grid">
+        <Field label="Pelanggan">
+          <BFGSelect
+            aria-label="Pelanggan"
+            className="select"
+            value={customerId}
+            onChange={(event) => updateFilter(setCustomerId, event.target.value)}
+          >
+            <option value="">Semua pelanggan</option>
+            {customers?.page.map((customer) => (
+              <option key={customer.customerUserId} value={customer.customerUserId}>
+                {customer.displayName} · {customer.memberCode || "tanpa kode"}
+              </option>
+            ))}
+          </BFGSelect>
+        </Field>
+        <Field label="Batch / Cargo">
+          <BFGSelect
+            aria-label="Batch / Cargo"
+            className="select"
+            value={batchId}
+            onChange={(event) => updateFilter(setBatchId, event.target.value)}
+          >
+            <option value="">Semua Batch</option>
+            {batches?.page
+              .filter((batch) => !batch.isArchived && batch.currentShipmentStage)
+              .map((batch) => (
+                <option key={batch.batchId} value={batch.batchId}>
+                  {batch.referenceCode ? `${batch.referenceCode} · ` : ""}
+                  {batch.name}
+                </option>
+              ))}
+          </BFGSelect>
+        </Field>
+        <Button
+          type="button"
+          variant="tertiary"
+          disabled={!hasFilters}
+          onClick={() => {
+            setCustomerId("");
+            setBatchId("");
+            pagination.reset();
+            setSelected([]);
+            setReport("");
+          }}
+        >
+          Reset filter
+        </Button>
+      </div>
       <div className="form-grid">
         <label className="field">
           <span className="field-label">Syarat deposit</span>
@@ -309,9 +375,10 @@ function CustomerBatchInvoiceQueue({ customerId }: { customerId: string | null }
           {pageRows.map((row) => {
             const rowKey = `${row.batchId}:${row.customerUserId}`;
             return (
-              <div className="invoice-issue-row" key={rowKey}>
-                <label className="form-actions">
+              <div className="invoice-issue-row" data-testid="invoice-issue-row" key={rowKey}>
+                <label className="invoice-issue-select">
                   <input
+                    aria-label={`Pilih ${row.customerName} · ${row.batchName}`}
                     type="checkbox"
                     checked={selected.includes(rowKey)}
                     disabled={!row.eligible || pending !== null}
@@ -321,31 +388,43 @@ function CustomerBatchInvoiceQueue({ customerId }: { customerId: string | null }
                       )
                     }
                   />
-                  <span>
-                    <strong>{row.customerName}</strong>
-                    <br />
-                    <span className="subtle">
-                      {row.batchName} · {row.bookCount} buku · <Money amount={row.totalAmount} />
-                    </span>
-                  </span>
                 </label>
-                <span className="form-actions">
+                <div className="invoice-issue-main">
+                  <strong>{row.customerName}</strong>
+                  <span className="subtle">
+                    {row.customerMemberCode ? `${row.customerMemberCode} · ` : ""}
+                    {row.batchName} · {row.bookCount} buku · <Money amount={row.totalAmount} />
+                  </span>
+                </div>
+                <div className="invoice-issue-status">
                   {row.invoiceStatus ? (
-                    <StatusBadge>{row.invoiceStatus === "issued" ? "Sudah terbit" : row.invoiceStatus}</StatusBadge>
+                    <StatusBadge tone={row.invoiceStatus === "issued" ? "positive" : "neutral"}>
+                      {row.invoiceStatus === "issued" ? "Sudah terbit" : row.invoiceStatus}
+                    </StatusBadge>
                   ) : !row.eligible ? (
                     <StatusBadge tone="warning">Perlu ditinjau</StatusBadge>
                   ) : null}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={!row.eligible || pending !== null}
-                    loading={pending === rowKey}
-                    loadingLabel="Menerbitkan…"
-                    onClick={() => void issueRow(row)}
-                  >
-                    Terbitkan invoice
-                  </Button>
-                </span>
+                </div>
+                <div className="invoice-issue-action">
+                  {row.invoiceId ? (
+                    <LinkButton href={`/admin/invoices/${row.invoiceId}`} variant="tertiary">
+                      Buka invoice
+                    </LinkButton>
+                  ) : row.eligible ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={!row.eligible || pending !== null}
+                      loading={pending === rowKey}
+                      loadingLabel="Menerbitkan…"
+                      onClick={() => void issueRow(row)}
+                    >
+                      Terbitkan invoice
+                    </Button>
+                  ) : (
+                    <span className="subtle">Menunggu pemeriksaan</span>
+                  )}
+                </div>
               </div>
             );
           })}

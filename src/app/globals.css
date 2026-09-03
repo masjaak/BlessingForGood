@@ -7932,3 +7932,245 @@ p {
     justify-content: flex-start;
   }
 }
+
+/* Admin finance: keep queue, adjustment, and ledger relationships explicit. */
+.admin-shell .admin-finance-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: var(--form-field-field-gap);
+  align-items: end;
+  margin-block: var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--control-surface-hover);
+}
+
+.admin-shell .admin-finance-filter-grid > .button {
+  width: fit-content;
+}
+
+.admin-shell .invoice-issue-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(120px, auto) minmax(168px, auto);
+  gap: var(--space-lg);
+  align-items: center;
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-shell .invoice-issue-select {
+  display: flex;
+  min-height: var(--button-height-default);
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-shell .invoice-issue-select input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.admin-shell .invoice-issue-main,
+.admin-shell .invoice-issue-status,
+.admin-shell .invoice-issue-action,
+.admin-shell .deposit-history-primary,
+.admin-shell .deposit-history-amount,
+.admin-shell .deposit-history-description,
+.admin-shell .deposit-history-context {
+  min-width: 0;
+}
+
+.admin-shell .invoice-issue-main {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.admin-shell .invoice-issue-main strong,
+.admin-shell .deposit-history-primary strong,
+.admin-shell .deposit-history-description span,
+.admin-shell .deposit-history-context span {
+  overflow-wrap: anywhere;
+}
+
+.admin-shell .invoice-issue-status {
+  display: flex;
+  min-width: 120px;
+  align-items: center;
+}
+
+.admin-shell .invoice-issue-action {
+  display: flex;
+  min-width: 168px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.admin-shell .invoice-issue-action > .button,
+.admin-shell .invoice-issue-action > a.button {
+  min-width: 168px;
+}
+
+.admin-shell .deposit-adjustment-fields > :nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.admin-shell .deposit-adjustment-actions {
+  justify-content: flex-end;
+  margin-top: var(--space-xs);
+}
+
+.admin-shell .deposit-adjustment-actions > .button {
+  width: fit-content;
+}
+
+.admin-shell .deposit-history-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--form-field-field-gap);
+  margin-top: var(--space-lg);
+}
+
+.admin-shell .deposit-history-list {
+  margin-top: var(--space-lg);
+  border-top: 1px solid var(--line);
+}
+
+.admin-shell .deposit-history-heading,
+.admin-shell .deposit-history-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(115px, 0.8fr) minmax(170px, 1.15fr) minmax(160px, 1.2fr);
+  gap: var(--space-lg);
+}
+
+.admin-shell .deposit-history-heading {
+  padding: var(--space-md) 0 var(--space-sm);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-shell .deposit-history-row {
+  align-items: start;
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-shell .deposit-history-primary,
+.admin-shell .deposit-history-amount,
+.admin-shell .deposit-history-description,
+.admin-shell .deposit-history-context {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.admin-shell .deposit-history-primary time,
+.admin-shell .deposit-history-context,
+.admin-shell .deposit-history-description span {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.admin-shell .deposit-history-amount {
+  justify-items: start;
+}
+
+.admin-shell .deposit-history-amount strong {
+  white-space: nowrap;
+}
+
+.admin-shell .deposit-direction {
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-shell .deposit-direction-in {
+  color: var(--accent-dark);
+}
+
+.admin-shell .deposit-direction-out {
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .admin-shell .admin-finance-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-shell .invoice-issue-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-areas:
+      "select main"
+      "select status"
+      "select action";
+    column-gap: var(--space-md);
+    row-gap: var(--space-sm);
+    align-items: start;
+  }
+
+  .admin-shell .invoice-issue-select {
+    grid-area: select;
+  }
+
+  .admin-shell .invoice-issue-main {
+    grid-area: main;
+  }
+
+  .admin-shell .invoice-issue-status {
+    grid-area: status;
+    min-width: 0;
+  }
+
+  .admin-shell .invoice-issue-action {
+    grid-area: action;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .admin-shell .invoice-issue-action > .button,
+  .admin-shell .invoice-issue-action > a.button {
+    width: fit-content;
+  }
+
+  .admin-shell .deposit-history-heading {
+    display: none;
+  }
+
+  .admin-shell .deposit-history-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-md);
+  }
+
+  .admin-shell .deposit-history-description,
+  .admin-shell .deposit-history-context {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-shell .admin-finance-filter-grid,
+  .admin-shell .deposit-history-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .admin-finance-filter-grid > .button,
+  .admin-shell .deposit-adjustment-actions > .button,
+  .admin-shell .invoice-issue-action > .button,
+  .admin-shell .invoice-issue-action > a.button {
+    width: 100%;
+  }
+
+  .admin-shell .deposit-history-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .deposit-history-description,
+  .admin-shell .deposit-history-context {
+    grid-column: auto;
+  }
+}

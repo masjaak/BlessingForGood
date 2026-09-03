@@ -506,14 +506,18 @@ export const listReadyForIssuance = query({
   args: {
     paginationOpts: paginationOptsValidator,
     customerUserId: v.optional(v.id("appUsers")),
+    batchId: v.optional(v.id("batches")),
   },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "invoices.read.all");
-    const batchPage = await ctx.db
-      .query("batches")
-      .withIndex("by_created_at")
-      .order("desc")
-      .paginate(args.paginationOpts);
+    const selectedBatch = args.batchId ? await ctx.db.get(args.batchId) : null;
+    const batchPage = args.batchId
+      ? { page: selectedBatch ? [selectedBatch] : [], isDone: true, continueCursor: "" }
+      : await ctx.db
+          .query("batches")
+          .withIndex("by_created_at")
+          .order("desc")
+          .paginate(args.paginationOpts);
     const rows = [];
     for (const batch of batchPage.page) {
       if (batch.isArchived || !batch.currentShipmentStage) continue;
