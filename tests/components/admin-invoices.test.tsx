@@ -173,6 +173,16 @@ describe("Admin invoice issue entry", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Invoice dibatalkan."));
   });
 
+  it("keeps physical Invoice deletion unavailable and exposes the canonical void path", () => {
+    setup({ ...invoice, status: "draft" });
+
+    render(<AdminInvoiceDetailPage />);
+
+    expect(screen.queryByRole("button", { name: "Hapus permanen" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Terbitkan invoice" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Batalkan invoice" })).toBeTruthy();
+  });
+
   it("keeps void unavailable while settlement history still requires resolution", () => {
     setup({ ...invoice, allocatedDepositAmount: 50000, paymentStatus: "partially_paid" });
 

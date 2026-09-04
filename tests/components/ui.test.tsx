@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useQuery } from "convex/react";
 import HomePage from "@/app/page";
@@ -7,7 +7,7 @@ import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { AdminShellContext } from "@/components/site-shell";
-import { Button, Card, InlineBooleanField, LinkButton, PageHeader } from "@/components/ui";
+import { Button, Card, ConfirmationDialog, InlineBooleanField, LinkButton, PageHeader } from "@/components/ui";
 import { AdminShell, SiteShell } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 import { useAuth } from "@clerk/nextjs";
@@ -81,6 +81,37 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("button", { name: "Compact action" }).className).toContain("button-size-compact");
     expect(screen.getByRole("link", { name: "Compact link" }).className).toContain("button-size-compact");
     expect(document.querySelector("section.frame-detail")).toBeTruthy();
+  });
+
+  it("requires an exact phrase before confirming a destructive action", () => {
+    const onConfirm = vi.fn();
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+
+    render(
+      <ConfirmationDialog
+        open
+        title="Hapus katalog secara permanen?"
+        description="Tindakan ini tidak dapat dibatalkan."
+        confirmLabel="Hapus permanen"
+        confirmationPhrase="HAPUS KATALOG"
+        danger
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    const input = within(dialog).getByRole("textbox", { name: "Ketik HAPUS KATALOG" });
+    const confirm = within(dialog).getByRole("button", { name: "Hapus permanen" });
+    expect(confirm).toHaveProperty("disabled", true);
+    fireEvent.change(input, { target: { value: "hapus katalog" } });
+    expect(confirm).toHaveProperty("disabled", true);
+    fireEvent.change(input, { target: { value: "HAPUS KATALOG" } });
+    expect(confirm).toHaveProperty("disabled", false);
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it("keeps Button and LinkButton on one complete interaction contract", () => {

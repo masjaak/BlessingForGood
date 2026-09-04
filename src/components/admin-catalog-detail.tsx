@@ -81,6 +81,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     title: string;
     description: string;
     confirmLabel: string;
+    confirmationPhrase?: string;
     danger?: boolean;
     action: () => void;
   } | null>(null);
@@ -208,7 +209,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           </StatusBadge>
         </div>
         <form
-          className="form-card"
+          className="form-card admin-catalog-detail-form"
           onSubmit={(event) => {
             event.preventDefault();
             void run(
@@ -349,9 +350,11 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 loading={pending === "delete"}
                 onClick={() =>
                   setConfirmAction({
-                    title: "Hapus katalog ini?",
-                    description: "Hanya katalog draf yang belum dipakai yang dapat dihapus.",
-                    confirmLabel: "Hapus katalog",
+                    title: "Hapus katalog secara permanen?",
+                    description:
+                      "Tindakan ini tidak dapat dibatalkan. Hanya katalog draf yang belum memiliki produk, akses, batch, atau order yang dapat dihapus.",
+                    confirmLabel: "Hapus permanen",
+                    confirmationPhrase: "HAPUS KATALOG",
                     danger: true,
                     action: () =>
                       void run(
@@ -360,12 +363,12 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                           await removeCatalog({ catalogId: id });
                           router.push("/admin/catalogs");
                         },
-                        "Katalog dihapus.",
+                        "Katalog dihapus permanen.",
                       ),
                   })
                 }
               >
-                Hapus katalog
+                Hapus permanen
               </Button>
             ) : null}
           </div>
@@ -639,6 +642,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
         title={confirmAction?.title || "Konfirmasi katalog"}
         description={confirmAction?.description || "Periksa kembali perubahan katalog ini."}
         confirmLabel={confirmAction?.confirmLabel || "Konfirmasi"}
+        confirmationPhrase={confirmAction?.confirmationPhrase}
         danger={confirmAction?.danger}
         onCancel={() => setConfirmAction(null)}
         onConfirm={() => {

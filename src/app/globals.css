@@ -1204,6 +1204,9 @@ p {
 .bfg-confirm-dialog p {
   margin: 10px 0 20px;
 }
+.bfg-confirm-dialog-confirmation {
+  margin-bottom: var(--space-lg);
+}
 .success-card {
   position: relative;
   min-height: 180px;
@@ -4920,6 +4923,24 @@ p {
 
 .form-grid {
   gap: var(--form-field-field-gap);
+}
+
+.admin-shell .admin-batch-create-form,
+.admin-shell .admin-catalog-create-form,
+.admin-shell .admin-catalog-detail-form {
+  row-gap: var(--space-content-to-actions);
+}
+
+.admin-shell .admin-batch-create-form .form-grid,
+.admin-shell .admin-catalog-create-form .form-grid,
+.admin-shell .admin-catalog-detail-form .form-grid {
+  column-gap: var(--space-lg);
+  row-gap: var(--space-lg);
+}
+
+.admin-shell .admin-catalog-detail-form .form-actions {
+  column-gap: var(--button-inline-gap);
+  row-gap: var(--button-stack-gap);
 }
 
 .split-heading {

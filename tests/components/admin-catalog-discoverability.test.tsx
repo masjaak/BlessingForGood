@@ -165,6 +165,32 @@ describe("Secret Catalog operational discoverability", () => {
     expect(document.querySelector(".catalog-settings-grid.form-grid-wide")).toBeTruthy();
   });
 
+  it("exposes permanent deletion only through the typed destructive confirmation", () => {
+    const catalog = {
+      id: "catalog-1",
+      name: "Draft catalog",
+      status: "draft",
+      description: null,
+      closesAt: null,
+      estimatedArrivalMonth: null,
+    };
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockReset();
+    vi.mocked(useQuery).mockImplementation(() => {
+      const result = queryIndex % 3 === 0 ? catalog : [];
+      queryIndex += 1;
+      return result as never;
+    });
+
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Hapus permanen" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Hapus katalog secara permanen?" })).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "Hapus permanen" })).toHaveProperty("disabled", true);
+    expect(within(dialog).getByRole("textbox", { name: "Ketik HAPUS KATALOG" })).toBeTruthy();
+  });
+
   it("keeps Buat kode akses actionable only after a catalog exists", () => {
     vi.mocked(useQuery)
       .mockReturnValueOnce({

@@ -59,7 +59,7 @@ function CreateBatchForm() {
     <Card>
       <span className="card-kicker">Cargo baru</span>
       <h2>Buat batch</h2>
-      <form className="form-card" onSubmit={handleSubmit}>
+      <form className="form-card admin-batch-create-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <Field label="Nama">
             <input className="input" value={name} onChange={(event) => setName(event.target.value)} required />

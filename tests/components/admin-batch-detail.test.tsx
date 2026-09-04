@@ -198,12 +198,17 @@ describe("Admin Batch Detail rendered workflow", () => {
     const { removeBatch } = setup();
 
     render(<AdminBatchDetailPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Hapus batch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hapus permanen" }));
 
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: "Hapus batch ini?" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "Hapus batch secara permanen?" })).toBeTruthy();
     expect(within(dialog).getByText(/tanpa tautan, assignment, atau riwayat/i)).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Hapus batch" }));
+    const confirm = within(dialog).getByRole("button", { name: "Hapus permanen" });
+    expect(confirm).toHaveProperty("disabled", true);
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Ketik HAPUS BATCH" }), {
+      target: { value: "HAPUS BATCH" },
+    });
+    fireEvent.click(confirm);
 
     await waitFor(() => expect(removeBatch).toHaveBeenCalledWith("batch-1"));
   });
@@ -216,7 +221,7 @@ describe("Admin Batch Detail rendered workflow", () => {
 
     render(<AdminBatchDetailPage />);
 
-    expect(screen.queryByRole("button", { name: "Hapus batch" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Hapus permanen" })).toBeNull();
     expect(screen.getByRole("button", { name: "Arsipkan batch" })).toBeTruthy();
   });
 });

@@ -304,7 +304,7 @@ function AdminBatchDetail() {
                     loadingLabel="Menghapus…"
                     onClick={() => setConfirmDelete(true)}
                   >
-                    Hapus batch
+                    Hapus permanen
                   </Button>
                 ) : null}
               </div>
@@ -756,9 +756,10 @@ function AdminBatchDetail() {
           />
           <ConfirmationDialog
             open={confirmDelete}
-            title="Hapus batch ini?"
-            description="Hanya Batch draf yang benar-benar kosong tanpa tautan, assignment, atau riwayat yang dapat dihapus."
-            confirmLabel="Hapus batch"
+            title="Hapus batch secara permanen?"
+            description="Tindakan ini tidak dapat dibatalkan. Hanya Batch draf yang benar-benar kosong tanpa tautan, assignment, atau riwayat yang dapat dihapus."
+            confirmLabel="Hapus permanen"
+            confirmationPhrase="HAPUS BATCH"
             danger
             onCancel={() => setConfirmDelete(false)}
             onConfirm={() => {
@@ -768,7 +769,7 @@ function AdminBatchDetail() {
                   await removeBatch(batchId);
                   router.push("/admin/batches");
                 },
-                "Batch dihapus.",
+                "Batch dihapus permanen.",
                 "delete",
               );
             }}

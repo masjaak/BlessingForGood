@@ -298,6 +298,7 @@ describe("BFG destructive action guards", () => {
 
     const linkedBatch = await admin.mutation(api.batches.create, { name: "Operational Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: linkedBatch.batchId, catalogId });
+    await expect(admin.mutation(api.secretCatalogs.remove, { catalogId })).rejects.toThrow("ENTITY_IN_USE");
     await expect(admin.mutation(api.batches.remove, { batchId: linkedBatch.batchId })).rejects.toThrow("ENTITY_IN_USE");
 
     const stagedBatch = await admin.mutation(api.batches.create, { name: "Staged Batch" });

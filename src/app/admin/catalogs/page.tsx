@@ -58,7 +58,7 @@ function CatalogForm() {
         <h2>Buat ruang katalog, lalu isi dengan produk yang sudah siap.</h2>
         <p>Katalog dimulai sebagai Draf. Produk, status, dan akses dikelola dari halaman detail.</p>
       </div>
-      <form onSubmit={handleSubmit} className="form-card">
+      <form onSubmit={handleSubmit} className="form-card admin-catalog-create-form">
         <div className="form-grid">
           <Field label="Nama katalog" hint="Nama singkat untuk membedakan katalog ini.">
             <input
