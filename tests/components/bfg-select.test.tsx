@@ -16,6 +16,31 @@ function SelectHarness() {
   );
 }
 
+function SearchableChangingOptionsHarness() {
+  const [search, setSearch] = useState("");
+  const [value, setValue] = useState("");
+  const customers = ["Madina7754", "Mulia Raya", "Elly"].filter((customer) =>
+    customer.toLowerCase().includes(search.toLowerCase()),
+  );
+  return (
+    <BFGSelect
+      aria-label="Pelanggan"
+      searchable
+      searchValue={search}
+      onSearchChange={setSearch}
+      searchInputLabel="Cari pelanggan"
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+    >
+      {customers.map((customer) => (
+        <option value={customer} key={customer}>
+          {customer}
+        </option>
+      ))}
+    </BFGSelect>
+  );
+}
+
 describe("BFGSelect", () => {
   it("uses a portaled listbox, propagates values, and returns focus on close", () => {
     render(<SelectHarness />);
@@ -79,6 +104,21 @@ describe("BFGSelect", () => {
     fireEvent.keyDown(trigger, { key: "Enter" });
 
     expect(trigger.textContent).toContain("Mulia Raya · mulia-raya-5484");
+  });
+
+  it("keeps a searchable menu open and focused while options change per keystroke", () => {
+    render(<SearchableChangingOptionsHarness />);
+    const trigger = screen.getByRole("combobox", { name: "Pelanggan" });
+    fireEvent.click(trigger);
+    const search = screen.getByRole("searchbox", { name: "Cari pelanggan" });
+
+    for (const query of ["m", "ma", "mad"]) {
+      fireEvent.change(search, { target: { value: query } });
+      expect(screen.getByRole("listbox", { name: "Pelanggan" })).toBeTruthy();
+      expect(document.activeElement).toBe(search);
+    }
+
+    expect(screen.getByRole("option", { name: "Madina7754" })).toBeTruthy();
   });
 
   it("keeps the menu height tied to the side where it is rendered", () => {

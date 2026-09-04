@@ -230,6 +230,7 @@ function ConvexAssistedOrderForm() {
   const { state } = useProduct();
   const customerPagination = useAdminCursorPagination();
   const [customerSearch, setCustomerSearch] = useState("");
+  const [customerFormShown, setCustomerFormShown] = useState(false);
   const customers = useQuery(api.orders.listEligibleCustomers, {
     paginationOpts: { numItems: customerPagination.pageSize, cursor: customerPagination.cursor },
     search: customerSearch.trim() || undefined,
@@ -337,7 +338,7 @@ function ConvexAssistedOrderForm() {
         Pilih pelanggan BFG aktif yang sudah ada. Server menentukan snapshot pelanggan dan harga.
       </p>
       {customers === undefined ? <div className="state-panel">Memuat pelanggan yang memenuhi syarat…</div> : null}
-      {customerRows.length > 0 &&
+      {(customerRows.length > 0 || customerFormShown) &&
       (source === "preorder"
         ? catalogs.length > 0
         : Boolean(readyStockRows?.some((row) => row.isAvailable && row.availableQuantity > 0))) ? (
@@ -350,6 +351,7 @@ function ConvexAssistedOrderForm() {
                   type="search"
                   value={customerSearch}
                   onChange={(event) => {
+                    setCustomerFormShown(true);
                     setCustomerSearch(event.target.value);
                     setCustomerId("");
                     customerPagination.reset();
@@ -373,6 +375,11 @@ function ConvexAssistedOrderForm() {
                     </option>
                   ))}
                 </BFGSelect>
+                {customerSearch.trim() && customers !== undefined && !customerRows.length ? (
+                  <span className="subtle" role="status">
+                    Tidak ada pelanggan yang cocok.
+                  </span>
+                ) : null}
               </label>
               <label className="field">
                 <span className="field-label">Sumber</span>

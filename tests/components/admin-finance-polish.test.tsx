@@ -301,4 +301,24 @@ describe("Admin finance polish", () => {
       expect(screen.queryByRole("option", { name: "Madina7754 · madina-7754" })).toBeNull();
     });
   });
+
+  it("keeps the Deposit Customer selector open and focused through sequential search", async () => {
+    render(<AdminDepositsPage />);
+
+    const selector = screen.getByRole("combobox", { name: "Pelanggan" });
+    fireEvent.click(selector);
+    let search = screen.getByRole("searchbox", { name: "Cari pelanggan" });
+
+    for (const value of ["m", "ma", "mad"]) {
+      fireEvent.change(search, { target: { value } });
+      await waitFor(() => expect(screen.getByRole("listbox", { name: "Pelanggan" })).toBeTruthy());
+      search = screen.getByRole("searchbox", { name: "Cari pelanggan" });
+      expect(document.activeElement).toBe(search);
+      expect(screen.getByRole("option", { name: "Madina7754 · madina-7754" })).toBeTruthy();
+    }
+
+    fireEvent.click(screen.getByRole("option", { name: "Madina7754 · madina-7754" }));
+    expect(screen.queryByRole("listbox", { name: "Pelanggan" })).toBeNull();
+    expect(selector.textContent).toContain("Madina7754 · madina-7754");
+  });
 });

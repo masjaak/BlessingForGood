@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
+import { getFunctionName } from "convex/server";
 import AdminOrdersPage from "@/app/admin/orders/page";
 import { useProduct } from "@/domain/prototype/store";
 
@@ -114,5 +115,59 @@ describe("Admin assisted-order discovery", () => {
     fireEvent.change(catalogSearch, { target: { value: "does-not-exist" } });
     expect(screen.getByText("Tidak ada Catalog yang cocok.")).toBeTruthy();
     expect(document.querySelector("select")).toBeNull();
+  });
+
+  it("keeps the Customer search mounted through sequential server query loading", () => {
+    const customer = { customerUserId: "customer-madina", displayName: "Madina Astrid", memberCode: "madina-7754" };
+    let queryPending = false;
+    vi.mocked(useQuery).mockImplementation((query, args?) => {
+      const functionName = getFunctionName(query as never);
+      if (functionName.endsWith(":listEligibleCustomers")) {
+        const search = args && typeof args === "object" && "search" in args ? args.search : undefined;
+        if (search && queryPending) return undefined as never;
+        if (search === "zzz") return { page: [], isDone: true, continueCursor: "" } as never;
+        return { page: [customer], isDone: true, continueCursor: "" } as never;
+      }
+      if (functionName.endsWith(":listForAdmin")) {
+        return args && typeof args === "object" && "paginationOpts" in args
+          ? { page: [], isDone: true, continueCursor: "" }
+          : [];
+      }
+      return [] as never;
+    });
+
+    const { rerender } = render(<AdminOrdersPage />);
+    let search = screen.getByPlaceholderText("Nama, potongan nama, atau nomor telepon");
+
+    for (const value of ["m", "ma", "mad"]) {
+      queryPending = true;
+      fireEvent.change(search, { target: { value } });
+      expect(screen.getByPlaceholderText("Nama, potongan nama, atau nomor telepon")).toBeTruthy();
+      queryPending = false;
+      rerender(<AdminOrdersPage />);
+      search = screen.getByPlaceholderText("Nama, potongan nama, atau nomor telepon");
+      expect(search).toHaveProperty("value", value);
+      const customerSelect = screen.getByRole("combobox", { name: "Pelanggan" });
+      fireEvent.click(customerSelect);
+      expect(screen.getByRole("option", { name: /Madina Astrid · madina-7754/ })).toBeTruthy();
+      fireEvent.keyDown(customerSelect, { key: "Escape" });
+    }
+
+    queryPending = true;
+    fireEvent.change(search, { target: { value: "zzz" } });
+    expect(screen.getByPlaceholderText("Nama, potongan nama, atau nomor telepon")).toBeTruthy();
+    queryPending = false;
+    rerender(<AdminOrdersPage />);
+    expect(screen.getByText("Tidak ada pelanggan yang cocok.")).toBeTruthy();
+    search = screen.getByPlaceholderText("Nama, potongan nama, atau nomor telepon");
+    queryPending = true;
+    fireEvent.change(search, { target: { value: "" } });
+    expect(screen.getByPlaceholderText("Nama, potongan nama, atau nomor telepon")).toBeTruthy();
+    queryPending = false;
+    rerender(<AdminOrdersPage />);
+    const customerSelect = screen.getByRole("combobox", { name: "Pelanggan" });
+    fireEvent.click(customerSelect);
+    fireEvent.click(screen.getByRole("option", { name: /Madina Astrid · madina-7754/ }));
+    expect(customerSelect.textContent).toContain("Madina Astrid · madina-7754");
   });
 });
