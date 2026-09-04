@@ -35,6 +35,8 @@ describe("global BFG button system", () => {
       .filter((path) => !path.endsWith("/components/ui.tsx"))
       // BFGSelect owns a native button element only as its accessible combobox trigger.
       .filter((path) => !path.endsWith("/components/bfg-select.tsx"))
+      // BFGMultiSelect owns native buttons for its accessible trigger and reset row.
+      .filter((path) => !path.endsWith("/components/bfg-multi-select.tsx"))
       .map((path) => readFileSync(path, "utf8"))
       .join("\n");
 

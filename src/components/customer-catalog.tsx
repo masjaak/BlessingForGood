@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { formatBfgCalendarDate } from "@/lib/calendar-date";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
+import { BFGMultiSelect } from "@/components/bfg-multi-select";
 import { BFGSelect } from "@/components/bfg-select";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -40,6 +41,19 @@ const CATALOG_FORMAT_FILTERS = [
   { value: "Cards", label: "Cards" },
   { value: "Pack", label: "Pack" },
 ] as const satisfies ReadonlyArray<{ value: BookFormat; label: string }>;
+
+function filterSummary(
+  selected: readonly string[],
+  options: ReadonlyArray<{ value: string; label: string }>,
+  defaultLabel: string,
+  noun: string,
+) {
+  if (!selected.length) return defaultLabel;
+  if (selected.length <= 2) {
+    return selected.map((value) => options.find((option) => option.value === value)?.label || value).join(", ");
+  }
+  return `${selected.length} ${noun} dipilih`;
+}
 
 function CatalogHeader({ catalog }: { catalog: NonNullable<ReturnType<typeof useProduct>["unlockedCatalog"]> }) {
   const availableBooks = catalog.titleCount ?? catalog.books.length;
@@ -91,7 +105,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [publisherFilter, setPublisherFilter] = useState("");
+  const [publisherFilters, setPublisherFilters] = useState<string[]>([]);
   const [formatFilters, setFormatFilters] = useState<BookFormat[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -137,21 +151,25 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
         : [],
     [catalog],
   );
+  const publisherOptions = useMemo(
+    () => publishers.map((publisher) => ({ value: publisher, label: publisher })),
+    [publishers],
+  );
   const filteredBooks = useMemo(
     () =>
       catalog?.books.filter(
         (book) =>
           matchesCustomerCatalogBook(book, searchQuery) &&
-          (!publisherFilter || book.publisher === publisherFilter) &&
+          (!publisherFilters.length || publisherFilters.includes(book.publisher)) &&
           (!formatFilters.length || book.variants.some((variant) => formatFilters.includes(variant.format))),
       ) || [],
-    [catalog, formatFilters, publisherFilter, searchQuery],
+    [catalog, formatFilters, publisherFilters, searchQuery],
   );
-  const hasFilters = Boolean(searchQuery.trim() || publisherFilter || formatFilters.length);
+  const hasFilters = Boolean(searchQuery.trim() || publisherFilters.length || formatFilters.length);
 
   function resetDiscovery() {
     setSearchQuery("");
-    setPublisherFilter("");
+    setPublisherFilters([]);
     setFormatFilters([]);
   }
 
@@ -305,58 +323,39 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
         </Card>
       ) : null}
       <section className="catalog-discovery" aria-label="Cari buku di katalog">
-        <div className="catalog-discovery-controls">
-          <div className="catalog-search-and-format">
-            <Field label="Cari buku">
-              <input
-                className="input"
-                type="search"
-                aria-label="Cari judul atau ISBN"
-                placeholder="Cari judul atau ISBN"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+        <div className="catalog-discovery-controls customer-catalog-discovery-controls">
+          <Field label="Cari buku">
+            <input
+              className="input"
+              type="search"
+              aria-label="Cari judul atau ISBN"
+              placeholder="Cari judul atau ISBN"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </Field>
+          <div className="catalog-filter-row">
+            <Field label="Format">
+              <BFGMultiSelect
+                aria-label="Format"
+                defaultLabel="Semua Format"
+                options={CATALOG_FORMAT_FILTERS}
+                selectedLabel={filterSummary(formatFilters, CATALOG_FORMAT_FILTERS, "Semua Format", "format")}
+                value={formatFilters}
+                onChange={(next) => setFormatFilters(next as BookFormat[])}
               />
             </Field>
-            <fieldset className="catalog-format-filter">
-              <legend className="field-label">Format buku</legend>
-              <div className="catalog-format-options">
-                {CATALOG_FORMAT_FILTERS.map(({ value, label }) => {
-                  const checked = formatFilters.includes(value);
-                  return (
-                    <label className={`catalog-format-option${checked ? " is-selected" : ""}`} key={value}>
-                      <input
-                        type="checkbox"
-                        aria-label={label}
-                        checked={checked}
-                        onChange={(event) =>
-                          setFormatFilters((current) =>
-                            event.target.checked
-                              ? [...current, value]
-                              : current.filter((candidate) => candidate !== value),
-                          )
-                        }
-                      />
-                      <span>{label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
+            <Field label="Publisher">
+              <BFGMultiSelect
+                aria-label="Publisher"
+                defaultLabel="Semua Publisher"
+                options={publisherOptions}
+                selectedLabel={filterSummary(publisherFilters, publisherOptions, "Semua Publisher", "publisher")}
+                value={publisherFilters}
+                onChange={setPublisherFilters}
+              />
+            </Field>
           </div>
-          <Field label="Publisher">
-            <BFGSelect
-              aria-label="Publisher"
-              value={publisherFilter}
-              onChange={(event) => setPublisherFilter(event.target.value)}
-            >
-              <option value="">Semua Publisher</option>
-              {publishers.map((publisher) => (
-                <option key={publisher} value={publisher}>
-                  {publisher}
-                </option>
-              ))}
-            </BFGSelect>
-          </Field>
           {hasFilters ? (
             <Button type="button" variant="tertiary" onClick={resetDiscovery}>
               Reset pencarian

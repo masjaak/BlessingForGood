@@ -476,11 +476,19 @@ describe("CustomerCatalog projection", () => {
     expect(screen.getByRole("heading", { name: "Science Around Us" })).toBeTruthy();
 
     fireEvent.change(search, { target: { value: "" } });
-    fireEvent.click(screen.getByRole("combobox", { name: "Publisher" }));
-    await waitFor(() => expect(screen.getByRole("option", { name: "DK" })).toBeTruthy());
-    fireEvent.click(screen.getByRole("option", { name: "DK" }));
+    const publisherTrigger = screen.getByRole("button", { name: "Publisher" });
+    fireEvent.click(publisherTrigger);
+    const publisherMenu = await screen.findByRole("dialog", { name: "Publisher" });
+    expect(within(publisherMenu).getAllByRole("checkbox")).toHaveLength(2);
+    fireEvent.click(within(publisherMenu).getByRole("checkbox", { name: "DK" }));
     expect(screen.getByText("2 buku ditemukan")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Forest Stories" })).toBeNull();
+    fireEvent.click(within(publisherMenu).getByRole("checkbox", { name: "Nosy Crow" }));
+    expect(screen.getByText("3 buku ditemukan")).toBeTruthy();
+    expect(publisherTrigger.textContent).toContain("DK, Nosy Crow");
+    fireEvent.click(within(publisherMenu).getByRole("button", { name: "Semua Publisher" }));
+    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(2);
+    fireEvent.click(publisherTrigger);
 
     fireEvent.change(search, { target: { value: "experiments" } });
     expect(screen.getByText("1 buku ditemukan")).toBeTruthy();
@@ -569,22 +577,27 @@ describe("CustomerCatalog projection", () => {
 
     render(<CustomerCatalog />);
 
-    const formatGroup = screen.getByRole("group", { name: "Format buku" });
-    expect(within(formatGroup).getAllByRole("checkbox")).toHaveLength(9);
+    const formatTrigger = screen.getByRole("button", { name: "Format" });
+    expect(formatTrigger.textContent).toContain("Semua Format");
+    expect(screen.queryByRole("checkbox", { name: "BB" })).toBeNull();
+    fireEvent.click(formatTrigger);
+    const formatMenu = screen.getByRole("dialog", { name: "Format" });
+    expect(within(formatMenu).getAllByRole("checkbox")).toHaveLength(9);
     for (const [format, title] of formatFixtures) {
-      const checkbox = within(formatGroup).getByRole("checkbox", { name: format });
+      const checkbox = within(formatMenu).getByRole("checkbox", { name: format });
       fireEvent.click(checkbox);
       expect(screen.getByRole("heading", { name: title })).toBeTruthy();
       fireEvent.click(checkbox);
     }
 
-    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "PB" }));
-    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "HB" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "PB" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "HB" }));
     expect(screen.getByRole("heading", { name: "PB Book" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "HB Book" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Harry Multi" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { name: "Harry Multi" })).toHaveLength(1);
     expect(screen.queryByRole("heading", { name: "Pack Book" })).toBeNull();
+    expect(formatTrigger.textContent).toContain("PB, HB");
 
     const search = screen.getByRole("searchbox", { name: "Cari judul atau ISBN" });
     fireEvent.change(search, { target: { value: "Harry" } });
@@ -593,19 +606,105 @@ describe("CustomerCatalog projection", () => {
     expect(screen.getByRole("heading", { name: "Harry PB" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Dune" })).toBeNull();
 
-    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "PB" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "PB" }));
     expect(screen.queryByRole("heading", { name: "Harry PB" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Harry HB" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Harry Multi" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Reset pencarian" }));
-    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "PB" }));
-    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "Pack" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "PB" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "Pack" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "HB" }));
+    expect(formatTrigger.textContent).toContain("3 format dipilih");
     expect(screen.getByRole("heading", { name: "PB Book" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Pack Book" })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "HB Book" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "HB Book" })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset pencarian" }));
+    fireEvent.click(within(formatMenu).getByRole("button", { name: "Semua Format" }));
+    expect(formatTrigger.textContent).toContain("Semua Format");
     expect(screen.getByRole("heading", { name: "Dune" })).toBeTruthy();
+  });
+
+  it("composes search, Format, and Publisher as AND across OR groups", () => {
+    const variant = (id: string, format: string) => ({
+      id,
+      format,
+      isbn: `978000000${id.replace(/\D/g, "").padStart(4, "0")}`,
+      price: 125000,
+      currency: "IDR",
+      availability: "available",
+    });
+
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-combined-filters",
+        name: "Combined Filter Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-a",
+            title: "Harry A",
+            publisher: "Publisher One",
+            variants: [variant("variant-a-hb", "HB")],
+          },
+          {
+            id: "book-b",
+            title: "Harry B",
+            publisher: "Publisher Two",
+            variants: [variant("variant-b-pb", "PB")],
+          },
+          {
+            id: "book-c",
+            title: "Dune",
+            publisher: "Publisher One",
+            variants: [variant("variant-c-hb", "HB")],
+          },
+          {
+            id: "book-d",
+            title: "Harry Multi",
+            publisher: "Publisher Three",
+            variants: [variant("variant-d-hb", "HB"), variant("variant-d-pb", "PB")],
+          },
+          {
+            id: "book-e",
+            title: "Pack",
+            publisher: "Publisher Two",
+            variants: [variant("variant-e-pack", "Pack")],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    const formatTrigger = screen.getByRole("button", { name: "Format" });
+    fireEvent.click(formatTrigger);
+    const formatMenu = screen.getByRole("dialog", { name: "Format" });
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "HB" }));
+    fireEvent.click(within(formatMenu).getByRole("checkbox", { name: "PB" }));
+    fireEvent.click(formatTrigger);
+
+    const publisherTrigger = screen.getByRole("button", { name: "Publisher" });
+    fireEvent.click(publisherTrigger);
+    const publisherMenu = screen.getByRole("dialog", { name: "Publisher" });
+    fireEvent.click(within(publisherMenu).getByRole("checkbox", { name: "Publisher One" }));
+    fireEvent.click(within(publisherMenu).getByRole("checkbox", { name: "Publisher Three" }));
+
+    const search = screen.getByRole("searchbox", { name: "Cari judul atau ISBN" });
+    fireEvent.change(search, { target: { value: "Harry" } });
+    expect(screen.getByRole("heading", { name: "Harry A" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Harry Multi" })).toBeTruthy();
+    expect(screen.getAllByRole("heading", { name: "Harry Multi" })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: "Harry B" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Dune" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Pack" })).toBeNull();
   });
 });

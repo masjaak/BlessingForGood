@@ -5567,6 +5567,71 @@ p {
   font-weight: 800;
 }
 
+.bfg-multi-select-menu {
+  gap: 2px;
+}
+
+.bfg-multi-select-reset,
+.bfg-multi-select-option {
+  display: flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 9px 11px;
+  color: var(--ink);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.bfg-multi-select-reset {
+  justify-content: flex-start;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+}
+
+.bfg-multi-select-option {
+  cursor: pointer;
+}
+
+.bfg-multi-select-option input {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.bfg-multi-select-option > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bfg-multi-select-reset:hover,
+.bfg-multi-select-option:hover,
+.bfg-multi-select-option:focus-within {
+  background: var(--mint);
+}
+
+.bfg-multi-select-option:focus-within {
+  box-shadow: var(--control-focus, var(--focus));
+  outline: none;
+}
+
+.bfg-multi-select-reset.is-selected,
+.bfg-multi-select-option.is-selected {
+  color: var(--accent-dark);
+  background: var(--mint);
+}
+
 .admin-shell .admin-account {
   flex-wrap: nowrap;
   white-space: nowrap;
@@ -7333,60 +7398,18 @@ p {
   align-items: end;
 }
 
-.customer-shell .catalog-search-and-format {
+.customer-shell .customer-catalog-discovery-controls {
   display: grid;
-  gap: var(--space-md);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
   min-width: 0;
 }
 
-.customer-shell .catalog-format-filter {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.customer-shell .catalog-format-filter legend {
-  margin-bottom: var(--space-xs);
-  padding: 0;
-}
-
-.customer-shell .catalog-format-options {
+.customer-shell .catalog-filter-row {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--space-xs);
-}
-
-.customer-shell .catalog-format-option {
-  display: flex;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
   min-width: 0;
-  min-height: 40px;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  cursor: pointer;
-  font-size: 0.82rem;
-  line-height: 1.2;
-}
-
-.customer-shell .catalog-format-option input {
-  flex: 0 0 auto;
-  margin: 0;
-  accent-color: var(--accent);
-}
-
-.customer-shell .catalog-format-option > span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.customer-shell .catalog-format-option.is-selected {
-  color: var(--accent-dark);
-  border-color: var(--accent);
-  background: var(--mint);
 }
 
 .catalog-discovery-controls > .button {
@@ -7507,10 +7530,6 @@ p {
     grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr);
   }
 
-  .customer-shell .catalog-format-options {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .catalog-discovery-controls > .button {
     grid-column: 1 / -1;
     justify-self: start;
@@ -7541,8 +7560,8 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .customer-shell .catalog-format-options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .customer-shell .catalog-filter-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .catalog-discovery-controls > .button,
