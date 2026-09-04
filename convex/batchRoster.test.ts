@@ -158,6 +158,11 @@ describe("BFG batch roster and assisted orders", () => {
       displayName: "Madina Astrid",
       phone: "081234567754",
     });
+    const memberCodeSuffix = customerUser.memberCode?.slice(-4);
+    if (!memberCodeSuffix) throw new Error("customer member code missing");
+    await expect(admin.query(api.orders.listEligibleCustomers, { search: memberCodeSuffix })).resolves.toMatchObject({
+      page: [expect.objectContaining({ customerUserId: customerUser.appUserId, memberCode: customerUser.memberCode })],
+    });
     for (const search of ["madina", "astrid", "dina", "7754", "567754"]) {
       await expect(admin.query(api.orders.listEligibleCustomers, { search })).resolves.toMatchObject({
         page: [expect.objectContaining({ displayName: "Madina Astrid", phoneLast4: "7754" })],

@@ -18,6 +18,65 @@ function customerOptionLabel(customer: { displayName: string; memberCode: string
   return `${customer.displayName} · ${customer.memberCode || "tanpa kode"}`;
 }
 
+function AdminCustomerSelect({
+  label,
+  ariaLabel,
+  emptyLabel,
+  value,
+  onChange,
+  required = false,
+}: {
+  label: string;
+  ariaLabel: string;
+  emptyLabel: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<{
+    customerUserId: Id<"appUsers">;
+    displayName: string;
+    memberCode: string | null;
+  } | null>(null);
+  const customers = useQuery(api.orders.listEligibleCustomers, {
+    paginationOpts: { numItems: 100, cursor: null },
+    search: search.trim() || undefined,
+  });
+  const rows = customers?.page || [];
+  const selectedLabel = selectedCustomer?.customerUserId === value ? customerOptionLabel(selectedCustomer) : undefined;
+
+  return (
+    <Field label={label}>
+      <BFGSelect
+        aria-label={ariaLabel}
+        className="select"
+        value={value}
+        selectedLabel={selectedLabel}
+        onChange={(event) => {
+          const customer = rows.find((row) => row.customerUserId === event.target.value);
+          if (customer) setSelectedCustomer(customer);
+          onChange(event.target.value);
+        }}
+        required={required}
+        searchable
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Cari pelanggan..."
+        searchInputLabel="Cari pelanggan"
+        searchEmptyMessage={customers === undefined ? "Memuat pelanggan…" : "Tidak ada pelanggan yang cocok."}
+      >
+        {!search.trim() ? <option value="">{emptyLabel}</option> : null}
+        {rows.map((customer) => (
+          <option key={customer.customerUserId} value={customer.customerUserId}>
+            {customerOptionLabel(customer)}
+          </option>
+        ))}
+      </BFGSelect>
+    </Field>
+  );
+}
+
 function historyDate(value: string) {
   return new Date(value).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 }
@@ -25,9 +84,6 @@ function historyDate(value: string) {
 function DepositOperations() {
   const requestedCustomerId = useSearchParams().get("customerId") || "";
   const topUps = useQuery(api.depositTopUps.listForAdmin, {});
-  const customers = useQuery(api.orders.listEligibleCustomers, {
-    paginationOpts: { numItems: 100, cursor: null },
-  });
   const historyPagination = useAdminCursorPagination();
   const startReview = useMutation(api.depositTopUps.startReview);
   const approve = useMutation(api.depositTopUps.approve);
@@ -142,21 +198,14 @@ function DepositOperations() {
           }}
         >
           <div className="form-grid deposit-adjustment-fields">
-            <Field label="Pelanggan">
-              <BFGSelect
-                className="select"
-                value={customerId}
-                onChange={(event) => setCustomerId(event.target.value)}
-                required
-              >
-                <option value="">Pilih pelanggan</option>
-                {customers?.page.map((customer) => (
-                  <option key={customer.customerUserId} value={customer.customerUserId}>
-                    {customerOptionLabel(customer)} · {customer.email || "—"}
-                  </option>
-                ))}
-              </BFGSelect>
-            </Field>
+            <AdminCustomerSelect
+              label="Pelanggan"
+              ariaLabel="Pelanggan"
+              emptyLabel="Pilih pelanggan"
+              value={customerId}
+              onChange={setCustomerId}
+              required
+            />
             <Field label="Arah">
               <BFGSelect
                 className="select"
@@ -200,24 +249,16 @@ function DepositOperations() {
           Riwayat perubahan saldo Customer dari top-up, alokasi, penyesuaian, dan transaksi terkait.
         </p>
         <div className="deposit-history-filters">
-          <Field label="Pelanggan">
-            <BFGSelect
-              aria-label="Pelanggan riwayat deposit"
-              className="select"
-              value={historyCustomerId}
-              onChange={(event) => {
-                setHistoryCustomerId(event.target.value);
-                historyPagination.reset();
-              }}
-            >
-              <option value="">Semua pelanggan</option>
-              {customers?.page.map((customer) => (
-                <option key={customer.customerUserId} value={customer.customerUserId}>
-                  {customerOptionLabel(customer)}
-                </option>
-              ))}
-            </BFGSelect>
-          </Field>
+          <AdminCustomerSelect
+            label="Pelanggan"
+            ariaLabel="Pelanggan riwayat deposit"
+            emptyLabel="Semua pelanggan"
+            value={historyCustomerId}
+            onChange={(value) => {
+              setHistoryCustomerId(value);
+              historyPagination.reset();
+            }}
+          />
           <Field label="Arah">
             <BFGSelect
               aria-label="Arah riwayat deposit"

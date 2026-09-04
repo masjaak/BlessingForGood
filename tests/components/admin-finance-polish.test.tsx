@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminInvoicesPage from "@/app/admin/invoices/page";
 import AdminDepositsPage from "@/app/admin/deposits/page";
 import { useQuery, useMutation } from "convex/react";
+import { getFunctionName } from "convex/server";
 import { useOperations } from "@/domain/prototype/operations-context";
 
 vi.mock("convex/react", () => ({
@@ -66,6 +67,19 @@ const invoiceRows = [
 const customers = [
   { customerUserId: "customer-a", displayName: "Customer A", memberCode: "BFG-A", email: "a@example.com" },
   { customerUserId: "customer-b", displayName: "Customer B", memberCode: "BFG-B", email: "b@example.com" },
+  {
+    customerUserId: "customer-mulia",
+    displayName: "Mulia Raya",
+    memberCode: "mulia-raya-5484",
+    email: "mulia@example.com",
+  },
+  {
+    customerUserId: "customer-madina",
+    displayName: "Madina7754",
+    memberCode: "madina-7754",
+    email: "madina@example.com",
+  },
+  { customerUserId: "customer-elly", displayName: "Elly", memberCode: "elly-0192", email: "elly@example.com" },
 ];
 
 const batches = [
@@ -120,8 +134,7 @@ const historyRows = [
 ];
 
 function setupQueryMocks() {
-  let optionQuery = 0;
-  vi.mocked(useQuery).mockImplementation((_, args?) => {
+  vi.mocked(useQuery).mockImplementation((query, args?) => {
     if (args === "skip") return null as never;
     if (args && typeof args === "object" && "direction" in args) {
       return { page: historyRows, isDone: true, continueCursor: "" } as never;
@@ -133,11 +146,18 @@ function setupQueryMocks() {
       return { page: invoiceRows, isDone: true, continueCursor: "" } as never;
     }
     if (args && typeof args === "object" && "paginationOpts" in args && args.paginationOpts.numItems === 100) {
-      return (
-        optionQuery++ % 2 === 0
-          ? { page: customers, isDone: true, continueCursor: "" }
-          : { page: batches, isDone: true, continueCursor: "" }
-      ) as never;
+      if (getFunctionName(query as never).endsWith(":listEligibleCustomers")) {
+        const search = typeof args.search === "string" ? args.search.trim().toLowerCase() : "";
+        const page = search
+          ? customers.filter(
+              (customer) =>
+                customer.displayName.toLowerCase().includes(search) ||
+                (customer.memberCode || "").toLowerCase().includes(search),
+            )
+          : customers;
+        return { page, isDone: true, continueCursor: "" } as never;
+      }
+      return { page: batches, isDone: true, continueCursor: "" } as never;
     }
     return [] as never;
   });
@@ -199,6 +219,16 @@ describe("Admin finance polish", () => {
     expect(within(issuedRow).getByText("Sudah terbit")).toBeTruthy();
   });
 
+  it("separates invoice deposit controls, the bulk CTA, and the invoice list", () => {
+    render(<AdminInvoicesPage />);
+
+    expect(screen.getByRole("combobox", { name: "Syarat deposit" }).closest(".invoice-issue-requirement")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Terbitkan invoice terpilih" }).closest(".invoice-issue-bulk-actions"),
+    ).toBeTruthy();
+    expect(screen.getAllByTestId("invoice-issue-row")[0].closest(".invoice-issue-list")).toBeTruthy();
+  });
+
   it("renders canonical deposit history with direction, source, and related references", () => {
     render(<AdminDepositsPage />);
 
@@ -238,5 +268,37 @@ describe("Admin finance polish", () => {
     const form = screen.getByRole("button", { name: "Catat penyesuaian" }).closest("form");
     expect(form?.classList.contains("deposit-adjustment-form")).toBe(true);
     expect(form?.querySelector(".deposit-adjustment-actions")).toBeTruthy();
+  });
+
+  it("searches the Deposit Customer selector by name and shows an intentional empty state", async () => {
+    render(<AdminDepositsPage />);
+
+    const selector = screen.getByRole("combobox", { name: "Pelanggan" });
+    fireEvent.click(selector);
+    const search = screen.getByRole("searchbox", { name: "Cari pelanggan" });
+    fireEvent.change(search, { target: { value: "mUlIa" } });
+
+    await waitFor(() => expect(screen.getByRole("option", { name: "Mulia Raya · mulia-raya-5484" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("option", { name: "Mulia Raya · mulia-raya-5484" }));
+    expect(selector.textContent).toContain("Mulia Raya · mulia-raya-5484");
+
+    fireEvent.click(selector);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Cari pelanggan" }), {
+      target: { value: "does-not-exist" },
+    });
+    await waitFor(() => expect(screen.getByText("Tidak ada pelanggan yang cocok.")).toBeTruthy());
+  });
+
+  it("searches the canonical Customer member-code suffix, not only names", async () => {
+    render(<AdminDepositsPage />);
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Pelanggan" }));
+    const search = screen.getByRole("searchbox", { name: "Cari pelanggan" });
+    fireEvent.change(search, { target: { value: "5484" } });
+
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "Mulia Raya · mulia-raya-5484" })).toBeTruthy();
+      expect(screen.queryByRole("option", { name: "Madina7754 · madina-7754" })).toBeNull();
+    });
   });
 });

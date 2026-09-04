@@ -12,7 +12,7 @@ import { catalogDeadlineLabel, formatIdr } from "@/domain/prototype/logic";
 import { formatCargoEta } from "@/domain/prototype/operations";
 import type { ProductContextValue } from "@/domain/prototype/context";
 import { useProduct } from "@/domain/prototype/store";
-import type { Order } from "@/domain/prototype/types";
+import type { BookFormat, Order } from "@/domain/prototype/types";
 import { matchesCustomerCatalogBook } from "@/lib/catalog-discovery";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 import {
@@ -28,6 +28,18 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
+
+const CATALOG_FORMAT_FILTERS = [
+  { value: "BB", label: "BB" },
+  { value: "HB", label: "HB" },
+  { value: "PB", label: "PB" },
+  { value: "Boxset PB", label: "Boxset PB" },
+  { value: "Boxset HB", label: "Boxset HB" },
+  { value: "Slipcase PB", label: "Slipcase PB" },
+  { value: "Slipcase HB", label: "Slipcase HB" },
+  { value: "Cards", label: "Cards" },
+  { value: "Pack", label: "Pack" },
+] as const satisfies ReadonlyArray<{ value: BookFormat; label: string }>;
 
 function CatalogHeader({ catalog }: { catalog: NonNullable<ReturnType<typeof useProduct>["unlockedCatalog"]> }) {
   const availableBooks = catalog.titleCount ?? catalog.books.length;
@@ -80,6 +92,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   const [accessError, setAccessError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [publisherFilter, setPublisherFilter] = useState("");
+  const [formatFilters, setFormatFilters] = useState<BookFormat[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [customerEmail, setCustomerEmail] = useState("");
@@ -128,15 +141,18 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     () =>
       catalog?.books.filter(
         (book) =>
-          matchesCustomerCatalogBook(book, searchQuery) && (!publisherFilter || book.publisher === publisherFilter),
+          matchesCustomerCatalogBook(book, searchQuery) &&
+          (!publisherFilter || book.publisher === publisherFilter) &&
+          (!formatFilters.length || book.variants.some((variant) => formatFilters.includes(variant.format))),
       ) || [],
-    [catalog, publisherFilter, searchQuery],
+    [catalog, formatFilters, publisherFilter, searchQuery],
   );
-  const hasFilters = Boolean(searchQuery.trim() || publisherFilter);
+  const hasFilters = Boolean(searchQuery.trim() || publisherFilter || formatFilters.length);
 
   function resetDiscovery() {
     setSearchQuery("");
     setPublisherFilter("");
+    setFormatFilters([]);
   }
 
   async function handleUnlock(event: React.FormEvent<HTMLFormElement>) {
@@ -290,16 +306,43 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
       ) : null}
       <section className="catalog-discovery" aria-label="Cari buku di katalog">
         <div className="catalog-discovery-controls">
-          <Field label="Cari buku">
-            <input
-              className="input"
-              type="search"
-              aria-label="Cari judul atau ISBN"
-              placeholder="Cari judul atau ISBN"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </Field>
+          <div className="catalog-search-and-format">
+            <Field label="Cari buku">
+              <input
+                className="input"
+                type="search"
+                aria-label="Cari judul atau ISBN"
+                placeholder="Cari judul atau ISBN"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+            </Field>
+            <fieldset className="catalog-format-filter">
+              <legend className="field-label">Format buku</legend>
+              <div className="catalog-format-options">
+                {CATALOG_FORMAT_FILTERS.map(({ value, label }) => {
+                  const checked = formatFilters.includes(value);
+                  return (
+                    <label className={`catalog-format-option${checked ? " is-selected" : ""}`} key={value}>
+                      <input
+                        type="checkbox"
+                        aria-label={label}
+                        checked={checked}
+                        onChange={(event) =>
+                          setFormatFilters((current) =>
+                            event.target.checked
+                              ? [...current, value]
+                              : current.filter((candidate) => candidate !== value),
+                          )
+                        }
+                      />
+                      <span>{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          </div>
           <Field label="Publisher">
             <BFGSelect
               aria-label="Publisher"
@@ -437,7 +480,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
           ) : (
             <EmptyState
               title="Tidak ada buku yang cocok."
-              description="Coba kata kunci lain atau hapus filter Publisher."
+              description="Coba kata kunci lain atau hapus filter yang dipilih."
               mascotVariant={false}
               action={
                 <Button type="button" variant="secondary" onClick={resetDiscovery}>

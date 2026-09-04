@@ -331,7 +331,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           Reset filter
         </Button>
       </div>
-      <div className="form-grid">
+      <div className="form-grid invoice-issue-requirement">
         <label className="field">
           <span className="field-label">Syarat deposit</span>
           <BFGSelect
@@ -359,7 +359,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           </Field>
         ) : null}
       </div>
-      <ActionGroup variant="responsive">
+      <ActionGroup className="invoice-issue-bulk-actions" variant="responsive">
         <Button type="button" variant="primary" loading={pending === "bulk"} onClick={() => void issueSelected()}>
           Terbitkan invoice terpilih
         </Button>
@@ -371,7 +371,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
       </ActionGroup>
       {rows === undefined ? <p className="subtle">Memuat pool Customer × Batch…</p> : null}
       {pageRows.length ? (
-        <div className="content-stack">
+        <div className="content-stack invoice-issue-list">
           {pageRows.map((row) => {
             const rowKey = `${row.batchId}:${row.customerUserId}`;
             return (

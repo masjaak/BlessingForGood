@@ -64,6 +64,23 @@ describe("BFGSelect", () => {
     expect(screen.getByRole("option", { name: "Terbit" }).getAttribute("aria-disabled")).toBe("true");
   });
 
+  it("keeps searchable options keyboard-operable", () => {
+    render(
+      <BFGSelect searchable>
+        <option value="customer">Mulia Raya · mulia-raya-5484</option>
+      </BFGSelect>,
+    );
+    const trigger = screen.getByRole("combobox");
+
+    fireEvent.click(trigger);
+    const search = screen.getByRole("searchbox", { name: "Cari…" });
+    expect(document.activeElement).toBe(search);
+    fireEvent.keyDown(search, { key: "ArrowDown" });
+    fireEvent.keyDown(trigger, { key: "Enter" });
+
+    expect(trigger.textContent).toContain("Mulia Raya · mulia-raya-5484");
+  });
+
   it("keeps the menu height tied to the side where it is rendered", () => {
     const originalHeight = Object.getOwnPropertyDescriptor(window, "innerHeight");
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 600 });

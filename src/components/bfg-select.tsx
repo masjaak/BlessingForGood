@@ -38,6 +38,13 @@ export type BFGSelectProps = Omit<
   name?: string;
   required?: boolean;
   disabled?: boolean;
+  searchable?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+  searchInputLabel?: string;
+  searchEmptyMessage?: ReactNode;
+  selectedLabel?: ReactNode;
 };
 
 function nextEnabled(options: BFGOption[], start: number, direction: 1 | -1) {
@@ -57,6 +64,13 @@ export function BFGSelect({
   id,
   className = "",
   disabled = false,
+  searchable = false,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = "Cari…",
+  searchInputLabel,
+  searchEmptyMessage = "Tidak ada pilihan.",
+  selectedLabel,
   ...buttonProps
 }: BFGSelectProps) {
   const generatedId = useId();
@@ -85,6 +99,13 @@ export function BFGSelect({
   const selectedOption = options[selectedIndex];
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(selectedIndex >= 0 ? selectedIndex : nextEnabled(options, 0, 1));
+  const [internalSearch, setInternalSearch] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchQuery = searchValue ?? internalSearch;
+  const activeOptionIndex =
+    activeIndex >= 0 && activeIndex < options.length && !options[activeIndex].disabled
+      ? activeIndex
+      : nextEnabled(options, 0, 1);
   const [menuPosition, setMenuPosition] = useState<{
     top: number;
     left: number;
@@ -98,8 +119,10 @@ export function BFGSelect({
   const close = useCallback(() => {
     setOpen(false);
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : nextEnabled(options, 0, 1));
+    if (searchValue === undefined) setInternalSearch("");
+    onSearchChange?.("");
     triggerRef.current?.focus();
-  }, [options, selectedIndex]);
+  }, [onSearchChange, options, searchValue, selectedIndex]);
 
   function choose(option: BFGOption) {
     if (option.disabled) return;
@@ -114,10 +137,19 @@ export function BFGSelect({
     setOpen(true);
   }
 
+  function updateSearch(value: string) {
+    if (searchValue === undefined) setInternalSearch(value);
+    onSearchChange?.(value);
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (disabled) return;
     if (event.key === "Tab") {
-      if (open) setOpen(false);
+      if (open) {
+        setOpen(false);
+        if (searchValue === undefined) setInternalSearch("");
+        onSearchChange?.("");
+      }
       return;
     }
     if (event.key === "Escape") {
@@ -135,14 +167,14 @@ export function BFGSelect({
     if (!open) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      const option = options[activeIndex];
+      const option = options[activeOptionIndex];
       if (option) choose(option);
       return;
     }
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
-      const next = nextEnabled(options, activeIndex + direction, direction);
+      const next = nextEnabled(options, activeOptionIndex + direction, direction);
       if (next >= 0) setActiveIndex(next);
       return;
     }
@@ -150,6 +182,22 @@ export function BFGSelect({
       event.preventDefault();
       const next = event.key === "Home" ? nextEnabled(options, 0, 1) : nextEnabled(options, options.length - 1, -1);
       if (next >= 0) setActiveIndex(next);
+    }
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      const start = event.key === "ArrowDown" ? 0 : options.length - 1;
+      const next = nextEnabled(options, start, direction);
+      if (next >= 0) setActiveIndex(next);
+      triggerRef.current?.focus();
     }
   }
 
@@ -208,9 +256,14 @@ export function BFGSelect({
   }, [close, menuPosition, open]);
 
   useEffect(() => {
-    if (!open || activeIndex < 0) return;
-    optionRefs.current[activeIndex]?.scrollIntoView?.({ block: "nearest" });
-  }, [activeIndex, open]);
+    if (!open || activeOptionIndex < 0) return;
+    optionRefs.current[activeOptionIndex]?.scrollIntoView?.({ block: "nearest" });
+  }, [activeOptionIndex, open]);
+
+  useEffect(() => {
+    if (!open || !searchable || !menuPosition) return;
+    searchInputRef.current?.focus();
+  }, [menuPosition, open, searchable]);
 
   const menu =
     open && menuPosition && typeof document !== "undefined"
@@ -229,11 +282,23 @@ export function BFGSelect({
               maxHeight: menuPosition.maxHeight,
             }}
           >
+            {searchable ? (
+              <input
+                ref={searchInputRef}
+                className="input bfg-select-search"
+                type="search"
+                aria-label={searchInputLabel || searchPlaceholder}
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(event) => updateSearch(event.target.value)}
+                onKeyDown={handleSearchKeyDown}
+              />
+            ) : null}
             {options.map((option, index) => (
               <div
                 aria-disabled={option.disabled || undefined}
                 aria-selected={option.value === selectedValue}
-                className={`bfg-select-option${index === activeIndex ? " is-active" : ""}${
+                className={`bfg-select-option${index === activeOptionIndex ? " is-active" : ""}${
                   option.value === selectedValue ? " is-selected" : ""
                 }`}
                 id={`${listboxId}-option-${index}`}
@@ -256,6 +321,11 @@ export function BFGSelect({
                 ) : null}
               </div>
             ))}
+            {searchable && !options.length ? (
+              <div className="bfg-select-empty" role="status">
+                {searchEmptyMessage}
+              </div>
+            ) : null}
           </div>,
           document.body,
         )
@@ -265,7 +335,7 @@ export function BFGSelect({
     <>
       <button
         {...buttonProps}
-        aria-activedescendant={open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+        aria-activedescendant={open && activeOptionIndex >= 0 ? `${listboxId}-option-${activeOptionIndex}` : undefined}
         aria-controls={listboxId}
         aria-disabled={disabled || undefined}
         aria-expanded={open}
@@ -281,7 +351,7 @@ export function BFGSelect({
         role="combobox"
         type="button"
       >
-        <span className="bfg-select-value">{selectedOption?.label ?? selectedValue}</span>
+        <span className="bfg-select-value">{selectedOption?.label ?? selectedLabel ?? selectedValue}</span>
         <span className="bfg-select-trailing" aria-hidden="true">
           <span className="bfg-select-chevron" />
         </span>

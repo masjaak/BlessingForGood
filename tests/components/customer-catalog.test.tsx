@@ -497,4 +497,115 @@ describe("CustomerCatalog projection", () => {
     expect(within(scienceCard as HTMLElement).queryByText("Ada Lovelace")).toBeNull();
     expect(within(scienceCard as HTMLElement).getByText(/978-0-01-1111-11-1/)).toBeTruthy();
   });
+
+  it("filters the visible Catalog by every canonical format and composes search with formats", () => {
+    const formatFixtures = [
+      ["BB", "BB Book"],
+      ["HB", "HB Book"],
+      ["PB", "PB Book"],
+      ["Boxset PB", "Boxset PB Book"],
+      ["Boxset HB", "Boxset HB Book"],
+      ["Slipcase PB", "Slipcase PB Book"],
+      ["Slipcase HB", "Slipcase HB Book"],
+      ["Cards", "Cards Book"],
+      ["Pack", "Pack Book"],
+    ] as const;
+    const variant = (id: string, format: string) => ({
+      id,
+      format,
+      isbn: `978000000${id.replace(/\D/g, "").padStart(4, "0")}`,
+      price: 125000,
+      currency: "IDR",
+      availability: "available",
+    });
+
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-formats",
+        name: "Format Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          ...formatFixtures.map(([format, title], index) => ({
+            id: `book-${index}`,
+            title,
+            publisher: "BFG Press",
+            variants: [variant(`variant-${index}`, format)],
+          })),
+          {
+            id: "book-multi",
+            title: "Harry Multi",
+            publisher: "BFG Press",
+            variants: [variant("variant-multi-pb", "PB"), variant("variant-multi-hb", "HB")],
+          },
+          {
+            id: "book-harry-hb",
+            title: "Harry HB",
+            publisher: "BFG Press",
+            variants: [variant("variant-harry-hb", "HB")],
+          },
+          {
+            id: "book-harry-pb",
+            title: "Harry PB",
+            publisher: "BFG Press",
+            variants: [variant("variant-harry-pb", "PB")],
+          },
+          {
+            id: "book-dune",
+            title: "Dune",
+            publisher: "BFG Press",
+            variants: [variant("variant-dune-hb", "HB")],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    const formatGroup = screen.getByRole("group", { name: "Format buku" });
+    expect(within(formatGroup).getAllByRole("checkbox")).toHaveLength(9);
+    for (const [format, title] of formatFixtures) {
+      const checkbox = within(formatGroup).getByRole("checkbox", { name: format });
+      fireEvent.click(checkbox);
+      expect(screen.getByRole("heading", { name: title })).toBeTruthy();
+      fireEvent.click(checkbox);
+    }
+
+    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "PB" }));
+    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "HB" }));
+    expect(screen.getByRole("heading", { name: "PB Book" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "HB Book" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Harry Multi" })).toBeTruthy();
+    expect(screen.getAllByRole("heading", { name: "Harry Multi" })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: "Pack Book" })).toBeNull();
+
+    const search = screen.getByRole("searchbox", { name: "Cari judul atau ISBN" });
+    fireEvent.change(search, { target: { value: "Harry" } });
+    expect(screen.getByRole("heading", { name: "Harry Multi" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Harry HB" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Harry PB" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Dune" })).toBeNull();
+
+    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "PB" }));
+    expect(screen.queryByRole("heading", { name: "Harry PB" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Harry HB" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Harry Multi" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset pencarian" }));
+    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "PB" }));
+    fireEvent.click(within(formatGroup).getByRole("checkbox", { name: "Pack" }));
+    expect(screen.getByRole("heading", { name: "PB Book" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Pack Book" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "HB Book" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset pencarian" }));
+    expect(screen.getByRole("heading", { name: "Dune" })).toBeTruthy();
+  });
 });

@@ -5501,6 +5501,20 @@ p {
   scrollbar-gutter: stable;
 }
 
+.bfg-select-search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: calc(100% - 4px);
+  margin: 2px 2px var(--space-xs);
+}
+
+.bfg-select-empty {
+  padding: var(--space-sm);
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+}
+
 .bfg-select-option {
   display: flex;
   min-height: 40px;
@@ -7303,6 +7317,62 @@ p {
   align-items: end;
 }
 
+.customer-shell .catalog-search-and-format {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.customer-shell .catalog-format-filter {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.customer-shell .catalog-format-filter legend {
+  margin-bottom: var(--space-xs);
+  padding: 0;
+}
+
+.customer-shell .catalog-format-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.customer-shell .catalog-format-option {
+  display: flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.customer-shell .catalog-format-option input {
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.customer-shell .catalog-format-option > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .catalog-format-option.is-selected {
+  color: var(--accent-dark);
+  border-color: var(--accent);
+  background: var(--mint);
+}
+
 .catalog-discovery-controls > .button {
   margin-bottom: 1px;
 }
@@ -7421,6 +7491,10 @@ p {
     grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr);
   }
 
+  .customer-shell .catalog-format-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .catalog-discovery-controls > .button {
     grid-column: 1 / -1;
     justify-self: start;
@@ -7449,6 +7523,10 @@ p {
   .catalog-access-code-form,
   .catalog-member-form {
     grid-template-columns: 1fr;
+  }
+
+  .customer-shell .catalog-format-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .catalog-discovery-controls > .button,
@@ -7948,6 +8026,14 @@ p {
 
 .admin-shell .admin-finance-filter-grid > .button {
   width: fit-content;
+}
+
+.admin-shell .invoice-issue-requirement + .invoice-issue-bulk-actions {
+  margin-top: var(--space-action-stack);
+}
+
+.admin-shell .invoice-issue-bulk-actions + .invoice-issue-list {
+  margin-top: var(--space-content-to-actions);
 }
 
 .admin-shell .invoice-issue-row {
