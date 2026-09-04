@@ -181,13 +181,22 @@ describe("Admin finance polish", () => {
     expect(screen.getByText("Customer A")).toBeTruthy();
   });
 
-  it("keeps invoice status and action in separate stable row regions", () => {
+  it("keeps invoice status and action regions framed and visually ranked", () => {
     render(<AdminInvoicesPage />);
-    const row = screen.getAllByTestId("invoice-issue-row")[0];
-    expect(row.querySelector(".invoice-issue-main")).toBeTruthy();
-    expect(row.querySelector(".invoice-issue-status")).toBeTruthy();
-    expect(row.querySelector(".invoice-issue-action")).toBeTruthy();
-    expect(within(row).getByRole("button", { name: "Terbitkan invoice" })).toBeTruthy();
+    const rows = screen.getAllByTestId("invoice-issue-row");
+    const eligibleRow = rows[0];
+    const issuedRow = rows[1];
+
+    expect(eligibleRow.querySelector(".invoice-issue-main")).toBeTruthy();
+    expect(eligibleRow.querySelector(".invoice-issue-status")).toBeTruthy();
+    expect(eligibleRow.querySelector(".invoice-issue-action")).toBeTruthy();
+    expect(
+      within(eligibleRow).getByRole("button", { name: "Terbitkan invoice" }).classList.contains("button-primary"),
+    ).toBe(true);
+    expect(within(issuedRow).getByRole("link", { name: "Buka invoice" }).classList.contains("button-secondary")).toBe(
+      true,
+    );
+    expect(within(issuedRow).getByText("Sudah terbit")).toBeTruthy();
   });
 
   it("renders canonical deposit history with direction, source, and related references", () => {

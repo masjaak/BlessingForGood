@@ -407,13 +407,13 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
                 </div>
                 <div className="invoice-issue-action">
                   {row.invoiceId ? (
-                    <LinkButton href={`/admin/invoices/${row.invoiceId}`} variant="tertiary">
+                    <LinkButton href={`/admin/invoices/${row.invoiceId}`} variant="secondary">
                       Buka invoice
                     </LinkButton>
                   ) : row.eligible ? (
                     <Button
                       type="button"
-                      variant="secondary"
+                      variant="primary"
                       disabled={!row.eligible || pending !== null}
                       loading={pending === rowKey}
                       loadingLabel="Menerbitkan…"

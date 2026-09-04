@@ -7952,8 +7952,9 @@ p {
 
 .admin-shell .invoice-issue-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) minmax(120px, auto) minmax(168px, auto);
-  gap: var(--space-lg);
+  grid-template-columns: 28px minmax(0, 1fr) minmax(128px, max-content) minmax(168px, max-content);
+  column-gap: var(--space-md);
+  row-gap: var(--space-sm);
   align-items: center;
   padding: var(--space-md) 0;
   border-top: 1px solid var(--line);
@@ -7989,6 +7990,7 @@ p {
 }
 
 .admin-shell .invoice-issue-main strong,
+.admin-shell .invoice-issue-main .subtle,
 .admin-shell .deposit-history-primary strong,
 .admin-shell .deposit-history-description span,
 .admin-shell .deposit-history-context span {
@@ -7997,13 +7999,15 @@ p {
 
 .admin-shell .invoice-issue-status {
   display: flex;
-  min-width: 120px;
+  min-width: 128px;
+  min-height: var(--button-height-default);
   align-items: center;
 }
 
 .admin-shell .invoice-issue-action {
   display: flex;
   min-width: 168px;
+  min-height: var(--button-height-default);
   align-items: center;
   justify-content: flex-end;
 }
