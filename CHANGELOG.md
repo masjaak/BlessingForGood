@@ -26,8 +26,9 @@ source: conversation
 ### QA and scope
 
 - Added 6 real-schema Convex UAT fixtures plus rendered UAT confirmation
-  coverage. No canonical Production record was touched because approved dummy
-  IDs and an authenticated Owner session were not supplied.
+  coverage. The final full suite is 89 files / 515 tests green; no canonical
+  Production record was touched because approved dummy IDs and an authenticated
+  Owner session were not supplied.
 - Shared Customer, Book Master, Order, Catalog, Batch, unrelated finance, and
   normal RBAC/lifecycle behavior remain protected.
 

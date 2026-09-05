@@ -20,10 +20,14 @@ deleting. A minimal `UAT_PURGE` audit event remains after root deletion.
 
 Focused evidence: `convex/uatCleanup.test.ts` has 6 passing real-schema
 fixtures; `tests/components/uat-purge-dialog.test.tsx` verifies the explicit
-UAT checkbox and exact keyword; existing Catalog, Batch, Invoice UI suites
-remain green. No approved canonical Production dummy IDs or authenticated
-Owner session were provided, so Production UAT purge and `GREEN_PRODUCTION`
-are intentionally pending.
+UAT checkbox, exact keyword, and reset-on-reopen behavior; the full suite is
+89/89 files and 515/515 tests green with the repository's required stress-test
+timeout budget. Lint, format, TypeScript, Convex validation, build, and diff
+check are green. The local rendered route probe is blocked only by the
+workspace's placeholder Clerk publishable key; the pushed canonical domain
+returns HTTP 200 through Vercel. No approved canonical Production dummy IDs
+or authenticated Owner session were provided, so Production UAT purge and
+`GREEN_PRODUCTION` are intentionally pending.
 
 ## Destructive action discoverability correction — 2026-09-05
 

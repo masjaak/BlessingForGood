@@ -39,7 +39,11 @@ Production history.
 - Focused harness coverage lives in `convex/uatCleanup.test.ts` and the
   checkbox/typed-confirmation contract in
   `tests/components/uat-purge-dialog.test.tsx`. No canonical Production dummy
-  IDs were supplied in this run, so no Production record was purged.
+  IDs were supplied in this run, so no Production record was purged. Final
+  evidence is 89/89 test files and 515/515 tests green, plus lint, format,
+  TypeScript, Convex validation, build, and diff checks. The local rendered
+  route probe remains environment-blocked by the placeholder Clerk key; the
+  pushed canonical domain responds HTTP 200 through Vercel.
 
 ## Destructive action discoverability correction — 2026-09-05
 
