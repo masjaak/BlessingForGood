@@ -52,6 +52,7 @@ export type PaymentConfirmationInput = {
 export interface OperationsContextValue {
   enabled: boolean;
   dataSource: ProductDataSource;
+  sessionRole?: "owner" | "admin" | "customer" | null;
   batchList: BatchPage | undefined;
   adminInvoiceList: InvoicePage | undefined;
   customerInvoiceList: InvoicePage | undefined;
@@ -262,6 +263,7 @@ export function ConvexOperationsProvider({
     () => ({
       enabled,
       dataSource: "convex",
+      sessionRole: role,
       batchList,
       adminInvoiceList,
       customerInvoiceList,
@@ -315,6 +317,7 @@ export function ConvexOperationsProvider({
       adminPaymentHistory,
       customerExceptionList,
       mutations,
+      role,
     ],
   );
 
@@ -332,6 +335,7 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
     () => ({
       enabled: false,
       dataSource: "unavailable",
+      sessionRole: null,
       batchList: undefined,
       adminInvoiceList: undefined,
       customerInvoiceList: undefined,

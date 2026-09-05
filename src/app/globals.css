@@ -8226,6 +8226,8 @@ p {
 
 .admin-shell .invoice-issue-action {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
   min-width: 168px;
   min-height: var(--button-height-default);
   align-items: center;
@@ -8235,6 +8237,12 @@ p {
 .admin-shell .invoice-issue-action > .button,
 .admin-shell .invoice-issue-action > a.button {
   min-width: 168px;
+}
+
+.deposit-allocation-offer,
+.deposit-allocation-confirmation {
+  display: grid;
+  gap: var(--space-sm);
 }
 
 .admin-shell .deposit-adjustment-fields > :nth-child(3) {

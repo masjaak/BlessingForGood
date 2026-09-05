@@ -30,6 +30,7 @@ import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { percentageToBasisPoints } from "@/lib/percentage";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
+import { UatPurgeDialog } from "@/components/uat-purge-dialog";
 
 export function PersistentRequirementForm({ orderId }: { orderId: string }) {
   const { createInvoice, issueInvoice } = useOperations();
@@ -176,6 +177,7 @@ function IssueInvoiceButton({ invoiceId }: { invoiceId: string }) {
 }
 
 function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { customerId: string | null }) {
+  const { sessionRole } = useOperations();
   const pagination = useAdminCursorPagination();
   const [customerId, setCustomerId] = useState(requestedCustomerId || "");
   const [batchId, setBatchId] = useState("");
@@ -196,6 +198,19 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string | null>(null);
   const [report, setReport] = useState("");
+  const [purgeTarget, setPurgeTarget] = useState<{
+    customerUserId: Id<"appUsers">;
+    batchId: Id<"batches">;
+    rowKey: string;
+  } | null>(null);
+  const [purgeError, setPurgeError] = useState("");
+  const purgeImpact = useQuery(
+    api.uatCleanup.getOrderCandidateImpact,
+    sessionRole === "owner" && purgeTarget
+      ? { customerUserId: purgeTarget.customerUserId, batchId: purgeTarget.batchId }
+      : "skip",
+  );
+  const purgeCandidate = useMutation(api.uatCleanup.purgeOrderCandidate);
   const pageRows = rows?.page || [];
   const hasFilters = Boolean(customerId || batchId);
 
@@ -265,6 +280,28 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
       );
     } catch (reason) {
       setReport(productErrorMessage(reason, "Bulk invoice tidak dapat diproses."));
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function confirmCandidatePurge() {
+    if (!purgeTarget) return;
+    setPending("purge");
+    setPurgeError("");
+    try {
+      await purgeCandidate({
+        customerUserId: purgeTarget.customerUserId,
+        batchId: purgeTarget.batchId,
+        confirmedUatCleanup: true,
+        confirmationKeyword: "HAPUS PESANAN",
+      });
+      setSelected((current) => current.filter((key) => key !== purgeTarget.rowKey));
+      setPurgeTarget(null);
+      pagination.reset();
+      setReport("Data UAT dibersihkan.");
+    } catch (reason) {
+      setPurgeError(productErrorMessage(reason, "Data UAT belum dapat dihapus."));
     } finally {
       setPending(null);
     }
@@ -410,19 +447,42 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
                     <LinkButton href={`/admin/invoices/${row.invoiceId}`} variant="secondary">
                       Buka invoice
                     </LinkButton>
-                  ) : row.eligible ? (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      disabled={!row.eligible || pending !== null}
-                      loading={pending === rowKey}
-                      loadingLabel="Menerbitkan…"
-                      onClick={() => void issueRow(row)}
-                    >
-                      Terbitkan invoice
-                    </Button>
                   ) : (
-                    <span className="subtle">Menunggu pemeriksaan</span>
+                    <>
+                      {row.eligible ? (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          disabled={!row.eligible || pending !== null}
+                          loading={pending === rowKey}
+                          loadingLabel="Menerbitkan…"
+                          onClick={() => void issueRow(row)}
+                        >
+                          Terbitkan invoice
+                        </Button>
+                      ) : (
+                        <span className="subtle">Menunggu pemeriksaan</span>
+                      )}
+                      {sessionRole === "owner" ? (
+                        <Button
+                          type="button"
+                          variant="danger"
+                          disabled={pending !== null}
+                          loading={pending === "purge" && purgeTarget?.rowKey === rowKey}
+                          loadingLabel="Menghapus…"
+                          onClick={() => {
+                            setPurgeError("");
+                            setPurgeTarget({
+                              customerUserId: row.customerUserId,
+                              batchId: row.batchId,
+                              rowKey,
+                            });
+                          }}
+                        >
+                          Hapus permanen
+                        </Button>
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>
@@ -437,6 +497,14 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
         rowCount={pageRows.length}
         isDone={rows?.isDone ?? true}
         continueCursor={rows?.continueCursor ?? ""}
+      />
+      <UatPurgeDialog
+        open={purgeTarget !== null}
+        impact={purgeImpact}
+        loading={pending === "purge"}
+        error={purgeError}
+        onCancel={() => setPurgeTarget(null)}
+        onConfirm={() => void confirmCandidatePurge()}
       />
     </Card>
   );

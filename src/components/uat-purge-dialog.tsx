@@ -10,9 +10,10 @@ type ImpactRow = {
 };
 
 export type UatImpact = {
-  entityType: "catalog" | "batch" | "invoice";
+  entityType: "catalog" | "batch" | "invoice" | "order";
   entityId: string;
   entityName: string;
+  reference?: string | null;
   status: string;
   safe: boolean;
   blocker: string | null;
@@ -69,9 +70,17 @@ export function UatPurgeDialog({
       ? "HAPUS KATALOG"
       : impact?.entityType === "batch"
         ? "HAPUS BATCH"
-        : "HAPUS INVOICE";
+        : impact?.entityType === "order"
+          ? "HAPUS PESANAN"
+          : "HAPUS INVOICE";
   const entityLabel =
-    impact?.entityType === "catalog" ? "KATALOG" : impact?.entityType === "batch" ? "BATCH" : "INVOICE";
+    impact?.entityType === "catalog"
+      ? "KATALOG"
+      : impact?.entityType === "batch"
+        ? "BATCH"
+        : impact?.entityType === "order"
+          ? "PESANAN"
+          : "INVOICE";
   const description =
     "Tindakan ini akan menghapus data dummy beserta data turunannya dari sistem dan tidak dapat dibatalkan. Pastikan record ini bukan data transaksi Customer yang sedang digunakan.";
 
@@ -95,6 +104,7 @@ export function UatPurgeDialog({
         <div className="bfg-uat-identity">
           <strong>{entityLabel}</strong>
           <span>{impact?.entityName || "Menghitung dampak…"}</span>
+          {impact?.reference ? <span>Referensi: {impact.reference}</span> : null}
           {impact ? <span>Status saat ini: {impact.status}</span> : null}
         </div>
         {loading && !impact ? <p className="subtle">Menghitung dampak terbaru…</p> : null}

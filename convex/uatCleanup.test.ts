@@ -178,6 +178,216 @@ describe("owner UAT cleanup", () => {
     expect(remaining.audit).toEqual(expect.arrayContaining([expect.objectContaining({ action: "UAT_PURGE" })]));
   });
 
+  it("purges the real unissued candidate Order while preserving shared Customer, Book, and Batch roots", async () => {
+    const t = testConvex();
+    const { owner, admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "UAT Candidate Catalog", "0097", "uat-candidate-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "uat-candidate-code" });
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "UAT Candidate Customer",
+      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+    });
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("candidate customer fixture missing");
+    const batch = await admin.mutation(api.batches.create, { name: "UAT Candidate Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
+
+    const ready = await admin.query(api.invoices.listReadyForIssuance, {
+      paginationOpts: { numItems: 25, cursor: null },
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+    });
+    expect(ready.page).toEqual([
+      expect.objectContaining({
+        customerUserId: customerUser.appUserId,
+        batchId: batch.batchId,
+        bookCount: 2,
+        totalAmount: 250000,
+        invoiceId: null,
+      }),
+    ]);
+
+    await expect(
+      admin.query(api.uatCleanup.getOrderCandidateImpact, {
+        customerUserId: customerUser.appUserId,
+        batchId: batch.batchId,
+      }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    const impact = await owner.query(api.uatCleanup.getOrderCandidateImpact, {
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+    });
+    expect(impact).toMatchObject({
+      entityType: "order",
+      entityName: "UAT Candidate Customer · UAT Candidate Batch",
+      reference: order.orderCode,
+      safe: true,
+      delete: expect.arrayContaining([
+        expect.objectContaining({ key: "candidate", count: 1, amount: 250000 }),
+        expect.objectContaining({ key: "orders", count: 1 }),
+        expect.objectContaining({ key: "orderItems", count: 1 }),
+        expect.objectContaining({ key: "orderItemBatchAssignments", count: 1 }),
+      ]),
+      preserve: expect.arrayContaining([
+        expect.objectContaining({ key: "customers", count: 1 }),
+        expect.objectContaining({ key: "books", count: 1 }),
+        expect.objectContaining({ key: "batches", count: 1 }),
+      ]),
+    });
+    await expect(
+      owner.mutation(api.uatCleanup.purgeOrderCandidate, {
+        customerUserId: customerUser.appUserId,
+        batchId: batch.batchId,
+        confirmedUatCleanup: false,
+        confirmationKeyword: "HAPUS PESANAN",
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+
+    await owner.mutation(api.uatCleanup.purgeOrderCandidate, {
+      customerUserId: customerUser.appUserId,
+      batchId: batch.batchId,
+      confirmedUatCleanup: true,
+      confirmationKeyword: "HAPUS PESANAN",
+    });
+
+    const remaining = await t.run(async (ctx) => {
+      const variant = await ctx.db.get(catalog.variantIds[0]);
+      return {
+        order: await ctx.db.get(order.orderId),
+        customer: await ctx.db.get(customerUser.appUserId),
+        catalog: await ctx.db.get(catalog.catalogId),
+        batch: await ctx.db.get(batch.batchId),
+        book: variant ? await ctx.db.get(variant.bookId) : null,
+        items: await ctx.db
+          .query("orderItems")
+          .withIndex("by_order", (index) => index.eq("orderId", order.orderId))
+          .collect(),
+        assignments: await ctx.db
+          .query("orderItemBatchAssignments")
+          .withIndex("by_batch", (index) => index.eq("batchId", batch.batchId))
+          .collect(),
+        orderHistory: await ctx.db
+          .query("orderStatusHistory")
+          .withIndex("by_order", (index) => index.eq("orderId", order.orderId))
+          .collect(),
+        notifications: await ctx.db
+          .query("notifications")
+          .withIndex("by_related_entity", (index) =>
+            index.eq("relatedEntityType", "order").eq("relatedEntityId", String(order.orderId)),
+          )
+          .collect(),
+        orderAudits: await ctx.db
+          .query("auditEvents")
+          .withIndex("by_target", (index) => index.eq("targetType", "order").eq("targetId", String(order.orderId)))
+          .collect(),
+        candidateAudit: await ctx.db
+          .query("auditEvents")
+          .withIndex("by_target", (index) =>
+            index.eq("targetType", "order_candidate").eq("targetId", `${customerUser.appUserId}:${batch.batchId}`),
+          )
+          .collect(),
+        invoices: await ctx.db.query("invoices").collect(),
+      };
+    });
+    expect(remaining.order).toBeNull();
+    expect(remaining.items).toEqual([]);
+    expect(remaining.assignments).toEqual([]);
+    expect(remaining.orderHistory).toEqual([]);
+    expect(remaining.notifications).toEqual([]);
+    expect(remaining.orderAudits).toEqual([]);
+    expect(remaining.candidateAudit).toEqual([expect.objectContaining({ action: "UAT_PURGE" })]);
+    expect(remaining.customer).not.toBeNull();
+    expect(remaining.catalog).not.toBeNull();
+    expect(remaining.batch).not.toBeNull();
+    expect(remaining.book).not.toBeNull();
+    expect(remaining.invoices).toEqual([]);
+    await expect(
+      admin.query(api.invoices.listReadyForIssuance, {
+        paginationOpts: { numItems: 25, cursor: null },
+        customerUserId: customerUser.appUserId,
+        batchId: batch.batchId,
+      }),
+    ).resolves.toMatchObject({ page: [] });
+  });
+
+  it("detaches a shared Order candidate without deleting the Order or its other Batch assignment", async () => {
+    const t = testConvex();
+    const { owner, admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Shared Candidate Catalog", "0098", "shared-candidate-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "shared-candidate-code" });
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Shared Candidate Customer",
+      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+    });
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("shared candidate customer fixture missing");
+    const candidateBatch = await admin.mutation(api.batches.create, { name: "Shared Candidate Batch" });
+    const otherBatch = await admin.mutation(api.batches.create, { name: "Other Shared Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: candidateBatch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: otherBatch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batchTracking.assignOrderItem, {
+      orderItemId: order.items[0]._id,
+      batchId: candidateBatch.batchId,
+      assignedQuantity: 1,
+    });
+    await admin.mutation(api.batchTracking.assignOrderItem, {
+      orderItemId: order.items[0]._id,
+      batchId: otherBatch.batchId,
+      assignedQuantity: 1,
+    });
+    await admin.mutation(api.batchTracking.updateShipmentStage, {
+      batchId: candidateBatch.batchId,
+      toStage: "po_closed",
+    });
+
+    const impact = await owner.query(api.uatCleanup.getOrderCandidateImpact, {
+      customerUserId: customerUser.appUserId,
+      batchId: candidateBatch.batchId,
+    });
+    expect(impact).toMatchObject({
+      safe: true,
+      delete: expect.arrayContaining([expect.objectContaining({ key: "orders", count: 0 })]),
+      detach: [expect.objectContaining({ key: "orderItemBatchAssignments", count: 1 })],
+      preserve: expect.arrayContaining([
+        expect.objectContaining({ key: "orders", count: 1 }),
+        expect.objectContaining({ key: "orderItems", count: 1 }),
+      ]),
+    });
+
+    await owner.mutation(api.uatCleanup.purgeOrderCandidate, {
+      customerUserId: customerUser.appUserId,
+      batchId: candidateBatch.batchId,
+      confirmedUatCleanup: true,
+      confirmationKeyword: "HAPUS PESANAN",
+    });
+
+    const remaining = await t.run(async (ctx) => ({
+      order: await ctx.db.get(order.orderId),
+      item: await ctx.db.get(order.items[0]._id),
+      candidateAssignments: await ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_batch", (index) => index.eq("batchId", candidateBatch.batchId))
+        .collect(),
+      otherAssignments: await ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_batch", (index) => index.eq("batchId", otherBatch.batchId))
+        .collect(),
+      candidateBatch: await ctx.db.get(candidateBatch.batchId),
+      otherBatch: await ctx.db.get(otherBatch.batchId),
+    }));
+    expect(remaining.order).not.toBeNull();
+    expect(remaining.item).not.toBeNull();
+    expect(remaining.candidateAssignments).toEqual([]);
+    expect(remaining.otherAssignments).toMatchObject([
+      { orderItemId: order.items[0]._id, batchId: otherBatch.batchId, assignedQuantity: 1 },
+    ]);
+    expect(remaining.candidateBatch).not.toBeNull();
+    expect(remaining.otherBatch).not.toBeNull();
+  });
+
   it("purges Invoice-owned payment, deposit, and refund consequences while preserving roots", async () => {
     const t = testConvex();
     const { owner, admin, customer } = await setupUsers(t);

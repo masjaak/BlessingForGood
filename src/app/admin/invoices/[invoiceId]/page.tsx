@@ -368,8 +368,9 @@ function AdminInvoiceDetail() {
               adminTransactions.page.map((transaction) => (
                 <div className="summary-line" key={transaction.transactionId}>
                   <span>
-                    {transaction.type} · {formatIdr(transaction.amount)} ·{" "}
-                    {new Date(transaction.createdAt).toLocaleString("en-GB")}
+                    {transaction.source || transaction.type} · {formatIdr(transaction.amount)} ·{" "}
+                    {new Date(transaction.createdAt).toLocaleString("id-ID")}
+                    {transaction.actorName ? ` · ${transaction.actorName}` : ""}
                   </span>
                   <span className="form-actions">
                     {transaction.type !== "reversal" && !transaction.reversedByTransactionId ? (

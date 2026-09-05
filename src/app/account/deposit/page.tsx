@@ -93,9 +93,13 @@ function DepositPage() {
                 transactions.page.map((row) => (
                   <div className="summary-line" key={row.transactionId}>
                     <span>
-                      {row.type} · {new Date(row.createdAt).toLocaleString("id-ID")}
+                      {row.source || row.type} · {new Date(row.createdAt).toLocaleString("id-ID")}
+                      {row.invoiceNumber ? ` · ${row.invoiceNumber}` : ""}
                     </span>
-                    <Money amount={row.amount} />
+                    <strong>
+                      {row.direction === "out" ? "− " : "+ "}
+                      <Money amount={row.amount} />
+                    </strong>
                   </div>
                 ))
               ) : (

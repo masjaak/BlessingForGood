@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
@@ -9,6 +9,7 @@ import { BFGFilePicker } from "@/components/bfg-file-picker";
 import {
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   LinkButton,
@@ -36,6 +37,7 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = useProduct();
+  const allocateDeposit = useMutation(api.invoiceDepositAllocations.allocateMine);
   const {
     currentCustomerInvoice,
     customerAccount,
@@ -44,6 +46,10 @@ function CustomerInvoiceDetail() {
     customerPaymentConfirmations,
     submitPaymentConfirmation,
   } = useOperations();
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  const [depositPending, setDepositPending] = useState(false);
+  const [depositMessage, setDepositMessage] = useState("");
+  const [depositError, setDepositError] = useState("");
   if (dataSource !== "convex") return <div className="state-panel">Invoice belum tersedia saat ini.</div>;
   if (currentCustomerInvoice === undefined) {
     return (
@@ -64,6 +70,23 @@ function CustomerInvoiceDetail() {
     );
   }
   const account = customerAccount?.account;
+  const invoiceId = currentCustomerInvoice.invoiceId;
+  const maxDepositAllocation = Math.min(account?.availableAmount || 0, currentCustomerInvoice.outstandingAmount);
+
+  async function confirmDepositAllocation() {
+    setDepositPending(true);
+    setDepositError("");
+    try {
+      await allocateDeposit({ invoiceId });
+      setDepositDialogOpen(false);
+      setDepositMessage("Deposit berhasil digunakan untuk invoice ini.");
+    } catch (reason) {
+      setDepositError(productErrorMessage(reason, "Deposit belum dapat digunakan."));
+    } finally {
+      setDepositPending(false);
+    }
+  }
+
   return (
     <div className="page narrow-page">
       <PageHeader
@@ -106,10 +129,40 @@ function CustomerInvoiceDetail() {
             <strong>{formatIdr(currentCustomerInvoice.allocatedDepositAmount)}</strong>
           </div>
           <div className="summary-line">
+            <span>Pembayaran terverifikasi</span>
+            <strong>{formatIdr(currentCustomerInvoice.verifiedPaymentAmount)}</strong>
+          </div>
+          <div className="summary-line">
             <span>Sisa tagihan</span>
             <strong>{formatIdr(currentCustomerInvoice.outstandingAmount)}</strong>
           </div>
         </Card>
+
+        <ConfirmationDialog
+          open={depositDialogOpen}
+          title="Gunakan saldo deposit?"
+          description="Saldo deposit tidak digunakan otomatis saat invoice diterbitkan. Periksa jumlah yang akan digunakan sebelum melanjutkan."
+          confirmLabel={`Gunakan ${formatIdr(maxDepositAllocation)}`}
+          disabled={depositPending || maxDepositAllocation <= 0}
+          onCancel={() => setDepositDialogOpen(false)}
+          onConfirm={() => void confirmDepositAllocation()}
+        >
+          <div className="deposit-allocation-confirmation">
+            <div className="summary-line">
+              <span>Saldo tersedia</span>
+              <strong>{formatIdr(account?.availableAmount || 0)}</strong>
+            </div>
+            <div className="summary-line">
+              <span>Akan digunakan</span>
+              <strong>− {formatIdr(maxDepositAllocation)}</strong>
+            </div>
+            <div className="summary-line">
+              <span>Sisa tagihan setelah deposit</span>
+              <strong>{formatIdr(Math.max(0, currentCustomerInvoice.outstandingAmount - maxDepositAllocation))}</strong>
+            </div>
+            {depositError ? <p className="error-text">{depositError}</p> : null}
+          </div>
+        </ConfirmationDialog>
 
         <Card>
           <div className="split-heading">
@@ -187,12 +240,38 @@ function CustomerInvoiceDetail() {
                 <span>Dialokasikan</span>
                 <strong>{formatIdr(account?.reservedAmount || 0)}</strong>
               </div>
+              {currentCustomerInvoice.status === "issued" && maxDepositAllocation > 0 ? (
+                <div className="deposit-allocation-offer">
+                  <div className="summary-line">
+                    <span>Tagihan tersisa</span>
+                    <strong>{formatIdr(currentCustomerInvoice.outstandingAmount)}</strong>
+                  </div>
+                  <p className="subtle">Saldo yang digunakan akan otomatis menyesuaikan dengan sisa tagihan.</p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setDepositError("");
+                      setDepositDialogOpen(true);
+                    }}
+                  >
+                    Gunakan saldo deposit
+                  </Button>
+                </div>
+              ) : null}
+              {depositMessage ? (
+                <p className="success-banner" role="status">
+                  {depositMessage}
+                </p>
+              ) : null}
               <h3>Riwayat alokasi</h3>
               {customerAllocations.length ? (
                 customerAllocations.map((allocation) => (
                   <div className="summary-line" key={allocation.allocationId}>
-                    <span>{allocation.status}</span>
-                    <strong>{formatIdr(allocation.amount)}</strong>
+                    <span>
+                      {allocation.status} · {new Date(allocation.createdAt).toLocaleString("id-ID")}
+                    </span>
+                    <strong>− {formatIdr(allocation.amount)}</strong>
                   </div>
                 ))
               ) : (
@@ -219,9 +298,13 @@ function CustomerInvoiceDetail() {
             customerTransactions.page.map((transaction) => (
               <div className="summary-line" key={transaction.transactionId}>
                 <span>
-                  {transaction.type} · {new Date(transaction.createdAt).toLocaleString("en-GB")}
+                  {transaction.source || transaction.type} · {new Date(transaction.createdAt).toLocaleString("id-ID")}
+                  {transaction.invoiceNumber ? ` · ${transaction.invoiceNumber}` : ""}
                 </span>
-                <strong>{formatIdr(transaction.amount)}</strong>
+                <strong>
+                  {transaction.direction === "out" ? "− " : "+ "}
+                  {formatIdr(transaction.amount)}
+                </strong>
               </div>
             ))
           ) : (

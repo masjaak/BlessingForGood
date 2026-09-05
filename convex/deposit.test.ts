@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
-async function createIssuedInvoice(t: ReturnType<typeof testConvex>) {
+async function createInvoice(t: ReturnType<typeof testConvex>, issue = true) {
   const users = await setupUsers(t);
   const bundle = await createOpenCatalog(users.admin, "Deposit Catalog", "2353", "deposit-catalog-code");
   await users.customer.mutation(api.catalogAccess.unlock, { accessCode: "deposit-catalog-code" });
@@ -18,8 +18,12 @@ async function createIssuedInvoice(t: ReturnType<typeof testConvex>) {
     depositRequirementMode: "percentage",
     depositRequirementValue: 5000,
   });
-  const issued = await users.admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
-  return { ...users, invoice: issued };
+  const result = issue ? await users.admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId }) : invoice;
+  return { ...users, invoice: result };
+}
+
+async function createIssuedInvoice(t: ReturnType<typeof testConvex>) {
+  return createInvoice(t);
 }
 
 describe("BFG append-only deposit ledger", () => {
@@ -122,14 +126,132 @@ describe("BFG append-only deposit ledger", () => {
       paginationOpts: { numItems: 10, cursor: null },
     });
     expect(ledger.page).toMatchObject([{ type: "credit", amount: 100000, availableDelta: 100000 }]);
-    await expect(customer.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 1 })).rejects.toThrow(
-      "PERMISSION_DENIED",
+    await expect(
+      customer.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 1 }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+  });
+
+  it("does not consume deposit when Admin issues the full invoice snapshot", async () => {
+    const t = testConvex();
+    const { admin, customer, invoice } = await createInvoice(t, false);
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
+
+    const issued = await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
+    expect(issued).toMatchObject({
+      status: "issued",
+      totalAmount: 250000,
+      allocatedDepositAmount: 0,
+      outstandingAmount: 250000,
+    });
+    expect((await customer.query(api.depositAccounts.getMine, {})).account).toMatchObject({
+      availableAmount: 100000,
+      reservedAmount: 0,
+    });
+  });
+
+  it("lets the Customer allocate the current minimum and records Customer traceability", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer, invoice } = await createIssuedInvoice(t);
+    const currentCustomer = await customer.query(api.users.current, {});
+    if (!currentCustomer) throw new Error("deposit customer fixture missing");
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
+
+    const allocation = await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
+      invoiceId: invoice.invoiceId,
+    });
+    expect(allocation).toMatchObject({ amount: 100000, status: "active" });
+    expect(allocation.account).toMatchObject({ availableAmount: 0, reservedAmount: 100000 });
+    expect(allocation.invoice).toMatchObject({
+      totalAmount: 250000,
+      allocatedDepositAmount: 100000,
+      outstandingAmount: 150000,
+      paymentStatus: "partially_paid",
+    });
+    await expect(
+      secondCustomer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId }),
+    ).rejects.toThrow("INVOICE_ACCESS_DENIED");
+    await expect(
+      customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId }),
+    ).rejects.toThrow("DEPOSIT_BALANCE_INSUFFICIENT");
+
+    const history = await customer.query(api.depositTransactions.listMine, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(history.page).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "reservation",
+          amount: 100000,
+          direction: "out",
+          source: "Alokasi ke invoice",
+          invoiceNumber: expect.any(String),
+          actorName: expect.any(String),
+        }),
+      ]),
     );
+    const trace = await t.run(async (ctx) => ({
+      audit: (await ctx.db.query("auditEvents").collect()).find(
+        (event) => event.action === "deposit.allocated" && event.targetId === String(invoice.invoiceId),
+      ),
+      notification: (await ctx.db.query("notifications").collect()).find(
+        (notice) => notice.eventType === "deposit.allocated" && notice.recipientUserId === currentCustomer.appUserId,
+      ),
+    }));
+    expect(trace.audit).toMatchObject({
+      actorUserId: currentCustomer.appUserId,
+      targetType: "invoice",
+      safeMetadata: { amount: "100000", actorRole: "customer" },
+    });
+    expect(trace.notification).toMatchObject({
+      relatedEntityType: "invoice",
+      relatedEntityId: String(invoice.invoiceId),
+    });
+  });
+
+  it("caps Customer allocation at outstanding and leaves excess deposit available", async () => {
+    const t = testConvex();
+    const { admin, customer, invoice } = await createIssuedInvoice(t);
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 300000 });
+
+    const allocation = await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
+      invoiceId: invoice.invoiceId,
+    });
+    expect(allocation).toMatchObject({ amount: 250000 });
+    expect(allocation.account).toMatchObject({ availableAmount: 50000, reservedAmount: 250000 });
+    expect(allocation.invoice).toMatchObject({ outstandingAmount: 0, paymentStatus: "paid" });
+    expect(await customer.query(api.paymentConfirmations.listMineForInvoice, { invoiceId: invoice.invoiceId })).toEqual(
+      [],
+    );
+  });
+
+  it("composes Customer deposit allocation with approved Payment without double-counting", async () => {
+    const t = testConvex();
+    const { admin, customer, invoice } = await createIssuedInvoice(t);
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
+    await customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId });
+
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      amount: 150000,
+      paymentMethod: "Bank transfer",
+      transferReference: "CUSTOMER-DEPOSIT-COMPOSE",
+      paidAt: Date.now(),
+    });
+    await admin.mutation(api.paymentConfirmations.approve, { confirmationId: confirmation.confirmationId });
+    expect(await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).toMatchObject({
+      totalAmount: 250000,
+      allocatedDepositAmount: 100000,
+      verifiedPaymentAmount: 150000,
+      outstandingAmount: 0,
+      paymentStatus: "paid",
+    });
   });
 
   it("allocates and releases a reservation atomically", async () => {
     const t = testConvex();
     const { admin, invoice } = await createIssuedInvoice(t);
+    const currentAdmin = await admin.query(api.users.current, {});
+    if (!currentAdmin) throw new Error("deposit admin fixture missing");
     await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
     const allocation = await admin.mutation(api.invoiceDepositAllocations.allocate, {
       invoiceId: invoice.invoiceId,
@@ -138,6 +260,16 @@ describe("BFG append-only deposit ledger", () => {
     expect(allocation).toMatchObject({ status: "active", amount: 80000 });
     expect(allocation.account).toMatchObject({ availableAmount: 20000, reservedAmount: 80000 });
     expect(allocation.invoice).toMatchObject({ allocatedDepositAmount: 80000, outstandingAmount: 170000 });
+    await expect(
+      t.run(async (ctx) =>
+        (await ctx.db.query("auditEvents").collect()).find(
+          (event) => event.action === "deposit.allocated" && event.targetId === String(invoice.invoiceId),
+        ),
+      ),
+    ).resolves.toMatchObject({
+      actorUserId: currentAdmin.appUserId,
+      safeMetadata: { actorRole: "admin" },
+    });
     await expect(
       admin.mutation(api.invoiceDepositAllocations.allocate, { invoiceId: invoice.invoiceId, amount: 20001 }),
     ).rejects.toThrow("DEPOSIT_BALANCE_INSUFFICIENT");
@@ -165,29 +297,38 @@ describe("BFG append-only deposit ledger", () => {
   it("reverses a credit with an inverse transaction", async () => {
     const t = testConvex();
     const { admin, customer, invoice } = await createIssuedInvoice(t);
-    const credit = await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
+    const credit = await admin.mutation(api.depositTransactions.recordCredit, {
+      invoiceId: invoice.invoiceId,
+      amount: 100000,
+    });
     const reversal = await admin.mutation(api.depositTransactions.reverse, {
       transactionId: credit.transactionId,
       note: "corrected test credit",
     });
     expect(reversal).toMatchObject({ type: "reversal", amount: 100000, availableDelta: -100000 });
-    expect((await customer.query(api.depositAccounts.getMine, {})).account).toMatchObject({ availableAmount: 0, reservedAmount: 0 });
+    expect((await customer.query(api.depositAccounts.getMine, {})).account).toMatchObject({
+      availableAmount: 0,
+      reservedAmount: 0,
+    });
     const ledger = await customer.query(api.depositTransactions.listMine, {
       paginationOpts: { numItems: 10, cursor: null },
     });
     expect(ledger.page).toHaveLength(2);
-    await expect(admin.mutation(api.depositTransactions.reverse, { transactionId: credit.transactionId })).rejects.toThrow(
-      "DEPOSIT_TRANSACTION_ALREADY_REVERSED",
-    );
-    await expect(admin.mutation(api.depositTransactions.reverse, { transactionId: reversal.transactionId })).rejects.toThrow(
-      "DEPOSIT_REVERSAL_INVALID",
-    );
+    await expect(
+      admin.mutation(api.depositTransactions.reverse, { transactionId: credit.transactionId }),
+    ).rejects.toThrow("DEPOSIT_TRANSACTION_ALREADY_REVERSED");
+    await expect(
+      admin.mutation(api.depositTransactions.reverse, { transactionId: reversal.transactionId }),
+    ).rejects.toThrow("DEPOSIT_REVERSAL_INVALID");
   });
 
   it("reverses an allocation through a new ledger row", async () => {
     const t = testConvex();
     const { admin, invoice } = await createIssuedInvoice(t);
-    const credit = await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
+    const credit = await admin.mutation(api.depositTransactions.recordCredit, {
+      invoiceId: invoice.invoiceId,
+      amount: 100000,
+    });
     const allocation = await admin.mutation(api.invoiceDepositAllocations.allocate, {
       invoiceId: invoice.invoiceId,
       amount: 80000,

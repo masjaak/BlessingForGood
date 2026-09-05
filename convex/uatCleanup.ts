@@ -16,9 +16,10 @@ export type ImpactRow = {
 };
 
 export type UatImpact = {
-  entityType: "catalog" | "batch" | "invoice";
+  entityType: "catalog" | "batch" | "invoice" | "order";
   entityId: string;
   entityName: string;
+  reference?: string | null;
   status: string;
   safe: boolean;
   blocker: string | null;
@@ -397,6 +398,277 @@ function batchImpact(plan: BatchPlan): UatImpact {
       row("orders", "root Order", plan.assignments.length),
       row("customers", "Customer", new Set(plan.invoices.map((invoice) => String(invoice.customerUserId))).size),
       row("invoices", "Invoice", plan.invoices.length),
+    ],
+  };
+}
+
+type OrderCandidatePlan = {
+  batch: Doc<"batches">;
+  customerUserId: Id<"appUsers">;
+  customer: Doc<"appUsers"> | null;
+  customerName: string;
+  assignments: Doc<"orderItemBatchAssignments">[];
+  orders: Doc<"orders">[];
+  orderItems: Doc<"orderItems">[];
+  sharedOrders: Doc<"orders">[];
+  sharedOrderItems: Doc<"orderItems">[];
+  exclusiveOrders: Doc<"orders">[];
+  exclusiveOrderItems: Doc<"orderItems">[];
+  exclusiveAssignments: Doc<"orderItemBatchAssignments">[];
+  detachedAssignments: Doc<"orderItemBatchAssignments">[];
+  statusHistory: Doc<"orderStatusHistory">[];
+  fulfillmentHistory: Doc<"orderFulfillmentHistory">[];
+  notifications: Doc<"notifications">[];
+  auditEvents: Doc<"auditEvents">[];
+  totalAmount: number;
+  blockers: string[];
+};
+
+async function orderCandidatePlan(
+  ctx: DataCtx,
+  customerUserId: Id<"appUsers">,
+  batchId: Id<"batches">,
+): Promise<OrderCandidatePlan | null> {
+  const batch = await ctx.db.get(batchId);
+  if (!batch) return null;
+  const blockers: string[] = [];
+  if (batch.isArchived || !batch.currentShipmentStage) {
+    blockers.push("Batch kandidat tidak lagi tersedia di antrian invoice aktif");
+  }
+  const candidateAssignments = await capped(
+    ctx.db
+      .query("orderItemBatchAssignments")
+      .withIndex("by_batch", (index) => index.eq("batchId", batchId))
+      .take(MAX_UAT_ROWS + 1),
+    "candidate Batch assignments",
+    blockers,
+  );
+  const assignments: Doc<"orderItemBatchAssignments">[] = [];
+  const ordersById = new Map<string, Doc<"orders">>();
+  let totalAmount = 0;
+  for (const assignment of candidateAssignments) {
+    const item = await ctx.db.get(assignment.orderItemId);
+    const order = item ? await ctx.db.get(item.orderId) : null;
+    if (!item || !order) {
+      blockers.push("ditemukan assignment kandidat tanpa Order atau Order Item");
+      continue;
+    }
+    if (order.customerUserId !== customerUserId || order.status === "cancelled" || assignment.assignedQuantity <= 0) {
+      continue;
+    }
+    assignments.push(assignment);
+    ordersById.set(String(order._id), order);
+    const subtotal = item.unitPriceAmountSnapshot * assignment.assignedQuantity;
+    if (
+      !Number.isSafeInteger(item.unitPriceAmountSnapshot) ||
+      item.unitPriceAmountSnapshot < 0 ||
+      !Number.isSafeInteger(assignment.assignedQuantity) ||
+      !Number.isSafeInteger(subtotal)
+    ) {
+      blockers.push("snapshot Order Item kandidat tidak valid");
+    } else {
+      totalAmount += subtotal;
+      if (!Number.isSafeInteger(totalAmount)) blockers.push("total kandidat tidak valid");
+    }
+  }
+  if (!assignments.length) return null;
+
+  const orders = [...ordersById.values()];
+  const orderItems: Doc<"orderItems">[] = [];
+  const sharedOrders: Doc<"orders">[] = [];
+  const sharedOrderItems: Doc<"orderItems">[] = [];
+  const exclusiveOrders: Doc<"orders">[] = [];
+  const exclusiveOrderItems: Doc<"orderItems">[] = [];
+  const exclusiveAssignments: Doc<"orderItemBatchAssignments">[] = [];
+  const detachedAssignments: Doc<"orderItemBatchAssignments">[] = [];
+  const statusHistory: Doc<"orderStatusHistory">[] = [];
+  const fulfillmentHistory: Doc<"orderFulfillmentHistory">[] = [];
+  const notifications: Doc<"notifications">[] = [];
+  const auditEvents: Doc<"auditEvents">[] = [];
+  const candidateItemIds = new Set(assignments.map((assignment) => String(assignment.orderItemId)));
+
+  for (const order of orders) {
+    if (order.status !== "submitted") blockers.push("Order kandidat tidak lagi berstatus submitted");
+    if (order.source === "ready_stock" || !order.catalogId) {
+      blockers.push("Order kandidat bukan Order Catalog yang aman untuk purge");
+    }
+    const allItems = await capped(
+      ctx.db
+        .query("orderItems")
+        .withIndex("by_order", (index) => index.eq("orderId", order._id))
+        .take(MAX_UAT_ROWS + 1),
+      "candidate Order Items",
+      blockers,
+    );
+    const orderInvoices = await ctx.db
+      .query("invoices")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(MAX_UAT_ROWS + 1);
+    if (orderInvoices.length) blockers.push("Order kandidat sudah memiliki riwayat Invoice");
+    const itemAssignments = new Map<string, Doc<"orderItemBatchAssignments">[]>();
+    for (const item of allItems) {
+      orderItems.push(item);
+      const itemRows = await capped(
+        ctx.db
+          .query("orderItemBatchAssignments")
+          .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+          .take(MAX_UAT_ROWS + 1),
+        "candidate item assignments",
+        blockers,
+      );
+      itemAssignments.set(String(item._id), itemRows);
+      const invoices = unique(
+        (
+          await Promise.all(
+            (
+              await ctx.db
+                .query("invoiceItems")
+                .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+                .take(MAX_UAT_ROWS + 1)
+            ).map((invoiceItem) => ctx.db.get(invoiceItem.invoiceId)),
+          )
+        ).filter((invoice): invoice is Doc<"invoices"> => Boolean(invoice)),
+        (invoice) => String(invoice._id),
+      );
+      if (invoices.length) blockers.push("Order Item kandidat sudah memiliki riwayat Invoice");
+    }
+    const orderExceptions = await ctx.db
+      .query("orderExceptions")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(MAX_UAT_ROWS + 1);
+    const adjustments = await ctx.db
+      .query("orderExceptionFinancialAdjustments")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(MAX_UAT_ROWS + 1);
+    const exceptionEvents = await ctx.db
+      .query("orderExceptionEvents")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(MAX_UAT_ROWS + 1);
+    const refundObligations = await capped(
+      ctx.db
+        .query("refundObligations")
+        .withIndex("by_customer_user_id_and_created_at", (index) => index.eq("customerUserId", order.customerUserId))
+        .take(MAX_UAT_ROWS + 1),
+      "candidate refund obligations",
+      blockers,
+    );
+    const orderRefundObligations = refundObligations.filter((obligation) => obligation.orderId === order._id);
+    const reservations = await ctx.db
+      .query("readyStockReservations")
+      .withIndex("by_order", (index) => index.eq("orderId", order._id))
+      .take(MAX_UAT_ROWS + 1);
+    if (
+      orderExceptions.length ||
+      adjustments.length ||
+      exceptionEvents.length ||
+      orderRefundObligations.length ||
+      reservations.length
+    ) {
+      blockers.push("Order kandidat memiliki consequence finansial atau fulfillment");
+    }
+
+    const isExclusive =
+      allItems.length > 0 &&
+      allItems.every((item) => {
+        const rows = itemAssignments.get(String(item._id)) || [];
+        return rows.length > 0 && rows.every((assignment) => assignment.batchId === batchId);
+      });
+    const allItemIds = new Set(allItems.map((item) => String(item._id)));
+    const orderTargetAssignments = assignments.filter((assignment) => allItemIds.has(String(assignment.orderItemId)));
+    if (isExclusive) {
+      exclusiveOrders.push(order);
+      exclusiveOrderItems.push(...allItems);
+      for (const item of allItems) exclusiveAssignments.push(...(itemAssignments.get(String(item._id)) || []));
+      statusHistory.push(
+        ...(await capped(
+          ctx.db
+            .query("orderStatusHistory")
+            .withIndex("by_order", (index) => index.eq("orderId", order._id))
+            .take(MAX_UAT_ROWS + 1),
+          "candidate Order history",
+          blockers,
+        )),
+      );
+      fulfillmentHistory.push(
+        ...(await capped(
+          ctx.db
+            .query("orderFulfillmentHistory")
+            .withIndex("by_order", (index) => index.eq("orderId", order._id))
+            .take(MAX_UAT_ROWS + 1),
+          "candidate fulfillment history",
+          blockers,
+        )),
+      );
+      notifications.push(...(await relatedNotifications(ctx, "order", String(order._id), blockers)));
+      auditEvents.push(...(await relatedAudits(ctx, "order", String(order._id), blockers)));
+      for (const item of allItems) {
+        notifications.push(...(await relatedNotifications(ctx, "orderItem", String(item._id), blockers)));
+        auditEvents.push(...(await relatedAudits(ctx, "orderItem", String(item._id), blockers)));
+      }
+    } else {
+      sharedOrders.push(order);
+      sharedOrderItems.push(...allItems.filter((item) => candidateItemIds.has(String(item._id))));
+      detachedAssignments.push(...orderTargetAssignments);
+    }
+  }
+
+  const customer = await ctx.db.get(customerUserId);
+  const customerName =
+    orders[0]?.customerName || customer?.displayNameSnapshot || customer?.emailSnapshot || "Customer BFG";
+  return {
+    batch,
+    customerUserId,
+    customer,
+    customerName,
+    assignments,
+    orders,
+    orderItems: unique(orderItems, (item) => String(item._id)),
+    sharedOrders: unique(sharedOrders, (order) => String(order._id)),
+    sharedOrderItems: unique(sharedOrderItems, (item) => String(item._id)),
+    exclusiveOrders: unique(exclusiveOrders, (order) => String(order._id)),
+    exclusiveOrderItems: unique(exclusiveOrderItems, (item) => String(item._id)),
+    exclusiveAssignments: unique(exclusiveAssignments, (assignment) => String(assignment._id)),
+    detachedAssignments: unique(detachedAssignments, (assignment) => String(assignment._id)),
+    statusHistory: unique(statusHistory, (event) => String(event._id)),
+    fulfillmentHistory: unique(fulfillmentHistory, (event) => String(event._id)),
+    notifications: unique(notifications, (notice) => String(notice._id)),
+    auditEvents: unique(auditEvents, (event) => String(event._id)),
+    totalAmount,
+    blockers,
+  };
+}
+
+function orderCandidateImpact(plan: OrderCandidatePlan): UatImpact {
+  const bookIds = new Set(plan.orderItems.map((item) => String(item.bookId)));
+  const orderReferences = plan.orders
+    .map((order) => order.orderCode)
+    .filter(Boolean)
+    .join(", ");
+  return {
+    entityType: "order",
+    entityId: `${String(plan.customerUserId)}:${String(plan.batch._id)}`,
+    entityName: `${plan.customerName} · ${plan.batch.name}`,
+    reference: orderReferences || null,
+    status: plan.orders.every((order) => order.status === "submitted") ? "submitted" : "mixed",
+    safe: plan.blockers.length === 0,
+    blocker: blockerMessage(plan.blockers),
+    delete: [
+      row("candidate", "kandidat tagihan", 1, plan.totalAmount),
+      row("orders", "root Order eksklusif", plan.exclusiveOrders.length),
+      row("orderItems", "Order Item", plan.exclusiveOrderItems.length),
+      row("orderItemBatchAssignments", "assignment", plan.exclusiveAssignments.length),
+      row("orderStatusHistory", "riwayat Order", plan.statusHistory.length),
+      row("orderFulfillmentHistory", "riwayat fulfillment", plan.fulfillmentHistory.length),
+      row("notifications", "notifikasi terkait Order", plan.notifications.length),
+      row("auditEvents", "riwayat audit Order", plan.auditEvents.length),
+    ],
+    detach: [row("orderItemBatchAssignments", "assignment dari Order shared", plan.detachedAssignments.length)],
+    preserve: [
+      row("customers", "Customer", plan.customer ? 1 : 0),
+      row("books", "Book Master", bookIds.size),
+      row("batches", "Batch root", 1),
+      row("orders", "Order shared", plan.sharedOrders.length),
+      row("orderItems", "Order Item shared", plan.sharedOrderItems.length),
     ],
   };
 }
@@ -870,7 +1142,7 @@ function requireConfirmation(confirmedUatCleanup: boolean, confirmationKeyword: 
 
 function requirePlanSafe(
   plan: { blockers: string[] } | null,
-  notFoundCode: "CATALOG_NOT_FOUND" | "BATCH_NOT_FOUND" | "INVOICE_NOT_FOUND",
+  notFoundCode: "CATALOG_NOT_FOUND" | "BATCH_NOT_FOUND" | "INVOICE_NOT_FOUND" | "UAT_CANDIDATE_NOT_FOUND",
 ) {
   if (!plan) fail(notFoundCode);
   if (plan.blockers.length) {
@@ -973,6 +1245,58 @@ export const purgeBatch = mutation({
       detachedCatalogLinks: String(plan.links.length),
       detachedInvoices: String(plan.invoices.length),
     });
+    return { removed: true as const, auditEventId };
+  },
+});
+
+export const getOrderCandidateImpact = query({
+  args: {
+    customerUserId: v.id("appUsers"),
+    batchId: v.id("batches"),
+  },
+  handler: async (ctx, args) => {
+    await requireOwner(ctx);
+    const plan = await orderCandidatePlan(ctx, args.customerUserId, args.batchId);
+    return plan ? orderCandidateImpact(plan) : null;
+  },
+});
+
+export const purgeOrderCandidate = mutation({
+  args: {
+    customerUserId: v.id("appUsers"),
+    batchId: v.id("batches"),
+    confirmedUatCleanup: v.boolean(),
+    confirmationKeyword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireOwner(ctx);
+    requireConfirmation(args.confirmedUatCleanup, args.confirmationKeyword, "HAPUS PESANAN");
+    const plan = await orderCandidatePlan(ctx, args.customerUserId, args.batchId);
+    requirePlanSafe(plan, "UAT_CANDIDATE_NOT_FOUND");
+    if (!plan) fail("UAT_CANDIDATE_NOT_FOUND");
+
+    for (const assignment of plan.detachedAssignments) await ctx.db.delete(assignment._id);
+    for (const assignment of plan.exclusiveAssignments) await ctx.db.delete(assignment._id);
+    for (const item of plan.exclusiveOrderItems) await ctx.db.delete(item._id);
+    for (const history of plan.statusHistory) await ctx.db.delete(history._id);
+    for (const history of plan.fulfillmentHistory) await ctx.db.delete(history._id);
+    await deleteRelatedNotifications(ctx, plan.notifications);
+    await deleteRelatedAudits(ctx, plan.auditEvents);
+    for (const order of plan.exclusiveOrders) await ctx.db.delete(order._id);
+    const auditEventId = await recordAudit(
+      ctx,
+      user._id,
+      "UAT_PURGE",
+      "order_candidate",
+      `${args.customerUserId}:${args.batchId}`,
+      {
+        customerUserId: String(args.customerUserId),
+        batchId: String(args.batchId),
+        entityName: `${plan.customerName} · ${plan.batch.name}`,
+        deletedOrders: String(plan.exclusiveOrders.length),
+        detachedAssignments: String(plan.detachedAssignments.length),
+      },
+    );
     return { removed: true as const, auditEventId };
   },
 });

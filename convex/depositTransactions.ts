@@ -288,7 +288,7 @@ export const listMine = query({
       .withIndex("by_account_and_created_at", (index) => index.eq("accountId", account._id))
       .order("desc")
       .paginate(args.paginationOpts);
-    return { ...page, page: page.page.map((transaction) => transactionView(transaction, false)) };
+    return { ...page, page: await Promise.all(page.page.map((transaction) => historyView(ctx, transaction))) };
   },
 });
 
@@ -305,7 +305,7 @@ export const listForInvoice = query({
       .withIndex("by_account_and_created_at", (index) => index.eq("accountId", account._id))
       .order("desc")
       .paginate(args.paginationOpts);
-    return { ...page, page: page.page.map((transaction) => transactionView(transaction, true)) };
+    return { ...page, page: await Promise.all(page.page.map((transaction) => historyView(ctx, transaction))) };
   },
 });
 

@@ -56,4 +56,27 @@ describe("UAT purge confirmation", () => {
     view.rerender(<UatPurgeDialog open impact={impact} onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Hapus permanen" })).toHaveProperty("disabled", true);
   });
+
+  it("uses the underlying Order wording for unissued invoice candidates", () => {
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+    render(
+      <UatPurgeDialog
+        open
+        impact={{
+          ...impact,
+          entityType: "order",
+          entityName: "Customer · Batch",
+          reference: "BFG-ORD-001",
+        }}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("PESANAN")).toBeTruthy();
+    expect(within(dialog).getByText("Referensi: BFG-ORD-001")).toBeTruthy();
+    expect(within(dialog).getByRole("textbox", { name: "Ketik HAPUS PESANAN" })).toBeTruthy();
+  });
 });

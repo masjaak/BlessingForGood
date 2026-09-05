@@ -136,6 +136,20 @@ const historyRows = [
 function setupQueryMocks() {
   vi.mocked(useQuery).mockImplementation((query, args?) => {
     if (args === "skip") return null as never;
+    if (getFunctionName(query as never).endsWith(":getOrderCandidateImpact")) {
+      return {
+        entityType: "order",
+        entityId: "customer-a:batch-x",
+        entityName: "Customer A · Thunder",
+        reference: "BFG-ORD-UAT",
+        status: "submitted",
+        safe: true,
+        blocker: null,
+        delete: [],
+        detach: [],
+        preserve: [],
+      } as never;
+    }
     if (args && typeof args === "object" && "direction" in args) {
       return { page: historyRows, isDone: true, continueCursor: "" } as never;
     }
@@ -171,6 +185,9 @@ describe("Admin finance polish", () => {
     vi.mocked(useOperations).mockReturnValue({
       adminInvoiceList: { page: [], isDone: true, continueCursor: "" },
     } as never);
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
   });
 
   it("applies Customer and Batch filters through the queue query and resets pagination", async () => {
@@ -217,6 +234,29 @@ describe("Admin finance polish", () => {
       true,
     );
     expect(within(issuedRow).getByText("Sudah terbit")).toBeTruthy();
+  });
+
+  it("exposes UAT purge only to Owner on an unissued candidate", () => {
+    vi.mocked(useOperations).mockReturnValue({
+      sessionRole: "owner",
+      adminInvoiceList: { page: [], isDone: true, continueCursor: "" },
+    } as never);
+
+    const { unmount } = render(<AdminInvoicesPage />);
+    const candidateRow = screen.getAllByTestId("invoice-issue-row")[0];
+    fireEvent.click(within(candidateRow).getByRole("button", { name: "Hapus permanen" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("PESANAN")).toBeTruthy();
+    expect(within(dialog).getByText(/BFG-ORD-UAT/)).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "Hapus permanen" })).toHaveProperty("disabled", true);
+    unmount();
+
+    vi.mocked(useOperations).mockReturnValue({
+      sessionRole: "admin",
+      adminInvoiceList: { page: [], isDone: true, continueCursor: "" },
+    } as never);
+    render(<AdminInvoicesPage />);
+    expect(screen.getAllByTestId("invoice-issue-row")[0].textContent).not.toContain("Hapus permanen");
   });
 
   it("separates invoice deposit controls, the bulk CTA, and the invoice list", () => {

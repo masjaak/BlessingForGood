@@ -4,11 +4,12 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { accountView, applyLedgerDeltas, findDepositAccount } from "./depositAccounts";
 import { appendDepositTransaction, transactionView } from "./depositTransactions";
-import { requireOwnedResource, requirePermission } from "./lib/auth";
+import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { invoiceProjection } from "./lib/invoiceProjection";
 import { fail } from "./lib/errors";
 import { inverseLedgerDeltas, ledgerDeltas } from "./lib/depositLedger";
+import { notifyUser } from "./lib/notifications";
 
 type DataCtx = QueryCtx | MutationCtx;
 
@@ -81,42 +82,85 @@ export const allocate = mutation({
     const user = await requirePermission(ctx, "deposits.manage");
     const { invoice, account } = await invoiceAndAccount(ctx, args.invoiceId);
     if (!Number.isSafeInteger(args.amount) || args.amount <= 0) fail("DEPOSIT_AMOUNT_INVALID");
-    if (args.amount > invoice.outstandingAmount) fail("DEPOSIT_ALLOCATION_EXCEEDS_OUTSTANDING");
-    const deltas = ledgerDeltas("reservation", args.amount);
-    const updatedAccount = await applyLedgerDeltas(ctx, account, deltas);
-    const now = Date.now();
-    const reservationTransactionId = await appendDepositTransaction(ctx, {
-      accountId: account._id,
-      type: "reservation",
-      amount: args.amount,
-      ...deltas,
-      invoiceId: invoice._id,
-      note: "invoice deposit allocation",
-      createdAt: now,
-      createdByUserId: user._id,
-    });
-    const allocationId = await ctx.db.insert("invoiceDepositAllocations", {
-      invoiceId: invoice._id,
-      accountId: account._id,
-      reservationTransactionId,
-      amount: args.amount,
-      status: "active",
-      createdAt: now,
-      createdByUserId: user._id,
-    });
-    await ctx.db.patch(invoice._id, {
-      ...(await updatedInvoiceAmounts(ctx, invoice, args.amount)),
-      updatedAt: now,
-    });
-    const allocation = await ctx.db.get(allocationId);
-    const updatedInvoice = await ctx.db.get(invoice._id);
-    if (!allocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
-    await recordAudit(ctx, user._id, "deposit.allocated", "invoice", invoice._id, { amount: String(args.amount) });
-    return {
-      ...allocationView(allocation),
-      account: accountView(updatedAccount),
-      invoice: invoiceView(updatedInvoice),
-    };
+    return allocateInternal(ctx, user, invoice, account, args.amount);
+  },
+});
+
+async function allocateInternal(
+  ctx: MutationCtx,
+  user: Doc<"appUsers">,
+  invoice: Doc<"invoices">,
+  account: Doc<"depositAccounts">,
+  amount: number,
+) {
+  if (!Number.isSafeInteger(amount) || amount <= 0) fail("DEPOSIT_AMOUNT_INVALID");
+  if (amount > invoice.outstandingAmount) fail("DEPOSIT_ALLOCATION_EXCEEDS_OUTSTANDING");
+  const deltas = ledgerDeltas("reservation", amount);
+  const updatedAccount = await applyLedgerDeltas(ctx, account, deltas);
+  const now = Date.now();
+  const reservationTransactionId = await appendDepositTransaction(ctx, {
+    accountId: account._id,
+    type: "reservation",
+    amount,
+    ...deltas,
+    invoiceId: invoice._id,
+    note: "invoice deposit allocation",
+    createdAt: now,
+    createdByUserId: user._id,
+  });
+  const allocationId = await ctx.db.insert("invoiceDepositAllocations", {
+    invoiceId: invoice._id,
+    accountId: account._id,
+    reservationTransactionId,
+    amount,
+    status: "active",
+    createdAt: now,
+    createdByUserId: user._id,
+  });
+  await ctx.db.patch(invoice._id, {
+    ...(await updatedInvoiceAmounts(ctx, invoice, amount)),
+    updatedAt: now,
+  });
+  const allocation = await ctx.db.get(allocationId);
+  const updatedInvoice = await ctx.db.get(invoice._id);
+  if (!allocation || !updatedInvoice) fail("DEPOSIT_ALLOCATION_INVALID");
+  await recordAudit(ctx, user._id, "deposit.allocated", "invoice", invoice._id, {
+    amount: String(amount),
+    customerUserId: String(invoice.customerUserId),
+    actorRole: user.role,
+  });
+  await notifyUser(ctx, invoice.customerUserId, {
+    surface: "notification",
+    eventType: "deposit.allocated",
+    title: "Deposit digunakan untuk tagihan",
+    body: `${amount.toLocaleString("id-ID")} deposit digunakan untuk ${invoice.invoiceNumber}.`,
+    destination: `/account/invoices/${invoice._id}`,
+    relatedEntityType: "invoice",
+    relatedEntityId: String(invoice._id),
+  });
+  return {
+    ...allocationView(allocation),
+    account: accountView(updatedAccount),
+    invoice: invoiceView(updatedInvoice),
+  };
+}
+
+export const allocateMine = mutation({
+  args: { invoiceId: v.id("invoices") },
+  handler: async (ctx, args) => {
+    const user = await requireActiveUser(ctx);
+    if (user.role !== "customer") fail("PERMISSION_DENIED");
+    const invoice = await ctx.db.get(args.invoiceId);
+    if (!invoice) fail("INVOICE_NOT_FOUND");
+    await requireOwnedResource(ctx, invoice.customerUserId, "INVOICE_ACCESS_DENIED");
+    const { account } = await invoiceAndAccount(ctx, args.invoiceId);
+    if (invoice.status !== "issued") fail("INVOICE_INVALID_STATE");
+    const amount = Math.min(account.availableAmount, invoice.outstandingAmount);
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      if (account.availableAmount <= 0) fail("DEPOSIT_BALANCE_INSUFFICIENT");
+      fail("DEPOSIT_ALLOCATION_EXCEEDS_OUTSTANDING");
+    }
+    return allocateInternal(ctx, user, invoice, account, amount);
   },
 });
 
