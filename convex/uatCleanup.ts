@@ -424,7 +424,7 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) return null;
   const blockers: string[] = [];
-  const [order, customer, items, payments, allocations, obligations, adjustmentRows, notifications, rootAuditEvents] = await Promise.all(
+  const [order, customerRecord, items, payments, allocations, obligations, adjustmentRows, notifications, rootAuditEvents] = await Promise.all(
     [
       ctx.db.get(invoice.orderId),
       ctx.db.get(invoice.customerUserId),
@@ -472,8 +472,8 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
       relatedAudits(ctx, "invoice", String(invoiceId), blockers),
     ],
   );
+  const customer = customerRecord?.role === "customer" ? customerRecord : null;
   if (!order) blockers.push("Invoice Order root tidak ditemukan");
-  if (!customer || customer.role !== "customer") blockers.push("Invoice Customer root tidak ditemukan");
   if (
     invoice.financialAdjustmentAmount !== 0 ||
     invoice.adjustedTotalAmount !== invoice.totalAmount ||
@@ -646,12 +646,10 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
     }
   }
   const depositTransactions = [...transactionMap.values()];
-  const account = customer
-    ? await ctx.db
-        .query("depositAccounts")
-        .withIndex("by_user_id_and_currency", (index) => index.eq("userId", customer._id).eq("currency", "IDR"))
-        .unique()
-    : null;
+  const account = await ctx.db
+    .query("depositAccounts")
+    .withIndex("by_user_id_and_currency", (index) => index.eq("userId", invoice.customerUserId).eq("currency", "IDR"))
+    .unique();
   if (depositTransactions.length && !account) blockers.push("Deposit account root tidak ditemukan");
   if (obligations.some((obligation) => obligation.depositAccountId) && !account) {
     blockers.push("Refund consequence Deposit account root tidak ditemukan");

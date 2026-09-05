@@ -336,6 +336,127 @@ describe("owner UAT cleanup", () => {
     ).resolves.toEqual([]);
   });
 
+  it("purges a legacy Invoice when its Customer root is already absent", async () => {
+    const t = testConvex();
+    const { owner, admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Legacy Invoice UAT Catalog", "0096", "legacy-invoice-uat-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "legacy-invoice-uat-code" });
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Legacy UAT Customer",
+      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+    });
+    const invoice = await admin.mutation(api.invoices.create, {
+      orderId: order.orderId,
+      depositRequirementMode: "none",
+    });
+    await admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
+    const payment = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      amount: 99000,
+      paymentMethod: "Bank transfer",
+      transferReference: "LEGACY-UAT-PAYMENT",
+      paidAt: Date.now() - 1_000,
+    });
+    const customerUser = await customer.query(api.users.current, {});
+    const adminUser = await admin.query(api.users.current, {});
+    if (!customerUser || !adminUser) throw new Error("legacy invoice fixture users missing");
+    const accountId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("depositAccounts", {
+        userId: customerUser.appUserId,
+        currency: "IDR",
+        availableAmount: 0,
+        reservedAmount: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert("notifications", {
+        recipientUserId: adminUser.appUserId,
+        surface: "notification",
+        eventType: "legacy.invoice",
+        title: "Legacy Invoice",
+        body: "Legacy UAT invoice",
+        destination: "/admin/invoices",
+        relatedEntityType: "invoice",
+        relatedEntityId: String(invoice.invoiceId),
+        createdAt: now,
+      });
+      await ctx.db.insert("notifications", {
+        recipientUserId: adminUser.appUserId,
+        surface: "notification",
+        eventType: "legacy.payment",
+        title: "Legacy Payment",
+        body: "Legacy UAT payment",
+        destination: "/admin/payments",
+        relatedEntityType: "paymentConfirmation",
+        relatedEntityId: String(payment.confirmationId),
+        createdAt: now,
+      });
+      await ctx.db.delete(customerUser.appUserId);
+    });
+
+    const impact = await owner.query(api.uatCleanup.getInvoiceImpact, { invoiceId: invoice.invoiceId });
+    expect(impact).toMatchObject({
+      safe: true,
+      blocker: null,
+      preserve: expect.arrayContaining([
+        expect.objectContaining({ key: "orders", count: 1 }),
+        expect.objectContaining({ key: "customers", count: 0 }),
+        expect.objectContaining({ key: "depositAccounts", count: 1 }),
+      ]),
+    });
+
+    await owner.mutation(api.uatCleanup.purgeInvoice, {
+      invoiceId: invoice.invoiceId,
+      confirmedUatCleanup: true,
+      confirmationKeyword: "HAPUS INVOICE",
+    });
+
+    const remaining = await t.run(async (ctx) => ({
+      invoice: await ctx.db.get(invoice.invoiceId),
+      customer: await ctx.db.get(customerUser.appUserId),
+      account: await ctx.db.get(accountId),
+      order: await ctx.db.get(order.orderId),
+      items: await ctx.db
+        .query("invoiceItems")
+        .withIndex("by_invoice", (index) => index.eq("invoiceId", invoice.invoiceId))
+        .collect(),
+      payments: await ctx.db
+        .query("paymentConfirmations")
+        .withIndex("by_invoice", (index) => index.eq("invoiceId", invoice.invoiceId))
+        .collect(),
+      invoiceNotifications: await ctx.db
+        .query("notifications")
+        .withIndex("by_related_entity", (index) =>
+          index.eq("relatedEntityType", "invoice").eq("relatedEntityId", invoice.invoiceId),
+        )
+        .collect(),
+      paymentNotifications: await ctx.db
+        .query("notifications")
+        .withIndex("by_related_entity", (index) =>
+          index.eq("relatedEntityType", "paymentConfirmation").eq("relatedEntityId", String(payment.confirmationId)),
+        )
+        .collect(),
+      audit: await ctx.db
+        .query("auditEvents")
+        .withIndex("by_target", (index) => index.eq("targetType", "invoice").eq("targetId", invoice.invoiceId))
+        .collect(),
+    }));
+    expect(remaining.invoice).toBeNull();
+    expect(remaining.customer).toBeNull();
+    expect(remaining.account).toMatchObject({ userId: customerUser.appUserId, availableAmount: 0, reservedAmount: 0 });
+    expect(remaining.order).not.toBeNull();
+    expect(remaining.items).toEqual([]);
+    expect(remaining.payments).toEqual([]);
+    expect(remaining.invoiceNotifications).toEqual([]);
+    expect(remaining.paymentNotifications).toEqual([]);
+    expect(remaining.audit).toEqual([expect.objectContaining({ action: "UAT_PURGE" })]);
+  });
+
   it("aborts atomically when an Invoice has an unsupported financial adjustment", async () => {
     const t = testConvex();
     const { owner, admin, customer } = await setupUsers(t);
