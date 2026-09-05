@@ -8,6 +8,27 @@ source: conversation
 
 # Changelog
 
+## [destructive-action-discoverability] — 2026-09-05
+
+### Changed
+
+- Kept `Hapus permanen` discoverable on Catalog detail, Batch operation/detail,
+  and Invoice operation/detail surfaces regardless of current eligibility.
+- Added protected-record explanations that do not issue a delete mutation;
+  disposable Catalog and Batch records retain the existing typed confirmation,
+  server guard, audit, and safe navigation flow.
+- Kept Invoice physical deletion unsupported. Its protected explanation names
+  retained Order, payment, Deposit, Refund, and Audit history and points to the
+  existing void lifecycle where applicable.
+
+### QA and scope
+
+- Added rendered component coverage for discoverability, protected outcomes,
+  typed confirmation, and no-mutation behavior across Catalog, Batch, and
+  Invoice states.
+- No Convex source, finance/lifecycle model, authorization, or unrelated UI
+  work was changed.
+
 ## [catalog-drag-ordering] — 2026-09-02
 
 ### Changed

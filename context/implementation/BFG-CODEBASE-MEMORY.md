@@ -1,5 +1,48 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Destructive action discoverability — 2026-09-05
+
+### Decision and boundary
+
+- Latest Admin evidence supersedes `ineligible record → hide Hapus permanen`.
+  The current invariant is `visible action → server-authoritative eligibility
+  → safe consequence`.
+- The exact UI owners are `src/components/admin-catalog-detail.tsx`,
+  `src/app/admin/batches/[batchId]/page.tsx`, and
+  `src/app/admin/invoices/[invoiceId]/page.tsx`. The shared owners remain the
+  existing `Button` danger variant, `ActionGroup`, and `ConfirmationDialog`.
+
+### Lifecycle trace
+
+- Catalog: a disposable draft with no visible Catalog items and no access
+  period opens typed `HAPUS KATALOG`, then calls `api.secretCatalogs.remove`;
+  protected status/content opens a non-mutating explanation with archive or
+  restore guidance. `convex/secretCatalogs.ts:remove` remains the final check
+  for status, Catalog items, Batch links, Orders, access period, and access
+  history, then records `catalog.deleted`.
+- Batch: a pristine editable Batch opens typed `HAPUS BATCH`, then calls
+  `removeBatch`; an archived, staged, linked, assigned, or historical Batch
+  opens a non-mutating explanation. `convex/batches.ts:remove` remains the
+  final status/link/assignment/history check and records `batch.deleted`.
+- Invoice: all current records expose the action but use a neutral protected
+  explanation. No `invoices.remove` mutation exists; the lifecycle remains
+  `draft → issued → void`, and `voidInvoice` preserves Invoice, Order,
+  InvoiceItem, payment, Deposit, Refund, and Audit history.
+
+### Regression anchors and status
+
+- Component anchors: `tests/components/admin-catalog-discoverability.test.tsx`,
+  `tests/components/admin-batch-detail.test.tsx`, and
+  `tests/components/admin-invoices.test.tsx` cover visible actions, typed
+  confirmation, protected explanation, and no mutation.
+- Server anchors remain `convex/destructive-actions.test.ts` and
+  `convex/invoices.test.ts`; no server policy source was duplicated or
+  weakened. Final changed-surface coverage is `35/35`, and the full serial
+  baseline is `87/87` files / `507/507` tests. Default parallel/5-second
+  execution still exposes existing slow-fixture timeouts outside this diff;
+  authenticated Production Admin UAT remains pending until legitimate Clerk
+  access and approved disposable fixtures are available.
+
 ## Post-diff memory — Customer mobile clearance and destructive actions — 2026-09-03
 
 - `src/components/site-shell.tsx` remains the shared Customer shell and

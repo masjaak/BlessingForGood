@@ -47,6 +47,10 @@ function releaseCatalogPointerCapture(target: HTMLButtonElement, pointerId: numb
   if (target.hasPointerCapture?.(pointerId)) target.releasePointerCapture(pointerId);
 }
 
+const catalogProtectionReason =
+  "Katalog ini tidak dapat dihapus permanen karena sudah memiliki produk, akses, pesanan, Batch, " +
+  "atau riwayat operasional yang perlu dipertahankan.";
+
 export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
   const router = useRouter();
@@ -113,6 +117,9 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const hasCatalogFilters = Boolean(catalogSearch.trim() || catalogPublisher);
   const catalogItemPositions = new Map(items.map((item, index) => [item._id, index]));
   const canReorderCatalog = !hasCatalogFilters && items.length > 1 && !pending;
+  const catalogIsDraft = catalog.status === "draft";
+  const catalogIsArchived = catalog.status === "archived";
+  const catalogMayBeDeleted = catalogIsDraft && catalogItems.length === 0 && !catalog.accessPeriodId;
 
   async function run(key: string, action: () => Promise<unknown>, success: string) {
     setPending(key);
@@ -127,6 +134,45 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     } finally {
       setPending("");
     }
+  }
+
+  function openCatalogDeleteConfirmation() {
+    if (!catalogMayBeDeleted) {
+      setConfirmAction({
+        title: "Katalog tidak dapat dihapus permanen",
+        description: catalogIsArchived
+          ? [
+              "Katalog yang diarsipkan tidak dapat dihapus permanen melalui lifecycle ini.",
+              "Produk, akses, pesanan, Batch, atau riwayat operasional yang ada tetap dipertahankan.",
+              "Katalog tetap diarsipkan; gunakan Pulihkan katalog hanya jika perlu mengelolanya kembali.",
+            ].join(" ")
+          : catalogIsDraft
+            ? [catalogProtectionReason, "Gunakan Arsipkan katalog sebagai alternatif yang aman."].join(" ")
+            : [
+                "Katalog ini belum berstatus Draf sehingga tidak dapat dihapus permanen.",
+                "Gunakan Arsipkan katalog sebagai alternatif yang aman.",
+              ].join(" "),
+        confirmLabel: "Tutup",
+        action: () => undefined,
+      });
+      return;
+    }
+    setConfirmAction({
+      title: "Hapus katalog secara permanen?",
+      description: "Katalog ini akan dihapus permanen dan tidak dapat dipulihkan.",
+      confirmLabel: "Hapus permanen",
+      confirmationPhrase: "HAPUS KATALOG",
+      danger: true,
+      action: () =>
+        void run(
+          "delete",
+          async () => {
+            await removeCatalog({ catalogId: id });
+            router.push("/admin/catalogs");
+          },
+          "Katalog dihapus permanen.",
+        ),
+    });
   }
 
   function getCatalogDropIndex(clientY: number, draggedItemId: Id<"catalogItems">) {
@@ -343,34 +389,14 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 Arsipkan katalog
               </Button>
             ) : null}
-            {catalog.status === "draft" ? (
-              <Button
-                type="button"
-                variant="danger"
-                loading={pending === "delete"}
-                onClick={() =>
-                  setConfirmAction({
-                    title: "Hapus katalog secara permanen?",
-                    description:
-                      "Tindakan ini tidak dapat dibatalkan. Hanya katalog draf yang belum memiliki produk, akses, batch, atau order yang dapat dihapus.",
-                    confirmLabel: "Hapus permanen",
-                    confirmationPhrase: "HAPUS KATALOG",
-                    danger: true,
-                    action: () =>
-                      void run(
-                        "delete",
-                        async () => {
-                          await removeCatalog({ catalogId: id });
-                          router.push("/admin/catalogs");
-                        },
-                        "Katalog dihapus permanen.",
-                      ),
-                  })
-                }
-              >
-                Hapus permanen
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              variant="danger"
+              loading={pending === "delete"}
+              onClick={openCatalogDeleteConfirmation}
+            >
+              Hapus permanen
+            </Button>
           </div>
         </form>
       </Card>

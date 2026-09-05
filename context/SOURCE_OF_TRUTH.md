@@ -1,5 +1,37 @@
 # BFG SOURCE OF TRUTH
 
+## Destructive action discoverability correction — 2026-09-05
+
+Status: `IMPLEMENTED LOCALLY; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The latest Admin evidence supersedes the former UI rule that hid `Hapus
+permanen` whenever a record was not eligible. The action is now discoverable
+on the Catalog detail, Batch operation/detail, and Invoice operation/detail
+surfaces; eligibility determines the consequence after the click.
+
+- `src/components/admin-catalog-detail.tsx` always renders the existing
+  danger action. A disposable draft opens the existing typed confirmation;
+  protected status or visible Catalog content opens a non-mutating explanation
+  with the existing archive/restore alternative. `convex/secretCatalogs.ts:remove`
+  remains the final guard for status, product, Batch, order, access-period, and
+  access-history relationships.
+- `src/app/admin/batches/[batchId]/page.tsx` always renders the existing danger
+  action on the canonical Batch operation surface. A pristine editable Batch
+  uses the existing typed confirmation; an operational or historical Batch
+  opens a non-mutating explanation with archive as the safe alternative.
+  `convex/batches.ts:remove` remains authoritative and rechecks status,
+  Catalog links, assignments, and history immediately before deletion.
+- `src/app/admin/invoices/[invoiceId]/page.tsx` always renders the existing
+  danger action. Current Invoice records have no supported physical-delete
+  mutation because Order, InvoiceItem, payment, Deposit, Refund, and Audit
+  history must be retained. The click therefore opens a neutral explanation;
+  `convex/invoices.ts:voidInvoice` remains the canonical guarded lifecycle
+  alternative where available.
+
+The UI checks are advisory only. No Catalog/Batch remove guard, Invoice
+lifecycle, financial relation, audit behavior, or authorization boundary was
+weakened or rewritten.
+
 ## Customer mobile clearance and destructive-action closure — 2026-09-03
 
 This is a scoped maintenance closure. It keeps the existing Customer shell,

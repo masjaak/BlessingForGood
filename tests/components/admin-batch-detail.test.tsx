@@ -202,7 +202,7 @@ describe("Admin Batch Detail rendered workflow", () => {
 
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByRole("heading", { name: "Hapus batch secara permanen?" })).toBeTruthy();
-    expect(within(dialog).getByText(/tanpa tautan, assignment, atau riwayat/i)).toBeTruthy();
+    expect(within(dialog).getByText(/belum memiliki hubungan atau riwayat operasional/i)).toBeTruthy();
     const confirm = within(dialog).getByRole("button", { name: "Hapus permanen" });
     expect(confirm).toHaveProperty("disabled", true);
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Ketik HAPUS BATCH" }), {
@@ -213,15 +213,41 @@ describe("Admin Batch Detail rendered workflow", () => {
     await waitFor(() => expect(removeBatch).toHaveBeenCalledWith("batch-1"));
   });
 
-  it("keeps physical deletion unavailable once the Batch has entered operations", () => {
-    setup({
+  it("keeps permanent deletion visible and explains why an archived Batch is protected", () => {
+    const { removeBatch } = setup({
       ...batch,
+      isArchived: true,
       history: [{ toStage: "po_closed", at: "2026-08-27T00:00:00.000Z" }] as never,
     });
 
     render(<AdminBatchDetailPage />);
 
-    expect(screen.queryByRole("button", { name: "Hapus permanen" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Arsipkan batch" })).toBeTruthy();
+    const deleteButton = screen.getByRole("button", { name: "Hapus permanen" });
+    expect(deleteButton.className).toContain("button-danger");
+    fireEvent.click(deleteButton);
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Batch tidak dapat dihapus permanen" })).toBeTruthy();
+    expect(within(dialog).getByText(/hubungan atau riwayat operasional/i)).toBeTruthy();
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
+    expect(within(dialog).getByRole("button", { name: "Tutup" })).toBeTruthy();
+    expect(removeBatch).not.toHaveBeenCalled();
+  });
+
+  it("keeps the permanent action eligible on a pristine editable Batch", () => {
+    const { removeBatch } = setup();
+
+    render(<AdminBatchDetailPage />);
+
+    expect(screen.getByRole("button", { name: "Hapus permanen" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Hapus permanen" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("textbox", { name: "Ketik HAPUS BATCH" })).toBeTruthy();
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Ketik HAPUS BATCH" }), {
+      target: { value: "HAPUS BATCH" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hapus permanen" }));
+
+    return waitFor(() => expect(removeBatch).toHaveBeenCalledWith("batch-1"));
   });
 });

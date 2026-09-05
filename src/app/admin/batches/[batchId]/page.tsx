@@ -83,7 +83,7 @@ function AdminBatchDetail() {
   const [pendingStage, setPendingStage] = useState<(typeof shipmentStages)[number] | null>(null);
   const [confirmLock, setConfirmLock] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<"eligible" | "protected" | null>(null);
   const router = useRouter();
   if (dataSource !== "convex") return <div className="state-panel">Data batch belum tersedia.</div>;
   if (currentBatch === undefined || currentBatchUnassigned === undefined) {
@@ -120,6 +120,12 @@ function AdminBatchDetail() {
     (total, link) => total + link.eligibleOrderItemCount,
     0,
   );
+  const batchMayBeDeleted =
+    !currentBatch.isArchived &&
+    !currentBatch.currentShipmentStage &&
+    !currentBatch.catalogLinks.length &&
+    !currentBatch.assignmentCount &&
+    !currentBatch.history.length;
   function movableBatches(catalogId: string) {
     return (batchList?.page || []).filter(
       (batch) =>
@@ -292,21 +298,15 @@ function AdminBatchDetail() {
                 >
                   Arsipkan batch
                 </Button>
-                {!currentBatch.isArchived &&
-                !currentBatch.currentShipmentStage &&
-                !currentBatch.catalogLinks.length &&
-                !currentBatch.assignmentCount &&
-                !currentBatch.history.length ? (
-                  <Button
-                    type="button"
-                    variant="danger"
-                    loading={pendingAction === "delete"}
-                    loadingLabel="Menghapus…"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    Hapus permanen
-                  </Button>
-                ) : null}
+                <Button
+                  type="button"
+                  variant="danger"
+                  loading={pendingAction === "delete"}
+                  loadingLabel="Menghapus…"
+                  onClick={() => setConfirmDelete(batchMayBeDeleted ? "eligible" : "protected")}
+                >
+                  Hapus permanen
+                </Button>
               </div>
               <p className="subtle action-support">
                 {rosterLocked
@@ -755,15 +755,18 @@ function AdminBatchDetail() {
             }}
           />
           <ConfirmationDialog
-            open={confirmDelete}
+            open={confirmDelete === "eligible"}
             title="Hapus batch secara permanen?"
-            description="Tindakan ini tidak dapat dibatalkan. Hanya Batch draf yang benar-benar kosong tanpa tautan, assignment, atau riwayat yang dapat dihapus."
+            description={[
+              "Batch ini akan dihapus permanen dan tidak dapat dipulihkan.",
+              "Server tetap memeriksa bahwa Batch belum memiliki hubungan atau riwayat operasional.",
+            ].join(" ")}
             confirmLabel="Hapus permanen"
             confirmationPhrase="HAPUS BATCH"
             danger
-            onCancel={() => setConfirmDelete(false)}
+            onCancel={() => setConfirmDelete(null)}
             onConfirm={() => {
-              setConfirmDelete(false);
+              setConfirmDelete(null);
               void run(
                 async () => {
                   await removeBatch(batchId);
@@ -773,6 +776,17 @@ function AdminBatchDetail() {
                 "delete",
               );
             }}
+          />
+          <ConfirmationDialog
+            open={confirmDelete === "protected"}
+            title="Batch tidak dapat dihapus permanen"
+            description={[
+              "Batch ini tidak dapat dihapus permanen karena sudah memiliki hubungan atau riwayat operasional.",
+              "Gunakan Arsipkan batch; tautan, assignment, dan riwayat tetap disimpan.",
+            ].join(" ")}
+            confirmLabel="Tutup"
+            onCancel={() => setConfirmDelete(null)}
+            onConfirm={() => setConfirmDelete(null)}
           />
         </div>
       </div>

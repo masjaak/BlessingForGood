@@ -1,5 +1,24 @@
 # Decisions
 
+## Destructive action discoverability — 2026-09-05
+
+Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- `Hapus permanen` must remain discoverable on Catalog detail, Batch
+  operation/detail, and Invoice operation/detail surfaces. The old rule
+  “ineligible → hide action” is superseded.
+- Catalog and Batch retain their existing typed confirmation, server-side
+  eligibility recheck, physical deletion, audit, and safe-navigation behavior
+  only for disposable records. Protected records use a non-mutating
+  explanation and the existing archive/restore alternative where applicable.
+- Invoice has no physical-delete path in the current model. Every current
+  Invoice click explains retention of Order, InvoiceItem, payment, Deposit,
+  Refund, and Audit history; `voidInvoice` remains the canonical lifecycle
+  alternative and its settlement guards are unchanged.
+- This is an Admin discoverability correction only. It does not rewrite
+  Catalog, Batch, Invoice, Payment, Deposit, Refund, Order, Audit, Auth, or
+  RBAC behavior.
+
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

@@ -173,15 +173,31 @@ describe("Admin invoice issue entry", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Invoice dibatalkan."));
   });
 
-  it("keeps physical Invoice deletion unavailable and exposes the canonical void path", () => {
-    setup({ ...invoice, status: "draft" });
+  it.each([
+    ["draft", { ...invoice, status: "draft" }],
+    ["issued", invoice],
+    [
+      "partially paid",
+      { ...invoice, allocatedDepositAmount: 50000, outstandingAmount: 50000, paymentStatus: "partially_paid" },
+    ],
+    ["cancelled", { ...invoice, status: "void" }],
+  ] as const)(
+    "exposes protected permanent deletion on the canonical detail surface for %s invoices",
+    (_label, current) => {
+      const { voidInvoice } = setup(current);
 
-    render(<AdminInvoiceDetailPage />);
+      render(<AdminInvoiceDetailPage />);
 
-    expect(screen.queryByRole("button", { name: "Hapus permanen" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Terbitkan invoice" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Batalkan invoice" })).toBeTruthy();
-  });
+      fireEvent.click(screen.getByRole("button", { name: "Hapus permanen" }));
+      const dialog = screen.getByRole("dialog");
+      expect(within(dialog).getByRole("heading", { name: "Invoice tidak dapat dihapus permanen" })).toBeTruthy();
+      expect(within(dialog).getByText(/riwayat pesanan atau keuangan/i)).toBeTruthy();
+      expect(within(dialog).getByText(/pembayaran, deposit, pengembalian, dan audit/i)).toBeTruthy();
+      expect(within(dialog).queryByRole("textbox")).toBeNull();
+      expect(within(dialog).getByRole("button", { name: "Tutup" })).toBeTruthy();
+      expect(voidInvoice).not.toHaveBeenCalled();
+    },
+  );
 
   it("keeps void unavailable while settlement history still requires resolution", () => {
     setup({ ...invoice, allocatedDepositAmount: 50000, paymentStatus: "partially_paid" });

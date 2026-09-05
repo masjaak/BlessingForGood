@@ -64,6 +64,7 @@ function AdminInvoiceDetail() {
   } = useOperations();
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [showDeleteExplanation, setShowDeleteExplanation] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     description: string;
@@ -212,6 +213,9 @@ function AdminInvoiceDetail() {
                     Batalkan invoice
                   </Button>
                 ) : null}
+                <Button type="button" variant="danger" onClick={() => setShowDeleteExplanation(true)}>
+                  Hapus permanen
+                </Button>
               </ActionGroup>
               {voidBlockReason ? <span className="subtle action-support">{voidBlockReason}</span> : null}
             </div>
@@ -358,6 +362,20 @@ function AdminInvoiceDetail() {
               <p className="subtle">Belum ada transaksi deposit yang tercatat.</p>
             )}
           </Card>
+          <ConfirmationDialog
+            open={showDeleteExplanation}
+            title="Invoice tidak dapat dihapus permanen"
+            description={[
+              "Invoice ini tidak dapat dihapus permanen karena sudah menjadi bagian dari riwayat",
+              "pesanan atau keuangan.",
+              "Riwayat invoice, pembayaran, deposit, pengembalian, dan audit perlu tetap disimpan.",
+              "Gunakan Batalkan invoice sebagai alternatif bila tersedia; invoice yang sudah dibatalkan tetap",
+              "dipertahankan sebagai bukti riwayat.",
+            ].join(" ")}
+            confirmLabel="Tutup"
+            onCancel={() => setShowDeleteExplanation(false)}
+            onConfirm={() => setShowDeleteExplanation(false)}
+          />
           <ConfirmationDialog
             open={confirmAction !== null}
             title={confirmAction?.title || "Konfirmasi operasi"}

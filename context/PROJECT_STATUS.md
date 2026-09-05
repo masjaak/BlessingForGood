@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Destructive action discoverability correction — 2026-09-05
+
+Status: `ENGINEERING GREEN; DEFAULT VITEST TIMEOUT CAVEAT; AUTHENTICATED PRODUCTION UAT PENDING`
+
+`Hapus permanen` is now visible on all three canonical Admin detail/operation
+surfaces: Catalog detail, Batch detail, and Invoice detail. Catalog and Batch
+retain typed confirmation plus the existing server-authoritative hard-delete
+guards for genuinely disposable records; protected records explain the block
+without issuing a delete mutation. Invoice keeps physical deletion
+unsupported and explains financial/history retention, with the existing void
+path unchanged. Focused discoverability coverage now includes disposable and
+protected Catalog/Batch states plus draft, issued, partially paid, and void
+Invoice states. No Convex source, financial model, lifecycle, or unrelated UI
+was changed.
+
+Final changed-surface coverage is `35/35`; format, lint, TypeScript, build,
+Convex check, diff check, and the server guard/lifecycle anchors pass. The
+full suite reaches `87/87` files and `507/507` tests in its serial baseline;
+the default parallel/5-second runner still times out on unrelated existing
+slow fixtures, which pass when isolated or given their required budget.
+
+Authenticated Production Admin UAT remains pending because this run has no
+legitimate Clerk Admin session or approved disposable Production Catalog/Batch
+fixture. No destructive Production action is being simulated or invented.
+
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

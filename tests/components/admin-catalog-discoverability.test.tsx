@@ -165,7 +165,9 @@ describe("Secret Catalog operational discoverability", () => {
     expect(document.querySelector(".catalog-settings-grid.form-grid-wide")).toBeTruthy();
   });
 
-  it("exposes permanent deletion only through the typed destructive confirmation", () => {
+  it("exposes permanent deletion only through the typed destructive confirmation", async () => {
+    const remove = vi.fn().mockResolvedValue({ removed: true });
+    vi.mocked(useMutation).mockReturnValue(remove as never);
     const catalog = {
       id: "catalog-1",
       name: "Draft catalog",
@@ -189,6 +191,69 @@ describe("Secret Catalog operational discoverability", () => {
     expect(within(dialog).getByRole("heading", { name: "Hapus katalog secara permanen?" })).toBeTruthy();
     expect(within(dialog).getByRole("button", { name: "Hapus permanen" })).toHaveProperty("disabled", true);
     expect(within(dialog).getByRole("textbox", { name: "Ketik HAPUS KATALOG" })).toBeTruthy();
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Ketik HAPUS KATALOG" }), {
+      target: { value: "HAPUS KATALOG" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hapus permanen" }));
+
+    await waitFor(() => expect(remove).toHaveBeenCalledWith({ catalogId: "catalog-1" }));
+  });
+
+  it("keeps permanent deletion visible and explains why an archived catalog is protected", () => {
+    const remove = vi.fn();
+    vi.mocked(useMutation).mockReturnValue(remove as never);
+    const catalog = {
+      id: "catalog-archived",
+      name: "Archived catalog",
+      status: "archived",
+      description: null,
+      closesAt: null,
+    };
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => {
+      const result = queryIndex++ % 3 === 0 ? catalog : [];
+      return result as never;
+    });
+
+    render(<AdminCatalogDetail catalogId="catalog-archived" />);
+
+    const deleteButton = screen.getByRole("button", { name: "Hapus permanen" });
+    expect(deleteButton.className).toContain("button-danger");
+    fireEvent.click(deleteButton);
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Katalog tidak dapat dihapus permanen" })).toBeTruthy();
+    expect(within(dialog).getByText(/produk, akses, pesanan, Batch, atau riwayat operasional/i)).toBeTruthy();
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
+    expect(within(dialog).getByRole("button", { name: "Tutup" })).toBeTruthy();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("keeps permanent deletion visible and offers archive for an active catalog", () => {
+    const remove = vi.fn();
+    vi.mocked(useMutation).mockReturnValue(remove as never);
+    const catalog = {
+      id: "catalog-open",
+      name: "Open catalog",
+      status: "open",
+      description: null,
+      closesAt: null,
+    };
+    let queryIndex = 0;
+    vi.mocked(useQuery).mockImplementation(() => {
+      const result = queryIndex++ % 3 === 0 ? catalog : [];
+      return result as never;
+    });
+
+    render(<AdminCatalogDetail catalogId="catalog-open" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Hapus permanen" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Katalog tidak dapat dihapus permanen" })).toBeTruthy();
+    expect(within(dialog).getByText(/Gunakan Arsipkan katalog/i)).toBeTruthy();
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
+    expect(remove).not.toHaveBeenCalled();
   });
 
   it("keeps Buat kode akses actionable only after a catalog exists", () => {
