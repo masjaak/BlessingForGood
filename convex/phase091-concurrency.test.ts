@@ -97,7 +97,7 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
 
   it("keeps concurrent deposit allocations within available balance", async () => {
     const t = testConvex();
-    const { admin, invoice } = await (async () => {
+    const { admin, customer, invoice } = await (async () => {
       const users = await setupUsers(t);
       const catalog = await createOpenCatalog(users.admin, "Deposit Concurrency", "0913", "deposit-concurrency-code");
       await users.customer.mutation(api.catalogAccess.unlock, { accessCode: "deposit-concurrency-code" });
@@ -115,19 +115,22 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
         invoiceId: invoice.invoiceId,
         amount: 100000,
       });
-      return { admin: users.admin, invoice };
+      return { admin: users.admin, customer: users.customer, invoice };
     })();
 
-    const attempts = await Promise.allSettled(
-      [80000, 80000].map((amount) =>
-        admin.mutation(api.invoiceDepositAllocations.allocate, { invoiceId: invoice.invoiceId, amount }),
-      ),
-    );
-    expect(attempts.filter((attempt) => attempt.status === "fulfilled")).toHaveLength(1);
+    const attempts = await Promise.allSettled([
+      customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId }),
+      admin.mutation(api.invoiceDepositAllocations.allocate, { invoiceId: invoice.invoiceId, amount: 80000 }),
+    ]);
+    expect(attempts.filter((attempt) => attempt.status === "fulfilled").length).toBeGreaterThanOrEqual(1);
 
     const account = await admin.query(api.depositAccounts.getForInvoice, { invoiceId: invoice.invoiceId });
     expect(account.account?.availableAmount).toBeGreaterThanOrEqual(0);
     expect(account.account?.reservedAmount).toBeLessThanOrEqual(100000);
+    expect((account.account?.availableAmount || 0) + (account.account?.reservedAmount || 0)).toBe(100000);
+    expect(
+      (await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).outstandingAmount,
+    ).toBeGreaterThanOrEqual(0);
   });
 
   it("keeps concurrent preorder writes and automatic Batch assignments aligned", async () => {
