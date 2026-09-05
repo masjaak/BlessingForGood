@@ -85,6 +85,16 @@ export default defineConfig({
       grep: /@activity/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
     },
+    {
+      name: "native-control-webkit",
+      grep: /@native-control/,
+      use: { ...devices["Desktop Safari"], viewport: { width: 390, height: 844 } },
+    },
+    {
+      name: "native-control-chromium",
+      grep: /@native-control/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
+    },
   ],
   webServer: process.env.BFG_E2E_BASE_URL
     ? undefined

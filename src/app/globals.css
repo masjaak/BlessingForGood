@@ -5375,6 +5375,13 @@ p {
   line-height: 20px;
 }
 
+.admin-shell .input[type="date"],
+.admin-shell .input[type="month"],
+.admin-shell .input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .admin-shell .form-actions {
   align-items: end;
 }
