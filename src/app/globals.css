@@ -1207,6 +1207,77 @@ p {
 .bfg-confirm-dialog-confirmation {
   margin-bottom: var(--space-lg);
 }
+.bfg-confirm-dialog-checkbox {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 16px 0;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.bfg-confirm-dialog-checkbox input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+.bfg-uat-purge-dialog {
+  width: min(calc(100vw - 32px), 680px);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+.bfg-uat-impact {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 6px;
+}
+.bfg-uat-identity {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.bfg-uat-identity strong {
+  color: var(--danger);
+  letter-spacing: 0.06em;
+}
+.bfg-uat-identity span:last-child {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.bfg-uat-impact-section {
+  min-width: 0;
+}
+.bfg-uat-impact-section h3 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+.bfg-uat-impact-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.bfg-uat-impact-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.bfg-uat-impact-list li span:first-child {
+  overflow-wrap: anywhere;
+}
+.bfg-uat-impact-list li span:last-child {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
 .success-card {
   position: relative;
   min-height: 180px;

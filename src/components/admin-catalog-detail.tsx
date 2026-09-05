@@ -22,6 +22,8 @@ import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { matchesAdminCatalogRecord } from "@/lib/catalog-discovery";
 import { calendarDateInputValue, calendarDateToEndTimestamp } from "@/lib/calendar-date";
+import { useProduct } from "@/domain/prototype/store";
+import { UatPurgeDialog } from "@/components/uat-purge-dialog";
 
 type CatalogDragState = {
   itemId: Id<"catalogItems">;
@@ -54,6 +56,7 @@ const catalogProtectionReason =
 export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
   const router = useRouter();
+  const { sessionRole } = useProduct();
   const catalog = useQuery(api.secretCatalogs.getForAdmin, { catalogId: id });
   const items = useQuery(api.catalogItems.listForCatalog, { catalogId: id });
   const assignable = useQuery(api.catalogItems.listAssignable, { catalogId: id });
@@ -67,6 +70,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const add = useMutation(api.catalogItems.add);
   const remove = useMutation(api.catalogItems.remove);
   const move = useMutation(api.catalogItems.move);
+  const purgeCatalogUat = useMutation(api.uatCleanup.purgeCatalog);
   const [name, setName] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [closesAt, setClosesAt] = useState<string | null>(null);
@@ -78,6 +82,8 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [pending, setPending] = useState("");
+  const [uatPurgeOpen, setUatPurgeOpen] = useState(false);
+  const [uatPurgeError, setUatPurgeError] = useState("");
   const catalogItemRefs = useRef(new Map<string, HTMLDivElement>());
   const catalogPointerRef = useRef<CatalogPointerState | null>(null);
   const [catalogDragState, setCatalogDragState] = useState<CatalogDragState | null>(null);
@@ -136,7 +142,29 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     }
   }
 
+  async function confirmCatalogUatPurge() {
+    setPending("uat-delete");
+    setUatPurgeError("");
+    try {
+      await purgeCatalogUat({
+        catalogId: id,
+        confirmedUatCleanup: true,
+        confirmationKeyword: "HAPUS KATALOG",
+      });
+      router.push("/admin/catalogs");
+    } catch (reason) {
+      setUatPurgeError(productErrorMessage(reason, "Data UAT belum dapat dihapus."));
+    } finally {
+      setPending("");
+    }
+  }
+
   function openCatalogDeleteConfirmation() {
+    if (sessionRole === "owner") {
+      setUatPurgeError("");
+      setUatPurgeOpen(true);
+      return;
+    }
     if (!catalogMayBeDeleted) {
       setConfirmAction({
         title: "Katalog tidak dapat dihapus permanen",
@@ -392,7 +420,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             <Button
               type="button"
               variant="danger"
-              loading={pending === "delete"}
+              loading={pending === "delete" || pending === "uat-delete"}
               onClick={openCatalogDeleteConfirmation}
             >
               Hapus permanen
@@ -677,6 +705,34 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           action?.();
         }}
       />
+      {uatPurgeOpen ? (
+        <CatalogUatPurgeDialog
+          catalogId={id}
+          loading={pending === "uat-delete"}
+          error={uatPurgeError}
+          onCancel={() => setUatPurgeOpen(false)}
+          onConfirm={() => void confirmCatalogUatPurge()}
+        />
+      ) : null}
     </AdminOperationalPage>
+  );
+}
+
+function CatalogUatPurgeDialog({
+  catalogId,
+  loading,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  catalogId: Id<"secretCatalogs">;
+  loading: boolean;
+  error: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const impact = useQuery(api.uatCleanup.getCatalogImpact, { catalogId });
+  return (
+    <UatPurgeDialog open impact={impact} loading={loading} error={error} onCancel={onCancel} onConfirm={onConfirm} />
   );
 }

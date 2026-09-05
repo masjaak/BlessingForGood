@@ -1,8 +1,11 @@
 "use client";
 
+import { useMutation, useQuery } from "convex/react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { api } from "../../../../../convex/_generated/api";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 import { BFGSelect } from "@/components/bfg-select";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
@@ -34,6 +37,7 @@ import { SiteShell } from "@/components/site-shell";
 import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
 import { formatGbpMinor } from "@/lib/gbp";
 import { calendarDateInputValue, calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
+import { UatPurgeDialog } from "@/components/uat-purge-dialog";
 
 function formatCatalogDeadline(value: number | null | undefined): string {
   return value === null || value === undefined ? "Belum ditentukan" : formatBfgCalendarDate(value);
@@ -58,7 +62,7 @@ function downloadPurchaseSummary(batch: BatchDetail) {
 function AdminBatchDetail() {
   const params = useParams<{ batchId: string }>();
   const batchId = String(params.batchId);
-  const { dataSource, state } = useProduct();
+  const { dataSource, state, sessionRole } = useProduct();
   const {
     batchList,
     currentBatch,
@@ -84,6 +88,13 @@ function AdminBatchDetail() {
   const [confirmLock, setConfirmLock] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<"eligible" | "protected" | null>(null);
+  const [uatPurgeOpen, setUatPurgeOpen] = useState(false);
+  const [uatPurgeError, setUatPurgeError] = useState("");
+  const purgeBatchUat = useMutation(api.uatCleanup.purgeBatch);
+  const uatImpact = useQuery(
+    api.uatCleanup.getBatchImpact,
+    uatPurgeOpen && sessionRole === "owner" ? { batchId: batchId as Id<"batches"> } : "skip",
+  );
   const router = useRouter();
   if (dataSource !== "convex") return <div className="state-panel">Data batch belum tersedia.</div>;
   if (currentBatch === undefined || currentBatchUnassigned === undefined) {
@@ -146,6 +157,23 @@ function AdminBatchDetail() {
     } catch (reason) {
       setMessageIsError(true);
       setMessage(productErrorMessage(reason, "Operasi Batch belum berhasil. Silakan coba lagi."));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function confirmBatchUatPurge() {
+    setPendingAction("uat-delete");
+    setUatPurgeError("");
+    try {
+      await purgeBatchUat({
+        batchId: batchId as Id<"batches">,
+        confirmedUatCleanup: true,
+        confirmationKeyword: "HAPUS BATCH",
+      });
+      router.push("/admin/batches");
+    } catch (reason) {
+      setUatPurgeError(productErrorMessage(reason, "Data UAT belum dapat dihapus."));
     } finally {
       setPendingAction(null);
     }
@@ -301,9 +329,16 @@ function AdminBatchDetail() {
                 <Button
                   type="button"
                   variant="danger"
-                  loading={pendingAction === "delete"}
+                  loading={pendingAction === "delete" || pendingAction === "uat-delete"}
                   loadingLabel="Menghapus…"
-                  onClick={() => setConfirmDelete(batchMayBeDeleted ? "eligible" : "protected")}
+                  onClick={() => {
+                    if (sessionRole === "owner") {
+                      setUatPurgeError("");
+                      setUatPurgeOpen(true);
+                    } else {
+                      setConfirmDelete(batchMayBeDeleted ? "eligible" : "protected");
+                    }
+                  }}
                 >
                   Hapus permanen
                 </Button>
@@ -787,6 +822,14 @@ function AdminBatchDetail() {
             confirmLabel="Tutup"
             onCancel={() => setConfirmDelete(null)}
             onConfirm={() => setConfirmDelete(null)}
+          />
+          <UatPurgeDialog
+            open={uatPurgeOpen}
+            impact={uatImpact}
+            loading={pendingAction === "uat-delete"}
+            error={uatPurgeError}
+            onCancel={() => setUatPurgeOpen(false)}
+            onConfirm={() => void confirmBatchUatPurge()}
           />
         </div>
       </div>

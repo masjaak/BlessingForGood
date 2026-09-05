@@ -1,7 +1,11 @@
 "use client";
 
+import { useMutation, useQuery } from "convex/react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { api } from "../../../../../convex/_generated/api";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import {
@@ -26,6 +30,7 @@ import { formatIdr } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
+import { UatPurgeDialog } from "@/components/uat-purge-dialog";
 
 export function invoiceVoidBlockReason({
   allocatedDepositAmount,
@@ -48,7 +53,8 @@ export function invoiceVoidBlockReason({
 function AdminInvoiceDetail() {
   const params = useParams<{ invoiceId: string }>();
   const invoiceId = String(params.invoiceId);
-  const { dataSource } = useProduct();
+  const router = useRouter();
+  const { dataSource, sessionRole } = useProduct();
   const {
     currentAdminInvoice,
     adminAccount,
@@ -65,6 +71,13 @@ function AdminInvoiceDetail() {
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [showDeleteExplanation, setShowDeleteExplanation] = useState(false);
+  const [uatPurgeOpen, setUatPurgeOpen] = useState(false);
+  const [uatPurgeError, setUatPurgeError] = useState("");
+  const purgeInvoiceUat = useMutation(api.uatCleanup.purgeInvoice);
+  const uatImpact = useQuery(
+    api.uatCleanup.getInvoiceImpact,
+    uatPurgeOpen && sessionRole === "owner" ? { invoiceId: invoiceId as Id<"invoices"> } : "skip",
+  );
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     description: string;
@@ -104,6 +117,23 @@ function AdminInvoiceDetail() {
       setMessage(success);
     } catch (reason) {
       setMessage(productErrorMessage(reason, "Operasi invoice tidak dapat diselesaikan."));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function confirmInvoiceUatPurge() {
+    setPendingAction("uat-delete");
+    setUatPurgeError("");
+    try {
+      await purgeInvoiceUat({
+        invoiceId: invoiceId as Id<"invoices">,
+        confirmedUatCleanup: true,
+        confirmationKeyword: "HAPUS INVOICE",
+      });
+      router.push("/admin/invoices");
+    } catch (reason) {
+      setUatPurgeError(productErrorMessage(reason, "Data UAT belum dapat dihapus."));
     } finally {
       setPendingAction(null);
     }
@@ -213,7 +243,19 @@ function AdminInvoiceDetail() {
                     Batalkan invoice
                   </Button>
                 ) : null}
-                <Button type="button" variant="danger" onClick={() => setShowDeleteExplanation(true)}>
+                <Button
+                  type="button"
+                  variant="danger"
+                  loading={pendingAction === "uat-delete"}
+                  onClick={() => {
+                    if (sessionRole === "owner") {
+                      setUatPurgeError("");
+                      setUatPurgeOpen(true);
+                    } else {
+                      setShowDeleteExplanation(true);
+                    }
+                  }}
+                >
                   Hapus permanen
                 </Button>
               </ActionGroup>
@@ -388,6 +430,14 @@ function AdminInvoiceDetail() {
               setConfirmAction(null);
               action?.();
             }}
+          />
+          <UatPurgeDialog
+            open={uatPurgeOpen}
+            impact={uatImpact}
+            loading={pendingAction === "uat-delete"}
+            error={uatPurgeError}
+            onCancel={() => setUatPurgeOpen(false)}
+            onConfirm={() => void confirmInvoiceUatPurge()}
           />
         </div>
       </div>

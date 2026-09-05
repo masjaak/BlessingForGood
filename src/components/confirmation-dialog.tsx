@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ActionGroup, Button } from "./ui";
 
 export function ConfirmationDialog({
@@ -11,6 +11,11 @@ export function ConfirmationDialog({
   cancelLabel = "Batal",
   danger = false,
   confirmationPhrase,
+  checkboxLabel,
+  checkboxRequired = false,
+  disabled = false,
+  className,
+  children,
   onConfirm,
   onCancel,
 }: {
@@ -21,6 +26,11 @@ export function ConfirmationDialog({
   cancelLabel?: string;
   danger?: boolean;
   confirmationPhrase?: string;
+  checkboxLabel?: string;
+  checkboxRequired?: boolean;
+  disabled?: boolean;
+  className?: string;
+  children?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -28,18 +38,22 @@ export function ConfirmationDialog({
   const titleId = useId();
   const descriptionId = useId();
   const confirmationSession = `${open}:${title}:${confirmationPhrase || ""}`;
-  const [confirmationState, setConfirmationState] = useState({ session: "", value: "" });
+  const [confirmationState, setConfirmationState] = useState({ session: "", value: "", checked: false });
   useEffect(() => {
     const dialog = dialogRef.current;
     if (open && dialog && !dialog.open) dialog.showModal();
   }, [open]);
   const confirmationValue = confirmationState.session === confirmationSession ? confirmationState.value : "";
-  const canConfirm = !confirmationPhrase || confirmationValue === confirmationPhrase;
+  const confirmationChecked = confirmationState.session === confirmationSession && confirmationState.checked;
+  const canConfirm =
+    !disabled &&
+    (!confirmationPhrase || confirmationValue === confirmationPhrase) &&
+    (!checkboxRequired || confirmationChecked);
   if (!open) return null;
   return (
     <dialog
       ref={dialogRef}
-      className="bfg-confirm-dialog"
+      className={`bfg-confirm-dialog${className ? ` ${className}` : ""}`}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
       onCancel={(event) => {
@@ -50,6 +64,23 @@ export function ConfirmationDialog({
     >
       <h2 id={titleId}>{title}</h2>
       <p id={descriptionId}>{description}</p>
+      {children}
+      {checkboxLabel ? (
+        <label className="checkbox-row bfg-confirm-dialog-checkbox">
+          <input
+            type="checkbox"
+            checked={confirmationChecked}
+            onChange={(event) =>
+              setConfirmationState({
+                session: confirmationSession,
+                value: confirmationValue,
+                checked: event.target.checked,
+              })
+            }
+          />
+          <span>{checkboxLabel}</span>
+        </label>
+      ) : null}
       {confirmationPhrase ? (
         <label className="field bfg-confirm-dialog-confirmation">
           <span className="field-label">Ketik {confirmationPhrase} untuk melanjutkan.</span>
@@ -57,7 +88,13 @@ export function ConfirmationDialog({
             className="input"
             type="text"
             value={confirmationValue}
-            onChange={(event) => setConfirmationState({ session: confirmationSession, value: event.target.value })}
+            onChange={(event) =>
+              setConfirmationState({
+                session: confirmationSession,
+                value: event.target.value,
+                checked: confirmationChecked,
+              })
+            }
             autoComplete="off"
             autoFocus
             aria-label={`Ketik ${confirmationPhrase}`}

@@ -1,8 +1,49 @@
 # BFG SOURCE OF TRUTH
 
-## Destructive action discoverability correction — 2026-09-05
+## Owner-only UAT permanent purge — 2026-09-05
 
 Status: `IMPLEMENTED LOCALLY; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+This decision supersedes the prior destructive-action rule for one narrow
+case: an active BFG Owner may explicitly assert that a Catalog, Batch, or
+Invoice is dummy/UAT data and permanently purge it after a server-authoritative
+impact preview. Archive, Cancel, and Void remain the normal lifecycle for real
+Production history.
+
+- `convex/uatCleanup.ts` is the only Owner-only UAT cleanup boundary. Its
+  impact queries re-trace current state, and its mutations re-trace again
+  immediately before one atomic server-side cleanup. The client never sends a
+  child deletion plan.
+- Every purge requires the Owner role, `confirmedUatCleanup=true`, and the
+  exact entity keyword: `HAPUS KATALOG`, `HAPUS BATCH`, or `HAPUS INVOICE`.
+  The Owner dialog also requires the explicit Indonesian UAT checkbox. Admin
+  and Customer roles cannot execute or preview this data.
+- Catalog cleanup deletes Catalog-owned items, grants, access records, and
+  target-owned derived assignments; it detaches Catalog links from Orders and
+  Batch while preserving Book Master, Customer, Order, and Batch roots. A
+  shared access period is re-anchored to a surviving Catalog.
+- Batch cleanup deletes the Batch root, roster/assignment rows, shipment
+  history, and Batch notifications; it detaches Catalog links and Invoice
+  `batchId` references while preserving Catalog, Order, Customer, Invoice,
+  Payment, Deposit, Refund, and Book Master roots.
+- Invoice cleanup traces InvoiceItems, Payment confirmations/proofs, Deposit
+  allocations and ledger chains, Refund obligations/payouts, top-ups, and
+  notifications. It reconciles the Customer deposit projection from the
+  remaining ledger, preserves Order/Customer/Book roots, and deletes the
+  Invoice last. Exception-linked or otherwise unknown financial relations
+  return `UAT_PURGE_UNSAFE_RELATION` and roll back without partial deletion.
+- Each successful purge retains one minimal `UAT_PURGE` audit event with the
+  deleted entity reference, Owner actor, timestamp, and impact counts. The
+  operational root is physically absent from active, archived, search, and
+  detail projections; no archive tombstone is used as success.
+- Focused harness coverage lives in `convex/uatCleanup.test.ts` and the
+  checkbox/typed-confirmation contract in
+  `tests/components/uat-purge-dialog.test.tsx`. No canonical Production dummy
+  IDs were supplied in this run, so no Production record was purged.
+
+## Destructive action discoverability correction — 2026-09-05
+
+Status: `HISTORICAL NORMAL-LIFECYCLE BASELINE; UAT PURGE RULE ABOVE SUPERSEDES THIS CASE`
 
 The latest Admin evidence supersedes the former UI rule that hid `Hapus
 permanen` whenever a record was not eligible. The action is now discoverable
@@ -12,20 +53,20 @@ surfaces; eligibility determines the consequence after the click.
 - `src/components/admin-catalog-detail.tsx` always renders the existing
   danger action. A disposable draft opens the existing typed confirmation;
   protected status or visible Catalog content opens a non-mutating explanation
-  with the existing archive/restore alternative. `convex/secretCatalogs.ts:remove`
-  remains the final guard for status, product, Batch, order, access-period, and
-  access-history relationships.
+  with the existing archive/restore alternative for Admins; Owners enter the
+  separate UAT purge contract above. `convex/secretCatalogs.ts:remove` remains
+  the normal lifecycle guard.
 - `src/app/admin/batches/[batchId]/page.tsx` always renders the existing danger
   action on the canonical Batch operation surface. A pristine editable Batch
   uses the existing typed confirmation; an operational or historical Batch
   opens a non-mutating explanation with archive as the safe alternative.
-  `convex/batches.ts:remove` remains authoritative and rechecks status,
-  Catalog links, assignments, and history immediately before deletion.
+  `convex/batches.ts:remove` remains authoritative for normal lifecycle
+  deletion; Owners enter the separate UAT purge contract above.
 - `src/app/admin/invoices/[invoiceId]/page.tsx` always renders the existing
-  danger action. Current Invoice records have no supported physical-delete
+  danger action. Normal Invoice records have no general physical-delete
   mutation because Order, InvoiceItem, payment, Deposit, Refund, and Audit
-  history must be retained. The click therefore opens a neutral explanation;
-  `convex/invoices.ts:voidInvoice` remains the canonical guarded lifecycle
+  history must be retained. Owners enter the explicit UAT purge contract;
+  `convex/invoices.ts:voidInvoice` remains the canonical normal lifecycle
   alternative where available.
 
 The UI checks are advisory only. No Catalog/Batch remove guard, Invoice

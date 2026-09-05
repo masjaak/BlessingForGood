@@ -1,20 +1,41 @@
 # Decisions
 
+## Owner-confirmed UAT physical purge — 2026-09-05
+
+Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PURGE PENDING`
+
+- The prior rule `protected relationship → permanent delete blocked` is
+  superseded only for an explicit Owner-confirmed dummy/UAT Catalog, Batch, or
+  Invoice cleanup.
+- The required sequence is impact preview → explicit UAT assertion → exact
+  typed keyword → server re-analysis → owned/derived cleanup → shared-root
+  detach/reconcile → root delete last → `UAT_PURGE` audit tombstone.
+- `convex/uatCleanup.ts` uses the existing `requireOwner` boundary and one
+  server mutation per entity. It is not a general Admin delete API and does
+  not grant UAT purge to Admin or Customer roles.
+- Catalog-owned items/access and Batch-owned roster/assignment/tracking rows
+  are deleted. Shared Customer, Book Master, Order, Catalog, and Batch roots
+  survive. Invoice-owned Payment/Deposit/Refund consequences are deleted only
+  after their live financial graph and proof storage are traced; the remaining
+  Customer ledger projection is checked before and after reconciliation.
+- Unsupported exception-linked or unknown relations abort atomically with a
+  safe error. Archive, Cancel, and Void remain the normal real-Production
+  lifecycle and are not treated as UAT purge success.
+- Production UAT is a separate gate and requires Owner-approved dummy IDs. No
+  real Customer transaction is eligible merely because this feature exists.
+
 ## Destructive action discoverability — 2026-09-05
 
-Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PENDING`
+Status: `HISTORICAL NORMAL-LIFECYCLE BASELINE; SUPERSEDED FOR EXPLICIT UAT PURGE`
 
 - `Hapus permanen` must remain discoverable on Catalog detail, Batch
   operation/detail, and Invoice operation/detail surfaces. The old rule
   “ineligible → hide action” is superseded.
-- Catalog and Batch retain their existing typed confirmation, server-side
-  eligibility recheck, physical deletion, audit, and safe-navigation behavior
-  only for disposable records. Protected records use a non-mutating
-  explanation and the existing archive/restore alternative where applicable.
-- Invoice has no physical-delete path in the current model. Every current
-  Invoice click explains retention of Order, InvoiceItem, payment, Deposit,
-  Refund, and Audit history; `voidInvoice` remains the canonical lifecycle
-  alternative and its settlement guards are unchanged.
+- Catalog and Batch retain their existing normal-lifecycle guards, while
+  Owners have the separate UAT purge path recorded above.
+- Invoice has no general normal-lifecycle physical delete; `voidInvoice`
+  remains canonical for real history, while Owner UAT purge handles only
+  explicitly asserted dummy records.
 - This is an Admin discoverability correction only. It does not rewrite
   Catalog, Batch, Invoice, Payment, Deposit, Refund, Order, Audit, Auth, or
   RBAC behavior.

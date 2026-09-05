@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useMutation, useQuery } from "convex/react";
 import { PersistentRequirementForm } from "@/app/admin/invoices/page";
 import AdminInvoiceDetailPage, { AllocationForm, invoiceVoidBlockReason } from "@/app/admin/invoices/[invoiceId]/page";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -7,6 +8,12 @@ import { useProduct } from "@/domain/prototype/store";
 
 vi.mock("next/navigation", () => ({
   useParams: vi.fn(() => ({ invoiceId: "invoice-1" })),
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
+}));
+
+vi.mock("convex/react", () => ({
+  useMutation: vi.fn(),
+  useQuery: vi.fn(),
 }));
 
 vi.mock("@/domain/prototype/operations-context", () => ({
@@ -69,6 +76,8 @@ function setup(currentInvoice = invoice) {
 describe("Admin invoice issue entry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    vi.mocked(useQuery).mockReturnValue(undefined as never);
     HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute("open", "");
     };

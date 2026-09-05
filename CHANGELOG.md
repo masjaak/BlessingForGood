@@ -2,11 +2,34 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-02
+last_updated: 2026-09-05
 source: conversation
 ---
 
 # Changelog
+
+## [owner-only-uat-cleanup] — 2026-09-05
+
+### Changed
+
+- Added Owner-only server impact queries and atomic physical purge mutations
+  for Catalog, Batch, and Invoice UAT records.
+- Added live relation tracing for Catalog access/orders/Batch links, Batch
+  roster/shipment/Invoice links, and Invoice Payment, proof, Deposit ledger,
+  allocation, Refund, top-up, and financial-adjustment consequences.
+- Added Owner-only detail-surface confirmation with actual impact counts, UAT
+  assertion checkbox, exact `HAPUS KATALOG` / `HAPUS BATCH` / `HAPUS INVOICE`
+  keywords, and safe abort for unsupported relations.
+- Added `UAT_PURGE` audit tombstones and schema indexes for deterministic
+  cleanup; normal Archive/Cancel/Void lifecycle behavior remains unchanged.
+
+### QA and scope
+
+- Added 6 real-schema Convex UAT fixtures plus rendered UAT confirmation
+  coverage. No canonical Production record was touched because approved dummy
+  IDs and an authenticated Owner session were not supplied.
+- Shared Customer, Book Master, Order, Catalog, Batch, unrelated finance, and
+  normal RBAC/lifecycle behavior remain protected.
 
 ## [destructive-action-discoverability] — 2026-09-05
 

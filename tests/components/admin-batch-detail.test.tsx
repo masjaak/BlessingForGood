@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useMutation, useQuery } from "convex/react";
 import AdminBatchDetailPage from "@/app/admin/batches/[batchId]/page";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { useProduct } from "@/domain/prototype/store";
@@ -7,6 +8,11 @@ import { useProduct } from "@/domain/prototype/store";
 vi.mock("next/navigation", () => ({
   useParams: vi.fn(() => ({ batchId: "batch-1" })),
   useRouter: vi.fn(() => ({ push: vi.fn() })),
+}));
+
+vi.mock("convex/react", () => ({
+  useMutation: vi.fn(),
+  useQuery: vi.fn(),
 }));
 
 vi.mock("@/domain/prototype/operations-context", () => ({
@@ -123,6 +129,8 @@ function setup(currentBatch = batch) {
 describe("Admin Batch Detail rendered workflow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    vi.mocked(useQuery).mockReturnValue(undefined as never);
     HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute("open", "");
     };

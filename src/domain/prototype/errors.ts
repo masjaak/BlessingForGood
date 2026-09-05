@@ -60,6 +60,9 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "ENTITY_DELETE_NOT_ALLOWED" || message.includes("ENTITY_DELETE_NOT_ALLOWED")) {
     return "Hanya data draf yang belum dipakai yang dapat dihapus.";
   }
+  if (code === "UAT_PURGE_UNSAFE_RELATION" || message.includes("UAT_PURGE_UNSAFE_RELATION")) {
+    return "Data UAT belum dapat dihapus karena ditemukan relasi yang belum bisa dibersihkan otomatis.";
+  }
   if (message.includes("BOOK_VARIANT_UNAVAILABLE")) return "Format yang dipilih sudah tidak tersedia.";
   if (code === "READY_STOCK_UNAVAILABLE" || message.includes("READY_STOCK_UNAVAILABLE")) {
     if (message.includes("Jumlah melebihi stok")) return "Jumlah melebihi stok.";

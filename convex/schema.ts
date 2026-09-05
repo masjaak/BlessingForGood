@@ -195,7 +195,8 @@ export default defineSchema({
     readAt: v.optional(v.number()),
   })
     .index("by_recipient_surface_created_at", ["recipientUserId", "surface", "createdAt"])
-    .index("by_recipient_surface_read_at", ["recipientUserId", "surface", "readAt"]),
+    .index("by_recipient_surface_read_at", ["recipientUserId", "surface", "readAt"])
+    .index("by_related_entity", ["relatedEntityType", "relatedEntityId"]),
 
   contentBlocks: defineTable({
     key: v.union(v.literal("community"), v.literal("how_to_order"), v.literal("help")),
@@ -406,6 +407,7 @@ export default defineSchema({
   })
     .index("by_session_digest", ["sessionDigest"])
     .index("by_catalog", ["catalogId"])
+    .index("by_access_period", ["accessPeriodId"])
     .index("by_expiration", ["expiresAt"]),
 
   catalogAccessAnonymousAttempts: defineTable({
@@ -486,6 +488,7 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_order", ["orderId"])
+    .index("by_catalog_item", ["catalogItemId"])
     .index("by_book", ["bookId"])
     .index("by_variant", ["bookVariantId"])
     .index("by_created_at", ["createdAt"]),
@@ -530,6 +533,7 @@ export default defineSchema({
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_order", ["orderId"])
     .index("by_order_item", ["orderItemId"])
+    .index("by_refund_obligation", ["refundObligationId"])
     .index("by_type_and_created_at", ["type", "createdAt"])
     .index("by_created_at", ["createdAt"]),
 
@@ -571,7 +575,8 @@ export default defineSchema({
     .index("by_exception", ["exceptionId"])
     .index("by_order", ["orderId"])
     .index("by_invoice", ["invoiceId"])
-    .index("by_order_item", ["orderItemId"]),
+    .index("by_order_item", ["orderItemId"])
+    .index("by_refund_obligation", ["refundObligationId"]),
 
   batches: defineTable({
     name: v.string(),
@@ -664,6 +669,7 @@ export default defineSchema({
     createdByUserId: v.id("appUsers"),
   })
     .index("by_order", ["orderId"])
+    .index("by_batch", ["batchId"])
     .index("by_customer_user_id", ["customerUserId"])
     .index("by_status", ["status"])
     .index("by_invoice_number", ["invoiceNumber"])
@@ -692,6 +698,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_invoice", ["invoiceId"])
+    .index("by_proof_storage_id", ["proofStorageId"])
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_status_and_created_at", ["status", "createdAt"])
     .index("by_created_at", ["createdAt"]),
@@ -713,6 +720,7 @@ export default defineSchema({
     depositTransactionId: v.optional(v.id("depositTransactions")),
   })
     .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_proof_storage_id", ["proofStorageId"])
     .index("by_status_and_created_at", ["status", "createdAt"])
     .index("by_deposit_transaction", ["depositTransactionId"]),
 
@@ -804,6 +812,7 @@ export default defineSchema({
     .index("by_account_and_created_at", ["accountId", "createdAt"])
     .index("by_invoice", ["invoiceId"])
     .index("by_reference_transaction", ["referenceTransactionId"])
+    .index("by_refund_obligation", ["refundObligationId"])
     .index("by_created_at", ["createdAt"]),
 
   invoiceDepositAllocations: defineTable({

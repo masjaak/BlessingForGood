@@ -1,19 +1,37 @@
 # BFG Project Status
 
+## Owner-only UAT permanent purge — 2026-09-05
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PURGE PENDING`
+
+The canonical repository now has one Owner-only UAT cleanup boundary for
+Catalog, Batch, and Invoice. Each detail/operation surface opens a typed,
+checkbox-gated impact dialog; each impact is calculated from live Convex
+relations; and each purge mutation recalculates the graph before atomically
+deleting owned/derived UAT data and the root last. Shared Customer, Book
+Master, Order, Catalog, Batch, Payment, Deposit, Refund, and unrelated Audit
+roots are preserved according to the relation graph.
+
+Invoice cleanup includes approved/partial Payment confirmations, proof
+ownership, Deposit allocation/ledger chains, Refund obligations/payouts, and
+Customer balance reconciliation. Exception-linked or unknown financial
+relations abort with `UAT_PURGE_UNSAFE_RELATION` rather than partially
+deleting. A minimal `UAT_PURGE` audit event remains after root deletion.
+
+Focused evidence: `convex/uatCleanup.test.ts` has 6 passing real-schema
+fixtures; `tests/components/uat-purge-dialog.test.tsx` verifies the explicit
+UAT checkbox and exact keyword; existing Catalog, Batch, Invoice UI suites
+remain green. No approved canonical Production dummy IDs or authenticated
+Owner session were provided, so Production UAT purge and `GREEN_PRODUCTION`
+are intentionally pending.
+
 ## Destructive action discoverability correction — 2026-09-05
 
-Status: `ENGINEERING GREEN; DEFAULT VITEST TIMEOUT CAVEAT; AUTHENTICATED PRODUCTION UAT PENDING`
+Status: `HISTORICAL NORMAL-LIFECYCLE BASELINE; SUPERSEDED FOR EXPLICIT UAT PURGE`
 
-`Hapus permanen` is now visible on all three canonical Admin detail/operation
-surfaces: Catalog detail, Batch detail, and Invoice detail. Catalog and Batch
-retain typed confirmation plus the existing server-authoritative hard-delete
-guards for genuinely disposable records; protected records explain the block
-without issuing a delete mutation. Invoice keeps physical deletion
-unsupported and explains financial/history retention, with the existing void
-path unchanged. Focused discoverability coverage now includes disposable and
-protected Catalog/Batch states plus draft, issued, partially paid, and void
-Invoice states. No Convex source, financial model, lifecycle, or unrelated UI
-was changed.
+`Hapus permanen` remains visible on all three canonical Admin detail/operation
+surfaces. The normal lifecycle guards and Invoice void path remain unchanged;
+the Owner-only UAT purge is now the separate destructive maintenance path.
 
 Final changed-surface coverage is `35/35`; format, lint, TypeScript, build,
 Convex check, diff check, and the server guard/lifecycle anchors pass. The
