@@ -48,10 +48,10 @@ describe("Floating Blessy Phase 1", () => {
     expect(FLOATING_BLESSY_POSES).toHaveLength(4);
     expect(FLOATING_BLESSY_POSES.map((pose) => pose.id)).toEqual(["greeting", "question", "apology", "sleeping"]);
     expect(FLOATING_BLESSY_POSES.map((pose) => pose.asset.src)).toEqual([
-      "/brand/mascot/Mascott-1.png",
-      "/brand/mascot/Mascott-2.png",
-      "/brand/mascot/Mascott-3.png",
-      "/brand/mascot/Mascott-4.png",
+      "/brand/mascot/floating-blessy/Blessy 1.png",
+      "/brand/mascot/floating-blessy/Blessy 2.png",
+      "/brand/mascot/floating-blessy/Blessy 3.png",
+      "/brand/mascot/floating-blessy/Blessy 4.png",
     ]);
     expect(FLOATING_BLESSY_POSES.map((pose) => pose.message)).toEqual([
       "Hallo, Selamat datang di Website Official BFG! Namaku Blessy!",
@@ -79,7 +79,7 @@ describe("Floating Blessy Phase 1", () => {
 
     advance(1);
     expect(screen.getByTestId("floating-blessy").getAttribute("data-stage")).toBe("visible-message");
-    expect(poseImage()?.getAttribute("src")).toContain("Mascott-1.png");
+    expect(poseImage()?.getAttribute("src")).toContain(encodeURIComponent(FLOATING_BLESSY_POSES[0].asset.src));
     expect(screen.getByText(FLOATING_BLESSY_POSES[0].message)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tutup Blessy" })).toBeTruthy();
   });
@@ -88,7 +88,7 @@ describe("Floating Blessy Phase 1", () => {
     showGreeting();
 
     FLOATING_BLESSY_POSES.forEach((pose, index) => {
-      expect(poseImage()?.getAttribute("src")).toContain("Mascott-" + (index + 1) + ".png");
+      expect(poseImage()?.getAttribute("src")).toContain(encodeURIComponent(pose.asset.src));
       expect(screen.getByText(pose.message)).toBeTruthy();
 
       advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs);
@@ -101,7 +101,7 @@ describe("Floating Blessy Phase 1", () => {
         expect(screen.getByTestId("floating-blessy").getAttribute("data-stage")).toBe("complete-idle");
         expect(screen.getByTestId("floating-blessy").getAttribute("data-sequence-complete")).toBe("true");
         advance(1_000_000);
-        expect(poseImage()?.getAttribute("src")).toContain("Mascott-4.png");
+        expect(poseImage()?.getAttribute("src")).toContain(encodeURIComponent(FLOATING_BLESSY_POSES[3].asset.src));
         expect(screen.getByTestId("floating-blessy-bubble").getAttribute("data-visible")).toBe("false");
       }
     });
@@ -132,11 +132,11 @@ describe("Floating Blessy Phase 1", () => {
     const { rerender } = render(<FloatingBlessyGuide />);
     advance(FLOATING_BLESSY_TIMING.initialDelayMs);
     advanceToNextPose();
-    expect(poseImage()?.getAttribute("src")).toContain("Mascott-2.png");
+    expect(poseImage()?.getAttribute("src")).toContain(encodeURIComponent(FLOATING_BLESSY_POSES[1].asset.src));
 
     pathname.mockReturnValue("/account/orders");
     rerender(<FloatingBlessyGuide />);
-    expect(poseImage()?.getAttribute("src")).toContain("Mascott-2.png");
+    expect(poseImage()?.getAttribute("src")).toContain(encodeURIComponent(FLOATING_BLESSY_POSES[1].asset.src));
 
     pathname.mockReturnValue("/admin/orders");
     rerender(<FloatingBlessyGuide />);

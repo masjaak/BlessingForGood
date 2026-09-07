@@ -8507,7 +8507,7 @@ p {
 .floating-blessy__close {
   position: absolute;
   z-index: 1;
-  top: 1px;
+  top: -32px;
   right: 0;
   display: grid;
   width: 30px;
@@ -8564,7 +8564,7 @@ p {
   }
 
   .floating-blessy__visual {
-    width: clamp(96px, 30vw, 128px);
+    width: clamp(108px, 30vw, 136px);
   }
 }
 

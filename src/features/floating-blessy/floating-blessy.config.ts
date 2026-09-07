@@ -1,11 +1,14 @@
-import { assetReferences } from "@/config/assets";
-
-const [greetingAsset, questionAsset, apologyAsset, sleepingAsset] = assetReferences.mascot.expectedPaths;
+const [greetingAsset, questionAsset, apologyAsset, sleepingAsset] = [
+  "/brand/mascot/floating-blessy/Blessy 1.png",
+  "/brand/mascot/floating-blessy/Blessy 2.png",
+  "/brand/mascot/floating-blessy/Blessy 3.png",
+  "/brand/mascot/floating-blessy/Blessy 4.png",
+] as const;
 
 const mascotAsset = (src: string) => ({
   src,
-  width: 5000,
-  height: 5000,
+  width: 1254,
+  height: 1254,
 });
 
 export const FLOATING_BLESSY_TIMING = {
