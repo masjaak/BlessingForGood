@@ -99,6 +99,7 @@ describe("Floating Blessy Phase 1", () => {
       } else {
         advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs);
         expect(screen.getByTestId("floating-blessy").getAttribute("data-stage")).toBe("complete-idle");
+        expect(screen.getByTestId("floating-blessy").getAttribute("data-sequence-complete")).toBe("true");
         advance(1_000_000);
         expect(poseImage()?.getAttribute("src")).toContain("Mascott-4.png");
         expect(screen.getByTestId("floating-blessy-bubble").getAttribute("data-visible")).toBe("false");

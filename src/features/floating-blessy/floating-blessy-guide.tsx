@@ -35,6 +35,7 @@ export function FloatingBlessyGuide() {
       className="floating-blessy"
       data-pose-id={pose.id}
       data-stage={state.stage}
+      data-sequence-complete={state.sequenceComplete ? "true" : "false"}
       data-testid="floating-blessy"
       data-transition-phase={state.transitionPhase || undefined}
       aria-label="Blessy"

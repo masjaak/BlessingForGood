@@ -14,6 +14,7 @@ type FloatingBlessyState = {
   stage: FloatingBlessyStage;
   transitionPhase: PoseTransitionPhase;
   dismissed: boolean;
+  sequenceComplete: boolean;
 };
 
 type FloatingBlessyAction =
@@ -31,6 +32,7 @@ const initialState: FloatingBlessyState = {
   stage: "boot-delay",
   transitionPhase: null,
   dismissed: false,
+  sequenceComplete: false,
 };
 
 function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): FloatingBlessyState {
@@ -46,7 +48,7 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
     case "finish-bubble-exit":
       if (state.stage !== "bubble-exit") return state;
       return state.currentPoseIndex === FLOATING_BLESSY_POSES.length - 1
-        ? { ...state, stage: "complete-idle" }
+        ? { ...state, stage: "complete-idle", sequenceComplete: true }
         : { ...state, stage: "idle-wait" };
     case "start-pose-transition":
       return state.stage === "idle-wait" && state.currentPoseIndex !== FLOATING_BLESSY_POSES.length - 1
