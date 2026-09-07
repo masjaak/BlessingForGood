@@ -96,11 +96,11 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await page.getByRole("button", { name: "Tutup Blessy" }).click();
     await expect(page.locator("[data-testid='floating-blessy']")).toHaveCount(0);
 
-    await page.locator('a[href="/catalog"]').first().click();
+    await page.locator('.customer-bottom-nav a[href="/catalog"]').click();
     await expect(page).toHaveURL(/\/catalog$/);
     await expect(page.locator("[data-testid='floating-blessy']")).toHaveCount(0);
 
-    await page.locator('a[href="/"]').first().click();
+    await page.locator('.customer-bottom-nav a[href="/"]').click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("[data-testid='floating-blessy']")).toHaveCount(0);
 
