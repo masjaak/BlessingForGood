@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { BfgSplash } from "@/components/bfg-splash";
 import { bfgClerkAppearance, bfgClerkLocalization } from "@/config/clerk";
 import { ProductProvider } from "@/domain/prototype/store";
+import { FloatingBlessyGuide } from "@/features/floating-blessy";
 import "./globals.css";
 
 const SITE_TITLE = "Blessing For Goods — Imported Bookstore & Community";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ClerkProvider appearance={bfgClerkAppearance} localization={bfgClerkLocalization}>
           <ProductProvider>
             <BfgSplash />
+            <FloatingBlessyGuide />
             {children}
           </ProductProvider>
         </ClerkProvider>
