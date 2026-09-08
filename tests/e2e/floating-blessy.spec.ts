@@ -126,4 +126,74 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       .poll(() => page.locator(".floating-blessy__idle").evaluate((element) => getComputedStyle(element).animationName))
       .toBe("none");
   });
+
+  test("follows the real bottom-nav families and shows the matching contextual copy", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "customer-390",
+      "The route-context harness runs once from the 390px customer project.",
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1700);
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-pose-id", "greeting");
+
+    await page.locator('.customer-bottom-nav a[href="/catalog"]').click();
+    await expect(page).toHaveURL(/\/catalog$/);
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-navigation-context", "catalog");
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-pose-id", "question");
+    await expect(page.getByText("Hari ini mau FIX buku apa?")).toBeVisible();
+
+    await page.locator('.customer-bottom-nav a[href="/account/orders"]').click();
+    await expect(page).toHaveURL(/\/account\/orders$/);
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-pose-id", "apology");
+    await expect(
+      page.getByText("Kalau Admin telat bales, sabar ya. Mungkin lagi dinas ke nyuapin anaknya."),
+    ).toBeVisible();
+
+    await page.locator('.customer-bottom-nav a[href="/account"]').click();
+    await expect(page).toHaveURL(/\/account$/);
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-pose-id", "sleeping");
+  });
+
+  test("keeps the mascot as the WhatsApp action and separates drag from tap", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "customer-390",
+      "The pointer harness runs once from the 390px customer project.",
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1700);
+
+    const mascot = page.getByRole("link", { name: "Chat Admin BFG lewat WhatsApp" });
+    await expect(mascot).toHaveAttribute("href", "https://wa.me/6288973465977");
+    await expect(mascot).toHaveAttribute("target", "_blank");
+    await expect(mascot).toHaveAttribute("rel", "noopener noreferrer");
+
+    const before = await mascot.boundingBox();
+    if (!before) throw new Error("Blessy hit target has no geometry");
+    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(before.x + 56, before.y + 48);
+    await page.mouse.up();
+    const after = await mascot.boundingBox();
+    expect(after).not.toBeNull();
+    expect(Math.abs((after?.x || 0) - before.x) + Math.abs((after?.y || 0) - before.y)).toBeGreaterThan(0);
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-dragging", "false");
+
+    const popupPromise = page.waitForEvent("popup");
+    await mascot.click();
+    const popup = await popupPromise;
+    await expect.poll(() => popup.url()).toContain("6288973465977");
+    await popup.close();
+  });
+
+  test("shows the compact WhatsApp hint after contextual bubble expiry", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "customer-390", "The CTA harness runs once from the 390px customer project.");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1700 + 7200);
+    await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-visible", "false");
+    await expect(page.locator("[data-testid='floating-blessy-cta']")).toHaveAttribute("data-visible", "true");
+    await expect(page.getByText("Klik aku kalau mau ngobrol langsung ya")).toBeVisible();
+  });
 });

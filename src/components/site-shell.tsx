@@ -10,22 +10,7 @@ import { bfgClerkAppearance } from "@/config/clerk";
 import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
 import { LinkButton } from "@/components/ui";
 import { isProductIdentityAuthenticated, ProductContext } from "@/domain/prototype/context";
-
-const customerLinks = [
-  { href: "/", label: "Beranda" },
-  { href: "/catalog", label: "Katalog" },
-  { href: "/account/orders", label: "Buku Saya" },
-  { href: "/account/invoices", label: "Tagihan" },
-  { href: "/account", label: "Akun" },
-];
-
-const customerBottomLinks = [
-  { href: "/", label: "Beranda", icon: "home" },
-  { href: "/catalog", label: "Katalog", icon: "catalog" },
-  { href: "/account/orders", label: "Buku Saya", icon: "books" },
-  { href: "/account/invoices", label: "Tagihan", icon: "invoice" },
-  { href: "/account", label: "Akun", icon: "account" },
-] as const;
+import { customerBottomLinks, customerLinks } from "@/components/customer-navigation";
 
 const publicLinks = [
   { href: "/", label: "Beranda" },

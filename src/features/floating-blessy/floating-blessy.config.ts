@@ -14,11 +14,15 @@ const mascotAsset = (src: string) => ({
 export const FLOATING_BLESSY_TIMING = {
   initialDelayMs: 1500,
   bubbleVisibleMs: 7000,
-  betweenMessagesMs: 150000,
+  bubbleTransitionMs: 200,
   poseExitMs: 160,
   poseEnterMs: 220,
-  bubbleTransitionMs: 200,
+  dragThresholdPx: 6,
 } as const;
+
+export const FLOATING_BLESSY_WHATSAPP_URL = "https://wa.me/6288973465977";
+export const FLOATING_BLESSY_WHATSAPP_LABEL = "Chat Admin BFG lewat WhatsApp";
+export const FLOATING_BLESSY_CTA = "Klik aku kalau mau ngobrol langsung ya";
 
 export const FLOATING_BLESSY_POSES = [
   {
@@ -46,3 +50,5 @@ export const FLOATING_BLESSY_POSES = [
     message: "Ssstt jangan bilang ka Madin, aku mau tidur dulu!",
   },
 ] as const;
+
+export type FloatingBlessyPoseId = (typeof FLOATING_BLESSY_POSES)[number]["id"];

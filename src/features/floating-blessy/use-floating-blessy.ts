@@ -1,69 +1,88 @@
 "use client";
 
-import { useCallback, useEffect, useReducer } from "react";
-import { FLOATING_BLESSY_POSES, FLOATING_BLESSY_TIMING } from "./floating-blessy.config";
+import { useCallback, useEffect, useReducer, useRef } from "react";
+import { FLOATING_BLESSY_TIMING } from "./floating-blessy.config";
+import type { FloatingBlessyNavigation } from "./floating-blessy-context";
 
 export type FloatingBlessyStage =
-  "boot-delay" | "visible-message" | "bubble-exit" | "idle-wait" | "pose-transition" | "complete-idle" | "dismissed";
+  "boot-delay" | "visible-message" | "bubble-exit" | "idle" | "pose-transition" | "dismissed";
 
 type PoseTransitionPhase = "exit" | "enter" | null;
 
 type FloatingBlessyState = {
-  currentPoseIndex: number | null;
+  navigationContext: FloatingBlessyNavigation["navigationContext"] | null;
+  currentPoseId: FloatingBlessyNavigation["poseId"] | null;
+  pendingNavigation: FloatingBlessyNavigation | null;
   bubbleVisible: boolean;
   stage: FloatingBlessyStage;
   transitionPhase: PoseTransitionPhase;
   dismissed: boolean;
-  sequenceComplete: boolean;
 };
 
 type FloatingBlessyAction =
-  | { type: "show-greeting" }
+  | { type: "show-initial"; navigation: FloatingBlessyNavigation }
   | { type: "hide-bubble" }
   | { type: "finish-bubble-exit" }
-  | { type: "start-pose-transition" }
-  | { type: "enter-next-pose" }
-  | { type: "show-next-message" }
+  | { type: "start-context-transition"; navigation: FloatingBlessyNavigation }
+  | { type: "enter-context" }
+  | { type: "show-context-message" }
   | { type: "dismiss" };
 
 const initialState: FloatingBlessyState = {
-  currentPoseIndex: null,
+  navigationContext: null,
+  currentPoseId: null,
+  pendingNavigation: null,
   bubbleVisible: false,
   stage: "boot-delay",
   transitionPhase: null,
   dismissed: false,
-  sequenceComplete: false,
 };
 
 function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): FloatingBlessyState {
   if (state.dismissed && action.type !== "dismiss") return state;
 
   switch (action.type) {
-    case "show-greeting":
+    case "show-initial":
       return state.stage === "boot-delay"
-        ? { ...state, currentPoseIndex: 0, bubbleVisible: true, stage: "visible-message" }
+        ? {
+            ...state,
+            navigationContext: action.navigation.navigationContext,
+            currentPoseId: action.navigation.poseId,
+            bubbleVisible: true,
+            stage: "visible-message",
+          }
         : state;
     case "hide-bubble":
       return state.stage === "visible-message" ? { ...state, bubbleVisible: false, stage: "bubble-exit" } : state;
     case "finish-bubble-exit":
-      if (state.stage !== "bubble-exit") return state;
-      return state.currentPoseIndex === FLOATING_BLESSY_POSES.length - 1
-        ? { ...state, stage: "complete-idle", sequenceComplete: true }
-        : { ...state, stage: "idle-wait" };
-    case "start-pose-transition":
-      return state.stage === "idle-wait" && state.currentPoseIndex !== FLOATING_BLESSY_POSES.length - 1
-        ? { ...state, stage: "pose-transition", transitionPhase: "exit" }
-        : state;
-    case "enter-next-pose":
-      if (state.stage !== "pose-transition" || state.transitionPhase !== "exit" || state.currentPoseIndex === null) {
+      return state.stage === "bubble-exit" ? { ...state, stage: "idle" } : state;
+    case "start-context-transition":
+      if (
+        state.currentPoseId === null ||
+        (state.navigationContext === action.navigation.navigationContext && state.pendingNavigation === null) ||
+        state.pendingNavigation?.navigationContext === action.navigation.navigationContext
+      ) {
         return state;
       }
       return {
         ...state,
-        currentPoseIndex: state.currentPoseIndex + 1,
+        pendingNavigation: action.navigation,
+        bubbleVisible: false,
+        stage: "pose-transition",
+        transitionPhase: "exit",
+      };
+    case "enter-context":
+      if (state.stage !== "pose-transition" || state.transitionPhase !== "exit" || !state.pendingNavigation) {
+        return state;
+      }
+      return {
+        ...state,
+        navigationContext: state.pendingNavigation.navigationContext,
+        currentPoseId: state.pendingNavigation.poseId,
+        pendingNavigation: null,
         transitionPhase: "enter",
       };
-    case "show-next-message":
+    case "show-context-message":
       return state.stage === "pose-transition" && state.transitionPhase === "enter"
         ? { ...state, bubbleVisible: true, stage: "visible-message", transitionPhase: null }
         : state;
@@ -72,8 +91,12 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
   }
 }
 
-export function useFloatingBlessy(enabled: boolean) {
+export function useFloatingBlessy(enabled: boolean, navigation: FloatingBlessyNavigation) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const navigationRef = useRef(navigation);
+  useEffect(() => {
+    navigationRef.current = navigation;
+  }, [navigation]);
 
   useEffect(() => {
     if (!enabled || state.dismissed) return;
@@ -83,7 +106,7 @@ export function useFloatingBlessy(enabled: boolean) {
     switch (state.stage) {
       case "boot-delay":
         delay = FLOATING_BLESSY_TIMING.initialDelayMs;
-        action = { type: "show-greeting" };
+        action = { type: "show-initial", navigation: navigationRef.current };
         break;
       case "visible-message":
         delay = FLOATING_BLESSY_TIMING.bubbleVisibleMs;
@@ -93,16 +116,12 @@ export function useFloatingBlessy(enabled: boolean) {
         delay = FLOATING_BLESSY_TIMING.bubbleTransitionMs;
         action = { type: "finish-bubble-exit" };
         break;
-      case "idle-wait":
-        delay = FLOATING_BLESSY_TIMING.betweenMessagesMs;
-        action = { type: "start-pose-transition" };
-        break;
       case "pose-transition":
         delay =
           state.transitionPhase === "exit" ? FLOATING_BLESSY_TIMING.poseExitMs : FLOATING_BLESSY_TIMING.poseEnterMs;
-        action = state.transitionPhase === "exit" ? { type: "enter-next-pose" } : { type: "show-next-message" };
+        action = state.transitionPhase === "exit" ? { type: "enter-context" } : { type: "show-context-message" };
         break;
-      case "complete-idle":
+      case "idle":
       case "dismissed":
         return;
     }
@@ -110,6 +129,31 @@ export function useFloatingBlessy(enabled: boolean) {
     const timer = window.setTimeout(() => dispatch(action!), delay);
     return () => window.clearTimeout(timer);
   }, [enabled, state.dismissed, state.stage, state.transitionPhase]);
+
+  useEffect(() => {
+    if (
+      !enabled ||
+      state.dismissed ||
+      state.currentPoseId === null ||
+      state.navigationContext === navigation.navigationContext ||
+      state.pendingNavigation?.navigationContext === navigation.navigationContext
+    ) {
+      return;
+    }
+
+    dispatch({
+      type: "start-context-transition",
+      navigation: { navigationContext: navigation.navigationContext, poseId: navigation.poseId },
+    });
+  }, [
+    enabled,
+    navigation.navigationContext,
+    navigation.poseId,
+    state.currentPoseId,
+    state.dismissed,
+    state.navigationContext,
+    state.pendingNavigation?.navigationContext,
+  ]);
 
   const dismiss = useCallback(() => dispatch({ type: "dismiss" }), []);
   return { ...state, onDismiss: dismiss };

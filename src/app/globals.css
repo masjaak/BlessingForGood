@@ -8412,23 +8412,33 @@ p {
   z-index: 30;
   right: max(12px, env(safe-area-inset-right));
   bottom: 18px;
-  display: grid;
-  width: min(calc(100vw - 24px), 340px);
-  justify-items: end;
-  gap: 2px;
+  display: block;
+  width: clamp(112px, 10vw, 152px);
+  aspect-ratio: 1;
   pointer-events: none;
 }
 
+.floating-blessy__bubble,
+.floating-blessy__cta {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  inline-size: max-content;
+  margin: 0;
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+
 .floating-blessy__bubble {
-  position: relative;
-  max-inline-size: min(300px, calc(100vw - 24px));
-  margin-inline-end: 36px;
-  padding: 11px 14px;
+  max-inline-size: min(300px, calc(100vw - 16px));
+  padding: 12px 14px;
   color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-raised);
+  border: 1px solid rgb(159 190 165 / 72%);
+  border-radius: 18px 18px 18px 11px;
+  background: linear-gradient(160deg, #fffef9 0%, #faf2e5 100%);
+  box-shadow:
+    0 14px 28px rgb(31 50 41 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 85%);
   font-size: 0.84rem;
   line-height: 1.4;
   opacity: 0;
@@ -8440,17 +8450,16 @@ p {
   visibility: hidden;
 }
 
-.floating-blessy__bubble::after {
+.floating-blessy__bubble::before,
+.floating-blessy__cta::before {
   position: absolute;
-  right: 28px;
-  bottom: -7px;
-  width: 12px;
-  height: 12px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  top: 5px;
+  right: 14px;
+  left: 14px;
+  height: 1px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 78%);
   content: "";
-  transform: rotate(45deg);
 }
 
 .floating-blessy__bubble.is-visible {
@@ -8460,6 +8469,45 @@ p {
   visibility: visible;
 }
 
+.floating-blessy__bubble::after,
+.floating-blessy__cta::after {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgb(159 190 165 / 72%);
+  background: #faf2e5;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.floating-blessy__bubble[data-placement="top-right"]::after,
+.floating-blessy__bubble[data-placement="top-left"]::after,
+.floating-blessy__cta[data-placement="top-right"]::after,
+.floating-blessy__cta[data-placement="top-left"]::after {
+  bottom: -7px;
+  border-top: 0;
+  border-left: 0;
+}
+
+.floating-blessy__bubble[data-placement="bottom-right"]::after,
+.floating-blessy__bubble[data-placement="bottom-left"]::after,
+.floating-blessy__cta[data-placement="bottom-right"]::after,
+.floating-blessy__cta[data-placement="bottom-left"]::after {
+  top: -7px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.floating-blessy__bubble[data-placement$="right"]::after,
+.floating-blessy__cta[data-placement$="right"]::after {
+  right: 24px;
+}
+
+.floating-blessy__bubble[data-placement$="left"]::after,
+.floating-blessy__cta[data-placement$="left"]::after {
+  left: 24px;
+}
+
 .floating-blessy__bubble p {
   max-width: 100%;
   margin: 0;
@@ -8467,10 +8515,63 @@ p {
   overflow-wrap: anywhere;
 }
 
+.floating-blessy__cta {
+  max-inline-size: min(232px, calc(100vw - 16px));
+  padding: 8px 12px;
+  color: var(--accent-dark);
+  border: 1px solid rgb(159 190 165 / 65%);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(160deg, #fffef9 0%, #f6efdf 100%);
+  box-shadow:
+    0 10px 22px rgb(31 50 41 / 10%),
+    inset 0 1px 0 rgb(255 255 255 / 85%);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.3;
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    visibility 0s linear 200ms;
+  visibility: hidden;
+}
+
+.floating-blessy__cta.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 0s;
+  visibility: visible;
+}
+
 .floating-blessy__visual {
   position: relative;
-  width: clamp(112px, 10vw, 152px);
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+}
+
+.floating-blessy__mascot {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.floating-blessy__mascot.is-dragging {
+  cursor: grabbing;
+}
+
+.floating-blessy__mascot:focus-visible {
+  outline: none;
+  border-radius: 50%;
+  box-shadow: var(--focus);
 }
 
 .floating-blessy__pose {
@@ -8563,7 +8664,7 @@ p {
     );
   }
 
-  .floating-blessy__visual {
+  .floating-blessy {
     width: clamp(108px, 30vw, 136px);
   }
 }
@@ -8574,6 +8675,7 @@ p {
   }
 
   .floating-blessy__bubble,
+  .floating-blessy__cta,
   .floating-blessy__pose,
   .floating-blessy__pose.is-exit,
   .floating-blessy__pose.is-enter {
