@@ -1,6 +1,7 @@
 import { act, createEvent, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePathname } from "next/navigation";
+import { customerBottomLinks, publicLinks, resolveSiteNavigationContext } from "@/components/customer-navigation";
 import {
   FLOATING_BLESSY_CTA,
   FLOATING_BLESSY_POSES,
@@ -80,9 +81,13 @@ describe("Floating Blessy nav-context extension", () => {
 
   it.each([
     ["/", "home", "greeting"],
-    ["/ready-stock", "home", "greeting"],
+    ["/ready-stock", "ready-stock", "question"],
+    ["/ready-stock/the-public-book", "ready-stock", "question"],
+    ["/community", "community", "greeting"],
+    ["/how-to-order", "how-to-order", "apology"],
     ["/catalog", "catalog", "question"],
     ["/catalog/catalog-1/book-1", "catalog", "question"],
+    ["/join", "join", "greeting"],
     ["/account/orders", "orders", "apology"],
     ["/account/orders/order-1", "orders", "apology"],
     ["/account/invoices", "invoices", "apology"],
@@ -91,10 +96,47 @@ describe("Floating Blessy nav-context extension", () => {
     ["/account/profile", "account", "sleeping"],
   ])("maps %s to the %s context and %s pose", (path, context, poseId) => {
     const navigation = resolveFloatingBlessyNavigation(path);
-    expect(navigation).toEqual({ navigationContext: context, poseId });
+    expect(navigation).toMatchObject({ navigationContext: context, poseId, isFallback: false });
     expect(findFloatingBlessyPose(navigation.poseId).message).toBe(
       FLOATING_BLESSY_POSES.find((pose) => pose.id === poseId)?.message,
     );
+  });
+
+  it("requires every primary public and customer nav entry to resolve without fallback", () => {
+    for (const link of [...publicLinks, ...customerBottomLinks]) {
+      expect(resolveSiteNavigationContext(link.href), link.href).toBe(link.context);
+      expect(resolveFloatingBlessyNavigation(link.href), link.href).toMatchObject({ isFallback: false });
+    }
+  });
+
+  it("updates copy when the context changes but the approved pose is reused", () => {
+    pathname.mockReturnValue("/ready-stock");
+    const { rerender } = render(<FloatingBlessyGuide />);
+    advance(FLOATING_BLESSY_TIMING.initialDelayMs);
+    const widget = screen.getByTestId("floating-blessy");
+    expectAttribute(widget, "data-navigation-context", "ready-stock");
+    expectAttribute(widget, "data-pose-id", "question");
+    expect(screen.getByText("Mau cari buku yang bisa langsung dibawa pulang? Cek Ready Stock yuk!")).toBeTruthy();
+
+    pathname.mockReturnValue("/catalog");
+    rerender(<FloatingBlessyGuide />);
+
+    expectAttribute(widget, "data-navigation-context", "catalog");
+    expectAttribute(widget, "data-pose-id", "question");
+    expect(widget.getAttribute("data-transition-phase")).toBeNull();
+    expect(screen.getByText("Hari ini mau FIX buku apa?")).toBeTruthy();
+  });
+
+  it("uses one shared bubble family with a dedicated centered CTA inner wrapper", () => {
+    showBlessy();
+    expect(screen.getByTestId("floating-blessy-bubble").className).toContain("floating-blessy__bubble--context");
+    expect(screen.getByTestId("floating-blessy-bubble").querySelector(".floating-blessy__bubble-inner")).toBeTruthy();
+
+    advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs);
+    const cta = screen.getByTestId("floating-blessy-cta");
+    expect(cta.className).toContain("floating-blessy__bubble--cta");
+    expect(cta.querySelector(".floating-blessy__bubble-inner")).toBeTruthy();
+    expect(cta.getAttribute("data-align")).toBe("center");
   });
 
   it("shows the current route context after the initial delay", () => {

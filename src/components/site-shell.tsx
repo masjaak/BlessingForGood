@@ -10,16 +10,7 @@ import { bfgClerkAppearance } from "@/config/clerk";
 import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
 import { LinkButton } from "@/components/ui";
 import { isProductIdentityAuthenticated, ProductContext } from "@/domain/prototype/context";
-import { customerBottomLinks, customerLinks } from "@/components/customer-navigation";
-
-const publicLinks = [
-  { href: "/", label: "Beranda" },
-  { href: "/ready-stock", label: "Ready Stock" },
-  { href: "/community", label: "Komunitas" },
-  { href: "/how-to-order", label: "Cara memesan" },
-  { href: "/catalog", label: "Secret Catalog" },
-  { href: "/join", label: "Gabung" },
-];
+import { customerBottomLinks, customerLinks, publicLinks } from "@/components/customer-navigation";
 
 const supportLinks = [
   { href: "/community", label: "Komunitas" },

@@ -35,4 +35,17 @@ describe("Floating Blessy geometry", () => {
     expect(bottomLeft.left).toBeGreaterThanOrEqual(bounds.left);
     expect(bottomLeft.top).toBeGreaterThanOrEqual(bounds.top);
   });
+
+  it("rejects bubble placements that overlap the close exclusion zone", () => {
+    const result = resolveFloatingBlessyBubble({
+      anchor: { x: 260, y: 300, ...mascot },
+      bubble: { width: 300, height: 92 },
+      close: { x: 350, y: 268, width: 30, height: 30 },
+      bounds,
+    });
+
+    expect(result.placement).toBe("bottom-right");
+    expect(result.top).toBeGreaterThanOrEqual(300 + mascot.height);
+    expect(result.left + 300).toBeLessThanOrEqual(bounds.right);
+  });
 });

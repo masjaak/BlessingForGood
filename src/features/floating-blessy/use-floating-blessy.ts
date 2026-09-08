@@ -11,9 +11,13 @@ type PoseTransitionPhase = "exit" | "enter" | null;
 
 type FloatingBlessyState = {
   navigationContext: FloatingBlessyNavigation["navigationContext"] | null;
+  semanticContext: FloatingBlessyNavigation["semanticContext"] | null;
   currentPoseId: FloatingBlessyNavigation["poseId"] | null;
+  currentMessage: string | null;
+  bubbleAlign: FloatingBlessyNavigation["bubbleAlign"] | null;
   pendingNavigation: FloatingBlessyNavigation | null;
   bubbleVisible: boolean;
+  bubbleVersion: number;
   stage: FloatingBlessyStage;
   transitionPhase: PoseTransitionPhase;
   dismissed: boolean;
@@ -30,9 +34,13 @@ type FloatingBlessyAction =
 
 const initialState: FloatingBlessyState = {
   navigationContext: null,
+  semanticContext: null,
   currentPoseId: null,
+  currentMessage: null,
+  bubbleAlign: null,
   pendingNavigation: null,
   bubbleVisible: false,
+  bubbleVersion: 0,
   stage: "boot-delay",
   transitionPhase: null,
   dismissed: false,
@@ -47,7 +55,10 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
         ? {
             ...state,
             navigationContext: action.navigation.navigationContext,
+            semanticContext: action.navigation.semanticContext,
             currentPoseId: action.navigation.poseId,
+            currentMessage: action.navigation.message,
+            bubbleAlign: action.navigation.bubbleAlign,
             bubbleVisible: true,
             stage: "visible-message",
           }
@@ -64,6 +75,20 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
       ) {
         return state;
       }
+      if (state.currentPoseId === action.navigation.poseId) {
+        return {
+          ...state,
+          navigationContext: action.navigation.navigationContext,
+          semanticContext: action.navigation.semanticContext,
+          currentMessage: action.navigation.message,
+          bubbleAlign: action.navigation.bubbleAlign,
+          pendingNavigation: null,
+          bubbleVisible: true,
+          bubbleVersion: state.bubbleVersion + 1,
+          stage: "visible-message",
+          transitionPhase: null,
+        };
+      }
       return {
         ...state,
         pendingNavigation: action.navigation,
@@ -78,8 +103,12 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
       return {
         ...state,
         navigationContext: state.pendingNavigation.navigationContext,
+        semanticContext: state.pendingNavigation.semanticContext,
         currentPoseId: state.pendingNavigation.poseId,
+        currentMessage: state.pendingNavigation.message,
+        bubbleAlign: state.pendingNavigation.bubbleAlign,
         pendingNavigation: null,
+        bubbleVersion: state.bubbleVersion + 1,
         transitionPhase: "enter",
       };
     case "show-context-message":
@@ -128,7 +157,7 @@ export function useFloatingBlessy(enabled: boolean, navigation: FloatingBlessyNa
 
     const timer = window.setTimeout(() => dispatch(action!), delay);
     return () => window.clearTimeout(timer);
-  }, [enabled, state.dismissed, state.stage, state.transitionPhase]);
+  }, [enabled, state.bubbleVersion, state.dismissed, state.stage, state.transitionPhase]);
 
   useEffect(() => {
     if (
@@ -143,10 +172,11 @@ export function useFloatingBlessy(enabled: boolean, navigation: FloatingBlessyNa
 
     dispatch({
       type: "start-context-transition",
-      navigation: { navigationContext: navigation.navigationContext, poseId: navigation.poseId },
+      navigation,
     });
   }, [
     enabled,
+    navigation,
     navigation.navigationContext,
     navigation.poseId,
     state.currentPoseId,
