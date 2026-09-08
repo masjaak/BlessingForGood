@@ -121,22 +121,46 @@ describe("Floating Blessy nav-context extension", () => {
     pathname.mockReturnValue("/catalog");
     rerender(<FloatingBlessyGuide />);
 
-    expectAttribute(widget, "data-navigation-context", "catalog");
+    expectAttribute(widget, "data-navigation-context", "ready-stock");
     expectAttribute(widget, "data-pose-id", "question");
+    expectAttribute(widget, "data-stage", "bubble-exit");
     expect(widget.getAttribute("data-transition-phase")).toBeNull();
+    const bubble = screen.getByTestId("floating-blessy-bubble");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expectAttribute(bubble, "data-visible", "false");
+    expect(screen.getByText("Mau cari buku yang bisa langsung dibawa pulang? Cek Ready Stock yuk!")).toBeTruthy();
+    expect(screen.queryByText("Hari ini mau FIX buku apa?")).toBeNull();
+
+    advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs);
+
+    expectAttribute(widget, "data-stage", "visible-message");
+    expectAttribute(widget, "data-navigation-context", "catalog");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expectAttribute(bubble, "data-visible", "true");
     expect(screen.getByText("Hari ini mau FIX buku apa?")).toBeTruthy();
   });
 
   it("uses one shared bubble family with a dedicated centered CTA inner wrapper", () => {
     showBlessy();
-    expect(screen.getByTestId("floating-blessy-bubble").className).toContain("floating-blessy__bubble--context");
-    expect(screen.getByTestId("floating-blessy-bubble").querySelector(".floating-blessy__bubble-inner")).toBeTruthy();
+    const bubble = screen.getByTestId("floating-blessy-bubble");
+    expect(screen.getAllByTestId("floating-blessy-bubble")).toHaveLength(1);
+    expect(screen.queryByTestId("floating-blessy-cta")).toBeNull();
+    expect(bubble.className).toContain("floating-blessy__bubble--context");
+    expect(bubble.querySelector(".floating-blessy__bubble-inner")).toBeTruthy();
 
     advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs);
-    const cta = screen.getByTestId("floating-blessy-cta");
-    expect(cta.className).toContain("floating-blessy__bubble--cta");
-    expect(cta.querySelector(".floating-blessy__bubble-inner")).toBeTruthy();
-    expect(cta.getAttribute("data-align")).toBe("center");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expectAttribute(bubble, "data-visible", "false");
+    expect(screen.queryByText(FLOATING_BLESSY_CTA)).toBeNull();
+
+    advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs);
+
+    expect(bubble.className).toContain("floating-blessy__bubble--cta");
+    expect(bubble.querySelector(".floating-blessy__bubble-inner")).toBeTruthy();
+    expect(bubble.getAttribute("data-align")).toBe("center");
+    expectAttribute(bubble, "data-bubble-mode", "cta");
+    expectAttribute(bubble, "data-visible", "true");
+    expect(screen.getByText(FLOATING_BLESSY_CTA)).toBeTruthy();
   });
 
   it("shows the current route context after the initial delay", () => {
@@ -148,7 +172,7 @@ describe("Floating Blessy nav-context extension", () => {
     expect(poseImage()?.getAttribute("src")).toContain(encodeURIComponent(FLOATING_BLESSY_POSES[1].asset.src));
     expect(screen.getByText(FLOATING_BLESSY_POSES[1].message)).toBeTruthy();
     expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-visible", "true");
-    expectAttribute(screen.getByTestId("floating-blessy-cta"), "data-visible", "false");
+    expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-bubble-mode", "context");
   });
 
   it("transitions on a nav-family change, shows the new bubble, and preserves position", () => {
@@ -161,15 +185,20 @@ describe("Floating Blessy nav-context extension", () => {
     rerender(<FloatingBlessyGuide />);
     expectAttribute(widget, "data-stage", "pose-transition");
     expectAttribute(widget, "data-transition-phase", "exit");
+    expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-visible", "false");
+    expect(screen.queryByText(FLOATING_BLESSY_CTA)).toBeNull();
 
-    advance(FLOATING_BLESSY_TIMING.poseExitMs);
+    advance(Math.max(FLOATING_BLESSY_TIMING.poseExitMs, FLOATING_BLESSY_TIMING.bubbleTransitionMs));
     expectAttribute(widget, "data-pose-id", "question");
     expectAttribute(widget, "data-transition-phase", "enter");
+    expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-visible", "false");
+    expect(screen.getByText("Hari ini mau FIX buku apa?")).toBeTruthy();
     advance(FLOATING_BLESSY_TIMING.poseEnterMs);
 
     expectAttribute(widget, "data-stage", "visible-message");
     expectAttribute(widget, "data-navigation-context", "catalog");
     expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-visible", "true");
+    expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-bubble-mode", "context");
     expect(screen.getByText("Hari ini mau FIX buku apa?")).toBeTruthy();
     expect(widget.getAttribute("style")).toBe(initialStyle);
   });
@@ -192,14 +221,94 @@ describe("Floating Blessy nav-context extension", () => {
     showBlessy();
     advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs);
 
-    expectAttribute(screen.getByTestId("floating-blessy-bubble"), "data-visible", "false");
-    expectAttribute(screen.getByTestId("floating-blessy-cta"), "data-visible", "true");
+    const bubble = screen.getByTestId("floating-blessy-bubble");
+    expectAttribute(bubble, "data-visible", "false");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expect(screen.queryByText(FLOATING_BLESSY_CTA)).toBeNull();
+
+    advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs);
+
+    expectAttribute(bubble, "data-visible", "true");
+    expectAttribute(bubble, "data-bubble-mode", "cta");
     expect(screen.getByText(FLOATING_BLESSY_CTA)).toBeTruthy();
 
     advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs + 1_000_000);
     expectAttribute(screen.getByTestId("floating-blessy"), "data-stage", "idle");
     expectAttribute(screen.getByTestId("floating-blessy"), "data-pose-id", "greeting");
     expect(screen.getByTestId("floating-blessy").getAttribute("data-sequence-complete")).toBeNull();
+  });
+
+  it("exits CTA before entering a new context without a second bubble", () => {
+    const { rerender } = render(<FloatingBlessyGuide />);
+    advance(FLOATING_BLESSY_TIMING.initialDelayMs);
+    advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs);
+    advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs);
+
+    const bubble = screen.getByTestId("floating-blessy-bubble");
+    expectAttribute(bubble, "data-bubble-mode", "cta");
+    expectAttribute(bubble, "data-visible", "true");
+    expect(screen.getByText(FLOATING_BLESSY_CTA)).toBeTruthy();
+
+    pathname.mockReturnValue("/catalog");
+    rerender(<FloatingBlessyGuide />);
+
+    expectAttribute(screen.getByTestId("floating-blessy"), "data-stage", "pose-transition");
+    expectAttribute(bubble, "data-visible", "false");
+    expectAttribute(bubble, "data-bubble-mode", "cta");
+    expect(screen.getByText(FLOATING_BLESSY_CTA)).toBeTruthy();
+    expect(screen.queryByText("Hari ini mau FIX buku apa?")).toBeNull();
+
+    advance(Math.max(FLOATING_BLESSY_TIMING.poseExitMs, FLOATING_BLESSY_TIMING.bubbleTransitionMs));
+    expectAttribute(bubble, "data-visible", "false");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expect(screen.getByText("Hari ini mau FIX buku apa?")).toBeTruthy();
+    expect(screen.queryByText(FLOATING_BLESSY_CTA)).toBeNull();
+
+    advance(FLOATING_BLESSY_TIMING.poseEnterMs);
+    expectAttribute(bubble, "data-visible", "true");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+  });
+
+  it("lets the latest rapid navigation win and ignores the old expiry timer", () => {
+    const { rerender } = render(<FloatingBlessyGuide />);
+    advance(FLOATING_BLESSY_TIMING.initialDelayMs);
+
+    for (const path of ["/ready-stock", "/community", "/how-to-order", "/catalog", "/join"]) {
+      pathname.mockReturnValue(path);
+      rerender(<FloatingBlessyGuide />);
+      advance(1);
+    }
+
+    const bubble = screen.getByTestId("floating-blessy-bubble");
+    advance(FLOATING_BLESSY_TIMING.bubbleTransitionMs);
+    expectAttribute(screen.getByTestId("floating-blessy"), "data-navigation-context", "join");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expectAttribute(bubble, "data-visible", "true");
+    expect(screen.getByText("Mau gabung jadi bagian dari Blessfriends? Yuk, sini!")).toBeTruthy();
+    expect(screen.queryByText(FLOATING_BLESSY_CTA)).toBeNull();
+
+    advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs - 1);
+    expectAttribute(bubble, "data-visible", "true");
+    advance(1);
+    expectAttribute(bubble, "data-visible", "false");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+  });
+
+  it("does not let the CTA timer fire one millisecond before a context change", () => {
+    const { rerender } = render(<FloatingBlessyGuide />);
+    advance(FLOATING_BLESSY_TIMING.initialDelayMs);
+    advance(FLOATING_BLESSY_TIMING.bubbleVisibleMs - 1);
+
+    pathname.mockReturnValue("/catalog");
+    rerender(<FloatingBlessyGuide />);
+    advance(Math.max(FLOATING_BLESSY_TIMING.poseExitMs, FLOATING_BLESSY_TIMING.bubbleTransitionMs));
+    advance(FLOATING_BLESSY_TIMING.poseEnterMs);
+
+    const bubble = screen.getByTestId("floating-blessy-bubble");
+    expectAttribute(bubble, "data-bubble-mode", "context");
+    expectAttribute(bubble, "data-visible", "true");
+    expect(screen.getByText("Hari ini mau FIX buku apa?")).toBeTruthy();
+    expect(screen.queryByText(FLOATING_BLESSY_CTA)).toBeNull();
   });
 
   it("uses one keyboard-accessible WhatsApp action and tap does not change pose", () => {

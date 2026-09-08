@@ -35,7 +35,6 @@ export function FloatingBlessyGuide() {
   const pose = state.currentPoseId ? findFloatingBlessyPose(state.currentPoseId) : null;
   const rootRef = useRef<HTMLElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
-  const ctaRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLDivElement | null>(null);
   const mascotRef = useRef<HTMLImageElement | null>(null);
   const [labelGeometry, setLabelGeometry] = useState(emptyGeometry);
@@ -46,7 +45,7 @@ export function FloatingBlessyGuide() {
   useLayoutEffect(() => {
     if (!enabled || !pose) return;
     const root = rootRef.current;
-    const label = state.bubbleVisible ? bubbleRef.current : ctaRef.current;
+    const label = bubbleRef.current;
     const close = closeRef.current;
     const mascot = mascotRef.current;
     if (!root || !label || !close || !mascot) return;
@@ -95,7 +94,7 @@ export function FloatingBlessyGuide() {
       window.removeEventListener("orientationchange", updateGeometry);
       observer?.disconnect();
     };
-  }, [enabled, message, navigation.bubbleAlign, pose, position?.x, position?.y, state.bubbleVisible]);
+  }, [enabled, message, navigation.bubbleAlign, pose, position?.x, position?.y, state.bubbleMode]);
 
   useLayoutEffect(() => {
     if (!enabled) return;
@@ -112,6 +111,12 @@ export function FloatingBlessyGuide() {
     ? { left: `${position.x}px`, top: `${position.y}px`, right: "auto", bottom: "auto" }
     : undefined;
   const labelStyle = { left: `${labelGeometry.left}px`, top: `${labelGeometry.top}px` };
+  const bubbleVisible =
+    state.bubbleMode !== "hidden" && state.stage !== "bubble-exit" && state.stage !== "pose-transition";
+  const bubbleClass =
+    "floating-blessy__bubble " +
+    (state.bubbleMode === "cta" ? "floating-blessy__bubble--cta" : "floating-blessy__bubble--context") +
+    (bubbleVisible ? " is-visible" : "");
 
   return (
     <aside
@@ -141,36 +146,18 @@ export function FloatingBlessyGuide() {
       </div>
       <div
         ref={bubbleRef}
-        className={
-          "floating-blessy__bubble floating-blessy__bubble--context" + (state.bubbleVisible ? " is-visible" : "")
-        }
+        className={bubbleClass}
         style={labelStyle}
         data-placement={labelGeometry.placement}
-        data-align={bubbleAlign}
+        data-align={state.bubbleMode === "cta" ? "center" : bubbleAlign}
+        data-bubble-mode={state.bubbleMode}
         data-testid="floating-blessy-bubble"
-        data-visible={state.bubbleVisible ? "true" : "false"}
-        aria-hidden={!state.bubbleVisible}
-        aria-live={state.bubbleVisible ? "polite" : "off"}
+        data-visible={bubbleVisible ? "true" : "false"}
+        aria-hidden={!bubbleVisible}
+        aria-live={state.bubbleMode === "context" && bubbleVisible ? "polite" : "off"}
       >
         <div className="floating-blessy__bubble-inner">
-          <p>{message}</p>
-        </div>
-      </div>
-      <div
-        ref={ctaRef}
-        className={
-          "floating-blessy__bubble floating-blessy__bubble--cta floating-blessy__cta" +
-          (!state.bubbleVisible ? " is-visible" : "")
-        }
-        style={labelStyle}
-        data-placement={labelGeometry.placement}
-        data-align="center"
-        data-testid="floating-blessy-cta"
-        data-visible={!state.bubbleVisible ? "true" : "false"}
-        aria-hidden={state.bubbleVisible}
-      >
-        <div className="floating-blessy__bubble-inner">
-          <p>{FLOATING_BLESSY_CTA}</p>
+          <p>{state.bubbleMode === "cta" ? FLOATING_BLESSY_CTA : message}</p>
         </div>
       </div>
       <div className="floating-blessy__visual">

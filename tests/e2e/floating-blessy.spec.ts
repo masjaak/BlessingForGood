@@ -38,6 +38,9 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
         const close = document.querySelector<HTMLElement>(".floating-blessy__close");
         const nav = document.querySelector<HTMLElement>(".customer-bottom-nav");
         if (!widget || !bubble || !mascot || !close || !nav) throw new Error("Blessy geometry fixture is incomplete");
+        if (document.querySelectorAll("[data-testid='floating-blessy-bubble']").length !== 1) {
+          throw new Error("Blessy must render one bubble frame");
+        }
 
         const rect = (element: HTMLElement) => {
           const box = element.getBoundingClientRect();
@@ -71,6 +74,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           bubbleOverlapsMascot: overlaps(rect(bubble), rect(mascot)),
           bubbleMascotGap: gapAlongPlacement(rect(bubble), rect(mascot), bubblePlacement),
           bubblePlacement,
+          bubbleMode: bubble.dataset.bubbleMode || "",
           nav: { ...rect(nav), display: getComputedStyle(nav).display },
           scrollWidth: document.documentElement.scrollWidth,
           animationName: getComputedStyle(document.querySelector(".floating-blessy__idle")!).animationName,
@@ -88,6 +92,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       expect(geometry.pointerEvents).toBe("none");
       expect(geometry.bubbleOverlapsClose).toBe(false);
       expect(geometry.bubbleOverlapsMascot).toBe(false);
+      expect(geometry.bubbleMode).toBe("context");
       expect(geometry.bubbleMascotGap, viewport.width + "px bubble/mascot gap").toBeGreaterThanOrEqual(
         (viewport.width <= 800 ? 12 : 16) - 0.5,
       );
@@ -242,6 +247,119 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     }
   });
 
+  test("keeps one bubble mode through normal and rapid public navigation", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "customer-390",
+      "The bubble transition harness runs once from the customer project.",
+    );
+    test.setTimeout(30_000);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1700);
+
+    type BubbleSample = { bubbleCount: number; mode: string; visible: string; stage: string; text: string };
+    const startRecording = () =>
+      page.evaluate(() => {
+        type RecordingWindow = Window & {
+          __bfgBubbleSampleTimer?: number;
+          __bfgBubbleSamples?: BubbleSample[];
+        };
+        const recordingWindow = window as RecordingWindow;
+        const samples: BubbleSample[] = [];
+        const sample = () => {
+          const widget = document.querySelector<HTMLElement>("[data-testid='floating-blessy']");
+          const bubbles = document.querySelectorAll<HTMLElement>("[data-testid='floating-blessy-bubble']");
+          const bubble = bubbles[0];
+          if (widget && bubble) {
+            samples.push({
+              bubbleCount: bubbles.length,
+              mode: bubble.dataset.bubbleMode || "",
+              visible: bubble.dataset.visible || "",
+              stage: widget.dataset.stage || "",
+              text: bubble.textContent?.trim() || "",
+            });
+          }
+        };
+        sample();
+        recordingWindow.__bfgBubbleSamples = samples;
+        recordingWindow.__bfgBubbleSampleTimer = window.setInterval(sample, 10);
+      });
+    const stopRecording = () =>
+      page.evaluate(() => {
+        type RecordingWindow = Window & {
+          __bfgBubbleSampleTimer?: number;
+          __bfgBubbleSamples?: BubbleSample[];
+        };
+        const recordingWindow = window as RecordingWindow;
+        if (recordingWindow.__bfgBubbleSampleTimer !== undefined) {
+          window.clearInterval(recordingWindow.__bfgBubbleSampleTimer);
+          recordingWindow.__bfgBubbleSampleTimer = undefined;
+        }
+        return recordingWindow.__bfgBubbleSamples || [];
+      });
+
+    const assertModes = (samples: BubbleSample[]) => {
+      expect(samples.length).toBeGreaterThan(5);
+      for (const sample of samples) {
+        expect(sample.bubbleCount).toBe(1);
+        expect(["context", "cta", "hidden"]).toContain(sample.mode);
+        if (sample.stage === "bubble-exit" || sample.stage === "pose-transition") {
+          expect(sample.visible).not.toBe("true");
+        }
+        if (sample.mode === "context" && sample.visible === "true") {
+          expect(sample.text).not.toContain("Klik aku kalau mau ngobrol langsung ya");
+        }
+        if (sample.mode === "cta" && sample.visible === "true") {
+          expect(sample.text).toBe("Klik aku kalau mau ngobrol langsung ya");
+        }
+      }
+    };
+
+    const normalEntries = [
+      {
+        href: "/ready-stock",
+        context: "ready-stock",
+        copy: "Mau cari buku yang bisa langsung dibawa pulang? Cek Ready Stock yuk!",
+      },
+      {
+        href: "/community",
+        context: "community",
+        copy: "Mau kenalan lebih dekat sama Blessfriends? Yuk lihat komunitasnya!",
+      },
+      {
+        href: "/how-to-order",
+        context: "how-to-order",
+        copy: "Masih bingung cara mesannya? Sini, aku bantu tunjukin alurnya ya!",
+      },
+      { href: "/catalog", context: "catalog", copy: "Hari ini mau FIX buku apa?" },
+      { href: "/join", context: "join", copy: "Mau gabung jadi bagian dari Blessfriends? Yuk, sini!" },
+    ];
+
+    for (const entry of normalEntries) {
+      await startRecording();
+      await page.locator("nav[aria-label='Navigasi utama'] a[href='" + entry.href + "']").click();
+      await page.waitForTimeout(700);
+      assertModes(await stopRecording());
+      await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute(
+        "data-navigation-context",
+        entry.context,
+      );
+      await expect(page.getByText(entry.copy, { exact: true })).toBeVisible();
+    }
+
+    await startRecording();
+    for (const href of ["/ready-stock", "/community", "/how-to-order", "/catalog", "/join"]) {
+      const link = page.locator("nav[aria-label='Navigasi utama'] a[href='" + href + "']");
+      await link.click({ noWaitAfter: true });
+      await page.waitForTimeout(20);
+    }
+    await page.waitForTimeout(1_500);
+    assertModes(await stopRecording());
+    await expect(page).toHaveURL(/\/join$/);
+    await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-navigation-context", "join");
+    await expect(page.getByText("Mau gabung jadi bagian dari Blessfriends? Yuk, sini!", { exact: true })).toBeVisible();
+  });
+
   test("keeps bubble, mascot, and close geometry safe across dragged positions", async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== "customer-390",
@@ -316,12 +434,12 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       await page.setViewportSize(viewport);
       await page.goto("/", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(9000);
-      await expect(page.locator("[data-testid='floating-blessy-cta']")).toHaveAttribute("data-visible", "true", {
+      await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-bubble-mode", "cta", {
         timeout: 15_000,
       });
 
       const geometry = await page.evaluate(() => {
-        const cta = document.querySelector<HTMLElement>("[data-testid='floating-blessy-cta']");
+        const cta = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
         const mascot = document.querySelector<HTMLElement>(".floating-blessy__image");
         const close = document.querySelector<HTMLElement>(".floating-blessy__close");
         if (!cta || !mascot || !close) throw new Error("Blessy CTA geometry fixture is incomplete");
@@ -335,6 +453,8 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           first.top < second.bottom &&
           first.bottom > second.top;
         return {
+          mode: cta.dataset.bubbleMode,
+          visible: cta.dataset.visible,
           overlapMascot: overlaps(bubble, character),
           overlapClose: overlaps(bubble, closeRect),
           gap: cta.dataset.placement?.startsWith("top") ? character.top - bubble.bottom : bubble.top - character.bottom,
@@ -343,6 +463,8 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
 
       expect(geometry.overlapMascot).toBe(false);
       expect(geometry.overlapClose).toBe(false);
+      expect(geometry.mode).toBe("cta");
+      expect(geometry.visible).toBe("true");
       expect(geometry.gap).toBeGreaterThanOrEqual((viewport.width <= 800 ? 12 : 16) - 0.5);
     }
   });
@@ -384,11 +506,11 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1700 + 7200);
-    await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-visible", "false");
-    await expect(page.locator("[data-testid='floating-blessy-cta']")).toHaveAttribute("data-visible", "true");
+    await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-visible", "true");
+    await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-bubble-mode", "cta");
     await expect(page.getByText("Klik aku kalau mau ngobrol langsung ya")).toBeVisible();
     const ctaLayout = await page
-      .locator("[data-testid='floating-blessy-cta'] .floating-blessy__bubble-inner")
+      .locator("[data-testid='floating-blessy-bubble'] .floating-blessy__bubble-inner")
       .evaluate((element) => {
         const style = getComputedStyle(element);
         return {

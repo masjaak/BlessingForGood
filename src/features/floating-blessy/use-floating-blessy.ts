@@ -6,6 +6,7 @@ import type { FloatingBlessyNavigation } from "./floating-blessy-context";
 
 export type FloatingBlessyStage =
   "boot-delay" | "visible-message" | "bubble-exit" | "idle" | "pose-transition" | "dismissed";
+export type FloatingBlessyBubbleMode = "context" | "cta" | "hidden";
 
 type PoseTransitionPhase = "exit" | "enter" | null;
 
@@ -16,8 +17,9 @@ type FloatingBlessyState = {
   currentMessage: string | null;
   bubbleAlign: FloatingBlessyNavigation["bubbleAlign"] | null;
   pendingNavigation: FloatingBlessyNavigation | null;
-  bubbleVisible: boolean;
+  bubbleMode: FloatingBlessyBubbleMode;
   bubbleVersion: number;
+  transitionEpoch: number;
   stage: FloatingBlessyStage;
   transitionPhase: PoseTransitionPhase;
   dismissed: boolean;
@@ -25,11 +27,11 @@ type FloatingBlessyState = {
 
 type FloatingBlessyAction =
   | { type: "show-initial"; navigation: FloatingBlessyNavigation }
-  | { type: "hide-bubble" }
-  | { type: "finish-bubble-exit" }
+  | { type: "hide-bubble"; epoch: number }
+  | { type: "finish-bubble-exit"; epoch: number }
   | { type: "start-context-transition"; navigation: FloatingBlessyNavigation }
-  | { type: "enter-context" }
-  | { type: "show-context-message" }
+  | { type: "enter-context"; epoch: number }
+  | { type: "show-context-message"; epoch: number }
   | { type: "dismiss" };
 
 const initialState: FloatingBlessyState = {
@@ -39,8 +41,9 @@ const initialState: FloatingBlessyState = {
   currentMessage: null,
   bubbleAlign: null,
   pendingNavigation: null,
-  bubbleVisible: false,
+  bubbleMode: "hidden",
   bubbleVersion: 0,
+  transitionEpoch: 0,
   stage: "boot-delay",
   transitionPhase: null,
   dismissed: false,
@@ -48,6 +51,7 @@ const initialState: FloatingBlessyState = {
 
 function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): FloatingBlessyState {
   if (state.dismissed && action.type !== "dismiss") return state;
+  if ("epoch" in action && action.epoch !== state.transitionEpoch) return state;
 
   switch (action.type) {
     case "show-initial":
@@ -59,14 +63,25 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
             currentPoseId: action.navigation.poseId,
             currentMessage: action.navigation.message,
             bubbleAlign: action.navigation.bubbleAlign,
-            bubbleVisible: true,
+            bubbleMode: "context",
             stage: "visible-message",
           }
         : state;
     case "hide-bubble":
-      return state.stage === "visible-message" ? { ...state, bubbleVisible: false, stage: "bubble-exit" } : state;
+      return state.stage === "visible-message" ? { ...state, stage: "bubble-exit" } : state;
     case "finish-bubble-exit":
-      return state.stage === "bubble-exit" ? { ...state, stage: "idle" } : state;
+      if (state.stage !== "bubble-exit") return state;
+      if (!state.pendingNavigation) {
+        return { ...state, bubbleMode: "cta", transitionEpoch: state.transitionEpoch + 1, stage: "idle" };
+      }
+      return state.pendingNavigation.poseId === state.currentPoseId
+        ? commitContext(state, state.pendingNavigation)
+        : {
+            ...state,
+            transitionEpoch: state.transitionEpoch + 1,
+            stage: "pose-transition",
+            transitionPhase: "exit",
+          };
     case "start-context-transition":
       if (
         state.currentPoseId === null ||
@@ -75,24 +90,25 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
       ) {
         return state;
       }
+      if (state.stage === "bubble-exit" || state.stage === "pose-transition") {
+        return {
+          ...state,
+          pendingNavigation: action.navigation,
+          transitionEpoch: state.transitionEpoch + 1,
+        };
+      }
       if (state.currentPoseId === action.navigation.poseId) {
         return {
           ...state,
-          navigationContext: action.navigation.navigationContext,
-          semanticContext: action.navigation.semanticContext,
-          currentMessage: action.navigation.message,
-          bubbleAlign: action.navigation.bubbleAlign,
-          pendingNavigation: null,
-          bubbleVisible: true,
-          bubbleVersion: state.bubbleVersion + 1,
-          stage: "visible-message",
-          transitionPhase: null,
+          pendingNavigation: action.navigation,
+          transitionEpoch: state.transitionEpoch + 1,
+          stage: "bubble-exit",
         };
       }
       return {
         ...state,
         pendingNavigation: action.navigation,
-        bubbleVisible: false,
+        transitionEpoch: state.transitionEpoch + 1,
         stage: "pose-transition",
         transitionPhase: "exit",
       };
@@ -100,6 +116,7 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
       if (state.stage !== "pose-transition" || state.transitionPhase !== "exit" || !state.pendingNavigation) {
         return state;
       }
+      if (state.currentPoseId === state.pendingNavigation.poseId) return commitContext(state, state.pendingNavigation);
       return {
         ...state,
         navigationContext: state.pendingNavigation.navigationContext,
@@ -108,16 +125,57 @@ function reducer(state: FloatingBlessyState, action: FloatingBlessyAction): Floa
         currentMessage: state.pendingNavigation.message,
         bubbleAlign: state.pendingNavigation.bubbleAlign,
         pendingNavigation: null,
+        bubbleMode: "context",
         bubbleVersion: state.bubbleVersion + 1,
+        transitionEpoch: state.transitionEpoch + 1,
         transitionPhase: "enter",
       };
     case "show-context-message":
-      return state.stage === "pose-transition" && state.transitionPhase === "enter"
-        ? { ...state, bubbleVisible: true, stage: "visible-message", transitionPhase: null }
-        : state;
+      if (state.stage !== "pose-transition" || state.transitionPhase !== "enter") return state;
+      if (state.pendingNavigation) {
+        return state.pendingNavigation.poseId === state.currentPoseId
+          ? commitContext(state, state.pendingNavigation)
+          : {
+              ...state,
+              transitionEpoch: state.transitionEpoch + 1,
+              transitionPhase: "exit",
+            };
+      }
+      return {
+        ...state,
+        bubbleMode: "context",
+        transitionEpoch: state.transitionEpoch + 1,
+        stage: "visible-message",
+        transitionPhase: null,
+      };
     case "dismiss":
-      return { ...state, bubbleVisible: false, stage: "dismissed", transitionPhase: null, dismissed: true };
+      return {
+        ...state,
+        bubbleMode: "hidden",
+        pendingNavigation: null,
+        transitionEpoch: state.transitionEpoch + 1,
+        stage: "dismissed",
+        transitionPhase: null,
+        dismissed: true,
+      };
   }
+}
+
+function commitContext(state: FloatingBlessyState, navigation: FloatingBlessyNavigation): FloatingBlessyState {
+  return {
+    ...state,
+    navigationContext: navigation.navigationContext,
+    semanticContext: navigation.semanticContext,
+    currentPoseId: navigation.poseId,
+    currentMessage: navigation.message,
+    bubbleAlign: navigation.bubbleAlign,
+    pendingNavigation: null,
+    bubbleMode: "context",
+    bubbleVersion: state.bubbleVersion + 1,
+    transitionEpoch: state.transitionEpoch + 1,
+    stage: "visible-message",
+    transitionPhase: null,
+  };
 }
 
 export function useFloatingBlessy(enabled: boolean, navigation: FloatingBlessyNavigation) {
@@ -139,16 +197,21 @@ export function useFloatingBlessy(enabled: boolean, navigation: FloatingBlessyNa
         break;
       case "visible-message":
         delay = FLOATING_BLESSY_TIMING.bubbleVisibleMs;
-        action = { type: "hide-bubble" };
+        action = { type: "hide-bubble", epoch: state.transitionEpoch };
         break;
       case "bubble-exit":
         delay = FLOATING_BLESSY_TIMING.bubbleTransitionMs;
-        action = { type: "finish-bubble-exit" };
+        action = { type: "finish-bubble-exit", epoch: state.transitionEpoch };
         break;
       case "pose-transition":
         delay =
-          state.transitionPhase === "exit" ? FLOATING_BLESSY_TIMING.poseExitMs : FLOATING_BLESSY_TIMING.poseEnterMs;
-        action = state.transitionPhase === "exit" ? { type: "enter-context" } : { type: "show-context-message" };
+          state.transitionPhase === "exit"
+            ? Math.max(FLOATING_BLESSY_TIMING.poseExitMs, FLOATING_BLESSY_TIMING.bubbleTransitionMs)
+            : FLOATING_BLESSY_TIMING.poseEnterMs;
+        action =
+          state.transitionPhase === "exit"
+            ? { type: "enter-context", epoch: state.transitionEpoch }
+            : { type: "show-context-message", epoch: state.transitionEpoch };
         break;
       case "idle":
       case "dismissed":
@@ -157,7 +220,15 @@ export function useFloatingBlessy(enabled: boolean, navigation: FloatingBlessyNa
 
     const timer = window.setTimeout(() => dispatch(action!), delay);
     return () => window.clearTimeout(timer);
-  }, [enabled, state.bubbleVersion, state.dismissed, state.stage, state.transitionPhase]);
+  }, [
+    enabled,
+    state.bubbleVersion,
+    state.dismissed,
+    state.pendingNavigation?.navigationContext,
+    state.stage,
+    state.transitionEpoch,
+    state.transitionPhase,
+  ]);
 
   useEffect(() => {
     if (
