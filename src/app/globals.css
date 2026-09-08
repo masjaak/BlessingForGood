@@ -8469,8 +8469,8 @@ p {
 
 .floating-blessy__bubble::after {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border: 1px solid rgb(159 190 165 / 72%);
   background: #faf2e5;
   content: "";
@@ -8479,14 +8479,14 @@ p {
 
 .floating-blessy__bubble[data-placement="top-right"]::after,
 .floating-blessy__bubble[data-placement="top-left"]::after {
-  bottom: -7px;
+  bottom: -12px;
   border-top: 0;
   border-left: 0;
 }
 
 .floating-blessy__bubble[data-placement="bottom-right"]::after,
 .floating-blessy__bubble[data-placement="bottom-left"]::after {
-  top: -7px;
+  top: -12px;
   border-right: 0;
   border-bottom: 0;
 }

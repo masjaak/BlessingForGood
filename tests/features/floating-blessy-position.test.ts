@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clampFloatingBlessyPosition,
+  getFloatingBlessyMascotGap,
   resolveFloatingBlessyBubble,
   type FloatingBlessyBounds,
 } from "@/features/floating-blessy/floating-blessy-position";
@@ -47,5 +48,34 @@ describe("Floating Blessy geometry", () => {
     expect(result.placement).toBe("bottom-right");
     expect(result.top).toBeGreaterThanOrEqual(300 + mascot.height);
     expect(result.left + 300).toBeLessThanOrEqual(bounds.right);
+  });
+
+  it("keeps the bubble outside the mascot exclusion with the responsive visual gap", () => {
+    const result = resolveFloatingBlessyBubble({
+      anchor: { x: 260, y: 300, ...mascot },
+      mascot: { x: 260, y: 300, ...mascot },
+      bubble: { width: 300, height: 92 },
+      mascotGap: getFloatingBlessyMascotGap(390),
+      bounds,
+    });
+
+    expect(result.placement).toBe("top-right");
+    expect(result.top + 92).toBeLessThanOrEqual(300 - 12);
+    expect(result.left + 300).toBeLessThanOrEqual(bounds.right);
+  });
+
+  it("clears Close sideways when it sits between the bubble and mascot", () => {
+    const result = resolveFloatingBlessyBubble({
+      anchor: { x: 261, y: 645, width: 117, height: 117 },
+      mascot: { x: 261, y: 645, width: 117, height: 117 },
+      bubble: { width: 300, height: 64 },
+      mascotGap: 16,
+      close: { x: 348, y: 615, width: 30, height: 30 },
+      bounds: { left: 8, top: 8, right: 382, bottom: 768 },
+    });
+
+    expect(result.placement).toBe("top-right");
+    expect(result.top + 64).toBeLessThanOrEqual(645 - 16);
+    expect(result.left + 300).toBeLessThanOrEqual(348 - 6);
   });
 });

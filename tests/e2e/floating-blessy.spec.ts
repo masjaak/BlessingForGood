@@ -55,6 +55,12 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           first.right > second.left &&
           first.top < second.bottom &&
           first.bottom > second.top;
+        const gapAlongPlacement = (
+          bubbleRect: ReturnType<typeof rect>,
+          mascotRect: ReturnType<typeof rect>,
+          placement: string,
+        ) => (placement.startsWith("top") ? mascotRect.top - bubbleRect.bottom : bubbleRect.top - mascotRect.bottom);
+        const bubblePlacement = bubble.dataset.placement || "";
         return {
           viewport: { width: window.innerWidth, height: window.innerHeight },
           widget: rect(widget),
@@ -62,6 +68,9 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           mascot: rect(mascot),
           close: rect(close),
           bubbleOverlapsClose: overlaps(rect(bubble), rect(close)),
+          bubbleOverlapsMascot: overlaps(rect(bubble), rect(mascot)),
+          bubbleMascotGap: gapAlongPlacement(rect(bubble), rect(mascot), bubblePlacement),
+          bubblePlacement,
           nav: { ...rect(nav), display: getComputedStyle(nav).display },
           scrollWidth: document.documentElement.scrollWidth,
           animationName: getComputedStyle(document.querySelector(".floating-blessy__idle")!).animationName,
@@ -78,6 +87,10 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       expect(geometry.scrollWidth, viewport.width + "px document width").toBeLessThanOrEqual(viewport.width + 1);
       expect(geometry.pointerEvents).toBe("none");
       expect(geometry.bubbleOverlapsClose).toBe(false);
+      expect(geometry.bubbleOverlapsMascot).toBe(false);
+      expect(geometry.bubbleMascotGap, viewport.width + "px bubble/mascot gap").toBeGreaterThanOrEqual(
+        (viewport.width <= 800 ? 12 : 16) - 0.5,
+      );
 
       if (viewport.width <= 800) {
         expect(geometry.nav.display).not.toBe("none");
@@ -229,7 +242,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     }
   });
 
-  test("keeps the close control clear and clickable at dragged corners", async ({ page }, testInfo) => {
+  test("keeps bubble, mascot, and close geometry safe across dragged positions", async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== "customer-390",
       "The close geometry harness runs once from the 390px customer project.",
@@ -238,41 +251,100 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1700);
     const mascot = page.getByRole("link", { name: "Chat Admin BFG lewat WhatsApp" });
-    const corners = [
-      { x: 18, y: 180 },
-      { x: 350, y: 180 },
-      { x: 18, y: 590 },
-      { x: 350, y: 590 },
+    const positions = [
+      { x: 66, y: 102 },
+      { x: 195, y: 102 },
+      { x: 324, y: 102 },
+      { x: 66, y: 408 },
+      { x: 195, y: 408 },
+      { x: 324, y: 408 },
+      { x: 66, y: 700 },
+      { x: 195, y: 700 },
+      { x: 324, y: 700 },
     ];
 
-    for (const corner of corners) {
+    for (const position of positions) {
       const before = await mascot.boundingBox();
       if (!before) throw new Error("Blessy hit target has no geometry");
       await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
       await page.mouse.down();
-      await page.mouse.move(corner.x, corner.y);
+      await page.mouse.move(position.x, position.y);
       await page.mouse.up();
+      await page.waitForTimeout(50);
 
       const geometry = await page.evaluate(() => {
         const bubble = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
+        const mascot = document.querySelector<HTMLElement>(".floating-blessy__image");
         const close = document.querySelector<HTMLElement>(".floating-blessy__close");
-        if (!bubble || !close) throw new Error("Blessy close geometry fixture is incomplete");
+        if (!bubble || !mascot || !close) throw new Error("Blessy geometry fixture is incomplete");
         const first = bubble.getBoundingClientRect();
-        const second = close.getBoundingClientRect();
+        const character = mascot.getBoundingClientRect();
+        const closeRect = close.getBoundingClientRect();
         return {
-          overlap:
-            first.left < second.right &&
-            first.right > second.left &&
-            first.top < second.bottom &&
-            first.bottom > second.top,
+          bubbleOverlapsMascot:
+            first.left < character.right &&
+            first.right > character.left &&
+            first.top < character.bottom &&
+            first.bottom > character.top,
+          bubbleMascotGap: bubble.dataset.placement?.startsWith("top")
+            ? character.top - first.bottom
+            : first.top - character.bottom,
+          bubbleOverlapsClose:
+            first.left < closeRect.right &&
+            first.right > closeRect.left &&
+            first.top < closeRect.bottom &&
+            first.bottom > closeRect.top,
         };
       });
-      expect(geometry.overlap).toBe(false);
+      expect(geometry.bubbleOverlapsMascot).toBe(false);
+      expect(geometry.bubbleMascotGap).toBeGreaterThanOrEqual(11.5);
+      expect(geometry.bubbleOverlapsClose).toBe(false);
       await expect(page.getByRole("button", { name: "Tutup Blessy" })).toBeVisible();
     }
 
     await page.getByRole("button", { name: "Tutup Blessy" }).click();
     await expect(page.locator("[data-testid='floating-blessy']")).toHaveCount(0);
+  });
+
+  test("keeps the CTA bubble outside the mascot across mobile and desktop", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "customer-390", "The CTA geometry harness runs once.");
+    test.setTimeout(60_000);
+    for (const viewport of [
+      { width: 390, height: 844 },
+      { width: 1280, height: 800 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(9000);
+      await expect(page.locator("[data-testid='floating-blessy-cta']")).toHaveAttribute("data-visible", "true", {
+        timeout: 15_000,
+      });
+
+      const geometry = await page.evaluate(() => {
+        const cta = document.querySelector<HTMLElement>("[data-testid='floating-blessy-cta']");
+        const mascot = document.querySelector<HTMLElement>(".floating-blessy__image");
+        const close = document.querySelector<HTMLElement>(".floating-blessy__close");
+        if (!cta || !mascot || !close) throw new Error("Blessy CTA geometry fixture is incomplete");
+        const rect = (element: HTMLElement) => element.getBoundingClientRect();
+        const bubble = rect(cta);
+        const character = rect(mascot);
+        const closeRect = rect(close);
+        const overlaps = (first: DOMRect, second: DOMRect) =>
+          first.left < second.right &&
+          first.right > second.left &&
+          first.top < second.bottom &&
+          first.bottom > second.top;
+        return {
+          overlapMascot: overlaps(bubble, character),
+          overlapClose: overlaps(bubble, closeRect),
+          gap: cta.dataset.placement?.startsWith("top") ? character.top - bubble.bottom : bubble.top - character.bottom,
+        };
+      });
+
+      expect(geometry.overlapMascot).toBe(false);
+      expect(geometry.overlapClose).toBe(false);
+      expect(geometry.gap).toBeGreaterThanOrEqual((viewport.width <= 800 ? 12 : 16) - 0.5);
+    }
   });
 
   test("keeps the mascot as the WhatsApp action and separates drag from tap", async ({ page }, testInfo) => {

@@ -13,6 +13,7 @@ import {
 import { findFloatingBlessyPose, resolveFloatingBlessyNavigation } from "./floating-blessy-context";
 import {
   getFloatingBlessyBounds,
+  getFloatingBlessyMascotExclusionGap,
   resolveFloatingBlessyBubble,
   type FloatingBlessyBubblePlacement,
 } from "./floating-blessy-position";
@@ -36,6 +37,7 @@ export function FloatingBlessyGuide() {
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const ctaRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLDivElement | null>(null);
+  const mascotRef = useRef<HTMLImageElement | null>(null);
   const [labelGeometry, setLabelGeometry] = useState(emptyGeometry);
   const { position, isDragging, dragHandlers } = useDraggableBlessy(enabled && !state.dismissed, rootRef);
   const message = state.currentMessage || navigation.message;
@@ -46,12 +48,14 @@ export function FloatingBlessyGuide() {
     const root = rootRef.current;
     const label = state.bubbleVisible ? bubbleRef.current : ctaRef.current;
     const close = closeRef.current;
-    if (!root || !label || !close) return;
+    const mascot = mascotRef.current;
+    if (!root || !label || !close || !mascot) return;
 
     const updateGeometry = () => {
       const rootRect = root.getBoundingClientRect();
       const labelRect = label.getBoundingClientRect();
       const closeRect = close.getBoundingClientRect();
+      const mascotRect = mascot.getBoundingClientRect();
       const next = resolveFloatingBlessyBubble({
         anchor: {
           x: rootRect.left,
@@ -59,7 +63,14 @@ export function FloatingBlessyGuide() {
           width: rootRect.width,
           height: rootRect.height,
         },
+        mascot: {
+          x: mascotRect.left,
+          y: mascotRect.top,
+          width: mascotRect.width,
+          height: mascotRect.height,
+        },
         bubble: { width: labelRect.width, height: labelRect.height },
+        mascotGap: getFloatingBlessyMascotExclusionGap(window.innerWidth),
         close: { x: closeRect.left, y: closeRect.top, width: closeRect.width, height: closeRect.height },
         bounds: getFloatingBlessyBounds(),
       });
@@ -78,6 +89,7 @@ export function FloatingBlessyGuide() {
     observer?.observe(root);
     observer?.observe(label);
     observer?.observe(close);
+    observer?.observe(mascot);
     return () => {
       window.removeEventListener("resize", updateGeometry);
       window.removeEventListener("orientationchange", updateGeometry);
@@ -185,6 +197,7 @@ export function FloatingBlessyGuide() {
                 width={pose.asset.width}
                 height={pose.asset.height}
                 className="floating-blessy__image"
+                ref={mascotRef}
                 draggable={false}
                 priority={state.currentPoseId === "greeting"}
                 sizes="(max-width: 800px) 30vw, 152px"
