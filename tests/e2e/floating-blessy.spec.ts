@@ -172,7 +172,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await expect(page).toHaveURL(/\/account\/orders$/);
     await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute("data-pose-id", "apology");
     await expect(
-      page.getByText("Kalau Admin telat bales, sabar ya. Mungkin lagi dinas ke nyuapin anaknya."),
+      page.getByText("Kalau Admin telat bales, sabar ya. Mungkin lagi ada tugas penting: nyuapin anak dulu."),
     ).toBeVisible();
 
     await page.locator('.customer-bottom-nav a[href="/account"]').click();

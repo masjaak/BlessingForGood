@@ -41,7 +41,7 @@ export const FLOATING_BLESSY_POSES = [
     id: "apology",
     semanticPose: "meminta maaf",
     asset: mascotAsset(apologyAsset),
-    message: "Kalau Admin telat bales, sabar ya. Mungkin lagi dinas ke nyuapin anaknya.",
+    message: "Kalau Admin telat bales, sabar ya. Mungkin lagi ada tugas penting: nyuapin anak dulu.",
   },
   {
     id: "sleeping",

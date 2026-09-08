@@ -64,7 +64,7 @@ describe("Floating Blessy nav-context extension", () => {
     expect(FLOATING_BLESSY_POSES.map((pose) => pose.message)).toEqual([
       "Hallo, Selamat datang di Website Official BFG! Namaku Blessy!",
       "Hari ini mau FIX buku apa?",
-      "Kalau Admin telat bales, sabar ya. Mungkin lagi dinas ke nyuapin anaknya.",
+      "Kalau Admin telat bales, sabar ya. Mungkin lagi ada tugas penting: nyuapin anak dulu.",
       "Ssstt jangan bilang ka Madin, aku mau tidur dulu!",
     ]);
     expect(FLOATING_BLESSY_TIMING).toMatchObject({
