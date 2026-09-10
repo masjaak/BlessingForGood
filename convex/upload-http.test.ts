@@ -168,22 +168,47 @@ describe("BFG owned upload HTTP boundary", () => {
     try {
       const t = testConvex();
       const { admin } = await setupUsers(t);
+      const publisherId = await admin.mutation(api.publishers.create, { name: "Sequential Upload Publisher" });
+      const bookIds = [] as Id<"books">[];
+      for (let index = 0; index < 4; index += 1) {
+        bookIds.push(
+          await admin.mutation(api.books.create, {
+            publisherId,
+            title: `Sequential Upload Book ${index}`,
+          }),
+        );
+      }
 
       for (let index = 0; index < 30; index += 1) {
+        const fileName = `sequential-${index}.jpg`;
         const response = await admin.fetch(
-          `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent(`sequential-${index}.jpg`)}`,
+          `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent(fileName)}`,
           {
             method: "POST",
             headers: {
               Origin: "http://localhost:3100",
               "Content-Type": "image/jpeg",
-              "X-BFG-File-Size": String(baselineJpeg.byteLength),
+              "X-BFG-File-Size": String(progressiveExifJpeg.byteLength),
             },
-            body: baselineJpeg,
+            body: progressiveExifJpeg,
           },
         );
         expect(response.status, `sequential upload ${index + 1}`).toBe(200);
-        expect((await response.json()).storageId, `sequential upload ${index + 1}`).toBeTruthy();
+        const { storageId } = (await response.json()) as { storageId: string };
+        expect(storageId, `sequential upload ${index + 1}`).toBeTruthy();
+        // convex-test does not retain Blob.type in synthetic storage metadata; real Convex Storage does.
+        await t.run(async (ctx) => {
+          await ctx.db.patch(storageId as never, { contentType: "image/jpeg" } as never);
+        });
+        await expect(
+          admin.action(api.books.attachGalleryImage, {
+            bookId: bookIds[index % bookIds.length]!,
+            storageId: storageId as Id<"_storage">,
+            fileName,
+            mimeType: "image/jpeg",
+            altText: fileName,
+          }),
+        ).resolves.toBeTruthy();
       }
 
       const limited = await admin.fetch(
@@ -193,9 +218,9 @@ describe("BFG owned upload HTTP boundary", () => {
           headers: {
             Origin: "http://localhost:3100",
             "Content-Type": "image/jpeg",
-            "X-BFG-File-Size": String(baselineJpeg.byteLength),
+            "X-BFG-File-Size": String(progressiveExifJpeg.byteLength),
           },
-          body: baselineJpeg,
+          body: progressiveExifJpeg,
         },
       );
       expect(limited.status).toBe(429);
@@ -210,13 +235,30 @@ describe("BFG owned upload HTTP boundary", () => {
           headers: {
             Origin: "http://localhost:3100",
             "Content-Type": "image/jpeg",
-            "X-BFG-File-Size": String(baselineJpeg.byteLength),
+            "X-BFG-File-Size": String(progressiveExifJpeg.byteLength),
           },
-          body: baselineJpeg,
+          body: progressiveExifJpeg,
         },
       );
       expect(recovered.status).toBe(200);
-      expect((await recovered.json()).storageId).toBeTruthy();
+      const { storageId: recoveredStorageId } = (await recovered.json()) as { storageId: string };
+      await t.run(async (ctx) => {
+        await ctx.db.patch(recoveredStorageId as never, { contentType: "image/jpeg" } as never);
+      });
+      await expect(
+        admin.action(api.books.attachGalleryImage, {
+          bookId: bookIds[2]!,
+          storageId: recoveredStorageId as Id<"_storage">,
+          fileName: "sequential-recovered.jpg",
+          mimeType: "image/jpeg",
+          altText: "sequential-recovered.jpg",
+        }),
+      ).resolves.toBeTruthy();
+
+      const galleryCounts = await Promise.all(
+        bookIds.map(async (bookId) => (await admin.query(api.books.getForAdmin, { bookId }))?.gallery.length),
+      );
+      expect(galleryCounts).toEqual([8, 8, 8, 7]);
     } finally {
       vi.useRealTimers();
     }
@@ -232,9 +274,9 @@ describe("BFG owned upload HTTP boundary", () => {
           headers: {
             Origin: "http://localhost:3100",
             "Content-Type": "image/jpeg",
-            "X-BFG-File-Size": String(baselineJpeg.byteLength),
+            "X-BFG-File-Size": String(progressiveExifJpeg.byteLength),
           },
-          body: baselineJpeg,
+          body: progressiveExifJpeg,
         }),
       ),
     );
