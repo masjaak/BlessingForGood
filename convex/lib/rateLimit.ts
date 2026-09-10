@@ -17,7 +17,7 @@ const limits = {
   proofUploadUser: { kind: "token bucket", rate: 10, period: 15 * MINUTE, capacity: 3 },
   depositSubmitUser: { kind: "token bucket", rate: 5, period: 15 * MINUTE, capacity: 2 },
   depositUploadUser: { kind: "token bucket", rate: 10, period: 15 * MINUTE, capacity: 3 },
-  bookUploadUser: { kind: "token bucket", rate: 40, period: HOUR, capacity: 30 },
+  bookUploadUser: { kind: "token bucket", rate: 120, period: HOUR, capacity: 100 },
   staffInviteOwner: { kind: "token bucket", rate: 10, period: HOUR, capacity: 3 },
   bulkImportConfirmUser: { kind: "token bucket", rate: 10, period: HOUR, capacity: 2 },
 } satisfies Record<string, RateLimitConfig>;

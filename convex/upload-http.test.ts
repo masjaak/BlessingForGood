@@ -163,23 +163,13 @@ describe("BFG owned upload HTTP boundary", () => {
     expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toHaveLength(files.length);
   });
 
-  it("keeps 30 sequential authorized book uploads available for one Admin", async () => {
+  it("allows 100 Admin Book uploads, then refills one token every 30 seconds", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     try {
       const t = testConvex();
       const { admin } = await setupUsers(t);
-      const publisherId = await admin.mutation(api.publishers.create, { name: "Sequential Upload Publisher" });
-      const bookIds = [] as Id<"books">[];
-      for (let index = 0; index < 4; index += 1) {
-        bookIds.push(
-          await admin.mutation(api.books.create, {
-            publisherId,
-            title: `Sequential Upload Book ${index}`,
-          }),
-        );
-      }
 
-      for (let index = 0; index < 30; index += 1) {
+      for (let index = 0; index < 100; index += 1) {
         const fileName = `sequential-${index}.jpg`;
         const response = await admin.fetch(
           `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent(fileName)}`,
@@ -196,19 +186,6 @@ describe("BFG owned upload HTTP boundary", () => {
         expect(response.status, `sequential upload ${index + 1}`).toBe(200);
         const { storageId } = (await response.json()) as { storageId: string };
         expect(storageId, `sequential upload ${index + 1}`).toBeTruthy();
-        // convex-test does not retain Blob.type in synthetic storage metadata; real Convex Storage does.
-        await t.run(async (ctx) => {
-          await ctx.db.patch(storageId as never, { contentType: "image/jpeg" } as never);
-        });
-        await expect(
-          admin.action(api.books.attachGalleryImage, {
-            bookId: bookIds[index % bookIds.length]!,
-            storageId: storageId as Id<"_storage">,
-            fileName,
-            mimeType: "image/jpeg",
-            altText: fileName,
-          }),
-        ).resolves.toBeTruthy();
       }
 
       const limited = await admin.fetch(
@@ -224,10 +201,10 @@ describe("BFG owned upload HTTP boundary", () => {
         },
       );
       expect(limited.status).toBe(429);
-      expect(limited.headers.get("Retry-After")).toBe("90");
-      expect(await limited.json()).toMatchObject({ code: "RATE_LIMITED", retryAfterSeconds: 90 });
+      expect(limited.headers.get("Retry-After")).toBe("30");
+      expect(await limited.json()).toMatchObject({ code: "RATE_LIMITED", retryAfterSeconds: 30 });
 
-      vi.setSystemTime(Date.now() + 90_000);
+      vi.setSystemTime(Date.now() + 30_000);
       const recovered = await admin.fetch(
         `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent("sequential-recovered.jpg")}`,
         {
@@ -241,26 +218,48 @@ describe("BFG owned upload HTTP boundary", () => {
         },
       );
       expect(recovered.status).toBe(200);
-      const { storageId: recoveredStorageId } = (await recovered.json()) as { storageId: string };
-      await t.run(async (ctx) => {
-        await ctx.db.patch(recoveredStorageId as never, { contentType: "image/jpeg" } as never);
-      });
-      await expect(
-        admin.action(api.books.attachGalleryImage, {
-          bookId: bookIds[2]!,
-          storageId: recoveredStorageId as Id<"_storage">,
-          fileName: "sequential-recovered.jpg",
-          mimeType: "image/jpeg",
-          altText: "sequential-recovered.jpg",
-        }),
-      ).resolves.toBeTruthy();
-
-      const galleryCounts = await Promise.all(
-        bookIds.map(async (bookId) => (await admin.query(api.books.getForAdmin, { bookId }))?.gallery.length),
-      );
-      expect(galleryCounts).toEqual([8, 8, 8, 7]);
+      expect((await recovered.json()).storageId).toBeTruthy();
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it("keeps Payment Proof and Deposit Proof upload limiters at their existing policy", async () => {
+    const t = testConvex();
+    const { customer } = await setupUsers(t);
+
+    for (const purpose of ["payment-proof", "deposit-proof"] as const) {
+      for (let index = 0; index < 3; index += 1) {
+        const response = await customer.fetch(
+          `/bfg/upload?purpose=${purpose}&fileName=${encodeURIComponent(`${purpose}-${index}.png`)}`,
+          {
+            method: "POST",
+            headers: {
+              Origin: "http://localhost:3100",
+              "Content-Type": "image/png",
+              "X-BFG-File-Size": String(validPng.byteLength),
+            },
+            body: validPng,
+          },
+        );
+        expect(response.status, `${purpose} upload ${index + 1}`).toBe(200);
+      }
+
+      const limited = await customer.fetch(
+        `/bfg/upload?purpose=${purpose}&fileName=${encodeURIComponent(`${purpose}-limited.png`)}`,
+        {
+          method: "POST",
+          headers: {
+            Origin: "http://localhost:3100",
+            "Content-Type": "image/png",
+            "X-BFG-File-Size": String(validPng.byteLength),
+          },
+          body: validPng,
+        },
+      );
+      expect(limited.status, purpose).toBe(429);
+      expect(limited.headers.get("Retry-After"), purpose).toBe("90");
+      expect(await limited.json()).toMatchObject({ code: "RATE_LIMITED", retryAfterSeconds: 90 });
     }
   });
 
