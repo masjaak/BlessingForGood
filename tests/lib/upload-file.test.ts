@@ -34,4 +34,29 @@ describe("BFG upload client", () => {
       expect(request).toMatchObject({ method: "POST", body: file });
     },
   );
+
+  it("derives the Convex site endpoint when Production only injects the cloud URL", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CONVEX_SITE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "https://clean-eel-522.convex.cloud");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ storageId: "storage-id" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const file = new File(["operator-approved-file"], "71NF7HZ5+UL._SL1500_.jpg", { type: "image/jpeg" });
+
+    await expect(
+      uploadBfgFile(
+        file,
+        "book-gallery",
+        vi.fn(async () => "token"),
+        { aud: "convex" },
+      ),
+    ).resolves.toBe("storage-id");
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://clean-eel-522.convex.site/bfg/upload?purpose=book-gallery&fileName=71NF7HZ5%2BUL._SL1500_.jpg",
+    );
+  });
 });

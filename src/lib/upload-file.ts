@@ -8,13 +8,31 @@ export function normalizeUploadMimeType(value: string): string {
   return normalized === "image/jpg" || normalized === "image/pjpeg" ? "image/jpeg" : normalized;
 }
 
+function convexSiteUrl(): string | null {
+  const configured = process.env.NEXT_PUBLIC_CONVEX_SITE_URL?.trim();
+  if (configured) return configured;
+  const cloudUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.trim();
+  if (!cloudUrl) return null;
+  try {
+    const parsed = new URL(cloudUrl);
+    if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".convex.cloud")) return null;
+    parsed.hostname = `${parsed.hostname.slice(0, -".convex.cloud".length)}.convex.site`;
+    parsed.pathname = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
 export async function uploadBfgFile(
   file: File,
   purpose: BfgUploadPurpose,
   getToken: ConvexToken,
   sessionClaims?: unknown,
 ): Promise<Id<"_storage">> {
-  const siteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
+  const siteUrl = convexSiteUrl();
   if (!siteUrl) throw new Error("UPLOAD_REJECTED");
   const nativeConvexSession =
     typeof sessionClaims === "object" &&
