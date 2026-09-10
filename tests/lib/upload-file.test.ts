@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { uploadBfgFile, type BfgUploadPurpose } from "@/lib/upload-file";
+import { BfgUploadError, uploadBfgFile, type BfgUploadPurpose } from "@/lib/upload-file";
 
 describe("BFG upload client", () => {
   afterEach(() => {
@@ -58,5 +58,27 @@ describe("BFG upload client", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       "https://clean-eel-522.convex.site/bfg/upload?purpose=book-gallery&fileName=71NF7HZ5%2BUL._SL1500_.jpg",
     );
+  });
+
+  it("classifies a rate-limited response with its retry window", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CONVEX_SITE_URL", "https://clean-eel-522.convex.site");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ code: "RATE_LIMITED", retryAfterSeconds: 90 }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "90" },
+      }),
+    );
+
+    await expect(
+      uploadBfgFile(
+        new File(["operator-approved-file"], "book.jpg", { type: "image/jpeg" }),
+        "book-gallery",
+        vi.fn(async () => "token"),
+        { aud: "convex" },
+      ),
+    ).rejects.toMatchObject({
+      code: "UPLOAD_RATE_LIMITED",
+      retryAfterSeconds: 90,
+    } satisfies Partial<BfgUploadError>);
   });
 });

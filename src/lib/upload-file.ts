@@ -1,7 +1,18 @@
 import type { Id } from "../../convex/_generated/dataModel";
 
 export type BfgUploadPurpose = "book-cover" | "book-gallery" | "payment-proof" | "deposit-proof";
+export type BfgUploadErrorCode = "UPLOAD_RATE_LIMITED" | "UPLOAD_REJECTED";
 type ConvexToken = (options: { template?: "convex" }) => Promise<string | null>;
+
+export class BfgUploadError extends Error {
+  constructor(
+    public readonly code: BfgUploadErrorCode,
+    public readonly retryAfterSeconds?: number,
+  ) {
+    super(code);
+    this.name = "BfgUploadError";
+  }
+}
 
 export function normalizeUploadMimeType(value: string): string {
   const normalized = value.split(";", 1)[0]?.trim().toLowerCase() || "";
@@ -33,14 +44,14 @@ export async function uploadBfgFile(
   sessionClaims?: unknown,
 ): Promise<Id<"_storage">> {
   const siteUrl = convexSiteUrl();
-  if (!siteUrl) throw new Error("UPLOAD_REJECTED");
+  if (!siteUrl) throw new BfgUploadError("UPLOAD_REJECTED");
   const nativeConvexSession =
     typeof sessionClaims === "object" &&
     sessionClaims !== null &&
     "aud" in sessionClaims &&
     sessionClaims.aud === "convex";
   const token = await getToken(nativeConvexSession ? {} : { template: "convex" });
-  if (!token) throw new Error("UPLOAD_REJECTED");
+  if (!token) throw new BfgUploadError("UPLOAD_REJECTED");
   const url = new URL("/bfg/upload", siteUrl);
   url.searchParams.set("purpose", purpose);
   url.searchParams.set("fileName", file.name);
@@ -53,7 +64,22 @@ export async function uploadBfgFile(
     },
     body: file,
   });
-  const result = (await response.json()) as { storageId?: string };
-  if (!response.ok || !result.storageId) throw new Error("UPLOAD_REJECTED");
+  let result: { code?: string; retryAfterSeconds?: number; storageId?: string } = {};
+  try {
+    result = (await response.json()) as typeof result;
+  } catch {
+    // The status still determines the generic rejection below.
+  }
+  if (response.status === 429 && result.code === "RATE_LIMITED") {
+    const headerRetryAfter = Number(response.headers.get("Retry-After"));
+    const retryAfterSeconds =
+      typeof result.retryAfterSeconds === "number" && Number.isFinite(result.retryAfterSeconds)
+        ? Math.max(1, Math.ceil(result.retryAfterSeconds))
+        : Number.isFinite(headerRetryAfter) && headerRetryAfter > 0
+          ? Math.ceil(headerRetryAfter)
+          : undefined;
+    throw new BfgUploadError("UPLOAD_RATE_LIMITED", retryAfterSeconds);
+  }
+  if (!response.ok || !result.storageId) throw new BfgUploadError("UPLOAD_REJECTED");
   return result.storageId as Id<"_storage">;
 }

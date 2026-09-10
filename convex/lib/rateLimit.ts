@@ -17,7 +17,7 @@ const limits = {
   proofUploadUser: { kind: "token bucket", rate: 10, period: 15 * MINUTE, capacity: 3 },
   depositSubmitUser: { kind: "token bucket", rate: 5, period: 15 * MINUTE, capacity: 2 },
   depositUploadUser: { kind: "token bucket", rate: 10, period: 15 * MINUTE, capacity: 3 },
-  bookUploadUser: { kind: "token bucket", rate: 40, period: HOUR, capacity: 8 },
+  bookUploadUser: { kind: "token bucket", rate: 40, period: HOUR, capacity: 30 },
   staffInviteOwner: { kind: "token bucket", rate: 10, period: HOUR, capacity: 3 },
   bulkImportConfirmUser: { kind: "token bucket", rate: 10, period: HOUR, capacity: 2 },
 } satisfies Record<string, RateLimitConfig>;
@@ -30,6 +30,6 @@ export async function enforceRateLimit(ctx: MutationCtx, name: RateLimitName, ke
   const result = await rateLimiter.limit(ctx, name, key ? { key } : {});
   if (!result.ok) {
     const retryAfterSeconds = Math.max(1, Math.ceil((result.retryAfter ?? MINUTE) / 1_000));
-    fail("RATE_LIMITED", `retry after ${retryAfterSeconds} seconds`);
+    fail("RATE_LIMITED", `retry after ${retryAfterSeconds} seconds`, { retryAfterSeconds });
   }
 }

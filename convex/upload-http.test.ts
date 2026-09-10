@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
@@ -161,6 +161,86 @@ describe("BFG owned upload HTTP boundary", () => {
     }
 
     expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toHaveLength(files.length);
+  });
+
+  it("keeps 30 sequential authorized book uploads available for one Admin", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const t = testConvex();
+      const { admin } = await setupUsers(t);
+
+      for (let index = 0; index < 30; index += 1) {
+        const response = await admin.fetch(
+          `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent(`sequential-${index}.jpg`)}`,
+          {
+            method: "POST",
+            headers: {
+              Origin: "http://localhost:3100",
+              "Content-Type": "image/jpeg",
+              "X-BFG-File-Size": String(baselineJpeg.byteLength),
+            },
+            body: baselineJpeg,
+          },
+        );
+        expect(response.status, `sequential upload ${index + 1}`).toBe(200);
+        expect((await response.json()).storageId, `sequential upload ${index + 1}`).toBeTruthy();
+      }
+
+      const limited = await admin.fetch(
+        `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent("sequential-limited.jpg")}`,
+        {
+          method: "POST",
+          headers: {
+            Origin: "http://localhost:3100",
+            "Content-Type": "image/jpeg",
+            "X-BFG-File-Size": String(baselineJpeg.byteLength),
+          },
+          body: baselineJpeg,
+        },
+      );
+      expect(limited.status).toBe(429);
+      expect(limited.headers.get("Retry-After")).toBe("90");
+      expect(await limited.json()).toMatchObject({ code: "RATE_LIMITED", retryAfterSeconds: 90 });
+
+      vi.setSystemTime(Date.now() + 90_000);
+      const recovered = await admin.fetch(
+        `/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent("sequential-recovered.jpg")}`,
+        {
+          method: "POST",
+          headers: {
+            Origin: "http://localhost:3100",
+            "Content-Type": "image/jpeg",
+            "X-BFG-File-Size": String(baselineJpeg.byteLength),
+          },
+          body: baselineJpeg,
+        },
+      );
+      expect(recovered.status).toBe(200);
+      expect((await recovered.json()).storageId).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps a controlled ten-upload burst within the Admin media allowance", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        admin.fetch(`/bfg/upload?purpose=book-gallery&fileName=${encodeURIComponent(`burst-${index}.jpg`)}`, {
+          method: "POST",
+          headers: {
+            Origin: "http://localhost:3100",
+            "Content-Type": "image/jpeg",
+            "X-BFG-File-Size": String(baselineJpeg.byteLength),
+          },
+          body: baselineJpeg,
+        }),
+      ),
+    );
+
+    expect(responses.map((response) => response.status)).toEqual(Array(10).fill(200));
+    for (const response of responses) expect((await response.json()).storageId).toBeTruthy();
   });
 
   it("runs the real JPEG upload, attach, reload, and customer projection path", async () => {

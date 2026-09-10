@@ -29,10 +29,19 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import { ProductGallery } from "@/components/product-gallery";
 import { formatGbpMinor, normalizeGbpInput, parseGbpMinor } from "@/lib/gbp";
-import { uploadBfgFile } from "@/lib/upload-file";
+import { BfgUploadError, uploadBfgFile } from "@/lib/upload-file";
 import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
+
+function uploadFailureMessage(label: string, reason: unknown): string {
+  if (reason instanceof BfgUploadError && reason.code === "UPLOAD_RATE_LIMITED") {
+    return reason.retryAfterSeconds
+      ? `${label} sementara dibatasi. Coba lagi dalam ${reason.retryAfterSeconds} detik.`
+      : `${label} sementara dibatasi. Coba lagi beberapa saat lagi.`;
+  }
+  return `${label} belum tersimpan. Coba lagi.`;
+}
 type Variant = AdminBook["variants"][number];
 type GalleryImage = AdminBook["gallery"][number];
 type PublicationStatus = "draft" | "published" | "special" | "archived";
@@ -280,8 +289,8 @@ function BookEditor({ book }: { book: AdminBook }) {
         setCoverFile(null);
         setCoverMessage("Cover tersimpan.");
       }
-    } catch {
-      setCoverError("Cover belum tersimpan. Coba lagi.");
+    } catch (reason) {
+      setCoverError(uploadFailureMessage("Unggah cover", reason));
     } finally {
       setPendingAction(null);
     }
@@ -308,8 +317,8 @@ function BookEditor({ book }: { book: AdminBook }) {
       });
       setGalleryFile(null);
       setGalleryMessage("Gambar galeri tersimpan.");
-    } catch {
-      setGalleryError("Gambar galeri belum tersimpan. Coba lagi.");
+    } catch (reason) {
+      setGalleryError(uploadFailureMessage("Unggah gambar galeri", reason));
     } finally {
       setPendingAction(null);
     }

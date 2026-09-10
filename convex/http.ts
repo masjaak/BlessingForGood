@@ -1,4 +1,5 @@
 import { httpRouter } from "convex/server";
+import { ConvexError } from "convex/values";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
@@ -30,11 +31,29 @@ function corsHeaders(origin: string | null): HeadersInit {
   };
 }
 
-function json(origin: string | null, body: Record<string, unknown>, status: number): Response {
+function json(
+  origin: string | null,
+  body: Record<string, unknown>,
+  status: number,
+  extraHeaders?: HeadersInit,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders(origin), "Content-Type": "application/json", "X-Content-Type-Options": "nosniff" },
+    headers: {
+      ...corsHeaders(origin),
+      ...extraHeaders,
+      "Content-Type": "application/json",
+      "X-Content-Type-Options": "nosniff",
+    },
   });
+}
+
+function rateLimitDetails(error: unknown): { retryAfterSeconds: number } | null {
+  if (!(error instanceof ConvexError) || typeof error.data !== "object" || error.data === null) return null;
+  const data = error.data as { code?: unknown; retryAfterSeconds?: unknown };
+  if (data.code !== "RATE_LIMITED" || typeof data.retryAfterSeconds !== "number") return null;
+  const retryAfterSeconds = Math.max(1, Math.ceil(data.retryAfterSeconds));
+  return Number.isFinite(retryAfterSeconds) ? { retryAfterSeconds } : null;
 }
 
 const purposeContracts: Record<UploadPurpose, ReadonlySet<string>> = {
@@ -98,7 +117,16 @@ http.route({
         throw new Error("upload claim failed");
       }
       return json(origin, { storageId }, 200);
-    } catch {
+    } catch (error) {
+      const limited = rateLimitDetails(error);
+      if (limited) {
+        return json(
+          origin,
+          { code: "RATE_LIMITED", error: "upload temporarily rate limited", retryAfterSeconds: limited.retryAfterSeconds },
+          429,
+          { "Retry-After": String(limited.retryAfterSeconds) },
+        );
+      }
       return json(origin, { error: "file upload rejected" }, 400);
     }
   }),

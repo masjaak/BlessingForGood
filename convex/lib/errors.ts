@@ -130,6 +130,6 @@ export const ERROR_CODES = {
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
-export function fail(code: ErrorCode, message: string = code): never {
-  throw new ConvexError({ code, message });
+export function fail(code: ErrorCode, message: string = code, details?: Record<string, unknown>): never {
+  throw new ConvexError({ code, message, ...details });
 }
