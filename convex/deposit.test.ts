@@ -29,6 +29,62 @@ async function createIssuedInvoice(t: ReturnType<typeof testConvex>) {
 describe("BFG append-only deposit ledger", () => {
   beforeEach(configureTestEnvironment);
 
+  it("preserves exact integer IDR across canonical records, ledger, balance, and views", async () => {
+    const t = testConvex();
+    const { admin, customer, invoice } = await createIssuedInvoice(t);
+    const amounts = [
+      1, 2, 10, 99, 100, 999, 1000, 9999, 10000, 99999, 100000, 254998, 254999, 255000, 255001, 999999, 1000000,
+      // Three sequential credits prove no hidden per-confirmation decrement.
+      255000, 255000,
+    ];
+    const credits: Array<{ amount: number }> = [];
+
+    for (const amount of amounts) {
+      const credit = await admin.mutation(api.depositTransactions.recordCredit, {
+        invoiceId: invoice.invoiceId,
+        amount,
+      });
+      credits.push(credit);
+      expect(credit).toMatchObject({ amount, availableDelta: amount, reservedDelta: 0 });
+      expect(Number.isInteger(credit.amount)).toBe(true);
+    }
+
+    const expectedBalance = amounts.reduce((total, amount) => total + amount, 0);
+    expect((await customer.query(api.depositAccounts.getMine, {})).account).toMatchObject({
+      availableAmount: expectedBalance,
+      reservedAmount: 0,
+    });
+
+    const stored = await t.run(async (ctx) => {
+      const account = await ctx.db
+        .query("depositAccounts")
+        .withIndex("by_user_id_and_currency", (index) =>
+          index.eq("userId", invoice.customerUserId).eq("currency", "IDR"),
+        )
+        .unique();
+      if (!account) throw new Error("deposit account fixture missing");
+      return ctx.db
+        .query("depositTransactions")
+        .withIndex("by_account_and_created_at", (index) => index.eq("accountId", account._id))
+        .order("asc")
+        .collect();
+    });
+    expect(stored.map((row) => row.amount)).toEqual(amounts);
+    expect(stored.every((row) => Number.isInteger(row.amount))).toBe(true);
+
+    const customerHistory = await customer.query(api.depositTransactions.listMine, {
+      paginationOpts: { numItems: 100, cursor: null },
+    });
+    const adminHistory = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 100, cursor: null },
+    });
+    expect(customerHistory.page.map((row) => row.amount)).toEqual([...amounts].reverse());
+    expect(adminHistory.page.map((row) => row.amount)).toEqual([...amounts].reverse());
+    expect(credits.filter((credit) => credit.amount === 255000).map((credit) => credit.amount)).toEqual([
+      255000, 255000, 255000,
+    ]);
+  });
+
   it("projects the canonical ledger into bounded admin history with context", async () => {
     const t = testConvex();
     const { admin, customer, invoice } = await createIssuedInvoice(t);

@@ -133,10 +133,44 @@ const historyRows = [
   },
 ];
 
+const topUpRows = [
+  {
+    topUpId: "top-up-submitted",
+    customerUserId: "customer-a",
+    customerName: "Customer A with a deliberately long operational email label",
+    amount: 255000,
+    bankReference: "BANK-255000",
+    status: "submitted",
+    createdAt: "2026-09-03T10:00:00.000Z",
+    proofUrl: "https://example.com/proof-submitted.pdf",
+  },
+  {
+    topUpId: "top-up-review",
+    customerUserId: "customer-b",
+    customerName: "Customer B",
+    amount: 100000,
+    bankReference: "BANK-100000",
+    status: "under_review",
+    createdAt: "2026-09-03T09:00:00.000Z",
+    proofUrl: "https://example.com/proof-review.pdf",
+  },
+  {
+    topUpId: "top-up-approved",
+    customerUserId: "customer-a",
+    customerName: "Customer A",
+    amount: 50000,
+    bankReference: null,
+    status: "approved",
+    createdAt: "2026-09-03T08:00:00.000Z",
+    proofUrl: "https://example.com/proof-approved.pdf",
+  },
+];
+
 function setupQueryMocks() {
   vi.mocked(useQuery).mockImplementation((query, args?) => {
     if (args === "skip") return null as never;
-    if (getFunctionName(query as never).endsWith(":getOrderCandidateImpact")) {
+    const functionName = getFunctionName(query as never);
+    if (functionName.endsWith(":getOrderCandidateImpact")) {
       return {
         entityType: "order",
         entityId: "customer-a:batch-x",
@@ -149,6 +183,9 @@ function setupQueryMocks() {
         detach: [],
         preserve: [],
       } as never;
+    }
+    if (functionName.endsWith(":listForAdmin") && !(args && typeof args === "object" && "paginationOpts" in args)) {
+      return topUpRows as never;
     }
     if (args && typeof args === "object" && "direction" in args) {
       return { page: historyRows, isDone: true, continueCursor: "" } as never;
@@ -282,6 +319,23 @@ describe("Admin finance polish", () => {
     expect(screen.getByText(/BFG-ORD-001/)).toBeTruthy();
     expect(screen.getByText(/Thunder/)).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Arah riwayat deposit" })).toBeTruthy();
+  });
+
+  it("keeps every Deposit queue action inside the shared action rail", () => {
+    render(<AdminDepositsPage />);
+    const card = screen.getByText("Bukti menunggu verifikasi").closest(".deposit-topup-card");
+    expect(card).toBeTruthy();
+    const rows = card?.querySelectorAll(".deposit-topup-row");
+    expect(rows).toHaveLength(3);
+    rows?.forEach((row) => {
+      expect(row.querySelector(".deposit-topup-summary")).toBeTruthy();
+      expect(row.querySelector(".deposit-topup-actions")).toBeTruthy();
+      expect(row.querySelector(".deposit-topup-actions > .button, .deposit-topup-actions > a.button")).toBeTruthy();
+    });
+    expect(screen.getAllByRole("link", { name: "Lihat bukti" })).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Tinjau" }).closest(".deposit-topup-actions")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Setujui" }).closest(".deposit-topup-actions")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tolak" }).closest(".deposit-topup-actions")).toBeTruthy();
   });
 
   it("applies Customer and direction filters through the history query", async () => {

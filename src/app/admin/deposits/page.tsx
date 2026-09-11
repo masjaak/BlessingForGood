@@ -126,13 +126,13 @@ function DepositOperations() {
         <h2>Bukti menunggu verifikasi</h2>
         {topUps?.length ? (
           topUps.map((row) => (
-            <div className="summary-line" key={row.topUpId}>
-              <span>
+            <div className="summary-line deposit-topup-row" key={row.topUpId}>
+              <span className="deposit-topup-summary">
                 <strong>{row.customerName}</strong>
                 <br />
                 <Money amount={row.amount} /> · {row.bankReference || "tanpa referensi"}
               </span>
-              <span className="form-actions">
+              <span className="form-actions deposit-topup-actions">
                 <LinkButton variant="secondary" href={row.proofUrl || "#"} target="_blank" rel="noreferrer">
                   Lihat bukti
                 </LinkButton>

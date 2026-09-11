@@ -381,14 +381,14 @@ describe("Phase 07.1 reconciliation", () => {
     });
     await expect(
       secondCustomer.action(api.depositTopUps.submit, {
-        amount: 250000,
+        amount: 255000,
         storageId,
         fileName: "proof.pdf",
         mimeType: "application/pdf",
       }),
     ).rejects.toThrow("VALIDATION_FAILED");
     const request = await customer.action(api.depositTopUps.submit, {
-      amount: 250000,
+      amount: 255000,
       storageId,
       fileName: "proof.pdf",
       mimeType: "application/pdf",
@@ -396,12 +396,43 @@ describe("Phase 07.1 reconciliation", () => {
     });
     expect(await secondCustomer.query(api.depositTopUps.listMine, {})).toEqual([]);
     const queue = await admin.query(api.depositTopUps.listForAdmin, { status: "submitted" });
-    expect(queue[0]).toMatchObject({ topUpId: request.topUpId, amount: 250000, status: "submitted" });
+    expect(queue[0]).toMatchObject({ topUpId: request.topUpId, amount: 255000, status: "submitted" });
     await admin.mutation(api.depositTopUps.startReview, { topUpId: request.topUpId });
-    await admin.mutation(api.depositTopUps.approve, { topUpId: request.topUpId });
-    expect(await customer.query(api.depositAccounts.getMine, {})).toMatchObject({
-      account: { availableAmount: 250000 },
+    const approval = await admin.mutation(api.depositTopUps.approve, { topUpId: request.topUpId });
+    const persisted = await t.run(async (ctx) => {
+      const topUp = await ctx.db.get(request.topUpId);
+      const transaction = topUp?.depositTransactionId ? await ctx.db.get(topUp.depositTransactionId) : null;
+      const audit = (await ctx.db.query("auditEvents").collect()).find(
+        (event) => event.action === "deposit.top_up_approved" && event.targetId === String(request.topUpId),
+      );
+      return { topUp, transaction, audit };
     });
+    expect(persisted.topUp).toMatchObject({ amount: 255000, status: "approved" });
+    expect(persisted.transaction).toMatchObject({ amount: 255000, availableDelta: 255000, reservedDelta: 0 });
+    expect(persisted.audit).toMatchObject({ safeMetadata: { amount: "255000" } });
+    expect(approval.depositTransactionId).toBe(persisted.transaction?._id);
+    expect(await customer.query(api.depositAccounts.getMine, {})).toMatchObject({
+      account: { availableAmount: 255000 },
+    });
+    expect(await customer.query(api.depositTopUps.listMine, {})).toEqual(
+      expect.arrayContaining([expect.objectContaining({ topUpId: request.topUpId, amount: 255000 })]),
+    );
+    const customerHistory = await customer.query(api.depositTransactions.listMine, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    const adminHistory = await admin.query(api.depositTransactions.listForAdmin, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(customerHistory.page).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ transactionId: approval.depositTransactionId, amount: 255000 }),
+      ]),
+    );
+    expect(adminHistory.page).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ transactionId: approval.depositTransactionId, amount: 255000 }),
+      ]),
+    );
     await admin.mutation(api.depositTransactions.adjust, {
       customerUserId: queue[0].customerUserId,
       direction: "debit",
@@ -409,7 +440,7 @@ describe("Phase 07.1 reconciliation", () => {
       note: "Verified correction",
     });
     expect(await customer.query(api.depositAccounts.getMine, {})).toMatchObject({
-      account: { availableAmount: 200000 },
+      account: { availableAmount: 205000 },
     });
     await expect(admin.mutation(api.depositTopUps.approve, { topUpId: request.topUpId })).rejects.toThrow(
       "DEPOSIT_TOP_UP_INVALID_STATE",

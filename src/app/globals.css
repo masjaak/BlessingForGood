@@ -8146,6 +8146,36 @@ p {
 }
 
 /* Admin finance: keep queue, adjustment, and ledger relationships explicit. */
+.admin-shell .deposit-topup-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(168px, 216px);
+  column-gap: var(--space-md);
+  row-gap: var(--space-sm);
+  align-items: center;
+}
+
+.admin-shell .deposit-topup-summary {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-shell .deposit-topup-actions {
+  display: grid;
+  min-width: 0;
+  align-items: stretch;
+  gap: var(--space-xs);
+}
+
+.admin-shell .deposit-topup-actions > .button,
+.admin-shell .deposit-topup-actions > a.button {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-shell .deposit-topup-actions > .status-badge {
+  justify-self: start;
+}
+
 .admin-shell .admin-finance-filter-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
@@ -8388,6 +8418,15 @@ p {
   .admin-shell .admin-finance-filter-grid,
   .admin-shell .deposit-history-filters {
     grid-template-columns: 1fr;
+  }
+
+  .admin-shell .deposit-topup-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .admin-shell .deposit-topup-actions {
+    width: 100%;
   }
 
   .admin-shell .admin-finance-filter-grid > .button,
