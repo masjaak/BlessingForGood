@@ -183,6 +183,56 @@ describe("BFG Book Master product media", () => {
     await expect(customer.query(api.books.getForAdmin, { bookId })).rejects.toThrow("PERMISSION_DENIED");
   });
 
+  it("keeps the current eight-image gallery limit at the boundary", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const adminUser = await admin.query(api.users.current, {});
+    if (!adminUser) throw new Error("admin fixture missing");
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Gallery Limit Publisher" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Gallery Limit Book" });
+    const mediaIds = [];
+
+    for (let index = 0; index < 8; index += 1) {
+      const storageId = await storeImage(t, adminUser.appUserId);
+      mediaIds.push(
+        await admin.action(api.books.attachGalleryImage, {
+          bookId,
+          storageId,
+          fileName: `gallery-${index}.webp`,
+          mimeType: "image/webp",
+          altText: `Gallery image ${index + 1}`,
+        }),
+      );
+    }
+
+    const atLimit = await admin.query(api.books.getForAdmin, { bookId });
+    expect(atLimit?.gallery).toHaveLength(8);
+    expect(atLimit?.gallery.map((image) => image.displayOrder)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+
+    const ninthStorageId = await storeImage(t, adminUser.appUserId);
+    await expect(
+      admin.action(api.books.attachGalleryImage, {
+        bookId,
+        storageId: ninthStorageId,
+        fileName: "gallery-9.webp",
+        mimeType: "image/webp",
+        altText: "Gallery image 9",
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+
+    const afterRejectedUpload = await admin.query(api.books.getForAdmin, { bookId });
+    expect(afterRejectedUpload?.gallery.map((image) => image.mediaId)).toEqual(mediaIds);
+    expect(await t.run((ctx) => ctx.db.get(ninthStorageId as never))).not.toBeNull();
+    expect(
+      await t.run((ctx) =>
+        ctx.db
+          .query("uploadClaims")
+          .withIndex("by_storage_id", (query) => query.eq("storageId", ninthStorageId))
+          .first(),
+      ),
+    ).not.toBeNull();
+  });
+
   it("persists non-destructive cover framing, projects it to customers, and supports reset", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
