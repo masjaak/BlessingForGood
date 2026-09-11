@@ -74,6 +74,41 @@ export const assertClaim = internalQuery({
   },
 });
 
+export const disposeClaimedUpload = internalMutation({
+  args: { storageId: v.id("_storage"), purpose: uploadPurposeValidator },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, permissions[args.purpose]);
+    const claim = await ctx.db
+      .query("uploadClaims")
+      .withIndex("by_storage_id", (index) => index.eq("storageId", args.storageId))
+      .unique();
+    if (!claim || claim.ownerUserId !== user._id || claim.purpose !== args.purpose) return { disposed: false };
+
+    const [media, covers, payments, deposits] = await Promise.all([
+      ctx.db
+        .query("bookMedia")
+        .withIndex("by_storage_id", (index) => index.eq("storageId", args.storageId))
+        .take(1),
+      ctx.db
+        .query("books")
+        .withIndex("by_cover_storage_id", (index) => index.eq("coverStorageId", args.storageId))
+        .take(1),
+      ctx.db
+        .query("paymentConfirmations")
+        .withIndex("by_proof_storage_id", (index) => index.eq("proofStorageId", args.storageId))
+        .take(1),
+      ctx.db
+        .query("depositTopUps")
+        .withIndex("by_proof_storage_id", (index) => index.eq("proofStorageId", args.storageId))
+        .take(1),
+    ]);
+    const referenced = media.length > 0 || covers.length > 0 || payments.length > 0 || deposits.length > 0;
+    await ctx.db.delete(claim._id);
+    if (!referenced) await ctx.storage.delete(args.storageId);
+    return { disposed: true };
+  },
+});
+
 export async function consumeClaim(
   ctx: MutationCtx,
   storageId: Id<"_storage">,

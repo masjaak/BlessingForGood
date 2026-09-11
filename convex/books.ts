@@ -1,5 +1,5 @@
 import { paginationOptsValidator } from "convex/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
@@ -13,8 +13,14 @@ import { insertBook } from "./lib/productDomain";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { consumeClaim } from "./uploads";
 
-const galleryLimit = 8;
+export const GALLERY_LIMIT = 8;
 const coverPresentationValidator = v.object({ zoom: v.number(), x: v.number(), y: v.number() });
+
+function isTerminalGalleryAttachmentError(error: unknown): boolean {
+  if (!(error instanceof ConvexError) || typeof error.data !== "object" || error.data === null) return false;
+  const code = (error.data as { code?: unknown }).code;
+  return code === "VALIDATION_FAILED" || code === "BOOK_NOT_FOUND";
+}
 
 function normalizeCoverPresentation(presentation?: { zoom: number; x: number; y: number }) {
   if (!presentation) return undefined;
@@ -110,7 +116,7 @@ export const getForAdmin = query({
         .query("bookMedia")
         .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
         .order("asc")
-        .take(galleryLimit),
+        .take(GALLERY_LIMIT),
     ]);
     return {
       ...book,
@@ -246,21 +252,31 @@ export const attachGalleryImage = action({
     altText: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"bookMedia">> => {
-    await ctx.runQuery(internal.books.assertBookUploadAccess, { bookId: args.bookId });
-    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-gallery" });
-    await validateUploadedFile(
-      ctx,
-      args.storageId,
-      args.fileName,
-      args.mimeType,
-      IMAGE_CONTENT_TYPES,
-      "gallery image must be a valid JPG, PNG, or WebP image up to 5 MB",
-    );
-    return ctx.runMutation(internal.books.attachGalleryImageValidated, {
-      bookId: args.bookId,
-      storageId: args.storageId,
-      altText: args.altText,
-    });
+    try {
+      await ctx.runQuery(internal.books.assertBookUploadAccess, { bookId: args.bookId });
+      await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-gallery" });
+      await validateUploadedFile(
+        ctx,
+        args.storageId,
+        args.fileName,
+        args.mimeType,
+        IMAGE_CONTENT_TYPES,
+        "gallery image must be a valid JPG, PNG, or WebP image up to 5 MB",
+      );
+      return await ctx.runMutation(internal.books.attachGalleryImageValidated, {
+        bookId: args.bookId,
+        storageId: args.storageId,
+        altText: args.altText,
+      });
+    } catch (error) {
+      if (isTerminalGalleryAttachmentError(error)) {
+        await ctx.runMutation(internal.uploads.disposeClaimedUpload, {
+          storageId: args.storageId,
+          purpose: "book-gallery",
+        });
+      }
+      throw error;
+    }
   },
 });
 
@@ -276,8 +292,9 @@ export const attachGalleryImageValidated = internalMutation({
       .query("bookMedia")
       .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
       .order("asc")
-      .take(galleryLimit + 1);
-    if (gallery.length >= galleryLimit) fail("VALIDATION_FAILED", "a book can have at most 8 gallery images");
+      .take(GALLERY_LIMIT + 1);
+    if (gallery.length >= GALLERY_LIMIT)
+      fail("VALIDATION_FAILED", `a book can have at most ${GALLERY_LIMIT} gallery images`);
     await validateStoredFile(
       ctx,
       args.storageId,
@@ -355,7 +372,7 @@ export const moveGalleryImage = mutation({
       .query("bookMedia")
       .withIndex("by_book_and_order", (query) => query.eq("bookId", book._id))
       .order("asc")
-      .take(galleryLimit);
+      .take(GALLERY_LIMIT);
     const index = gallery.findIndex((item) => item._id === media._id);
     const swapIndex = args.direction === "up" ? index - 1 : index + 1;
     if (index < 0 || swapIndex < 0 || swapIndex >= gallery.length) return media._id;

@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
+import { GALLERY_LIMIT } from "./books";
 import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
 
 const validWebp = new Uint8Array([
@@ -21,7 +22,7 @@ async function storeFile(
   bytes: Uint8Array,
   contentType: string,
   ownerUserId: string,
-  purpose: "book-cover" | "book-gallery",
+  purpose: "book-cover" | "book-gallery" | "payment-proof" | "deposit-proof",
 ) {
   return t.run(async (ctx) => {
     const copy = new Uint8Array(bytes.length);
@@ -183,7 +184,7 @@ describe("BFG Book Master product media", () => {
     await expect(customer.query(api.books.getForAdmin, { bookId })).rejects.toThrow("PERMISSION_DENIED");
   });
 
-  it("keeps the current eight-image gallery limit at the boundary", async () => {
+  it("cleans the extra upload rejected at the current gallery limit", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);
     const adminUser = await admin.query(api.users.current, {});
@@ -192,7 +193,7 @@ describe("BFG Book Master product media", () => {
     const bookId = await admin.mutation(api.books.create, { publisherId, title: "Gallery Limit Book" });
     const mediaIds = [];
 
-    for (let index = 0; index < 8; index += 1) {
+    for (let index = 0; index < GALLERY_LIMIT; index += 1) {
       const storageId = await storeImage(t, adminUser.appUserId);
       mediaIds.push(
         await admin.action(api.books.attachGalleryImage, {
@@ -206,31 +207,191 @@ describe("BFG Book Master product media", () => {
     }
 
     const atLimit = await admin.query(api.books.getForAdmin, { bookId });
-    expect(atLimit?.gallery).toHaveLength(8);
-    expect(atLimit?.gallery.map((image) => image.displayOrder)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(atLimit?.gallery).toHaveLength(GALLERY_LIMIT);
+    expect(atLimit?.gallery.map((image) => image.displayOrder)).toEqual(
+      Array.from({ length: GALLERY_LIMIT }, (_, index) => index),
+    );
 
-    const ninthStorageId = await storeImage(t, adminUser.appUserId);
+    const extraStorageId = await storeImage(t, adminUser.appUserId);
     await expect(
       admin.action(api.books.attachGalleryImage, {
         bookId,
-        storageId: ninthStorageId,
-        fileName: "gallery-9.webp",
+        storageId: extraStorageId,
+        fileName: "gallery-extra.webp",
         mimeType: "image/webp",
-        altText: "Gallery image 9",
+        altText: "Extra gallery image",
       }),
     ).rejects.toThrow("VALIDATION_FAILED");
 
     const afterRejectedUpload = await admin.query(api.books.getForAdmin, { bookId });
     expect(afterRejectedUpload?.gallery.map((image) => image.mediaId)).toEqual(mediaIds);
-    expect(await t.run((ctx) => ctx.db.get(ninthStorageId as never))).not.toBeNull();
+    expect(await t.run((ctx) => ctx.db.system.get("_storage", extraStorageId))).toBeNull();
     expect(
       await t.run((ctx) =>
         ctx.db
           .query("uploadClaims")
-          .withIndex("by_storage_id", (query) => query.eq("storageId", ninthStorageId))
+          .withIndex("by_storage_id", (query) => query.eq("storageId", extraStorageId))
           .first(),
       ),
-    ).not.toBeNull();
+    ).toBeNull();
+  });
+
+  it("keeps a concurrent capacity loser from becoming an orphan", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const adminUser = await admin.query(api.users.current, {});
+    if (!adminUser) throw new Error("admin fixture missing");
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Gallery Race Publisher" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Gallery Race Book" });
+    const existingMediaIds = [];
+
+    for (let index = 0; index < GALLERY_LIMIT - 1; index += 1) {
+      existingMediaIds.push(
+        await admin.action(api.books.attachGalleryImage, {
+          bookId,
+          storageId: await storeImage(t, adminUser.appUserId),
+          fileName: `race-existing-${index}.webp`,
+          mimeType: "image/webp",
+        }),
+      );
+    }
+
+    const racingStorageIds = [await storeImage(t, adminUser.appUserId), await storeImage(t, adminUser.appUserId)];
+    const attempts = await Promise.allSettled(
+      racingStorageIds.map((storageId, index) =>
+        admin.action(api.books.attachGalleryImage, {
+          bookId,
+          storageId,
+          fileName: `race-${index}.webp`,
+          mimeType: "image/webp",
+        }),
+      ),
+    );
+
+    expect(attempts.filter((attempt) => attempt.status === "fulfilled")).toHaveLength(1);
+    const winnerIndex = attempts.findIndex((attempt) => attempt.status === "fulfilled");
+    const loserIndex = 1 - winnerIndex;
+    const finalBook = await admin.query(api.books.getForAdmin, { bookId });
+    expect(finalBook?.gallery).toHaveLength(GALLERY_LIMIT);
+    expect(finalBook?.gallery.slice(0, -1).map((image) => image.mediaId)).toEqual(existingMediaIds);
+
+    const resources = await t.run(async (ctx) =>
+      Promise.all(
+        racingStorageIds.map(async (storageId) => ({
+          storage: await ctx.db.system.get("_storage", storageId),
+          claim: await ctx.db
+            .query("uploadClaims")
+            .withIndex("by_storage_id", (query) => query.eq("storageId", storageId))
+            .first(),
+          media: await ctx.db
+            .query("bookMedia")
+            .withIndex("by_storage_id", (query) => query.eq("storageId", storageId))
+            .first(),
+        })),
+      ),
+    );
+    expect(resources[winnerIndex]).toMatchObject({
+      storage: expect.any(Object),
+      claim: null,
+      media: expect.any(Object),
+    });
+    expect(resources[loserIndex]).toEqual({ storage: null, claim: null, media: null });
+  });
+
+  it("protects cleanup from another actor, Book, and proof purpose", async () => {
+    const t = testConvex();
+    const { owner, admin, customer } = await setupUsers(t);
+    const adminUser = await admin.query(api.users.current, {});
+    const customerUser = await customer.query(api.users.current, {});
+    if (!adminUser || !customerUser) throw new Error("media security fixture missing");
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Media Security Publisher" });
+    const bookId = await admin.mutation(api.books.create, { publisherId, title: "Media Security Book" });
+
+    for (let index = 0; index < GALLERY_LIMIT; index += 1) {
+      await admin.action(api.books.attachGalleryImage, {
+        bookId,
+        storageId: await storeImage(t, adminUser.appUserId),
+        fileName: `security-existing-${index}.webp`,
+        mimeType: "image/webp",
+      });
+    }
+
+    const adminOwnedStorage = await storeImage(t, adminUser.appUserId);
+    await expect(
+      owner.action(api.books.attachGalleryImage, {
+        bookId,
+        storageId: adminOwnedStorage,
+        fileName: "other-admin.webp",
+        mimeType: "image/webp",
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+    await expect(t.run(async (ctx) => ctx.db.system.get("_storage", adminOwnedStorage))).resolves.not.toBeNull();
+    await expect(
+      t.run(async (ctx) =>
+        ctx.db
+          .query("uploadClaims")
+          .withIndex("by_storage_id", (query) => query.eq("storageId", adminOwnedStorage))
+          .first(),
+      ),
+    ).resolves.not.toBeNull();
+
+    for (const purpose of ["payment-proof", "deposit-proof"] as const) {
+      const proofStorage = await storeFile(t, validWebp, "image/webp", customerUser.appUserId, purpose);
+      await expect(
+        admin.action(api.books.attachGalleryImage, {
+          bookId,
+          storageId: proofStorage,
+          fileName: `${purpose}.webp`,
+          mimeType: "image/webp",
+        }),
+      ).rejects.toThrow("VALIDATION_FAILED");
+      await expect(t.run(async (ctx) => ctx.db.system.get("_storage", proofStorage))).resolves.not.toBeNull();
+      await expect(
+        t.run(async (ctx) =>
+          ctx.db
+            .query("uploadClaims")
+            .withIndex("by_storage_id", (query) => query.eq("storageId", proofStorage))
+            .first(),
+        ),
+      ).resolves.not.toBeNull();
+    }
+
+    const otherBookId = await admin.mutation(api.books.create, { publisherId, title: "Other Media Book" });
+    const sharedStorage = await storeImage(t, adminUser.appUserId);
+    await admin.action(api.books.attachGalleryImage, {
+      bookId: otherBookId,
+      storageId: sharedStorage,
+      fileName: "other-book.webp",
+      mimeType: "image/webp",
+    });
+    await t.run(async (ctx) => {
+      await ctx.db.insert("uploadClaims", {
+        storageId: sharedStorage,
+        ownerUserId: adminUser.appUserId,
+        purpose: "book-gallery",
+        createdAt: Date.now(),
+      });
+    });
+    await expect(
+      admin.action(api.books.attachGalleryImage, {
+        bookId,
+        storageId: sharedStorage,
+        fileName: "shared.webp",
+        mimeType: "image/webp",
+      }),
+    ).rejects.toThrow("VALIDATION_FAILED");
+    await expect(t.run(async (ctx) => ctx.db.system.get("_storage", sharedStorage))).resolves.not.toBeNull();
+    await expect(admin.query(api.books.getForAdmin, { bookId: otherBookId })).resolves.toMatchObject({
+      gallery: [{ storageId: sharedStorage }],
+    });
+    await expect(
+      t.run(async (ctx) =>
+        ctx.db
+          .query("uploadClaims")
+          .withIndex("by_storage_id", (query) => query.eq("storageId", sharedStorage))
+          .first(),
+      ),
+    ).resolves.toBeNull();
   });
 
   it("persists non-destructive cover framing, projects it to customers, and supports reset", async () => {
