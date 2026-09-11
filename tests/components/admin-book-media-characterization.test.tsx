@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { getFunctionName } from "convex/server";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AdminBookDetail } from "@/components/admin-book-detail";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
@@ -123,8 +124,14 @@ function mockActions({
   const actions = [attachCover, attachGallery];
   vi.mocked(useAction).mockImplementation(() => actions[actionIndex++ % actions.length] as never);
   let mutationIndex = 0;
-  const mutations = [vi.fn(), vi.fn(), vi.fn(), removeGallery, moveGallery, updateExternalPreview];
-  vi.mocked(useMutation).mockImplementation(() => mutations[mutationIndex++ % mutations.length] as never);
+  const mutations = [vi.fn(), vi.fn(), vi.fn()];
+  vi.mocked(useMutation).mockImplementation((reference) => {
+    const functionName = getFunctionName(reference as never);
+    if (functionName === "books:updateExternalPreview") return updateExternalPreview as never;
+    if (functionName === "books:removeGalleryImage") return removeGallery as never;
+    if (functionName === "books:moveGalleryImage") return moveGallery as never;
+    return mutations[mutationIndex++ % mutations.length] as never;
+  });
 }
 
 function renderAdminBook(book: TestBook = baseBook) {
