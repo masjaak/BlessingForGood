@@ -385,6 +385,41 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
   });
 
+  it("shows password guidance before submission and keeps the Clerk flow unchanged", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn().mockImplementation(() => {
+        signUp.status = "complete";
+        return Promise.resolve({ error: null });
+      }),
+      finalize: vi.fn().mockResolvedValue({ error: null }),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+
+    const passwordInput = screen.getByLabelText("Password");
+    expect(
+      screen.getByText(
+        "Gunakan password yang kuat dan tidak mudah ditebak. Password yang terlalu lemah atau pernah bocor dapat ditolak.",
+      ),
+    ).toBeTruthy();
+    expect(passwordInput.getAttribute("aria-describedby")).toBe("invitation-password-help");
+    expect(signUp.password).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(passwordInput, { target: { value: "safe-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+
+    await waitFor(() =>
+      expect(signUp.password).toHaveBeenCalledWith({ username: "reader", password: "safe-password" }),
+    );
+    await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
   it("ends the username/password onboarding at Account after membership activation", async () => {
     let isSignedIn = false;
     const signUp = {

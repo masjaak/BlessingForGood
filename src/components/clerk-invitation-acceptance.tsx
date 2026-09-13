@@ -1368,7 +1368,7 @@ export function ClerkInvitationAcceptance({
             </>
           ) : null}
           {liveMissingFields.includes("password") ? (
-            <>
+            <div className="field">
               <label className="field" htmlFor="invitation-password">
                 <span className="field-label">Password</span>
                 <input
@@ -1379,12 +1379,20 @@ export function ClerkInvitationAcceptance({
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="new-password"
                   aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={fieldErrors.password ? "invitation-password-error" : undefined}
+                  aria-describedby={
+                    fieldErrors.password
+                      ? "invitation-password-help invitation-password-error"
+                      : "invitation-password-help"
+                  }
                   required
                 />
               </label>
+              <span id="invitation-password-help" className="field-hint">
+                Gunakan password yang kuat dan tidak mudah ditebak. Password yang terlalu lemah atau pernah bocor dapat
+                ditolak.
+              </span>
               {renderFieldError("password")}
-            </>
+            </div>
           ) : null}
           {liveMissingFields.includes("legal_accepted") ? (
             <>
