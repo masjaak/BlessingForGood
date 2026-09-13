@@ -29,6 +29,7 @@ import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { invoiceStatusLabel } from "@/domain/prototype/operations";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { AdminOrderItemCancellation } from "@/features/admin-orders/cancellation/admin-order-item-cancellation";
 
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
@@ -130,7 +131,16 @@ function AdminOrderDetail() {
                 <span>
                   {item.quantity} × {item.bookTitle} · {item.format}
                 </span>
-                <Money amount={item.subtotal} />
+                <div className="form-actions">
+                  <Money amount={item.subtotal} />
+                  <AdminOrderItemCancellation
+                    orderItemId={item.id}
+                    orderStatus={order.status}
+                    bookTitle={item.bookTitle}
+                    format={item.format}
+                    quantity={item.quantity}
+                  />
+                </div>
               </div>
             ))}
             {invoice ? (

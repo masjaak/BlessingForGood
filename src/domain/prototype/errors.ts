@@ -48,11 +48,17 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "BATCH_LOCKED" || message.includes("BATCH_LOCKED")) {
     return "Batch sudah dikunci dan tidak dapat diubah.";
   }
+  if (code === "BATCH_RECONCILIATION_REQUIRED" || message.includes("BATCH_RECONCILIATION_REQUIRED")) {
+    return "Rekonsiliasi penugasan Batch terlebih dahulu sebelum menyelesaikan pembatalan item.";
+  }
   if (code === "BATCH_ARCHIVED" || message.includes("BATCH_ARCHIVED")) {
     return "Batch sudah diarsipkan.";
   }
   if (code === "BATCH_DEADLINE_MISMATCH" || message.includes("BATCH_DEADLINE_MISMATCH")) {
     return "Deadline PO harus sama dengan batas pemesanan katalog.";
+  }
+  if (code === "CANCELLED_ORDER_FULFILLMENT_BLOCKED" || message.includes("CANCELLED_ORDER_FULFILLMENT_BLOCKED")) {
+    return "Pesanan yang sudah dibatalkan tidak dapat dilanjutkan ke fulfillment.";
   }
   if (code === "ENTITY_IN_USE" || message.includes("ENTITY_IN_USE")) {
     return "Data ini sudah dipakai dan tidak dapat dihapus.";
@@ -69,6 +75,13 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     return "Stok baru saja habis.";
   }
   if (message.includes("ORDER_LOCKED")) return "Pesanan sudah terkunci setelah katalog ditutup.";
+  if (code === "CANCELLATION_NOT_ELIGIBLE" || message.includes("CANCELLATION_NOT_ELIGIBLE")) {
+    if (message.includes("ALREADY_FULFILLED")) return "Item sudah selesai dipenuhi.";
+    if (message.includes("ALREADY_CANCELLED")) return "Item atau pesanan ini sudah dibatalkan.";
+    if (message.includes("ACTIVE_EXCEPTION_EXISTS"))
+      return "Item sudah memiliki masalah aktif yang harus diselesaikan.";
+    return "Item ini tidak dapat dibatalkan pada keadaan sekarang.";
+  }
   if (message.includes("ORDER_EMPTY")) return "Pilih minimal satu buku sebelum mengirim preorder.";
   if (code === "INVOICE_INVALID_STATE" || message.includes("INVOICE_INVALID_STATE")) {
     if (message.includes("release or reverse")) return "Lepaskan atau balikkan pembayaran sebelum membatalkan invoice.";

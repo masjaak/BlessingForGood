@@ -45,6 +45,9 @@ export const updateStage = mutation({
     const user = await requirePermission(ctx, "tracking.manage");
     const order = await ctx.db.get(args.orderId);
     if (!order) fail("ORDER_NOT_FOUND");
+    if (order.status === "cancelled") {
+      fail("CANCELLED_ORDER_FULFILLMENT_BLOCKED");
+    }
     if (args.toStage === "completed" && (await hasUnresolvedException(ctx, order._id))) {
       fail("EXCEPTION_REQUIRES_RESOLUTION");
     }

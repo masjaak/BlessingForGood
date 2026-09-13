@@ -3,6 +3,12 @@
 Status: Phase 06.7 policy-closed; runtime integration QA is part of the
 release gate.
 
+The Admin Order Detail `Batalkan item` action uses the same exception domain;
+it never deletes an Order or Order Item. A simple item with no active Invoice,
+settlement, locked Batch, or affected editable assignment may be resolved by
+the server orchestration. Other cases are opened for the existing Admin review
+queue.
+
 ## Purpose
 
 `orderExceptions` is the canonical item-level operational case for out of
@@ -26,8 +32,9 @@ under_review → rejected
 ```
 
 Only admin/owner users can review, reject, select a resolution, or resolve a
-case. Customers can create only their own cancellation request and can read
-only their own safe projection.
+case. Customer cancellation mutation access is currently disabled; Customers
+can read only their own safe projection. Admin cancellation is initiated from
+the Order Item surface or the existing exception queue.
 
 ## Resolutions
 
@@ -63,11 +70,13 @@ it is never the authority.
 
 Partial quantities are supported. The original item quantity is immutable for
 history; exception state subtracts only affected quantity from the
-fulfillable quantity. Batch assignment checks use the remaining quantity and
-preserve historical assignments after lock/PO close. Fulfillment cannot advance
-to `completed` while an exception remains in review. An order is marked
-`cancelled` only when every item quantity has been resolved through a
-non-`no_action` exception; unrelated items remain operational.
+fulfillable quantity. Editable Batch assignments that cover the cancelled
+quantity must be reconciled through the Batch owner before terminal resolution.
+Locked/committed assignments remain historical and require review. Fulfillment
+cannot advance after an Order is `cancelled`, and cannot advance to `completed`
+while an exception remains in review. An Order is marked `cancelled` only when
+every item quantity has been resolved through a non-`no_action` exception;
+unrelated items remain operational.
 
 ## Financial consequence
 
@@ -92,6 +101,9 @@ ledger row, restore available balance, and reject a second release.
 
 ## Access and UI
 
+- Admin Order Detail: `Batalkan item` opens the current item's cancellation
+  confirmation and routes finance-sensitive or Batch-sensitive cases into
+  review.
 - Admin queue: `/admin/exceptions`.
 - Refund queue: `/admin/refunds`.
 - Admin order detail shows exception history and financial consequence.

@@ -45,4 +45,21 @@ describe("BFG order fulfillment tracking", () => {
       "ORDER_ACCESS_DENIED",
     );
   });
+
+  it("blocks every fulfillment transition after an Order is cancelled", async () => {
+    const t = testConvex();
+    const { admin, order } = await createOrder(t);
+    await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Publisher tidak dapat menyediakan buku.",
+    });
+
+    await expect(
+      admin.mutation(api.orderFulfillment.updateStage, {
+        orderId: order.orderId,
+        toStage: "awaiting_payment",
+      }),
+    ).rejects.toThrow("CANCELLED_ORDER_FULFILLMENT_BLOCKED");
+  });
 });

@@ -64,6 +64,13 @@ describe("BFG order exception workflow", () => {
         reason: "Please cancel one copy.",
       }),
     ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      customer.mutation(api.orderExceptions.cancelItem, {
+        orderItemId: item._id,
+        affectedQuantity: 1,
+        reason: "Customer cannot use the Admin cancellation action.",
+      }),
+    ).rejects.toThrow("PERMISSION_DENIED");
     const exception = await admin.mutation(api.orderExceptions.open, {
       orderItemId: item._id,
       type: "admin_cancellation",
@@ -86,6 +93,117 @@ describe("BFG order exception workflow", () => {
       secondCustomer.mutation(api.orderExceptions.requestCancellation, { orderItemId: item._id, reason: "Not mine" }),
     ).rejects.toThrow("PERMISSION_DENIED");
     expect(catalog.catalogId).toBe(order.catalogId);
+  });
+
+  it("cancels a simple item from the Admin Order flow without deleting history", async () => {
+    const t = testConvex();
+    const { admin, customer, order } = await createOrder(t);
+    const result = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Publisher tidak dapat menyediakan format ini.",
+      customerNote: "Kami akan menghubungi Anda terkait pilihan berikutnya.",
+    });
+
+    expect(result).toMatchObject({
+      outcome: "resolved",
+      exception: { type: "admin_cancellation", status: "resolved", affectedQuantity: 1 },
+    });
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("cancelled");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toHaveLength(1);
+    expect((await customer.query(api.orders.getMine, { orderId: order.orderId })).orderId).toBe(order.orderId);
+  });
+
+  it("keeps unrelated multi-item quantities operational", async () => {
+    const t = testConvex();
+    const { admin, order } = await createOrder(t);
+    const secondItemId = await t.run(async (ctx) => {
+      const original = await ctx.db.get(order.items[0]._id);
+      if (!original) throw new Error("order item fixture missing");
+      return ctx.db.insert("orderItems", {
+        orderId: order.orderId,
+        catalogItemId: original.catalogItemId,
+        bookId: original.bookId,
+        bookVariantId: original.bookVariantId,
+        bookTitleSnapshot: original.bookTitleSnapshot,
+        publisherNameSnapshot: original.publisherNameSnapshot,
+        formatSnapshot: original.formatSnapshot,
+        isbnSnapshot: original.isbnSnapshot,
+        unitPriceAmountSnapshot: original.unitPriceAmountSnapshot,
+        currencySnapshot: original.currencySnapshot,
+        quantity: original.quantity,
+        subtotalAmount: original.subtotalAmount,
+        createdAt: Date.now(),
+      });
+    });
+    const result = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Customer memilih untuk tidak melanjutkan item ini.",
+    });
+
+    expect(result.outcome).toBe("resolved");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("submitted");
+    expect(
+      (await admin.query(api.orderExceptions.listForOrderAdmin, { orderId: order.orderId })).map(
+        (exception) => exception.orderItemId,
+      ),
+    ).toContain(order.items[0]._id);
+    expect(
+      (await admin.query(api.orderExceptions.listForOrderAdmin, { orderId: order.orderId })).map(
+        (exception) => exception.orderItemId,
+      ),
+    ).not.toContain(secondItemId);
+  });
+
+  it("requires editable Batch reconciliation before resolving an affected assignment", async () => {
+    const t = testConvex();
+    const { admin, order, catalog } = await createOrder(t, 3);
+    const batch = await admin.mutation(api.batches.create, { name: "Cancellation Reconciliation Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batchTracking.assignOrderItem, {
+      orderItemId: order.items[0]._id,
+      batchId: batch.batchId,
+      assignedQuantity: 3,
+    });
+
+    const request = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Publisher tidak dapat memenuhi satu eksemplar.",
+    });
+    expect(request).toMatchObject({ outcome: "review_required", reasonCode: "BATCH_RECONCILIATION_REQUIRED" });
+    await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exception.exceptionId });
+    await admin.mutation(api.orderExceptions.selectResolution, {
+      exceptionId: request.exception.exceptionId,
+      resolution: "remove_item",
+    });
+    await expect(
+      admin.mutation(api.orderExceptions.resolve, { exceptionId: request.exception.exceptionId }),
+    ).rejects.toThrow("BATCH_RECONCILIATION_REQUIRED");
+
+    await admin.mutation(api.batchTracking.unassignOrderItem, {
+      orderItemId: order.items[0]._id,
+      batchId: batch.batchId,
+    });
+    await expect(
+      admin.mutation(api.orderExceptions.resolve, { exceptionId: request.exception.exceptionId }),
+    ).resolves.toMatchObject({ status: "resolved" });
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("submitted");
+  });
+
+  it("routes an issued Invoice cancellation into review", async () => {
+    const t = testConvex();
+    const { admin, order } = await createOrder(t);
+    await issuedInvoice(t, order.orderId);
+    const request = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Format yang diminta sudah tidak tersedia.",
+    });
+
+    expect(request).toMatchObject({ outcome: "review_required", reasonCode: "INVOICE_RECONCILIATION_REQUIRED" });
+    expect(request.exception.status).toBe("opened");
   });
 
   it("handles partial OOS without deleting the original item or assigning blocked quantity", async () => {
@@ -337,18 +455,18 @@ describe("BFG order exception workflow", () => {
       decision: "requires_admin_review",
       reasonCode: "BATCH_LOCKED",
     });
-    const request = await admin.mutation(api.orderExceptions.open, {
+    const request = await admin.mutation(api.orderExceptions.cancelItem, {
       orderItemId: order.items[0]._id,
-      type: "admin_cancellation",
       affectedQuantity: 1,
       reason: "Please review this cancellation after PO lock.",
     });
-    await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exceptionId });
+    expect(request).toMatchObject({ outcome: "review_required", reasonCode: "BATCH_LOCKED" });
+    await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exception.exceptionId });
     await admin.mutation(api.orderExceptions.selectResolution, {
-      exceptionId: request.exceptionId,
+      exceptionId: request.exception.exceptionId,
       resolution: "remove_item",
     });
-    await admin.mutation(api.orderExceptions.resolve, { exceptionId: request.exceptionId });
+    await admin.mutation(api.orderExceptions.resolve, { exceptionId: request.exception.exceptionId });
     expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).assignments).toHaveLength(1);
   });
 
