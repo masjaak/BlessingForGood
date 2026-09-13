@@ -68,7 +68,7 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
             <StatusBadge tone="positive">{book.totalStock} tersedia</StatusBadge>
             <span className="subtle">{book.publisher.name}</span>
           </div>
-          {book.description ? <p>{book.description}</p> : null}
+          {book.description ? <p style={{ whiteSpace: "pre-line" }}>{book.description}</p> : null}
           {book.categories.length ? <p className="subtle">{book.categories.join(" · ")}</p> : null}
           {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}
           {book.externalPreview ? (

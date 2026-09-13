@@ -195,7 +195,11 @@ export function SecretCatalogBookDetail() {
       <div className="ready-stock-detail">
         <BookCover title={book.title} publisher={book.publisher} src={book.coverImageUrl || undefined} />
         <div className="content-stack">
-          {book.description ? <p>{book.description}</p> : <p className="subtle">Deskripsi belum ditambahkan.</p>}
+          {book.description ? (
+            <p style={{ whiteSpace: "pre-line" }}>{book.description}</p>
+          ) : (
+            <p className="subtle">Deskripsi belum ditambahkan.</p>
+          )}
           {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}
           {book.externalPreview ? (
             <LinkButton href={book.externalPreview.url} target="_blank" rel="noreferrer noopener" variant="secondary">

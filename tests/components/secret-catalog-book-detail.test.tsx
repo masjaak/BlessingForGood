@@ -29,7 +29,10 @@ vi.mock("@/components/bfg-select", () => ({
   BFGSelect: (props: React.SelectHTMLAttributes<HTMLSelectElement>) => <select {...props} />,
 }));
 
-function setup(profileDisplayName: string | null | undefined = "MULIA KAH") {
+function setup(
+  profileDisplayName: string | null | undefined = "MULIA KAH",
+  description = "Paragraph one.\n\nParagraph two.",
+) {
   vi.mocked(useParams).mockReturnValue({ catalogId: "catalog-1", bookId: "book-1" } as never);
   vi.mocked(useUser).mockReturnValue({
     isLoaded: true,
@@ -47,6 +50,7 @@ function setup(profileDisplayName: string | null | undefined = "MULIA KAH") {
           id: "book-1",
           title: "A Book",
           publisher: "BFG Press",
+          description,
           variants: [{ id: "variant-1", format: "PB", isbn: "9780000000001", price: 125000 }],
         },
       ],
@@ -102,5 +106,32 @@ describe("Secret Catalog book detail preorder", () => {
     setup("Mulia Raya Updated");
     render(<SecretCatalogBookDetail />);
     await waitFor(() => expect((screen.getByLabelText("Nama") as HTMLInputElement).value).toBe("Mulia Raya Updated"));
+  });
+
+  it.each([
+    ["single-line descriptions", "One line."],
+    ["one newline", "Paragraph one.\nParagraph two."],
+    ["blank paragraphs", "Paragraph one.\n\nParagraph two."],
+    [
+      "long descriptions",
+      "Paragraph one with enough text to wrap naturally on narrow screens.\n\nParagraph two remains readable.",
+    ],
+  ])("marks %s for visual line-break preservation", (_label, description) => {
+    setup("MULIA KAH", description);
+    const { container } = render(<SecretCatalogBookDetail />);
+
+    const renderedDescription = container.querySelector(".ready-stock-detail > .content-stack > p");
+    expect(renderedDescription?.textContent).toBe(description);
+    expect((renderedDescription as HTMLElement | null)?.style.whiteSpace).toBe("pre-line");
+  });
+
+  it("renders HTML-looking descriptions as escaped plain text", () => {
+    const description = "<script>alert(1)</script>\n\nSafe text.";
+    setup("MULIA KAH", description);
+    const { container } = render(<SecretCatalogBookDetail />);
+
+    const rendered = container.querySelector(".ready-stock-detail > .content-stack > p");
+    expect(rendered?.textContent).toBe(description);
+    expect(rendered?.querySelector("script")).toBeNull();
   });
 });

@@ -185,4 +185,29 @@ describe("BFG product publishing projections", () => {
     await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
     expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({ publicationStatus: "published" });
   });
+
+  it("preserves intentional description paragraphs through the Book and Ready Stock projections", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Paragraph Publisher" });
+    const bookId = await admin.mutation(api.books.create, {
+      publisherId,
+      title: "Paragraph Book",
+      description: "Paragraph one.\n\nParagraph two.",
+    });
+    const variantId = await admin.mutation(api.bookVariants.create, {
+      bookId,
+      format: "PB",
+      isbn: "9780000099003",
+      priceAmount: 175000,
+    });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: variantId, quantity: 1 });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
+
+    const saved = await admin.query(api.books.getForAdmin, { bookId });
+    expect(saved?.description).toBe("Paragraph one.\n\nParagraph two.");
+
+    const projected = await admin.query(api.readyStock.getBySlug, { slug: saved?.slug || "" });
+    expect(projected?.description).toBe("Paragraph one.\n\nParagraph two.");
+  });
 });

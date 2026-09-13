@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { useMutation } from "convex/react";
-import { ReadyStockOrderAction } from "@/components/ready-stock-detail";
+import { useMutation, useQuery } from "convex/react";
+import { ReadyStockDetail, ReadyStockOrderAction } from "@/components/ready-stock-detail";
 import { useProduct } from "@/domain/prototype/store";
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(),
+  useQuery: vi.fn(),
 }));
 
 vi.mock("@/domain/prototype/store", () => ({
@@ -17,7 +18,9 @@ const book = {
   slug: "ready-book",
   title: "Ready Book",
   author: "A. Writer",
-  description: "A customer-facing description.",
+  description: "Paragraph one.\n\nParagraph two.",
+  categories: [],
+  totalStock: 3,
   publisher: { id: "publisher-1", name: "Publisher" },
   coverImageUrl: null,
   coverPresentation: null,
@@ -53,6 +56,22 @@ describe("Ready Stock checkout role boundary", () => {
     render(<ReadyStockOrderAction book={book} />);
 
     expect(screen.getByRole("button", { name: "Pesan Ready Stock" })).toBeTruthy();
+  });
+
+  it("marks multiline descriptions for visual line-break preservation", () => {
+    vi.mocked(useQuery).mockReturnValue(book);
+    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "authenticated",
+      sessionRole: "customer",
+    } as never);
+
+    const { container } = render(<ReadyStockDetail slug="ready-book" />);
+
+    const description = container.querySelector(".ready-stock-detail > .content-stack > p");
+    expect(description?.textContent).toBe("Paragraph one.\n\nParagraph two.");
+    expect((description as HTMLElement | null)?.style.whiteSpace).toBe("pre-line");
   });
 
   it.each(["loading", "convex-loading", "provisioning"] as const)(
