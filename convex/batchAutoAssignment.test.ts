@@ -350,6 +350,34 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
       page: expect.arrayContaining([expect.objectContaining({ assignmentState: "Tujuan Batch ambigu" })]),
     });
 
+    const singleLockedCatalog = await createOpenCatalog(admin, "Single Locked Catalog", "7104A", "single-locked-code");
+    await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "single-locked-code" });
+    await secondCustomer.mutation(api.orders.submit, {
+      catalogId: singleLockedCatalog.catalogId,
+      customerName: "Single Locked Initial Customer",
+      items: [{ variantId: singleLockedCatalog.variantIds[0], quantity: 1 }],
+    });
+    const singleLockedBatch = await admin.mutation(api.batches.create, { name: "Single Locked Batch" });
+    await admin.mutation(api.batches.linkCatalog, {
+      batchId: singleLockedBatch.batchId,
+      catalogId: singleLockedCatalog.catalogId,
+    });
+    await admin.mutation(api.batchTracking.updateShipmentStage, {
+      batchId: singleLockedBatch.batchId,
+      toStage: "po_closed",
+    });
+    const singleLockedOrderCountBefore = await t
+      .run((ctx) => ctx.db.query("orders").collect())
+      .then((orders) => orders.length);
+    await expect(
+      secondCustomer.mutation(api.orders.submit, {
+        catalogId: singleLockedCatalog.catalogId,
+        customerName: "Single Locked Customer",
+        items: [{ variantId: singleLockedCatalog.variantIds[0], quantity: 1 }],
+      }),
+    ).rejects.toThrow("NO_ELIGIBLE_BATCH");
+    await expect(t.run((ctx) => ctx.db.query("orders").collect())).resolves.toHaveLength(singleLockedOrderCountBefore);
+
     const lockedCatalog = await createOpenCatalog(admin, "Locked Catalog", "7104", "locked-code");
     await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "locked-code" });
     await secondCustomer.mutation(api.orders.submit, {
@@ -360,14 +388,19 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     const lockedBatch = await admin.mutation(api.batches.create, { name: "Locked Batch" });
     const archivedBatch = await admin.mutation(api.batches.create, { name: "Archived Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: lockedBatch.batchId, catalogId: lockedCatalog.catalogId });
-    await admin.mutation(api.batches.linkCatalog, { batchId: archivedBatch.batchId, catalogId: lockedCatalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, {
+      batchId: archivedBatch.batchId,
+      catalogId: lockedCatalog.catalogId,
+    });
     await admin.mutation(api.batches.archive, { batchId: archivedBatch.batchId });
     await admin.mutation(api.batchTracking.updateShipmentStage, {
       batchId: lockedBatch.batchId,
       toStage: "po_closed",
     });
     const orderCountBefore = await t.run((ctx) => ctx.db.query("orders").collect()).then((orders) => orders.length);
-    const orderItemCountBefore = await t.run((ctx) => ctx.db.query("orderItems").collect()).then((items) => items.length);
+    const orderItemCountBefore = await t
+      .run((ctx) => ctx.db.query("orderItems").collect())
+      .then((items) => items.length);
     const assignmentCountBefore = await t
       .run((ctx) => ctx.db.query("orderItemBatchAssignments").collect())
       .then((assignments) => assignments.length);
