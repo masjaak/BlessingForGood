@@ -1,5 +1,21 @@
 # BFG Project Status
 
+## Admin Book Master canonical search — 2026-09-13
+
+Status: `IMPLEMENTED; PRODUCTION UAT PENDING`
+
+The confirmed `convex/books.ts:listForAdmin` defect is corrected at its
+canonical owner. Normal Admin browsing uses cursor pagination over newest
+Books; search uses the maintained `books.by_admin_search` projection for title,
+author, publisher, category, and variant ISBN instead of the first 200 browse
+rows. Existing records are covered by the idempotent search-projection
+backfill. The Phase 1 visibility fixture is now a regression covering the
+N-1/N/N+1 boundary, Catalog identity, filters, non-existent search, and
+metadata synchronization.
+
+No Book media, Catalog relation, Ready Stock policy, finance, Auth, Orders,
+customer navigation, Blessy, or global CSS behavior changed.
+
 ## Owner-only UAT permanent purge — 2026-09-05
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PURGE PENDING`

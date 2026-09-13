@@ -96,9 +96,10 @@ the canonical repository.
   wait for this decision.
 - [DEFERRED] Durable cover upload/storage. Phase 06.1 keeps the existing optional
   image-reference boundary and stores no binary/base64 content.
-- [SCALE TRIGGER] Public/admin Book Master queries are bounded to 200 source rows
-  and 100 public results. Add pagination/search indexes when real inventory reaches
-  that ceiling.
+- [RESOLVED 2026-09-13] Admin Book Master browse now uses cursor pagination and
+  canonical search uses `books.by_admin_search`; the old 200-row Admin search
+  candidate ceiling is superseded. Public Ready Stock retains its separate
+  200-row source / 100-result ceiling.
 - [RESOLVED FOR COVERAGE AUDIT] The original product pack remains outside the
   canonical Git repository but was found in the supplied local BFG source and
   audited read-only. The current PRD/mockup matrices record its applicable scope.

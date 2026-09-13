@@ -240,6 +240,7 @@ export default defineSchema({
   books: defineTable({
     publisherId: v.id("publishers"),
     title: v.string(),
+    adminSearchText: v.optional(v.string()),
     slug: v.string(),
     author: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -262,9 +263,14 @@ export default defineSchema({
     createdByUserId: v.id("appUsers"),
   })
     .index("by_slug", ["slug"])
+    .index("by_publisher", ["publisherId"])
     .index("by_publication_status", ["publicationStatus"])
     .index("by_created_at", ["createdAt"])
-    .index("by_cover_storage_id", ["coverStorageId"]),
+    .index("by_cover_storage_id", ["coverStorageId"])
+    .searchIndex("by_admin_search", {
+      searchField: "adminSearchText",
+      filterFields: ["publicationStatus"],
+    }),
 
   bookMedia: defineTable({
     bookId: v.id("books"),

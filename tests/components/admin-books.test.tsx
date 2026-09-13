@@ -37,7 +37,10 @@ const draftBook = {
 function mockList(book = draftBook, getBooks: () => (typeof draftBook)[] = () => [book]) {
   vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
   vi.mocked(useQuery).mockImplementation(((reference: unknown, args: unknown) => {
-    if (args && typeof args === "object" && "paginationOpts" in args) return { page: [] };
+    if (args && typeof args === "object" && "paginationOpts" in args) {
+      if ("search" in args) return { page: getBooks(), isDone: true, continueCursor: "" };
+      return { page: [] };
+    }
     if (args && typeof args === "object" && "search" in args) return getBooks();
     return [];
   }) as never);

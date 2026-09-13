@@ -3,13 +3,14 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import type { QueryCtx } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
 import { IMAGE_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
 import { bookPublicationStatusValidator } from "./validators";
-import { insertBook } from "./lib/productDomain";
+import { insertBook, refreshAdminBookSearchText } from "./lib/productDomain";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { consumeClaim } from "./uploads";
 
@@ -66,6 +67,31 @@ function validateExternalPreviewUrl(value: string) {
     /^172\.(1[6-9]|2\d|3[01])\./.test(hostname);
   if (privateHost) fail("VALIDATION_FAILED", "external preview URL points to a private destination");
   return parsed.toString();
+}
+
+async function hydrateAdminBook(ctx: QueryCtx, book: Doc<"books">) {
+  const [publisher, variants] = await Promise.all([
+    ctx.db.get(book.publisherId),
+    ctx.db
+      .query("bookVariants")
+      .withIndex("by_book", (query) => query.eq("bookId", book._id))
+      .collect(),
+  ]);
+  const stocks = await Promise.all(
+    variants.map((variant) =>
+      ctx.db
+        .query("readyStockInventory")
+        .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
+        .unique(),
+    ),
+  );
+  return {
+    ...book,
+    publisherName: publisher?.name || "—",
+    variants,
+    stockQuantity: stocks.reduce((total, stock) => total + (stock?.quantity || 0), 0),
+    isListed: stocks.some(Boolean),
+  };
 }
 
 export const list = query({
@@ -410,42 +436,25 @@ export const updateExternalPreview = mutation({
 
 export const listForAdmin = query({
   args: {
+    paginationOpts: paginationOptsValidator,
     search: v.optional(v.string()),
     publicationStatus: v.optional(bookPublicationStatusValidator),
     availability: v.optional(v.union(v.literal("in_stock"), v.literal("out_of_stock"), v.literal("not_listed"))),
   },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "books.manage");
-    // ponytail: bounded operational scan; add cursor pagination when the master exceeds 200 books.
-    const books = await ctx.db.query("books").withIndex("by_created_at").order("desc").take(200);
-    const search = args.search?.trim().toLowerCase();
-    const rows = await Promise.all(
-      books.map(async (book) => {
-        const [publisher, variants] = await Promise.all([
-          ctx.db.get(book.publisherId),
-          ctx.db
-            .query("bookVariants")
-            .withIndex("by_book", (query) => query.eq("bookId", book._id))
-            .collect(),
-        ]);
-        const stocks = await Promise.all(
-          variants.map((variant) =>
-            ctx.db
-              .query("readyStockInventory")
-              .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
-              .unique(),
-          ),
-        );
-        return {
-          ...book,
-          publisherName: publisher?.name || "—",
-          variants,
-          stockQuantity: stocks.reduce((total, stock) => total + (stock?.quantity || 0), 0),
-          isListed: stocks.some(Boolean),
-        };
-      }),
-    );
-    return rows.filter((row) => {
+    const search = args.search?.trim().toLowerCase() || undefined;
+    const page = search
+      ? await ctx.db
+          .query("books")
+          .withSearchIndex("by_admin_search", (query) => {
+            const searchQuery = query.search("adminSearchText", search);
+            return args.publicationStatus ? searchQuery.eq("publicationStatus", args.publicationStatus) : searchQuery;
+          })
+          .paginate(args.paginationOpts)
+      : await ctx.db.query("books").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
+
+    const matches = (row: Awaited<ReturnType<typeof hydrateAdminBook>>) => {
       if (args.publicationStatus && row.publicationStatus !== args.publicationStatus) return false;
       if (args.availability === "in_stock" && row.stockQuantity === 0) return false;
       if (args.availability === "out_of_stock" && (!row.isListed || row.stockQuantity > 0)) return false;
@@ -454,7 +463,31 @@ export const listForAdmin = query({
       return [row.title, row.author, row.publisherName, ...row.categories, ...row.variants.map((item) => item.isbn)]
         .filter((value): value is string => Boolean(value))
         .some((value) => value.toLowerCase().includes(search));
-    });
+    };
+    const rows = await Promise.all(page.page.map((book) => hydrateAdminBook(ctx, book)));
+
+    return {
+      ...page,
+      page: rows.filter(matches),
+    };
+  },
+});
+
+export const backfillAdminSearch = mutation({
+  args: { cursor: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "books.manage");
+    const page = await ctx.db
+      .query("books")
+      .withIndex("by_created_at")
+      .order("desc")
+      .paginate({ numItems: 100, cursor: args.cursor ?? null });
+    for (const book of page.page) await refreshAdminBookSearchText(ctx, book._id);
+    return {
+      updated: page.page.length,
+      isDone: page.isDone,
+      continueCursor: page.isDone ? "" : page.continueCursor,
+    };
   },
 });
 
@@ -499,6 +532,7 @@ export const update = mutation({
       isActive: publicationStatus !== "archived",
       updatedAt: Date.now(),
     });
+    await refreshAdminBookSearchText(ctx, book._id);
     await recordAudit(
       ctx,
       user._id,

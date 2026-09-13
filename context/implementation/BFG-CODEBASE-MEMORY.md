@@ -1,5 +1,44 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Admin Book Master canonical search — 2026-09-13
+
+### CURRENT
+
+- `src/components/admin-books.tsx` owns the Admin Book Master consumer and
+  uses `useAdminCursorPagination` for newest-first browsing and reset-on-filter
+  behavior.
+- `convex/books.ts:listForAdmin` owns the split query: `books.by_created_at`
+  for browse and `books.by_admin_search` for canonical search. Search hydrates
+  the returned canonical Book page and retains the existing field matcher,
+  publication filter, and availability filter.
+- `convex/lib/productDomain.ts:adminSearchText` projection combines title,
+  author, publisher, categories, and variant ISBN. `books.backfillAdminSearch`
+  refreshes legacy records in bounded mutation pages.
+- The fixed N-1/N/N+1 regression is
+  `convex/admin-book-visibility-characterization.test.ts`; the Production
+  example is `Bizzy Bear: Dress-Up Fun`, canonical Book ID
+  `js79n9j1ebx2hf1xj7xtxzhyhx8dm8f7`, currently outside the historical first
+  200 rows.
+
+### PROTECTED
+
+- Book media, cover/gallery uploads, Storage, upload claims/cleanup/throughput,
+  gallery capacity, Catalog relation/projection, Ready Stock policy, finance,
+  invoices, payments, deposits, Auth/Clerk, Orders, customer navigation,
+  Blessy, Admin date controls, unrelated Book Editor behavior, and global CSS.
+
+### SUPERSEDED
+
+- Admin Book Master search over only the newest 200 hydrated Books.
+- The old documentation statement that Admin Book Master shares the public
+  Ready Stock 200-row source ceiling.
+
+### UNPROVEN
+
+- Authenticated browser-level Production UI acceptance remains separate from
+  the authenticated Convex query proof. No Product source path outside the
+  search owner is implicated.
+
 ## Post-diff memory — Destructive action discoverability — 2026-09-05
 
 ### Decision and boundary

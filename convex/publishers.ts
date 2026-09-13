@@ -5,7 +5,7 @@ import { fail } from "./lib/errors";
 import { requirePermission } from "./lib/auth";
 import { requiredText, slugify } from "./lib/validation";
 import { recordAudit } from "./lib/audit";
-import { insertPublisher } from "./lib/productDomain";
+import { insertPublisher, refreshAdminBookSearchText } from "./lib/productDomain";
 
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -49,6 +49,11 @@ export const update = mutation({
       .unique();
     if (duplicate && duplicate._id !== publisher._id) fail("DUPLICATE_SLUG");
     await ctx.db.patch(publisher._id, { name, slug, isActive: args.isActive, updatedAt: Date.now() });
+    for await (const book of ctx.db
+      .query("books")
+      .withIndex("by_publisher", (query) => query.eq("publisherId", publisher._id))) {
+      await refreshAdminBookSearchText(ctx, book._id);
+    }
     await recordAudit(ctx, user._id, "publisher.updated", "publisher", publisher._id, {
       active: String(args.isActive),
     });

@@ -8,6 +8,25 @@ source: conversation
 
 # Changelog
 
+## [admin-book-master-search] — 2026-09-13
+
+### Changed
+
+- Split Admin Book Master browse pagination from canonical search. Browse keeps
+  newest-first ordering through the existing Book index; search uses a
+  maintained indexed projection covering title, author, publisher, categories,
+  and variant ISBN.
+- Added an idempotent backfill for existing Books and refreshes across Book,
+  Variant, and Publisher searchable metadata changes.
+
+### QA and scope
+
+- Converted the Phase 1 visibility characterization into a regression covering
+  the former 200-row boundary, Catalog canonical identity, search fields,
+  filters, non-existent terms, and projection synchronization.
+- Book media, Catalog behavior, Ready Stock policy, finance, Auth, Orders,
+  customer navigation, Blessy, and global CSS remain unchanged.
+
 ## [owner-only-uat-cleanup] — 2026-09-05
 
 ### Changed

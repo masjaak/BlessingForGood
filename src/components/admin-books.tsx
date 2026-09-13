@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
+import { AdminPagination } from "@/components/admin-pagination";
 import { BFGSelect } from "@/components/bfg-select";
 import {
   ActionGroup,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 
 type PublicationStatus = "draft" | "published" | "special" | "archived";
 type Availability = "in_stock" | "out_of_stock" | "not_listed";
@@ -36,6 +38,7 @@ const publicationLabels: Record<PublicationStatus, string> = {
 
 function ConnectedAdminBooks() {
   const router = useRouter();
+  const pagination = useAdminCursorPagination();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<PublicationStatus | "">("");
   const [availability, setAvailability] = useState<Availability | "">("");
@@ -51,6 +54,7 @@ function ConnectedAdminBooks() {
   const publishers = useQuery(api.publishers.list, { paginationOpts: { numItems: 100, cursor: null } });
   const allPublishers = useQuery(api.publishers.listForAdmin, {});
   const books = useQuery(api.books.listForAdmin, {
+    paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
     search: search || undefined,
     publicationStatus: status || undefined,
     availability: availability || undefined,
@@ -118,7 +122,7 @@ function ConnectedAdminBooks() {
     }
   }
 
-  const selectedBook = books?.find((book) => book._id === deleteState?.bookId);
+  const selectedBook = books?.page.find((book) => book._id === deleteState?.bookId);
   return (
     <div className="page admin-page">
       <PageHeader
@@ -242,7 +246,10 @@ function ConnectedAdminBooks() {
                 className="input"
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  pagination.reset();
+                  setSearch(event.target.value);
+                }}
                 placeholder="Judul, penulis, penerbit, ISBN"
               />
             </Field>
@@ -250,7 +257,10 @@ function ConnectedAdminBooks() {
               <BFGSelect
                 className="select"
                 value={status}
-                onChange={(event) => setStatus(event.target.value as PublicationStatus | "")}
+                onChange={(event) => {
+                  pagination.reset();
+                  setStatus(event.target.value as PublicationStatus | "");
+                }}
               >
                 <option value="">Semua</option>
                 <option value="draft">Draf</option>
@@ -263,7 +273,10 @@ function ConnectedAdminBooks() {
               <BFGSelect
                 className="select"
                 value={availability}
-                onChange={(event) => setAvailability(event.target.value as Availability | "")}
+                onChange={(event) => {
+                  pagination.reset();
+                  setAvailability(event.target.value as Availability | "");
+                }}
               >
                 <option value="">Semua</option>
                 <option value="in_stock">Ada stok</option>
@@ -277,7 +290,7 @@ function ConnectedAdminBooks() {
               <SkeletonTable rows={5} />
             </LoadingRegion>
           ) : null}
-          {books?.length ? (
+          {books?.page.length ? (
             <div className="table-wrap">
               <table className="data-table admin-books-table">
                 <thead>
@@ -291,7 +304,7 @@ function ConnectedAdminBooks() {
                   </tr>
                 </thead>
                 <tbody>
-                  {books.map((book) => (
+                  {books.page.map((book) => (
                     <tr key={book._id}>
                       <td>
                         <strong>{book.title}</strong>
@@ -329,10 +342,20 @@ function ConnectedAdminBooks() {
             </div>
           ) : books ? (
             <EmptyState
-              title="Master Buku kosong"
-              description="Buat penerbit dan buku pertama untuk mulai menata katalog."
+              title={search || status || availability ? "Tidak ada buku yang cocok" : "Master Buku kosong"}
+              description={
+                search || status || availability
+                  ? "Ubah pencarian atau filter untuk melihat Book Master lain."
+                  : "Buat penerbit dan buku pertama untuk mulai menata katalog."
+              }
             />
           ) : null}
+          <AdminPagination
+            {...pagination}
+            rowCount={books?.page.length ?? 0}
+            isDone={books?.isDone ?? true}
+            continueCursor={books?.continueCursor ?? ""}
+          />
           {deleteError ? (
             <p className="error-text" role="alert">
               {deleteError}

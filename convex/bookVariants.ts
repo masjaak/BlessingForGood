@@ -5,7 +5,7 @@ import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { nonNegativeMoney, positiveMoney, requiredText } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
-import { insertVariant } from "./lib/productDomain";
+import { insertVariant, refreshAdminBookSearchText } from "./lib/productDomain";
 
 export const listForBook = query({
   args: { bookId: v.id("books") },
@@ -76,6 +76,7 @@ export const update = mutation({
       isAvailable: args.isAvailable ?? variant.isAvailable,
       updatedAt: Date.now(),
     });
+    await refreshAdminBookSearchText(ctx, variant.bookId);
     await recordAudit(ctx, user._id, "book_variant.updated", "bookVariant", variant._id);
     return variant._id;
   },
@@ -111,6 +112,7 @@ export const remove = mutation({
     }
     if (inventory) await ctx.db.delete(inventory._id);
     await ctx.db.delete(variant._id);
+    await refreshAdminBookSearchText(ctx, variant.bookId);
     await recordAudit(ctx, user._id, "book_variant.deleted", "bookVariant", variant._id);
     return { removed: true };
   },

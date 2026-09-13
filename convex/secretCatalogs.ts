@@ -7,7 +7,7 @@ import { getCatalogView } from "./lib/catalogView";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { requiredText, slugify } from "./lib/validation";
-import { insertVariant } from "./lib/productDomain";
+import { buildAdminBookSearchText, insertVariant } from "./lib/productDomain";
 import { bookFormatValidator } from "./validators";
 
 const variantInput = v.object({
@@ -290,6 +290,7 @@ export const createBundle = mutation({
         title: bookTitle,
         slug: bookSlug,
         categories: [],
+        adminSearchText: buildAdminBookSearchText([bookTitle, publisher.name]),
         publicationStatus: "special",
         isActive: true,
         createdAt: now,

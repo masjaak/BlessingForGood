@@ -1,5 +1,24 @@
 # Decisions
 
+## Admin Book Master canonical search — 2026-09-13
+
+Status: `ACTIVE / IMPLEMENTED; PRODUCTION UAT PENDING`
+
+- Admin Book Master browse and canonical search are separate paths. Browse uses
+  cursor pagination over `books.by_created_at` with newest-first ordering;
+  search uses the `books.by_admin_search` index and never searches only the
+  currently loaded browse rows.
+- `books.adminSearchText` is the maintained searchable projection for title,
+  author, publisher, categories, and variant ISBN. Book creation, Book updates,
+  Variant creation/update/removal, and Publisher updates refresh it. Existing
+  records use the idempotent Admin backfill mutation before Production search
+  acceptance.
+- The existing field-level matcher and publication/availability filters remain
+  in `books.listForAdmin`. Catalog relation/projection, Book media, inventory,
+  finance, authentication, and unrelated Admin systems are unchanged.
+- This local Book Master correction does not reopen the optional cross-domain
+  Admin search decision.
+
 ## Owner-confirmed UAT physical purge — 2026-09-05
 
 Status: `ACTIVE / IMPLEMENTED LOCALLY; AUTHENTICATED PRODUCTION UAT PURGE PENDING`

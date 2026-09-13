@@ -1258,6 +1258,14 @@ HTTPS metadata only: label/title plus URL, with no server fetch, scrape, iframe,
 or remote image hotlink. Cover remains a separate primary identity image. See
 [`BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md`](implementation/BFG-PHASE-08-PRODUCT-MEDIA-SOURCE-CONTRACT.md).
 
+Admin Book Master browse and search are separate ownership paths. `/admin/books`
+uses cursor pagination over the newest canonical Books, while search uses the
+maintained `books.by_admin_search` projection over title, author, publisher,
+categories, and variant ISBN. Existing Books are backfilled into that
+projection, and Book Master search does not depend on the current browse page.
+Catalog continues to resolve `catalogItem → bookVariant → canonical Book`; the
+cross-domain Admin search question remains optional and separate.
+
 ## Ready Stock
 
 Ready Stock is public-safe discovery with customer-safe title, publisher,

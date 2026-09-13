@@ -42,9 +42,10 @@
   the canonical repository build still succeeds.
 - `READY_STOCK_ORDER_RECORDING` is unresolved. Public Ready Stock ends at a
   contact/help CTA; no checkout, reservation, or sale transition exists.
-- Book Master/public search uses a documented 200-row server scan and 100-item
-  public result ceiling. Add pagination/search-specific indexes when real data
-  reaches that boundary.
+- Public Ready Stock retains its documented 200-row source scan and 100-item
+  result ceiling. Admin Book Master browse is cursor-paginated and its search
+  uses the canonical `books.by_admin_search` projection; the Admin search path
+  no longer inherits the public or historical 200-row browse ceiling.
 - Cover metadata is a reference only. Durable upload/storage and external image
   host policy remain deferred.
 - Phase 06.4 records cancellation requests, OOS/defect/admin cases, append-only

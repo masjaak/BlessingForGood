@@ -47,4 +47,7 @@ cancellation, rejection, or another terminating operational action.
 
 ## Query ceiling
 
-The v0.1 public and admin queries scan at most 200 indexed Book Master rows on the server and return at most 100 public items. Add pagination and search-specific indexes when real volume exceeds that ceiling; do not fetch Book Master rows for browser-side filtering.
+Public Ready Stock retains the v0.1 ceiling of at most 200 indexed Book Master
+source rows and 100 public items. Admin Book Master has a separate
+cursor-paginated browse path and canonical search index; its search does not
+share this public projection ceiling or filter a browser-loaded Book list.
