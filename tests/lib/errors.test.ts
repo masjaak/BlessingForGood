@@ -40,5 +40,8 @@ describe("prototype error boundary", () => {
         "fallback",
       ),
     ).toBe("Tahap berikutnya tidak valid.");
+    expect(productErrorMessage(new Error("[CONVEX M(orders:submit)] NO_ELIGIBLE_BATCH"), "fallback")).toBe(
+      "PO katalog ini sudah ditutup dan belum ada Batch yang dapat menerima pesanan.",
+    );
   });
 });

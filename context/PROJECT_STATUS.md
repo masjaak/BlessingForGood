@@ -1,5 +1,16 @@
 # BFG Project Status
 
+## Secret Catalog Order Batch admission — 2026-09-13
+
+Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+The Customer `orders.submit` boundary now reuses `eligibleReceivingBatches`
+before creating a Secret Catalog Order. Zero Catalog-to-Batch links remain
+valid and may produce an unassigned Order; linked Catalogs with no eligible
+receiving Batch fail with `NO_ELIGIBLE_BATCH` before any Order graph is
+written. Admin-assisted/editable operational paths and Ready Stock remain
+separate.
+
 ## Admin Book Master canonical search — 2026-09-13
 
 Status: `IMPLEMENTED; PRODUCTION UAT PENDING`

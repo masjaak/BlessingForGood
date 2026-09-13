@@ -296,7 +296,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     expect(assignments).toHaveLength(100);
   }, 20000);
 
-  it("keeps zero, ambiguous, and locked receiving targets unassigned", async () => {
+  it("keeps zero and ambiguous receiving targets unassigned, but rejects locked targets", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);
 
@@ -358,32 +358,65 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
       items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1 }],
     });
     const lockedBatch = await admin.mutation(api.batches.create, { name: "Locked Batch" });
+    const archivedBatch = await admin.mutation(api.batches.create, { name: "Archived Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: lockedBatch.batchId, catalogId: lockedCatalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: archivedBatch.batchId, catalogId: lockedCatalog.catalogId });
+    await admin.mutation(api.batches.archive, { batchId: archivedBatch.batchId });
     await admin.mutation(api.batchTracking.updateShipmentStage, {
       batchId: lockedBatch.batchId,
       toStage: "po_closed",
     });
-    const lockedOrder = await secondCustomer.mutation(api.orders.submit, {
-      catalogId: lockedCatalog.catalogId,
-      customerName: "Locked Customer",
-      items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1 }],
+    const orderCountBefore = await t.run((ctx) => ctx.db.query("orders").collect()).then((orders) => orders.length);
+    const orderItemCountBefore = await t.run((ctx) => ctx.db.query("orderItems").collect()).then((items) => items.length);
+    const assignmentCountBefore = await t
+      .run((ctx) => ctx.db.query("orderItemBatchAssignments").collect())
+      .then((assignments) => assignments.length);
+    await expect(
+      secondCustomer.mutation(api.orders.submit, {
+        catalogId: lockedCatalog.catalogId,
+        customerName: "Locked Customer",
+        items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1 }],
+      }),
+    ).rejects.toThrow("NO_ELIGIBLE_BATCH");
+    await expect(t.run((ctx) => ctx.db.query("orders").collect())).resolves.toHaveLength(orderCountBefore);
+    await expect(t.run((ctx) => ctx.db.query("orderItems").collect())).resolves.toHaveLength(orderItemCountBefore);
+    await expect(t.run((ctx) => ctx.db.query("orderItemBatchAssignments").collect())).resolves.toHaveLength(
+      assignmentCountBefore,
+    );
+  });
+
+  it("submits and assigns when a mixed Catalog still has one eligible receiving Batch", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Mixed Eligibility Catalog", "7105", "mixed-eligibility-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "mixed-eligibility-code" });
+    await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Mixed Initial Customer",
+      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
     });
-    expect(
-      await t.run((ctx) =>
+    const lockedBatch = await admin.mutation(api.batches.create, { name: "Mixed Locked Batch" });
+    const eligibleBatch = await admin.mutation(api.batches.create, { name: "Mixed Eligible Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: lockedBatch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: eligibleBatch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batchTracking.updateShipmentStage, {
+      batchId: lockedBatch.batchId,
+      toStage: "po_closed",
+    });
+
+    const order = await customer.mutation(api.orders.submit, {
+      catalogId: catalog.catalogId,
+      customerName: "Mixed Customer",
+      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+    });
+    await expect(
+      t.run((ctx) =>
         ctx.db
           .query("orderItemBatchAssignments")
-          .withIndex("by_order_item", (index) => index.eq("orderItemId", lockedOrder.items[0]._id))
+          .withIndex("by_order_item", (index) => index.eq("orderItemId", order.items[0]._id))
           .collect(),
       ),
-    ).toEqual([]);
-    await expect(
-      admin.query(api.batchTracking.listUnassignedForAdmin, {
-        batchId: lockedBatch.batchId,
-        paginationOpts: { numItems: 100, cursor: null },
-      }),
-    ).resolves.toMatchObject({
-      page: expect.arrayContaining([expect.objectContaining({ assignmentState: "Belum masuk Batch" })]),
-    });
+    ).resolves.toMatchObject([{ batchId: eligibleBatch.batchId, assignedQuantity: 1 }]);
   });
 
   it("projects canonical recap snapshots and finance state", async () => {

@@ -8,6 +8,25 @@ source: conversation
 
 # Changelog
 
+## [secret-catalog-batch-admission] — 2026-09-13
+
+### Changed
+
+- Added the shared Secret Catalog Order admission guard. A Catalog with linked
+  Batches may accept a new preorder only when at least one linked Batch remains
+  eligible to receive it; a Catalog with no links keeps the existing unassigned
+  workflow.
+- Added the domain error `NO_ELIGIBLE_BATCH` and safe Customer-facing mapping.
+- Applied the guard to Customer self-service submission. Admin-assisted and
+  editable operational paths, and Ready Stock, remain isolated.
+
+### QA and scope
+
+- Added locked, archived, mixed-eligibility, no-link, and atomic-rejection
+  regression coverage.
+- No Cart, Catalog UI, Ready Stock, Blessy, navigation, finance, or global CSS
+  behavior changed.
+
 ## [admin-book-master-search] — 2026-09-13
 
 ### Changed

@@ -36,6 +36,9 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "CATALOG_REOPEN_BLOCKED" || message.includes("CATALOG_REOPEN_BLOCKED")) {
     return "Katalog tidak dapat dibuka kembali karena sudah masuk proses PO yang dikunci.";
   }
+  if (code === "NO_ELIGIBLE_BATCH" || message.includes("NO_ELIGIBLE_BATCH")) {
+    return "PO katalog ini sudah ditutup dan belum ada Batch yang dapat menerima pesanan.";
+  }
   if (code === "CUSTOMER_REQUIRED" || message.includes("CUSTOMER_REQUIRED")) {
     return "Pesanan pelanggan dibuat melalui ruang kerja Admin.";
   }

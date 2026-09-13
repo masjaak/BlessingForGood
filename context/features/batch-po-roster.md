@@ -32,6 +32,23 @@ machine. An unset stage is an editable roster; `po_closed` and every later
 shipment stage lock catalog links and assignment changes. `isArchived` keeps
 historical batches readable and blocks operational mutations.
 
+## Secret Catalog Order admission
+
+An open Secret Catalog is not sufficient for a new Customer preorder once it
+has linked Batch targets. Customer `orders.submit` uses the existing
+`eligibleReceivingBatches` predicate:
+
+- zero linked Batches preserves the existing workflow; the Order may remain
+  unassigned until a Batch is linked later;
+- one or more linked Batches with at least one eligible receiving target remain
+  submit-able and use the existing automatic assignment behavior;
+- one or more linked Batches with zero eligible receiving targets reject before
+  Order creation with `NO_ELIGIBLE_BATCH`.
+
+Ready Stock remains a separate reservation/order path and never enters this
+Catalog-to-Batch admission guard. Admin-assisted and existing editable-order
+paths retain their current operational behavior.
+
 ### Disposable draft cleanup
 
 Admin `batches.remove` may physically remove only an unarchived Batch with an

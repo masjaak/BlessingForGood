@@ -1,5 +1,21 @@
 # BFG SOURCE OF TRUTH
 
+## Secret Catalog Order Batch admission — 2026-09-13
+
+Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+An open Secret Catalog is not sufficient for a new preorder when it has linked
+Batch targets but none can receive new Order quantities. The existing
+`eligibleReceivingBatches` predicate remains canonical. Secret Catalog
+self-service `orders.submit` rejects with `NO_ELIGIBLE_BATCH` before Order
+insertion when at least one Catalog link exists and the eligible receiving set
+is empty.
+
+A Catalog with zero linked Batches retains the existing valid workflow: Orders
+may be created and remain unassigned until a Batch is linked. Mixed eligibility
+remains allowed. Admin-assisted and editable-order operational paths remain
+unchanged. Ready Stock remains outside this Catalog guard.
+
 ## Owner-only UAT permanent purge — 2026-09-05
 
 Status: `IMPLEMENTED LOCALLY; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

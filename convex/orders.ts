@@ -14,7 +14,7 @@ import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/
 import { positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
 import { enforceRateLimit } from "./lib/rateLimit";
-import { autoAssignOrderItemsForCatalog } from "./batches";
+import { autoAssignOrderItemsForCatalog, eligibleReceivingBatches } from "./batches";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
@@ -74,6 +74,15 @@ async function activeGrant(ctx: DataCtx, appUserId: Id<"appUsers">, catalogId: I
     .first();
   if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) fail("ACCESS_GRANT_REQUIRED");
   return grant;
+}
+
+async function assertCatalogBatchReceivable(ctx: MutationCtx, catalogId: Id<"secretCatalogs">) {
+  const linkedBatch = await ctx.db
+    .query("catalogBatchLinks")
+    .withIndex("by_catalog", (query) => query.eq("catalogId", catalogId))
+    .first();
+  if (!linkedBatch) return;
+  if (!(await eligibleReceivingBatches(ctx, catalogId)).length) fail("NO_ELIGIBLE_BATCH");
 }
 
 async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
@@ -229,6 +238,7 @@ export const submit = mutation({
     await activeGrant(ctx, user._id, args.catalogId);
     const customerName = requiredText(args.customerName, "customer name");
     const resolved = await resolveItems(ctx, args.catalogId, args.items);
+    await assertCatalogBatchReceivable(ctx, args.catalogId);
     const order = await insertOrder(
       ctx,
       {

@@ -1,5 +1,21 @@
 # Decisions
 
+## Secret Catalog Order Batch admission — 2026-09-13
+
+Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+- Catalog open state remains necessary but is no longer sufficient for a new
+  Customer Secret Catalog preorder when Catalog-to-Batch links already exist.
+- `eligibleReceivingBatches` remains the single Batch receivability predicate.
+- Zero linked Batches preserve the existing unassigned-Order workflow.
+- At least one eligible linked Batch allows submission and existing automatic
+  assignment behavior.
+- At least one linked Batch with zero eligible targets rejects before Order,
+  Order Item, assignment, audit, or success-side effects with
+  `NO_ELIGIBLE_BATCH`.
+- Admin-assisted and editable-order operational paths remain unchanged.
+- Ready Stock keeps its separate inventory reservation and Order path.
+
 ## Admin Book Master canonical search — 2026-09-13
 
 Status: `ACTIVE / IMPLEMENTED; PRODUCTION UAT PENDING`
