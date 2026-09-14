@@ -304,6 +304,13 @@ describe("Customer Cart server domain", () => {
       }),
     ).rejects.toThrow("INVALID_QUANTITY");
 
+    const quantityRemoveResults = await Promise.allSettled([
+      customer.mutation(api.carts.updateQuantity, { cartItemId: ownerCart.lines[0].id, quantity: 3 }),
+      customer.mutation(api.carts.removeItem, { cartItemId: ownerCart.lines[0].id }),
+    ]);
+    expect(quantityRemoveResults.some((result) => result.status === "fulfilled")).toBe(true);
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ lines: [], catalogId: null });
+
     const secondBundle = await createCartCatalog(admin, "Cart Security Catalog B");
     await customer.mutation(api.catalogAccess.unlock, { accessCode: "cart-security-catalog-b-code" });
     const secondItemId = await catalogItemId(t, secondBundle.catalogId, secondBundle.variantIds[0]);
