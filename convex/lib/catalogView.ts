@@ -72,6 +72,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
       externalPreview: { label: string; url: string } | null;
       variants: Array<{
         id: string;
+        catalogItemId: string;
         format: string;
         isbn: string;
         price: number;
@@ -104,6 +105,7 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
     };
     current.variants.push({
       id: variant._id,
+      catalogItemId: item._id,
       format: variant.format,
       isbn: variant.isbn,
       price: item.priceOverrideAmount ?? variant.priceAmount,

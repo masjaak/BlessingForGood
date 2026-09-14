@@ -95,6 +95,7 @@ export async function createCatalogFromInput(input: CreateCatalogInput, now = ne
     formats.add(variant.format);
     return {
       id: createId("variant"),
+      catalogItemId: createId("catalog-item"),
       format: variant.format,
       isbn: requireText(variant.isbn, "ISBN"),
       price: variant.price,

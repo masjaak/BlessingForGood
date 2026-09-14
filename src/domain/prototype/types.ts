@@ -37,6 +37,7 @@ export type OrderStatus =
 
 export interface BookVariant {
   id: string;
+  catalogItemId: string;
   format: BookFormat;
   isbn: string;
   price: number;

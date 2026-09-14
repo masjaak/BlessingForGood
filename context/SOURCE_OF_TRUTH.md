@@ -1,5 +1,23 @@
 # BFG SOURCE OF TRUTH
 
+## Secret Catalog Add-to-Cart entry points — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The Secret Catalog Customer list and Book Detail now expose additive
+`Tambahkan ke keranjang` actions. They pass only the selected canonical
+`catalogItemId` and positive quantity to `carts.addItem`; the server remains
+authoritative for ownership, Catalog scope, availability, duplicate merge, and
+price observation. Signed-out visitors use the existing sign-in continuation
+with the current Catalog route as the return destination.
+
+Success feedback links directly to `/account/cart` without redirecting or
+adding a mini-cart. The existing direct Secret Catalog preorder remains the
+current transaction path until Cart checkout is implemented. Ready Stock,
+navigation, Blessy, Orders, and Cart backend semantics remain unchanged.
+
+Mini-cart, Cart checkout, and direct-order cutover remain unimplemented.
+
 ## Customer Cart management UI — 2026-09-14
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -12,9 +30,9 @@ mutations. Active lines and retained non-eligible lines are rendered in
 separate sections; changed prices and reopened availability never auto-accept.
 
 The route uses the existing Customer shell and role guard. It intentionally
-does not add navigation, Add-to-Cart, mini-cart, checkout, Order creation,
-Blessy, or any Cart backend/schema change. Authenticated populated UAT remains
-pending because no approved disposable Customer fixture is available.
+does not add navigation, mini-cart, checkout, Order creation, Blessy, or any
+Cart backend/schema change. Authenticated populated UAT remains pending
+because no approved disposable Customer fixture is available.
 
 ## Customer Cart server domain — 2026-09-14
 
@@ -41,8 +59,9 @@ Publisher, and the canonical `eligibleReceivingBatches` predicate. Zero linked
 Batches remain active according to the existing unassigned-Order workflow;
 linked Batches with no eligible receiver are `po_closed`. Missing underlying
 records become a safe removable `removed` line. Ready Stock is outside this
-Cart domain. No Cart UI, route, checkout, or Order mutation integration is
-implemented in this phase.
+Cart domain. Customer Cart management and the additive Secret Catalog entry
+points consume this domain without changing its semantics; checkout and Order
+mutation integration remain unimplemented.
 
 The server domain is deployed from commit `31c8970` through Vercel
 `dpl_HGYohWm6Tnmkg8gTj1U3ph369PVf` to Convex Production `clean-eel-522`.

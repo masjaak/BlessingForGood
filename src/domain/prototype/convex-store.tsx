@@ -62,6 +62,7 @@ type CatalogRecord = {
     externalPreview?: { label: string; url: string } | null;
     variants: Array<{
       id: string;
+      catalogItemId: string;
       format: BookFormat;
       isbn: string;
       price: number;

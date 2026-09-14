@@ -8,6 +8,26 @@ source: conversation
 
 # Changelog
 
+## [customer-cart-add-to-cart] — 2026-09-14
+
+### Changed
+
+- Added additive `Tambahkan ke keranjang` actions to the Secret Catalog
+  Customer list and Book Detail, preserving the selected canonical Catalog
+  Item and quantity.
+- Added the missing Customer-safe `catalogItemId` to the existing Secret
+  Catalog projection so `carts.addItem` remains the sole Cart authority.
+- Added signed-out auth continuation, pending/error/success feedback, and a
+  direct `/account/cart` link without automatic navigation.
+
+### QA and scope
+
+- The existing direct Secret Catalog preorder remains the current transaction
+  path. Mini-cart, checkout, direct-order cutover, Ready Stock Cart,
+  navigation, Blessy, and Cart backend semantics remain unchanged.
+- Authenticated Production add-to-cart UAT remains pending without an approved
+  disposable Customer fixture.
+
 ## [customer-cart-page] — 2026-09-14
 
 ### Changed

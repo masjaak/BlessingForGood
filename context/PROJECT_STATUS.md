@@ -1,5 +1,21 @@
 # BFG Project Status
 
+## Secret Catalog Add-to-Cart entry points — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The Customer Secret Catalog list and Book Detail now expose additive
+`Tambahkan ke keranjang` actions. They use the canonical Customer-safe
+`catalogItemId` projection and call the existing `carts.addItem` mutation with
+selected quantity only. Successful adds stay on the current page and link to
+`/account/cart`; signed-out visitors use the existing sign-in continuation.
+
+The existing direct Secret Catalog preorder remains the current Production
+transaction path. Mini-cart, Cart checkout, direct-order cutover, Ready Stock
+Cart, navigation, Blessy, and Cart backend semantics remain unchanged.
+Authenticated add-to-cart UAT remains pending because no approved disposable
+Customer fixture is available.
+
 ## Customer Cart management UI — 2026-09-14
 
 Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -11,11 +27,10 @@ prices, quantity controls, removal, clear confirmation, and explicit price or
 reopened-state acknowledgement. The page reconciles once on non-empty entry
 and otherwise leaves Cart semantics to the server.
 
-No Add-to-Cart, mini-cart, checkout, Order mutation, navigation, Blessy,
-global CSS, or backend Cart changes are included. Direct Secret Catalog
-preorder remains the current Production entry point. Authenticated populated
-Cart UAT remains pending because no approved disposable Customer fixture is
-available.
+Mini-cart, checkout, Order mutation, navigation, Blessy, global CSS, and
+backend Cart changes are not included. Direct Secret Catalog preorder remains
+the current Production entry point. Authenticated populated Cart UAT remains
+pending because no approved disposable Customer fixture is available.
 
 ## Customer Cart server domain — 2026-09-14
 
@@ -42,8 +57,9 @@ from commit `31c8970`; Convex Production is `clean-eel-522`. No approved
 authenticated disposable Customer fixture was available, so Cart UAT remains
 pending.
 
-Cart UI, `/account/cart`, Add to Cart, mini-cart, checkout, Order integration,
-Wishlist, Blessy, and Customer navigation remain unimplemented/unchanged.
+Cart UI, `/account/cart`, and additive Secret Catalog Cart entry points now
+exist. Mini-cart, checkout, Order integration, Wishlist, Blessy, and Customer
+navigation remain unimplemented/unchanged.
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 

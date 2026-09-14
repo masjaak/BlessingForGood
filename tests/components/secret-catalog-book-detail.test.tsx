@@ -29,6 +29,25 @@ vi.mock("@/components/bfg-select", () => ({
   BFGSelect: (props: React.SelectHTMLAttributes<HTMLSelectElement>) => <select {...props} />,
 }));
 
+vi.mock("@/features/customer-cart/add-to-cart-action", () => ({
+  AddToCartAction: ({
+    catalogItemId,
+    quantity,
+    returnTo,
+  }: {
+    catalogItemId: string;
+    quantity: number;
+    returnTo: string;
+  }) => (
+    <span
+      data-testid="add-to-cart-action"
+      data-catalog-item-id={catalogItemId}
+      data-quantity={quantity}
+      data-return-to={returnTo}
+    />
+  ),
+}));
+
 function setup(
   profileDisplayName: string | null | undefined = "MULIA KAH",
   description = "Paragraph one.\n\nParagraph two.",
@@ -51,7 +70,15 @@ function setup(
           title: "A Book",
           publisher: "BFG Press",
           description,
-          variants: [{ id: "variant-1", format: "PB", isbn: "9780000000001", price: 125000 }],
+          variants: [
+            {
+              id: "variant-1",
+              catalogItemId: "catalog-item-1",
+              format: "PB",
+              isbn: "9780000000001",
+              price: 125000,
+            },
+          ],
         },
       ],
     },
@@ -161,5 +188,31 @@ describe("Secret Catalog book detail preorder", () => {
     fireEvent.click(screen.getByRole("button", { name: "Catat preorder" }));
 
     expect((await screen.findByRole("alert")).textContent).toContain("Harga buku berubah");
+  });
+
+  it("passes the selected detail Variant Catalog Item and quantity to Cart", () => {
+    const product = setup();
+    render(<SecretCatalogBookDetail />);
+
+    fireEvent.change(screen.getByLabelText("Jumlah"), { target: { value: "3" } });
+
+    const action = screen.getByTestId("add-to-cart-action");
+    expect(action.getAttribute("data-catalog-item-id")).toBe("catalog-item-1");
+    expect(action.getAttribute("data-quantity")).toBe("3");
+    expect(product.submitOrder).not.toHaveBeenCalled();
+  });
+
+  it("keeps Variant and quantity selection available before signed-out auth continuation", () => {
+    const product = setup() as { authState: string; sessionRole: string | null };
+    product.authState = "signed-out";
+    product.sessionRole = null;
+    render(<SecretCatalogBookDetail />);
+
+    fireEvent.change(screen.getByLabelText("Jumlah"), { target: { value: "2" } });
+
+    const action = screen.getByTestId("add-to-cart-action");
+    expect(action.getAttribute("data-catalog-item-id")).toBe("catalog-item-1");
+    expect(action.getAttribute("data-quantity")).toBe("2");
+    expect(action.getAttribute("data-return-to")).toBe("/catalog/catalog-1/book-1");
   });
 });

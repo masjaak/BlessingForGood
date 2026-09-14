@@ -16,6 +16,7 @@ import { useProduct } from "@/domain/prototype/store";
 import type { BookFormat, Order } from "@/domain/prototype/types";
 import { matchesCustomerCatalogBook } from "@/lib/catalog-discovery";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
+import { AddToCartAction } from "@/features/customer-cart/add-to-cart-action";
 import {
   Button,
   Card,
@@ -474,6 +475,15 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                           </IconButton>
                         </div>
                       </div>
+                      {selectedVariant?.catalogItemId ? (
+                        <AddToCartAction
+                          catalogItemId={selectedVariant.catalogItemId}
+                          quantity={selectedQuantity}
+                          authState={authState}
+                          sessionRole={sessionRole}
+                          returnTo="/catalog"
+                        />
+                      ) : null}
                     </div>
                   </div>
                 </Card>

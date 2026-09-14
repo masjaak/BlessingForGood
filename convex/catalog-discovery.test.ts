@@ -22,6 +22,13 @@ describe("Secret Catalog discovery and global access", () => {
     const view = await customer.query(api.catalogAccess.getUnlocked, { catalogId: first.catalogId });
     expect(view).toMatchObject({ estimatedArrivalMonth: "2026-11", titleCount: 1 });
     expect(view?.books.map((book) => book.title)).toEqual(["Discovery A Book"]);
+    const catalogItem = await t.run(async (ctx) =>
+      ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog", (query) => query.eq("catalogId", first.catalogId))
+        .first(),
+    );
+    expect(view?.books[0]?.variants[0]).toMatchObject({ catalogItemId: catalogItem?._id });
     expect(view?.books.map((book) => book.title)).not.toContain("Discovery B Book");
     expect(second.catalogId).not.toBe(first.catalogId);
   });

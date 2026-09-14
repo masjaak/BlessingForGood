@@ -1,5 +1,20 @@
 # Decisions
 
+## Secret Catalog Add-to-Cart entry points — 2026-09-14
+
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- Add-to-Cart is deployed additively from the existing Secret Catalog list and
+  Book Detail. The selected Variant resolves to its canonical `catalogItemId`
+  in the Customer-safe projection; the client sends only that ID and quantity
+  to `carts.addItem`.
+- The existing direct Secret Catalog preorder remains the current transaction
+  path. Successful adds stay on the current page and provide a direct
+  `/account/cart` link; there is no automatic redirect or mini-cart.
+- Signed-out visitors use the existing sign-in continuation with a safe local
+  Catalog return route. Ready Stock, navigation, Blessy, Cart backend
+  semantics, checkout, and direct-order cutover remain outside this phase.
+
 ## Customer Cart management UI — 2026-09-14
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -13,9 +28,9 @@ Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
   sections, quantity, remove, clear confirmation, and explicit
   `acknowledgeCurrentLineState`. The server remains authoritative for price,
   availability, ownership, and mutation validation.
-- Add-to-Cart, mini-cart, checkout, Order integration, navigation, Blessy,
-  and the Cart backend remain outside this phase. Direct Secret Catalog
-  preorder remains the live Customer entry point.
+- Mini-cart, checkout, Order integration, navigation, Blessy, and the Cart
+  backend remain outside this phase. Direct Secret Catalog preorder remains
+  the live Customer entry point.
 
 ## Customer Cart server domain — 2026-09-14
 

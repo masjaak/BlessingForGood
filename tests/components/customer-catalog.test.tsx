@@ -12,6 +12,12 @@ vi.mock("@/domain/prototype/store", () => ({
   useProduct: vi.fn(),
 }));
 
+vi.mock("@/features/customer-cart/add-to-cart-action", () => ({
+  AddToCartAction: ({ catalogItemId, quantity }: { catalogItemId: string; quantity: number }) => (
+    <span data-testid="add-to-cart-action" data-catalog-item-id={catalogItemId} data-quantity={quantity} />
+  ),
+}));
+
 beforeEach(() => {
   vi.mocked(useUser).mockReturnValue({ isLoaded: true, user: null } as never);
 });
@@ -303,6 +309,61 @@ describe("CustomerCatalog projection", () => {
         items: [{ variantId: "variant-pb", quantity: 1, expectedUnitPriceAmount: 245000 }],
       }),
     );
+  });
+
+  it("passes the currently selected Catalog Item and quantity to Cart", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-cart",
+        name: "Cart Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-cart",
+            title: "Cart Book",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-hb",
+                catalogItemId: "catalog-item-hb",
+                format: "HB",
+                isbn: "9780000000002",
+                price: 325000,
+                currency: "IDR",
+                availability: "available",
+              },
+              {
+                id: "variant-pb",
+                catalogItemId: "catalog-item-pb",
+                format: "PB",
+                isbn: "9780000000003",
+                price: 245000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    const card = screen.getByRole("heading", { name: "Cart Book" }).closest(".book-card") as HTMLElement;
+    fireEvent.click(within(card).getByRole("radio", { name: "PB" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Tambah jumlah Cart Book" }));
+
+    const action = within(card).getByTestId("add-to-cart-action");
+    expect(action.getAttribute("data-catalog-item-id")).toBe("catalog-item-pb");
+    expect(action.getAttribute("data-quantity")).toBe("1");
   });
 
   it("renders the persisted Convex cover for an unlocked catalog book", () => {

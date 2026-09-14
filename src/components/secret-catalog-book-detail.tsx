@@ -12,6 +12,7 @@ import { orderReference } from "@/domain/prototype/order-reference";
 import { useProduct } from "@/domain/prototype/store";
 import type { Book } from "@/domain/prototype/types";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
+import { AddToCartAction } from "@/features/customer-cart/add-to-cart-action";
 
 function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book }) {
   const { authState, sessionRole, submitOrder, dataSource, customerProfileDisplayName } = useProduct();
@@ -31,6 +32,30 @@ function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book })
     clerkFullName: user?.fullName,
     clerkUsername: user?.username,
   });
+  const selectionFields = (
+    <>
+      <Field label="Format">
+        <BFGSelect value={variantId} onChange={(event) => setVariantId(event.target.value)}>
+          {book.variants.map((variant) => (
+            <option value={variant.id} key={variant.id}>
+              {variant.format} · {variant.isbn} · IDR {variant.price.toLocaleString("id-ID")}
+            </option>
+          ))}
+        </BFGSelect>
+      </Field>
+      <Field label="Jumlah">
+        <input
+          className="input"
+          type="number"
+          min="1"
+          step="1"
+          value={quantity}
+          onChange={(event) => setQuantity(event.target.value)}
+          required
+        />
+      </Field>
+    </>
+  );
 
   if (authState === "authenticated" && sessionRole === "customer") {
     if (orderId) {
@@ -73,26 +98,7 @@ function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book })
 
     return (
       <form className="form-card" onSubmit={submit}>
-        <Field label="Format">
-          <BFGSelect value={variantId} onChange={(event) => setVariantId(event.target.value)}>
-            {book.variants.map((variant) => (
-              <option value={variant.id} key={variant.id}>
-                {variant.format} · {variant.isbn} · IDR {variant.price.toLocaleString("id-ID")}
-              </option>
-            ))}
-          </BFGSelect>
-        </Field>
-        <Field label="Jumlah">
-          <input
-            className="input"
-            type="number"
-            min="1"
-            step="1"
-            value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
-            required
-          />
-        </Field>
+        {selectionFields}
         <Field label="Nama">
           <input
             className="input"
@@ -117,6 +123,15 @@ function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book })
         <Button type="submit" loading={pending} loadingLabel="Mencatat…" disabled={!selected}>
           Catat preorder
         </Button>
+        {selected?.catalogItemId ? (
+          <AddToCartAction
+            catalogItemId={selected.catalogItemId}
+            quantity={Number(quantity)}
+            authState={authState}
+            sessionRole={sessionRole}
+            returnTo={`/catalog/${catalogId}/${book.id}`}
+          />
+        ) : null}
       </form>
     );
   }
@@ -133,6 +148,23 @@ function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book })
   }
   if (authState === "suspended")
     return <p className="subtle">Akunmu sedang ditangguhkan. Hubungi admin BFG untuk bantuan.</p>;
+  if (authState === "signed-out") {
+    return (
+      <div className="form-card">
+        {selectionFields}
+        <p className="subtle">Masuk untuk menyimpan pilihan ini ke keranjang.</p>
+        {selected?.catalogItemId ? (
+          <AddToCartAction
+            catalogItemId={selected.catalogItemId}
+            quantity={Number(quantity)}
+            authState={authState}
+            sessionRole={sessionRole}
+            returnTo={`/catalog/${catalogId}/${book.id}`}
+          />
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className="catalog-member-note">
       <p>Masuk lewat Akun untuk mencatat preorder dan melihat perjalanannya.</p>
