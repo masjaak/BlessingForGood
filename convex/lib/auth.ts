@@ -101,6 +101,12 @@ export async function requireActiveUser(ctx: AuthCtx): Promise<Doc<"appUsers">> 
   return user;
 }
 
+export async function requireActiveCustomer(ctx: AuthCtx): Promise<Doc<"appUsers">> {
+  const user = await requireActiveUser(ctx);
+  if (user.role !== "customer") fail("CUSTOMER_REQUIRED");
+  return user;
+}
+
 export async function requirePermission(ctx: AuthCtx, permission: Permission): Promise<Doc<"appUsers">> {
   const user = await requireActiveUser(ctx);
   const permissions =

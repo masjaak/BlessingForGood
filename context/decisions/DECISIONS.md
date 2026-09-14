@@ -1,5 +1,31 @@
 # Decisions
 
+## Customer Cart server domain — 2026-09-14
+
+Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+- Cart V1 is server-persisted and available only to an authenticated active
+  Customer. Ownership comes from the canonical Clerk-to-`appUsers` identity;
+  no client user ID is accepted.
+- One Customer has one Cart root. A non-empty Cart has exactly one Secret
+  Catalog. Cross-Catalog adds reject with `CART_CATALOG_MISMATCH`; an empty
+  retained root may establish a new Catalog.
+- `catalogItemId` is the Cart line identity. Repeated adds merge quantity;
+  quantity is a positive safe integer and no zero-quantity row is persisted.
+- New lines snapshot the server-resolved effective price
+  `catalogItems.priceOverrideAmount ?? bookVariants.priceAmount` as observed
+  intent. The current price remains canonical, and reads never overwrite the
+  observed snapshot.
+- Retained lines are reconciled directly against Catalog, Item, Variant, Book,
+  Publisher, and `eligibleReceivingBatches` state. Unavailable lines remain
+  removable; explicit reconciliation and
+  `acknowledgeCurrentLineState` prevent silent reopened-offer acceptance.
+- Zero linked Batches remain valid for the existing unassigned preorder
+  workflow. A linked Catalog with no eligible receiving Batch is `po_closed`.
+- Cart does not include Ready Stock, checkout, Order creation, Wishlist, UI,
+  Blessy, or navigation changes. `orders.submit` remains the future Order
+  owner.
+
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

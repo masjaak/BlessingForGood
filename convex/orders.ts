@@ -5,6 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
+import { requireActiveCatalogGrant } from "./lib/catalogAccess";
 import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
@@ -66,15 +67,6 @@ function logReadyStockFailure(correlationId: string, stage: ReadyStockStage, sou
 
 function logReadyStockStarted(correlationId: string, source: string) {
   console.log("ready_stock_attempt_started", { correlationId, stage: "auth", source });
-}
-
-async function activeGrant(ctx: DataCtx, appUserId: Id<"appUsers">, catalogId: Id<"secretCatalogs">) {
-  const grant = await ctx.db
-    .query("catalogAccessGrants")
-    .withIndex("by_app_user_id_and_catalog_id", (query) => query.eq("appUserId", appUserId).eq("catalogId", catalogId))
-    .first();
-  if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) fail("ACCESS_GRANT_REQUIRED");
-  return grant;
 }
 
 async function assertCatalogBatchReceivable(ctx: MutationCtx, catalogId: Id<"secretCatalogs">) {
@@ -264,7 +256,7 @@ export const submit = mutation({
     const catalog = await ctx.db.get(args.catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     if (!(await catalogIsOpen(ctx, args.catalogId))) fail("CATALOG_NOT_OPEN");
-    await activeGrant(ctx, user._id, args.catalogId);
+    await requireActiveCatalogGrant(ctx, user._id, args.catalogId);
     const customerName = requiredText(args.customerName, "customer name");
     const resolved = await resolveItems(ctx, args.catalogId, args.items);
     await assertCatalogBatchReceivable(ctx, args.catalogId);

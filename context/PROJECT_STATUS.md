@@ -1,5 +1,28 @@
 # BFG Project Status
 
+## Customer Cart server domain — 2026-09-14
+
+Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+Phase B establishes the authenticated Customer Secret Catalog Cart backend in
+`convex/carts.ts` with `carts` and `cartItems` persistence. One Customer has
+one active Cart root; while it contains lines, every line must belong to one
+Secret Catalog. The canonical line identity is `catalogItemId`, and repeated
+adds merge quantity rather than creating duplicate rows. Removing the last
+line retains an empty root so a later Add can establish another Catalog.
+
+The Cart stores Customer intent and the server's observed effective integer IDR
+price only. Current price and availability are hydrated from canonical Catalog,
+Variant, Book, Publisher, and Batch state. Retained lines are not deleted when
+they become unavailable; `carts.reconcile` records unavailable/reopened state,
+and `carts.acknowledgeCurrentLineState` is the explicit price/reopen
+acknowledgement boundary. Reads do not accept a new price or silently accept a
+reopened line. Zero linked Batches remain valid; linked Batches with no
+eligible receiver project as PO closed. Ready Stock remains separate.
+
+Cart UI, `/account/cart`, Add to Cart, mini-cart, checkout, Order integration,
+Wishlist, Blessy, and Customer navigation remain unimplemented/unchanged.
+
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

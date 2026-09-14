@@ -1,5 +1,33 @@
 # BFG SOURCE OF TRUTH
 
+## Customer Cart server domain — 2026-09-14
+
+Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+Cart V1 is an authenticated Customer-only Secret Catalog preorder intent
+domain. `convex/carts.ts` owns Cart reads and mutations; Cart does not own
+Catalog lifecycle, pricing, Variant/Book metadata, Batch eligibility, Order
+creation, or finance. A Customer has at most one active Cart root, and a
+non-empty Cart is scoped to exactly one Secret Catalog. A line is identified by
+`catalogItemId`; distinct Catalog Items preserve distinct Variant intent.
+
+New lines snapshot the current server effective price
+`catalogItems.priceOverrideAmount ?? bookVariants.priceAmount` as observed
+integer IDR evidence. The snapshot is never authoritative. The direct Cart
+projection re-resolves current price and availability, retains stale lines for
+awareness, and excludes unavailable, price-changed, or pending-acknowledgement
+lines from the display subtotal. Explicit reconciliation can move an
+unavailable line to reopened/pending acknowledgement; explicit acknowledgement
+updates the observed price. A read never performs that consent.
+
+Availability includes Catalog open state, Catalog Item, Variant, Book,
+Publisher, and the canonical `eligibleReceivingBatches` predicate. Zero linked
+Batches remain active according to the existing unassigned-Order workflow;
+linked Batches with no eligible receiver are `po_closed`. Missing underlying
+records become a safe removable `removed` line. Ready Stock is outside this
+Cart domain. No Cart UI, route, checkout, or Order mutation integration is
+implemented in this phase.
+
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

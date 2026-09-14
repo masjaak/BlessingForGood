@@ -8,6 +8,28 @@ source: conversation
 
 # Changelog
 
+## [customer-cart-server-domain] — 2026-09-14
+
+### Changed
+
+- Added authenticated Customer-only Secret Catalog Cart persistence with one
+  Cart root per Customer and one Catalog per non-empty Cart.
+- Added canonical `catalogItemId` lines with duplicate quantity merge, exact
+  safe-integer quantity validation, removal, clear, and Customer isolation.
+- Added direct reconciliation against current Catalog, Variant, Book,
+  Publisher, price, and Batch eligibility state. Unavailable lines remain
+  persisted; explicit reconciliation and acknowledgement prevent silent
+  reopened or repriced intent acceptance.
+
+### QA and scope
+
+- Added dedicated Convex Cart coverage for empty/add/duplicate/different
+  Variant/Catalog scope/quantity/remove/clear, authorization, concurrency,
+  exact IDR, stale availability, PO closure, missing records, and reopen
+  acknowledgement.
+- Cart UI, `/account/cart`, mini-cart, checkout, Order integration, Ready
+  Stock, Wishlist, Blessy, navigation, and global CSS remain unchanged.
+
 ## [secret-catalog-price-reconciliation] — 2026-09-14
 
 ### Changed

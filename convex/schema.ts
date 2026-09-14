@@ -432,6 +432,29 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_app_user_id", ["appUserId"]),
 
+  carts: defineTable({
+    customerUserId: v.id("appUsers"),
+    catalogId: v.optional(v.id("secretCatalogs")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_customer_user_id", ["customerUserId"]),
+
+  cartItems: defineTable({
+    cartId: v.id("carts"),
+    catalogItemId: v.id("catalogItems"),
+    quantity: v.number(),
+    observedUnitPriceAmount: v.number(),
+    availabilityState: v.union(
+      v.literal("active"),
+      v.literal("unavailable"),
+      v.literal("available_pending_acknowledgement"),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_cart", ["cartId"])
+    .index("by_cart_and_catalog_item", ["cartId", "catalogItemId"]),
+
   orders: defineTable({
     customerUserId: v.id("appUsers"),
     catalogId: v.optional(v.id("secretCatalogs")),
