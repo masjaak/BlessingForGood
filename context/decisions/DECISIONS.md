@@ -2,7 +2,7 @@
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 
-Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 - The Customer-observed effective unit price is stale-intent evidence only;
   the server remains the financial authority.
@@ -20,7 +20,7 @@ Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
 
 ## Secret Catalog Order Batch admission — 2026-09-13
 
-Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 - Catalog open state remains necessary but is no longer sufficient for a new
   Customer Secret Catalog preorder when Catalog-to-Batch links already exist.

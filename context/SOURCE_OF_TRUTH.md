@@ -2,7 +2,7 @@
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 
-Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 Customer Secret Catalog `orders.submit` requires each preorder line to carry
 the effective unit price the Customer observed. The server independently
@@ -18,7 +18,7 @@ editable Order paths remain separate, and Cart remains unimplemented.
 
 ## Secret Catalog Order Batch admission — 2026-09-13
 
-Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 An open Secret Catalog is not sufficient for a new preorder when it has linked
 Batch targets but none can receive new Order quantities. The existing

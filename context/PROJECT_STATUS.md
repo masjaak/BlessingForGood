@@ -2,7 +2,7 @@
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 
-Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 The Customer self-service Secret Catalog submission now requires an observed
 effective unit price per line. `orders.submit` resolves the current server
@@ -15,7 +15,7 @@ Orders, Ready Stock, and Cart remain outside this change.
 
 ## Secret Catalog Order Batch admission — 2026-09-13
 
-Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 The Customer `orders.submit` boundary now reuses `eligibleReceivingBatches`
 before creating a Secret Catalog Order. Zero Catalog-to-Batch links remain
