@@ -20,7 +20,7 @@ import {
   SkeletonTable,
   StatusBadge,
 } from "@/components/ui";
-import { nextOrderStatuses, orderStatusLabels } from "@/domain/prototype/logic";
+import { nextOrderStatuses, orderStatusLabel, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
@@ -168,7 +168,7 @@ function OrderTable() {
                       <Money amount={order.total} />
                     </td>
                     <td>
-                      <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
+                      <StatusBadge>{orderStatusLabel(order.status, order.cancellationPending)}</StatusBadge>
                       <br />
                       <span className="subtle">Diperbarui {new Date(order.updatedAt).toLocaleString("id-ID")}</span>
                     </td>
@@ -516,7 +516,7 @@ function OrderTimeline({ orderId }: { orderId: string }) {
           <span className="card-kicker">{orderReference(order)}</span>
           <h2>{order.customerName}</h2>
         </div>
-        <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
+        <StatusBadge>{orderStatusLabel(order.status, order.cancellationPending)}</StatusBadge>
       </div>
       <div className="content-stack">
         {order.items.map((item) => (

@@ -69,6 +69,7 @@ type AdminAssignment = {
   supplierPriceGbpMinor: number | null;
   assignedQuantity: number;
   orderedQuantity: number;
+  assignmentState: "active" | "needs_reconciliation";
   orderDate: string;
   etaCargoMonth: string | null;
   dpAmount: number;
@@ -346,13 +347,17 @@ export const getMine = query({
         .query("orderItemBatchAssignments")
         .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
         .take(200);
+      let remainingQuantity = await fulfillableQuantityForOrderItem(ctx, item);
       for (const assignment of assignments) {
+        const quantity = Math.min(assignment.assignedQuantity, remainingQuantity);
+        remainingQuantity -= quantity;
+        if (quantity <= 0) continue;
         const section = sections.get(assignment.batchId) || { batchId: assignment.batchId, assignments: [] };
         section.assignments.push({
           orderItemId: item._id,
           bookTitle: item.bookTitleSnapshot,
           format: item.formatSnapshot,
-          quantity: assignment.assignedQuantity,
+          quantity,
         });
         sections.set(assignment.batchId, section);
       }
@@ -452,15 +457,10 @@ async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"
       assignments.map(async (assignment) => {
         const item = await ctx.db.get(assignment.orderItemId);
         const order = item ? await ctx.db.get(item.orderId) : null;
-        return item && order?.customerUserId === userId
-          ? customerBatchItemView(
-              ctx,
-              String(assignment._id),
-              assignment.assignedQuantity,
-              item,
-              order,
-              batch.currentShipmentStage,
-            )
+        if (!item || order?.customerUserId !== userId) return null;
+        const quantity = Math.min(assignment.assignedQuantity, await fulfillableQuantityForOrderItem(ctx, item));
+        return quantity > 0
+          ? customerBatchItemView(ctx, String(assignment._id), quantity, item, order, batch.currentShipmentStage)
           : null;
       }),
     )
@@ -551,12 +551,15 @@ export const getBookOverview = query({
         .withIndex("by_order", (index) => index.eq("orderId", order._id))
         .take(200);
       for (const item of items) {
-        const itemTotal = item.unitPriceAmountSnapshot * item.quantity;
+        const effectiveQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+        if (effectiveQuantity <= 0) continue;
+        const itemTotal = item.unitPriceAmountSnapshot * effectiveQuantity;
         if (
           !Number.isSafeInteger(item.unitPriceAmountSnapshot) ||
           item.unitPriceAmountSnapshot < 0 ||
           !Number.isSafeInteger(item.quantity) ||
           item.quantity < 1 ||
+          !Number.isSafeInteger(effectiveQuantity) ||
           !Number.isSafeInteger(itemTotal)
         ) {
           fail("INVOICE_TOTAL_INVALID");
@@ -572,7 +575,9 @@ export const getBookOverview = query({
           if (assignment.assignedQuantity < 1 || assignment.assignedQuantity > item.quantity) continue;
           const batch = await ctx.db.get(assignment.batchId);
           if (!batch) continue;
-          assignedQuantity += assignment.assignedQuantity;
+          const quantity = Math.min(assignment.assignedQuantity, effectiveQuantity - assignedQuantity);
+          if (quantity <= 0) continue;
+          assignedQuantity += quantity;
           const key = String(batch._id);
           const group = groups.get(key) || {
             batch,
@@ -581,18 +586,18 @@ export const getBookOverview = query({
             orderIds: new Set<Id<"orders">>(),
             rows: [],
           };
-          group.totalAmount += item.unitPriceAmountSnapshot * assignment.assignedQuantity;
-          group.bookCount += assignment.assignedQuantity;
+          group.totalAmount += item.unitPriceAmountSnapshot * quantity;
+          group.bookCount += quantity;
           group.orderIds.add(order._id);
           group.rows.push({
             item,
             order,
-            quantity: assignment.assignedQuantity,
+            quantity,
             batchStage: batch.currentShipmentStage,
           });
           groups.set(key, group);
         }
-        if (assignedQuantity < item.quantity) {
+        if (assignedQuantity < effectiveQuantity) {
           const key = "unassigned";
           const group = groups.get(key) || {
             batch: null,
@@ -601,7 +606,7 @@ export const getBookOverview = query({
             orderIds: new Set<Id<"orders">>(),
             rows: [],
           };
-          const quantity = item.quantity - assignedQuantity;
+          const quantity = effectiveQuantity - assignedQuantity;
           group.totalAmount += item.unitPriceAmountSnapshot * quantity;
           group.bookCount += quantity;
           group.orderIds.add(order._id);
@@ -671,33 +676,41 @@ export const getForOrderAdmin = query({
       .take(200);
     return {
       orderId: order._id,
-      items: await Promise.all(
-        items.map(async (item) => {
-          const assignments = await ctx.db
-            .query("orderItemBatchAssignments")
-            .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
-            .take(200);
-          return {
-            orderItemId: item._id,
-            bookTitle: item.bookTitleSnapshot,
-            format: item.formatSnapshot,
-            orderedQuantity: item.quantity,
-            assignments: await Promise.all(
-              assignments.map(async (assignment) => {
-                const batch = await ctx.db.get(assignment.batchId);
-                return {
-                  assignmentId: assignment._id,
-                  batchId: assignment.batchId,
-                  batchName: batch?.name || "Unknown batch",
-                  currentShipmentStage: batch?.currentShipmentStage || null,
-                  etaCargoMonth: batch?.etaCargoMonth || null,
-                  assignedQuantity: assignment.assignedQuantity,
-                };
-              }),
-            ),
-          };
-        }),
-      ),
+      items: (
+        await Promise.all(
+          items.map(async (item) => {
+            const orderedQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+            if (orderedQuantity <= 0) return null;
+            const assignments = await ctx.db
+              .query("orderItemBatchAssignments")
+              .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id))
+              .take(200);
+            let remainingQuantity = orderedQuantity;
+            const assignmentViews = [];
+            for (const assignment of assignments) {
+              const assignedQuantity = Math.min(assignment.assignedQuantity, remainingQuantity);
+              remainingQuantity -= assignedQuantity;
+              if (assignedQuantity <= 0) continue;
+              const batch = await ctx.db.get(assignment.batchId);
+              assignmentViews.push({
+                assignmentId: assignment._id,
+                batchId: assignment.batchId,
+                batchName: batch?.name || "Unknown batch",
+                currentShipmentStage: batch?.currentShipmentStage || null,
+                etaCargoMonth: batch?.etaCargoMonth || null,
+                assignedQuantity,
+              });
+            }
+            return {
+              orderItemId: item._id,
+              bookTitle: item.bookTitleSnapshot,
+              format: item.formatSnapshot,
+              orderedQuantity,
+              assignments: assignmentViews,
+            };
+          }),
+        )
+      ).filter((item): item is NonNullable<typeof item> => item !== null),
     };
   },
 });
@@ -712,6 +725,11 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
     const orderItem = await ctx.db.get(assignment.orderItemId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
     if (!orderItem || !order || !order.catalogId || order.source === "ready_stock") continue;
+    const assignedQuantity = Math.min(
+      assignment.assignedQuantity,
+      await fulfillableQuantityForOrderItem(ctx, orderItem),
+    );
+    if (assignedQuantity <= 0) continue;
     const variant = await ctx.db.get(orderItem.bookVariantId);
     const customerKey = String(order.customerUserId);
     const purchaseKey = String(orderItem.bookVariantId);
@@ -727,7 +745,7 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
       customerCount: 0,
       customers: new Set<string>(),
     };
-    purchase.quantity += assignment.assignedQuantity;
+    purchase.quantity += assignedQuantity;
     purchase.customers.add(customerKey);
     purchase.customerCount = purchase.customers.size;
     purchaseGroups.set(purchaseKey, purchase);
@@ -801,39 +819,45 @@ export const getForAdmin = query({
     const invoiceByOrder = new Map(
       orderIds.map((orderId, index) => [orderId, invoiceRows[index].find((invoice) => invoice.status !== "void")]),
     );
-    const assignedItems: AdminAssignment[] = loaded.flatMap(({ assignment, orderItem, order }) => {
-      if (!order.catalogId || order.source === "ready_stock") return [];
-      const invoice = invoiceByOrder.get(order._id);
-      return [
-        {
-          assignmentId: assignment._id,
-          orderId: order._id,
-          orderCode: order.orderCode || null,
-          customerUserId: order.customerUserId,
-          customerName: order.customerName,
-          customerMemberCode: customerCodes.get(order.customerUserId) || null,
-          publisherName: orderItem.publisherNameSnapshot,
-          catalogId: order.catalogId,
-          catalogName: catalogNames.get(order.catalogId) || "Unknown catalog",
-          orderItemId: orderItem._id,
-          bookVariantId: orderItem.bookVariantId,
-          bookTitle: orderItem.bookTitleSnapshot,
-          format: orderItem.formatSnapshot,
-          isbn: orderItem.isbnSnapshot,
-          unitPriceAmount: orderItem.unitPriceAmountSnapshot,
-          supplierPriceGbpMinor: variantById.get(orderItem.bookVariantId)?.supplierPriceGbpMinor ?? null,
-          assignedQuantity: assignment.assignedQuantity,
-          orderedQuantity: orderItem.quantity,
-          orderDate: new Date(order.submittedAt).toISOString(),
-          etaCargoMonth: summary.etaCargoMonth,
-          dpAmount: invoice?.allocatedDepositAmount ?? 0,
-          paymentStatus: invoice?.paymentStatus ?? "unpaid",
-          gpe: variantById.get(orderItem.bookVariantId)?.supplierPriceGbpMinor ?? null,
-        },
-      ];
-    });
+    const assignedItems = (
+      await Promise.all(
+        loaded.map(async ({ assignment, orderItem, order }): Promise<AdminAssignment | null> => {
+          if (!order.catalogId || order.source === "ready_stock") return null;
+          const orderedQuantity = await fulfillableQuantityForOrderItem(ctx, orderItem);
+          const assignedQuantity = Math.min(assignment.assignedQuantity, orderedQuantity);
+          const invoice = invoiceByOrder.get(order._id);
+          return {
+            assignmentId: assignment._id,
+            orderId: order._id,
+            orderCode: order.orderCode || null,
+            customerUserId: order.customerUserId,
+            customerName: order.customerName,
+            customerMemberCode: customerCodes.get(order.customerUserId) || null,
+            publisherName: orderItem.publisherNameSnapshot,
+            catalogId: order.catalogId,
+            catalogName: catalogNames.get(order.catalogId) || "Unknown catalog",
+            orderItemId: orderItem._id,
+            bookVariantId: orderItem.bookVariantId,
+            bookTitle: orderItem.bookTitleSnapshot,
+            format: orderItem.formatSnapshot,
+            isbn: orderItem.isbnSnapshot,
+            unitPriceAmount: orderItem.unitPriceAmountSnapshot,
+            supplierPriceGbpMinor: variantById.get(orderItem.bookVariantId)?.supplierPriceGbpMinor ?? null,
+            assignedQuantity,
+            orderedQuantity,
+            assignmentState: assignedQuantity < assignment.assignedQuantity ? "needs_reconciliation" : "active",
+            orderDate: new Date(order.submittedAt).toISOString(),
+            etaCargoMonth: summary.etaCargoMonth,
+            dpAmount: invoice?.allocatedDepositAmount ?? 0,
+            paymentStatus: invoice?.paymentStatus ?? "unpaid",
+            gpe: variantById.get(orderItem.bookVariantId)?.supplierPriceGbpMinor ?? null,
+          };
+        }),
+      )
+    ).filter((item): item is AdminAssignment => item !== null);
     const customerGroups = new Map<string, CustomerRoster>();
     for (const item of assignedItems) {
+      if (item.assignedQuantity <= 0) continue;
       const customerKey = String(item.customerUserId);
       const customer = customerGroups.get(customerKey) || {
         customerUserId: item.customerUserId,

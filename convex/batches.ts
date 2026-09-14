@@ -267,11 +267,15 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
   let assignedQuantity = 0;
   let assignmentCount = 0;
   for await (const assignment of assignments) {
-    assignmentCount += 1;
-    assignedQuantity += assignment.assignedQuantity;
     const orderItem = await ctx.db.get(assignment.orderItemId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
-    if (order) customerIds.add(String(order.customerUserId));
+    if (!orderItem || !order) continue;
+    const effectiveQuantity = await fulfillableQuantityForOrderItem(ctx, orderItem);
+    const activeAssignedQuantity = Math.min(assignment.assignedQuantity, effectiveQuantity);
+    if (activeAssignedQuantity <= 0) continue;
+    assignmentCount += 1;
+    assignedQuantity += activeAssignedQuantity;
+    customerIds.add(String(order.customerUserId));
   }
   const catalogLinks = await Promise.all(
     links.map(async (link, index) => ({

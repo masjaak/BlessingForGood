@@ -513,7 +513,11 @@ function AdminBatchDetail() {
                           <td>{assignment.bookTitle}</td>
                           <td>{assignment.format}</td>
                           <td>
-                            {assignment.assignedQuantity}/{assignment.orderedQuantity}
+                            {assignment.assignmentState === "needs_reconciliation" ? (
+                              <StatusBadge tone="warning">Perlu rekonsiliasi item</StatusBadge>
+                            ) : (
+                              `${assignment.assignedQuantity}/${assignment.orderedQuantity}`
+                            )}
                           </td>
                           <td>
                             <StatusBadge tone={assignment.paymentStatus === "paid" ? "positive" : "warning"}>
@@ -537,15 +541,20 @@ function AdminBatchDetail() {
                     {currentBatch.assignments.map((assignment) => (
                       <div className="content-stack" key={assignment.assignmentId}>
                         <strong>
-                          {assignment.customerName} · {assignment.bookTitle} · {assignment.assignedQuantity}/
-                          {assignment.orderedQuantity}
+                          {assignment.customerName} · {assignment.bookTitle}
                         </strong>
-                        <AssignmentQuantityForm
-                          assignment={assignment}
-                          batchId={batchId}
-                          assignOrderItem={assignOrderItem}
-                          onDone={() => setMessage("Jumlah penugasan diperbarui.")}
-                        />
+                        {assignment.assignmentState === "needs_reconciliation" ? (
+                          <p className="subtle">
+                            Jumlah aktif sudah berkurang; keluarkan item dari Batch sebelum menyelesaikan koreksi.
+                          </p>
+                        ) : (
+                          <AssignmentQuantityForm
+                            assignment={assignment}
+                            batchId={batchId}
+                            assignOrderItem={assignOrderItem}
+                            onDone={() => setMessage("Jumlah penugasan diperbarui.")}
+                          />
+                        )}
                         <div className="form-actions">
                           <Button
                             type="button"

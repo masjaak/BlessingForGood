@@ -112,6 +112,7 @@ export interface Order {
   total: number;
   depositRequirement: DepositRequirement;
   status: OrderStatus;
+  cancellationPending?: boolean;
   statusHistory: OrderStatusEvent[];
   createdAt: string;
   updatedAt: string;

@@ -82,6 +82,7 @@ type OrderRecord = {
   orderCode?: string | null;
   source?: "customer_self_service" | "admin_assisted" | "ready_stock";
   status: OrderStatus;
+  cancellationPending?: boolean;
   subtotalAmount: number;
   totalAmount: number;
   createdAt: string;
@@ -149,6 +150,7 @@ export function asOrder(value: OrderView | null | undefined): Order | undefined 
     total: record.totalAmount,
     depositRequirement: { kind: "unset" },
     status: record.status,
+    cancellationPending: record.cancellationPending,
     statusHistory: record.statusHistory.map((event) => ({ status: event.status, at: event.at })),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,

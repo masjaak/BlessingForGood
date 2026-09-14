@@ -22,7 +22,7 @@ import {
 } from "@/components/ui";
 import { fulfillmentStageLabels, fulfillmentStages, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
-import { orderStatusLabels } from "@/domain/prototype/logic";
+import { orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -119,12 +119,12 @@ function AdminOrderDetail() {
           <Card>
             <div className="split-heading">
               <div>
-                <span className="card-kicker">Snapshot pesanan</span>
+                <span className="card-kicker">Pesanan aktif</span>
                 <h2>
                   <Money amount={order.total} />
                 </h2>
               </div>
-              <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
+              <StatusBadge>{orderStatusLabel(order.status, order.cancellationPending)}</StatusBadge>
             </div>
             {order.items.map((item) => (
               <div className="summary-line" key={item.id}>

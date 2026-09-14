@@ -230,7 +230,8 @@ describe("BFG Phase 06.7 business policy closure", () => {
     });
     const resolved = await admin.mutation(api.orderExceptions.resolve, { exceptionId: defect.exceptionId });
     expect(resolved).toMatchObject({ resolution: "replacement", replacementReference: "READY-STOCK-REPLACEMENT-001" });
-    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items[0].quantity).toBe(1);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toEqual([]);
+    expect(await t.run((ctx) => ctx.db.get(order.items[0]._id))).toBeTruthy();
     expect(await admin.query(api.refunds.listForAdmin, {})).toEqual([]);
   });
 

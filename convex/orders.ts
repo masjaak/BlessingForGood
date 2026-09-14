@@ -10,7 +10,7 @@ import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
-import { hasUnresolvedException } from "./lib/orderExceptionState";
+import { fulfillableQuantityForOrderItem, hasUnresolvedException, needsResolution } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { nonNegativeMoney, positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
@@ -82,7 +82,7 @@ async function assertCatalogBatchReceivable(ctx: MutationCtx, catalogId: Id<"sec
 async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
   const order = await ctx.db.get(orderId);
   if (!order) fail("ORDER_NOT_FOUND");
-  const [customer, items, history] = await Promise.all([
+  const [customer, items, history, exceptions] = await Promise.all([
     ctx.db.get(order.customerUserId),
     ctx.db
       .query("orderItems")
@@ -94,7 +94,27 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
       .withIndex("by_order_and_changed_at", (query) => query.eq("orderId", orderId))
       .order("asc")
       .take(100),
+    ctx.db
+      .query("orderExceptions")
+      .withIndex("by_order", (query) => query.eq("orderId", orderId))
+      .take(200),
   ]);
+  const effectiveItems = await Promise.all(
+    items.map(async (item) => ({ item, quantity: await fulfillableQuantityForOrderItem(ctx, item) })),
+  );
+  const activeItems = effectiveItems.filter(({ quantity }) => quantity > 0);
+  const activeTotalAmount = activeItems.reduce(
+    (total, { item, quantity }) => total + item.unitPriceAmountSnapshot * quantity,
+    0,
+  );
+  const cancellationPending =
+    order.status === "submitted" &&
+    activeItems.length === 0 &&
+    exceptions.some(
+      (exception) =>
+        (exception.type === "admin_cancellation" || exception.type === "customer_cancellation") &&
+        needsResolution(exception),
+    );
   return {
     orderId: order._id,
     id: order._id,
@@ -107,13 +127,18 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
     source: order.source ?? "customer_self_service",
     status: order.status,
     currency: order.currency,
-    subtotalAmount: order.subtotalAmount,
-    totalAmount: order.totalAmount,
+    subtotalAmount: activeTotalAmount,
+    totalAmount: activeTotalAmount,
+    cancellationPending,
     createdAt: new Date(order.createdAt).toISOString(),
     updatedAt: new Date(order.updatedAt).toISOString(),
     submittedAt: new Date(order.submittedAt).toISOString(),
     editableUntil: new Date(order.editableUntil).toISOString(),
-    items,
+    items: activeItems.map(({ item, quantity }) => ({
+      ...item,
+      quantity,
+      subtotalAmount: item.unitPriceAmountSnapshot * quantity,
+    })),
     statusHistory: history.map((event) => ({
       status: event.toStatus,
       at: new Date(event.changedAt).toISOString(),

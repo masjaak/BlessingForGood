@@ -131,7 +131,7 @@ export function CustomerOrderExceptions({ orderId, items }: { orderId: string; i
             <span>
               {item.quantity} × {item.title} · {item.format}
               <br />
-              <span className="subtle">Nilai awal item</span>
+              <span className="subtle">Nilai aktif item</span>
             </span>
             <span>
               <Money amount={item.subtotal} />

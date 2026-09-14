@@ -15,7 +15,7 @@ import {
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { fulfillmentStageLabels, formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
-import { formatIdr, orderStatusLabels } from "@/domain/prototype/logic";
+import { formatIdr, orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
@@ -92,7 +92,7 @@ function CustomerOrderDetail() {
               <span className="card-kicker">Status pesanan</span>
               <h2>{formatIdr(order.total)}</h2>
             </div>
-            <StatusBadge>{orderStatusLabels[order.status]}</StatusBadge>
+            <StatusBadge>{orderStatusLabel(order.status, order.cancellationPending)}</StatusBadge>
           </div>
           {order.items.map((item) => (
             <div className="summary-line" key={item.id}>

@@ -20,7 +20,7 @@ import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
-import { orderStatusLabels } from "@/domain/prototype/logic";
+import { orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
@@ -123,7 +123,7 @@ function CustomerDetail() {
                         {orderReference(order)}
                       </LinkButton>
                       <br />
-                      <small>{orderStatusLabels[order.status]}</small>
+                      <small>{orderStatusLabel(order.status, order.cancellationPending)}</small>
                     </span>
                     <span className="form-actions">
                       <Money amount={order.total} />

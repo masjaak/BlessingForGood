@@ -110,7 +110,9 @@ describe("BFG order exception workflow", () => {
       exception: { type: "admin_cancellation", status: "resolved", affectedQuantity: 1 },
     });
     expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("cancelled");
-    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toHaveLength(1);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toHaveLength(0);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).totalAmount).toBe(0);
+    expect(await t.run((ctx) => ctx.db.get(order.items[0]._id))).toBeTruthy();
     expect((await customer.query(api.orders.getMine, { orderId: order.orderId })).orderId).toBe(order.orderId);
   });
 
@@ -154,6 +156,33 @@ describe("BFG order exception workflow", () => {
         (exception) => exception.orderItemId,
       ),
     ).not.toContain(secondItemId);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toHaveLength(1);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).totalAmount).toBe(125000);
+    await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: secondItemId,
+      affectedQuantity: 1,
+      reason: "Customer memilih untuk membatalkan seluruh pesanan.",
+    });
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("cancelled");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toEqual([]);
+  });
+
+  it("projects a full quantity cancellation without deleting the historical item", async () => {
+    const t = testConvex();
+    const { admin, customer, order } = await createOrder(t, 3);
+    const result = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 3,
+      reason: "Seluruh jumlah item dibatalkan.",
+    });
+
+    expect(result.outcome).toBe("resolved");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("cancelled");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items).toEqual([]);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).totalAmount).toBe(0);
+    expect(
+      await customer.query(api.orderExceptions.getCancellationEligibility, { orderItemId: order.items[0]._id }),
+    ).toMatchObject({ decision: "not_eligible", reasonCode: "ALREADY_CANCELLED" });
   });
 
   it("requires editable Batch reconciliation before resolving an affected assignment", async () => {
@@ -241,15 +270,84 @@ describe("BFG order exception workflow", () => {
     expect((await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).adjustedTotalAmount).toBe(
       250000,
     );
-    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items[0].quantity).toBe(3);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items[0].quantity).toBe(2);
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).totalAmount).toBe(250000);
+    expect((await t.run((ctx) => ctx.db.get(order.items[0]._id)))?.quantity).toBe(3);
     expect(
       (await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).assignments[0].assignedQuantity,
     ).toBe(2);
+    expect(
+      (await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).assignments[0].orderedQuantity,
+    ).toBe(2);
+    expect(
+      (await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).purchaseSummary[0].quantity,
+    ).toBe(2);
+    expect(
+      (await customer.query(api.batchTracking.getMine, { orderId: order.orderId })).batches[0].assignments[0].quantity,
+    ).toBe(2);
+    const overview = await customer.query(api.batchTracking.getBookOverview, { startAt: 0, endAt: Date.now() + 1000 });
+    expect(overview.totalSpending).toBe(250000);
+    expect(overview.batches).toHaveLength(1);
+    expect(overview.batches[0]).toMatchObject({ bookCount: 2, totalAmount: 250000 });
     expect(
       await customer.query(api.orderExceptions.getCancellationEligibility, {
         orderItemId: order.items[0]._id,
       }),
     ).toEqual({ decision: "eligible", reasonCode: null });
+  });
+
+  it("projects a pending full cancellation as inactive while preserving reconciliation state", async () => {
+    const t = testConvex();
+    const { admin, customer, order, catalog } = await createOrder(t);
+    const batch = await admin.mutation(api.batches.create, { name: "Pending Cancellation Batch" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
+    await admin.mutation(api.batchTracking.assignOrderItem, {
+      orderItemId: order.items[0]._id,
+      batchId: batch.batchId,
+      assignedQuantity: 1,
+    });
+    const request = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Pending Batch reconciliation.",
+    });
+    expect(request).toMatchObject({ outcome: "review_required", reasonCode: "BATCH_RECONCILIATION_REQUIRED" });
+    await admin.mutation(api.orderExceptions.startReview, { exceptionId: request.exception.exceptionId });
+    await admin.mutation(api.orderExceptions.selectResolution, {
+      exceptionId: request.exception.exceptionId,
+      resolution: "remove_item",
+    });
+
+    const projectedOrder = await admin.query(api.orders.getForAdmin, { orderId: order.orderId });
+    expect(projectedOrder).toMatchObject({
+      status: "submitted",
+      cancellationPending: true,
+      subtotalAmount: 0,
+      totalAmount: 0,
+      items: [],
+    });
+    expect(await customer.query(api.orders.getMine, { orderId: order.orderId })).toMatchObject({
+      status: "submitted",
+      cancellationPending: true,
+      totalAmount: 0,
+      items: [],
+    });
+    expect((await admin.query(api.batchTracking.getForOrderAdmin, { orderId: order.orderId })).items).toEqual([]);
+    expect((await customer.query(api.batchTracking.getMine, { orderId: order.orderId })).batches).toEqual([]);
+    expect((await customer.query(api.batchTracking.getBatchMine, { batchId: batch.batchId }))?.items).toEqual([]);
+    expect(
+      await customer.query(api.batchTracking.getBookOverview, { startAt: 0, endAt: Date.now() + 1000 }),
+    ).toMatchObject({ totalSpending: 0, batches: [] });
+
+    const batchView = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
+    expect(batchView).toMatchObject({ assignmentCount: 0, assignedQuantity: 0, customerCount: 0 });
+    expect(batchView.assignments[0]).toMatchObject({
+      assignedQuantity: 0,
+      orderedQuantity: 0,
+      assignmentState: "needs_reconciliation",
+    });
+    expect(batchView.customerRoster).toEqual([]);
+    expect(batchView.purchaseSummary).toEqual([]);
   });
 
   it("applies a pre-invoice adjustment without rewriting the adjustment history", async () => {

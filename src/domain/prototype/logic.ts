@@ -43,6 +43,10 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
   cancelled: "Dibatalkan",
 };
 
+export function orderStatusLabel(status: OrderStatus, cancellationPending = false): string {
+  return cancellationPending && status === "submitted" ? "Pembatalan diproses" : orderStatusLabels[status];
+}
+
 const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
   submitted: ["po_closed", "cancelled"],
   po_closed: ["ordered_to_supplier"],
