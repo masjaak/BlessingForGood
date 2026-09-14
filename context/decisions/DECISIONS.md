@@ -1,5 +1,23 @@
 # Decisions
 
+## Secret Catalog Customer price reconciliation — 2026-09-14
+
+Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+- The Customer-observed effective unit price is stale-intent evidence only;
+  the server remains the financial authority.
+- `orders.submit` compares each submitted observed integer IDR amount with
+  `catalogItems.priceOverrideAmount ?? bookVariants.priceAmount` after current
+  item resolution and before Order insertion.
+- Any mismatch rejects the whole multi-line submission with `PRICE_CHANGED`
+  and per-line catalog/variant, observed, and current amounts. No partial
+  Order graph or assignment is created.
+- The current Customer Catalog and Secret Catalog Book Detail send their
+  displayed price and require a deliberate retry after reconciliation. A
+  second submit is revalidated; no bypass or consent token is stored.
+- Admin-assisted/editable Orders, Ready Stock, Batch lifecycle, navigation,
+  Blessy, and Cart remain unchanged.
+
 ## Secret Catalog Order Batch admission — 2026-09-13
 
 Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`

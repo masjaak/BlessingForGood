@@ -38,7 +38,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "UAT Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     await admin.mutation(api.secretCatalogs.archive, { catalogId: catalog.catalogId });
 
@@ -118,7 +118,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "UAT Batch Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("customer fixture missing");
@@ -186,7 +186,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "UAT Candidate Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("candidate customer fixture missing");
@@ -320,7 +320,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Shared Candidate Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("shared candidate customer fixture missing");
@@ -396,7 +396,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "UAT Invoice Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     const adminUser = await admin.query(api.users.current, {});
@@ -521,7 +521,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Invoice Items UAT Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,
@@ -554,7 +554,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Legacy UAT Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,
@@ -675,7 +675,7 @@ describe("owner UAT cleanup", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Unsafe UAT Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,

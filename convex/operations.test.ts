@@ -14,7 +14,7 @@ async function createOwnedOrder(
   return customer.mutation(api.orders.submit, {
     catalogId: catalogId as never,
     customerName: "Operations Customer",
-    items: [{ variantId: variantId as never, quantity: 2 }],
+    items: [{ variantId: variantId as never, quantity: 2, expectedUnitPriceAmount: 125000 }],
   });
 }
 

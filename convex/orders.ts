@@ -11,12 +11,13 @@ import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { hasUnresolvedException } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
-import { positiveQuantity, requiredText } from "./lib/validation";
+import { nonNegativeMoney, positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { autoAssignOrderItemsForCatalog, eligibleReceivingBatches } from "./batches";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
+const customerOrderItemInput = orderItemInput.extend({ expectedUnitPriceAmount: v.number() });
 type DataCtx = QueryCtx | MutationCtx;
 type ReadyStockStage =
   | "auth"
@@ -131,7 +132,11 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
 async function resolveItems(
   ctx: MutationCtx,
   catalogId: Id<"secretCatalogs">,
-  requestedItems: Array<{ variantId: Id<"bookVariants">; quantity: number }>,
+  requestedItems: Array<{
+    variantId: Id<"bookVariants">;
+    quantity: number;
+    expectedUnitPriceAmount?: number;
+  }>,
 ) {
   if (!requestedItems.length) fail("ORDER_EMPTY");
   const seen = new Set<string>();
@@ -140,6 +145,8 @@ async function resolveItems(
     if (seen.has(requested.variantId)) fail("VALIDATION_FAILED", "duplicate order item");
     seen.add(requested.variantId);
     const quantity = positiveQuantity(requested.quantity);
+    const expectedUnitPriceAmount =
+      requested.expectedUnitPriceAmount === undefined ? undefined : nonNegativeMoney(requested.expectedUnitPriceAmount);
     const catalogItem = await ctx.db
       .query("catalogItems")
       .withIndex("by_catalog_and_variant", (query) =>
@@ -155,9 +162,31 @@ async function resolveItems(
     }
     const unitPriceAmount = catalogItem.priceOverrideAmount ?? variant.priceAmount;
     const subtotalAmount = unitPriceAmount * quantity;
-    resolved.push({ catalogItem, variant, book, publisher, quantity, unitPriceAmount, subtotalAmount });
+    resolved.push({
+      catalogItem,
+      variant,
+      book,
+      publisher,
+      quantity,
+      expectedUnitPriceAmount,
+      unitPriceAmount,
+      subtotalAmount,
+    });
   }
   return resolved;
+}
+
+function assertExpectedPrices(resolved: Awaited<ReturnType<typeof resolveItems>>) {
+  const changes = resolved.filter((item) => item.expectedUnitPriceAmount !== item.unitPriceAmount);
+  if (!changes.length) return;
+  fail("PRICE_CHANGED", "Catalog price changed", {
+    changes: changes.map((item) => ({
+      catalogItemId: item.catalogItem._id,
+      variantId: item.variant._id,
+      observedUnitPriceAmount: item.expectedUnitPriceAmount ?? null,
+      currentUnitPriceAmount: item.unitPriceAmount,
+    })),
+  });
 }
 
 async function insertOrder(
@@ -227,7 +256,7 @@ export const submit = mutation({
     catalogId: v.id("secretCatalogs"),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
-    items: v.array(orderItemInput),
+    items: v.array(customerOrderItemInput),
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "orders.read.own");
@@ -239,6 +268,7 @@ export const submit = mutation({
     const customerName = requiredText(args.customerName, "customer name");
     const resolved = await resolveItems(ctx, args.catalogId, args.items);
     await assertCatalogBatchReceivable(ctx, args.catalogId);
+    assertExpectedPrices(resolved);
     const order = await insertOrder(
       ctx,
       {

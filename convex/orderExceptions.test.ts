@@ -17,7 +17,7 @@ async function createOrder(
   const order = await users.customer.mutation(api.orders.submit, {
     catalogId: catalog.catalogId,
     customerName: "Exception Customer",
-    items: [{ variantId: catalog.variantIds[0], quantity }],
+    items: [{ variantId: catalog.variantIds[0], quantity, expectedUnitPriceAmount: 125000 }],
   });
   return { ...users, catalog, order };
 }

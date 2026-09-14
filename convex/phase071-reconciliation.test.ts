@@ -114,7 +114,7 @@ describe("Phase 07.1 reconciliation", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Notice Customer",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,
@@ -458,7 +458,7 @@ describe("Phase 07.1 reconciliation", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Proof Customer",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,

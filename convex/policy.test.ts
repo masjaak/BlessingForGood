@@ -32,7 +32,7 @@ async function preorder(t: ReturnType<typeof testConvex>, suffix = "6701") {
   const order = await users.customer.mutation(api.orders.submit, {
     catalogId: catalog.catalogId,
     customerName: "Policy Customer",
-    items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+    items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
   });
   return { ...users, catalog, order };
 }

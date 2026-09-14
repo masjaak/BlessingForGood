@@ -183,7 +183,7 @@ describe("BFG destructive action guards", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Historical Delete Customer",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("customer fixture missing");

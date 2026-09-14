@@ -11,7 +11,7 @@ async function createInvoice(t: ReturnType<typeof testConvex>, issue = true) {
   const order = await users.customer.mutation(api.orders.submit, {
     catalogId: bundle.catalogId,
     customerName: "Deposit Customer",
-    items: [{ variantId: bundle.variantIds[0], quantity: 2 }],
+    items: [{ variantId: bundle.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
   });
   const invoice = await users.admin.mutation(api.invoices.create, {
     orderId: order.orderId,

@@ -16,12 +16,12 @@ describe("BFG human-facing order references", () => {
     const first = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Reference A",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const second = await secondCustomer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Reference B",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     expect(first.orderCode).toMatch(/^BFG-ORD-\d{6}-[0-9A-Z]{4,}$/);
     expect(second.orderCode).toMatch(/^BFG-ORD-\d{6}-[0-9A-Z]{4,}$/);

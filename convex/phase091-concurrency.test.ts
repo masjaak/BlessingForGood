@@ -65,7 +65,7 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Concurrency Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const created = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,
@@ -104,7 +104,7 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
       const order = await users.customer.mutation(api.orders.submit, {
         catalogId: catalog.catalogId,
         customerName: "Deposit Concurrency Customer",
-        items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+        items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
       });
       const created = await users.admin.mutation(api.invoices.create, {
         orderId: order.orderId,
@@ -159,7 +159,7 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
         customer.mutation(api.orders.submit, {
           catalogId: catalog.catalogId,
           customerName: "Concurrent Customer",
-          items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+          items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
         }),
       ),
     );

@@ -54,7 +54,13 @@ function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book })
         const order = await submitOrder(catalogId, {
           customerName,
           customerEmail,
-          items: [{ variantId: selected.id, quantity: Number(quantity) }],
+          items: [
+            {
+              variantId: selected.id,
+              quantity: Number(quantity),
+              expectedUnitPriceAmount: selected.price,
+            },
+          ],
         });
         setOrderId(order.id);
         setMessage(`Referensi pesanan ${orderReference(order)}.`);

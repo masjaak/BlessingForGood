@@ -93,7 +93,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     const future = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Future Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     const futureAssignments = await t.run((ctx) =>
       ctx.db
@@ -305,7 +305,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     const noBatchOrder = await customer.mutation(api.orders.submit, {
       catalogId: noBatchCatalog.catalogId,
       customerName: "No Batch Customer",
-      items: [{ variantId: noBatchCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: noBatchCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     expect(
       await t.run((ctx) =>
@@ -331,7 +331,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     const ambiguousOrder = await customer.mutation(api.orders.submit, {
       catalogId: ambiguousCatalog.catalogId,
       customerName: "Ambiguous Customer",
-      items: [{ variantId: ambiguousCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: ambiguousCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     expect(
       await t.run((ctx) =>
@@ -355,7 +355,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     await secondCustomer.mutation(api.orders.submit, {
       catalogId: singleLockedCatalog.catalogId,
       customerName: "Single Locked Initial Customer",
-      items: [{ variantId: singleLockedCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: singleLockedCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const singleLockedBatch = await admin.mutation(api.batches.create, { name: "Single Locked Batch" });
     await admin.mutation(api.batches.linkCatalog, {
@@ -373,7 +373,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
       secondCustomer.mutation(api.orders.submit, {
         catalogId: singleLockedCatalog.catalogId,
         customerName: "Single Locked Customer",
-        items: [{ variantId: singleLockedCatalog.variantIds[0], quantity: 1 }],
+        items: [{ variantId: singleLockedCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
       }),
     ).rejects.toThrow("NO_ELIGIBLE_BATCH");
     await expect(t.run((ctx) => ctx.db.query("orders").collect())).resolves.toHaveLength(singleLockedOrderCountBefore);
@@ -383,7 +383,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     await secondCustomer.mutation(api.orders.submit, {
       catalogId: lockedCatalog.catalogId,
       customerName: "Locked Initial Customer",
-      items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const lockedBatch = await admin.mutation(api.batches.create, { name: "Locked Batch" });
     const archivedBatch = await admin.mutation(api.batches.create, { name: "Archived Batch" });
@@ -408,7 +408,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
       secondCustomer.mutation(api.orders.submit, {
         catalogId: lockedCatalog.catalogId,
         customerName: "Locked Customer",
-        items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1 }],
+        items: [{ variantId: lockedCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
       }),
     ).rejects.toThrow("NO_ELIGIBLE_BATCH");
     await expect(t.run((ctx) => ctx.db.query("orders").collect())).resolves.toHaveLength(orderCountBefore);
@@ -426,7 +426,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Mixed Initial Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const lockedBatch = await admin.mutation(api.batches.create, { name: "Mixed Locked Batch" });
     const eligibleBatch = await admin.mutation(api.batches.create, { name: "Mixed Eligible Batch" });
@@ -440,7 +440,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Mixed Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     await expect(
       t.run((ctx) =>
@@ -464,7 +464,7 @@ describe("BFG deterministic Catalog to Batch assignment", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Recap Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     const invoice = await admin.mutation(api.invoices.create, {
       orderId: order.orderId,

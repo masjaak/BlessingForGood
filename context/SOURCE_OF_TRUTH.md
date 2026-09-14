@@ -1,5 +1,21 @@
 # BFG SOURCE OF TRUTH
 
+## Secret Catalog Customer price reconciliation — 2026-09-14
+
+Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+Customer Secret Catalog `orders.submit` requires each preorder line to carry
+the effective unit price the Customer observed. The server independently
+resolves the current canonical amount as
+`catalogItems.priceOverrideAmount ?? bookVariants.priceAmount` and compares
+the two integer IDR amounts before any Order, Order Item, Batch assignment, or
+success side effect is written. A mismatch rejects with structured
+`PRICE_CHANGED` reconciliation data; the observed amount is never the Order
+price authority. A second deliberate submission must carry the refreshed
+amount and is validated again. Equal effective amounts do not create a false
+positive when the override source changes. Ready Stock and Admin-assisted or
+editable Order paths remain separate, and Cart remains unimplemented.
+
 ## Secret Catalog Order Batch admission — 2026-09-13
 
 Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`

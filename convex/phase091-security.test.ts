@@ -13,7 +13,7 @@ describe("Phase 09.1 adversarial authorization", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Customer A",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const address = await customer.mutation(api.customerAddresses.create, {
       label: "Home",

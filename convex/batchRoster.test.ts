@@ -25,12 +25,12 @@ describe("BFG batch roster and assisted orders", () => {
     await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Roster Customer A",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     await secondCustomer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Roster Customer B",
-      items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const batch = await admin.mutation(api.batches.create, { name: "Roster Batch" });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
@@ -80,7 +80,7 @@ describe("BFG batch roster and assisted orders", () => {
     await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Move Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     const order = await customer.query(api.orders.listMine, {
       paginationOpts: { numItems: 10, cursor: null },
@@ -234,7 +234,7 @@ describe("BFG batch roster and assisted orders", () => {
           await customer.mutation(api.orders.submit, {
             catalogId: catalog.catalogId,
             customerName: "Pooled Customer",
-            items: [{ variantId: catalog.variantIds[0], quantity: 1 }],
+            items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
           }),
         );
       } else {
@@ -299,7 +299,7 @@ describe("BFG batch roster and assisted orders", () => {
     await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Overview Customer",
-      items: [{ variantId: catalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("overview customer fixture missing");
@@ -403,12 +403,20 @@ describe("BFG batch roster and assisted orders", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Shared Deadline Customer",
-      items: catalog.variantIds.map((variantId, index) => ({ variantId, quantity: index === 0 ? 2 : 1 })),
+      items: catalog.variantIds.map((variantId, index) => ({
+        variantId,
+        quantity: index === 0 ? 2 : 1,
+        expectedUnitPriceAmount: index === 0 ? 110000 : 115000,
+      })),
     });
     await secondCustomer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Shared Deadline Customer Two",
-      items: catalog.variantIds.map((variantId, index) => ({ variantId, quantity: index === 1 ? 2 : 1 })),
+      items: catalog.variantIds.map((variantId, index) => ({
+        variantId,
+        quantity: index === 1 ? 2 : 1,
+        expectedUnitPriceAmount: index === 0 ? 110000 : 115000,
+      })),
     });
     const batch = await admin.mutation(api.batches.create, {
       name: "Shared Deadline Batch",

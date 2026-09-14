@@ -300,7 +300,7 @@ describe("CustomerCatalog projection", () => {
       expect(submitOrder).toHaveBeenCalledWith("catalog-multi", {
         customerName: "Ada Customer",
         customerEmail: "",
-        items: [{ variantId: "variant-pb", quantity: 1 }],
+        items: [{ variantId: "variant-pb", quantity: 1, expectedUnitPriceAmount: 245000 }],
       }),
     );
   });

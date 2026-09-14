@@ -129,7 +129,10 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
       const variantId =
         selectedVariants[book.id] || book.variants.find((variant) => variant.availability === "available")?.id;
       const quantity = variantId ? quantities[variantId] || 0 : 0;
-      return variantId && quantity > 0 ? [{ variantId, quantity }] : [];
+      const variant = book.variants.find((candidate) => candidate.id === variantId);
+      return variantId && variant && quantity > 0
+        ? [{ variantId, quantity, expectedUnitPriceAmount: variant.price }]
+        : [];
     });
   }, [catalog, quantities, selectedVariants]);
 

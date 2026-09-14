@@ -11,7 +11,7 @@ async function createOrder(t: ReturnType<typeof testConvex>) {
   const order = await users.customer.mutation(api.orders.submit, {
     catalogId: bundle.catalogId,
     customerName: "Fulfillment Customer",
-    items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+    items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
   });
   return { ...users, order };
 }

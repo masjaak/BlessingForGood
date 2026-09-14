@@ -175,3 +175,7 @@ export interface CreateOrderInput {
   customerEmail?: string;
   items: Array<{ variantId: string; quantity: number }>;
 }
+
+export type SubmitOrderInput = Omit<CreateOrderInput, "items"> & {
+  items: Array<{ variantId: string; quantity: number; expectedUnitPriceAmount: number }>;
+};

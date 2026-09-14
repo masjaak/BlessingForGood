@@ -1,5 +1,18 @@
 # BFG Project Status
 
+## Secret Catalog Customer price reconciliation — 2026-09-14
+
+Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+
+The Customer self-service Secret Catalog submission now requires an observed
+effective unit price per line. `orders.submit` resolves the current server
+price from `catalogItems.priceOverrideAmount ?? bookVariants.priceAmount`,
+rejects mismatches with `PRICE_CHANGED` before insertion, and returns safe
+per-line reconciliation details. The current Catalog and Book Detail callers
+send the displayed integer IDR amount and retry only after a deliberate
+Customer submission against the refreshed projection. Admin-assisted/editable
+Orders, Ready Stock, and Cart remain outside this change.
+
 ## Secret Catalog Order Batch admission — 2026-09-13
 
 Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`

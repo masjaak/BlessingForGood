@@ -43,5 +43,8 @@ describe("prototype error boundary", () => {
     expect(productErrorMessage(new Error("[CONVEX M(orders:submit)] NO_ELIGIBLE_BATCH"), "fallback")).toBe(
       "PO katalog ini sudah ditutup dan belum ada Batch yang dapat menerima pesanan.",
     );
+    expect(productErrorMessage(new Error("[CONVEX M(orders:submit)] PRICE_CHANGED"), "fallback")).toBe(
+      "Harga buku berubah. Periksa harga terbaru, lalu kirim ulang pesanan.",
+    );
   });
 });

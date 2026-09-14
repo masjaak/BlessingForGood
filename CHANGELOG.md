@@ -8,6 +8,25 @@ source: conversation
 
 # Changelog
 
+## [secret-catalog-price-reconciliation] — 2026-09-14
+
+### Changed
+
+- Customer Secret Catalog preorder lines now submit their displayed effective
+  integer IDR price as reconciliation evidence. The canonical server price
+  remains `catalogItems.priceOverrideAmount ?? bookVariants.priceAmount`.
+- `orders.submit` rejects a stale effective price with structured
+  `PRICE_CHANGED` before writing any Order graph. The current Customer Catalog
+  and Secret Catalog Book Detail show the safe retry message and require a
+  deliberate resubmission against the refreshed price.
+
+### QA and scope
+
+- Added stable-price, Catalog override, Variant base-price, override
+  add/remove, exact Rp1, multi-line atomicity, and repeated-change coverage.
+- Admin-assisted/editable Orders, Ready Stock, Batch admission, Cart, Blessy,
+  navigation, finance, and global CSS remain unchanged.
+
 ## [secret-catalog-batch-admission] — 2026-09-13
 
 ### Changed

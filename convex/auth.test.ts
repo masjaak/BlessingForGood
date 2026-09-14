@@ -281,7 +281,7 @@ describe("Clerk identity and BFG authorization", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Customer One",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 100000 }],
     });
     await expect(secondCustomer.query(api.orders.getMine, { orderId: order.orderId })).rejects.toThrow(
       "ORDER_ACCESS_DENIED",

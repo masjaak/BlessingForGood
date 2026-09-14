@@ -5,6 +5,7 @@ import type {
   CreateCatalogInput,
   CreateCatalogResult,
   CreateOrderInput,
+  SubmitOrderInput,
   CatalogAccessOption,
   Order,
   OrderStatus,
@@ -147,7 +148,7 @@ export interface ProductContextValue {
   selectCatalog: (catalogId: string) => void;
   createCatalog: (input: CreateCatalogInput) => Promise<CreateCatalogResult>;
   unlockCatalog: (accessCode: string) => Promise<SecretCatalog | undefined>;
-  submitOrder: (catalogId: string, input: CreateOrderInput) => Promise<Order>;
+  submitOrder: (catalogId: string, input: SubmitOrderInput) => Promise<Order>;
   updateOrderStatus: (orderId: string, nextStatus: OrderStatus) => void | Promise<void>;
   closeCatalog: (catalogId: string) => void | Promise<void>;
   editOrder: (orderId: string, input: CreateOrderInput) => Promise<Order>;

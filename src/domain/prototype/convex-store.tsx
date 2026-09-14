@@ -36,6 +36,7 @@ import type {
   OrderStatus,
   PrototypeState,
   SecretCatalog,
+  SubmitOrderInput,
 } from "@/domain/prototype/types";
 import { useConvexRetry } from "@/providers/convex-provider";
 
@@ -397,7 +398,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   );
 
   const submitOrder = useCallback(
-    async (catalogId: string, input: CreateOrderInput) => {
+    async (catalogId: string, input: SubmitOrderInput) => {
       const result = await submit({
         catalogId: catalogId as Id<"secretCatalogs">,
         customerName: input.customerName,
@@ -405,6 +406,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
         items: input.items.map((item) => ({
           variantId: item.variantId as Id<"bookVariants">,
           quantity: item.quantity,
+          expectedUnitPriceAmount: item.expectedUnitPriceAmount,
         })),
       });
       const order = asOrder(result);

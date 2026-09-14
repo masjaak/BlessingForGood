@@ -39,6 +39,9 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "NO_ELIGIBLE_BATCH" || message.includes("NO_ELIGIBLE_BATCH")) {
     return "PO katalog ini sudah ditutup dan belum ada Batch yang dapat menerima pesanan.";
   }
+  if (code === "PRICE_CHANGED" || message.includes("PRICE_CHANGED")) {
+    return "Harga buku berubah. Periksa harga terbaru, lalu kirim ulang pesanan.";
+  }
   if (code === "CUSTOMER_REQUIRED" || message.includes("CUSTOMER_REQUIRED")) {
     return "Pesanan pelanggan dibuat melalui ruang kerja Admin.";
   }

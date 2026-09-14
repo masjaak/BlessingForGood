@@ -11,7 +11,7 @@ async function createOrder(t: ReturnType<typeof testConvex>) {
   const order = await users.customer.mutation(api.orders.submit, {
     catalogId: bundle.catalogId,
     customerName: "Invoice Customer",
-    items: [{ variantId: bundle.variantIds[0], quantity: 2 }],
+    items: [{ variantId: bundle.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
   });
   return { ...users, order };
 }
@@ -119,13 +119,13 @@ describe("BFG invoice persistence", () => {
     const firstOrder = await customer.mutation(api.orders.submit, {
       catalogId: firstCatalog.catalogId,
       customerName: "Multi Catalog Customer",
-      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     await customer.mutation(api.catalogAccess.unlock, { accessCode: "invoice-code-b" });
     const secondOrder = await customer.mutation(api.orders.submit, {
       catalogId: secondCatalog.catalogId,
       customerName: "Multi Catalog Customer",
-      items: [{ variantId: secondCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: secondCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const firstInvoice = await admin.mutation(api.invoices.create, {
       orderId: firstOrder.orderId,
@@ -158,18 +158,18 @@ describe("BFG invoice persistence", () => {
     const firstOrder = await customer.mutation(api.orders.submit, {
       catalogId: firstCatalog.catalogId,
       customerName: "Pooled Invoice Customer",
-      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const secondOrder = await customer.mutation(api.orders.submit, {
       catalogId: secondCatalog.catalogId,
       customerName: "Pooled Invoice Customer",
-      items: [{ variantId: secondCatalog.variantIds[0], quantity: 2 }],
+      items: [{ variantId: secondCatalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "pooled-invoice-code-a" });
     const secondCustomerOrder = await secondCustomer.mutation(api.orders.submit, {
       catalogId: firstCatalog.catalogId,
       customerName: "Second Pooled Customer",
-      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1 }],
+      items: [{ variantId: firstCatalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const customerUser = await customer.query(api.users.current, {});
     const secondCustomerUser = await secondCustomer.query(api.users.current, {});

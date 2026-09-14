@@ -158,9 +158,9 @@ describe("BFG product publishing projections", () => {
       catalogId: catalog.catalogId,
       customerName: "Multi Publisher Customer",
       items: [
-        { variantId: catalog.variantIds[0], quantity: 1 },
-        { variantId: extraVariants[0], quantity: 2 },
-        { variantId: extraVariants[1], quantity: 1 },
+        { variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 },
+        { variantId: extraVariants[0], quantity: 2, expectedUnitPriceAmount: 135000 },
+        { variantId: extraVariants[1], quantity: 1, expectedUnitPriceAmount: 135000 },
       ],
     });
     expect(order.items).toHaveLength(3);

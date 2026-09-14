@@ -134,4 +134,32 @@ describe("Secret Catalog book detail preorder", () => {
     expect(rendered?.textContent).toBe(description);
     expect(rendered?.querySelector("script")).toBeNull();
   });
+
+  it("submits the currently displayed price as reconciliation evidence", async () => {
+    const product = setup();
+    vi.mocked(product.submitOrder).mockResolvedValue({ id: "order-1" } as never);
+    render(<SecretCatalogBookDetail />);
+
+    await waitFor(() => expect((screen.getByLabelText("Nama") as HTMLInputElement).value).toBe("MULIA KAH"));
+    fireEvent.click(screen.getByRole("button", { name: "Catat preorder" }));
+
+    await waitFor(() =>
+      expect(product.submitOrder).toHaveBeenCalledWith("catalog-1", {
+        customerName: "MULIA KAH",
+        customerEmail: "",
+        items: [{ variantId: "variant-1", quantity: 1, expectedUnitPriceAmount: 125000 }],
+      }),
+    );
+  });
+
+  it("maps a price mismatch to a deliberate retry message", async () => {
+    const product = setup();
+    vi.mocked(product.submitOrder).mockRejectedValue(new Error("[CONVEX M(orders:submit)] PRICE_CHANGED"));
+    render(<SecretCatalogBookDetail />);
+
+    await waitFor(() => expect((screen.getByLabelText("Nama") as HTMLInputElement).value).toBe("MULIA KAH"));
+    fireEvent.click(screen.getByRole("button", { name: "Catat preorder" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Harga buku berubah");
+  });
 });

@@ -79,7 +79,7 @@ describe("BFG Convex core persistence", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Format Customer",
-      items: [{ variantId: bundle.variantIds[5], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[5], quantity: 1, expectedUnitPriceAmount: 100005 }],
     });
     expect(order.items[0]).toMatchObject({ formatSnapshot: "Slipcase HB" });
   });
@@ -211,7 +211,7 @@ describe("BFG Convex core persistence", () => {
       catalogId: bundle.catalogId,
       customerName: "Test Blessfriend",
       customerEmail: "test@example.com",
-      items: [{ variantId: bundle.variantIds[0], quantity: 2 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
     expect(order).toMatchObject({ totalAmount: 250000, status: "submitted" });
     expect(order.items[0]).toMatchObject({ unitPriceAmountSnapshot: 125000, quantity: 2, formatSnapshot: "PB" });
@@ -240,7 +240,7 @@ describe("BFG Convex core persistence", () => {
     const firstOrder = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "MULIA KAH",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     await customer.mutation(api.customerProfiles.upsertMine, { displayName: "Mulia Raya Updated" });
     await expect(customer.query(api.customerProfiles.getMine, {})).resolves.toMatchObject({
@@ -253,7 +253,7 @@ describe("BFG Convex core persistence", () => {
     const secondOrder = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Mulia Raya Updated",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     expect(secondOrder.customerName).toBe("Mulia Raya Updated");
   });
@@ -266,7 +266,7 @@ describe("BFG Convex core persistence", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Before Close",
-      items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+      items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
     const edited = await customer.mutation(api.orders.edit, {
       orderId: order.orderId,
@@ -316,7 +316,7 @@ describe("BFG Convex core persistence", () => {
       customer.mutation(api.orders.submit, {
         catalogId: bundle.catalogId,
         customerName: "No Grant",
-        items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+        items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
       }),
     ).rejects.toThrow("ACCESS_GRANT_REQUIRED");
     await customer.mutation(api.catalogAccess.unlock, { accessCode: "invariant-code" });
@@ -332,7 +332,7 @@ describe("BFG Convex core persistence", () => {
       customer.mutation(api.orders.submit, {
         catalogId: bundle.catalogId,
         customerName: "Expired Grant",
-        items: [{ variantId: bundle.variantIds[0], quantity: 1 }],
+        items: [{ variantId: bundle.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
       }),
     ).rejects.toThrow("ACCESS_GRANT_REQUIRED");
   });
