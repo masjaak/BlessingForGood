@@ -1,5 +1,26 @@
 # Decisions
 
+## Customer mini-cart access layer — 2026-09-14
+
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- `src/components/site-shell.tsx` mounts one `CustomerMiniCart` in the
+  Customer main rail. The feature owns presentation and the local route
+  exclusion; the shell does not own Cart domain logic. Admin and auth-only
+  surfaces do not receive the control.
+- The feature reads the existing reactive `carts.getMine` projection only
+  for an authenticated Customer and uses `retainedQuantity` as the sole
+  visibility/count authority. Pending, error, and empty states are absent;
+  retained unavailable lines remain visible for management. Active quantity
+  and subtotal are deliberately omitted from this compact control.
+- The control is a compact in-flow/sticky semantic link to `/account/cart`.
+  It is not fixed, modal, drawer, header, bottom navigation, Blessy, or a
+  local Cart state owner. The five-item Customer bottom nav and Blessy
+  geometry remain frozen.
+- Cart checkout, `orders.submit` integration, direct-preorder cutover, and
+  Ready Stock Cart remain unimplemented. Authenticated UAT remains pending
+  without an approved disposable Customer fixture.
+
 ## Secret Catalog Add-to-Cart entry points — 2026-09-14
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -10,7 +31,8 @@ Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
   to `carts.addItem`.
 - The existing direct Secret Catalog preorder remains the current transaction
   path. Successful adds stay on the current page and provide a direct
-  `/account/cart` link; there is no automatic redirect or mini-cart.
+  `/account/cart` link; the shared mini-cart provides persistent access
+  without automatic redirect or duplicated local feedback.
 - Signed-out visitors use the existing sign-in continuation with a safe local
   Catalog return route. Ready Stock, navigation, Blessy, Cart backend
   semantics, checkout, and direct-order cutover remain outside this phase.
@@ -28,9 +50,9 @@ Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
   sections, quantity, remove, clear confirmation, and explicit
   `acknowledgeCurrentLineState`. The server remains authoritative for price,
   availability, ownership, and mutation validation.
-- Mini-cart, checkout, Order integration, navigation, Blessy, and the Cart
-  backend remain outside this phase. Direct Secret Catalog preorder remains
-  the live Customer entry point.
+- The shared mini-cart is hidden on `/account/cart`; checkout, Order
+  integration, navigation, Blessy, and the Cart backend remain outside this
+  phase. Direct Secret Catalog preorder remains the live Customer entry point.
 
 ## Customer Cart server domain — 2026-09-14
 

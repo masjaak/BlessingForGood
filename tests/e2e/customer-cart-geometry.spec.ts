@@ -18,6 +18,13 @@ function cartFixture() {
     <div class="site-shell customer-shell">
       <header class="site-header"><span>Blessing For Good</span></header>
       <main>
+        <div class="miniCartRegion" data-testid="customer-mini-cart">
+          <a class="miniCart" href="/account/cart" aria-label="Buka keranjang, 4 buku tersimpan">
+            <span class="miniCartIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2l1.5 10.5h9.75L19 8H7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" /><circle cx="9" cy="19" r="1" fill="currentColor" /><circle cx="17" cy="19" r="1" fill="currentColor" /></svg></span>
+            <span class="miniCartCopy"><strong>Keranjang</strong><span>4 buku</span></span>
+            <span class="miniCartArrow" aria-hidden="true">→</span>
+          </a>
+        </div>
         <div class="page">
           <header class="page-header"><div><span class="eyebrow">Keranjang</span><h1>Keranjang</h1><p class="lede">Periksa buku yang masih bisa dipesan.</p></div></header>
           <div class="context"><div><span class="card-kicker">SECRET CATALOG</span><strong>September Picks</strong></div><p>Satu keranjang hanya menyimpan pilihan dari satu katalog.</p></div>
@@ -31,6 +38,7 @@ function cartFixture() {
         </div>
       </main>
       <nav class="customer-bottom-nav" aria-label="Navigasi pelanggan"><a href="/">Beranda</a><a href="/catalog">Katalog</a><a href="/account/orders">Buku Saya</a><a href="/account/invoices">Tagihan</a><a href="/account">Akun</a></nav>
+      <aside class="floating-blessy" data-testid="floating-blessy" aria-hidden="true"><div class="floating-blessy__visual"></div></aside>
     </div>`;
 }
 
@@ -55,9 +63,30 @@ test.describe("@customer Customer Cart geometry", () => {
         const layout = shell.querySelector<HTMLElement>(".layout");
         const sections = shell.querySelector<HTMLElement>(".sections");
         const summary = shell.querySelector<HTMLElement>(".summary");
+        const miniCart = shell.querySelector<HTMLElement>(".miniCartRegion");
+        const miniCartLink = shell.querySelector<HTMLAnchorElement>(".miniCart");
         const nav = shell.querySelector<HTMLElement>(".customer-bottom-nav");
+        const blessy = shell.querySelector<HTMLElement>(".floating-blessy");
         const main = shell.querySelector<HTMLElement>("main");
-        if (!layout || !sections || !summary || !nav || !main) throw new Error("Cart fixture is incomplete");
+        if (!layout || !sections || !summary || !miniCart || !miniCartLink || !nav || !blessy || !main) {
+          throw new Error("Cart fixture is incomplete");
+        }
+        const rect = (element: HTMLElement) => {
+          const bounds = element.getBoundingClientRect();
+          return { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom };
+        };
+        const miniCartRect = rect(miniCart);
+        const pageRect = rect(shell.querySelector<HTMLElement>(".page")!);
+        const navRect = rect(nav);
+        const blessyRect = rect(blessy);
+        const overlaps = (
+          first: { left: number; right: number; top: number; bottom: number },
+          second: { left: number; right: number; top: number; bottom: number },
+        ) =>
+          first.left < second.right &&
+          first.right > second.left &&
+          first.top < second.bottom &&
+          first.bottom > second.top;
         return {
           documentWidth: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth),
           layoutColumns: getComputedStyle(layout).gridTemplateColumns,
@@ -79,11 +108,51 @@ test.describe("@customer Customer Cart geometry", () => {
           mainPaddingBottom: Number.parseFloat(getComputedStyle(main).paddingBottom),
           navDisplay: getComputedStyle(nav).display,
           navPosition: getComputedStyle(nav).position,
+          miniCartPosition: getComputedStyle(miniCart).position,
+          miniCartLinkHeight: miniCartLink.getBoundingClientRect().height,
+          miniCartWithinContentRail: miniCartRect.left >= pageRect.left - 1 && miniCartRect.right <= pageRect.right + 1,
+          miniCartOverlapsBottomNav: overlaps(miniCartRect, navRect),
+          miniCartOverlapsBlessy: overlaps(miniCartRect, blessyRect),
         };
       });
 
       expect(geometry.documentWidth, `${viewport.width}px document overflow`).toBeLessThanOrEqual(viewport.width + 1);
       expect(geometry.lineOverflowDetails, `${viewport.width}px line overflow`).toEqual([]);
+      expect(geometry.miniCartPosition, `${viewport.width}px mini-cart flow`).toBe("sticky");
+      expect(geometry.miniCartLinkHeight, `${viewport.width}px mini-cart touch target`).toBeGreaterThanOrEqual(44);
+      expect(geometry.miniCartWithinContentRail, `${viewport.width}px mini-cart rail alignment`).toBe(true);
+      expect(geometry.miniCartOverlapsBottomNav, `${viewport.width}px mini-cart/nav overlap`).toBe(false);
+      expect(geometry.miniCartOverlapsBlessy, `${viewport.width}px mini-cart/Blessy overlap`).toBe(false);
+
+      await page.evaluate(() => window.scrollTo(0, Math.min(240, document.documentElement.scrollHeight)));
+      const scrolledMiniCart = await page.locator(".miniCartRegion").evaluate((mini) => {
+        const miniBounds = mini.getBoundingClientRect();
+        const navBounds = mini
+          .closest(".customer-shell")
+          ?.querySelector(".customer-bottom-nav")
+          ?.getBoundingClientRect();
+        const blessyBounds = mini
+          .closest(".customer-shell")
+          ?.querySelector(".floating-blessy")
+          ?.getBoundingClientRect();
+        const overlaps = (first: DOMRect, second?: DOMRect) =>
+          Boolean(
+            second &&
+            first.left < second.right &&
+            first.right > second.left &&
+            first.top < second.bottom &&
+            first.bottom > second.top,
+          );
+        return {
+          inViewport: miniBounds.top >= 0 && miniBounds.bottom <= window.innerHeight,
+          overlapsBottomNav: overlaps(miniBounds, navBounds),
+          overlapsBlessy: overlaps(miniBounds, blessyBounds),
+        };
+      });
+      expect(scrolledMiniCart.inViewport, `${viewport.width}px mini-cart reachable while scrolling`).toBe(true);
+      expect(scrolledMiniCart.overlapsBottomNav, `${viewport.width}px scrolled mini-cart/nav overlap`).toBe(false);
+      expect(scrolledMiniCart.overlapsBlessy, `${viewport.width}px scrolled mini-cart/Blessy overlap`).toBe(false);
+      await page.evaluate(() => window.scrollTo(0, 0));
       expect(
         geometry.buttonHeights.every((height) => height >= 44),
         `${viewport.width}px touch targets`,

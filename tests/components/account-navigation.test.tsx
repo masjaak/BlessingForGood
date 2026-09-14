@@ -13,6 +13,7 @@ vi.mock("@clerk/nextjs", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(() => 0),
+  useQuery_experimental: vi.fn(() => ({ status: "success", data: { retainedQuantity: 0 } })),
 }));
 
 vi.mock("next/navigation", () => ({

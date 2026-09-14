@@ -1,5 +1,41 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Customer mini-cart access layer — 2026-09-14
+
+### CURRENT
+
+- `src/features/customer-cart/customer-mini-cart.tsx` owns the compact
+  Customer Cart access presentation. It reads `api.carts.getMine` through
+  the reactive Convex object-form query and uses the projection's
+  `retainedQuantity` for visibility and count.
+- `src/components/site-shell.tsx` mounts exactly one feature in the Customer
+  `main` rail. The feature is gated to the authenticated `customer` session,
+  skips `/account/cart`, and renders nothing while the query is pending,
+  errored, empty, or signed out/non-Customer.
+- `src/features/customer-cart/cart.module.css` owns the compact local
+  in-flow/sticky rail treatment. The destination is `/account/cart`; no
+  subtotal is presented because the compact control must not blur active and
+  retained availability.
+
+### PROTECTED
+
+- Cart backend/schema/projection semantics, Cart page controls and
+  reconciliation, Add-to-Cart behavior, `orders.submit`, direct Secret
+  Catalog preorder, Ready Stock, Auth, Admin, finance, Book Master/media,
+  Batch/Orders guards, bottom navigation, Blessy, and global CSS.
+
+### SUPERSEDED
+
+- The early fixed lower-viewport Cart pill concept is superseded by this
+  Customer content-rail access layer. The five-item bottom nav remains the
+  navigation owner; Blessy remains frozen.
+
+### UNPROVEN
+
+- Authenticated Production mini-cart UAT remains pending because no approved
+  disposable Customer fixture with retained Cart state is available. No real
+  Customer Cart data was created.
+
 ## Post-diff memory — Admin Book Master canonical search — 2026-09-13
 
 ### CURRENT

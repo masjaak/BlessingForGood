@@ -11,10 +11,29 @@ selected quantity only. Successful adds stay on the current page and link to
 `/account/cart`; signed-out visitors use the existing sign-in continuation.
 
 The existing direct Secret Catalog preorder remains the current Production
-transaction path. Mini-cart, Cart checkout, direct-order cutover, Ready Stock
-Cart, navigation, Blessy, and Cart backend semantics remain unchanged.
+transaction path. The Customer mini-cart now provides shared access to the
+existing Cart while browsing; Cart checkout, direct-order cutover, Ready
+Stock Cart, navigation, Blessy, and Cart backend semantics remain unchanged.
 Authenticated add-to-cart UAT remains pending because no approved disposable
 Customer fixture is available.
+
+## Customer mini-cart access layer — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The Customer branch of `SiteShell` mounts one `CustomerMiniCart` in the main
+content rail. It safely gates the reactive `carts.getMine` query to the
+authenticated Customer context, hides on `/account/cart`, and uses only the
+server projection's `retainedQuantity` for conditional visibility and count.
+Unavailable retained intent therefore remains reachable; pending/error/empty
+results render no placeholder or reserved gap. The compact in-flow/sticky
+control links to `/account/cart` and uses no local Cart authority, subtotal,
+header slot, or bottom-nav slot.
+
+Checkout, `orders.submit` integration, direct-preorder cutover, Ready Stock
+Cart, Blessy changes, navigation changes, and Cart backend/schema changes are
+not included. Authenticated mini-cart UAT remains pending because no approved
+disposable Customer fixture is available.
 
 ## Customer Cart management UI — 2026-09-14
 
@@ -27,10 +46,11 @@ prices, quantity controls, removal, clear confirmation, and explicit price or
 reopened-state acknowledgement. The page reconciles once on non-empty entry
 and otherwise leaves Cart semantics to the server.
 
-Mini-cart, checkout, Order mutation, navigation, Blessy, global CSS, and
-backend Cart changes are not included. Direct Secret Catalog preorder remains
-the current Production entry point. Authenticated populated Cart UAT remains
-pending because no approved disposable Customer fixture is available.
+The shared mini-cart is hidden on `/account/cart`; checkout, Order mutation,
+navigation, Blessy, global CSS, and backend Cart changes are not included.
+Direct Secret Catalog preorder remains the current Production entry point.
+Authenticated populated Cart UAT remains pending because no approved
+disposable Customer fixture is available.
 
 ## Customer Cart server domain — 2026-09-14
 

@@ -11,12 +11,33 @@ authoritative for ownership, Catalog scope, availability, duplicate merge, and
 price observation. Signed-out visitors use the existing sign-in continuation
 with the current Catalog route as the return destination.
 
-Success feedback links directly to `/account/cart` without redirecting or
-adding a mini-cart. The existing direct Secret Catalog preorder remains the
-current transaction path until Cart checkout is implemented. Ready Stock,
-navigation, Blessy, Orders, and Cart backend semantics remain unchanged.
+Success feedback links directly to `/account/cart` without redirecting. The
+shared Customer mini-cart is the persistent access layer while browsing; it
+does not replace the local success feedback. The existing direct Secret
+Catalog preorder remains the current transaction path until Cart checkout is
+implemented. Ready Stock, navigation, Blessy, Orders, and Cart backend
+semantics remain unchanged.
 
-Mini-cart, Cart checkout, and direct-order cutover remain unimplemented.
+Cart checkout and direct-order cutover remain unimplemented.
+
+## Customer mini-cart access layer — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+`CustomerMiniCart` is mounted once by the Customer branch of
+`src/components/site-shell.tsx`, outside individual Catalog cards and hidden
+on `/account/cart`. It reads the existing reactive `carts.getMine` projection
+only for an authenticated active Customer. The canonical `retainedQuantity`
+field controls both visibility and the compact `Keranjang · N buku` count;
+active quantity and subtotal are intentionally not shown.
+
+An empty or unresolved/error Cart renders no control and reserves no space.
+Retained unavailable lines still keep the control visible, and the normal
+Convex query update removes it when retained quantity reaches zero. The
+control is an in-flow/sticky content-rail link to `/account/cart`; it is not a
+new Cart state owner, fixed viewport layer, header item, or bottom-nav item.
+Blessy, bottom navigation, Ready Stock, Cart backend/schema, Add-to-Cart
+semantics, and direct preorder remain unchanged. Checkout is still absent.
 
 ## Customer Cart management UI — 2026-09-14
 
@@ -29,9 +50,10 @@ existing quantity, remove, clear, and explicit current-line acknowledgement
 mutations. Active lines and retained non-eligible lines are rendered in
 separate sections; changed prices and reopened availability never auto-accept.
 
-The route uses the existing Customer shell and role guard. It intentionally
-does not add navigation, mini-cart, checkout, Order creation, Blessy, or any
-Cart backend/schema change. Authenticated populated UAT remains pending
+The route uses the existing Customer shell and role guard. The shared
+mini-cart is hidden on this destination so it does not duplicate or obscure
+Cart controls. The route does not add checkout, Order creation, Blessy, or
+any Cart backend/schema change. Authenticated populated UAT remains pending
 because no approved disposable Customer fixture is available.
 
 ## Customer Cart server domain — 2026-09-14

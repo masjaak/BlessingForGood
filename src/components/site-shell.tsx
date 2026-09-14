@@ -11,6 +11,7 @@ import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } fro
 import { LinkButton } from "@/components/ui";
 import { isProductIdentityAuthenticated, ProductContext } from "@/domain/prototype/context";
 import { customerBottomLinks, customerLinks, publicLinks } from "@/components/customer-navigation";
+import { CustomerMiniCart } from "@/features/customer-cart/customer-mini-cart";
 
 const supportLinks = [
   { href: "/community", label: "Komunitas" },
@@ -168,7 +169,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
             )}
           </div>
         </header>
-        <main>{children}</main>
+        <main>
+          {product ? <CustomerMiniCart /> : null}
+          {children}
+        </main>
         <footer className="site-footer">
           <div>
             <span>Blessing For Good</span>

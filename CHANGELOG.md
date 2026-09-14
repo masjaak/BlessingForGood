@@ -8,6 +8,26 @@ source: conversation
 
 # Changelog
 
+## [customer-mini-cart] — 2026-09-14
+
+### Changed
+
+- Added one reactive Customer mini-cart access layer to the Customer shell,
+  driven by the existing `carts.getMine` projection.
+- Used `retainedQuantity` for visibility/count, retained unavailable intent,
+  no compact subtotal, and a semantic link to `/account/cart`.
+- Kept the control in the local Cart CSS module as an in-flow/sticky content
+  rail; `/account/cart` hides the redundant destination control.
+
+### QA and scope
+
+- Added focused component and shell isolation tests plus six-width geometry
+  coverage for rail alignment, scroll reachability, 44px target, bottom-nav
+  and Blessy coexistence.
+- No Cart backend/schema, Cart page behavior, Add-to-Cart semantics, checkout,
+  direct-preorder cutover, Ready Stock, navigation, Blessy, Auth, or global
+  CSS change. Authenticated Production UAT remains pending.
+
 ## [customer-cart-add-to-cart] — 2026-09-14
 
 ### Changed
