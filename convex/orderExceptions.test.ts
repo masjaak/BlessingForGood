@@ -185,6 +185,25 @@ describe("BFG order exception workflow", () => {
     ).toMatchObject({ decision: "not_eligible", reasonCode: "ALREADY_CANCELLED" });
   });
 
+  it("projects a partial admin cancellation from quantity three as two active copies", async () => {
+    const t = testConvex();
+    const { admin, order } = await createOrder(t, 3);
+    const result = await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: order.items[0]._id,
+      affectedQuantity: 1,
+      reason: "Satu eksemplar dibatalkan.",
+    });
+
+    expect(result.outcome).toBe("resolved");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).status).toBe("submitted");
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).items[0]).toMatchObject({
+      quantity: 2,
+      subtotalAmount: 250000,
+    });
+    expect((await admin.query(api.orders.getForAdmin, { orderId: order.orderId })).totalAmount).toBe(250000);
+    expect((await t.run((ctx) => ctx.db.get(order.items[0]._id)))?.quantity).toBe(3);
+  });
+
   it("requires editable Batch reconciliation before resolving an affected assignment", async () => {
     const t = testConvex();
     const { admin, order, catalog } = await createOrder(t, 3);
