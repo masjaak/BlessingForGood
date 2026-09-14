@@ -225,6 +225,16 @@ export function customerConfig(pathname: string): SkeletonConfig {
       description: "Menyiapkan ringkasan pesanan, invoice, deposit, dan aktivitasmu.",
     };
   }
+  if (pathname === "/account/cart") {
+    return {
+      kind: "list",
+      eyebrow: "Keranjang",
+      title: "Keranjang",
+      description: "Menyiapkan buku dan status terbaru dari keranjangmu.",
+      narrow: true,
+      variant: "customer-card-list",
+    };
+  }
   if (pathname === "/account/orders") {
     return {
       kind: "list",

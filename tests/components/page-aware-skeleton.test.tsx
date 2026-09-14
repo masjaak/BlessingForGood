@@ -124,6 +124,14 @@ describe("page-aware workspace skeletons", () => {
     expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(4);
   });
 
+  it("uses Cart loading anatomy before the Cart query resolves", () => {
+    render(<PageAwareSkeleton workspace="customer" pathname="/account/cart" />);
+
+    expect(screen.getByRole("heading", { name: "Keranjang" })).toBeTruthy();
+    expect(document.querySelector('[data-skeleton="CUSTOMER_LIST_SKELETON"]')).toBeTruthy();
+    expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(4);
+  });
+
   it("mirrors the Customer dashboard loading sections", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account" />);
 
