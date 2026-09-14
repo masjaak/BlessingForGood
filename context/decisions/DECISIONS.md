@@ -1,5 +1,34 @@
 # Decisions
 
+## Customer Cart checkout — 2026-09-14
+
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- `convex/orders.ts:submitCart` owns the transactional bridge. It uses the
+  existing `resolveItems`, price guard, `insertOrder`, Batch admission, auto
+  assignment, and notification path rather than putting Order logic in
+  `carts.ts` or copying `orders.submit`.
+- The mutation loads the authenticated active Customer's Cart server-side and
+  accepts only a bounded `requestKey`. It revalidates all retained lines and
+  rejects the whole Cart for stale availability, changed price, pending
+  acknowledgement, invalid quantity, inaccessible/closed Catalog, invalid
+  product references, or blocked linked Batch/PO state. Zero linked Batches
+  retain the existing unassigned Order behavior.
+- A valid Cart creates one multi-line normal Secret Catalog Order, then
+  deletes its Cart Items and clears `catalogId` in the same Convex mutation.
+  The Cart root keeps optional `lastCheckout: { requestKey, orderId }` as the
+  minimal durable consumption/retry marker. Same-key retries return the same
+  Order; competing keys retry against the consumed Cart and cannot create a
+  duplicate. No new table or parallel idempotency subsystem was added.
+- `/account/cart` shows a confirmation-backed `Buat pesanan` action only when
+  every retained line is checkout-ready, keeps failure on Cart, and routes a
+  successful Order to `/account/orders/[orderId]`. Direct Catalog and Book
+  Detail preorder remains unchanged and is still the live fallback until a
+  separate authenticated-UAT cutover phase.
+- Ready Stock, payment/Invoice/finance, Add-to-Cart, mini-cart, Blessy,
+  bottom navigation, Auth architecture, and global CSS remain outside this
+  decision.
+
 ## Customer mini-cart access layer — 2026-09-14
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -17,9 +46,9 @@ Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
   It is not fixed, modal, drawer, header, bottom navigation, Blessy, or a
   local Cart state owner. The five-item Customer bottom nav and Blessy
   geometry remain frozen.
-- Cart checkout, `orders.submit` integration, direct-preorder cutover, and
-  Ready Stock Cart remain unimplemented. Authenticated UAT remains pending
-  without an approved disposable Customer fixture.
+- `orders.submitCart` checkout is now implemented separately; direct-preorder
+  cutover and Ready Stock Cart remain unimplemented. Authenticated UAT remains
+  pending without an approved disposable Customer fixture.
 
 ## Secret Catalog Add-to-Cart entry points — 2026-09-14
 
@@ -50,9 +79,10 @@ Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
   sections, quantity, remove, clear confirmation, and explicit
   `acknowledgeCurrentLineState`. The server remains authoritative for price,
   availability, ownership, and mutation validation.
-- The shared mini-cart is hidden on `/account/cart`; checkout, Order
-  integration, navigation, Blessy, and the Cart backend remain outside this
-  phase. Direct Secret Catalog preorder remains the live Customer entry point.
+- The shared mini-cart is hidden on `/account/cart`; checkout is separately
+  owned by `orders.submitCart`. Order cutover, navigation, Blessy, and the Cart
+  backend remain outside this phase. Direct Secret Catalog preorder remains
+  the live Customer entry point.
 
 ## Customer Cart server domain — 2026-09-14
 
@@ -76,9 +106,9 @@ Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
   `acknowledgeCurrentLineState` prevent silent reopened-offer acceptance.
 - Zero linked Batches remain valid for the existing unassigned preorder
   workflow. A linked Catalog with no eligible receiving Batch is `po_closed`.
-- Cart does not include Ready Stock, checkout, Order creation, Wishlist, UI,
-  Blessy, or navigation changes. `orders.submit` remains the future Order
-  owner.
+- Cart does not include Ready Stock, Order creation, Wishlist, UI, Blessy, or
+  navigation changes. `orders.submitCart` is the separate Order-domain owner
+  for Cart submission.
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 

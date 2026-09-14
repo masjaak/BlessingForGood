@@ -2,11 +2,16 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import { CustomerCart } from "@/features/customer-cart/customer-cart";
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(),
   useQuery: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
 }));
 
 vi.mock("@/components/site-shell", () => ({
@@ -22,6 +27,8 @@ const updateQuantity = vi.fn();
 const removeItem = vi.fn();
 const clear = vi.fn();
 const acknowledge = vi.fn();
+const submitCart = vi.fn();
+let routerPush: ReturnType<typeof vi.fn>;
 
 function emptyCart() {
   return {
@@ -112,8 +119,22 @@ function cartWithLines() {
   };
 }
 
+function readyCart() {
+  const cart = cartWithLines();
+  const line = cart.lines[0];
+  return {
+    ...cart,
+    lines: [line],
+    retainedLineCount: 1,
+    retainedQuantity: line.quantity,
+    activeLineCount: 1,
+    activeQuantity: line.quantity,
+    estimatedSubtotalAmount: line.subtotalAmount,
+  };
+}
+
 function mockMutations() {
-  const mutations = [reconcile, updateQuantity, removeItem, clear, acknowledge];
+  const mutations = [reconcile, updateQuantity, removeItem, clear, acknowledge, submitCart];
   let callIndex = 0;
   vi.mocked(useMutation).mockImplementation(() => mutations[callIndex++ % mutations.length] as never);
 }
@@ -126,6 +147,9 @@ describe("Customer Cart page", () => {
     removeItem.mockResolvedValue(emptyCart());
     clear.mockResolvedValue(emptyCart());
     acknowledge.mockResolvedValue(emptyCart());
+    submitCart.mockResolvedValue({ orderId: "order-1" });
+    routerPush = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({ push: routerPush } as never);
     mockMutations();
     HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute("open", "");
@@ -156,7 +180,7 @@ describe("Customer Cart page", () => {
     expect(screen.getByText("Harga sekarang")).toBeTruthy();
     expect(screen.getByText("Harga berubah")).toBeTruthy();
     expect(screen.getByText("Buku ini sudah tidak tersedia di katalog")).toBeTruthy();
-    expect(screen.queryByText("Checkout")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Buat pesanan" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Tambah jumlah Buku Aktif" }));
     await waitFor(() => expect(updateQuantity).toHaveBeenCalledWith({ cartItemId: "line-active", quantity: 3 }));
@@ -182,6 +206,42 @@ describe("Customer Cart page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Kosongkan keranjang" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Kosongkan keranjang" }));
     await waitFor(() => expect(clear).toHaveBeenCalledWith({}));
+  });
+
+  it("shows a deliberate checkout confirmation and navigates to the created Order", async () => {
+    vi.mocked(useQuery).mockReturnValue(readyCart() as never);
+
+    render(<CustomerCart />);
+    await screen.findByRole("heading", { name: "Buku yang bisa dipesan" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Buat pesanan" }));
+    const dialog = await screen.findByRole("dialog", { name: "Buat pesanan dari keranjang?" });
+    expect(
+      within(dialog).getByText(
+        "Semua 2 buku aktif akan dibuat menjadi satu pesanan dengan harga terbaru dari katalog.",
+      ),
+    ).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Buat pesanan" }));
+    await waitFor(() => expect(submitCart).toHaveBeenCalledWith({ requestKey: expect.any(String) }));
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/account/orders/order-1"));
+    expect(submitCart).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the Customer on Cart with a safe checkout error", async () => {
+    vi.mocked(useQuery).mockReturnValue(readyCart() as never);
+    submitCart.mockRejectedValueOnce(new Error("PRICE_CHANGED internal detail"));
+
+    render(<CustomerCart />);
+    await screen.findByRole("heading", { name: "Buku yang bisa dipesan" });
+    fireEvent.click(screen.getByRole("button", { name: "Buat pesanan" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Buat pesanan" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Harga buku berubah. Periksa harga terbaru, lalu kirim ulang pesanan.",
+    );
+    expect(screen.queryByText("PRICE_CHANGED internal detail")).toBeNull();
+    expect(routerPush).not.toHaveBeenCalled();
   });
 
   it("renders a safe mutation error without exposing the server error", async () => {

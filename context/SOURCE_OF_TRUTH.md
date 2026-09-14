@@ -1,5 +1,35 @@
 # BFG SOURCE OF TRUTH
 
+## Customer Cart checkout — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+`convex/orders.ts:submitCart` is the canonical authenticated Customer Cart
+checkout boundary. It derives the active Customer server-side, loads that
+Customer's Cart without accepting a Cart ID, Customer ID, Catalog ID, line
+payload, quantity, price, or Batch ID from the client, and validates the
+current Catalog access, every retained line, current Catalog/Item/Variant/
+Book/Publisher state, quantity, observed integer IDR price, acknowledgement
+state, and existing Batch/PO admission invariant.
+
+All retained lines must pass. A stale, unavailable, price-changed, or
+pending-acknowledgement line rejects the whole Cart before an Order is
+written. A successful request creates one normal `customer_self_service`
+Order with immutable Order Item snapshots, status history, existing Batch
+assignment and admin notification behavior, then deletes the submitted Cart
+Items and clears `catalogId` in the same Convex mutation. Failure leaves the
+Cart and Order graph unchanged.
+
+The Cart root's optional `lastCheckout` `{ requestKey, orderId }` marker is the
+smallest durable retry/consumption invariant: the same request key returns
+the existing Order, while a conflicting concurrent request retries against
+the consumed Cart and cannot create a second Order. No checkout table or
+parallel Order insertion path was added. The existing direct Catalog and Book
+Detail preorder remains available; direct-order cutover is a separate phase
+and is blocked until authenticated Production Cart checkout UAT passes.
+Ready Stock, payment, Invoice, shipping, finance, Blessy, bottom navigation,
+Add-to-Cart semantics, and mini-cart behavior remain outside this checkout.
+
 ## Secret Catalog Add-to-Cart entry points — 2026-09-14
 
 Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -14,11 +44,13 @@ with the current Catalog route as the return destination.
 Success feedback links directly to `/account/cart` without redirecting. The
 shared Customer mini-cart is the persistent access layer while browsing; it
 does not replace the local success feedback. The existing direct Secret
-Catalog preorder remains the current transaction path until Cart checkout is
-implemented. Ready Stock, navigation, Blessy, Orders, and Cart backend
-semantics remain unchanged.
+Catalog preorder remains available while Cart checkout is validated and
+before a separate cutover phase. Ready Stock, navigation, Blessy, Orders, and
+Cart backend semantics remain unchanged.
 
-Cart checkout and direct-order cutover remain unimplemented.
+Direct-order cutover remains unimplemented and is blocked pending
+authenticated Cart checkout UAT; the checkout implementation is documented
+above.
 
 ## Customer mini-cart access layer — 2026-09-14
 
@@ -52,9 +84,10 @@ separate sections; changed prices and reopened availability never auto-accept.
 
 The route uses the existing Customer shell and role guard. The shared
 mini-cart is hidden on this destination so it does not duplicate or obscure
-Cart controls. The route does not add checkout, Order creation, Blessy, or
-any Cart backend/schema change. Authenticated populated UAT remains pending
-because no approved disposable Customer fixture is available.
+Cart controls. A fully valid Cart exposes a deliberate confirmation action;
+the canonical checkout mutation and Order ownership are documented above.
+Authenticated populated checkout UAT remains pending because no approved
+disposable Customer fixture is available.
 
 ## Customer Cart server domain — 2026-09-14
 
@@ -82,8 +115,9 @@ Batches remain active according to the existing unassigned-Order workflow;
 linked Batches with no eligible receiver are `po_closed`. Missing underlying
 records become a safe removable `removed` line. Ready Stock is outside this
 Cart domain. Customer Cart management and the additive Secret Catalog entry
-points consume this domain without changing its semantics; checkout and Order
-mutation integration remain unimplemented.
+points consume this domain without changing its semantics; Cart checkout is
+owned by `orders.submitCart` and consumes the Cart only after canonical Order
+success.
 
 The server domain is deployed from commit `31c8970` through Vercel
 `dpl_HGYohWm6Tnmkg8gTj1U3ph369PVf` to Convex Production `clean-eel-522`.

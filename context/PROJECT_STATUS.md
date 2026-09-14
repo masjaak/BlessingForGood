@@ -1,5 +1,32 @@
 # BFG Project Status
 
+## Customer Cart checkout — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+`orders.submitCart` now bridges the authenticated Customer's server-owned
+Secret Catalog Cart into the existing canonical Order domain. The mutation
+re-resolves current Catalog, Item, Variant, Book, Publisher, effective integer
+IDR price, acknowledgement, quantity, access, and Batch/PO state for every
+retained line. It rejects the whole Cart on any invalid line and never trusts
+client Cart data.
+
+Valid multi-line Carts create exactly one normal preorder Order with immutable
+snapshots, existing status history, Batch assignment, and admin notification
+behavior. Cart Items are deleted and `catalogId` is cleared in the same
+mutation after Order work succeeds. The Cart root retains a minimal
+`lastCheckout` request/order marker: repeated requests with the same key are
+idempotent, and competing keys cannot produce a second Order after the Cart
+is consumed. The Cart page now confirms deliberately, shows the action only
+when all retained lines are ready, and routes success to the existing Order
+detail.
+
+No payment, Invoice, shipping, finance, Ready Stock, mini-cart, Add-to-Cart,
+Blessy, bottom-navigation, or direct-preorder behavior was cut over. Direct
+Catalog and Book Detail preorder remains the fallback. Direct-order cutover
+is blocked until authenticated Production Cart checkout UAT passes; no real
+Customer Cart was mutated.
+
 ## Secret Catalog Add-to-Cart entry points — 2026-09-14
 
 Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -10,10 +37,11 @@ The Customer Secret Catalog list and Book Detail now expose additive
 selected quantity only. Successful adds stay on the current page and link to
 `/account/cart`; signed-out visitors use the existing sign-in continuation.
 
-The existing direct Secret Catalog preorder remains the current Production
-transaction path. The Customer mini-cart now provides shared access to the
-existing Cart while browsing; Cart checkout, direct-order cutover, Ready
-Stock Cart, navigation, Blessy, and Cart backend semantics remain unchanged.
+The existing direct Secret Catalog preorder remains available. The Customer
+mini-cart provides shared access to the existing Cart while browsing; Cart
+checkout is implemented separately through `orders.submitCart`, while
+direct-order cutover, Ready Stock Cart, navigation, Blessy, and Cart backend
+semantics remain unchanged.
 Authenticated add-to-cart UAT remains pending because no approved disposable
 Customer fixture is available.
 
@@ -30,10 +58,11 @@ results render no placeholder or reserved gap. The compact in-flow/sticky
 control links to `/account/cart` and uses no local Cart authority, subtotal,
 header slot, or bottom-nav slot.
 
-Checkout, `orders.submit` integration, direct-preorder cutover, Ready Stock
-Cart, Blessy changes, navigation changes, and Cart backend/schema changes are
-not included. Authenticated mini-cart UAT remains pending because no approved
-disposable Customer fixture is available.
+Direct-preorder cutover, Ready Stock Cart, Blessy changes, navigation changes,
+and Cart backend semantics remain outside the mini-cart phase. Checkout is
+implemented by `orders.submitCart` and documented in the current checkout
+section above. Authenticated mini-cart/checkout UAT remains pending because no
+approved disposable Customer fixture is available.
 
 ## Customer Cart management UI — 2026-09-14
 
@@ -46,10 +75,11 @@ prices, quantity controls, removal, clear confirmation, and explicit price or
 reopened-state acknowledgement. The page reconciles once on non-empty entry
 and otherwise leaves Cart semantics to the server.
 
-The shared mini-cart is hidden on `/account/cart`; checkout, Order mutation,
-navigation, Blessy, global CSS, and backend Cart changes are not included.
-Direct Secret Catalog preorder remains the current Production entry point.
-Authenticated populated Cart UAT remains pending because no approved
+The shared mini-cart is hidden on `/account/cart`; Cart checkout is added by
+the separate `orders.submitCart` bridge documented in the current section.
+Navigation, Blessy, global CSS, and backend Cart semantics remain unchanged.
+Direct Secret Catalog preorder remains the current Production fallback.
+Authenticated populated Cart checkout UAT remains pending because no approved
 disposable Customer fixture is available.
 
 ## Customer Cart server domain — 2026-09-14
@@ -77,9 +107,9 @@ from commit `31c8970`; Convex Production is `clean-eel-522`. No approved
 authenticated disposable Customer fixture was available, so Cart UAT remains
 pending.
 
-Cart UI, `/account/cart`, and additive Secret Catalog Cart entry points now
-exist. Mini-cart, checkout, Order integration, Wishlist, Blessy, and Customer
-navigation remain unimplemented/unchanged.
+Cart UI, `/account/cart`, additive Secret Catalog Cart entry points, mini-cart,
+and canonical Cart checkout now exist. Wishlist, Blessy, and Customer
+navigation remain unchanged.
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 

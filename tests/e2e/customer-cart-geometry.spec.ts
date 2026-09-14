@@ -33,7 +33,7 @@ function cartFixture() {
               <section class="card sectionCard"><div class="sectionHeading"><div><span class="card-kicker">AKTIF</span><h2>Buku yang bisa dipesan</h2></div><span class="count">2 pilihan</span></div><div class="lineList">${line("Buku Satu", 2)}${line("Buku Dua", 1)}</div></section>
               <section class="card sectionCard"><div class="sectionHeading"><div><span class="card-kicker">PERLU PERHATIAN</span><h2>Belum bisa dipesan</h2></div><span class="count">1 pilihan</span></div><div class="lineList">${line("Buku Tiga", 1)}</div></section>
             </div>
-            <aside><section class="card summary"><div><span class="card-kicker">RINGKASAN</span><h2>Keranjangmu</h2></div><div class="summaryRows"><div><span>Buku aktif</span><strong>3</strong></div><div><span>Subtotal aktif</span><strong>Rp 375.000</strong></div></div><p class="summaryNote">Keranjang ini hanya untuk mengelola pilihan buku.</p><button class="button button-danger" type="button">Kosongkan keranjang</button></section></aside>
+            <aside><section class="card summary"><div><span class="card-kicker">RINGKASAN</span><h2>Keranjangmu</h2></div><div class="summaryRows"><div><span>Buku aktif</span><strong>3</strong></div><div><span>Subtotal aktif</span><strong>Rp 375.000</strong></div></div><p class="summaryNote">Semua buku siap dibuat menjadi satu pesanan.</p><button class="button button-primary checkoutButton" type="button">Buat pesanan</button><button class="button button-danger" type="button">Kosongkan keranjang</button></section></aside>
           </div>
         </div>
       </main>
@@ -65,10 +65,21 @@ test.describe("@customer Customer Cart geometry", () => {
         const summary = shell.querySelector<HTMLElement>(".summary");
         const miniCart = shell.querySelector<HTMLElement>(".miniCartRegion");
         const miniCartLink = shell.querySelector<HTMLAnchorElement>(".miniCart");
+        const checkoutButton = shell.querySelector<HTMLElement>(".checkoutButton");
         const nav = shell.querySelector<HTMLElement>(".customer-bottom-nav");
         const blessy = shell.querySelector<HTMLElement>(".floating-blessy");
         const main = shell.querySelector<HTMLElement>("main");
-        if (!layout || !sections || !summary || !miniCart || !miniCartLink || !nav || !blessy || !main) {
+        if (
+          !layout ||
+          !sections ||
+          !summary ||
+          !miniCart ||
+          !miniCartLink ||
+          !checkoutButton ||
+          !nav ||
+          !blessy ||
+          !main
+        ) {
           throw new Error("Cart fixture is incomplete");
         }
         const rect = (element: HTMLElement) => {
@@ -76,6 +87,7 @@ test.describe("@customer Customer Cart geometry", () => {
           return { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom };
         };
         const miniCartRect = rect(miniCart);
+        const checkoutRect = rect(checkoutButton);
         const pageRect = rect(shell.querySelector<HTMLElement>(".page")!);
         const navRect = rect(nav);
         const blessyRect = rect(blessy);
@@ -110,6 +122,11 @@ test.describe("@customer Customer Cart geometry", () => {
           navPosition: getComputedStyle(nav).position,
           miniCartPosition: getComputedStyle(miniCart).position,
           miniCartLinkHeight: miniCartLink.getBoundingClientRect().height,
+          checkoutPosition: getComputedStyle(checkoutButton).position,
+          checkoutButtonHeight: checkoutButton.getBoundingClientRect().height,
+          checkoutWithinContentRail: checkoutRect.left >= pageRect.left - 1 && checkoutRect.right <= pageRect.right + 1,
+          checkoutOverlapsBottomNav: overlaps(checkoutRect, navRect),
+          checkoutOverlapsBlessy: overlaps(checkoutRect, blessyRect),
           miniCartWithinContentRail: miniCartRect.left >= pageRect.left - 1 && miniCartRect.right <= pageRect.right + 1,
           miniCartOverlapsBottomNav: overlaps(miniCartRect, navRect),
           miniCartOverlapsBlessy: overlaps(miniCartRect, blessyRect),
@@ -120,6 +137,11 @@ test.describe("@customer Customer Cart geometry", () => {
       expect(geometry.lineOverflowDetails, `${viewport.width}px line overflow`).toEqual([]);
       expect(geometry.miniCartPosition, `${viewport.width}px mini-cart flow`).toBe("sticky");
       expect(geometry.miniCartLinkHeight, `${viewport.width}px mini-cart touch target`).toBeGreaterThanOrEqual(44);
+      expect(geometry.checkoutPosition, `${viewport.width}px checkout flow`).toBe("static");
+      expect(geometry.checkoutButtonHeight, `${viewport.width}px checkout touch target`).toBeGreaterThanOrEqual(44);
+      expect(geometry.checkoutWithinContentRail, `${viewport.width}px checkout rail alignment`).toBe(true);
+      expect(geometry.checkoutOverlapsBottomNav, `${viewport.width}px checkout/nav overlap`).toBe(false);
+      expect(geometry.checkoutOverlapsBlessy, `${viewport.width}px checkout/Blessy overlap`).toBe(false);
       expect(geometry.miniCartWithinContentRail, `${viewport.width}px mini-cart rail alignment`).toBe(true);
       expect(geometry.miniCartOverlapsBottomNav, `${viewport.width}px mini-cart/nav overlap`).toBe(false);
       expect(geometry.miniCartOverlapsBlessy, `${viewport.width}px mini-cart/Blessy overlap`).toBe(false);

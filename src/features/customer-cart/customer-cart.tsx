@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -45,13 +46,19 @@ function CartSkeleton() {
   );
 }
 
+function checkoutRequestKey() {
+  return crypto.randomUUID();
+}
+
 export function CustomerCart() {
+  const router = useRouter();
   const cart = useQuery(api.carts.getMine, {});
   const reconcile = useMutation(api.carts.reconcile);
   const updateQuantity = useMutation(api.carts.updateQuantity);
   const removeItem = useMutation(api.carts.removeItem);
   const clear = useMutation(api.carts.clear);
   const acknowledge = useMutation(api.carts.acknowledgeCurrentLineState);
+  const submitCart = useMutation(api.orders.submitCart);
   const reconcileStarted = useRef(false);
   const [reconcileAttempt, setReconcileAttempt] = useState(0);
   const [reconcileReady, setReconcileReady] = useState(false);
@@ -59,6 +66,8 @@ export function CustomerCart() {
   const [actionError, setActionError] = useState("");
   const [pending, setPending] = useState<PendingAction>(null);
   const [clearOpen, setClearOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const checkoutRequestKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (cart === undefined) return;
@@ -173,6 +182,23 @@ export function CustomerCart() {
     }
   }
 
+  async function checkout() {
+    if (!cart || pending !== null || activeLines.length !== cart.lines.length) return;
+    setActionError("");
+    setPending("checkout");
+    const requestKey = checkoutRequestKeyRef.current || (checkoutRequestKeyRef.current = checkoutRequestKey());
+    try {
+      const order = await submitCart({ requestKey });
+      setCheckoutOpen(false);
+      router.push(`/account/orders/${order.orderId}`);
+    } catch (reason) {
+      setCheckoutOpen(false);
+      setActionError(productErrorMessage(reason, "Pesanan belum berhasil dibuat. Periksa keranjang dan coba lagi."));
+    } finally {
+      setPending(null);
+    }
+  }
+
   return (
     <div className={`page ${styles.page}`}>
       <PageHeader
@@ -268,7 +294,22 @@ export function CustomerCart() {
                 </strong>
               </div>
             </div>
-            <p className={styles.summaryNote}>Keranjang ini belum memiliki tombol checkout atau pembuatan pesanan.</p>
+            <p className={styles.summaryNote}>
+              {activeLines.length === cart.lines.length
+                ? "Semua buku siap dibuat menjadi satu pesanan."
+                : "Selesaikan buku yang perlu perhatian sebelum membuat pesanan."}
+            </p>
+            {activeLines.length === cart.lines.length ? (
+              <Button
+                disabled={pending !== null}
+                loading={pending === "checkout"}
+                loadingLabel="Membuat pesanan…"
+                onClick={() => setCheckoutOpen(true)}
+                type="button"
+              >
+                Buat pesanan
+              </Button>
+            ) : null}
             <Button
               disabled={pending !== null}
               loading={pending === "clear"}
@@ -282,6 +323,17 @@ export function CustomerCart() {
           </Card>
         </aside>
       </div>
+      <ConfirmationDialog
+        open={checkoutOpen}
+        title="Buat pesanan dari keranjang?"
+        description={`Semua ${cart.activeQuantity} buku aktif akan dibuat menjadi satu pesanan dengan harga terbaru dari katalog.`}
+        confirmLabel={pending === "checkout" ? "Membuat pesanan…" : "Buat pesanan"}
+        disabled={pending !== null}
+        onCancel={() => {
+          if (pending === null) setCheckoutOpen(false);
+        }}
+        onConfirm={() => void checkout()}
+      />
       <ConfirmationDialog
         open={clearOpen}
         title="Kosongkan semua isi keranjang?"

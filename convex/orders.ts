@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
+import { requireActiveCustomer, requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { requireActiveCatalogGrant } from "./lib/catalogAccess";
 import { catalogIsOpen } from "./lib/catalogView";
@@ -16,6 +16,7 @@ import { nonNegativeMoney, positiveQuantity, requiredText } from "./lib/validati
 import { nextOrderCode } from "./lib/orderCodes";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { autoAssignOrderItemsForCatalog, eligibleReceivingBatches } from "./batches";
+import { resolveCartCatalogItem } from "./lib/cartProjection";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 const customerOrderItemInput = orderItemInput.extend({ expectedUnitPriceAmount: v.number() });
@@ -181,6 +182,8 @@ function assertExpectedPrices(resolved: Awaited<ReturnType<typeof resolveItems>>
   });
 }
 
+type ResolvedOrderItems = Awaited<ReturnType<typeof resolveItems>>;
+
 async function insertOrder(
   ctx: MutationCtx,
   input: {
@@ -243,6 +246,44 @@ async function insertOrder(
   return orderView(ctx, orderId);
 }
 
+async function submitResolvedCustomerOrder(
+  ctx: MutationCtx,
+  input: {
+    customerUserId: Id<"appUsers">;
+    catalogId: Id<"secretCatalogs">;
+    customerName: string;
+    customerEmail?: string;
+    actorUserId: Id<"appUsers">;
+    resolved: ResolvedOrderItems;
+    editableUntil: number;
+  },
+) {
+  const order = await insertOrder(
+    ctx,
+    {
+      customerUserId: input.customerUserId,
+      catalogId: input.catalogId,
+      customerName: input.customerName,
+      customerEmail: input.customerEmail,
+      source: "customer_self_service",
+      actorUserId: input.actorUserId,
+    },
+    input.resolved,
+    input.editableUntil,
+  );
+  await autoAssignOrderItemsForCatalog(ctx, order.orderId, input.catalogId, input.actorUserId);
+  await notifyAdmins(ctx, {
+    surface: "notification",
+    eventType: "order.submitted",
+    title: "Order baru diterima",
+    body: `${input.customerName} mengirim preorder baru.`,
+    destination: `/admin/orders/${order.orderId}`,
+    relatedEntityType: "order",
+    relatedEntityId: String(order.orderId),
+  });
+  return order;
+}
+
 export const submit = mutation({
   args: {
     catalogId: v.id("secretCatalogs"),
@@ -261,28 +302,129 @@ export const submit = mutation({
     const resolved = await resolveItems(ctx, args.catalogId, args.items);
     await assertCatalogBatchReceivable(ctx, args.catalogId);
     assertExpectedPrices(resolved);
-    const order = await insertOrder(
-      ctx,
-      {
-        customerUserId: user._id,
-        catalogId: args.catalogId,
-        customerName,
-        customerEmail: args.customerEmail?.trim() || undefined,
-        source: "customer_self_service",
-        actorUserId: user._id,
-      },
+    return submitResolvedCustomerOrder(ctx, {
+      customerUserId: user._id,
+      catalogId: args.catalogId,
+      customerName,
+      customerEmail: args.customerEmail?.trim() || undefined,
+      actorUserId: user._id,
       resolved,
-      catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
-    );
-    await autoAssignOrderItemsForCatalog(ctx, order.orderId, args.catalogId, user._id);
-    await notifyAdmins(ctx, {
-      surface: "notification",
-      eventType: "order.submitted",
-      title: "Order baru diterima",
-      body: `${customerName} mengirim preorder baru.`,
-      destination: `/admin/orders/${order.orderId}`,
-      relatedEntityType: "order",
-      relatedEntityId: String(order.orderId),
+      editableUntil: catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
+    });
+  },
+});
+
+function checkoutRequestKey(value: string) {
+  const key = requiredText(value, "checkout request key");
+  if (key.length > 128) fail("VALIDATION_FAILED", "checkout request key is invalid");
+  return key;
+}
+
+async function findCustomerCart(ctx: MutationCtx, customerUserId: Id<"appUsers">) {
+  return ctx.db
+    .query("carts")
+    .withIndex("by_customer_user_id", (query) => query.eq("customerUserId", customerUserId))
+    .unique();
+}
+
+async function currentCustomerOrderIdentity(ctx: MutationCtx, user: Awaited<ReturnType<typeof requireActiveCustomer>>) {
+  const profile = await ctx.db
+    .query("customerProfiles")
+    .withIndex("by_user_id", (query) => query.eq("userId", user._id))
+    .unique();
+  return {
+    customerName: profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
+    customerEmail: user.emailSnapshot,
+  };
+}
+
+export const submitCart = mutation({
+  args: { requestKey: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requireActiveCustomer(ctx);
+    const requestKey = checkoutRequestKey(args.requestKey);
+    const cart = await findCustomerCart(ctx, user._id);
+    if (!cart) fail("ORDER_EMPTY");
+
+    if (cart.lastCheckout?.requestKey === requestKey) {
+      const order = await ctx.db.get(cart.lastCheckout.orderId);
+      if (!order || order.customerUserId !== user._id) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+      return orderView(ctx, order._id);
+    }
+
+    const cartItems = await ctx.db
+      .query("cartItems")
+      .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
+      .order("asc")
+      .collect();
+    if (!cartItems.length) {
+      if (cart.lastCheckout) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+      fail("ORDER_EMPTY");
+    }
+
+    await enforceRateLimit(ctx, "orderSubmitUser", String(user._id));
+    if (!cart.catalogId) fail("CART_CATALOG_MISMATCH");
+    const catalog = await ctx.db.get(cart.catalogId);
+    if (!catalog) fail("CATALOG_NOT_FOUND");
+    if (!(await catalogIsOpen(ctx, catalog._id))) fail("CATALOG_NOT_OPEN");
+    await requireActiveCatalogGrant(ctx, user._id, catalog._id);
+    await assertCatalogBatchReceivable(ctx, catalog._id);
+
+    const requestedItems = [];
+    for (const item of cartItems) {
+      const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
+      if (!resolved.catalog || resolved.catalog._id !== catalog._id) fail("CART_CATALOG_MISMATCH");
+      if (resolved.availability === "catalog_closed") fail("CATALOG_NOT_OPEN");
+      if (resolved.availability === "po_closed") fail("NO_ELIGIBLE_BATCH");
+      if (resolved.availability !== "active" || !resolved.variant) {
+        fail("BOOK_VARIANT_UNAVAILABLE", "Cart item is not currently available", {
+          availability: resolved.availability,
+        });
+      }
+      if (item.availabilityState !== "active") {
+        if (
+          resolved.currentUnitPriceAmount !== null &&
+          item.observedUnitPriceAmount !== resolved.currentUnitPriceAmount
+        ) {
+          fail("PRICE_CHANGED", "Catalog price changed", {
+            changes: [
+              {
+                catalogItemId: resolved.catalogItem?._id,
+                variantId: resolved.variant._id,
+                observedUnitPriceAmount: item.observedUnitPriceAmount,
+                currentUnitPriceAmount: resolved.currentUnitPriceAmount,
+              },
+            ],
+          });
+        }
+        fail("CART_CHECKOUT_REQUIRES_ACKNOWLEDGEMENT");
+      }
+      requestedItems.push({
+        variantId: resolved.variant._id,
+        quantity: positiveQuantity(item.quantity),
+        expectedUnitPriceAmount: item.observedUnitPriceAmount,
+      });
+    }
+
+    const resolvedItems = await resolveItems(ctx, catalog._id, requestedItems);
+    assertExpectedPrices(resolvedItems);
+    const identity = await currentCustomerOrderIdentity(ctx, user);
+    const order = await submitResolvedCustomerOrder(ctx, {
+      customerUserId: user._id,
+      catalogId: catalog._id,
+      customerName: identity.customerName,
+      customerEmail: identity.customerEmail,
+      actorUserId: user._id,
+      resolved: resolvedItems,
+      editableUntil: catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS,
+    });
+
+    const now = Date.now();
+    for (const item of cartItems) await ctx.db.delete(item._id);
+    await ctx.db.patch(cart._id, {
+      catalogId: undefined,
+      lastCheckout: { requestKey, orderId: order.orderId },
+      updatedAt: now,
     });
     return order;
   },

@@ -2,11 +2,39 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-05
+last_updated: 2026-09-14
 source: conversation
 ---
 
 # Changelog
+
+## [customer-cart-checkout] — 2026-09-14
+
+### Changed
+
+- Added the canonical authenticated Customer `orders.submitCart` mutation.
+  It loads the server-owned Cart, revalidates every retained line, Catalog
+  access, current price, and Batch admission, then creates one normal
+  Secret Catalog Order through the existing Order insertion path.
+- Cart consumption now happens in the same Convex mutation after Order,
+  immutable item snapshots, status history, assignment, and existing admin
+  notification work succeed. No partial checkout is allowed.
+- Added a durable Cart-root `lastCheckout` request/order marker for retry
+  idempotency and concurrent-tab/device protection without a new checkout
+  table. Cart checkout accepts only a request key; all business data stays
+  server-owned.
+- Added a deliberate Cart-page confirmation, pending/error states, and
+  navigation to the existing `/account/orders/[orderId]` surface.
+
+### QA and scope
+
+- Covered empty, multi-line, quantity, stale availability, changed price,
+  acknowledgement, Catalog/access, PO/Batch, atomic Cart consumption, and
+  same-key/different-key concurrent submission paths.
+- Direct Catalog and Book Detail preorder remains functional. Checkout does
+  not call a payment or finance path, does not include Ready Stock, and does
+  not change Add-to-Cart, mini-cart, Blessy, bottom navigation, or Orders
+  guards. Authenticated Production checkout UAT remains pending.
 
 ## [customer-mini-cart] — 2026-09-14
 
@@ -24,7 +52,7 @@ source: conversation
 - Added focused component and shell isolation tests plus six-width geometry
   coverage for rail alignment, scroll reachability, 44px target, bottom-nav
   and Blessy coexistence.
-- No Cart backend/schema, Cart page behavior, Add-to-Cart semantics, checkout,
+- No mini-cart backend/domain authority, Add-to-Cart semantics,
   direct-preorder cutover, Ready Stock, navigation, Blessy, Auth, or global
   CSS change. Authenticated Production UAT remains pending.
 

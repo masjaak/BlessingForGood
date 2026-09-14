@@ -48,6 +48,12 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "CART_LINE_UNAVAILABLE" || message.includes("CART_LINE_UNAVAILABLE")) {
     return "Buku ini sudah tidak tersedia untuk dikelola.";
   }
+  if (code === "CART_CHECKOUT_REQUIRES_ACKNOWLEDGEMENT" || message.includes("CART_CHECKOUT_REQUIRES_ACKNOWLEDGEMENT")) {
+    return "Periksa dan setujui perubahan buku di keranjang sebelum membuat pesanan.";
+  }
+  if (code === "CART_CHECKOUT_ALREADY_SUBMITTED" || message.includes("CART_CHECKOUT_ALREADY_SUBMITTED")) {
+    return "Pesanan dari keranjang ini sudah tercatat. Periksa riwayat pesananmu.";
+  }
   if (code === "PRICE_CHANGED" || message.includes("PRICE_CHANGED")) {
     return "Harga buku berubah. Periksa harga terbaru, lalu kirim ulang pesanan.";
   }

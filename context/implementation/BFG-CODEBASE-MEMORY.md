@@ -1,5 +1,45 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Customer Cart checkout — 2026-09-14
+
+### CURRENT
+
+- `convex/orders.ts:submitCart` is the canonical authenticated Customer Cart
+  submission owner. It loads Cart state by the active Customer, re-resolves
+  current Catalog/product/price/Batch state for every retained line, and
+  converges with the existing Order insertion, immutable snapshots, status
+  history, Batch assignment, and notification machinery.
+- A successful Cart checkout creates one multi-line `customer_self_service`
+  Order, then consumes Cart Items and clears `catalogId` in the same Convex
+  mutation. `/account/cart` owns only the confirmation/pending/error UI and
+  routes to the existing Order detail.
+- The optional Cart-root `lastCheckout` request/order marker is the minimal
+  durable idempotency/consumption state. Same-key retries return the same
+  Order; conflicting concurrent calls cannot create a second Order after the
+  Cart write conflict/retry.
+
+### PROTECTED
+
+- Existing `orders.submit` direct Catalog/Book Detail preorder, Cart
+  persistence/reconciliation/acknowledgement, mini-cart, Add-to-Cart,
+  Batch/price guards, Ready Stock, Auth, finance, Admin cancellation, Book
+  Master/media, Blessy, bottom navigation, and global CSS.
+- Integer IDR, server-owned Customer/Cart data, all-lines-valid/no-partial
+  checkout, immutable Order snapshots, and Cart-clear-after-Order-success
+  invariants.
+
+### SUPERSEDED
+
+- Client-assembled Cart checkout, one Order per Cart line, partial active-line
+  checkout, checkout auto-acknowledgement, and client-side Cart clearing are
+  explicitly superseded by the server-owned `submitCart` boundary.
+
+### UNPROVEN
+
+- Authenticated Production Cart checkout UAT remains pending because no
+  approved disposable Customer/Catalog fixture is available. Direct-order
+  cutover remains blocked until that evidence exists.
+
 ## Post-diff memory — Customer mini-cart access layer — 2026-09-14
 
 ### CURRENT
