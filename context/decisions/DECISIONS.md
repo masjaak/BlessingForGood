@@ -2,7 +2,7 @@
 
 ## Customer Cart server domain — 2026-09-14
 
-Status: `ACTIVE / IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 - Cart V1 is server-persisted and available only to an authenticated active
   Customer. Ownership comes from the canonical Clerk-to-`appUsers` identity;

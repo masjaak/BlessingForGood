@@ -2,7 +2,7 @@
 
 ## Customer Cart server domain — 2026-09-14
 
-Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 Cart V1 is an authenticated Customer-only Secret Catalog preorder intent
 domain. `convex/carts.ts` owns Cart reads and mutations; Cart does not own
@@ -27,6 +27,11 @@ linked Batches with no eligible receiver are `po_closed`. Missing underlying
 records become a safe removable `removed` line. Ready Stock is outside this
 Cart domain. No Cart UI, route, checkout, or Order mutation integration is
 implemented in this phase.
+
+The server domain is deployed from commit `31c8970` through Vercel
+`dpl_HGYohWm6Tnmkg8gTj1U3ph369PVf` to Convex Production `clean-eel-522`.
+Authenticated Cart UAT remains pending because no approved disposable Customer
+fixture was supplied.
 
 ## Secret Catalog Customer price reconciliation — 2026-09-14
 

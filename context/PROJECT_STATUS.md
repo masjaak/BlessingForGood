@@ -2,7 +2,7 @@
 
 ## Customer Cart server domain — 2026-09-14
 
-Status: `IMPLEMENTED LOCALLY; PRODUCTION DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 Phase B establishes the authenticated Customer Secret Catalog Cart backend in
 `convex/carts.ts` with `carts` and `cartItems` persistence. One Customer has
@@ -19,6 +19,11 @@ and `carts.acknowledgeCurrentLineState` is the explicit price/reopen
 acknowledgement boundary. Reads do not accept a new price or silently accept a
 reopened line. Zero linked Batches remain valid; linked Batches with no
 eligible receiver project as PO closed. Ready Stock remains separate.
+
+The implementation is deployed in Vercel `dpl_HGYohWm6Tnmkg8gTj1U3ph369PVf`
+from commit `31c8970`; Convex Production is `clean-eel-522`. No approved
+authenticated disposable Customer fixture was available, so Cart UAT remains
+pending.
 
 Cart UI, `/account/cart`, Add to Cart, mini-cart, checkout, Order integration,
 Wishlist, Blessy, and Customer navigation remain unimplemented/unchanged.
