@@ -1,5 +1,22 @@
 # BFG Project Status
 
+## Customer Cart management UI — 2026-09-14
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+`/account/cart` now provides the first Customer-facing Cart surface over the
+existing GREEN `convex/carts.ts` projection. It shows the current Secret
+Catalog context, active lines, retained unavailable/stale lines, canonical
+prices, quantity controls, removal, clear confirmation, and explicit price or
+reopened-state acknowledgement. The page reconciles once on non-empty entry
+and otherwise leaves Cart semantics to the server.
+
+No Add-to-Cart, mini-cart, checkout, Order mutation, navigation, Blessy,
+global CSS, or backend Cart changes are included. Direct Secret Catalog
+preorder remains the current Production entry point. Authenticated populated
+Cart UAT remains pending because no approved disposable Customer fixture is
+available.
+
 ## Customer Cart server domain — 2026-09-14
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

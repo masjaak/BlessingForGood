@@ -8,6 +8,24 @@ source: conversation
 
 # Changelog
 
+## [customer-cart-page] — 2026-09-14
+
+### Changed
+
+- Added the authenticated Customer `/account/cart` management surface with
+  active and retained Cart sections, canonical price/availability display,
+  quantity updates, line removal, clear confirmation, and explicit
+  acknowledgement for changed or reopened lines.
+- Added one bounded page-entry reconciliation against the existing Cart
+  server domain.
+
+### QA and scope
+
+- Added focused Customer Cart component coverage and included `/account/cart`
+  in the existing signed-out Customer route smoke.
+- Add-to-Cart, mini-cart, checkout, Order integration, navigation, Blessy,
+  backend Cart semantics, and global CSS remain unchanged.
+
 ## [customer-cart-server-domain] — 2026-09-14
 
 ### Changed

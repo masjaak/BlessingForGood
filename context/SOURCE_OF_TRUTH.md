@@ -1,5 +1,21 @@
 # BFG SOURCE OF TRUTH
 
+## Customer Cart management UI — 2026-09-14
+
+Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
+
+`/account/cart` is the canonical authenticated Customer management surface for
+the existing Secret Catalog Cart projection. It reads `carts.getMine`, runs a
+single bounded `carts.reconcile` on a non-empty page entry, and wires only the
+existing quantity, remove, clear, and explicit current-line acknowledgement
+mutations. Active lines and retained non-eligible lines are rendered in
+separate sections; changed prices and reopened availability never auto-accept.
+
+The route uses the existing Customer shell and role guard. It intentionally
+does not add navigation, Add-to-Cart, mini-cart, checkout, Order creation,
+Blessy, or any Cart backend/schema change. Authenticated populated UAT remains
+pending because no approved disposable Customer fixture is available.
+
 ## Customer Cart server domain — 2026-09-14
 
 Status: `IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

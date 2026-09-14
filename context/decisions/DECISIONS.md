@@ -1,5 +1,22 @@
 # Decisions
 
+## Customer Cart management UI — 2026-09-14
+
+Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- `/account/cart` is the first canonical Customer Cart surface and uses the
+  existing active-Customer guard plus `carts.getMine` projection.
+- A non-empty page entry invokes `carts.reconcile` once, intentionally and
+  outside render. The page never acknowledges a changed price or reopened
+  line automatically.
+- The UI owns presentation and interaction only: active versus retained
+  sections, quantity, remove, clear confirmation, and explicit
+  `acknowledgeCurrentLineState`. The server remains authoritative for price,
+  availability, ownership, and mutation validation.
+- Add-to-Cart, mini-cart, checkout, Order integration, navigation, Blessy,
+  and the Cart backend remain outside this phase. Direct Secret Catalog
+  preorder remains the live Customer entry point.
+
 ## Customer Cart server domain — 2026-09-14
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`
