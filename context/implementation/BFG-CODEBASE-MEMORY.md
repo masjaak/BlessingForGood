@@ -34,6 +34,45 @@
   Admin session and safe populated Batch fixture. No Production data was
   mutated.
 
+## Post-diff memory — Multi-Catalog Cart M2 domain foundation — 2026-09-15
+
+### CURRENT
+
+- `convex/lib/cartProjection.ts:projectCart` keeps the existing global Cart
+  fields and adds `groups[]`. Each group is keyed from
+  `cartItem.catalogItemId → catalogItems.catalogId`; the Cart-root
+  `catalogId` is never used to choose group membership.
+- Groups expose the canonical Catalog summary, retained/active line and
+  quantity totals, integer active subtotal, `checkoutEligible`,
+  `blockedReason`, and `accessState`. Missing Catalog Items form a safe
+  unresolved/removed group instead of failing the whole Cart.
+- The projection checks each retained Catalog grant without throwing globally.
+  A revoked group remains removable but redacts restricted product metadata;
+  valid groups continue projecting independently.
+- `catalogConsistency` classifies the legacy root as `empty`, `consistent`,
+  `legacy_missing`, or `legacy_mismatch` for later grouped consumers.
+
+### PROTECTED
+
+- `carts.addItem` still rejects cross-Catalog writes with
+  `CART_CATALOG_MISMATCH`; no Customer-facing cross-Catalog state is enabled.
+- `orders.submitCart`, direct `orders.submit`, Cart Page, mini-cart,
+  reconciliation mutations, Cart schema/indexes, Batch/price/cancellation
+  guards, Ready Stock, Auth, Orders, finance, Book Master/media, Blessy,
+  navigation, and global CSS remain unchanged.
+
+### SUPERSEDED
+
+- Using the optional Cart-root `catalogId` as the authoritative grouping key
+  is superseded for grouped reads. The root field remains intact as legacy
+  compatibility metadata and current single-Catalog UI/checkout input.
+
+### UNPROVEN
+
+- Grouped Cart Page, per-Catalog checkout/idempotency, removal of
+  `CART_CATALOG_MISMATCH`, and authenticated Production multi-Catalog UAT are
+  intentionally deferred to M3–M6. No Production Cart data was mutated.
+
 ## Post-diff memory — Customer Cart checkout — 2026-09-14
 
 ### CURRENT

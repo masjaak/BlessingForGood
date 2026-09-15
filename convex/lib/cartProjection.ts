@@ -1,9 +1,13 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { eligibleReceivingBatches } from "../batches";
+import { hasActiveCatalogGrant } from "./catalogAccess";
 import { catalogIsOpen } from "./catalogView";
 
 type DataCtx = QueryCtx | MutationCtx;
+type CartGroupAccessState = "granted" | "revoked" | "unresolved";
+type CartGroupBlockedReason =
+  Exclude<CartAvailability, "active"> | "access_revoked" | "price_changed" | "acknowledgement_required";
 
 export type CartAvailability =
   | "active"
@@ -152,25 +156,38 @@ async function coverUrl(ctx: DataCtx, book: Doc<"books"> | null) {
 
 export async function projectCartLine(ctx: DataCtx, item: Doc<"cartItems">) {
   const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
+  return projectResolvedCartLine(ctx, item, resolved, "granted");
+}
+
+async function projectResolvedCartLine(
+  ctx: DataCtx,
+  item: Doc<"cartItems">,
+  resolved: CartCatalogResolution,
+  accessState: CartGroupAccessState,
+) {
+  const canPresentCatalogLine = accessState === "granted";
   const priceChanged =
-    resolved.currentUnitPriceAmount !== null && item.observedUnitPriceAmount !== resolved.currentUnitPriceAmount;
-  const checkoutEligible = resolved.availability === "active" && item.availabilityState === "active" && !priceChanged;
+    canPresentCatalogLine &&
+    resolved.currentUnitPriceAmount !== null &&
+    item.observedUnitPriceAmount !== resolved.currentUnitPriceAmount;
+  const checkoutEligible =
+    canPresentCatalogLine && resolved.availability === "active" && item.availabilityState === "active" && !priceChanged;
   return {
     id: item._id,
     catalogItemId: item.catalogItemId,
-    bookId: resolved.book?._id ?? null,
-    variantId: resolved.variant?._id ?? null,
-    title: resolved.book?.title ?? null,
-    publisherName: resolved.publisher?.name ?? null,
-    format: resolved.variant?.format ?? null,
-    isbn: resolved.variant?.isbn ?? null,
-    coverImageUrl: await coverUrl(ctx, resolved.book),
+    bookId: canPresentCatalogLine ? (resolved.book?._id ?? null) : null,
+    variantId: canPresentCatalogLine ? (resolved.variant?._id ?? null) : null,
+    title: canPresentCatalogLine ? (resolved.book?.title ?? null) : null,
+    publisherName: canPresentCatalogLine ? (resolved.publisher?.name ?? null) : null,
+    format: canPresentCatalogLine ? (resolved.variant?.format ?? null) : null,
+    isbn: canPresentCatalogLine ? (resolved.variant?.isbn ?? null) : null,
+    coverImageUrl: canPresentCatalogLine ? await coverUrl(ctx, resolved.book) : null,
     quantity: item.quantity,
     observedUnitPriceAmount: item.observedUnitPriceAmount,
-    currentUnitPriceAmount: resolved.currentUnitPriceAmount,
+    currentUnitPriceAmount: canPresentCatalogLine ? resolved.currentUnitPriceAmount : null,
     priceChanged,
-    availability: resolved.availability,
-    reconciliationState: item.availabilityState,
+    availability: canPresentCatalogLine ? resolved.availability : "removed",
+    reconciliationState: canPresentCatalogLine ? item.availabilityState : "unavailable",
     requiresAcknowledgement: !checkoutEligible,
     checkoutEligible,
     subtotalAmount: checkoutEligible ? resolved.currentUnitPriceAmount! * item.quantity : 0,
@@ -190,6 +207,25 @@ function projectCatalog(catalog: Doc<"secretCatalogs"> | null) {
   };
 }
 
+function catalogGroupId(resolved: CartCatalogResolution): Id<"secretCatalogs"> | null {
+  return resolved.catalog?._id ?? resolved.catalogItem?.catalogId ?? null;
+}
+
+function groupBlockedReason(group: {
+  accessState: CartGroupAccessState;
+  catalog: ReturnType<typeof projectCatalog>;
+  lines: Array<{ availability: CartAvailability; priceChanged: boolean; reconciliationState: CartAvailabilityState }>;
+}): CartGroupBlockedReason | null {
+  if (group.catalog?.status === "closed") return "catalog_closed";
+  if (group.accessState === "revoked") return "access_revoked";
+  if (group.accessState === "unresolved") return "removed";
+  const unavailableLine = group.lines.find((line) => line.availability !== "active");
+  if (unavailableLine && unavailableLine.availability !== "active") return unavailableLine.availability;
+  if (group.lines.some((line) => line.priceChanged)) return "price_changed";
+  if (group.lines.some((line) => line.reconciliationState !== "active")) return "acknowledgement_required";
+  return null;
+}
+
 export async function projectCart(ctx: DataCtx, cart: Doc<"carts">) {
   const [catalog, items] = await Promise.all([
     cart.catalogId ? ctx.db.get(cart.catalogId) : null,
@@ -200,13 +236,93 @@ export async function projectCart(ctx: DataCtx, cart: Doc<"carts">) {
       .collect(),
   ]);
   // ponytail: Cart is intentionally small; hydrate each retained line directly until measured scale requires batching.
-  const lines = await Promise.all(items.map((item) => projectCartLine(ctx, item)));
+  const resolvedItems = await Promise.all(
+    items.map(async (item) => ({
+      item,
+      resolved: await resolveCartCatalogItem(ctx, item.catalogItemId),
+    })),
+  );
+  const groupAccess = new Map<string, CartGroupAccessState>();
+  for (const { resolved } of resolvedItems) {
+    const id = catalogGroupId(resolved);
+    const key = id ? String(id) : "unresolved";
+    if (!groupAccess.has(key)) {
+      groupAccess.set(
+        key,
+        id && resolved.catalog
+          ? (await hasActiveCatalogGrant(ctx, cart.customerUserId, id))
+            ? "granted"
+            : "revoked"
+          : "unresolved",
+      );
+    }
+  }
+  const projectedItems = await Promise.all(
+    resolvedItems.map(async ({ item, resolved }) => {
+      const id = catalogGroupId(resolved);
+      const key = id ? String(id) : "unresolved";
+      return {
+        item,
+        resolved,
+        line: await projectResolvedCartLine(ctx, item, resolved, groupAccess.get(key) || "unresolved"),
+      };
+    }),
+  );
+  const lines = projectedItems.map(({ line }) => line);
   const activeLines = lines.filter((line) => line.checkoutEligible);
+  const groups = new Map<
+    string,
+    {
+      id: Id<"secretCatalogs"> | null;
+      catalog: ReturnType<typeof projectCatalog>;
+      accessState: CartGroupAccessState;
+      lines: typeof lines;
+    }
+  >();
+  projectedItems.forEach(({ resolved, line }) => {
+    const id = catalogGroupId(resolved);
+    const key = id ? String(id) : "unresolved";
+    const existing = groups.get(key);
+    if (existing) {
+      existing.lines.push(line);
+      return;
+    }
+    groups.set(key, {
+      id,
+      catalog: projectCatalog(resolved.catalog),
+      accessState: groupAccess.get(key) || "unresolved",
+      lines: [line],
+    });
+  });
+  const groupViews = Array.from(groups.values()).map((group) => {
+    const activeGroupLines = group.lines.filter((line) => line.checkoutEligible);
+    return {
+      id: group.id,
+      catalog: group.catalog,
+      accessState: group.accessState,
+      lines: group.lines,
+      retainedLineCount: group.lines.length,
+      retainedQuantity: group.lines.reduce((total, line) => total + line.quantity, 0),
+      activeLineCount: activeGroupLines.length,
+      activeQuantity: activeGroupLines.reduce((total, line) => total + line.quantity, 0),
+      activeSubtotalAmount: activeGroupLines.reduce((total, line) => total + line.subtotalAmount, 0),
+      checkoutEligible: group.lines.length > 0 && activeGroupLines.length === group.lines.length,
+      blockedReason: groupBlockedReason(group),
+    };
+  });
   return {
     id: cart._id,
     catalogId: cart.catalogId ?? null,
     catalog: projectCatalog(catalog),
+    catalogConsistency: !lines.length
+      ? "empty"
+      : groupViews.length === 1 && groupViews[0].id === cart.catalogId
+        ? "consistent"
+        : cart.catalogId
+          ? "legacy_mismatch"
+          : "legacy_missing",
     lines,
+    groups: groupViews,
     retainedLineCount: lines.length,
     retainedQuantity: lines.reduce((total, line) => total + line.quantity, 0),
     activeLineCount: activeLines.length,
@@ -220,7 +336,9 @@ export function emptyCartView() {
     id: null,
     catalogId: null,
     catalog: null,
+    catalogConsistency: "empty",
     lines: [],
+    groups: [],
     retainedLineCount: 0,
     retainedQuantity: 0,
     activeLineCount: 0,

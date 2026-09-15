@@ -16,3 +16,15 @@ export async function requireActiveCatalogGrant(
   if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) fail("ACCESS_GRANT_REQUIRED");
   return grant;
 }
+
+export async function hasActiveCatalogGrant(
+  ctx: DataCtx,
+  appUserId: Id<"appUsers">,
+  catalogId: Id<"secretCatalogs">,
+): Promise<boolean> {
+  const grant = await ctx.db
+    .query("catalogAccessGrants")
+    .withIndex("by_app_user_id_and_catalog_id", (query) => query.eq("appUserId", appUserId).eq("catalogId", catalogId))
+    .first();
+  return Boolean(grant && !grant.revokedAt && grant.expiresAt > Date.now());
+}
