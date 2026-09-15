@@ -468,8 +468,7 @@ export default defineSchema({
     orderId: v.id("orders"),
     createdAt: v.number(),
   })
-    .index("by_cart_and_catalog", ["cartId", "catalogId"])
-    .index("by_cart_and_request_key", ["cartId", "requestKey"]),
+    .index("by_cart_and_catalog", ["cartId", "catalogId"]),
 
   orders: defineTable({
     customerUserId: v.id("appUsers"),

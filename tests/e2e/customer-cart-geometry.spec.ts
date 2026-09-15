@@ -67,10 +67,13 @@ test.describe("@customer Customer Cart geometry", () => {
       await expect(page.getByRole("heading", { name: "CARGO 1", exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "CARGO 2", exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "CARGO 3", exact: true })).toBeVisible();
+      await page.locator(".checkoutButton").first().evaluate((button) =>
+        button.scrollIntoView({ block: "center", inline: "nearest" }),
+      );
 
       const geometry = await page.locator(".customer-shell").evaluate((shell) => {
         const layout = shell.querySelector<HTMLElement>(".layout");
-        const sections = shell.querySelector<HTMLElement>(".page > .sections");
+        const sections = layout?.querySelector<HTMLElement>(".sections");
         const summary = shell.querySelector<HTMLElement>(".summary");
         const miniCart = shell.querySelector<HTMLElement>(".miniCartRegion");
         const miniCartLink = shell.querySelector<HTMLAnchorElement>(".miniCart");
@@ -134,8 +137,8 @@ test.describe("@customer Customer Cart geometry", () => {
           checkoutPosition: getComputedStyle(checkoutButton).position,
           checkoutButtonHeight: checkoutButton.getBoundingClientRect().height,
           checkoutWithinContentRail: checkoutRect.left >= pageRect.left - 1 && checkoutRect.right <= pageRect.right + 1,
-          checkoutOverlapsBottomNav: overlaps(checkoutRect, navRect),
-          checkoutOverlapsBlessy: overlaps(checkoutRect, blessyRect),
+          checkoutOverlapsBottomNav: checkoutRect.top < window.innerHeight && overlaps(checkoutRect, navRect),
+          checkoutOverlapsBlessy: checkoutRect.top < window.innerHeight && overlaps(checkoutRect, blessyRect),
           miniCartWithinContentRail: miniCartRect.left >= pageRect.left - 1 && miniCartRect.right <= pageRect.right + 1,
           miniCartOverlapsBottomNav: overlaps(miniCartRect, navRect),
           miniCartOverlapsBlessy: overlaps(miniCartRect, blessyRect),
