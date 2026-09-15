@@ -372,6 +372,9 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             : `${catalog.titleCount ?? catalog.books.length} buku tersedia`}
         </p>
       </section>
+      <LinkButton href="#order-summary" variant="secondary" size="compact">
+        Tinjau preorder
+      </LinkButton>
       <div className="catalog-grid">
         <div className="book-list">
           {filteredBooks.length ? (
@@ -502,7 +505,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             />
           )}
         </div>
-        <Card frame="detail" className="order-summary">
+        <Card frame="detail" className="order-summary" id="order-summary">
           <div>
             <span className="card-kicker">Tinjau preorder</span>
             <h2>Pastikan pilihanmu.</h2>

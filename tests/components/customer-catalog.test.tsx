@@ -520,6 +520,9 @@ describe("CustomerCatalog projection", () => {
 
     render(<CustomerCatalog />);
 
+    expect(screen.getByRole("link", { name: "Tinjau preorder" }).getAttribute("href")).toBe("#order-summary");
+    expect(document.getElementById("order-summary")).toBeTruthy();
+
     expect(screen.getByRole("heading", { name: "September Discovery" })).toBeTruthy();
     expect(screen.getAllByText("3 buku tersedia")).toHaveLength(2);
     expect(screen.getByText("30 Sep 2030")).toBeTruthy();
