@@ -251,6 +251,7 @@ export function ClerkInvitationAcceptance({
   const redirected = useRef(false);
   const activeInvitationRef = useRef(false);
   const finalizeStarted = useRef(false);
+  const ticketStartedWhileSignedOut = useRef(false);
   const timedOut = useRef(false);
   const emailLinkWaitStarted = useRef<string | null>(null);
   const protectCheckContainer = useRef<HTMLDivElement>(null);
@@ -264,6 +265,12 @@ export function ClerkInvitationAcceptance({
     sessionId &&
     (liveSignUp?.existingSession?.sessionId === sessionId ||
       (liveSignUp?.status === "complete" && liveSignUp.createdUserId && liveSignUp.createdUserId === userId)),
+  );
+  const ticketCompletionObserved = Boolean(
+    ticket &&
+    ticketRun.current?.ticket === ticket &&
+    ticketStartedWhileSignedOut.current &&
+    (liveSignUp?.status === "complete" || signIn?.status === "complete"),
   );
   const currentVerifiedEmail = normalizeInvitationEmail(
     user?.primaryEmailAddress?.verification?.status === "verified" ? user.primaryEmailAddress.emailAddress : null,
@@ -279,7 +286,8 @@ export function ClerkInvitationAcceptance({
     authState === "authenticated" &&
     sessionRole === "customer" &&
     ((invitationEmail && invitationEmail === currentVerifiedEmail) ||
-      (!invitationEmail && (sameSessionInvite || phase === "finishing" || finalizeStarted.current))),
+      (!invitationEmail &&
+        (sameSessionInvite || phase === "finishing" || finalizeStarted.current || ticketCompletionObserved))),
   );
   if (activeInvitation) activeInvitationRef.current = true;
 
@@ -551,6 +559,7 @@ export function ClerkInvitationAcceptance({
     setAuthMode("sign-in");
     setError(null);
     const wasSignedIn = isSignedIn;
+    ticketStartedWhileSignedOut.current = wasSignedIn === false;
 
     void (async () => {
       try {
@@ -664,6 +673,7 @@ export function ClerkInvitationAcceptance({
     setPhase("loading");
     setError(null);
     const wasSignedIn = isSignedIn;
+    ticketStartedWhileSignedOut.current = wasSignedIn === false;
 
     void (async () => {
       try {
