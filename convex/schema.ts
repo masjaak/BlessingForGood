@@ -461,6 +461,16 @@ export default defineSchema({
     .index("by_cart", ["cartId"])
     .index("by_cart_and_catalog_item", ["cartId", "catalogItemId"]),
 
+  cartCheckouts: defineTable({
+    cartId: v.id("carts"),
+    catalogId: v.id("secretCatalogs"),
+    requestKey: v.string(),
+    orderId: v.id("orders"),
+    createdAt: v.number(),
+  })
+    .index("by_cart_and_catalog", ["cartId", "catalogId"])
+    .index("by_cart_and_request_key", ["cartId", "requestKey"]),
+
   orders: defineTable({
     customerUserId: v.id("appUsers"),
     catalogId: v.optional(v.id("secretCatalogs")),

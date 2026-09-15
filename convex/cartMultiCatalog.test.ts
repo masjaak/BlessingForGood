@@ -312,7 +312,7 @@ describe("Multi-Catalog Cart M2 projection", () => {
     await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedQuantity: 2 });
   });
 
-  it("rejects an artificially seeded mixed Cart before creating an Order", async () => {
+  it("requires a Catalog selector and submits only the selected mixed-Cart group", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const fixture = await createCatalogFixture(t, admin);
@@ -322,15 +322,101 @@ describe("Multi-Catalog Cart M2 projection", () => {
     await addDirectLine(t, customer, fixture.secondItemId, 2);
 
     await expect(customer.mutation(api.orders.submitCart, { requestKey: "mixed-m2-cart" })).rejects.toThrow(
-      "CART_CATALOG_MISMATCH",
+      "CART_CHECKOUT_CATALOG_REQUIRED",
     );
-    expect(await t.run((ctx) => ctx.db.query("orders").collect())).toHaveLength(0);
+    const firstOrder = await customer.mutation(api.orders.submitCart, {
+      requestKey: "mixed-m2-cart-a",
+      catalogId: fixture.first.catalogId,
+    });
+    expect(firstOrder).toMatchObject({ catalogId: fixture.first.catalogId, totalAmount: 125000 });
+    expect(firstOrder.items).toEqual([expect.objectContaining({ catalogItemId: fixture.firstItemId, quantity: 1 })]);
+    await expect(
+      customer.mutation(api.orders.submitCart, {
+        requestKey: "mixed-m2-cart-a",
+        catalogId: fixture.first.catalogId,
+      }),
+    ).resolves.toMatchObject({ orderId: firstOrder.orderId });
+    await expect(
+      customer.mutation(api.orders.submitCart, {
+        requestKey: "mixed-m2-cart-a-retry-with-new-key",
+        catalogId: fixture.first.catalogId,
+      }),
+    ).rejects.toThrow("CART_CHECKOUT_ALREADY_SUBMITTED");
     await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({
-      retainedQuantity: 3,
-      lines: expect.arrayContaining([
-        expect.objectContaining({ catalogItemId: fixture.firstItemId }),
-        expect.objectContaining({ catalogItemId: fixture.secondItemId }),
-      ]),
+      retainedQuantity: 2,
+      groups: [expect.objectContaining({ id: fixture.second.catalogId, retainedQuantity: 2 })],
+    });
+    const secondOrder = await customer.mutation(api.orders.submitCart, {
+      requestKey: "mixed-m2-cart-b",
+      catalogId: fixture.second.catalogId,
+    });
+    expect(secondOrder).toMatchObject({ catalogId: fixture.second.catalogId, totalAmount: 300000 });
+    await expect(
+      customer.mutation(api.orders.submitCart, { requestKey: "mixed-m2-cart-b", catalogId: fixture.second.catalogId }),
+    ).resolves.toMatchObject({ orderId: secondOrder.orderId });
+    expect(await t.run((ctx) => ctx.db.query("orders").collect())).toHaveLength(2);
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedQuantity: 0, lines: [] });
+
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId });
+    const futureOrder = await customer.mutation(api.orders.submitCart, {
+      requestKey: "mixed-m2-cart-future",
+      catalogId: fixture.first.catalogId,
+    });
+    expect(futureOrder.orderId).not.toBe(firstOrder.orderId);
+    expect(await t.run((ctx) => ctx.db.query("orders").collect())).toHaveLength(3);
+  });
+
+  it("checks out different Catalog groups independently under concurrency", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createCatalogFixture(t, admin);
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-a-code" });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-b-code" });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId });
+    await addDirectLine(t, customer, fixture.secondItemId, 2);
+
+    const results = await Promise.allSettled([
+      customer.mutation(api.orders.submitCart, {
+        requestKey: "concurrent-catalog-a",
+        catalogId: fixture.first.catalogId,
+      }),
+      customer.mutation(api.orders.submitCart, {
+        requestKey: "concurrent-catalog-b",
+        catalogId: fixture.second.catalogId,
+      }),
+    ]);
+    expect(results.every((result) => result.status === "fulfilled")).toBe(true);
+    expect(results.map((result) => (result.status === "fulfilled" ? result.value.catalogId : null))).toEqual(
+      expect.arrayContaining([fixture.first.catalogId, fixture.second.catalogId]),
+    );
+    expect(await t.run((ctx) => ctx.db.query("orders").collect())).toHaveLength(2);
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ lines: [], retainedQuantity: 0 });
+  }, 30000);
+
+  it("leaves a blocked Catalog group untouched while a valid group checks out", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createCatalogFixture(t, admin);
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-a-code" });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-b-code" });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId });
+    await addDirectLine(t, customer, fixture.secondItemId, 2);
+    await t.run((ctx) => ctx.db.patch(fixture.firstItemId, { isAvailable: false }));
+
+    await expect(
+      customer.mutation(api.orders.submitCart, {
+        requestKey: "blocked-catalog-a",
+        catalogId: fixture.first.catalogId,
+      }),
+    ).rejects.toThrow("BOOK_VARIANT_UNAVAILABLE");
+    const order = await customer.mutation(api.orders.submitCart, {
+      requestKey: "valid-catalog-b",
+      catalogId: fixture.second.catalogId,
+    });
+    expect(order).toMatchObject({ catalogId: fixture.second.catalogId, totalAmount: 300000 });
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({
+      retainedQuantity: 1,
+      groups: [expect.objectContaining({ id: fixture.first.catalogId, checkoutEligible: false })],
     });
   });
 });

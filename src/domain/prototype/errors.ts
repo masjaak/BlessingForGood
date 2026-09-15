@@ -54,6 +54,9 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "CART_CHECKOUT_ALREADY_SUBMITTED" || message.includes("CART_CHECKOUT_ALREADY_SUBMITTED")) {
     return "Pesanan dari keranjang ini sudah tercatat. Periksa riwayat pesananmu.";
   }
+  if (code === "CART_CHECKOUT_CATALOG_REQUIRED" || message.includes("CART_CHECKOUT_CATALOG_REQUIRED")) {
+    return "Pilih katalog yang ingin dibuat menjadi pesanan.";
+  }
   if (code === "PRICE_CHANGED" || message.includes("PRICE_CHANGED")) {
     return "Harga buku berubah. Periksa harga terbaru, lalu kirim ulang pesanan.";
   }

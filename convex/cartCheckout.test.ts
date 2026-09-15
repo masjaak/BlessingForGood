@@ -186,7 +186,9 @@ describe("BFG Cart checkout", () => {
     await t.run((ctx) => ctx.db.patch(cartLineId, { quantity: 0 }));
     await expectCheckoutError(customer, "bad-quantity", "INVALID_QUANTITY");
     await t.run((ctx) => ctx.db.patch(cartLineId, { quantity: 1, catalogItemId: secondItemId }));
-    await expectCheckoutError(customer, "mixed-catalog", "CART_CATALOG_MISMATCH");
+    await expect(
+      customer.mutation(api.orders.submitCart, { requestKey: "mixed-catalog", catalogId: first.catalogId }),
+    ).rejects.toThrow("ORDER_EMPTY");
     await t.run((ctx) => ctx.db.patch(cartLineId, { catalogItemId: firstItemId }));
 
     await admin.mutation(api.secretCatalogs.close, { catalogId: first.catalogId });

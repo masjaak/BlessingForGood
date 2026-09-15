@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { requireActiveCatalogGrant } from "./lib/catalogAccess";
 import { requireActiveCustomer } from "./lib/auth";
 import { emptyCartView, nextAvailabilityState, projectCart, resolveCartCatalogItem } from "./lib/cartProjection";
@@ -42,6 +43,18 @@ function assertAddable(availability: Awaited<ReturnType<typeof resolveCartCatalo
     fail("CART_LINE_UNAVAILABLE", "Cart item is not currently available", { availability });
 }
 
+async function clearCatalogCheckout(
+  ctx: MutationCtx,
+  cartId: Id<"carts">,
+  catalogId: Id<"secretCatalogs">,
+) {
+  const checkout = await ctx.db
+    .query("cartCheckouts")
+    .withIndex("by_cart_and_catalog", (query) => query.eq("cartId", cartId).eq("catalogId", catalogId))
+    .first();
+  if (checkout) await ctx.db.delete(checkout._id);
+}
+
 export const getMine = query({
   args: {},
   handler: async (ctx) => {
@@ -67,12 +80,6 @@ export const addItem = mutation({
     if (resolved.currentUnitPriceAmount === null) fail("CART_ITEM_NOT_FOUND");
 
     let cart = await findCart(ctx, user._id);
-    if (cart?.catalogId && cart.catalogId !== resolved.catalog._id) {
-      fail("CART_CATALOG_MISMATCH", "Cart can contain one Secret Catalog at a time", {
-        cartCatalogId: cart.catalogId,
-        requestedCatalogId: resolved.catalog._id,
-      });
-    }
     const now = Date.now();
     if (!cart) {
       const cartId = await ctx.db.insert("carts", {
@@ -87,6 +94,8 @@ export const addItem = mutation({
       cart = await ctx.db.get(cart._id);
     }
     if (!cart) fail("CART_ITEM_NOT_FOUND");
+
+    await clearCatalogCheckout(ctx, cart._id, resolved.catalog._id);
 
     const existing = await ctx.db
       .query("cartItems")
@@ -107,7 +116,7 @@ export const addItem = mutation({
         updatedAt: now,
       });
     }
-    await ctx.db.patch(cart._id, { updatedAt: now });
+    await ctx.db.patch(cart._id, { lastCheckout: undefined, updatedAt: now });
     return projectCart(ctx, (await ctx.db.get(cart._id))!);
   },
 });
@@ -150,7 +159,12 @@ export const clear = mutation({
       .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
       .collect();
     for (const item of items) await ctx.db.delete(item._id);
-    await ctx.db.patch(cart._id, { catalogId: undefined, updatedAt: Date.now() });
+    const checkouts = await ctx.db
+      .query("cartCheckouts")
+      .withIndex("by_cart_and_catalog", (query) => query.eq("cartId", cart._id))
+      .collect();
+    for (const checkout of checkouts) await ctx.db.delete(checkout._id);
+    await ctx.db.patch(cart._id, { catalogId: undefined, lastCheckout: undefined, updatedAt: Date.now() });
     return projectCart(ctx, (await ctx.db.get(cart._id))!);
   },
 });

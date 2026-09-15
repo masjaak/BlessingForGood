@@ -67,7 +67,8 @@ export function CustomerCart() {
   const [pending, setPending] = useState<PendingAction>(null);
   const [clearOpen, setClearOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const checkoutRequestKeyRef = useRef<string | null>(null);
+  const [checkoutCatalogId, setCheckoutCatalogId] = useState<Id<"secretCatalogs"> | null>(null);
+  const checkoutRequestKeyRef = useRef(new Map<string, string>());
 
   useEffect(() => {
     if (cart === undefined) return;
@@ -126,8 +127,6 @@ export function CustomerCart() {
     );
   }
 
-  const activeLines = cart.lines.filter((line) => line.checkoutEligible);
-
   async function changeQuantity(line: CartLine, quantity: number) {
     if (quantity < 1 || pending !== null) return;
     setActionError("");
@@ -182,13 +181,18 @@ export function CustomerCart() {
   }
 
   async function checkout() {
-    if (!cart || pending !== null || activeLines.length !== cart.lines.length) return;
+    if (!cart || !checkoutCatalogId || pending !== null) return;
+    const group = cart.groups.find((candidate) => candidate.id === checkoutCatalogId);
+    if (!group?.checkoutEligible) return;
     setActionError("");
     setPending("checkout");
-    const requestKey = checkoutRequestKeyRef.current || (checkoutRequestKeyRef.current = checkoutRequestKey());
+    const requestKey =
+      checkoutRequestKeyRef.current.get(checkoutCatalogId) ||
+      checkoutRequestKeyRef.current.set(checkoutCatalogId, checkoutRequestKey()).get(checkoutCatalogId)!;
     try {
-      const order = await submitCart({ requestKey });
+      const order = await submitCart({ catalogId: checkoutCatalogId, requestKey });
       setCheckoutOpen(false);
+      setCheckoutCatalogId(null);
       router.push(`/account/orders/${order.orderId}`);
     } catch (reason) {
       setCheckoutOpen(false);
@@ -312,11 +316,16 @@ export function CustomerCart() {
                   </p>
                   {group.checkoutEligible ? (
                     <Button
-                      disabled={pending !== null || cart.groups.length !== 1}
+                      disabled={pending !== null}
                       className="checkoutButton"
                       loading={pending === "checkout"}
                       loadingLabel="Membuat pesanan…"
-                      onClick={() => setCheckoutOpen(true)}
+                      onClick={() => {
+                        if (group.id) {
+                          setCheckoutCatalogId(group.id);
+                          setCheckoutOpen(true);
+                        }
+                      }}
                       type="button"
                     >
                       Buat pesanan
@@ -341,11 +350,14 @@ export function CustomerCart() {
       <ConfirmationDialog
         open={checkoutOpen}
         title="Buat pesanan dari keranjang?"
-        description={`Semua ${cart.activeQuantity} buku aktif akan dibuat menjadi satu pesanan dengan harga terbaru dari katalog.`}
+        description={`Semua ${cart.groups.find((group) => group.id === checkoutCatalogId)?.activeQuantity ?? 0} buku aktif dari katalog ini akan dibuat menjadi satu pesanan dengan harga terbaru.`}
         confirmLabel={pending === "checkout" ? "Membuat pesanan…" : "Buat pesanan"}
         disabled={pending !== null}
         onCancel={() => {
-          if (pending === null) setCheckoutOpen(false);
+          if (pending === null) {
+            setCheckoutOpen(false);
+            setCheckoutCatalogId(null);
+          }
         }}
         onConfirm={() => void checkout()}
       />

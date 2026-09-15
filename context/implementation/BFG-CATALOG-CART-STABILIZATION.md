@@ -51,8 +51,8 @@ grouped UI and scoped checkout passing regression.
 
 ## UNPROVEN
 
-Scoped checkout storage/schema, concurrency, migration compatibility, full
-integrated flow, responsive matrix, final deployment, authenticated UAT.
+Migration compatibility, full integrated flow, responsive matrix, final
+deployment, authenticated UAT.
 
 ## Gates
 
@@ -63,7 +63,11 @@ integrated flow, responsive matrix, final deployment, authenticated UAT.
   group independently, keeps management actions line-scoped, and has the
   responsive matrix fixture updated for three groups. Per-group checkout is
   intentionally gated until D.
-- D scoped checkout/idempotency: pending.
+- D scoped checkout/idempotency: GREEN. `orders.submitCart` accepts an
+  optional canonical `catalogId` selector and persists one bounded
+  `cartCheckouts` record per Cart/Catalog cycle. Canonical Order insertion,
+  Batch admission, snapshots, retries, and concurrent independent groups are
+  covered. The legacy root marker remains compatibility metadata only.
 - E cross-Catalog Add: pending.
 - F integrated harness: pending.
 - G deployment: pending.

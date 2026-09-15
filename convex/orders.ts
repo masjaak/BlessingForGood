@@ -364,16 +364,35 @@ async function currentCustomerOrderIdentity(ctx: MutationCtx, user: Awaited<Retu
 }
 
 export const submitCart = mutation({
-  args: { requestKey: v.string() },
+  args: {
+    requestKey: v.string(),
+    catalogId: v.optional(v.id("secretCatalogs")),
+  },
   handler: async (ctx, args) => {
     const user = await requireActiveCustomer(ctx);
     const requestKey = checkoutRequestKey(args.requestKey);
     const cart = await findCustomerCart(ctx, user._id);
     if (!cart) fail("ORDER_EMPTY");
 
+    if (args.catalogId) {
+      const checkout = await ctx.db
+        .query("cartCheckouts")
+        .withIndex("by_cart_and_catalog", (query) =>
+          query.eq("cartId", cart._id).eq("catalogId", args.catalogId!),
+        )
+        .first();
+      if (checkout) {
+        if (checkout.requestKey !== requestKey) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+        const order = await ctx.db.get(checkout.orderId);
+        if (!order || order.customerUserId !== user._id) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+        return orderView(ctx, order._id);
+      }
+    }
+
     if (cart.lastCheckout?.requestKey === requestKey) {
       const order = await ctx.db.get(cart.lastCheckout.orderId);
       if (!order || order.customerUserId !== user._id) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+      if (args.catalogId && order.catalogId !== args.catalogId) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
       return orderView(ctx, order._id);
     }
 
@@ -387,18 +406,45 @@ export const submitCart = mutation({
       fail("ORDER_EMPTY");
     }
 
+    let catalogId = args.catalogId;
+    if (!catalogId) {
+      const catalogIds = new Set<string>();
+      for (const item of cartItems) {
+        const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
+        if (resolved.catalog) catalogIds.add(resolved.catalog._id);
+      }
+      if (catalogIds.size !== 1) fail("CART_CHECKOUT_CATALOG_REQUIRED");
+      catalogId = [...catalogIds][0] as Id<"secretCatalogs">;
+    }
+
+    const checkout = await ctx.db
+      .query("cartCheckouts")
+      .withIndex("by_cart_and_catalog", (query) => query.eq("cartId", cart._id).eq("catalogId", catalogId!))
+      .first();
+    if (checkout) {
+      if (checkout.requestKey !== requestKey) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+      const order = await ctx.db.get(checkout.orderId);
+      if (!order || order.customerUserId !== user._id) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
+      return orderView(ctx, order._id);
+    }
+
     await enforceRateLimit(ctx, "orderSubmitUser", String(user._id));
-    if (!cart.catalogId) fail("CART_CATALOG_MISMATCH");
-    const catalog = await ctx.db.get(cart.catalogId);
+    const catalog = await ctx.db.get(catalogId);
     if (!catalog) fail("CATALOG_NOT_FOUND");
     if (!(await catalogIsOpen(ctx, catalog._id))) fail("CATALOG_NOT_OPEN");
     await requireActiveCatalogGrant(ctx, user._id, catalog._id);
     await assertCatalogBatchReceivable(ctx, catalog._id);
 
-    const requestedItems = [];
+    const selectedItems = [];
     for (const item of cartItems) {
       const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
-      if (!resolved.catalog || resolved.catalog._id !== catalog._id) fail("CART_CATALOG_MISMATCH");
+      if (!resolved.catalog || resolved.catalog._id !== catalog._id) continue;
+      selectedItems.push({ item, resolved });
+    }
+    if (!selectedItems.length) fail("ORDER_EMPTY");
+
+    const requestedItems = [];
+    for (const { item, resolved } of selectedItems) {
       if (resolved.availability === "catalog_closed") fail("CATALOG_NOT_OPEN");
       if (resolved.availability === "po_closed") fail("NO_ELIGIBLE_BATCH");
       if (resolved.availability !== "active" || !resolved.variant) {
@@ -445,10 +491,21 @@ export const submitCart = mutation({
     });
 
     const now = Date.now();
-    for (const item of cartItems) await ctx.db.delete(item._id);
+    for (const { item } of selectedItems) await ctx.db.delete(item._id);
+    const remaining = await ctx.db
+      .query("cartItems")
+      .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
+      .first();
+    await ctx.db.insert("cartCheckouts", {
+      cartId: cart._id,
+      catalogId: catalog._id,
+      requestKey,
+      orderId: order.orderId,
+      createdAt: now,
+    });
     await ctx.db.patch(cart._id, {
-      catalogId: undefined,
-      lastCheckout: { requestKey, orderId: order.orderId },
+      catalogId: remaining ? cart.catalogId : undefined,
+      lastCheckout: remaining ? undefined : { requestKey, orderId: order.orderId },
       updatedAt: now,
     });
     return order;

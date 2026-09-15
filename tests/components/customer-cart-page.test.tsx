@@ -188,7 +188,7 @@ describe("Customer Cart page", () => {
     await waitFor(() => expect(removeItem).toHaveBeenCalledWith({ cartItemId: "line-1" }));
     expect(
       within(screen.getByRole("region", { name: "CARGO 2" })).getByRole("button", { name: "Buat pesanan" }),
-    ).toHaveProperty("disabled", true);
+    ).toHaveProperty("disabled", false);
     for (const remaining of [[groups[0], groups[2]], [groups[2]], []]) {
       vi.mocked(useQuery).mockReturnValue({
         ...cart,
@@ -201,6 +201,33 @@ describe("Customer Cart page", () => {
     }
     expect(screen.getByText("Keranjangmu masih kosong")).toBeTruthy();
   });
+
+  it("submits only the selected Catalog group", async () => {
+    const cart = readyCart();
+    const groups = ["CARGO 1", "CARGO 2"].map((name, index) => ({
+      ...cart.groups[0],
+      id: `catalog-${index + 1}`,
+      catalog: { ...cart.catalog, id: `catalog-${index + 1}`, name },
+      lines: [{ ...cart.lines[0], id: `line-${index}`, title: `Book ${index}` }],
+    }));
+    vi.mocked(useQuery).mockReturnValue({ ...cart, groups, lines: groups.flatMap((group) => group.lines) } as never);
+
+    render(<CustomerCart />);
+    await screen.findByRole("heading", { name: "CARGO 2" });
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "CARGO 2" })).getByRole("button", { name: "Buat pesanan" }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole("dialog", { name: "Buat pesanan dari keranjang?" })).getByRole("button", {
+        name: "Buat pesanan",
+      }),
+    );
+    await waitFor(() =>
+      expect(submitCart).toHaveBeenCalledWith({ catalogId: "catalog-2", requestKey: expect.any(String) }),
+    );
+    expect(routerPush).toHaveBeenCalledWith("/account/orders/order-1");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     reconcile.mockResolvedValue(emptyCart());
@@ -279,12 +306,14 @@ describe("Customer Cart page", () => {
     const dialog = await screen.findByRole("dialog", { name: "Buat pesanan dari keranjang?" });
     expect(
       within(dialog).getByText(
-        "Semua 2 buku aktif akan dibuat menjadi satu pesanan dengan harga terbaru dari katalog.",
+        "Semua 2 buku aktif dari katalog ini akan dibuat menjadi satu pesanan dengan harga terbaru.",
       ),
     ).toBeTruthy();
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Buat pesanan" }));
-    await waitFor(() => expect(submitCart).toHaveBeenCalledWith({ requestKey: expect.any(String) }));
+    await waitFor(() =>
+      expect(submitCart).toHaveBeenCalledWith({ catalogId: "catalog-1", requestKey: expect.any(String) }),
+    );
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/account/orders/order-1"));
     expect(submitCart).toHaveBeenCalledOnce();
   });
