@@ -57,7 +57,10 @@ function filterSummary(
 }
 
 function scrollToCatalogTarget(targetId: string) {
-  document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  target.scrollIntoView({ behavior, block: "start", inline: "nearest" });
 }
 
 function CatalogHeader({ catalog }: { catalog: NonNullable<ReturnType<typeof useProduct>["unlockedCatalog"]> }) {

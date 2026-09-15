@@ -847,4 +847,66 @@ describe("CustomerCatalog projection", () => {
       });
     }
   });
+
+  it("uses instant navigation when reduced motion is preferred", () => {
+    const scrollIntoView = vi.fn();
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockReturnValue({ matches: true }),
+    });
+    window.history.replaceState(null, "", "/catalog");
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-reduced-motion",
+        name: "Reduced Motion Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-reduced-motion",
+            title: "Book Reduced Motion",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-reduced-motion",
+                format: "PB",
+                isbn: "9780000000098",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    try {
+      render(<CustomerCatalog />);
+      fireEvent.click(screen.getByRole("link", { name: "Tinjau preorder" }));
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "start", inline: "nearest" });
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        configurable: true,
+        value: originalScrollIntoView,
+      });
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
 });
