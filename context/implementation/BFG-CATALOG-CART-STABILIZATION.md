@@ -51,8 +51,7 @@ superseded by grouped Cart rendering and scoped checkout.
 
 ## UNPROVEN
 
-Migration compatibility, full integrated flow, responsive matrix, final
-deployment, authenticated UAT.
+Authenticated Production UAT with an approved disposable Customer fixture.
 
 ## Gates
 
@@ -75,5 +74,10 @@ deployment, authenticated UAT.
   Catalog Items, verifies the global retained count and three groups, blocks
   one group without blocking the other two, checks out Catalog B only, retries
   B idempotently, then consumes A and C with three single-Catalog Orders.
-- G deployment: pending.
-- H Production proof: pending.
+- G deployment: PASS. `928de783` is deployed as Vercel
+  `dpl_955yJENAfR8HH9tr1LboCZTni8Pp` (`READY`) on the canonical aliases; the
+  configured build deployed Convex Production `clean-eel-522` successfully.
+- H Production proof: PASS for safe evidence. Home, Catalog, Cart, and Ready
+  Stock return 200; signed-out Admin Catalog redirects to Clerk. Authenticated
+  Customer journey proof remains pending without an approved disposable
+  session, and no real business data was mutated.

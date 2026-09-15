@@ -16,6 +16,12 @@ Authenticated Production UAT remains pending because no approved disposable
 Customer fixture/session is available; no real Customer Order or Cart was
 mutated for proof.
 
+Safe Production evidence: Vercel deployment `dpl_955yJENAfR8HH9tr1LboCZTni8Pp`
+is `READY` on the canonical aliases from `928de783`; its configured build
+deployed Convex Production `clean-eel-522`. Public home, Catalog, Cart, and
+Ready Stock routes return HTTP 200, and signed-out Admin Catalog redirects to
+Clerk.
+
 ## Customer Cart checkout — 2026-09-14
 
 Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
