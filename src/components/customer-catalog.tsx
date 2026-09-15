@@ -56,6 +56,10 @@ function filterSummary(
   return `${selected.length} ${noun} dipilih`;
 }
 
+function scrollToCatalogTarget(targetId: string) {
+  document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+}
+
 function CatalogHeader({ catalog }: { catalog: NonNullable<ReturnType<typeof useProduct>["unlockedCatalog"]> }) {
   const availableBooks = catalog.titleCount ?? catalog.books.length;
   return (
@@ -326,7 +330,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
           </BFGSelect>
         </Card>
       ) : null}
-      <section className="catalog-discovery" aria-label="Cari buku di katalog">
+      <section className="catalog-discovery" id="catalog-browse" aria-label="Cari buku di katalog">
         <div className="catalog-discovery-controls customer-catalog-discovery-controls">
           <Field label="Cari buku">
             <input
@@ -372,7 +376,15 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             : `${catalog.titleCount ?? catalog.books.length} buku tersedia`}
         </p>
       </section>
-      <LinkButton href="#order-summary" variant="secondary" size="compact">
+      <LinkButton
+        href="#order-summary"
+        variant="secondary"
+        size="compact"
+        onClick={(event) => {
+          event.preventDefault();
+          scrollToCatalogTarget("order-summary");
+        }}
+      >
         Tinjau preorder
       </LinkButton>
       <div className="catalog-grid">
@@ -510,6 +522,17 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             <span className="card-kicker">Tinjau preorder</span>
             <h2>Pastikan pilihanmu.</h2>
           </div>
+          <LinkButton
+            href="#catalog-browse"
+            variant="tertiary"
+            size="compact"
+            onClick={(event) => {
+              event.preventDefault();
+              scrollToCatalogTarget("catalog-browse");
+            }}
+          >
+            Kembali ke daftar buku
+          </LinkButton>
           <div className="summary-line">
             <span>Jumlah buku</span>
             <strong>{selectedItems.reduce((sum, item) => sum + item.quantity, 0)}</strong>

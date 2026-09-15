@@ -771,4 +771,80 @@ describe("CustomerCatalog projection", () => {
     expect(screen.queryByRole("heading", { name: "Dune" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Pack" })).toBeNull();
   });
+
+  it("repeats preorder/list navigation without changing the selected preorder", () => {
+    const scrollIntoView = vi.fn();
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    window.history.replaceState(null, "", "/catalog");
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-navigation",
+        name: "Navigation Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-navigation",
+            title: "Book Navigation",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-navigation",
+                format: "PB",
+                isbn: "9780000000099",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    try {
+      render(<CustomerCatalog />);
+      fireEvent.click(screen.getByRole("button", { name: "Tambah jumlah Book Navigation" }));
+      expect(screen.getByLabelText("Jumlah Book Navigation").textContent).toBe("1");
+      expect(screen.getAllByText(/125[.]000/)).toHaveLength(2);
+
+      const down = screen.getByRole("link", { name: "Tinjau preorder" });
+      const up = screen.getByRole("link", { name: "Kembali ke daftar buku" });
+      for (let cycle = 0; cycle < 3; cycle += 1) {
+        fireEvent.click(down);
+        fireEvent.click(up);
+      }
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(6);
+      expect(scrollIntoView).toHaveBeenNthCalledWith(1, {
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+      expect(scrollIntoView).toHaveBeenNthCalledWith(2, {
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+      expect(window.location.hash).toBe("");
+      expect(screen.getByLabelText("Jumlah Book Navigation").textContent).toBe("1");
+      expect(screen.getAllByText(/125[.]000/)).toHaveLength(2);
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        configurable: true,
+        value: originalScrollIntoView,
+      });
+    }
+  });
 });
