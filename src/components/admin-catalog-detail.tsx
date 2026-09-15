@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { Fragment, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
@@ -59,7 +59,20 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const { sessionRole } = useProduct();
   const catalog = useQuery(api.secretCatalogs.getForAdmin, { catalogId: id });
   const items = useQuery(api.catalogItems.listForCatalog, { catalogId: id });
-  const assignable = useQuery(api.catalogItems.listAssignable, { catalogId: id });
+  const [assignableSearch, setAssignableSearch] = useState("");
+  const [assignableCursor, setAssignableCursor] = useState<string | null>(null);
+  const assignableResult = useQuery(api.catalogItems.listAssignable, {
+    catalogId: id,
+    search: assignableSearch,
+    paginationOpts: { numItems: 100, cursor: assignableCursor },
+  });
+  const assignable = assignableResult?.page;
+  useEffect(() => {
+    if (assignableResult && !assignableResult.isDone && !assignableResult.page.length) {
+      const frame = requestAnimationFrame(() => setAssignableCursor(assignableResult.continueCursor));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [assignableResult]);
   const update = useMutation(api.secretCatalogs.update);
   const open = useMutation(api.secretCatalogs.open);
   const close = useMutation(api.secretCatalogs.close);
@@ -76,7 +89,6 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const [closesAt, setClosesAt] = useState<string | null>(null);
   const [estimatedArrivalMonth, setEstimatedArrivalMonth] = useState<string | null>(null);
   const [variantId, setVariantId] = useState("");
-  const [assignableSearch, setAssignableSearch] = useState("");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogPublisher, setCatalogPublisher] = useState("");
   const [message, setMessage] = useState("");
@@ -96,7 +108,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     action: () => void;
   } | null>(null);
 
-  if (catalog === undefined || items === undefined || assignable === undefined) {
+  if (catalog === undefined || items === undefined) {
     return (
       <LoadingRegion label="Memuat katalog">
         <SkeletonCard />
@@ -110,7 +122,8 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const effectiveDescription = description ?? catalog.description ?? "";
   const effectiveClosesAt = closesAt ?? calendarDateInputValue(catalog.closesAt);
   const effectiveEstimatedArrivalMonth = estimatedArrivalMonth ?? catalog.estimatedArrivalMonth ?? "";
-  const filteredAssignable = assignable.filter((item) => matchesAdminCatalogRecord(item, assignableSearch));
+  const filteredAssignable = assignable ?? [];
+  const searchingAssignable = !assignableResult || (!assignableResult.isDone && !assignableResult.page.length);
   const catalogPublishers = Array.from(
     new Set(items.map((item) => item.publisherName).filter((publisher): publisher is string => Boolean(publisher))),
   ).sort((left, right) => left.localeCompare(right));
@@ -459,6 +472,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
               value={assignableSearch}
               onChange={(event) => {
                 setAssignableSearch(event.target.value);
+                setAssignableCursor(null);
                 setVariantId("");
               }}
             />
@@ -489,10 +503,24 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           </Button>
         </form>
         <p className="catalog-result-count" role="status" aria-live="polite">
-          {assignableSearch.trim()
-            ? `${filteredAssignable.length} buku/format ditemukan`
-            : `${assignable.length} buku/format tersedia`}
+          {searchingAssignable
+            ? "Mencari buku/format…"
+            : assignableSearch.trim()
+              ? `${filteredAssignable.length} buku/format ditemukan`
+              : `${filteredAssignable.length} buku/format tersedia`}
         </p>
+        {assignableResult && !assignableResult.isDone && !searchingAssignable ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setAssignableCursor(assignableResult.continueCursor);
+              setVariantId("");
+            }}
+          >
+            Lihat hasil berikutnya
+          </Button>
+        ) : null}
         <section className="catalog-tracking" aria-label="Cari buku dalam katalog">
           <div className="catalog-discovery-controls admin-catalog-tracking-controls">
             <Field label="Cari buku dalam Catalog">

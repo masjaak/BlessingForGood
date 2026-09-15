@@ -1,5 +1,21 @@
 # Decisions
 
+## Multi-Catalog Cart rollout and addable discovery — 2026-09-15
+
+Approved by the user: one Customer owns one Cart with multiple Secret Catalog
+groups; checkout creates one Order for one selected group and retains others.
+This supersedes the earlier one-Catalog Cart rule and root-wide checkout
+scope. Cross-Catalog Add activates only after grouped UI and scoped checkout
+pass regression. Ready Stock stays excluded and direct preorder stays live.
+
+Catalog addable search retains arbitrary substring matching for Publisher,
+title, author, and normalized ISBN. Cursor pages replace the terminal
+500-Variant window; indexed exact membership replaces bounded exclusion.
+Publisher hydration is cached per page. Existing full-text search is prefix
+based and cannot alone preserve this substring contract.
+
+Execution evidence: [stabilization record](../implementation/BFG-CATALOG-CART-STABILIZATION.md).
+
 ## Customer Cart checkout — 2026-09-14
 
 Status: `ACTIVE / IMPLEMENTED; AUTHENTICATED PRODUCTION UAT PENDING`

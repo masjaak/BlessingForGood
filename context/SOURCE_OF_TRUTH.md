@@ -1,5 +1,15 @@
 # BFG SOURCE OF TRUTH
 
+## Catalog search and multi-Catalog Cart — 2026-09-15
+
+The approved Cart model is one Customer, one persistent Cart, multiple Secret
+Catalog groups, and one Order per selected Catalog checkout. This supersedes
+the single-Catalog Cart restriction below. Implementation is sequentially gated
+in [the stabilization record](implementation/BFG-CATALOG-CART-STABILIZATION.md).
+Catalog-addable discovery must retain Publisher/title/author/normalized ISBN
+matching and exact Variant exclusion across the full dataset using bounded
+server pages. Book Master search remains unchanged.
+
 ## Customer Cart checkout — 2026-09-14
 
 Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

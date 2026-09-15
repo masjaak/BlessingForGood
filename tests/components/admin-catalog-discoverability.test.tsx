@@ -6,11 +6,25 @@ import { AdminCatalogAccess } from "@/components/admin-catalog-access";
 import { AdminCatalogDetail } from "@/components/admin-catalog-detail";
 import { useMutation, useQuery } from "convex/react";
 import { useProduct } from "@/domain/prototype/store";
+import { getFunctionName } from "convex/server";
 
-vi.mock("convex/react", () => ({
-  useMutation: vi.fn(),
-  useQuery: vi.fn(),
-}));
+vi.mock("convex/react", async () => {
+  const { getFunctionName } = await import("convex/server");
+  const { matchesAdminCatalogRecord } = await import("@/lib/catalog-discovery");
+  const query = vi.fn();
+  return {
+    useMutation: vi.fn(),
+    useQuery: Object.assign((reference: Parameters<typeof getFunctionName>[0], args: { search?: string }) => {
+      const result = query(reference, args);
+      if (getFunctionName(reference) !== "catalogItems:listAssignable" || !Array.isArray(result)) return result;
+      return {
+        page: result.filter((row) => matchesAdminCatalogRecord(row, args.search ?? "")),
+        isDone: true,
+        continueCursor: "",
+      };
+    }, query),
+  };
+});
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/catalogs",
@@ -47,6 +61,27 @@ beforeEach(() => {
 });
 
 describe("Secret Catalog operational discoverability", () => {
+  it("continues empty server pages and resets the search cursor without losing the input", async () => {
+    vi.mocked(useQuery).mockImplementation((reference, args?) => {
+      const name = getFunctionName(reference);
+      if (name === "secretCatalogs:getForAdmin") return { name: "CARGO 2", status: "open" } as never;
+      if (name !== "catalogItems:listAssignable") return [] as never;
+      const input = args as { search: string; paginationOpts: { cursor: string | null } };
+      return {
+        page: input.paginationOpts.cursor ? [{ variantId: "pb", title: "Rewild", format: "PB", isbn: "123" }] : [],
+        isDone: Boolean(input.paginationOpts.cursor),
+        continueCursor: "next-page",
+      } as never;
+    });
+    render(<AdminCatalogDetail catalogId="catalog-1" />);
+    expect(screen.getByText("Mencari buku/format…")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("1 buku/format tersedia")).toBeTruthy());
+    const input = screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[0];
+    fireEvent.change(input, { target: { value: "walker" } });
+    expect(input).toHaveProperty("value", "walker");
+    expect(screen.getByText("Mencari buku/format…")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("1 buku/format ditemukan")).toBeTruthy());
+  });
   it("keeps stacked actions and supporting copy in semantic action regions", () => {
     vi.mocked(useProduct).mockReturnValue({
       state: {

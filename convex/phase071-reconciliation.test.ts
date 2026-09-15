@@ -51,9 +51,14 @@ describe("Phase 07.1 reconciliation", () => {
     await admin.mutation(api.books.update, { bookId, publicationStatus: "special" });
     const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Curated Existing Products" });
 
-    expect(await admin.query(api.catalogItems.listAssignable, { catalogId })).toEqual([
-      expect.objectContaining({ variantId, title: "Existing Product" }),
-    ]);
+    expect(
+      (
+        await admin.query(api.catalogItems.listAssignable, {
+          catalogId,
+          paginationOpts: { numItems: 100, cursor: null },
+        })
+      ).page,
+    ).toEqual([expect.objectContaining({ variantId, title: "Existing Product" })]);
     const itemId = await admin.mutation(api.catalogItems.add, { catalogId, bookVariantId: variantId });
     await admin.mutation(api.catalogItems.remove, { catalogItemId: itemId });
     expect(await admin.query(api.catalogItems.listForCatalog, { catalogId })).toEqual([]);

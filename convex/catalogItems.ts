@@ -1,4 +1,7 @@
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import { matchesAdminCatalogRecord } from "../src/lib/catalog-discovery";
 import { mutation, query } from "./_generated/server";
 import { fail } from "./lib/errors";
 import { requirePermission } from "./lib/auth";
@@ -38,44 +41,46 @@ export const listForCatalog = query({
 });
 
 export const listAssignable = query({
-  args: { catalogId: v.id("secretCatalogs") },
+  args: {
+    catalogId: v.id("secretCatalogs"),
+    search: v.optional(v.string()),
+    paginationOpts: paginationOptsValidator,
+  },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "catalog.manage");
     if (!(await ctx.db.get(args.catalogId))) fail("CATALOG_NOT_FOUND");
-    const assigned = await ctx.db
-      .query("catalogItems")
-      .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
-      .take(500);
-    const assignedIds = new Set(assigned.map((item) => String(item.bookVariantId)));
-    const variants = await ctx.db.query("bookVariants").take(500);
-    return (
-      await Promise.all(
-        variants
-          .filter((variant) => variant.isAvailable && !assignedIds.has(String(variant._id)))
-          .map(async (variant) => {
-            const book = await ctx.db.get(variant.bookId);
-            const publisher = book ? await ctx.db.get(book.publisherId) : null;
-            if (
-              !book ||
-              !book.isActive ||
-              book.publicationStatus === "draft" ||
-              book.publicationStatus === "archived"
-            ) {
-              return null;
-            }
-            return {
-              variantId: variant._id,
-              bookId: book._id,
-              title: book.title,
-              publisherName: publisher?.name ?? null,
-              author: book.author ?? null,
-              format: variant.format,
-              isbn: variant.isbn,
-              priceAmount: variant.priceAmount,
-            };
-          }),
-      )
-    ).filter((item) => item !== null);
+    // ponytail: bounded cursor scan preserves arbitrary substring/ISBN matching;
+    // use a dedicated substring index if measured search latency requires it.
+    const result = await ctx.db.query("bookVariants").paginate(args.paginationOpts);
+    const books = new Map<Id<"books">, Doc<"books"> | null>();
+    const publishers = new Map<Id<"publishers">, Doc<"publishers"> | null>();
+    const page = [];
+    for (const variant of result.page) {
+      if (!variant.isAvailable) continue;
+      if (!books.has(variant.bookId)) books.set(variant.bookId, await ctx.db.get(variant.bookId));
+      const book = books.get(variant.bookId);
+      if (!book?.isActive || !["published", "special"].includes(book.publicationStatus)) continue;
+      if (!publishers.has(book.publisherId)) publishers.set(book.publisherId, await ctx.db.get(book.publisherId));
+      const publisher = publishers.get(book.publisherId);
+      if (!publisher?.isActive) continue;
+      const row = {
+        variantId: variant._id,
+        bookId: book._id,
+        title: book.title,
+        publisherName: publisher.name,
+        author: book.author ?? null,
+        format: variant.format,
+        isbn: variant.isbn,
+        priceAmount: variant.priceAmount,
+      };
+      if (!matchesAdminCatalogRecord(row, args.search ?? "")) continue;
+      const assigned = await ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog_and_variant", (q) => q.eq("catalogId", args.catalogId).eq("bookVariantId", variant._id))
+        .unique();
+      if (!assigned) page.push(row);
+    }
+    return { ...result, page };
   },
 });
 
