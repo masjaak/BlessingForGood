@@ -115,7 +115,7 @@ export function CustomerCart() {
   if (!cart.lines.length) {
     return (
       <div className={`page ${styles.page}`}>
-        <PageHeader eyebrow="Keranjang" title="Keranjang" description="Kelola pilihan buku dari satu Secret Catalog." />
+        <PageHeader eyebrow="Keranjang" title="Keranjang" description="Kelola pilihan buku dari Secret Catalog." />
         <EmptyState
           title="Keranjangmu masih kosong"
           description="Buku yang kamu pilih dari Secret Catalog akan muncul di sini."
@@ -127,7 +127,6 @@ export function CustomerCart() {
   }
 
   const activeLines = cart.lines.filter((line) => line.checkoutEligible);
-  const retainedLines = cart.lines.filter((line) => !line.checkoutEligible);
 
   async function changeQuantity(line: CartLine, quantity: number) {
     if (quantity < 1 || pending !== null) return;
@@ -213,116 +212,132 @@ export function CustomerCart() {
       />
       <div className={styles.context} aria-label="Konteks katalog keranjang">
         <div>
-          <span className="card-kicker">SECRET CATALOG</span>
-          <strong>{cart.catalog?.name || "Katalog tersimpan"}</strong>
+          <strong>{cart.retainedQuantity} buku tersimpan</strong>
         </div>
-        <p>Satu keranjang hanya menyimpan pilihan dari satu katalog.</p>
+        <p>{cart.groups.length} katalog · Satu pesanan untuk setiap katalog.</p>
       </div>
       {actionError ? (
         <p className={styles.error} role="alert">
           {actionError}
         </p>
       ) : null}
-      <div className={styles.layout}>
-        <div className={styles.sections}>
-          <Card className={styles.sectionCard}>
+      {cart.groups.map((group) => {
+        const activeLines = group.lines.filter((line) => line.checkoutEligible);
+        const retainedLines = group.lines.filter((line) => !line.checkoutEligible);
+        const headingId = `cart-group-${group.id ?? "removed"}`;
+        return (
+          <section key={group.id ?? "removed"} className={styles.sections} aria-labelledby={headingId}>
             <div className={styles.sectionHeading}>
               <div>
-                <span className="card-kicker">AKTIF</span>
-                <h2 id="cart-active-heading">Buku yang bisa dipesan</h2>
+                <span className="card-kicker">SECRET CATALOG</span>
+                <h2 id={headingId}>{group.catalog?.name || "Katalog tidak tersedia"}</h2>
               </div>
-              <span className={styles.count}>{cart.activeLineCount} pilihan</span>
+              <span className={styles.count}>{group.retainedQuantity} buku</span>
             </div>
-            {activeLines.length ? (
-              <div className={styles.lineList} aria-labelledby="cart-active-heading">
-                {activeLines.map((line) => (
-                  <CartLineCard
-                    key={line.id}
-                    line={line}
-                    pending={pending}
-                    onAcknowledge={(value) => void acknowledgeLine(value)}
-                    onQuantityChange={(value, quantity) => void changeQuantity(value, quantity)}
-                    onRemove={(value) => void removeLine(value)}
-                  />
-                ))}
+            <div className={styles.layout}>
+              <div className={styles.sections}>
+                <Card className={styles.sectionCard}>
+                  <div className={styles.sectionHeading}>
+                    <div>
+                      <span className="card-kicker">AKTIF</span>
+                      <h3 id={`${headingId}-active`}>Buku yang bisa dipesan</h3>
+                    </div>
+                    <span className={styles.count}>{group.activeLineCount} pilihan</span>
+                  </div>
+                  {activeLines.length ? (
+                    <div className={styles.lineList} aria-labelledby={`${headingId}-active`}>
+                      {activeLines.map((line) => (
+                        <CartLineCard
+                          key={line.id}
+                          line={line}
+                          pending={pending}
+                          onAcknowledge={(value) => void acknowledgeLine(value)}
+                          onQuantityChange={(value, quantity) => void changeQuantity(value, quantity)}
+                          onRemove={(value) => void removeLine(value)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.sectionEmpty}>
+                      <p>Belum ada buku yang bisa dipesan saat ini.</p>
+                    </div>
+                  )}
+                </Card>
+                {retainedLines.length ? (
+                  <Card className={styles.sectionCard}>
+                    <div className={styles.sectionHeading}>
+                      <div>
+                        <span className="card-kicker">PERLU PERHATIAN</span>
+                        <h3 id={`${headingId}-retained`}>Belum bisa dipesan</h3>
+                      </div>
+                      <span className={styles.count}>{retainedLines.length} pilihan</span>
+                    </div>
+                    <div className={styles.lineList} aria-labelledby={`${headingId}-retained`}>
+                      {retainedLines.map((line) => (
+                        <CartLineCard
+                          key={line.id}
+                          line={line}
+                          pending={pending}
+                          onAcknowledge={(value) => void acknowledgeLine(value)}
+                          onQuantityChange={(value, quantity) => void changeQuantity(value, quantity)}
+                          onRemove={(value) => void removeLine(value)}
+                        />
+                      ))}
+                    </div>
+                  </Card>
+                ) : null}
               </div>
-            ) : (
-              <div className={styles.sectionEmpty}>
-                <p>Belum ada buku yang bisa dipesan saat ini.</p>
-              </div>
-            )}
-          </Card>
-          {retainedLines.length ? (
-            <Card className={styles.sectionCard}>
-              <div className={styles.sectionHeading}>
-                <div>
-                  <span className="card-kicker">PERLU PERHATIAN</span>
-                  <h2 id="cart-retained-heading">Belum bisa dipesan</h2>
-                </div>
-                <span className={styles.count}>{retainedLines.length} pilihan</span>
-              </div>
-              <div className={styles.lineList} aria-labelledby="cart-retained-heading">
-                {retainedLines.map((line) => (
-                  <CartLineCard
-                    key={line.id}
-                    line={line}
-                    pending={pending}
-                    onAcknowledge={(value) => void acknowledgeLine(value)}
-                    onQuantityChange={(value, quantity) => void changeQuantity(value, quantity)}
-                    onRemove={(value) => void removeLine(value)}
-                  />
-                ))}
-              </div>
-            </Card>
-          ) : null}
-        </div>
-        <aside>
-          <Card className={styles.summary}>
-            <div>
-              <span className="card-kicker">RINGKASAN</span>
-              <h2>Keranjangmu</h2>
+              <aside>
+                <Card className={styles.summary}>
+                  <div>
+                    <span className="card-kicker">RINGKASAN</span>
+                    <h3>Pesanan katalog ini</h3>
+                  </div>
+                  <div className={styles.summaryRows}>
+                    <div>
+                      <span>Buku aktif</span>
+                      <strong>{group.activeQuantity}</strong>
+                    </div>
+                    <div>
+                      <span>Subtotal aktif</span>
+                      <strong>
+                        <Money amount={group.activeSubtotalAmount} />
+                      </strong>
+                    </div>
+                  </div>
+                  <p className={styles.summaryNote}>
+                    {group.checkoutEligible
+                      ? "Semua buku siap dibuat menjadi satu pesanan."
+                      : "Selesaikan buku yang perlu perhatian sebelum membuat pesanan."}
+                  </p>
+                  {group.checkoutEligible ? (
+                    <Button
+                      disabled={pending !== null || cart.groups.length !== 1}
+                      className="checkoutButton"
+                      loading={pending === "checkout"}
+                      loadingLabel="Membuat pesanan…"
+                      onClick={() => setCheckoutOpen(true)}
+                      type="button"
+                    >
+                      Buat pesanan
+                    </Button>
+                  ) : null}
+                </Card>
+              </aside>
             </div>
-            <div className={styles.summaryRows}>
-              <div>
-                <span>Buku aktif</span>
-                <strong>{cart.activeQuantity}</strong>
-              </div>
-              <div>
-                <span>Subtotal aktif</span>
-                <strong>
-                  <Money amount={cart.estimatedSubtotalAmount} />
-                </strong>
-              </div>
-            </div>
-            <p className={styles.summaryNote}>
-              {activeLines.length === cart.lines.length
-                ? "Semua buku siap dibuat menjadi satu pesanan."
-                : "Selesaikan buku yang perlu perhatian sebelum membuat pesanan."}
-            </p>
-            {activeLines.length === cart.lines.length ? (
-              <Button
-                disabled={pending !== null}
-                loading={pending === "checkout"}
-                loadingLabel="Membuat pesanan…"
-                onClick={() => setCheckoutOpen(true)}
-                type="button"
-              >
-                Buat pesanan
-              </Button>
-            ) : null}
-            <Button
-              disabled={pending !== null}
-              loading={pending === "clear"}
-              loadingLabel="Mengosongkan…"
-              onClick={() => setClearOpen(true)}
-              type="button"
-              variant="danger"
-            >
-              Kosongkan keranjang
-            </Button>
-          </Card>
-        </aside>
-      </div>
+          </section>
+        );
+      })}
+      <Button
+        disabled={pending !== null}
+        loading={pending === "clear"}
+        loadingLabel="Mengosongkan…"
+        onClick={() => setClearOpen(true)}
+        type="button"
+        variant="tertiary"
+      >
+        Kosongkan keranjang
+      </Button>
       <ConfirmationDialog
         open={checkoutOpen}
         title="Buat pesanan dari keranjang?"

@@ -41,6 +41,7 @@ function emptyCart() {
     activeLineCount: 0,
     activeQuantity: 0,
     estimatedSubtotalAmount: 0,
+    groups: [],
   };
 }
 
@@ -116,6 +117,22 @@ function cartWithLines() {
     activeLineCount: 1,
     activeQuantity: 2,
     estimatedSubtotalAmount: 250000,
+    get groups() {
+      return [
+        {
+          id: this.catalogId,
+          catalog: this.catalog,
+          lines: this.lines,
+          retainedQuantity: this.retainedQuantity,
+          activeQuantity: this.activeQuantity,
+          activeLineCount: this.activeLineCount,
+          activeSubtotalAmount: this.estimatedSubtotalAmount,
+          checkoutEligible: false,
+          accessState: "granted",
+          blockedReason: "price_changed",
+        },
+      ];
+    },
   };
 }
 
@@ -130,6 +147,16 @@ function readyCart() {
     activeLineCount: 1,
     activeQuantity: line.quantity,
     estimatedSubtotalAmount: line.subtotalAmount,
+    groups: [
+      {
+        ...cart.groups[0],
+        lines: [line],
+        retainedQuantity: line.quantity,
+        activeQuantity: line.quantity,
+        activeSubtotalAmount: line.subtotalAmount,
+        checkoutEligible: true,
+      },
+    ],
   };
 }
 
@@ -140,6 +167,40 @@ function mockMutations() {
 }
 
 describe("Customer Cart page", () => {
+  it("renders three independent Catalog groups from the server projection", async () => {
+    const cart = readyCart();
+    const groups = ["CARGO 1", "CARGO 2", "CARGO 3"].map((name, index) => ({
+      ...cart.groups[0],
+      id: `catalog-${index + 1}`,
+      catalog: { ...cart.catalog, id: `catalog-${index + 1}`, name },
+      lines: [{ ...cart.lines[0], id: `line-${index}`, title: `Book ${index}` }],
+      checkoutEligible: index !== 0,
+    }));
+    vi.mocked(useQuery).mockReturnValue({ ...cart, groups, lines: groups.flatMap((group) => group.lines) } as never);
+    const { rerender } = render(<CustomerCart />);
+    for (const group of groups) expect(await screen.findByRole("heading", { name: group.catalog.name })).toBeTruthy();
+    expect(screen.queryByText(/Satu keranjang hanya/)).toBeNull();
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "CARGO 2" })).getByRole("button", {
+        name: "Hapus Book 1 dari keranjang",
+      }),
+    );
+    await waitFor(() => expect(removeItem).toHaveBeenCalledWith({ cartItemId: "line-1" }));
+    expect(
+      within(screen.getByRole("region", { name: "CARGO 2" })).getByRole("button", { name: "Buat pesanan" }),
+    ).toHaveProperty("disabled", true);
+    for (const remaining of [[groups[0], groups[2]], [groups[2]], []]) {
+      vi.mocked(useQuery).mockReturnValue({
+        ...cart,
+        groups: remaining,
+        lines: remaining.flatMap((group) => group.lines),
+      } as never);
+      rerender(<CustomerCart />);
+      for (const group of remaining) expect(screen.getByRole("region", { name: group.catalog.name })).toBeTruthy();
+      expect(screen.queryByRole("region", { name: "CARGO 2" })).toBeNull();
+    }
+    expect(screen.getByText("Keranjangmu masih kosong")).toBeTruthy();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     reconcile.mockResolvedValue(emptyCart());

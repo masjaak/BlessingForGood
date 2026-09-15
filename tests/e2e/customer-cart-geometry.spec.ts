@@ -14,6 +14,16 @@ function cartFixture() {
       </div>
       <div class="actions"><div class="quantity"><span>Jumlah</span><div class="quantityControl"><button class="button button-tertiary button-icon" type="button" aria-label="Kurangi">−</button><output>${quantity}</output><button class="button button-tertiary button-icon" type="button" aria-label="Tambah">+</button></div></div><button class="button button-danger button-icon removeButton" type="button" aria-label="Hapus ${title}">×</button></div>
     </section>`;
+  const group = (name: string, index: number) => `
+    <section class="sections" aria-labelledby="cart-group-${index}">
+      <div class="sectionHeading"><div><span class="card-kicker">SECRET CATALOG</span><h2 id="cart-group-${index}">${name}</h2></div><span class="count">1 buku</span></div>
+      <div class="layout">
+        <div class="sections">
+          <section class="card sectionCard"><div class="sectionHeading"><div><span class="card-kicker">AKTIF</span><h3>Buku yang bisa dipesan</h3></div><span class="count">1 pilihan</span></div><div class="lineList">${line(`Buku ${index}`, 1)}</div></section>
+        </div>
+        <aside><section class="card summary"><div><span class="card-kicker">RINGKASAN</span><h3>Pesanan katalog ini</h3></div><div class="summaryRows"><div><span>Buku aktif</span><strong>1</strong></div><div><span>Subtotal aktif</span><strong>Rp 125.000</strong></div></div><p class="summaryNote">Semua buku siap dibuat menjadi satu pesanan.</p><button class="button button-primary checkoutButton" type="button">Buat pesanan</button></section></aside>
+      </div>
+    </section>`;
   return `
     <div class="site-shell customer-shell">
       <header class="site-header"><span>Blessing For Good</span></header>
@@ -27,14 +37,9 @@ function cartFixture() {
         </div>
         <div class="page">
           <header class="page-header"><div><span class="eyebrow">Keranjang</span><h1>Keranjang</h1><p class="lede">Periksa buku yang masih bisa dipesan.</p></div></header>
-          <div class="context"><div><span class="card-kicker">SECRET CATALOG</span><strong>September Picks</strong></div><p>Satu keranjang hanya menyimpan pilihan dari satu katalog.</p></div>
-          <div class="layout">
-            <div class="sections">
-              <section class="card sectionCard"><div class="sectionHeading"><div><span class="card-kicker">AKTIF</span><h2>Buku yang bisa dipesan</h2></div><span class="count">2 pilihan</span></div><div class="lineList">${line("Buku Satu", 2)}${line("Buku Dua", 1)}</div></section>
-              <section class="card sectionCard"><div class="sectionHeading"><div><span class="card-kicker">PERLU PERHATIAN</span><h2>Belum bisa dipesan</h2></div><span class="count">1 pilihan</span></div><div class="lineList">${line("Buku Tiga", 1)}</div></section>
-            </div>
-            <aside><section class="card summary"><div><span class="card-kicker">RINGKASAN</span><h2>Keranjangmu</h2></div><div class="summaryRows"><div><span>Buku aktif</span><strong>3</strong></div><div><span>Subtotal aktif</span><strong>Rp 375.000</strong></div></div><p class="summaryNote">Semua buku siap dibuat menjadi satu pesanan.</p><button class="button button-primary checkoutButton" type="button">Buat pesanan</button><button class="button button-danger" type="button">Kosongkan keranjang</button></section></aside>
-          </div>
+          <div class="context"><div><strong>3 buku tersimpan</strong></div><p>3 katalog · Satu pesanan untuk setiap katalog.</p></div>
+          <div class="sections">${group("CARGO 1", 1)}${group("CARGO 2", 2)}${group("CARGO 3", 3)}</div>
+          <button class="button button-tertiary" type="button">Kosongkan keranjang</button>
         </div>
       </main>
       <nav class="customer-bottom-nav" aria-label="Navigasi pelanggan"><a href="/">Beranda</a><a href="/catalog">Katalog</a><a href="/account/orders">Buku Saya</a><a href="/account/invoices">Tagihan</a><a href="/account">Akun</a></nav>
@@ -52,16 +57,20 @@ test.describe("@customer Customer Cart geometry", () => {
       { width: 390, height: 844 },
       { width: 430, height: 932 },
       { width: 768, height: 1024 },
+      { width: 1024, height: 768 },
       { width: 1440, height: 900 },
     ]) {
       await page.setViewportSize(viewport);
       await page.setContent(
         `<meta name="viewport" content="width=device-width, initial-scale=1" /><style>${globalsCss}\n${cartCss}</style>${cartFixture()}`,
       );
+      await expect(page.getByRole("heading", { name: "CARGO 1", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "CARGO 2", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "CARGO 3", exact: true })).toBeVisible();
 
       const geometry = await page.locator(".customer-shell").evaluate((shell) => {
         const layout = shell.querySelector<HTMLElement>(".layout");
-        const sections = shell.querySelector<HTMLElement>(".sections");
+        const sections = shell.querySelector<HTMLElement>(".page > .sections");
         const summary = shell.querySelector<HTMLElement>(".summary");
         const miniCart = shell.querySelector<HTMLElement>(".miniCartRegion");
         const miniCartLink = shell.querySelector<HTMLAnchorElement>(".miniCart");

@@ -30,7 +30,7 @@ consumers, including failed transactions and retries.
 - Eligibility was evaluated after take(500); membership also used take(500).
   Identity is Variant-level. Book -> publisherId resolves Publisher metadata.
   Catalog Publisher filter independently reads assigned Catalog items.
-- Search implementation in progress: bounded cursor pages, server metadata
+- Search implementation: bounded cursor pages, server metadata
   predicate, exact indexed membership exclusion, cached Publisher hydration.
   Empty intermediate pages must continue before claiming no matches.
 - M2 grouped backend projection is GREEN. Customer multi-Catalog rollout is
@@ -59,7 +59,10 @@ integrated flow, responsive matrix, final deployment, authenticated UAT.
 - A baseline: PASS.
 - B search: GREEN. Red reproduced; 39 focused/adjacent tests pass (including
   cursor continuation), TypeScript and focused lint pass. No schema change.
-- C grouped Cart UI: pending.
+- C grouped Cart UI: GREEN. The Cart page renders each server-projected Catalog
+  group independently, keeps management actions line-scoped, and has the
+  responsive matrix fixture updated for three groups. Per-group checkout is
+  intentionally gated until D.
 - D scoped checkout/idempotency: pending.
 - E cross-Catalog Add: pending.
 - F integrated harness: pending.

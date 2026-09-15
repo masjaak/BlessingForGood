@@ -61,6 +61,7 @@
 }
 
 .sectionHeading h2,
+.sectionHeading h3,
 .sectionHeading p {
   margin: 0;
 }
@@ -274,6 +275,7 @@
 }
 
 .summary h2,
+.summary h3,
 .summary p {
   margin: 0;
 }
