@@ -4,7 +4,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Button, LinkButton } from "@/components/ui";
-import { getConvexErrorCode, type ProductAuthState } from "@/domain/prototype/context";
+import { type ProductAuthState } from "@/domain/prototype/context";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import type { ProductRole } from "@/domain/prototype/session";
 import { useState } from "react";
@@ -26,7 +26,6 @@ export function AddToCartAction({ catalogItemId, quantity, authState, sessionRol
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
   const [error, setError] = useState("");
-  const [cartReviewRequired, setCartReviewRequired] = useState(false);
   const validQuantity = Number.isSafeInteger(quantity) && quantity >= 1;
 
   if (authState === "signed-out") {
@@ -52,16 +51,11 @@ export function AddToCartAction({ catalogItemId, quantity, authState, sessionRol
     setPending(true);
     setFeedback(null);
     setError("");
-    setCartReviewRequired(false);
     try {
       await addItem({ catalogItemId: catalogItemId as Id<"catalogItems">, quantity });
       setFeedback("success");
     } catch (reason) {
       setFeedback("error");
-      setCartReviewRequired(
-        getConvexErrorCode(reason) === "CART_CATALOG_MISMATCH" ||
-          (reason instanceof Error && reason.message.includes("CART_CATALOG_MISMATCH")),
-      );
       setError(productErrorMessage(reason, "Buku belum dapat ditambahkan ke keranjang. Coba lagi."));
     } finally {
       setPending(false);
@@ -90,16 +84,9 @@ export function AddToCartAction({ catalogItemId, quantity, authState, sessionRol
         </p>
       ) : null}
       {feedback === "error" ? (
-        <>
-          <p className="error-text" role="alert">
-            {error}
-          </p>
-          {cartReviewRequired ? (
-            <LinkButton href="/account/cart" variant="tertiary" size="compact">
-              Lihat keranjang
-            </LinkButton>
-          ) : null}
-        </>
+        <p className="error-text" role="alert">
+          {error}
+        </p>
       ) : null}
     </div>
   );

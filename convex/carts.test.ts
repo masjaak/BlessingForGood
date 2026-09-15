@@ -88,7 +88,7 @@ describe("Customer Cart server domain", () => {
     expect(cleared).toMatchObject({ id: updated.id, catalogId: null, lines: [], retainedQuantity: 0 });
   });
 
-  it("rejects a different Catalog while preserving the existing Cart", async () => {
+  it("adds valid items from different Catalogs while preserving the legacy root metadata", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const first = await createCartCatalog(admin, "Cart Catalog A");
@@ -99,12 +99,14 @@ describe("Customer Cart server domain", () => {
     const secondItemId = await catalogItemId(t, second.catalogId, second.variantIds[0]);
     await customer.mutation(api.carts.addItem, { catalogItemId: firstItemId });
 
-    await expect(customer.mutation(api.carts.addItem, { catalogItemId: secondItemId })).rejects.toThrow(
-      "CART_CATALOG_MISMATCH",
-    );
-    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({
+    const mixed = await customer.mutation(api.carts.addItem, { catalogItemId: secondItemId });
+    expect(mixed).toMatchObject({
       catalogId: first.catalogId,
-      retainedQuantity: 1,
+      retainedQuantity: 2,
+      groups: expect.arrayContaining([
+        expect.objectContaining({ id: first.catalogId }),
+        expect.objectContaining({ id: second.catalogId }),
+      ]),
     });
     await customer.mutation(api.carts.clear, {});
     await expect(customer.mutation(api.carts.addItem, { catalogItemId: secondItemId })).resolves.toMatchObject({
@@ -320,13 +322,8 @@ describe("Customer Cart server domain", () => {
       customer.mutation(api.carts.addItem, { catalogItemId: secondItemId }),
     ]);
     const fulfilledCount = crossCatalogResults.filter((result) => result.status === "fulfilled").length;
-    const rejected = crossCatalogResults.filter(
-      (result): result is PromiseRejectedResult => result.status === "rejected",
-    );
-    expect(fulfilledCount).toBe(1);
-    expect(rejected).toHaveLength(1);
-    expect(rejected[0].reason.message).toContain("CART_CATALOG_MISMATCH");
-    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedLineCount: 1 });
+    expect(fulfilledCount).toBe(2);
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedLineCount: 2 });
 
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("customer fixture missing");

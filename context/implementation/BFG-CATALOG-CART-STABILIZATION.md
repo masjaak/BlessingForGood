@@ -33,8 +33,8 @@ consumers, including failed transactions and retries.
 - Search implementation: bounded cursor pages, server metadata
   predicate, exact indexed membership exclusion, cached Publisher hydration.
   Empty intermediate pages must continue before claiming no matches.
-- M2 grouped backend projection is GREEN. Customer multi-Catalog rollout is
-  not yet implemented. Cross-Catalog Add remains disabled.
+- M2 grouped backend projection is GREEN. Customer multi-Catalog Cart and
+  valid cross-Catalog Add are now implemented; Ready Stock remains separate.
 
 ## PROTECTED
 
@@ -46,8 +46,8 @@ Deposit, Blessy, bottom nav, and global CSS.
 
 User-approved model: one authenticated Customer -> one persistent Cart ->
 multiple Secret Catalog groups -> one Order per selected Catalog checkout.
-The former one-Catalog Cart lock is superseded, but removal is gated on the
-grouped UI and scoped checkout passing regression.
+The former one-Catalog Cart lock and its customer-facing mismatch path are
+superseded by grouped Cart rendering and scoped checkout.
 
 ## UNPROVEN
 
@@ -61,14 +61,16 @@ deployment, authenticated UAT.
   cursor continuation), TypeScript and focused lint pass. No schema change.
 - C grouped Cart UI: GREEN. The Cart page renders each server-projected Catalog
   group independently, keeps management actions line-scoped, and has the
-  responsive matrix fixture updated for three groups. Per-group checkout is
-  intentionally gated until D.
+  responsive matrix fixture updated for three groups.
 - D scoped checkout/idempotency: GREEN. `orders.submitCart` accepts an
   optional canonical `catalogId` selector and persists one bounded
   `cartCheckouts` record per Cart/Catalog cycle. Canonical Order insertion,
   Batch admission, snapshots, retries, and concurrent independent groups are
   covered. The legacy root marker remains compatibility metadata only.
-- E cross-Catalog Add: pending.
+- E cross-Catalog Add: GREEN. `carts.addItem` no longer treats legacy root
+  `catalogId` as a lock; valid offers merge by exact Catalog Item identity and
+  separate Catalog groups remain distinct. Obsolete mismatch UI/error mapping
+  is removed.
 - F integrated harness: pending.
 - G deployment: pending.
 - H Production proof: pending.

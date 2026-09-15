@@ -1,5 +1,21 @@
 # BFG Project Status
 
+## Catalog search + multi-Catalog Cart rollout — 2026-09-15
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+Catalog addable search now evaluates the established metadata matcher across
+bounded server cursor pages and excludes exact assigned Variants. Customer
+Cart now groups persisted Secret Catalog lines, permits valid cross-Catalog
+adds, and checks out one selected Catalog at a time through canonical Order
+insertion. Scoped `cartCheckouts` records prevent same-group duplicates while
+allowing independent Catalog checkout and future Cart cycles. Ready Stock and
+direct preorder remain separate.
+
+Authenticated Production UAT remains pending because no approved disposable
+Customer fixture/session is available; no real Customer Order or Cart was
+mutated for proof.
+
 ## Customer Cart checkout — 2026-09-14
 
 Status: `IMPLEMENTED; ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

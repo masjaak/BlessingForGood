@@ -39,9 +39,6 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
   if (code === "NO_ELIGIBLE_BATCH" || message.includes("NO_ELIGIBLE_BATCH")) {
     return "PO katalog ini sudah ditutup dan belum ada Batch yang dapat menerima pesanan.";
   }
-  if (code === "CART_CATALOG_MISMATCH" || message.includes("CART_CATALOG_MISMATCH")) {
-    return "Keranjangmu sedang berisi buku dari katalog lain. Periksa keranjang sebelum menambah buku ini.";
-  }
   if (code === "CART_ITEM_NOT_FOUND" || message.includes("CART_ITEM_NOT_FOUND")) {
     return "Buku ini belum dapat ditemukan di keranjang.";
   }

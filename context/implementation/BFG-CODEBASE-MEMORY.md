@@ -1,5 +1,34 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Catalog search + multi-Catalog Cart rollout — 2026-09-15
+
+### CURRENT
+
+- Catalog addable discovery searches bounded server cursor pages with the
+  established title/Publisher/author/normalized-ISBN matcher and excludes
+  exact assigned Variants through the Catalog index.
+- One Customer Cart may contain multiple Secret Catalog groups. `submitCart`
+  accepts a canonical Catalog selector, derives that group's retained lines
+  server-side, and creates one Order for that Catalog only.
+- `cartCheckouts` stores one bounded idempotency record per Cart/Catalog
+  checkout cycle. Adding a new line to that Catalog starts a future cycle;
+  the root `catalogId` and `lastCheckout` fields are compatibility metadata.
+
+### PROTECTED
+
+- Book Master search/index, media, Ready Stock, Auth/Clerk, invitations, Batch
+  lifecycle/export, direct preorder, cancellation, finance, Invoice, Payment,
+  Deposit, Blessy, bottom navigation, and global CSS.
+
+### SUPERSEDED
+
+- The one-Catalog Cart lock and its `CART_CATALOG_MISMATCH` customer path.
+
+### UNPROVEN
+
+- Authenticated Production multi-Catalog UAT remains unavailable without an
+  approved disposable Customer fixture/session.
+
 ## Post-diff memory — Batch export column reconciliation — 2026-09-15
 
 ### CURRENT
@@ -54,12 +83,10 @@
 
 ### PROTECTED
 
-- `carts.addItem` still rejects cross-Catalog writes with
-  `CART_CATALOG_MISMATCH`; no Customer-facing cross-Catalog state is enabled.
 - `orders.submitCart`, direct `orders.submit`, Cart Page, mini-cart,
-  reconciliation mutations, Cart schema/indexes, Batch/price/cancellation
-  guards, Ready Stock, Auth, Orders, finance, Book Master/media, Blessy,
-  navigation, and global CSS remain unchanged.
+  reconciliation mutations, Batch/price/cancellation guards, Ready Stock,
+  Auth, Orders, finance, Book Master/media, Blessy, navigation, and global CSS
+  remain otherwise unchanged.
 
 ### SUPERSEDED
 
@@ -69,9 +96,7 @@
 
 ### UNPROVEN
 
-- Grouped Cart Page, per-Catalog checkout/idempotency, removal of
-  `CART_CATALOG_MISMATCH`, and authenticated Production multi-Catalog UAT are
-  intentionally deferred to M3–M6. No Production Cart data was mutated.
+- No Production Cart data was mutated for this rollout.
 
 ## Post-diff memory — Customer Cart checkout — 2026-09-14
 

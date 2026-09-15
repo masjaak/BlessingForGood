@@ -60,14 +60,14 @@ describe("AddToCartAction", () => {
     await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
   });
 
-  it("keeps a cross-Catalog Cart untouched and links to Cart review", async () => {
-    addItem.mockRejectedValue(new Error("CART_CATALOG_MISMATCH"));
+  it("shows a safe add error without exposing internal details", async () => {
+    addItem.mockRejectedValue(new Error("CART_LINE_UNAVAILABLE internal detail"));
     renderAction();
 
     fireEvent.click(screen.getByRole("button", { name: "Tambahkan ke keranjang" }));
 
-    expect((await screen.findByRole("alert")).textContent).toContain("katalog lain");
-    expect(screen.getByRole("link", { name: "Lihat keranjang" }).getAttribute("href")).toBe("/account/cart");
+    expect((await screen.findByRole("alert")).textContent).toContain("Buku ini sudah tidak tersedia");
+    expect(screen.queryByRole("link", { name: "Lihat keranjang" })).toBeNull();
     expect(screen.getByRole("alert").textContent).not.toContain("catalog-item-pb");
   });
 
