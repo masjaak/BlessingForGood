@@ -385,7 +385,7 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
   });
 
-  it("shows password guidance before submission and keeps the Clerk flow unchanged", async () => {
+  it("shows username and password guidance before submission and keeps the Clerk flow unchanged", async () => {
     const signUp = {
       status: "missing_requirements",
       missingFields: ["username", "password"],
@@ -402,15 +402,22 @@ describe("BFG application invitation acceptance", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
 
     const passwordInput = screen.getByLabelText("Password");
+    const usernameInput = screen.getByLabelText("Username");
     expect(
       screen.getByText(
-        "Gunakan password yang kuat dan tidak mudah ditebak. Password yang terlalu lemah atau pernah bocor dapat ditolak.",
+        "Pilih username yang mudah kamu ingat. Username ini digunakan sebagai identitas akun Blessfriend.",
       ),
     ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Gunakan password yang kuat dan sulit ditebak. Kombinasi huruf besar, huruf kecil, angka, atau simbol dapat membantu memperkuat password. Password yang terlalu lemah atau pernah bocor dapat ditolak.",
+      ),
+    ).toBeTruthy();
+    expect(usernameInput.getAttribute("aria-describedby")).toBe("invitation-username-help");
     expect(passwordInput.getAttribute("aria-describedby")).toBe("invitation-password-help");
     expect(signUp.password).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(usernameInput, { target: { value: "reader" } });
     fireEvent.change(passwordInput, { target: { value: "safe-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
 
@@ -418,6 +425,39 @@ describe("BFG application invitation acceptance", () => {
       expect(signUp.password).toHaveBeenCalledWith({ username: "reader", password: "safe-password" }),
     );
     await waitFor(() => expect(signUp.finalize).toHaveBeenCalledOnce());
+  });
+
+  it("maps a weak password rejection to BFG-owned customer copy", async () => {
+    const signUp = {
+      status: "missing_requirements",
+      missingFields: ["username", "password"],
+      ticket: vi.fn().mockResolvedValue({ error: null }),
+      password: vi.fn().mockResolvedValue({
+        error: { code: "form_password_not_strong_enough" },
+      }),
+      finalize: vi.fn(),
+    };
+    vi.mocked(useSignUp).mockReturnValue({ signUp } as never);
+
+    render(<ClerkInvitationAcceptance ticket="ticket-safe" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy());
+
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "reader" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "weak-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Password belum cukup kuat atau pernah bocor. Coba gunakan password yang lebih sulit ditebak.",
+        ),
+      ).toBeTruthy(),
+    );
+    expect(screen.getByLabelText("Password").getAttribute("aria-describedby")).toBe(
+      "invitation-password-help invitation-password-error",
+    );
+    expect(screen.queryByText(/Clerk/)).toBeNull();
+    expect(signUp.finalize).not.toHaveBeenCalled();
   });
 
   it("ends the username/password onboarding at Account after membership activation", async () => {
@@ -509,7 +549,13 @@ describe("BFG application invitation acceptance", () => {
     fireEvent.change(passwordInput, { target: { value: "safe-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan dan lanjutkan" }));
 
-    await waitFor(() => expect(screen.getByText("Username berisi karakter yang tidak didukung Clerk.")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText("Username berisi karakter yang belum didukung. Coba pilih username lain.")).toBeTruthy(),
+    );
+    expect(screen.getByLabelText("Username").getAttribute("aria-describedby")).toBe(
+      "invitation-username-help invitation-username-error",
+    );
+    expect(screen.queryByText(/Clerk/)).toBeNull();
     expect(screen.getByRole("heading", { name: "Lengkapi akun" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Aktivasi belum selesai." })).toBeNull();
 

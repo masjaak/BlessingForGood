@@ -136,16 +136,16 @@ function getClerkFieldErrorMessage(error: unknown, field: InvitationField | null
       "form_password_size_in_bytes_exceeded",
     ].includes(code || "")
   ) {
-    return "Password belum memenuhi persyaratan keamanan Clerk.";
+    return "Password belum cukup kuat atau pernah bocor. Coba gunakan password yang lebih sulit ditebak.";
   }
   if (
     field === "username" &&
     ["form_username_invalid_character", "form_username_needs_non_number_char"].includes(code || "")
   ) {
-    return "Username berisi karakter yang tidak didukung Clerk.";
+    return "Username berisi karakter yang belum didukung. Coba pilih username lain.";
   }
   if (field === "username" && code === "form_username_invalid_length") {
-    return "Panjang username belum sesuai persyaratan Clerk.";
+    return "Panjang username belum sesuai. Coba pilih username lain.";
   }
   if (field === "emailAddress" && code === "form_email_address_blocked") {
     return "Email ini tidak dapat digunakan untuk membuat akun.";
@@ -1350,7 +1350,7 @@ export function ClerkInvitationAcceptance({
             </>
           ) : null}
           {liveMissingFields.includes("username") ? (
-            <>
+            <div className="field">
               <label className="field" htmlFor="invitation-username">
                 <span className="field-label">Username</span>
                 <input
@@ -1360,12 +1360,19 @@ export function ClerkInvitationAcceptance({
                   onChange={(event) => setUsername(event.target.value)}
                   autoComplete="username"
                   aria-invalid={Boolean(fieldErrors.username)}
-                  aria-describedby={fieldErrors.username ? "invitation-username-error" : undefined}
+                  aria-describedby={
+                    fieldErrors.username
+                      ? "invitation-username-help invitation-username-error"
+                      : "invitation-username-help"
+                  }
                   required
                 />
               </label>
+              <span id="invitation-username-help" className="field-hint">
+                Pilih username yang mudah kamu ingat. Username ini digunakan sebagai identitas akun Blessfriend.
+              </span>
               {renderFieldError("username")}
-            </>
+            </div>
           ) : null}
           {liveMissingFields.includes("password") ? (
             <div className="field">
@@ -1388,8 +1395,8 @@ export function ClerkInvitationAcceptance({
                 />
               </label>
               <span id="invitation-password-help" className="field-hint">
-                Gunakan password yang kuat dan tidak mudah ditebak. Password yang terlalu lemah atau pernah bocor dapat
-                ditolak.
+                Gunakan password yang kuat dan sulit ditebak. Kombinasi huruf besar, huruf kecil, angka, atau simbol
+                dapat membantu memperkuat password. Password yang terlalu lemah atau pernah bocor dapat ditolak.
               </span>
               {renderFieldError("password")}
             </div>
