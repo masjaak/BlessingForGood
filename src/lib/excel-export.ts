@@ -1,4 +1,5 @@
 import { formatGbpMinor } from "@/lib/gbp";
+import { formatBfgCalendarDate } from "@/lib/calendar-date";
 
 function excelCell(value: string | number): string {
   const text = String(value);
@@ -21,9 +22,30 @@ export type PurchaseSummaryExportRow = {
   unitPriceAmount: number;
 };
 
-export function purchaseSummaryCsvRows(items: PurchaseSummaryExportRow[]): Array<Array<string | number>> {
+export type PurchaseSummaryExportContext = {
+  batchName: string;
+  cargoName: string | null;
+  closeDate: number | null;
+};
+
+export function purchaseSummaryCsvRows(
+  items: PurchaseSummaryExportRow[],
+  context: PurchaseSummaryExportContext,
+): Array<Array<string | number>> {
+  const closeDate = context.closeDate === null ? "" : formatBfgCalendarDate(context.closeDate);
   const rows: Array<Array<string | number>> = [
-    ["Publisher", "ISBN", "Judul", "Format", "Qty", "Harga GBP", "Harga IDR"],
+    [
+      "NAMA BATCH",
+      "PUBLISHER",
+      "ISBN",
+      "JUDUL",
+      "FORMAT",
+      "QTY",
+      "NAMA CARGO",
+      "TANGGAL CLOSE",
+      "HARGA GBP",
+      "HARGA IDR",
+    ],
   ];
   const groups = new Map<string, PurchaseSummaryExportRow[]>();
   for (const item of items) {
@@ -32,14 +54,17 @@ export function purchaseSummaryCsvRows(items: PurchaseSummaryExportRow[]): Array
     groups.set(item.publisherName, group);
   }
   for (const [publisher, groupedItems] of [...groups.entries()].sort(([left], [right]) => left.localeCompare(right))) {
-    rows.push([publisher, "", "", "", "", "", ""]);
+    rows.push([context.batchName, publisher, "", "", "", "", context.cargoName ?? "", closeDate, "", ""]);
     for (const item of groupedItems.sort((left, right) => left.bookTitle.localeCompare(right.bookTitle))) {
       rows.push([
+        context.batchName,
         publisher,
         item.isbn,
         item.bookTitle,
         item.format,
         item.quantity,
+        context.cargoName ?? "",
+        closeDate,
         item.supplierPriceGbpMinor === null ? "" : formatGbpMinor(item.supplierPriceGbpMinor),
         item.unitPriceAmount,
       ]);

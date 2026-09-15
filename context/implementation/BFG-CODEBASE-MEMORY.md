@@ -1,5 +1,39 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Batch export column reconciliation — 2026-09-15
+
+### CURRENT
+
+- `src/app/admin/batches/[batchId]/page.tsx` remains the download trigger;
+  `src/lib/excel-export.ts:purchaseSummaryCsvRows` remains the sole CSV row
+  builder and `toExcelCsv` remains the sole file serializer.
+- The canonical export schema is `NAMA BATCH | PUBLISHER | ISBN | JUDUL |
+  FORMAT | QTY | NAMA CARGO | TANGGAL CLOSE | HARGA GBP | HARGA IDR`.
+- Batch is the current single PO/Cargo state machine. Its canonical `name`
+  therefore supplies both Batch and Cargo display columns; no second Cargo
+  entity or relationship is inferred. `poDeadlineAt` supplies the close date
+  through the existing Asia/Jakarta calendar formatter.
+- ISBN remains the order-item snapshot string, QTY remains the derived
+  effective Batch purchase quantity, and GBP/IDR values retain their existing
+  sources and semantics.
+
+### PROTECTED
+
+- Batch lifecycle, assignment, cancellation reconciliation, Orders, Cart,
+  Ready Stock, Auth, Book Master, Catalog, finance, Invoice, Deposit, Payment,
+  Blessy, navigation, and global CSS.
+
+### SUPERSEDED
+
+- The seven-column Batch purchase CSV contract without Batch/Cargo/date
+  context.
+
+### UNPROVEN
+
+- Authenticated Production Batch download remains pending without an approved
+  Admin session and safe populated Batch fixture. No Production data was
+  mutated.
+
 ## Post-diff memory — Customer Cart checkout — 2026-09-14
 
 ### CURRENT

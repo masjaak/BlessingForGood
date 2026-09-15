@@ -48,9 +48,20 @@ function formatBatchDeadlineInput(value: number | null | undefined): string {
 }
 
 function downloadPurchaseSummary(batch: BatchDetail) {
-  const blob = new Blob([toExcelCsv(purchaseSummaryCsvRows(batch.purchaseSummary))], {
-    type: "text/csv;charset=utf-8",
-  });
+  const blob = new Blob(
+    [
+      toExcelCsv(
+        purchaseSummaryCsvRows(batch.purchaseSummary, {
+          batchName: batch.name,
+          cargoName: batch.name,
+          closeDate: batch.poDeadlineAt,
+        }),
+      ),
+    ],
+    {
+      type: "text/csv;charset=utf-8",
+    },
+  );
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
