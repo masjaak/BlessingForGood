@@ -60,6 +60,7 @@ function catalogMarkup() {
 test.describe("@customer Secret Catalog in-page navigation", () => {
   test("repeats semantic preorder/list jumps and preserves selection state", async ({ page }, testInfo) => {
     if (testInfo.project.name !== "customer-1440") test.skip(true, "Run the Catalog navigation matrix once.");
+    await page.emulateMedia({ reducedMotion: "reduce" });
 
     const viewports = [
       { width: 320, height: 568 },
@@ -88,7 +89,10 @@ test.describe("@customer Secret Catalog in-page navigation", () => {
       await page.setContent(catalogMarkup());
       await page.evaluate(() => {
         const scrollToCatalogTarget = (targetId: string) => {
-          document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+          const target = document.getElementById(targetId);
+          if (!target) return;
+          const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+          target.scrollIntoView({ behavior, block: "start", inline: "nearest" });
         };
         document.getElementById("review-preorder")?.addEventListener("click", (event) => {
           event.preventDefault();
