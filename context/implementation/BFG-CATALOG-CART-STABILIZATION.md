@@ -71,6 +71,9 @@ deployment, authenticated UAT.
   `catalogId` as a lock; valid offers merge by exact Catalog Item identity and
   separate Catalog groups remain distinct. Obsolete mismatch UI/error mapping
   is removed.
-- F integrated harness: pending.
+- F integrated harness: GREEN. The persisted Convex journey adds three valid
+  Catalog Items, verifies the global retained count and three groups, blocks
+  one group without blocking the other two, checks out Catalog B only, retries
+  B idempotently, then consumes A and C with three single-Catalog Orders.
 - G deployment: pending.
 - H Production proof: pending.

@@ -128,6 +128,60 @@ function groupFor(cart: CartView, catalogId: Id<"secretCatalogs">) {
 describe("Multi-Catalog Cart M2 projection", () => {
   beforeEach(configureTestEnvironment);
 
+  it("runs the CARGO 1 → CARGO 2 → CARGO 3 customer journey end to end", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createCatalogSet(t, admin);
+    for (const accessCode of ["multi-cart-a-code", "multi-cart-b-code", "multi-cart-c-code"]) {
+      await customer.mutation(api.catalogAccess.unlock, { accessCode });
+    }
+
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.sharedSecondItemId });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.thirdItemId });
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({
+      retainedQuantity: 3,
+      groups: [
+        expect.objectContaining({ id: fixture.first.catalogId, retainedQuantity: 1 }),
+        expect.objectContaining({ id: fixture.second.catalogId, retainedQuantity: 1 }),
+        expect.objectContaining({ id: fixture.third.catalogId, retainedQuantity: 1 }),
+      ],
+    });
+
+    await t.run((ctx) => ctx.db.patch(fixture.firstItemId, { isAvailable: false }));
+    const blockedCart = await customer.query(api.carts.getMine, {});
+    expect(groupFor(blockedCart, fixture.first.catalogId)).toMatchObject({ checkoutEligible: false });
+    expect(groupFor(blockedCart, fixture.second.catalogId)).toMatchObject({ checkoutEligible: true });
+    expect(groupFor(blockedCart, fixture.third.catalogId)).toMatchObject({ checkoutEligible: true });
+
+    const secondOrder = await customer.mutation(api.orders.submitCart, {
+      requestKey: "cargo-2-checkout",
+      catalogId: fixture.second.catalogId,
+    });
+    expect(secondOrder).toMatchObject({ catalogId: fixture.second.catalogId, totalAmount: 135000 });
+    await expect(
+      customer.mutation(api.orders.submitCart, {
+        requestKey: "cargo-2-checkout",
+        catalogId: fixture.second.catalogId,
+      }),
+    ).resolves.toMatchObject({ orderId: secondOrder.orderId });
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedQuantity: 2 });
+
+    await t.run((ctx) => ctx.db.patch(fixture.firstItemId, { isAvailable: true }));
+    const firstOrder = await customer.mutation(api.orders.submitCart, {
+      requestKey: "cargo-1-checkout",
+      catalogId: fixture.first.catalogId,
+    });
+    const thirdOrder = await customer.mutation(api.orders.submitCart, {
+      requestKey: "cargo-3-checkout",
+      catalogId: fixture.third.catalogId,
+    });
+    expect(firstOrder.catalogId).toBe(fixture.first.catalogId);
+    expect(thirdOrder.catalogId).toBe(fixture.third.catalogId);
+    expect(await t.run((ctx) => ctx.db.query("orders").collect())).toHaveLength(3);
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ lines: [], retainedQuantity: 0 });
+  });
+
   it("derives A/B/C groups from Catalog Items and preserves the legacy root contract", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
