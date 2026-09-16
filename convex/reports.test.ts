@@ -77,6 +77,7 @@ describe("order analytics report", () => {
           orderId: firstOrder.orderId,
           customerName: "Blessy 6608",
           publisherName: "Publisher A",
+          isbn: "9780002000001",
           bookTitle: "Book A",
           format: "HB",
           quantity: 1,
@@ -88,6 +89,7 @@ describe("order analytics report", () => {
         expect.objectContaining({
           orderId: firstOrder.orderId,
           publisherName: "Publisher B",
+          isbn: "9780002000003",
           bookTitle: "Book B",
           format: "BB",
           quantity: 2,
@@ -106,6 +108,14 @@ describe("order analytics report", () => {
         }),
       ]),
     );
+    expect(report.orders).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ orderId: firstOrder.orderId, customerName: "Blessy 6608" }),
+        expect.objectContaining({ orderId: secondOrder.orderId, customerName: "Second Blessfriend" }),
+      ]),
+    );
+    expect(report.invoices).toEqual([]);
+    expect(report.batches).toEqual([]);
   });
 
   it("uses effective quantities and omits fully cancelled items", async () => {

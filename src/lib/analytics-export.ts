@@ -4,6 +4,7 @@ import { formatGbpMinor } from "@/lib/gbp";
 export type OrderAnalyticsExportRow = {
   customerName: string;
   publisherName: string;
+  isbn: string;
   bookTitle: string;
   format: string;
   quantity: number;
@@ -15,10 +16,22 @@ export type OrderAnalyticsExportRow = {
 
 export function orderAnalyticsCsvRows(rows: OrderAnalyticsExportRow[]): Array<Array<string | number>> {
   return [
-    ["NAMA", "PUBLISHER", "JUDUL", "FORMAT", "QTY", "NAMA CARGO", "TANGGAL CLOSE", "HARGA GBP", "HARGA IDR"],
+    [
+      "NAMA CUSTOMER",
+      "PUBLISHER",
+      "ISBN",
+      "JUDUL",
+      "FORMAT",
+      "QTY",
+      "NAMA CARGO",
+      "TANGGAL CLOSE",
+      "HARGA GBP",
+      "HARGA IDR",
+    ],
     ...rows.map((row) => [
       row.customerName,
       row.publisherName,
+      row.isbn,
       row.bookTitle,
       row.format,
       row.quantity,

@@ -68,6 +68,7 @@ export const get = query({
         orderCode: order.orderCode || null,
         customerName: order.customerName,
         publisherName: item.publisherNameSnapshot,
+        isbn: item.isbnSnapshot,
         bookTitle: item.bookTitleSnapshot,
         format: item.formatSnapshot,
         quantity,
