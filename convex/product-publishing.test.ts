@@ -52,7 +52,9 @@ describe("BFG product publishing projections", () => {
       priceAmount: 220000,
     });
     const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Private Client Catalog" });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "special" });
     await admin.mutation(api.catalogItems.add, { catalogId, bookVariantId: variantId });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "draft" });
     await admin.mutation(api.catalogAccess.setCode, { catalogId, accessCode: "private-client-code" });
     await admin.mutation(api.secretCatalogs.open, { catalogId });
 

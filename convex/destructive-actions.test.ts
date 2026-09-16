@@ -99,6 +99,7 @@ describe("BFG destructive action guards", () => {
       priceAmount: 110000,
     });
     const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Referenced Draft Catalog" });
+    await admin.mutation(api.books.update, { bookId, publicationStatus: "special" });
     await admin.mutation(api.catalogItems.add, { catalogId, bookVariantId: variantId });
 
     await expect(admin.mutation(api.books.remove, { bookId })).resolves.toEqual({ removed: true });

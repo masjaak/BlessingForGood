@@ -77,8 +77,13 @@ describe("Secret Catalog operational discoverability", () => {
     expect(screen.getByText("Mencari buku/format…")).toBeTruthy();
     await waitFor(() => expect(screen.getByText("1 buku/format tersedia")).toBeTruthy());
     const input = screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[0];
+    const select = screen.getByRole("combobox", { name: "Produk yang dapat ditambahkan" });
+    fireEvent.click(select);
+    fireEvent.click(screen.getByRole("option", { name: /Rewild/ }));
+    expect(select.textContent).toContain("Rewild");
     fireEvent.change(input, { target: { value: "walker" } });
     expect(input).toHaveProperty("value", "walker");
+    expect(select.textContent).toContain("Pilih buku / format");
     expect(screen.getByText("Mencari buku/format…")).toBeTruthy();
     await waitFor(() => expect(screen.getByText("1 buku/format ditemukan")).toBeTruthy());
   });
