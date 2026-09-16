@@ -106,6 +106,15 @@ type PurchaseSummary = Pick<
   customerCount: number;
 };
 
+type CustomerDetail = Pick<
+  AdminAssignment,
+  "customerName" | "publisherName" | "isbn" | "bookTitle" | "format" | "unitPriceAmount" | "supplierPriceGbpMinor"
+> & {
+  quantity: number;
+  catalogName: string | null;
+  closeDate: number | null;
+};
+
 export const assignOrderItem = mutation({
   args: {
     orderItemId: v.id("orderItems"),
@@ -720,7 +729,8 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
     .query("orderItemBatchAssignments")
     .withIndex("by_batch", (index) => index.eq("batchId", batchId));
   const purchaseGroups = new Map<string, PurchaseSummary & { customers: Set<string> }>();
-  // ponytail: exact summary scan is separate from paginated rows; add materialized batch counters if this exceeds Convex read limits.
+  const customerDetail: CustomerDetail[] = [];
+  // ponytail: one exact assignment scan feeds both exports; add materialized batch counters if this exceeds Convex read limits.
   for await (const assignment of assignments) {
     const orderItem = await ctx.db.get(assignment.orderItemId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
@@ -731,6 +741,19 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
     );
     if (assignedQuantity <= 0) continue;
     const variant = await ctx.db.get(orderItem.bookVariantId);
+    const catalog = await ctx.db.get(order.catalogId);
+    customerDetail.push({
+      customerName: order.customerName,
+      publisherName: orderItem.publisherNameSnapshot,
+      isbn: orderItem.isbnSnapshot,
+      bookTitle: orderItem.bookTitleSnapshot,
+      format: orderItem.formatSnapshot,
+      quantity: assignedQuantity,
+      catalogName: catalog?.name ?? null,
+      closeDate: catalog?.closesAt ?? null,
+      supplierPriceGbpMinor: variant?.supplierPriceGbpMinor ?? null,
+      unitPriceAmount: orderItem.unitPriceAmountSnapshot,
+    });
     const customerKey = String(order.customerUserId);
     const purchaseKey = String(orderItem.bookVariantId);
     const purchase = purchaseGroups.get(purchaseKey) || {
@@ -750,7 +773,7 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
     purchase.customerCount = purchase.customers.size;
     purchaseGroups.set(purchaseKey, purchase);
   }
-  return [...purchaseGroups.values()]
+  const summary = [...purchaseGroups.values()]
     .sort(
       (left, right) =>
         left.publisherName.localeCompare(right.publisherName) ||
@@ -769,6 +792,16 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
       quantity: purchase.quantity,
       customerCount: purchase.customers.size,
     }));
+  customerDetail.sort(
+    (left, right) =>
+      left.customerName.localeCompare(right.customerName) ||
+      (left.catalogName ?? "").localeCompare(right.catalogName ?? "") ||
+      left.publisherName.localeCompare(right.publisherName) ||
+      left.bookTitle.localeCompare(right.bookTitle) ||
+      left.format.localeCompare(right.format) ||
+      left.isbn.localeCompare(right.isbn),
+  );
+  return { summary, customerDetail };
 }
 
 export const getForAdmin = query({
@@ -879,12 +912,14 @@ export const getForAdmin = query({
       });
       customerGroups.set(customerKey, customer);
     }
+    const purchase = await purchaseSummaryForBatch(ctx, args.batchId);
     return {
       ...summary,
       assignments: assignedItems,
       assignmentPage: { isDone: page.isDone, continueCursor: page.continueCursor },
       customerRoster: [...customerGroups.values()],
-      purchaseSummary: await purchaseSummaryForBatch(ctx, args.batchId),
+      purchaseSummary: purchase.summary,
+      customerDetail: purchase.customerDetail,
       history: await historyView(ctx, args.batchId, true),
     };
   },

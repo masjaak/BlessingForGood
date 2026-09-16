@@ -28,6 +28,48 @@ export type PurchaseSummaryExportContext = {
   closeDate: number | null;
 };
 
+export type CustomerDetailExportRow = {
+  customerName: string;
+  publisherName: string;
+  isbn: string;
+  bookTitle: string;
+  format: string;
+  quantity: number;
+  catalogName: string | null;
+  closeDate: number | null;
+  supplierPriceGbpMinor: number | null;
+  unitPriceAmount: number;
+};
+
+export function customerDetailCsvRows(items: CustomerDetailExportRow[]): Array<Array<string | number>> {
+  return [
+    [
+      "NAMA CUSTOMER",
+      "PUBLISHER",
+      "ISBN",
+      "JUDUL",
+      "FORMAT",
+      "QTY",
+      "NAMA CARGO",
+      "TANGGAL CLOSE",
+      "HARGA GBP",
+      "HARGA IDR",
+    ],
+    ...items.map((item) => [
+      item.customerName,
+      item.publisherName,
+      item.isbn,
+      item.bookTitle,
+      item.format,
+      item.quantity,
+      item.catalogName ?? "",
+      item.closeDate === null ? "" : formatBfgCalendarDate(item.closeDate),
+      item.supplierPriceGbpMinor === null ? "" : formatGbpMinor(item.supplierPriceGbpMinor),
+      item.unitPriceAmount,
+    ]),
+  ];
+}
+
 export function purchaseSummaryCsvRows(
   items: PurchaseSummaryExportRow[],
   context: PurchaseSummaryExportContext,

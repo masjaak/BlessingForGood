@@ -20,19 +20,25 @@ describe("BFG batch roster and assisted orders", () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);
     const catalog = await createOpenCatalog(admin, "Roster Catalog", "2001", "roster-code");
+    const closeDate = Date.parse("2026-10-10T23:59:59.999+07:00");
+    await admin.mutation(api.secretCatalogs.update, {
+      catalogId: catalog.catalogId,
+      name: "Roster Catalog",
+      closesAt: closeDate,
+    });
     await customer.mutation(api.catalogAccess.unlock, { accessCode: "roster-code" });
     await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "roster-code" });
-    await customer.mutation(api.orders.submit, {
+    const firstOrder = await customer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Roster Customer A",
       items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
-    await secondCustomer.mutation(api.orders.submit, {
+    const secondOrder = await secondCustomer.mutation(api.orders.submit, {
       catalogId: catalog.catalogId,
       customerName: "Roster Customer B",
       items: [{ variantId: catalog.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
-    const batch = await admin.mutation(api.batches.create, { name: "Roster Batch" });
+    const batch = await admin.mutation(api.batches.create, { name: "Roster Batch", poDeadlineAt: closeDate });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: catalog.catalogId });
     const eligibleRoster = await admin.query(api.batchTracking.listUnassignedForAdmin, { batchId: batch.batchId });
     expect(eligibleRoster.page).toEqual([]);
@@ -46,6 +52,20 @@ describe("BFG batch roster and assisted orders", () => {
       purchaseSummary: [{ bookVariantId: catalog.variantIds[0], quantity: 3, customerCount: 2 }],
     });
     expect(detail.customerRoster).toHaveLength(2);
+    expect(detail.customerDetail).toEqual([
+      expect.objectContaining({
+        customerName: "Roster Customer A",
+        catalogName: "Roster Catalog",
+        closeDate,
+        quantity: 2,
+      }),
+      expect.objectContaining({
+        customerName: "Roster Customer B",
+        catalogName: "Roster Catalog",
+        closeDate,
+        quantity: 1,
+      }),
+    ]);
     expect(await customer.query(api.batchTracking.listMine, {})).toEqual([
       expect.objectContaining({ batchId: batch.batchId, name: "Roster Batch" }),
     ]);
@@ -66,6 +86,73 @@ describe("BFG batch roster and assisted orders", () => {
     await expect(customer.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).rejects.toThrow(
       "PERMISSION_DENIED",
     );
+    const orderItemId = async (orderId: typeof firstOrder.orderId) =>
+      t.run(async (ctx) => {
+        const item = await ctx.db
+          .query("orderItems")
+          .withIndex("by_order", (query) => query.eq("orderId", orderId))
+          .first();
+        if (!item) throw new Error("batch roster order item missing");
+        return item._id;
+      });
+    await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: await orderItemId(firstOrder.orderId),
+      affectedQuantity: 1,
+      reason: "partial batch detail cancellation",
+    });
+    expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).customerDetail).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ customerName: "Roster Customer A", quantity: 1 }),
+        expect.objectContaining({ customerName: "Roster Customer B", quantity: 1 }),
+      ]),
+    );
+    await admin.mutation(api.orderExceptions.cancelItem, {
+      orderItemId: await orderItemId(secondOrder.orderId),
+      affectedQuantity: 1,
+      reason: "full batch detail cancellation",
+    });
+    expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).customerDetail).toEqual([
+      expect.objectContaining({ customerName: "Roster Customer A", quantity: 1 }),
+    ]);
+  });
+
+  it("keeps Customer and Cargo identities independent in customer-detail rows", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const cargoA = await createOpenCatalog(admin, "Cargo A", "2010", "cargo-a-code");
+    const cargoB = await createOpenCatalog(admin, "Cargo B", "2011", "cargo-b-code");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "cargo-a-code" });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "cargo-b-code" });
+    await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "cargo-a-code" });
+    await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "cargo-b-code" });
+    await customer.mutation(api.orders.submit, {
+      catalogId: cargoA.catalogId,
+      customerName: "Customer A",
+      items: [{ variantId: cargoA.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
+    });
+    await secondCustomer.mutation(api.orders.submit, {
+      catalogId: cargoA.catalogId,
+      customerName: "Customer B",
+      items: [{ variantId: cargoA.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
+    });
+    await customer.mutation(api.orders.submit, {
+      catalogId: cargoB.catalogId,
+      customerName: "Customer A",
+      items: [{ variantId: cargoB.variantIds[0], quantity: 3, expectedUnitPriceAmount: 125000 }],
+    });
+    const batch = await admin.mutation(api.batches.create, { name: "Independent identities" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: cargoA.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: cargoB.catalogId });
+
+    const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
+
+    expect(detail.customerDetail).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ customerName: "Customer A", catalogName: "Cargo A", quantity: 2 }),
+        expect.objectContaining({ customerName: "Customer B", catalogName: "Cargo A", quantity: 1 }),
+        expect.objectContaining({ customerName: "Customer A", catalogName: "Cargo B", quantity: 3 }),
+      ]),
+    );
   });
 
   it("moves and removes assignments before locking the roster", async () => {
@@ -82,9 +169,11 @@ describe("BFG batch roster and assisted orders", () => {
       customerName: "Move Customer",
       items: [{ variantId: catalog.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
     });
-    const order = await customer.query(api.orders.listMine, {
-      paginationOpts: { numItems: 10, cursor: null },
-    }).then((result) => result.page[0]);
+    const order = await customer
+      .query(api.orders.listMine, {
+        paginationOpts: { numItems: 10, cursor: null },
+      })
+      .then((result) => result.page[0]);
     if (!order) throw new Error("move order missing");
     await admin.mutation(api.batchTracking.assignOrderItem, {
       orderItemId: order.items[0]._id,

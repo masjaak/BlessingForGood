@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
+import { customerDetailCsvRows, purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
 
 describe("Excel-compatible export", () => {
   it("emits a UTF-8 BOM and safely quotes delimiters, quotes, and formulas", () => {
@@ -108,5 +108,40 @@ describe("publisher purchase export", () => {
 
     expect(csv).toContain("Batch,Publisher,9781788417373,Exact ISBN,BB,2,,,");
     expect(csv).not.toContain("9.78178E+12");
+  });
+});
+
+describe("customer detail export", () => {
+  it("uses Customer identity independently from Cargo and preserves prices", () => {
+    const rows = customerDetailCsvRows([
+      {
+        customerName: "Customer A",
+        publisherName: "Publisher",
+        isbn: "9780000000001",
+        bookTitle: "Book",
+        format: "PB",
+        quantity: 2,
+        catalogName: "Cargo 2",
+        closeDate: Date.parse("2026-10-10T23:59:59.999+07:00"),
+        supplierPriceGbpMinor: 1299,
+        unitPriceAmount: 210000,
+      },
+    ]);
+
+    expect(rows).toEqual([
+      [
+        "NAMA CUSTOMER",
+        "PUBLISHER",
+        "ISBN",
+        "JUDUL",
+        "FORMAT",
+        "QTY",
+        "NAMA CARGO",
+        "TANGGAL CLOSE",
+        "HARGA GBP",
+        "HARGA IDR",
+      ],
+      ["Customer A", "Publisher", "9780000000001", "Book", "PB", 2, "Cargo 2", "10 Okt 2026", "12.99", 210000],
+    ]);
   });
 });

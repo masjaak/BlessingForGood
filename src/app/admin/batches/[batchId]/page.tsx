@@ -34,7 +34,7 @@ import { useOperations, type BatchDetail } from "@/domain/prototype/operations-c
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
-import { purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
+import { customerDetailCsvRows, purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
 import { formatGbpMinor } from "@/lib/gbp";
 import { calendarDateInputValue, calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
 import { UatPurgeDialog } from "@/components/uat-purge-dialog";
@@ -66,6 +66,18 @@ function downloadPurchaseSummary(batch: BatchDetail) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = (batch.referenceCode || batch.name) + "-purchase-summary.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadCustomerDetail(batch: BatchDetail) {
+  const blob = new Blob([toExcelCsv(customerDetailCsvRows(batch.customerDetail))], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = (batch.referenceCode || batch.name) + "-customer-detail.csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -219,11 +231,10 @@ function AdminBatchDetail() {
         description={currentBatch.referenceCode || "Tanpa referensi"}
         actions={
           <ActionGroup>
-            <Button
-              type="button"
-              variant={currentBatch.rosterLocked ? "primary" : "secondary"}
-              onClick={() => downloadPurchaseSummary(currentBatch)}
-            >
+            <Button type="button" variant="primary" onClick={() => downloadCustomerDetail(currentBatch)}>
+              Unduh customer CSV
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => downloadPurchaseSummary(currentBatch)}>
               {currentBatch.rosterLocked ? "Unduh purchase CSV" : "Unduh preview CSV"}
             </Button>
             <LinkButton href="/admin/batches" variant="secondary">
