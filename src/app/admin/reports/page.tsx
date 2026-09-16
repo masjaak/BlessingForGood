@@ -7,11 +7,9 @@ import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonTable, StatusBadge } from "@/components/ui";
+import { orderAnalyticsCsvRows } from "@/lib/analytics-export";
 import { toExcelCsv } from "@/lib/excel-export";
-import { orderStatusLabels } from "@/domain/prototype/logic";
 import { orderReference } from "@/domain/prototype/order-reference";
-import { invoiceStatusLabel, shipmentStageLabels } from "@/domain/prototype/operations";
-import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function dayValue(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -33,45 +31,25 @@ function Reports() {
         .toLowerCase()
         .includes(search.toLowerCase()),
     ) || [];
+  const analyticsRows =
+    report?.orderAnalytics.filter((row) =>
+      `${row.customerName} ${orderReference({ id: row.orderId, orderCode: row.orderCode || undefined })}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    ) || [];
 
   async function download() {
     if (!report) return;
-    const csv = toExcelCsv([
-      ["Referensi pesanan", "Pelanggan", "Status", "Total IDR", "Dibuat pada"],
-      ...orders.map((row) => [
-        orderReference({ id: row.orderId, orderCode: row.orderCode || undefined }),
-        row.customerName,
-        orderStatusLabels[row.status],
-        row.totalAmount,
-        new Date(row.createdAt).toISOString(),
-      ]),
-      [],
-      ["Nomor invoice", "Status", "Total IDR", "Sisa IDR", "Dibuat pada"],
-      ...report.invoices.map((row) => [
-        invoiceReference(row.invoiceNumber),
-        invoiceStatusLabel(row.status),
-        row.totalAmount,
-        row.outstandingAmount,
-        new Date(row.createdAt).toISOString(),
-      ]),
-      [],
-      ["Batch", "Tahap", "Batas PO", "Dibuat pada"],
-      ...report.batches.map((row) => [
-        row.name,
-        row.stage ? shipmentStageLabels[row.stage] : "dapat diedit",
-        row.deadlineAt ? new Date(row.deadlineAt).toISOString() : "",
-        new Date(row.createdAt).toISOString(),
-      ]),
-    ]);
+    const csv = toExcelCsv(orderAnalyticsCsvRows(analyticsRows));
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     await recordExport({
       from: new Date(`${from}T00:00:00`).getTime(),
       to: new Date(`${to}T23:59:59.999`).getTime(),
-      rowCount: orders.length + report.invoices.length + report.batches.length,
+      rowCount: analyticsRows.length,
     });
     const link = document.createElement("a");
     link.href = url;
-    link.download = `bfg-report-${from}-${to}.csv`;
+    link.download = `bfg-order-analytics-${from}-${to}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }

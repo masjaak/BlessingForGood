@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { fulfillableQuantityForOrderItem } from "./lib/orderExceptionState";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { recordAudit } from "./lib/audit";
@@ -36,6 +37,46 @@ export const get = query({
         .order("desc")
         .take(2000),
     ]);
+    const orderById = new Map(orders.map((order) => [order._id, order]));
+    const orderItems = await ctx.db
+      .query("orderItems")
+      .withIndex("by_created_at", (index) => index.gte("createdAt", args.from).lte("createdAt", args.to))
+      .order("desc")
+      .take(2000);
+    const catalogIds = [
+      ...new Set(
+        orders.flatMap((order) => (order.source === "ready_stock" || !order.catalogId ? [] : [order.catalogId])),
+      ),
+    ];
+    const catalogs = new Map(
+      await Promise.all(catalogIds.map(async (catalogId) => [catalogId, await ctx.db.get(catalogId)] as const)),
+    );
+    const variantIds = [...new Set(orderItems.map((item) => item.bookVariantId))];
+    const variants = new Map(
+      await Promise.all(variantIds.map(async (variantId) => [variantId, await ctx.db.get(variantId)] as const)),
+    );
+    const orderAnalytics = [];
+    for (const item of orderItems) {
+      const order = orderById.get(item.orderId);
+      if (!order || order.source === "ready_stock" || !order.catalogId) continue;
+      const quantity = await fulfillableQuantityForOrderItem(ctx, item);
+      if (quantity === 0) continue;
+      const catalog = catalogs.get(order.catalogId);
+      const variant = variants.get(item.bookVariantId);
+      orderAnalytics.push({
+        orderId: order._id,
+        orderCode: order.orderCode || null,
+        customerName: order.customerName,
+        publisherName: item.publisherNameSnapshot,
+        bookTitle: item.bookTitleSnapshot,
+        format: item.formatSnapshot,
+        quantity,
+        catalogName: catalog?.name || null,
+        closeDate: catalog?.closesAt ?? null,
+        supplierPriceGbpMinor: variant?.supplierPriceGbpMinor ?? null,
+        unitPriceAmount: item.unitPriceAmountSnapshot,
+      });
+    }
     return {
       sales: {
         invoiceCount: invoices.filter((invoice) => invoice.status === "issued").length,
@@ -51,6 +92,7 @@ export const get = query({
         totalAmount: order.totalAmount,
         createdAt: order.createdAt,
       })),
+      orderAnalytics,
       invoices: invoices.map((invoice) => ({
         invoiceId: invoice._id,
         invoiceNumber: invoice.invoiceNumber,
