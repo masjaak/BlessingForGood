@@ -22,6 +22,16 @@ describe("order analytics report", () => {
         { format: "PB", isbn: "9780002000002", priceAmount: 170000 },
       ],
     });
+    const publisherB = await admin.mutation(api.publishers.create, { name: "Publisher B" });
+    const bookB = await admin.mutation(api.books.create, { publisherId: publisherB, title: "Book B" });
+    await admin.mutation(api.books.update, { bookId: bookB, publicationStatus: "special" });
+    const variantB = await admin.mutation(api.bookVariants.create, {
+      bookId: bookB,
+      format: "BB",
+      isbn: "9780002000003",
+      priceAmount: 170000,
+    });
+    await admin.mutation(api.catalogItems.add, { catalogId: cargoTwo.catalogId, bookVariantId: variantB });
     const cargoThree = await createOpenCatalog(admin, "CARGO 3 Analytics", "2003", "analytics-cargo-three");
     await admin.mutation(api.secretCatalogs.update, {
       catalogId: cargoThree.catalogId,
@@ -41,7 +51,7 @@ describe("order analytics report", () => {
       customerName: "Blessy 6608",
       items: [
         { variantId: cargoTwo.variantIds[0], quantity: 1, expectedUnitPriceAmount: 255000 },
-        { variantId: cargoTwo.variantIds[1], quantity: 2, expectedUnitPriceAmount: 170000 },
+        { variantId: variantB, quantity: 2, expectedUnitPriceAmount: 170000 },
       ],
     });
     const secondOrder = await secondCustomer.mutation(api.orders.submit, {
@@ -54,6 +64,7 @@ describe("order analytics report", () => {
       customerName: "Blessy 6608",
       items: [{ variantId: cargoThree.variantIds[0], quantity: 1, expectedUnitPriceAmount: 125000 }],
     });
+    await admin.mutation(api.secretCatalogs.close, { catalogId: cargoThree.catalogId });
 
     const report = await admin.query(api.reports.get, {
       from: Date.now() - 86_400_000,
@@ -76,7 +87,9 @@ describe("order analytics report", () => {
         }),
         expect.objectContaining({
           orderId: firstOrder.orderId,
-          format: "PB",
+          publisherName: "Publisher B",
+          bookTitle: "Book B",
+          format: "BB",
           quantity: 2,
           unitPriceAmount: 170000,
           supplierPriceGbpMinor: null,
