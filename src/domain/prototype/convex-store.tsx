@@ -166,6 +166,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const [unlockedCatalogId, setUnlockedCatalogId] = useState<string | null>(null);
   const [catalogSession, setCatalogSession] = useState<StoredCatalogSession | null>(null);
   const [provisioning, setProvisioning] = useState(false);
+  const [claimedCatalogSessionKey, setClaimedCatalogSessionKey] = useState<string | null>(null);
   const [provisionError, setProvisionError] = useState(false);
   const [admissionDenied, setAdmissionDenied] = useState(false);
   const provisioningSessionRef = useRef<string | null>(null);
@@ -177,6 +178,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const retryConvexAuth = useConvexRetry();
 
   const ensureCurrentUser = useAction(api.userProvisioning.ensureCurrentUser);
+  const claimCatalogSession = useMutation(api.catalogAccess.claimSession);
   const createBundle = useMutation(api.secretCatalogs.createBundle);
   const openCatalog = useMutation(api.secretCatalogs.open);
   const closeCatalogMutation = useMutation(api.secretCatalogs.close);
@@ -285,6 +287,23 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     provisionError,
     authSessionKey,
   ]);
+
+  const catalogSessionClaimKey =
+    isCustomer && catalogSession ? `${authSessionKey}:${catalogSession.sessionToken}` : null;
+
+  useEffect(() => {
+    if (!catalogSessionClaimKey || !catalogSession || claimedCatalogSessionKey === catalogSessionClaimKey) return;
+    let active = true;
+    void claimCatalogSession({ sessionToken: catalogSession.sessionToken })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!active) return;
+        setClaimedCatalogSessionKey(catalogSessionClaimKey);
+      });
+    return () => {
+      active = false;
+    };
+  }, [catalogSession, catalogSessionClaimKey, claimedCatalogSessionKey, claimCatalogSession]);
 
   useEffect(() => {
     reconciledSessionRef.current = null;
@@ -477,7 +496,8 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     retryConvexAuth();
   }, [retryConvexAuth]);
   const catalogLoading = Boolean(
-    unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null)),
+    (catalogSessionClaimKey !== null && claimedCatalogSessionKey !== catalogSessionClaimKey) ||
+    (unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null))),
   );
   const catalogsLoading = Boolean(isAdmin && adminCatalogs === undefined);
   const ordersLoading = Boolean((isCustomer && customerOrders === undefined) || (isAdmin && adminOrders === undefined));

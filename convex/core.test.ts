@@ -182,6 +182,40 @@ describe("BFG Convex core persistence", () => {
     ).resolves.toMatchObject({ errorCode: "ACCESS_CODE_EXPIRED" });
   });
 
+  it("claims an anonymous Catalog session before a signed-in Customer adds to Cart", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const bundle = await createOpenCatalog(admin, "Session Claim Catalog", "0006", "session-claim-code");
+    const session = await t.mutation(api.catalogAccess.unlock, {
+      accessCode: "session-claim-code",
+      attemptKey: "session-claim-browser",
+    });
+    if ("errorCode" in session) throw new Error(session.errorCode);
+    const catalogItemId = await t.run(async (ctx) => {
+      const item = await ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog_and_variant", (query) =>
+          query.eq("catalogId", bundle.catalogId).eq("bookVariantId", bundle.variantIds[0]),
+        )
+        .first();
+      if (!item) throw new Error("session claim Catalog Item missing");
+      return item._id;
+    });
+
+    await expect(
+      t.query(api.catalogAccess.getUnlocked, { catalogId: bundle.catalogId, sessionToken: session.sessionToken }),
+    ).resolves.toMatchObject({ id: bundle.catalogId });
+    await expect(customer.mutation(api.carts.addItem, { catalogItemId })).rejects.toThrow("ACCESS_GRANT_REQUIRED");
+
+    await expect(customer.mutation(api.catalogAccess.claimSession, { sessionToken: session.sessionToken })).resolves.toEqual(
+      { catalogIds: [bundle.catalogId] },
+    );
+    await expect(customer.mutation(api.carts.addItem, { catalogItemId })).resolves.toMatchObject({
+      retainedQuantity: 1,
+      lines: [expect.objectContaining({ catalogItemId })],
+    });
+  });
+
   it("generates one-time codes, rate-limits failures, and keeps existing grants readable after revocation", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);

@@ -9,7 +9,7 @@ import {
   randomAccessCode,
   randomCatalogSessionToken,
 } from "./lib/accessCodes";
-import { findCurrentUser, requirePermission } from "./lib/auth";
+import { findCurrentUser, requireActiveCustomer, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
 import { constantTimeEqual, keyedDigest } from "./lib/crypto";
@@ -206,6 +206,20 @@ async function upsertCatalogGrant(
   } else {
     await ctx.db.insert("catalogAccessGrants", { appUserId, catalogId, grantedAt, expiresAt });
   }
+}
+
+async function grantableSessionCatalogs(ctx: AccessContext, session: Doc<"catalogAccessSessions">) {
+  if (session.accessPeriodId) {
+    const period = await ctx.db.get(session.accessPeriodId);
+    return period && accessPeriodStatus(period) === "active" ? periodCatalogs(ctx, period._id) : [];
+  }
+  if (!session.accessCodeId) return [];
+  const code = await ctx.db.get(session.accessCodeId);
+  if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return [];
+  if (code.scope === "global") return eligibleGlobalCatalogs(ctx);
+  const catalog = await ctx.db.get(session.catalogId);
+  if (!catalog || code.catalogId !== catalog._id || !(await catalogIsOpen(ctx, catalog._id))) return [];
+  return [catalog];
 }
 
 export const setCode = mutation({
@@ -514,6 +528,33 @@ export const unlock = mutation({
       catalog: catalogView,
       catalogs: [catalogAccessSummary(catalogView)],
     };
+  },
+});
+
+export const claimSession = mutation({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requireActiveCustomer(ctx);
+    const sessionDigest = await catalogSessionDigest(args.sessionToken);
+    const session = await ctx.db
+      .query("catalogAccessSessions")
+      .withIndex("by_session_digest", (query) => query.eq("sessionDigest", sessionDigest))
+      .first();
+    if (!session || session.revokedAt || session.expiresAt <= Date.now()) fail("ACCESS_GRANT_REQUIRED");
+
+    const catalogs = await grantableSessionCatalogs(ctx, session);
+    if (!catalogs.length) fail("ACCESS_GRANT_REQUIRED");
+    const grantedAt = Date.now();
+    for (const catalog of catalogs) {
+      await upsertCatalogGrant(
+        ctx,
+        user._id,
+        catalog._id,
+        grantedAt,
+        Math.min(session.expiresAt, catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS),
+      );
+    }
+    return { catalogIds: catalogs.map((catalog) => catalog._id) };
   },
 });
 
