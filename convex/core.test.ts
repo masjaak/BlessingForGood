@@ -207,13 +207,26 @@ describe("BFG Convex core persistence", () => {
     ).resolves.toMatchObject({ id: bundle.catalogId });
     await expect(customer.mutation(api.carts.addItem, { catalogItemId })).rejects.toThrow("ACCESS_GRANT_REQUIRED");
 
-    await expect(customer.mutation(api.catalogAccess.claimSession, { sessionToken: session.sessionToken })).resolves.toEqual(
-      { catalogIds: [bundle.catalogId] },
-    );
+    await expect(
+      customer.mutation(api.catalogAccess.claimSession, { sessionToken: session.sessionToken }),
+    ).resolves.toEqual({ catalogIds: [bundle.catalogId] });
     await expect(customer.mutation(api.carts.addItem, { catalogItemId })).resolves.toMatchObject({
       retainedQuantity: 1,
       lines: [expect.objectContaining({ catalogItemId })],
     });
+
+    const access = await admin.query(api.catalogAccess.listForAdmin, { catalogId: bundle.catalogId });
+    const grant = access.grants.find((record) => record.customerEmail === "phase041-customer-test@example.com");
+    if (!grant) throw new Error("session claim grant missing");
+    await admin.mutation(api.catalogAccess.revokeGrant, { grantId: grant.grantId });
+    const revokedStateSession = await t.mutation(api.catalogAccess.unlock, {
+      accessCode: "session-claim-code",
+      attemptKey: "session-claim-revoked-browser",
+    });
+    if ("errorCode" in revokedStateSession) throw new Error(revokedStateSession.errorCode);
+    await expect(
+      customer.mutation(api.catalogAccess.claimSession, { sessionToken: revokedStateSession.sessionToken }),
+    ).rejects.toThrow("ACCESS_GRANT_REQUIRED");
   });
 
   it("generates one-time codes, rate-limits failures, and keeps existing grants readable after revocation", async () => {

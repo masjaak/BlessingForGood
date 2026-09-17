@@ -543,9 +543,19 @@ export const claimSession = mutation({
     if (!session || session.revokedAt || session.expiresAt <= Date.now()) fail("ACCESS_GRANT_REQUIRED");
 
     const catalogs = await grantableSessionCatalogs(ctx, session);
-    if (!catalogs.length) fail("ACCESS_GRANT_REQUIRED");
-    const grantedAt = Date.now();
+    const claimableCatalogs = [];
     for (const catalog of catalogs) {
+      const existingGrant = await ctx.db
+        .query("catalogAccessGrants")
+        .withIndex("by_app_user_id_and_catalog_id", (query) =>
+          query.eq("appUserId", user._id).eq("catalogId", catalog._id),
+        )
+        .first();
+      if (!existingGrant?.revokedAt) claimableCatalogs.push(catalog);
+    }
+    if (!claimableCatalogs.length) fail("ACCESS_GRANT_REQUIRED");
+    const grantedAt = Date.now();
+    for (const catalog of claimableCatalogs) {
       await upsertCatalogGrant(
         ctx,
         user._id,
@@ -554,7 +564,7 @@ export const claimSession = mutation({
         Math.min(session.expiresAt, catalog.closesAt || OPEN_ENDED_TIMESTAMP_MS),
       );
     }
-    return { catalogIds: catalogs.map((catalog) => catalog._id) };
+    return { catalogIds: claimableCatalogs.map((catalog) => catalog._id) };
   },
 });
 
