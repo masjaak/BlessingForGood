@@ -31,7 +31,7 @@ async function createMultiLineCatalog(
     bookTitle: `${name} Book`,
     accessCode,
     variants: [
-      { format: "PB", isbn: "9780000000101", priceAmount: 125000 },
+      { format: "FLEXIBOUND", isbn: "9780000000101", priceAmount: 125000 },
       { format: "HB", isbn: "9780000000102", priceAmount: 150000 },
     ],
   });
@@ -90,7 +90,12 @@ describe("BFG Cart checkout", () => {
     });
     expect(order.items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ quantity: 2, unitPriceAmountSnapshot: 125000, subtotalAmount: 250000 }),
+        expect.objectContaining({
+          quantity: 2,
+          unitPriceAmountSnapshot: 125000,
+          subtotalAmount: 250000,
+          formatSnapshot: "FLEXIBOUND",
+        }),
         expect.objectContaining({ quantity: 3, unitPriceAmountSnapshot: 150000, subtotalAmount: 450000 }),
       ]),
     );

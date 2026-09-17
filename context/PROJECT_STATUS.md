@@ -1,5 +1,16 @@
 # BFG Project Status
 
+## FLEXIBOUND Book Variant extension — 2026-09-17
+
+Status: `ENGINEERING GREEN; DEPLOYMENT PENDING`
+
+`FLEXIBOUND` is the new exact canonical Book Variant format. The existing
+validator, frontend type/options, importer, Catalog discovery, Customer
+projections, Cart/Order snapshots, Batch projections, Ready Stock metadata,
+and operational CSV builders preserve it without a new business rule.
+Existing formats remain valid. No schema migration, backfill, alias, or
+business-record fixture is required.
+
 ## Catalog search + multi-Catalog Cart rollout — 2026-09-15
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

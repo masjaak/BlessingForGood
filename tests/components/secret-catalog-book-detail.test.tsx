@@ -51,6 +51,7 @@ vi.mock("@/features/customer-cart/add-to-cart-action", () => ({
 function setup(
   profileDisplayName: string | null | undefined = "MULIA KAH",
   description = "Paragraph one.\n\nParagraph two.",
+  format = "PB",
 ) {
   vi.mocked(useParams).mockReturnValue({ catalogId: "catalog-1", bookId: "book-1" } as never);
   vi.mocked(useUser).mockReturnValue({
@@ -74,7 +75,7 @@ function setup(
             {
               id: "variant-1",
               catalogItemId: "catalog-item-1",
-              format: "PB",
+              format,
               isbn: "9780000000001",
               price: 125000,
             },
@@ -94,6 +95,13 @@ function setup(
 describe("Secret Catalog book detail preorder", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("renders the canonical FLEXIBOUND label", () => {
+    setup("MULIA KAH", undefined, "FLEXIBOUND");
+    render(<SecretCatalogBookDetail />);
+
+    expect(screen.getByText(/FLEXIBOUND/)).toBeTruthy();
   });
 
   it("prefills the editable detail preorder name from the BFG Profile", async () => {

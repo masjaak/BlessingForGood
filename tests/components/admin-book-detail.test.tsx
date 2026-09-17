@@ -126,7 +126,39 @@ describe("Admin Book Detail lifecycle actions", () => {
       Array.from(screen.getByRole("listbox").querySelectorAll('[role="option"]')).map(
         (option) => option.querySelector("span")?.textContent,
       ),
-    ).toEqual(["BB", "PB", "HB", "Cards", "Pack", "Slipcase HB", "Slipcase PB", "Boxset PB", "Boxset HB"]);
+    ).toEqual([
+      "BB",
+      "PB",
+      "HB",
+      "Cards",
+      "Pack",
+      "Slipcase HB",
+      "Slipcase PB",
+      "Boxset PB",
+      "Boxset HB",
+      "FLEXIBOUND",
+    ]);
+  });
+
+  it("keeps an existing FLEXIBOUND variant visible while editing", () => {
+    mockBook({
+      ...draftBook,
+      variants: [
+        {
+          _id: "variant-flexibound",
+          format: "FLEXIBOUND",
+          isbn: "9780000000001",
+          priceAmount: 150000,
+          supplierPriceGbpMinor: undefined,
+          stockQuantity: 0,
+          isAvailable: true,
+        },
+      ],
+    } as never);
+
+    render(<AdminBookDetail bookId="book-1" />);
+
+    expect(screen.getByText("FLEXIBOUND")).toBeTruthy();
   });
 
   it("accepts decimal pounds and keeps the variant creation grid aligned", async () => {

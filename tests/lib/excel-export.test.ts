@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { orderAnalyticsCsvRows } from "@/lib/analytics-export";
 import { customerDetailCsvRows, purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
 
 describe("Excel-compatible export", () => {
@@ -9,6 +10,28 @@ describe("Excel-compatible export", () => {
         ["=1+1", 'Ada, "Reader"'],
       ]),
     ).toBe('\uFEFFOrder,Customer\r\n"\'=1+1","Ada, ""Reader"""');
+  });
+
+  it("preserves FLEXIBOUND in every operational FORMAT column", () => {
+    const item = {
+      customerName: "Flexibound Customer",
+      publisherName: "Flexibound Publisher",
+      isbn: "978-flexibound-test",
+      bookTitle: "Flexibound Test Book",
+      format: "FLEXIBOUND",
+      quantity: 1,
+      catalogName: "Flexibound Catalog",
+      closeDate: null,
+      supplierPriceGbpMinor: null,
+      unitPriceAmount: 125000,
+    };
+
+    expect(
+      purchaseSummaryCsvRows([item], { batchName: "Flexibound Batch", cargoName: null, closeDate: null })[2]?.[4],
+    ).toBe("FLEXIBOUND");
+    expect(customerDetailCsvRows([item])[1]?.[4]).toBe("FLEXIBOUND");
+    expect(orderAnalyticsCsvRows([item])[1]?.[4]).toBe("FLEXIBOUND");
+    expect(toExcelCsv(orderAnalyticsCsvRows([item]))).toContain("FLEXIBOUND");
   });
 });
 

@@ -58,6 +58,7 @@ describe("BFG Convex core persistence", () => {
       "Slipcase PB",
       "Boxset PB",
       "Boxset HB",
+      "FLEXIBOUND",
     ] as const;
     const bundle = await admin.mutation(api.secretCatalogs.createBundle, {
       name: "Additive Formats Catalog",
@@ -79,9 +80,17 @@ describe("BFG Convex core persistence", () => {
     const order = await customer.mutation(api.orders.submit, {
       catalogId: bundle.catalogId,
       customerName: "Format Customer",
-      items: [{ variantId: bundle.variantIds[5], quantity: 1, expectedUnitPriceAmount: 100005 }],
+      items: [
+        { variantId: bundle.variantIds[5], quantity: 1, expectedUnitPriceAmount: 100005 },
+        { variantId: bundle.variantIds[9], quantity: 1, expectedUnitPriceAmount: 100009 },
+      ],
     });
-    expect(order.items[0]).toMatchObject({ formatSnapshot: "Slipcase HB" });
+    expect(order.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ formatSnapshot: "Slipcase HB" }),
+        expect.objectContaining({ formatSnapshot: "FLEXIBOUND" }),
+      ]),
+    );
   });
 
   it("allows anonymous token redemption only through a scoped expiring session", async () => {

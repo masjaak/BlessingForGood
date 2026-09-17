@@ -581,6 +581,7 @@ describe("CustomerCatalog projection", () => {
       ["Slipcase HB", "Slipcase HB Book"],
       ["Cards", "Cards Book"],
       ["Pack", "Pack Book"],
+      ["FLEXIBOUND", "FLEXIBOUND Book"],
     ] as const;
     const variant = (id: string, format: string) => ({
       id,
@@ -646,7 +647,7 @@ describe("CustomerCatalog projection", () => {
     expect(screen.queryByRole("checkbox", { name: "BB" })).toBeNull();
     fireEvent.click(formatTrigger);
     const formatMenu = screen.getByRole("dialog", { name: "Format" });
-    expect(within(formatMenu).getAllByRole("checkbox")).toHaveLength(9);
+    expect(within(formatMenu).getAllByRole("checkbox")).toHaveLength(10);
     for (const [format, title] of formatFixtures) {
       const checkbox = within(formatMenu).getByRole("checkbox", { name: format });
       fireEvent.click(checkbox);

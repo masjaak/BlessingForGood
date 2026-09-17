@@ -1,5 +1,19 @@
 # Decisions
 
+## FLEXIBOUND Book Variant format — 2026-09-17
+
+Status: `ACTIVE / ENGINEERING GREEN; DEPLOYMENT PENDING`
+
+- `FLEXIBOUND` extends the canonical Book Variant format set as one exact
+  persisted/display value. `FB`, `Flexi`, `Flexibound`, and `FLX` are not
+  aliases in this change.
+- Existing format values and historical Variant records remain valid. The
+  existing format-level validation boundaries are extended additively; Catalog,
+  Cart, Order, Batch, Ready Stock, and export consumers keep their existing
+  string pass-through behavior.
+- No schema migration, backfill, price, availability, lifecycle, Auth,
+  finance, media, navigation, or CSS change is part of this extension.
+
 ## Multi-Catalog Cart rollout and addable discovery — 2026-09-15
 
 Approved by the user: one Customer owns one Cart with multiple Secret Catalog

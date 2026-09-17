@@ -478,7 +478,7 @@ describe("BFG batch roster and assisted orders", () => {
       await admin.mutation(api.books.update, { bookId, publicationStatus: "published" });
       const variantId = await admin.mutation(api.bookVariants.create, {
         bookId,
-        format: "PB",
+        format: publisherName === "Publisher C" ? "FLEXIBOUND" : "PB",
         isbn,
         priceAmount: 115000,
         ...(supplierPriceGbpMinor === undefined ? {} : { supplierPriceGbpMinor }),
@@ -560,7 +560,7 @@ describe("BFG batch roster and assisted orders", () => {
         publisherName: "Publisher C",
         isbn: "97800009923",
         bookTitle: "Book C",
-        format: "PB",
+        format: "FLEXIBOUND",
         quantity: 2,
         supplierPriceGbpMinor: null,
         unitPriceAmount: 115000,

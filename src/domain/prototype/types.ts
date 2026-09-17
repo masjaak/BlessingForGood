@@ -8,6 +8,7 @@ export const BOOK_FORMATS = [
   "Slipcase PB",
   "Boxset PB",
   "Boxset HB",
+  "FLEXIBOUND",
 ] as const;
 
 export type BookFormat = (typeof BOOK_FORMATS)[number];

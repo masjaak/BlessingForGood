@@ -88,6 +88,20 @@ describe("Bulk Import V1", () => {
     expect(after).toEqual(before);
   });
 
+  it("accepts and persists the canonical FLEXIBOUND import value", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const importFile = csv(["Flexibound Publisher,Flexibound Test Book,,,,flexibound,9780306406157,305000"]);
+
+    const preview = await admin.query(api.bulkImport.preview, { csv: importFile, fileName: "books.csv" });
+    expect(preview.rows[0]).toMatchObject({ format: "FLEXIBOUND", status: "warning" });
+
+    await admin.mutation(api.bulkImport.confirm, { csv: importFile, fileName: "books.csv" });
+    expect(await t.run(async (ctx) => ctx.db.query("bookVariants").collect())).toEqual([
+      expect.objectContaining({ format: "FLEXIBOUND", isAvailable: false }),
+    ]);
+  });
+
   it("plans the locked 200-row maximum without writes", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);

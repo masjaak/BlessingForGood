@@ -13,7 +13,7 @@ import { catalogDeadlineLabel, formatIdr } from "@/domain/prototype/logic";
 import { formatCargoEta } from "@/domain/prototype/operations";
 import type { ProductContextValue } from "@/domain/prototype/context";
 import { useProduct } from "@/domain/prototype/store";
-import type { BookFormat, Order } from "@/domain/prototype/types";
+import { BOOK_FORMATS, type BookFormat, type Order } from "@/domain/prototype/types";
 import { matchesCustomerCatalogBook } from "@/lib/catalog-discovery";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 import { AddToCartAction } from "@/features/customer-cart/add-to-cart-action";
@@ -31,17 +31,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 
-const CATALOG_FORMAT_FILTERS = [
-  { value: "BB", label: "BB" },
-  { value: "HB", label: "HB" },
-  { value: "PB", label: "PB" },
-  { value: "Boxset PB", label: "Boxset PB" },
-  { value: "Boxset HB", label: "Boxset HB" },
-  { value: "Slipcase PB", label: "Slipcase PB" },
-  { value: "Slipcase HB", label: "Slipcase HB" },
-  { value: "Cards", label: "Cards" },
-  { value: "Pack", label: "Pack" },
-] as const satisfies ReadonlyArray<{ value: BookFormat; label: string }>;
+const CATALOG_FORMAT_FILTERS = BOOK_FORMATS.map((value) => ({ value, label: value }));
 
 function filterSummary(
   selected: readonly string[],

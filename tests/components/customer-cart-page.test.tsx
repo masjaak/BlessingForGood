@@ -58,7 +58,7 @@ function cartWithLines() {
         variantId: "variant-active",
         title: "Buku Aktif",
         publisherName: "BFG Press",
-        format: "PB",
+        format: "FLEXIBOUND",
         isbn: "9780000000001",
         coverImageUrl: null,
         quantity: 2,
@@ -264,6 +264,7 @@ describe("Customer Cart page", () => {
     await waitFor(() => expect(reconcile).toHaveBeenCalledOnce());
     expect(await screen.findByRole("heading", { name: "Buku yang bisa dipesan" })).toBeTruthy();
     expect(screen.getByText("September Picks")).toBeTruthy();
+    expect(screen.getByText(/FLEXIBOUND · BFG Press/)).toBeTruthy();
     expect(screen.getByText("Harga sebelumnya")).toBeTruthy();
     expect(screen.getByText("Harga sekarang")).toBeTruthy();
     expect(screen.getByText("Harga berubah")).toBeTruthy();

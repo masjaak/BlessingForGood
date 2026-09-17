@@ -348,7 +348,7 @@ Status: `IMPLEMENTED_LOCALLY; AUTHENTICATED_PRODUCTION_UAT_PENDING`
   invitation, and recoverable field errors remain unchanged.
 - Book Variant `format` is additive and stores the display value directly:
   `BB`, `PB`, `HB`, `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`,
-  and `Boxset HB`. Format remains a variant-level identity with independent
+  `Boxset HB`, and `FLEXIBOUND`. Format remains a variant-level identity with independent
   existing pricing, availability, inventory, and historical snapshots.
 
 ## Final client contract — My Books 2.0, Customer × Batch invoice pool, Admin users, and Book hard delete — 2026-08-31
@@ -520,7 +520,8 @@ original link mutation is superseded by this decision.
   recap and a separate exception list. Recap fields use order-item, Batch,
   invoice, and payment snapshots; format remains the Book variant format
   (`BB`, `PB`, `HB`, `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`, `Boxset PB`,
-  `Boxset HB`), and no GPE formula is invented without a canonical source.
+  `Boxset HB`, `FLEXIBOUND`), and no GPE formula is invented without a
+  canonical source.
   Customer invoice status keeps the existing BFG status treatment.
 - Search contract: assisted-order Catalog discovery searches the already
   eligible open Catalog projection by name. Book/Variant discovery searches
@@ -1413,7 +1414,7 @@ surfaces; `/admin` APIs are not a substitute for those projections.
 Book Master is the reusable identity for publisher, title, description,
 categories, author, publication status, durable cover, and variants. A variant
 owns format (`BB`, `PB`, `HB`, `Cards`, `Pack`, `Slipcase HB`, `Slipcase PB`,
-`Boxset PB`, `Boxset HB`), normalized ISBN, integer IDR price, and
+`Boxset PB`, `Boxset HB`, `FLEXIBOUND`), normalized ISBN, integer IDR price, and
 availability. Publication visibility is server-controlled. Current durable
 media proof is Admin upload → validated Convex storage → persisted reference →
 hard-refresh persistence → customer-safe projection.

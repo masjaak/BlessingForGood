@@ -6,6 +6,33 @@ import { configureTestEnvironment, setupUsers, testConvex } from "../tests/conve
 
 beforeEach(configureTestEnvironment);
 
+it("discovers and adds an eligible FLEXIBOUND variant", async () => {
+  const t = testConvex();
+  const { admin } = await setupUsers(t);
+  const publisherId = await admin.mutation(api.publishers.create, { name: "Flexibound Publisher" });
+  const bookId = await admin.mutation(api.books.create, { publisherId, title: "Flexibound Test Book" });
+  await admin.mutation(api.books.update, { bookId, publicationStatus: "special" });
+  const variantId = await admin.mutation(api.bookVariants.create, {
+    bookId,
+    format: "FLEXIBOUND",
+    isbn: "978-flexibound-test",
+    priceAmount: 125000,
+  });
+  const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Flexibound Catalog" });
+
+  const result = await admin.query(api.catalogItems.listAssignable, {
+    catalogId,
+    search: "Flexibound Test Book",
+    paginationOpts: { numItems: 100, cursor: null },
+  });
+  expect(result.page).toEqual([expect.objectContaining({ variantId, format: "FLEXIBOUND" })]);
+
+  await admin.mutation(api.catalogItems.add, { catalogId, bookVariantId: variantId });
+  expect(await admin.query(api.catalogItems.listForCatalog, { catalogId })).toEqual([
+    expect.objectContaining({ format: "FLEXIBOUND", isbn: "978-flexibound-test" }),
+  ]);
+});
+
 it("searches Publisher metadata across the full candidate dataset in one result page", async () => {
   const t = testConvex();
   const { admin } = await setupUsers(t);

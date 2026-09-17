@@ -20,6 +20,7 @@ export const BOOK_FORMAT_VALUES = [
   "Slipcase PB",
   "Boxset PB",
   "Boxset HB",
+  "FLEXIBOUND",
 ] as const;
 export type BulkImportFormat = (typeof BOOK_FORMAT_VALUES)[number];
 export type BulkImportFields = Record<BulkImportHeader, string>;

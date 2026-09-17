@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 export type BookFormat =
-  "BB" | "PB" | "HB" | "Cards" | "Pack" | "Slipcase HB" | "Slipcase PB" | "Boxset PB" | "Boxset HB";
+  "BB" | "PB" | "HB" | "Cards" | "Pack" | "Slipcase HB" | "Slipcase PB" | "Boxset PB" | "Boxset HB" | "FLEXIBOUND";
 
 export const bookFormatValidator = v.union(
   v.literal("BB"),
@@ -13,6 +13,7 @@ export const bookFormatValidator = v.union(
   v.literal("Slipcase PB"),
   v.literal("Boxset PB"),
   v.literal("Boxset HB"),
+  v.literal("FLEXIBOUND"),
 );
 export const bookPublicationStatusValidator = v.union(
   v.literal("draft"),

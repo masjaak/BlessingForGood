@@ -2,11 +2,29 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-14
+last_updated: 2026-09-17
 source: conversation
 ---
 
 # Changelog
+
+## [flexibound-book-format] — 2026-09-17
+
+### Changed
+
+- Added `FLEXIBOUND` as an additive canonical Book Variant format across the
+  Convex validator, Admin Book Master options, bulk import, and Customer
+  Catalog format filters.
+- Existing Catalog, Cart, Order, Batch, Ready Stock, and export projections
+  continue passing the stored Variant format without format-specific branches.
+
+### QA and scope
+
+- Added deterministic coverage for create/read, Catalog discovery/add, Cart and
+  Order snapshots, Batch projections, import normalization, Customer labels,
+  and purchase/customer/analytics CSV FORMAT columns.
+- No migration, backfill, alias, pricing, lifecycle, Auth, finance, media,
+  navigation, or global CSS change.
 
 ## [customer-cart-checkout] — 2026-09-14
 

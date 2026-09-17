@@ -27,7 +27,7 @@ describe("order analytics report", () => {
     await admin.mutation(api.books.update, { bookId: bookB, publicationStatus: "special" });
     const variantB = await admin.mutation(api.bookVariants.create, {
       bookId: bookB,
-      format: "BB",
+      format: "FLEXIBOUND",
       isbn: "9780002000003",
       priceAmount: 170000,
     });
@@ -91,7 +91,7 @@ describe("order analytics report", () => {
           publisherName: "Publisher B",
           isbn: "9780002000003",
           bookTitle: "Book B",
-          format: "BB",
+          format: "FLEXIBOUND",
           quantity: 2,
           unitPriceAmount: 170000,
           supplierPriceGbpMinor: null,

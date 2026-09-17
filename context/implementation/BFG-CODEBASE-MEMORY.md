@@ -376,7 +376,8 @@
 - The additive Book Variant format extension remains owned by the existing
   validation, type, import, Catalog, Admin, ordering, and snapshot paths.
 - Canonical Book Variant formats are `BB`, `PB`, `HB`, `Cards`, `Pack`,
-  `Slipcase HB`, `Slipcase PB`, `Boxset PB`, and `Boxset HB`. Owners are
+  `Slipcase HB`, `Slipcase PB`, `Boxset PB`, `Boxset HB`, and `FLEXIBOUND`.
+  Owners are
   `convex/validators.ts` and `convex/lib/productDomain.ts` for backend
   validation/creation, `src/domain/prototype/types.ts` for frontend types and
   UI labels, and `convex/lib/bulkImport.ts` for case-insensitive import
