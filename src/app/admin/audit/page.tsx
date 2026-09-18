@@ -5,7 +5,8 @@ import { api } from "../../../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { EmptyState, LoadingRegion, SkeletonTable } from "@/components/ui";
+import { EmptyState, LoadingRegion } from "@/components/ui";
+import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 
 function AuditLog() {
   const events = useQuery(api.auditEvents.list, { paginationOpts: { numItems: 100, cursor: null } });
@@ -17,7 +18,7 @@ function AuditLog() {
     >
       {events === undefined ? (
         <LoadingRegion label="Memuat log aktivitas">
-          <SkeletonTable rows={6} />
+          <SkeletonTableBlock />
         </LoadingRegion>
       ) : events.page.length ? (
         <div className="table-wrap">

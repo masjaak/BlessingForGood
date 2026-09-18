@@ -9,7 +9,17 @@ import { AdminNav } from "@/components/admin-nav";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, ConfirmationDialog, Field, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import {
+  Button,
+  Card,
+  ConfirmationDialog,
+  Field,
+  LoadingRegion,
+  PageHeader,
+  Skeleton,
+  SkeletonText,
+} from "@/components/ui";
+import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
@@ -105,31 +115,38 @@ function UserManagement() {
             ) : (
               <p className="subtle">Undangan staf dikelola Owner. Admin tetap dapat melihat status undangan.</p>
             )}
-            {invitations?.map((invitation) => (
-              <div className="summary-line" key={invitation.invitationId}>
-                <span>
-                  {invitation.email} · {roleLabels[invitation.role as keyof typeof roleLabels] || invitation.role}
-                </span>
-                <span className="form-actions">
-                  <span className="status-badge">
-                    {userStatusLabels[invitation.status as keyof typeof userStatusLabels] || invitation.status}
-                  </span>
-                  {canManageInvitations && invitation.status === "pending" ? (
-                    <Button
-                      variant="danger"
-                      onClick={() =>
-                        void run(
-                          revokeStaffInvitation({ invitationId: invitation.invitationId as Id<"staffInvitations"> }),
-                          `revoke:${invitation.invitationId}`,
-                        )
-                      }
-                    >
-                      Cabut
-                    </Button>
-                  ) : null}
-                </span>
+            {invitations === undefined ? (
+              <div className="content-stack" aria-hidden="true">
+                <SkeletonText width="72%" />
+                <Skeleton className="skeleton-field" />
               </div>
-            ))}
+            ) : (
+              invitations.map((invitation) => (
+                <div className="summary-line" key={invitation.invitationId}>
+                  <span>
+                    {invitation.email} · {roleLabels[invitation.role as keyof typeof roleLabels] || invitation.role}
+                  </span>
+                  <span className="form-actions">
+                    <span className="status-badge">
+                      {userStatusLabels[invitation.status as keyof typeof userStatusLabels] || invitation.status}
+                    </span>
+                    {canManageInvitations && invitation.status === "pending" ? (
+                      <Button
+                        variant="danger"
+                        onClick={() =>
+                          void run(
+                            revokeStaffInvitation({ invitationId: invitation.invitationId as Id<"staffInvitations"> }),
+                            `revoke:${invitation.invitationId}`,
+                          )
+                        }
+                      >
+                        Cabut
+                      </Button>
+                    ) : null}
+                  </span>
+                </div>
+              ))
+            )}
           </Card>
           <Card className="form-actions">
             <label className="field">
@@ -244,8 +261,8 @@ function UserManagement() {
           ))}
           {users === undefined ? (
             <LoadingRegion label="Memuat pengguna">
-              <SkeletonCard />
-              <SkeletonCard />
+              <SkeletonListCard />
+              <SkeletonListCard />
             </LoadingRegion>
           ) : null}
           <AdminPagination

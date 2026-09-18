@@ -6,13 +6,44 @@ import { api } from "../../../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, Field } from "@/components/ui";
+import { Button, Card, Field, LoadingRegion, Skeleton, SkeletonText } from "@/components/ui";
 
 function SettingsEditor() {
   const settings = useQuery(api.settings.getForAdmin, {});
   const update = useMutation(api.settings.update);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  if (settings === undefined) {
+    return (
+      <AdminOperationalPage
+        eyebrow="Kontrol operasional"
+        title="Pengaturan"
+        description="Instruksi penting untuk toko, kontak, dan pembayaran. Ini tidak mengaktifkan otomasi WhatsApp API atau gateway pembayaran."
+      >
+        <LoadingRegion label="Memuat pengaturan">
+          <Card aria-hidden="true">
+            <div className="form-card">
+              <Skeleton className="skeleton-field" />
+              <Skeleton className="skeleton-field" />
+              <SkeletonText width="34%" />
+              <div className="workspace-skeleton-form-grid">
+                <Skeleton className="skeleton-field" />
+                <Skeleton className="skeleton-field" />
+              </div>
+              <SkeletonText width="34%" />
+              <div className="workspace-skeleton-form-grid">
+                <Skeleton className="skeleton-field" />
+                <Skeleton className="skeleton-field" />
+                <Skeleton className="skeleton-field" />
+              </div>
+              <Skeleton className="skeleton-field" />
+              <Skeleton className="skeleton-cta" />
+            </div>
+          </Card>
+        </LoadingRegion>
+      </AdminOperationalPage>
+    );
+  }
   return (
     <AdminOperationalPage
       eyebrow="Kontrol operasional"

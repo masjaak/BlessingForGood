@@ -10,9 +10,20 @@ import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { ActionGroup, Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
+import {
+  ActionGroup,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  StatusBadge,
+} from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
+import { SkeletonListCard, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 
 function customerOptionLabel(customer: { displayName: string; memberCode: string | null }) {
   return `${customer.displayName} · ${customer.memberCode || "tanpa kode"}`;
@@ -124,7 +135,12 @@ function DepositOperations() {
       <Card className="deposit-topup-card">
         <span className="card-kicker">Antrian top-up</span>
         <h2>Bukti menunggu verifikasi</h2>
-        {topUps?.length ? (
+        {topUps === undefined ? (
+          <LoadingRegion label="Memuat top-up">
+            <SkeletonListCard />
+            <SkeletonListCard />
+          </LoadingRegion>
+        ) : topUps.length ? (
           topUps.map((row) => (
             <div className="summary-line deposit-topup-row" key={row.topUpId}>
               <span className="deposit-topup-summary">
@@ -275,7 +291,11 @@ function DepositOperations() {
             </BFGSelect>
           </Field>
         </div>
-        {history === undefined ? <p className="subtle">Memuat riwayat deposit…</p> : null}
+        {history === undefined ? (
+          <LoadingRegion label="Memuat riwayat deposit">
+            <SkeletonTableBlock />
+          </LoadingRegion>
+        ) : null}
         {historyRows.length ? (
           <div className="deposit-history-list">
             <div className="deposit-history-heading" aria-hidden="true">

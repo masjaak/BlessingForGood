@@ -17,9 +17,9 @@ import {
   LoadingRegion,
   Money,
   PageHeader,
-  SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { fulfillmentStageLabels, fulfillmentStages, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabel } from "@/domain/prototype/logic";
@@ -58,11 +58,24 @@ function AdminOrderDetail() {
     adminOrderInvoice === undefined
   ) {
     return (
-      <LoadingRegion label="Memuat operasi pesanan">
-        <SkeletonCard variant="order" />
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Operasi pesanan"
+          title="Detail pesanan"
+          description="Memuat snapshot, tracking, invoice, dan exception…"
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat operasi pesanan">
+              <SkeletonPanel lines={6} />
+              <SkeletonTableBlock />
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={5} />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   if (!order)

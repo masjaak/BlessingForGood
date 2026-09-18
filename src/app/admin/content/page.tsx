@@ -7,7 +7,7 @@ import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import { Button, Card, Field, StatusBadge } from "@/components/ui";
+import { Button, Card, Field, LoadingRegion, Skeleton, SkeletonText, StatusBadge } from "@/components/ui";
 
 type ContentKey = "community" | "how_to_order" | "help";
 
@@ -29,6 +29,39 @@ function ContentEditor() {
     } finally {
       setPending("");
     }
+  }
+  if (block === undefined) {
+    return (
+      <AdminOperationalPage
+        eyebrow="Manajemen konten"
+        title="Konten terstruktur"
+        description="Edit field yang disetujui tanpa mengubah kode. Draf tidak tampil ke pelanggan sampai dipublikasikan."
+      >
+        <LoadingRegion label="Memuat konten">
+          <Card className="notice-card" aria-hidden="true">
+            <SkeletonText width="22%" />
+            <SkeletonText width="58%" />
+            <SkeletonText width="92%" />
+            <SkeletonText width="76%" />
+          </Card>
+          <Card aria-hidden="true">
+            <div className="split-heading">
+              <Skeleton className="skeleton-field" />
+              <Skeleton className="skeleton-status" />
+            </div>
+            <div className="form-card">
+              <Skeleton className="skeleton-field" />
+              <Skeleton className="skeleton-field" />
+              <Skeleton className="skeleton-field" />
+              <div className="form-actions">
+                <Skeleton className="skeleton-cta" />
+                <Skeleton className="skeleton-cta" />
+              </div>
+            </div>
+          </Card>
+        </LoadingRegion>
+      </AdminOperationalPage>
+    );
   }
   return (
     <AdminOperationalPage

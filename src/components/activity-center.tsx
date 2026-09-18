@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
-import { Card, EmptyState, IconButton, LinkButton, LoadingRegion, PageHeader, SkeletonCard } from "@/components/ui";
+import { Card, EmptyState, IconButton, LinkButton, LoadingRegion, PageHeader } from "@/components/ui";
+import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 
 export function ActivityCenter({
   workspace,
@@ -24,8 +25,8 @@ export function ActivityCenter({
   const content =
     activity === undefined ? (
       <LoadingRegion label="Memuat aktivitas">
-        <SkeletonCard />
-        <SkeletonCard />
+        <SkeletonListCard />
+        <SkeletonListCard />
       </LoadingRegion>
     ) : visibleActivity?.length ? (
       compact ? (

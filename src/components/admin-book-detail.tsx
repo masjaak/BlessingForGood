@@ -18,9 +18,10 @@ import {
   LinkButton,
   LoadingRegion,
   PageHeader,
-  SkeletonCard,
+  Skeleton,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonForm, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { AdminBookMedia } from "@/features/admin-books/media/admin-book-media";
@@ -618,10 +619,22 @@ function ConnectedAdminBookDetail({ bookId }: { bookId: Id<"books"> }) {
   const book = useQuery(api.books.getForAdmin, { bookId });
   if (book === undefined) {
     return (
-      <LoadingRegion label="Memuat buku">
-        <SkeletonCard />
-        <SkeletonCard variant="book" />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader eyebrow="Master Buku" title="Detail buku" description="Memuat metadata, varian, dan media buku…" />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat buku">
+              <SkeletonForm />
+              <div className="two-column">
+                <SkeletonPanel lines={5} />
+                <SkeletonPanel lines={5} />
+              </div>
+              <Skeleton className="skeleton-field" />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   if (!book) return <div className="state-panel">Buku tidak ditemukan.</div>;

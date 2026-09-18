@@ -143,11 +143,13 @@ export function AdminSkeletonContent({ kind, variant }: { kind: AdminSkeletonKin
     return (
       <>
         <SkeletonToolbar />
-        <SkeletonSummaryGrid />
-        <div className="workspace-skeleton-two-column">
-          <SkeletonPanel lines={6} />
-          <SkeletonPanel lines={6} />
+        <div className="workspace-skeleton-metric-grid" aria-hidden="true">
+          {Array.from({ length: 4 }, (_, index) => (
+            <SkeletonMetric key={index} />
+          ))}
         </div>
+        <SkeletonTableBlock />
+        <SkeletonPanel lines={5} />
       </>
     );
   }

@@ -6,17 +6,8 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
-import {
-  ActionGroup,
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  LinkButton,
-  LoadingRegion,
-  SkeletonCard,
-  StatusBadge,
-} from "@/components/ui";
+import { ActionGroup, Button, Card, EmptyState, Field, LinkButton, LoadingRegion, StatusBadge } from "@/components/ui";
+import { SkeletonForm, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 
 export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
@@ -49,10 +40,16 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
 
   if (catalog === undefined || access === undefined || customers === undefined)
     return (
-      <LoadingRegion label="Memuat akses katalog">
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
+      <AdminOperationalPage
+        eyebrow="Secret Catalog"
+        title="Kelola akses katalog"
+        description="Memuat kode akses, grant pelanggan, dan status katalog…"
+      >
+        <LoadingRegion label="Memuat akses katalog">
+          <SkeletonForm />
+          <SkeletonTableBlock />
+        </LoadingRegion>
+      </AdminOperationalPage>
     );
   if (!catalog) return <div className="state-panel">Katalog tidak ditemukan.</div>;
 

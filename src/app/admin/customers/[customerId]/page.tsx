@@ -6,16 +6,8 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import {
-  Card,
-  EmptyState,
-  LinkButton,
-  LoadingRegion,
-  Money,
-  PageHeader,
-  SkeletonCard,
-  StatusBadge,
-} from "@/components/ui";
+import { Card, EmptyState, LinkButton, LoadingRegion, Money, PageHeader, StatusBadge } from "@/components/ui";
+import { SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
@@ -58,11 +50,27 @@ function CustomerDetail() {
     exceptions === undefined
   ) {
     return (
-      <LoadingRegion label="Memuat detail pelanggan">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Detail pelanggan"
+          title="Detail pelanggan"
+          description="Profil, alamat, pesanan, invoice, dan masalah pelanggan dari sumber operasional yang sama."
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat detail pelanggan">
+              <div className="two-column">
+                <SkeletonPanel lines={4} />
+                <SkeletonPanel lines={3} />
+              </div>
+              <SkeletonTableBlock />
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   const name = profile?.displayName || user.displayNameSnapshot || orders[0]?.customerName || "Pelanggan BFG";

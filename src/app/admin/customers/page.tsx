@@ -5,7 +5,8 @@ import { api } from "../../../../convex/_generated/api";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader, SkeletonTable } from "@/components/ui";
+import { Card, EmptyState, LinkButton, LoadingRegion, PageHeader } from "@/components/ui";
+import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
 import { useProduct } from "@/domain/prototype/store";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
@@ -31,7 +32,7 @@ function CustomerList() {
         <div className="admin-content">
           {!customers ? (
             <LoadingRegion label="Memuat pelanggan">
-              <SkeletonTable rows={5} />
+              <SkeletonTableBlock />
             </LoadingRegion>
           ) : customerRows.length ? (
             <div className="table-wrap">

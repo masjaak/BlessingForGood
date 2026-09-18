@@ -17,7 +17,8 @@ import {
   Field,
   LoadingRegion,
   PageHeader,
-  SkeletonCard,
+  Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
@@ -41,6 +42,28 @@ function statusTone(status: JoinRequestStatus): "neutral" | "positive" | "warnin
   if (status === "approved") return "positive";
   if (status === "rejected") return "warning";
   return "neutral";
+}
+
+function JoinRequestSkeleton() {
+  return (
+    <Card className="join-request-card" aria-hidden="true">
+      <div className="split-heading">
+        <div>
+          <SkeletonText width="34%" />
+          <SkeletonText width="62%" />
+          <SkeletonText width="48%" />
+        </div>
+        <Skeleton className="skeleton-status" />
+      </div>
+      {Array.from({ length: 4 }, (_, index) => (
+        <div className="summary-line" key={index}>
+          <SkeletonText width="34%" />
+          <SkeletonText width={index === 2 ? "44%" : "28%"} />
+        </div>
+      ))}
+      <Skeleton className="skeleton-cta" />
+    </Card>
+  );
 }
 
 function JoinRequestCard({
@@ -325,8 +348,8 @@ function ConnectedJoinRequests() {
           </Card>
           {filteredRequests === undefined ? (
             <LoadingRegion label="Memuat permintaan join">
-              <SkeletonCard />
-              <SkeletonCard />
+              <JoinRequestSkeleton />
+              <JoinRequestSkeleton />
             </LoadingRegion>
           ) : null}
           {filteredRequests?.length ? (

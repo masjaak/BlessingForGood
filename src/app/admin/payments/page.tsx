@@ -11,9 +11,10 @@ import {
   LinkButton,
   LoadingRegion,
   PageHeader,
-  SkeletonCard,
+  Skeleton,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonListCard, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { paymentConfirmationStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type AdminPaymentQueue } from "@/domain/prototype/operations-context";
 import { formatIdr } from "@/domain/prototype/logic";
@@ -173,10 +174,24 @@ function AdminPayments() {
   if (dataSource !== "convex") return <div className="state-panel">Antrian pembayaran belum tersedia.</div>;
   if (adminPaymentQueue === undefined) {
     return (
-      <LoadingRegion label="Memuat konfirmasi pembayaran">
-        <SkeletonCard variant="invoice" />
-        <SkeletonCard variant="invoice" />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Operasi pembayaran"
+          title="Tinjau konfirmasi pembayaran."
+          description="Setujui hanya setelah bukti pembayaran cocok dengan kiriman pelanggan. Jumlah yang disetujui dihitung satu kali terhadap invoice."
+          actions={<Skeleton className="skeleton-cta" />}
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat konfirmasi pembayaran">
+              <SkeletonListCard />
+              <SkeletonListCard />
+              <SkeletonPanel lines={4} />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   const resolvedHistory =

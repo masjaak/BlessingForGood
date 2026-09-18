@@ -208,6 +208,22 @@ describe("Admin invoice issue entry", () => {
     },
   );
 
+  it("keeps invoice detail geometry mounted while the four data regions load", () => {
+    vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+    vi.mocked(useOperations).mockReturnValue({
+      currentAdminInvoice: undefined,
+      adminAccount: undefined,
+      adminTransactions: undefined,
+      adminAllocations: undefined,
+    } as never);
+
+    const { container } = render(<AdminInvoiceDetailPage />);
+
+    expect(screen.getByRole("heading", { name: "Detail invoice" })).toBeTruthy();
+    expect(container.querySelector('[aria-label="Admin navigation"]')).toBeTruthy();
+    expect(container.querySelectorAll(".workspace-skeleton-panel")).toHaveLength(4);
+  });
+
   it("keeps void unavailable while settlement history still requires resolution", () => {
     setup({ ...invoice, allocatedDepositAmount: 50000, paymentStatus: "partially_paid" });
 

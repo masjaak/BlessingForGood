@@ -15,9 +15,9 @@ import {
   Field,
   LinkButton,
   LoadingRegion,
-  SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonForm, SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { matchesAdminCatalogRecord } from "@/lib/catalog-discovery";
@@ -110,10 +110,17 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
 
   if (catalog === undefined || items === undefined) {
     return (
-      <LoadingRegion label="Memuat katalog">
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
+      <AdminOperationalPage
+        eyebrow="Secret Catalog"
+        title="Kelola katalog"
+        description="Memuat metadata, kurasi produk, dan status katalog…"
+      >
+        <LoadingRegion label="Memuat katalog">
+          <SkeletonForm />
+          <SkeletonTableBlock />
+          <SkeletonPanel lines={5} />
+        </LoadingRegion>
+      </AdminOperationalPage>
     );
   }
   if (!catalog) return <div className="state-panel">Katalog tidak ditemukan.</div>;

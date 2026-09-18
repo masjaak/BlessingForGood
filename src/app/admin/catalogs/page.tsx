@@ -15,9 +15,9 @@ import {
   LinkButton,
   LoadingRegion,
   PageHeader,
-  SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
@@ -117,8 +117,8 @@ function CatalogList() {
   if (catalogRows === undefined) {
     return (
       <LoadingRegion label="Memuat katalog">
-        <SkeletonCard />
-        <SkeletonCard />
+        <SkeletonListCard />
+        <SkeletonListCard />
       </LoadingRegion>
     );
   }

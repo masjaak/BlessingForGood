@@ -17,9 +17,9 @@ import {
   LoadingRegion,
   Money,
   PageHeader,
-  SkeletonTable,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { nextOrderStatuses, orderStatusLabel, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -49,7 +49,7 @@ function OrderTable() {
   if (ordersLoading || (dataSource === "convex" && adminOrders === undefined)) {
     return (
       <LoadingRegion label="Memuat pesanan">
-        <SkeletonTable rows={6} />
+        <SkeletonTableBlock />
       </LoadingRegion>
     );
   }

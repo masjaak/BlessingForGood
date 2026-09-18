@@ -5,7 +5,8 @@ import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, EmptyState, LinkButton, LoadingRegion, SkeletonTable, StatusBadge } from "@/components/ui";
+import { Card, EmptyState, LinkButton, LoadingRegion, StatusBadge } from "@/components/ui";
+import { SkeletonSummaryGrid, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
 
 function number(value: number) {
@@ -126,7 +127,8 @@ function ConnectedAdminReadyStock() {
     >
       {rows === undefined ? (
         <LoadingRegion label="Memuat Ready Stock">
-          <SkeletonTable rows={7} />
+          <SkeletonSummaryGrid />
+          <SkeletonTableBlock />
         </LoadingRegion>
       ) : (
         <ReadyStockContent rows={rows} />

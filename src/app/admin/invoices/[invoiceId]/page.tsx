@@ -19,10 +19,11 @@ import {
   LoadingRegion,
   Money,
   PageHeader,
-  SkeletonCard,
+  Skeleton,
   SkeletonText,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { productErrorMessage } from "@/domain/prototype/errors";
@@ -92,10 +93,25 @@ function AdminInvoiceDetail() {
     adminAllocations === undefined
   ) {
     return (
-      <LoadingRegion label="Memuat invoice">
-        <SkeletonCard variant="invoice" />
-        <SkeletonCard />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Operasi invoice"
+          title="Detail invoice"
+          description="Ringkasan invoice, akun deposit, alokasi, dan transaksi."
+          actions={<Skeleton className="skeleton-cta" />}
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat invoice">
+              <SkeletonPanel lines={8} />
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
+              <SkeletonPanel lines={4} />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   if (!currentAdminInvoice)

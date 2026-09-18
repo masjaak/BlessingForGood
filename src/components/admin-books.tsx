@@ -19,9 +19,9 @@ import {
   LinkButton,
   LoadingRegion,
   PageHeader,
-  SkeletonTable,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
@@ -287,7 +287,7 @@ function ConnectedAdminBooks() {
           </Card>
           {books === undefined ? (
             <LoadingRegion label="Memuat Master Buku">
-              <SkeletonTable rows={5} />
+              <SkeletonTableBlock />
             </LoadingRegion>
           ) : null}
           {books?.page.length ? (

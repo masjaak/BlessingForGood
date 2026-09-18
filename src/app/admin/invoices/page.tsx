@@ -19,9 +19,10 @@ import {
   LoadingRegion,
   Money,
   PageHeader,
-  SkeletonCard,
+  Skeleton,
   StatusBadge,
 } from "@/components/ui";
+import { SkeletonForm, SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { formatIdr } from "@/domain/prototype/logic";
 import { invoicePaymentStatusLabel, invoiceStatusLabel } from "@/domain/prototype/operations";
 import { useOperations, type InvoiceRequirementMode } from "@/domain/prototype/operations-context";
@@ -522,10 +523,24 @@ function PersistentAdminInvoices() {
   const invoices = adminInvoiceList?.page || [];
   if (!adminInvoiceList) {
     return (
-      <LoadingRegion label="Memuat invoice">
-        <SkeletonCard variant="invoice" />
-        <SkeletonCard variant="invoice" />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Operasi invoice dan deposit"
+          title="Jaga status keuangan tetap jelas."
+          description="Invoice memakai snapshot pesanan. Deposit memakai ledger append-only; alokasi, pelepasan, dan pembalikan tetap terpisah."
+          actions={<Skeleton className="skeleton-cta" />}
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat invoice">
+              <SkeletonForm />
+              <SkeletonListCard />
+              <SkeletonListCard />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   const visibleInvoices = invoiceSearch.trim() ? (searchedInvoice ? [searchedInvoice] : []) : invoices;
