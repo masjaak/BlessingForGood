@@ -247,10 +247,14 @@ function ConvexAssistedOrderForm() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submissionKeyRef = useRef<string | null>(null);
+  const selectedCatalog = useQuery(
+    api.secretCatalogs.getForAdmin,
+    catalogId ? { catalogId: catalogId as Id<"secretCatalogs"> } : "skip",
+  );
   const customerPage = Array.isArray(customers) ? { page: customers, isDone: true, continueCursor: "" } : customers;
   const customerRows = customerPage?.page || [];
   const catalogs = state.catalogs.filter((candidate) => candidate.status === "open");
-  const catalog = catalogs.find((candidate) => candidate.id === catalogId);
+  const catalog = selectedCatalog?.view;
   const preorderVariants =
     catalog?.books.flatMap((book) =>
       book.variants.map((variant) => ({

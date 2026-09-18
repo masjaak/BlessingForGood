@@ -377,9 +377,7 @@ export const submitCart = mutation({
     if (args.catalogId) {
       const checkout = await ctx.db
         .query("cartCheckouts")
-        .withIndex("by_cart_and_catalog", (query) =>
-          query.eq("cartId", cart._id).eq("catalogId", args.catalogId!),
-        )
+        .withIndex("by_cart_and_catalog", (query) => query.eq("cartId", cart._id).eq("catalogId", args.catalogId!))
         .first();
       if (checkout) {
         if (checkout.requestKey !== requestKey) fail("CART_CHECKOUT_ALREADY_SUBMITTED");
@@ -900,6 +898,15 @@ export const listForAdmin = query({
     await requirePermission(ctx, "orders.read.all");
     const page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((order) => orderView(ctx, order._id))) };
+  },
+});
+
+export const listSummariesForAdmin = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "orders.read.all");
+    const page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
+    return { ...page, page: page.page.map((order) => ({ orderId: order._id, status: order.status })) };
   },
 });
 

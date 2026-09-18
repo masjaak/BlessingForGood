@@ -280,6 +280,10 @@ describe("BFG Convex core persistence", () => {
     expect(
       (await admin.query(api.orders.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } })).page,
     ).toHaveLength(1);
+    const summaryPage = await admin.query(api.orders.listSummariesForAdmin, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(summaryPage.page).toEqual([{ orderId: order.orderId, status: "submitted" }]);
   });
 
   it("reads back the BFG profile name and preserves submitted order snapshots", async () => {

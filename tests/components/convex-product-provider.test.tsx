@@ -129,5 +129,56 @@ describe("authenticated customer bootstrap caller", () => {
         ([reference, args]) => getFunctionName(reference as never) === "secretCatalogs:list" && args !== "skip",
       ),
     ).toBe(false);
+    expect(
+      queryCalls.some(
+        ([reference, args]) => getFunctionName(reference as never) === "orders:listForAdmin" && args !== "skip",
+      ),
+    ).toBe(false);
+  });
+
+  it("uses Catalog summaries for batch metadata without mounting the full Catalog list", () => {
+    vi.mocked(usePathname).mockReturnValue("/admin/batches");
+    queryValues.set("users:current", { role: "owner", status: "active" });
+    queryValues.set("secretCatalogs:listSummaries", { page: [], isDone: true, continueCursor: "" });
+
+    render(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+
+    expect(
+      queryCalls.some(
+        ([reference, args]) => getFunctionName(reference as never) === "secretCatalogs:list" && args !== "skip",
+      ),
+    ).toBe(false);
+    expect(
+      queryCalls.some(
+        ([reference, args]) =>
+          getFunctionName(reference as never) === "secretCatalogs:listSummaries" && args !== "skip",
+      ),
+    ).toBe(true);
+    expect(
+      queryCalls.some(
+        ([reference, args]) => getFunctionName(reference as never) === "orders:listForAdmin" && args !== "skip",
+      ),
+    ).toBe(false);
+  });
+
+  it("does not mount Admin Catalog or Order lists on an unrelated Admin route", () => {
+    vi.mocked(usePathname).mockReturnValue("/admin/join-requests");
+    queryValues.set("users:current", { role: "owner", status: "active" });
+
+    render(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+
+    for (const functionName of ["secretCatalogs:list", "secretCatalogs:listSummaries", "orders:listForAdmin"]) {
+      expect(
+        queryCalls.some(([reference, args]) => getFunctionName(reference as never) === functionName && args !== "skip"),
+      ).toBe(false);
+    }
   });
 });

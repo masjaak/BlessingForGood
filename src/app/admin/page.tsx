@@ -12,8 +12,12 @@ import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
 function AdminOverview() {
-  const { state, dataSource, sessionRole, ordersLoading, catalogsLoading } = useProduct();
+  const { state, dataSource, sessionRole, catalogsLoading } = useProduct();
   const { batchList, adminInvoiceList, adminPaymentQueue } = useOperations();
+  const orderSummaries = useQuery(
+    api.orders.listSummariesForAdmin,
+    dataSource === "convex" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+  );
   const joinRequests = useQuery(api.joinRequests.listForAdmin, dataSource === "convex" ? {} : "skip");
   const exceptions = useQuery(
     api.orderExceptions.listForAdmin,
@@ -21,8 +25,8 @@ function AdminOverview() {
   );
   const refunds = useQuery(api.refunds.listForAdmin, dataSource === "convex" ? {} : "skip");
   if (
-    ordersLoading ||
     catalogsLoading ||
+    (dataSource === "convex" && orderSummaries === undefined) ||
     batchList === undefined ||
     adminInvoiceList === undefined ||
     adminPaymentQueue === undefined ||
@@ -41,7 +45,9 @@ function AdminOverview() {
   const openExceptions =
     exceptions?.page.filter((item) => item.status !== "resolved" && item.status !== "rejected").length || 0;
   const pendingPayments = adminPaymentQueue?.length || 0;
-  const newOrders = state.orders.filter((order) => order.status === "submitted").length;
+  const newOrders = (dataSource === "convex" ? orderSummaries?.page || [] : state.orders).filter(
+    (order) => order.status === "submitted",
+  ).length;
   const pendingRefunds = refunds.filter((item) => item.status !== "paid").length;
 
   const queues = [

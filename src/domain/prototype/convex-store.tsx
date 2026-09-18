@@ -41,6 +41,7 @@ import type {
 import { useConvexRetry } from "@/providers/convex-provider";
 
 type CatalogView = NonNullable<FunctionReturnType<typeof api.catalogAccess.getUnlocked>>;
+type CatalogSummaryRecord = FunctionReturnType<typeof api.secretCatalogs.listSummaries>["page"][number];
 export type OrderView = Awaited<FunctionReturnType<typeof api.orders.submit>>;
 type CatalogRecord = {
   id: string;
@@ -115,6 +116,19 @@ function asCatalog(value: CatalogView | null | undefined): SecretCatalog | undef
     createdAt: record.createdAt,
     titleCount: record.titleCount,
     books: record.books,
+  };
+}
+
+function asCatalogSummary(value: CatalogSummaryRecord): SecretCatalog {
+  return {
+    id: value.id,
+    name: value.name,
+    accessCodeHash: "convex-managed",
+    status: normalizeCatalogStatus(value.status),
+    closingAt: value.closingAt,
+    estimatedArrivalMonth: value.estimatedArrivalMonth,
+    createdAt: value.createdAt,
+    books: [],
   };
 }
 
@@ -196,19 +210,31 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const adminWorkspace = pathname.startsWith("/admin");
   const isAdmin = activeUser && adminWorkspace && roleCanAccess(me?.role || null, "admin");
   const isCustomer = activeUser && !adminWorkspace && roleCanAccess(me?.role || null, "customer");
+  const adminCatalogDetailRoute = Boolean(isAdmin && pathname === "/admin/catalogs");
+  const adminCatalogSummaryRoute = Boolean(
+    isAdmin &&
+    (pathname === "/admin" ||
+      pathname === "/admin/orders" ||
+      pathname === "/admin/batches" ||
+      pathname.startsWith("/admin/batches/")),
+  );
+  const adminOrderStateRoute = Boolean(
+    isAdmin &&
+    (pathname === "/admin/orders" || pathname.startsWith("/admin/orders/") || pathname.startsWith("/admin/customers/")),
+  );
   const customerProfile = useQuery(api.customerProfiles.getMine, isCustomer ? {} : "skip");
   const customerProfileDisplayName = customerProfile === undefined ? undefined : (customerProfile?.displayName ?? null);
   const adminCatalogs = useQuery(
     api.secretCatalogs.list,
-    isAdmin && pathname !== "/admin" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    adminCatalogDetailRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const adminCatalogSummaries = useQuery(
     api.secretCatalogs.listSummaries,
-    isAdmin && pathname === "/admin" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    adminCatalogSummaryRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const adminOrders = useQuery(
     api.orders.listForAdmin,
-    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    adminOrderStateRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const unlocked = useQuery(
     api.catalogAccess.getUnlocked,
@@ -320,11 +346,15 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const catalogs = useMemo(
     () =>
       isAdmin
-        ? pageOf(adminCatalogs)
-            .map((catalog) => asCatalog(catalog as CatalogView))
-            .filter(Boolean)
+        ? adminCatalogDetailRoute
+          ? pageOf(adminCatalogs)
+              .map((catalog) => asCatalog(catalog as CatalogView))
+              .filter(Boolean)
+          : adminCatalogSummaryRoute
+            ? pageOf(adminCatalogSummaries).map(asCatalogSummary)
+            : []
         : [asCatalog(unlocked as CatalogView | null | undefined)].filter(Boolean),
-    [adminCatalogs, isAdmin, unlocked],
+    [adminCatalogDetailRoute, adminCatalogs, adminCatalogSummaries, adminCatalogSummaryRoute, isAdmin, unlocked],
   ) as SecretCatalog[];
   const catalogOptions = useMemo<CatalogAccessOption[]>(() => {
     const sessionOptions = (sessionCatalogs || []).map((option) => ({
@@ -503,9 +533,12 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     (unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null))),
   );
   const catalogsLoading = Boolean(
-    isAdmin && (pathname === "/admin" ? adminCatalogSummaries === undefined : adminCatalogs === undefined),
+    (adminCatalogDetailRoute && adminCatalogs === undefined) ||
+    (adminCatalogSummaryRoute && adminCatalogSummaries === undefined),
   );
-  const ordersLoading = Boolean((isCustomer && customerOrders === undefined) || (isAdmin && adminOrders === undefined));
+  const ordersLoading = Boolean(
+    (isCustomer && customerOrders === undefined) || (adminOrderStateRoute && adminOrders === undefined),
+  );
 
   const value = useMemo<ProductContextValue>(
     () => ({

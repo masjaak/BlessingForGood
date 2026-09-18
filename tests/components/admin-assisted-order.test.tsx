@@ -82,9 +82,11 @@ describe("Admin assisted-order discovery", () => {
       state: { catalogs, orders: [], invoices: [] },
       ordersLoading: false,
     } as never);
-    vi.mocked(useQuery).mockReturnValue([
-      { customerUserId: "customer-1", displayName: "A Customer", memberCode: "BFG-0001" },
-    ] as never);
+    vi.mocked(useQuery).mockImplementation((query, args?) => {
+      void args;
+      if (getFunctionName(query as never).endsWith(":getForAdmin")) return { view: catalogs[0] } as never;
+      return [{ customerUserId: "customer-1", displayName: "A Customer", memberCode: "BFG-0001" }] as never;
+    });
     vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
   });
 

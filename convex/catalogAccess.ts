@@ -60,17 +60,6 @@ async function periodCatalogs(ctx: AccessContext, periodId: Id<"catalogAccessPer
   );
 }
 
-function catalogAccessSummary(view: Awaited<ReturnType<typeof getCatalogView>>) {
-  return {
-    id: view.id,
-    name: view.name,
-    status: view.status,
-    closingAt: view.closingAt,
-    estimatedArrivalMonth: view.estimatedArrivalMonth,
-    titleCount: view.titleCount,
-  };
-}
-
 type UnlockErrorCode = "ACCESS_CODE_INVALID" | "ACCESS_CODE_EXPIRED" | "CATALOG_NOT_OPEN" | "ACCESS_CODE_RATE_LIMITED";
 
 function anonymousAttemptKey(args: { attemptKey?: string }): string {
@@ -482,13 +471,13 @@ export const unlock = mutation({
       } else {
         await clearAnonymousAttempts(ctx, attemptKey!);
       }
-      const views = await Promise.all(catalogs.map((catalog) => getCatalogView(ctx, catalog._id)));
+      const selectedView = await getCatalogView(ctx, catalogs[initialCatalogIndex]._id);
       return {
         catalogId: catalogs[initialCatalogIndex]._id,
         expiresAt,
         sessionToken,
-        catalog: views[initialCatalogIndex],
-        catalogs: views.map(catalogAccessSummary),
+        catalog: selectedView,
+        catalogs: catalogs.map((catalog) => catalogSummaryFromCatalog(catalog)),
       };
     }
     if (!record || !record.isActive) return reject("ACCESS_CODE_INVALID");
@@ -527,7 +516,7 @@ export const unlock = mutation({
       expiresAt,
       sessionToken,
       catalog: catalogView,
-      catalogs: [catalogAccessSummary(catalogView)],
+      catalogs: [catalogSummaryFromCatalog(catalog)],
     };
   },
 });

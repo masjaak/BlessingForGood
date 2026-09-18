@@ -140,11 +140,19 @@ export function ConvexOperationsProvider({
   const batchId = routeId(pathname, "/admin/batches/");
   const customerOrderId = routeId(pathname, "/account/orders/");
   const adminOrderId = routeId(pathname, "/admin/orders/");
+  const adminCustomerId = routeId(pathname, "/admin/customers/");
   const customerInvoiceId = routeId(pathname, "/account/invoices/");
   const adminInvoiceId = routeId(pathname, "/admin/invoices/");
   const adminWorkspace = pathname?.startsWith("/admin") ?? false;
   const isAdmin = enabled && active && adminWorkspace && roleCanAccess(role, "admin");
   const isCustomer = enabled && active && !adminWorkspace && roleCanAccess(role, "customer");
+  const adminBatchListRoute = Boolean(
+    isAdmin && (pathname === "/admin" || pathname === "/admin/batches" || Boolean(batchId) || Boolean(adminOrderId)),
+  );
+  const adminInvoiceListRoute = Boolean(
+    isAdmin && (pathname === "/admin" || pathname === "/admin/invoices" || Boolean(adminCustomerId)),
+  );
+  const adminPaymentRoute = Boolean(isAdmin && (pathname === "/admin" || pathname === "/admin/payments"));
   const batchListPagination = useAdminCursorPagination();
   const currentBatchPagination = useAdminCursorPagination();
   const currentBatchUnassignedPagination = useAdminCursorPagination();
@@ -160,13 +168,13 @@ export function ConvexOperationsProvider({
 
   const batchList = useQuery(
     api.batches.listForAdmin,
-    isAdmin
+    adminBatchListRoute
       ? { paginationOpts: { numItems: batchListPagination.pageSize, cursor: batchListPagination.cursor } }
       : "skip",
   );
   const adminInvoiceList = useQuery(
     api.invoices.listForAdmin,
-    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    adminInvoiceListRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const customerInvoiceList = useQuery(
     api.invoices.listMine,
@@ -247,10 +255,10 @@ export function ConvexOperationsProvider({
     api.paymentConfirmations.listMineForInvoice,
     isCustomer && customerInvoiceId ? { invoiceId: customerInvoiceId as Id<"invoices"> } : "skip",
   );
-  const adminPaymentQueue = useQuery(api.paymentConfirmations.listPendingForAdmin, isAdmin ? {} : "skip");
+  const adminPaymentQueue = useQuery(api.paymentConfirmations.listPendingForAdmin, adminPaymentRoute ? {} : "skip");
   const adminPaymentHistory = useQuery(
     api.paymentConfirmations.listForAdmin,
-    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    adminPaymentRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const customerExceptionList = useQuery(
     api.orderExceptions.listMine,

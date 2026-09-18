@@ -109,7 +109,35 @@ describe("Catalog read contract characterization", () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const source = await createOpenCatalog(admin, "Session source catalog", "5050", "session-50");
-    for (let index = 1; index < 50; index += 1) {
+    const heavySiblings: Array<Awaited<ReturnType<typeof createOpenCatalog>>> = [];
+    for (let index = 0; index < 3; index += 1) {
+      const sibling = await createOpenCatalog(
+        admin,
+        `Heavy sibling ${index}`,
+        `505${index + 1}`,
+        `session-heavy-${index}`,
+      );
+      await addDuplicateItems(t, sibling.catalogId, sibling.variantIds[0], 499);
+      heavySiblings.push(sibling);
+    }
+    const adminUser = await admin.query(api.users.current, {});
+    if (!adminUser) throw new Error("admin fixture missing");
+    await t.run(async (ctx) => {
+      const storageId = await ctx.storage.store(new Blob(["sibling-cover"]));
+      await ctx.db.patch(heavySiblings[0].bookId, { coverStorageId: storageId });
+      for (let index = 0; index < 8; index += 1) {
+        await ctx.db.insert("bookMedia", {
+          bookId: heavySiblings[0].bookId,
+          storageId,
+          displayOrder: index,
+          altText: `Sibling gallery ${index}`,
+          createdAt: Date.now() + index,
+          updatedAt: Date.now() + index,
+          createdByUserId: adminUser.appUserId,
+        });
+      }
+    });
+    for (let index = 4; index < 50; index += 1) {
       const catalogId = await admin.mutation(api.secretCatalogs.create, { name: `Session catalog ${index}` });
       await admin.mutation(api.secretCatalogs.open, { catalogId });
     }
@@ -117,6 +145,16 @@ describe("Catalog read contract characterization", () => {
     const generated = await admin.mutation(api.catalogAccess.generateCode, { catalogId: source.catalogId });
     const unlocked = await customer.mutation(api.catalogAccess.unlock, { accessCode: generated.code });
     if ("errorCode" in unlocked) throw new Error(unlocked.errorCode);
+
+    expect(unlocked.catalog.id).toBe(source.catalogId);
+    expect(unlocked.catalog.books[0]).toMatchObject({ id: source.bookId });
+    expect(unlocked.catalogs).toHaveLength(50);
+    const selectedSummary = unlocked.catalogs.find((catalog) => catalog.id === source.catalogId);
+    expect(selectedSummary).toBeDefined();
+    expect(Object.keys(selectedSummary || {}).sort()).toEqual(
+      ["id", "name", "status", "closingAt", "estimatedArrivalMonth", "createdAt"].sort(),
+    );
+    expect(selectedSummary).not.toHaveProperty("books");
 
     const options = await customer.query(api.catalogAccess.listForSession, { sessionToken: unlocked.sessionToken });
     expect(options).toHaveLength(50);
