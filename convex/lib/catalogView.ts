@@ -8,9 +8,22 @@ export async function catalogIsOpen(ctx: QueryCtx, catalogId: Id<"secretCatalogs
   return Boolean(catalog && catalog.status === "open" && (!catalog.closesAt || catalog.closesAt > Date.now()));
 }
 
-export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalogs">) {
+export async function getCatalogView(
+  ctx: QueryCtx,
+  catalogId: Id<"secretCatalogs">,
+  options?: { includeBooks?: boolean },
+) {
   const catalog = await ctx.db.get(catalogId);
   if (!catalog) fail("CATALOG_NOT_FOUND");
+  const metadata = {
+    id: catalog._id,
+    name: catalog.name,
+    status: catalog.status === "open" && catalog.closesAt && catalog.closesAt <= Date.now() ? "closed" : catalog.status,
+    closingAt: catalog.closesAt ? new Date(catalog.closesAt).toISOString() : null,
+    estimatedArrivalMonth: catalog.estimatedArrivalMonth ?? null,
+    createdAt: new Date(catalog.createdAt).toISOString(),
+  };
+  if (options?.includeBooks === false) return { ...metadata, titleCount: undefined, books: [] };
   // ponytail: bounded 500-item customer projection for the requested hundreds-scale Catalog; paginate if a Catalog exceeds 500 items.
   const items = sortCatalogItems(
     await ctx.db
@@ -116,13 +129,8 @@ export async function getCatalogView(ctx: QueryCtx, catalogId: Id<"secretCatalog
   });
 
   return {
-    id: catalog._id,
-    name: catalog.name,
-    status: catalog.status === "open" && catalog.closesAt && catalog.closesAt <= Date.now() ? "closed" : catalog.status,
-    closingAt: catalog.closesAt ? new Date(catalog.closesAt).toISOString() : null,
-    estimatedArrivalMonth: catalog.estimatedArrivalMonth ?? null,
+    ...metadata,
     titleCount: bookMap.size,
     books: Array.from(bookMap.values()),
-    createdAt: new Date(catalog.createdAt).toISOString(),
   };
 }

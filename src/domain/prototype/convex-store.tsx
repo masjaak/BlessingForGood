@@ -200,7 +200,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const customerProfileDisplayName = customerProfile === undefined ? undefined : (customerProfile?.displayName ?? null);
   const adminCatalogs = useQuery(
     api.secretCatalogs.list,
-    isAdmin ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    isAdmin ? { paginationOpts: { numItems: 50, cursor: null }, includeBooks: pathname !== "/admin" } : "skip",
   );
   const adminOrders = useQuery(
     api.orders.listForAdmin,

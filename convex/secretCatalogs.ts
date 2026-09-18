@@ -24,7 +24,7 @@ function normalizeEstimatedArrivalMonth(value: string | undefined): string | und
 }
 
 export const list = query({
-  args: { paginationOpts: paginationOptsValidator },
+  args: { paginationOpts: paginationOptsValidator, includeBooks: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "catalog.manage");
     const page = await ctx.db
@@ -32,7 +32,12 @@ export const list = query({
       .withIndex("by_created_at")
       .order("desc")
       .paginate(args.paginationOpts);
-    return { ...page, page: await Promise.all(page.page.map((catalog) => getCatalogView(ctx, catalog._id))) };
+    return {
+      ...page,
+      page: await Promise.all(
+        page.page.map((catalog) => getCatalogView(ctx, catalog._id, { includeBooks: args.includeBooks !== false })),
+      ),
+    };
   },
 });
 

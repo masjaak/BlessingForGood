@@ -7,9 +7,11 @@ import { BFG_MEMBERSHIP_CORRELATION_KEY } from "@/config/clerk";
 import { ProductContext } from "@/domain/prototype/context";
 import { ConvexProductProvider } from "@/domain/prototype/convex-store";
 import { useConvexRetry } from "@/providers/convex-provider";
+import { usePathname } from "next/navigation";
 
 const ensureCurrentUser = vi.fn();
 const queryValues = new Map<string, unknown>();
+const queryCalls: Array<[unknown, unknown]> = [];
 
 vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn() }));
 vi.mock("convex/react", () => ({
@@ -36,6 +38,8 @@ describe("authenticated customer bootstrap caller", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     queryValues.clear();
+    queryCalls.length = 0;
+    vi.mocked(usePathname).mockReturnValue("/account");
     queryValues.set("users:current", null);
     queryValues.set("joinRequests:mine", [{ status: "approved" }]);
     ensureCurrentUser.mockReset().mockResolvedValue({ role: "customer", status: "active" });
@@ -48,6 +52,7 @@ describe("authenticated customer bootstrap caller", () => {
         : vi.fn()) as never);
     vi.mocked(useMutation).mockImplementation((() => vi.fn()) as never);
     vi.mocked(useQuery).mockImplementation(((reference: unknown, args?: unknown) => {
+      queryCalls.push([reference, args]);
       if (args === "skip") return undefined;
       return queryValues.get(getFunctionName(reference as never));
     }) as never);
@@ -102,5 +107,22 @@ describe("authenticated customer bootstrap caller", () => {
     await waitFor(() => expect(ensureCurrentUser).toHaveBeenCalledTimes(2));
 
     resolveFirst({ role: "customer", status: "active" });
+  });
+
+  it("uses the lightweight Catalog projection on the Admin Dashboard", () => {
+    vi.mocked(usePathname).mockReturnValue("/admin");
+    queryValues.set("users:current", { role: "owner", status: "active" });
+    queryValues.set("secretCatalogs:list", { page: [], isDone: true, continueCursor: "" });
+
+    render(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+
+    const catalogQuery = queryCalls.find(
+      ([reference]) => getFunctionName(reference as never) === "secretCatalogs:list",
+    );
+    expect(catalogQuery?.[1]).toEqual({ paginationOpts: { numItems: 50, cursor: null }, includeBooks: false });
   });
 });

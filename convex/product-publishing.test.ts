@@ -108,6 +108,10 @@ describe("BFG product publishing projections", () => {
       titleCount: 1,
       books: [{ title: "Same Book", variants: [{ format: "PB" }, { format: "HB" }] }],
     });
+    expect(
+      (await admin.query(api.secretCatalogs.list, { paginationOpts: { numItems: 10, cursor: null }, includeBooks: false }))
+        .page[0],
+    ).toMatchObject({ name: "Distinct Title Catalog", books: [] });
 
     const publisherId = await admin.mutation(api.publishers.create, { name: "Second Distinct Publisher" });
     const secondBookId = await admin.mutation(api.books.create, { publisherId, title: "Second Book" });
