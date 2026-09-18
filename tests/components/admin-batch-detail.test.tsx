@@ -153,6 +153,23 @@ describe("Admin Batch Detail rendered workflow", () => {
     expect((deadlineInput as HTMLInputElement | null)?.value).toBe("2026-09-01");
   });
 
+  it("keeps every resolved Batch Detail region represented while loading", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      state: { catalogs: [] },
+    } as never);
+    vi.mocked(useOperations).mockReturnValue({
+      currentBatch: undefined,
+      currentBatchUnassigned: undefined,
+    } as never);
+
+    const { container } = render(<AdminBatchDetailPage />);
+
+    expect(container.querySelectorAll(".loading-region > .card")).toHaveLength(9);
+    expect(container.querySelectorAll(".workspace-skeleton-batch-table-panel")).toHaveLength(2);
+    expect(container.querySelectorAll(".page-header-actions .skeleton-cta")).toHaveLength(3);
+  });
+
   it("frames the Catalog unlink operation with the existing secondary button variant", () => {
     setup({
       ...batch,

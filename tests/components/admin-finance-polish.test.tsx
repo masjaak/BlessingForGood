@@ -338,6 +338,20 @@ describe("Admin finance polish", () => {
     expect(screen.getByRole("button", { name: "Tolak" }).closest(".deposit-topup-actions")).toBeTruthy();
   });
 
+  it("matches Deposit loading rows to the resolved queue and ledger anatomy", () => {
+    vi.mocked(useQuery).mockReturnValue(undefined as never);
+
+    const { container } = render(<AdminDepositsPage />);
+
+    expect(container.querySelectorAll(".workspace-skeleton-deposit-topup-row")).toHaveLength(3);
+    expect(container.querySelectorAll(".workspace-skeleton-deposit-topup-row .deposit-skeleton-action")).toHaveLength(
+      6,
+    );
+    expect(container.querySelectorAll(".workspace-skeleton-deposit-history .deposit-history-row")).toHaveLength(5);
+    expect(container.querySelector(".workspace-skeleton-list-card")).toBeNull();
+    expect(container.querySelector(".workspace-skeleton-table-card")).toBeNull();
+  });
+
   it("applies Customer and direction filters through the history query", async () => {
     render(<AdminDepositsPage />);
 

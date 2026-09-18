@@ -20,6 +20,7 @@ import {
   LinkButton,
   LoadingRegion,
   PageHeader,
+  Skeleton,
   StatusBadge,
 } from "@/components/ui";
 import {
@@ -43,7 +44,12 @@ import {
 import { formatGbpMinor } from "@/lib/gbp";
 import { calendarDateInputValue, calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
 import { UatPurgeDialog } from "@/components/uat-purge-dialog";
-import { SkeletonForm, SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import {
+  SkeletonBatchTable,
+  SkeletonForm,
+  SkeletonPanel,
+  SkeletonTableBlock,
+} from "@/components/workspace-skeleton-primitives";
 
 function formatCatalogDeadline(value: number | null | undefined): string {
   return value === null || value === undefined ? "Belum ditentukan" : formatBfgCalendarDate(value);
@@ -147,17 +153,31 @@ function AdminBatchDetail() {
   if (currentBatch === undefined) {
     return (
       <div className="page admin-page">
-        <PageHeader eyebrow="Operasi batch" title="Operasi batch" description="Memuat detail batch…" />
+        <PageHeader
+          eyebrow="Operasi batch"
+          title="Operasi batch"
+          description="Memuat detail batch…"
+          actions={
+            <>
+              <Skeleton className="skeleton-cta" />
+              <Skeleton className="skeleton-cta" />
+              <Skeleton className="skeleton-cta" />
+            </>
+          }
+        />
         <div className="admin-workspace">
           <AdminNav />
           <div className="admin-content">
             <LoadingRegion label="Memuat operasi batch">
               <SkeletonForm />
-              <SkeletonPanel lines={4} />
-              <SkeletonTableBlock />
               <SkeletonPanel lines={6} />
-              <SkeletonTableBlock />
+              <SkeletonPanel lines={7} />
+              <SkeletonBatchTable />
+              <SkeletonPanel lines={7} />
+              <SkeletonBatchTable />
+              <SkeletonPanel lines={6} />
               <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
             </LoadingRegion>
           </div>
         </div>

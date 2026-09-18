@@ -59,6 +59,22 @@ export function SkeletonTableBlock() {
   );
 }
 
+export function SkeletonBatchTable() {
+  return (
+    <Card className="workspace-skeleton-batch-table-panel" aria-hidden="true">
+      <div className="table-wrap workspace-skeleton-batch-table">
+        <div className="workspace-skeleton-table-head">
+          <SkeletonText width="20%" />
+          <SkeletonText width="18%" />
+          <SkeletonText width="16%" />
+          <SkeletonText width="12%" />
+        </div>
+        <SkeletonTable rows={6} />
+      </div>
+    </Card>
+  );
+}
+
 export function SkeletonForm() {
   return (
     <Card frame="form" className="workspace-skeleton-form" aria-hidden="true">
@@ -106,6 +122,60 @@ export function SkeletonListCard() {
       <SkeletonText width="62%" />
       <Skeleton className="skeleton-cta" />
     </Card>
+  );
+}
+
+export function SkeletonDepositTopUpRow({ actionCount }: { actionCount: 2 | 3 | 4 }) {
+  return (
+    <div className="summary-line deposit-topup-row workspace-skeleton-deposit-topup-row" aria-hidden="true">
+      <span className="deposit-topup-summary workspace-skeleton-deposit-topup-summary">
+        <SkeletonText width="76%" />
+        <SkeletonText width="58%" />
+      </span>
+      <span className="form-actions deposit-topup-actions">
+        <Skeleton className="deposit-skeleton-action" />
+        <Skeleton className="deposit-skeleton-status" />
+        {Array.from({ length: actionCount - 2 }, (_, index) => (
+          <Skeleton className="deposit-skeleton-action" key={index} />
+        ))}
+      </span>
+    </div>
+  );
+}
+
+export function SkeletonDepositHistory({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="deposit-history-list workspace-skeleton-deposit-history" aria-hidden="true">
+      <div className="deposit-history-heading">
+        <SkeletonText width="78%" />
+        <SkeletonText width="72%" />
+        <SkeletonText width="74%" />
+        <SkeletonText width="68%" />
+      </div>
+      {Array.from({ length: rows }, (_, index) => (
+        <div className="deposit-history-row" key={index}>
+          <div className="deposit-history-primary">
+            <SkeletonText width="88%" />
+            <SkeletonText width="76%" />
+            <SkeletonText width="52%" />
+          </div>
+          <div className="deposit-history-amount">
+            <SkeletonText width="62%" />
+            <SkeletonText width="86%" />
+          </div>
+          <div className="deposit-history-description">
+            <SkeletonText width="72%" />
+            <SkeletonText width="94%" />
+          </div>
+          <div className="deposit-history-context">
+            <SkeletonText width="84%" />
+            <SkeletonText width="78%" />
+            <SkeletonText width="88%" />
+            <SkeletonText width="76%" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

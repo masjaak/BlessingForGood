@@ -23,7 +23,7 @@ import {
 } from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
-import { SkeletonListCard, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { SkeletonDepositHistory, SkeletonDepositTopUpRow } from "@/components/workspace-skeleton-primitives";
 
 function customerOptionLabel(customer: { displayName: string; memberCode: string | null }) {
   return `${customer.displayName} · ${customer.memberCode || "tanpa kode"}`;
@@ -137,8 +137,9 @@ function DepositOperations() {
         <h2>Bukti menunggu verifikasi</h2>
         {topUps === undefined ? (
           <LoadingRegion label="Memuat top-up">
-            <SkeletonListCard />
-            <SkeletonListCard />
+            <SkeletonDepositTopUpRow actionCount={3} />
+            <SkeletonDepositTopUpRow actionCount={4} />
+            <SkeletonDepositTopUpRow actionCount={2} />
           </LoadingRegion>
         ) : topUps.length ? (
           topUps.map((row) => (
@@ -293,7 +294,7 @@ function DepositOperations() {
         </div>
         {history === undefined ? (
           <LoadingRegion label="Memuat riwayat deposit">
-            <SkeletonTableBlock />
+            <SkeletonDepositHistory />
           </LoadingRegion>
         ) : null}
         {historyRows.length ? (

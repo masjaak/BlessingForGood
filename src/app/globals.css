@@ -287,6 +287,22 @@
   border-radius: 0;
 }
 
+.workspace-skeleton-batch-table-panel {
+  min-width: 0;
+}
+
+.workspace-skeleton-batch-table {
+  overflow-x: auto;
+}
+
+.workspace-skeleton-batch-table .skeleton-table {
+  min-width: 700px;
+}
+
+.workspace-skeleton-batch-table .skeleton-table-row {
+  min-width: 700px;
+}
+
 .workspace-skeleton-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8176,6 +8192,22 @@ p {
   justify-self: start;
 }
 
+.admin-shell .workspace-skeleton-deposit-topup-summary {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.admin-shell .workspace-skeleton-deposit-topup-row .deposit-skeleton-action {
+  width: 100%;
+  min-height: var(--button-height-default);
+}
+
+.admin-shell .workspace-skeleton-deposit-topup-row .deposit-skeleton-status {
+  width: 82px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+}
+
 .admin-shell .admin-finance-filter-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
@@ -8427,6 +8459,14 @@ p {
 
   .admin-shell .deposit-topup-actions {
     width: 100%;
+  }
+
+  .workspace-skeleton-batch-table .skeleton-table-row .bfg-skeleton-text:nth-child(n + 3) {
+    display: block;
+  }
+
+  .workspace-skeleton-batch-table .skeleton-table-row {
+    grid-template-columns: 1.5fr 0.8fr 1fr 0.6fr;
   }
 
   .admin-shell .admin-finance-filter-grid > .button,
