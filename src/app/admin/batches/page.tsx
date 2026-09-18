@@ -4,17 +4,8 @@ import { useState } from "react";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import {
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  LinkButton,
-  LoadingRegion,
-  PageHeader,
-  SkeletonCard,
-  StatusBadge,
-} from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, PageHeader, StatusBadge } from "@/components/ui";
+import { SkeletonForm, SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { productErrorMessage } from "@/domain/prototype/errors";
@@ -108,10 +99,23 @@ function AdminBatches() {
   const { state } = useProduct();
   if (!batchList) {
     return (
-      <LoadingRegion label="Memuat batch">
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Operasi batch"
+          title="Jalankan cargo dengan catatan yang jelas."
+          description="Hubungkan katalog, susun roster, kunci PO, dan catat perjalanan kiriman dalam satu alur."
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat batch">
+              <SkeletonForm />
+              <SkeletonListCard />
+              <SkeletonListCard />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   return (
@@ -156,14 +160,7 @@ function AdminBatches() {
                 </div>
                 <div className="summary-line">
                   <span>Roster</span>
-                  <strong>
-                    {batch.rosterLocked ? "Dikunci" : "Dapat diubah"} · {batch.assignmentCount} penugasan ·{" "}
-                    {batch.customerCount} pelanggan
-                  </strong>
-                </div>
-                <div className="summary-line">
-                  <span>Jumlah yang ditugaskan</span>
-                  <strong>{batch.assignedQuantity}</strong>
+                  <strong>{batch.rosterLocked ? "Dikunci" : "Dapat diubah"}</strong>
                 </div>
                 {batch.catalogLinks.map((link) => (
                   <div className="summary-line" key={link.catalogId}>

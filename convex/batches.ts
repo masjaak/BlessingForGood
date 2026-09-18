@@ -313,6 +313,36 @@ export async function getBatchSummary(ctx: DataCtx, batchId: Id<"batches">) {
   };
 }
 
+export async function getBatchListSummary(ctx: DataCtx, batchId: Id<"batches">) {
+  const batch = await ctx.db.get(batchId);
+  if (!batch) fail("BATCH_NOT_FOUND");
+  const links = await ctx.db
+    .query("catalogBatchLinks")
+    .withIndex("by_batch", (index) => index.eq("batchId", batch._id))
+    .take(200);
+  const catalogs = await Promise.all(links.map((link) => ctx.db.get(link.catalogId)));
+  return {
+    batchId: batch._id,
+    id: batch._id,
+    name: batch.name,
+    referenceCode: batch.referenceCode || null,
+    description: batch.description || null,
+    poDeadlineAt: batch.poDeadlineAt ?? null,
+    etaCargoMonth: batch.etaCargoMonth ?? null,
+    currentShipmentStage: batch.currentShipmentStage || null,
+    rosterLocked: batch.currentShipmentStage !== undefined,
+    isArchived: batch.isArchived,
+    createdAt: new Date(batch.createdAt).toISOString(),
+    updatedAt: new Date(batch.updatedAt).toISOString(),
+    catalogLinks: links.map((link, index) => ({
+      catalogId: link.catalogId,
+      catalogName: catalogs[index]?.name || "Unknown catalog",
+      closingAt: catalogs[index]?.closesAt ?? null,
+      createdAt: new Date(link.createdAt).toISOString(),
+    })),
+  };
+}
+
 export const create = mutation({
   args: {
     name: v.string(),
@@ -418,7 +448,7 @@ export const listForAdmin = query({
   handler: async (ctx, args) => {
     await requirePermission(ctx, "batches.read");
     const page = await ctx.db.query("batches").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
-    return { ...page, page: await Promise.all(page.page.map((batch) => getBatchSummary(ctx, batch._id))) };
+    return { ...page, page: await Promise.all(page.page.map((batch) => getBatchListSummary(ctx, batch._id))) };
   },
 });
 

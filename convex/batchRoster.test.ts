@@ -53,7 +53,11 @@ describe("BFG batch roster and assisted orders", () => {
       purchaseSummary: [{ bookVariantId: catalog.variantIds[0], quantity: 3, customerCount: 2 }],
     });
     expect(detail.customerRoster).toHaveLength(2);
-    expect(detail.customerDetail).toEqual([
+    const customerExport = await admin.query(api.batchTracking.getExport, {
+      batchId: batch.batchId,
+      kind: "customer-detail",
+    });
+    expect(customerExport.rows).toEqual([
       expect.objectContaining({
         customerName: "Roster Customer A",
         catalogName: "Roster Catalog",
@@ -101,7 +105,14 @@ describe("BFG batch roster and assisted orders", () => {
       affectedQuantity: 1,
       reason: "partial batch detail cancellation",
     });
-    expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).customerDetail).toEqual(
+    expect(
+      (
+        await admin.query(api.batchTracking.getExport, {
+          batchId: batch.batchId,
+          kind: "customer-detail",
+        })
+      ).rows,
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ customerName: "Roster Customer A", quantity: 1 }),
         expect.objectContaining({ customerName: "Roster Customer B", quantity: 1 }),
@@ -112,9 +123,14 @@ describe("BFG batch roster and assisted orders", () => {
       affectedQuantity: 1,
       reason: "full batch detail cancellation",
     });
-    expect((await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId })).customerDetail).toEqual([
-      expect.objectContaining({ customerName: "Roster Customer A", quantity: 1 }),
-    ]);
+    expect(
+      (
+        await admin.query(api.batchTracking.getExport, {
+          batchId: batch.batchId,
+          kind: "customer-detail",
+        })
+      ).rows,
+    ).toEqual([expect.objectContaining({ customerName: "Roster Customer A", quantity: 1 })]);
   });
 
   it("keeps Customer and Cargo identities independent in customer-detail rows", async () => {
@@ -145,9 +161,11 @@ describe("BFG batch roster and assisted orders", () => {
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: cargoA.catalogId });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: cargoB.catalogId });
 
-    const detail = await admin.query(api.batchTracking.getForAdmin, { batchId: batch.batchId });
-
-    expect(detail.customerDetail).toEqual(
+    const customerExport = await admin.query(api.batchTracking.getExport, {
+      batchId: batch.batchId,
+      kind: "customer-detail",
+    });
+    expect(customerExport.rows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ customerName: "Customer A", catalogName: "Cargo A", quantity: 2 }),
         expect.objectContaining({ customerName: "Customer B", catalogName: "Cargo A", quantity: 1 }),

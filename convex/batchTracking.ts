@@ -15,7 +15,6 @@ import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
 import { findDepositAccount } from "./depositAccounts";
 
 type DataCtx = QueryCtx | MutationCtx;
-const MAX_CUSTOMER_BOOK_INVOICES = 2000;
 
 async function linkedCatalog(ctx: DataCtx, catalogId: Id<"secretCatalogs">, batchId: Id<"batches">) {
   return ctx.db
@@ -423,6 +422,41 @@ async function customerBatchItemView(
   };
 }
 
+type CustomerOwnedBatchAssignment = {
+  assignment: Doc<"orderItemBatchAssignments">;
+  item: Doc<"orderItems">;
+  order: Doc<"orders">;
+  quantity: number;
+};
+
+async function customerOwnedBatchAssignments(
+  ctx: QueryCtx,
+  userId: Id<"appUsers">,
+  batchId?: Id<"batches">,
+): Promise<CustomerOwnedBatchAssignment[]> {
+  const orders = ctx.db
+    .query("orders")
+    .withIndex("by_customer_user_id_and_created_at", (index) => index.eq("customerUserId", userId))
+    .order("asc");
+  const result: CustomerOwnedBatchAssignment[] = [];
+  for await (const order of orders) {
+    const items = ctx.db.query("orderItems").withIndex("by_order", (index) => index.eq("orderId", order._id));
+    for await (const item of items) {
+      const effectiveQuantity = await fulfillableQuantityForOrderItem(ctx, item);
+      if (effectiveQuantity <= 0) continue;
+      const assignments = ctx.db
+        .query("orderItemBatchAssignments")
+        .withIndex("by_order_item", (index) => index.eq("orderItemId", item._id));
+      for await (const assignment of assignments) {
+        if (batchId && assignment.batchId !== batchId) continue;
+        const quantity = Math.min(assignment.assignedQuantity, effectiveQuantity);
+        if (quantity > 0) result.push({ assignment, item, order, quantity });
+      }
+    }
+  }
+  return result;
+}
+
 async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"appUsers">, search?: string) {
   const batch = await ctx.db.get(batchId);
   if (!batch) return null;
@@ -457,21 +491,11 @@ async function batchMineView(ctx: QueryCtx, batchId: Id<"batches">, userId: Id<"
       });
     }
   }
-  const assignments = await ctx.db
-    .query("orderItemBatchAssignments")
-    .withIndex("by_batch", (index) => index.eq("batchId", batchId))
-    .take(200);
   const owned = (
     await Promise.all(
-      assignments.map(async (assignment) => {
-        const item = await ctx.db.get(assignment.orderItemId);
-        const order = item ? await ctx.db.get(item.orderId) : null;
-        if (!item || order?.customerUserId !== userId) return null;
-        const quantity = Math.min(assignment.assignedQuantity, await fulfillableQuantityForOrderItem(ctx, item));
-        return quantity > 0
-          ? customerBatchItemView(ctx, String(assignment._id), quantity, item, order, batch.currentShipmentStage)
-          : null;
-      }),
+      (await customerOwnedBatchAssignments(ctx, userId, batchId)).map(({ assignment, item, order, quantity }) =>
+        customerBatchItemView(ctx, String(assignment._id), quantity, item, order, batch.currentShipmentStage),
+      ),
     )
   )
     .filter((item) => item !== null)
@@ -496,23 +520,56 @@ export const listMine = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireActiveUser(ctx);
-    const assignments = await ctx.db.query("orderItemBatchAssignments").take(500);
-    const batchIds = new Set(assignments.map((item) => item.batchId));
-    const grants = await ctx.db
-      .query("catalogAccessGrants")
-      .withIndex("by_app_user_id", (index) => index.eq("appUserId", user._id))
-      .take(200);
-    for (const grant of grants) {
-      if (grant.revokedAt || grant.expiresAt <= Date.now() || !(await catalogIsOpen(ctx, grant.catalogId))) continue;
-      const links = await ctx.db
-        .query("catalogBatchLinks")
-        .withIndex("by_catalog", (index) => index.eq("catalogId", grant.catalogId))
-        .take(200);
-      for (const link of links) batchIds.add(link.batchId);
+    const ownedAssignments = await customerOwnedBatchAssignments(ctx, user._id);
+    const batchIds = new Set(ownedAssignments.map(({ assignment }) => assignment.batchId));
+    const ownedQuantity = new Map<string, number>();
+    for (const { assignment, quantity } of ownedAssignments) {
+      const key = String(assignment.batchId);
+      ownedQuantity.set(key, (ownedQuantity.get(key) || 0) + quantity);
     }
-    return (await Promise.all([...batchIds].map((batchId) => batchMineView(ctx, batchId, user._id)))).filter(
-      (batch) => batch !== null,
-    );
+    const grants = ctx.db
+      .query("catalogAccessGrants")
+      .withIndex("by_app_user_id", (index) => index.eq("appUserId", user._id));
+    const catalogIds = new Set<string>();
+    for await (const grant of grants) {
+      if (grant.revokedAt || grant.expiresAt <= Date.now()) continue;
+      const catalog = await ctx.db.get(grant.catalogId);
+      if (!catalog || catalog.status !== "open" || (catalog.closesAt && catalog.closesAt <= Date.now())) continue;
+      catalogIds.add(String(grant.catalogId));
+    }
+    const availableItemCount = new Map<string, number>();
+    for (const catalogId of catalogIds) {
+      const links = ctx.db
+        .query("catalogBatchLinks")
+        .withIndex("by_catalog", (index) => index.eq("catalogId", catalogId as Id<"secretCatalogs">));
+      const catalog = await ctx.db.get(catalogId as Id<"secretCatalogs">);
+      for await (const link of links) {
+        batchIds.add(link.batchId);
+        availableItemCount.set(
+          String(link.batchId),
+          (availableItemCount.get(String(link.batchId)) || 0) + (catalog?.titleCount ?? 0),
+        );
+      }
+    }
+    return (
+      await Promise.all(
+        [...batchIds].map(async (batchId) => {
+          const batch = await ctx.db.get(batchId);
+          if (!batch) return null;
+          return {
+            batchId: batch._id,
+            name: batch.name,
+            referenceCode: batch.referenceCode ?? null,
+            poDeadlineAt: batch.poDeadlineAt ?? null,
+            etaCargoMonth: batch.etaCargoMonth ?? null,
+            currentShipmentStage: batch.currentShipmentStage ?? null,
+            updatedAt: batch.updatedAt,
+            ownedQuantity: ownedQuantity.get(String(batch._id)) || 0,
+            availableItemCount: availableItemCount.get(String(batch._id)) || 0,
+          };
+        }),
+      )
+    ).filter((batch) => batch !== null);
   },
 });
 
@@ -531,12 +588,12 @@ export const getBookOverview = query({
     if (!Number.isSafeInteger(args.startAt) || !Number.isSafeInteger(args.endAt) || args.startAt > args.endAt) {
       fail("VALIDATION_FAILED", "date range is invalid");
     }
-    const orders = await ctx.db
+    const orders = ctx.db
       .query("orders")
-      .withIndex("by_customer_user_id_and_created_at", (index) => index.eq("customerUserId", user._id))
-      .order("asc")
-      .take(2000);
-    // ponytail: bounded personal history scan; materialize customer totals if one account exceeds 2,000 orders.
+      .withIndex("by_customer_user_id_and_submitted_at", (index) =>
+        index.eq("customerUserId", user._id).gte("submittedAt", args.startAt).lte("submittedAt", args.endAt),
+      )
+      .order("asc");
     const groups = new Map<
       string,
       {
@@ -553,7 +610,7 @@ export const getBookOverview = query({
       }
     >();
     let totalSpending = 0;
-    for (const order of orders) {
+    for await (const order of orders) {
       if (order.status === "cancelled" || order.submittedAt < args.startAt || order.submittedAt > args.endAt) continue;
       const items = await ctx.db
         .query("orderItems")
@@ -624,13 +681,13 @@ export const getBookOverview = query({
         }
       }
     }
-    const invoices = await ctx.db
+    const invoices = ctx.db
       .query("invoices")
-      .withIndex("by_customer_user_id", (index) => index.eq("customerUserId", user._id))
-      .take(MAX_CUSTOMER_BOOK_INVOICES);
-    const pendingPayment = invoices
-      .filter((invoice) => invoice.status === "issued")
-      .reduce((total, invoice) => total + invoice.outstandingAmount, 0);
+      .withIndex("by_customer_user_id", (index) => index.eq("customerUserId", user._id));
+    let pendingPayment = 0;
+    for await (const invoice of invoices) {
+      if (invoice.status === "issued") pendingPayment += invoice.outstandingAmount;
+    }
     const deposit = await findDepositAccount(ctx, user._id);
     const batches = await Promise.all(
       [...groups.values()]
@@ -724,13 +781,29 @@ export const getForOrderAdmin = query({
   },
 });
 
-async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
+type BatchExportKind = "purchase" | "customer-detail";
+
+async function batchExportForKind(ctx: QueryCtx, batchId: Id<"batches">, kind: "purchase"): Promise<PurchaseSummary[]>;
+async function batchExportForKind(
+  ctx: QueryCtx,
+  batchId: Id<"batches">,
+  kind: "customer-detail",
+): Promise<CustomerDetail[]>;
+async function batchExportForKind(
+  ctx: QueryCtx,
+  batchId: Id<"batches">,
+  kind: BatchExportKind,
+): Promise<PurchaseSummary[] | CustomerDetail[]>;
+async function batchExportForKind(
+  ctx: QueryCtx,
+  batchId: Id<"batches">,
+  kind: BatchExportKind,
+): Promise<PurchaseSummary[] | CustomerDetail[]> {
   const assignments = ctx.db
     .query("orderItemBatchAssignments")
     .withIndex("by_batch", (index) => index.eq("batchId", batchId));
   const purchaseGroups = new Map<string, PurchaseSummary & { customers: Set<string> }>();
   const customerDetail: CustomerDetail[] = [];
-  // ponytail: one exact assignment scan feeds both exports; add materialized batch counters if this exceeds Convex read limits.
   for await (const assignment of assignments) {
     const orderItem = await ctx.db.get(assignment.orderItemId);
     const order = orderItem && (await ctx.db.get(orderItem.orderId));
@@ -742,18 +815,21 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
     if (assignedQuantity <= 0) continue;
     const variant = await ctx.db.get(orderItem.bookVariantId);
     const catalog = await ctx.db.get(order.catalogId);
-    customerDetail.push({
-      customerName: order.customerName,
-      publisherName: orderItem.publisherNameSnapshot,
-      isbn: orderItem.isbnSnapshot,
-      bookTitle: orderItem.bookTitleSnapshot,
-      format: orderItem.formatSnapshot,
-      quantity: assignedQuantity,
-      catalogName: catalog?.name ?? null,
-      closeDate: catalog?.closesAt ?? null,
-      supplierPriceGbpMinor: variant?.supplierPriceGbpMinor ?? null,
-      unitPriceAmount: orderItem.unitPriceAmountSnapshot,
-    });
+    if (kind === "customer-detail") {
+      customerDetail.push({
+        customerName: order.customerName,
+        publisherName: orderItem.publisherNameSnapshot,
+        isbn: orderItem.isbnSnapshot,
+        bookTitle: orderItem.bookTitleSnapshot,
+        format: orderItem.formatSnapshot,
+        quantity: assignedQuantity,
+        catalogName: catalog?.name ?? null,
+        closeDate: catalog?.closesAt ?? null,
+        supplierPriceGbpMinor: variant?.supplierPriceGbpMinor ?? null,
+        unitPriceAmount: orderItem.unitPriceAmountSnapshot,
+      });
+      continue;
+    }
     const customerKey = String(order.customerUserId);
     const purchaseKey = String(orderItem.bookVariantId);
     const purchase = purchaseGroups.get(purchaseKey) || {
@@ -772,6 +848,18 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
     purchase.customers.add(customerKey);
     purchase.customerCount = purchase.customers.size;
     purchaseGroups.set(purchaseKey, purchase);
+  }
+  if (kind === "customer-detail") {
+    customerDetail.sort(
+      (left, right) =>
+        left.customerName.localeCompare(right.customerName) ||
+        (left.catalogName ?? "").localeCompare(right.catalogName ?? "") ||
+        left.publisherName.localeCompare(right.publisherName) ||
+        left.bookTitle.localeCompare(right.bookTitle) ||
+        left.format.localeCompare(right.format) ||
+        left.isbn.localeCompare(right.isbn),
+    );
+    return customerDetail;
   }
   const summary = [...purchaseGroups.values()]
     .sort(
@@ -792,16 +880,7 @@ async function purchaseSummaryForBatch(ctx: QueryCtx, batchId: Id<"batches">) {
       quantity: purchase.quantity,
       customerCount: purchase.customers.size,
     }));
-  customerDetail.sort(
-    (left, right) =>
-      left.customerName.localeCompare(right.customerName) ||
-      (left.catalogName ?? "").localeCompare(right.catalogName ?? "") ||
-      left.publisherName.localeCompare(right.publisherName) ||
-      left.bookTitle.localeCompare(right.bookTitle) ||
-      left.format.localeCompare(right.format) ||
-      left.isbn.localeCompare(right.isbn),
-  );
-  return { summary, customerDetail };
+  return summary;
 }
 
 export const getForAdmin = query({
@@ -912,15 +991,35 @@ export const getForAdmin = query({
       });
       customerGroups.set(customerKey, customer);
     }
-    const purchase = await purchaseSummaryForBatch(ctx, args.batchId);
+    const purchaseSummary = await batchExportForKind(ctx, args.batchId, "purchase");
     return {
       ...summary,
       assignments: assignedItems,
       assignmentPage: { isDone: page.isDone, continueCursor: page.continueCursor },
       customerRoster: [...customerGroups.values()],
-      purchaseSummary: purchase.summary,
-      customerDetail: purchase.customerDetail,
+      purchaseSummary,
       history: await historyView(ctx, args.batchId, true),
+    };
+  },
+});
+
+export const getExport = query({
+  args: {
+    batchId: v.id("batches"),
+    kind: v.union(v.literal("purchase"), v.literal("customer-detail")),
+  },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "tracking.read.all");
+    const batch = await ctx.db.get(args.batchId);
+    if (!batch) fail("BATCH_NOT_FOUND");
+    const rows = await batchExportForKind(ctx, args.batchId, args.kind);
+    return {
+      batchId: batch._id,
+      kind: args.kind,
+      batchName: batch.name,
+      referenceCode: batch.referenceCode ?? null,
+      poDeadlineAt: batch.poDeadlineAt ?? null,
+      rows,
     };
   },
 });

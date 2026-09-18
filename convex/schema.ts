@@ -482,8 +482,7 @@ export default defineSchema({
     requestKey: v.string(),
     orderId: v.id("orders"),
     createdAt: v.number(),
-  })
-    .index("by_cart_and_catalog", ["cartId", "catalogId"]),
+  }).index("by_cart_and_catalog", ["cartId", "catalogId"]),
 
   orders: defineTable({
     customerUserId: v.id("appUsers"),
@@ -510,6 +509,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_catalog_and_status", ["catalogId", "status"])
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_customer_user_id_and_submitted_at", ["customerUserId", "submittedAt"])
     .index("by_assisted_submission_key", ["assistedSubmissionKey"])
     .index("by_created_at", ["createdAt"]),
 

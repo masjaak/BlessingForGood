@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { BFGSelect } from "@/components/bfg-select";
@@ -20,7 +20,6 @@ import {
   LinkButton,
   LoadingRegion,
   PageHeader,
-  SkeletonCard,
   StatusBadge,
 } from "@/components/ui";
 import {
@@ -34,10 +33,17 @@ import { useOperations, type BatchDetail } from "@/domain/prototype/operations-c
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
-import { customerDetailCsvRows, purchaseSummaryCsvRows, toExcelCsv } from "@/lib/excel-export";
+import {
+  customerDetailCsvRows,
+  purchaseSummaryCsvRows,
+  toExcelCsv,
+  type CustomerDetailExportRow,
+  type PurchaseSummaryExportRow,
+} from "@/lib/excel-export";
 import { formatGbpMinor } from "@/lib/gbp";
 import { calendarDateInputValue, calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
 import { UatPurgeDialog } from "@/components/uat-purge-dialog";
+import { SkeletonForm, SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 
 function formatCatalogDeadline(value: number | null | undefined): string {
   return value === null || value === undefined ? "Belum ditentukan" : formatBfgCalendarDate(value);
@@ -47,11 +53,14 @@ function formatBatchDeadlineInput(value: number | null | undefined): string {
   return calendarDateInputValue(value);
 }
 
-function downloadPurchaseSummary(batch: BatchDetail) {
+type BatchExport =
+  { kind: "purchase"; rows: PurchaseSummaryExportRow[] } | { kind: "customer-detail"; rows: CustomerDetailExportRow[] };
+
+function downloadPurchaseSummary(batch: BatchDetail, rows: PurchaseSummaryExportRow[]) {
   const blob = new Blob(
     [
       toExcelCsv(
-        purchaseSummaryCsvRows(batch.purchaseSummary, {
+        purchaseSummaryCsvRows(rows, {
           batchName: batch.name,
           cargoName: batch.name,
           closeDate: batch.poDeadlineAt,
@@ -70,8 +79,8 @@ function downloadPurchaseSummary(batch: BatchDetail) {
   URL.revokeObjectURL(url);
 }
 
-function downloadCustomerDetail(batch: BatchDetail) {
-  const blob = new Blob([toExcelCsv(customerDetailCsvRows(batch.customerDetail))], {
+function downloadCustomerDetail(batch: BatchDetail, rows: CustomerDetailExportRow[]) {
+  const blob = new Blob([toExcelCsv(customerDetailCsvRows(rows))], {
     type: "text/csv;charset=utf-8",
   });
   const url = URL.createObjectURL(blob);
@@ -113,20 +122,46 @@ function AdminBatchDetail() {
   const [confirmDelete, setConfirmDelete] = useState<"eligible" | "protected" | null>(null);
   const [uatPurgeOpen, setUatPurgeOpen] = useState(false);
   const [uatPurgeError, setUatPurgeError] = useState("");
+  const [exportKind, setExportKind] = useState<BatchExport["kind"] | null>(null);
   const purgeBatchUat = useMutation(api.uatCleanup.purgeBatch);
   const uatImpact = useQuery(
     api.uatCleanup.getBatchImpact,
     uatPurgeOpen && sessionRole === "owner" ? { batchId: batchId as Id<"batches"> } : "skip",
   );
+  const batchExport = useQuery(
+    api.batchTracking.getExport,
+    exportKind ? { batchId: batchId as Id<"batches">, kind: exportKind } : "skip",
+  ) as BatchExport | undefined;
+  useEffect(() => {
+    if (!currentBatch || !batchExport || batchExport.kind !== exportKind) return;
+    if (batchExport.kind === "purchase") {
+      downloadPurchaseSummary(currentBatch, batchExport.rows);
+    } else {
+      downloadCustomerDetail(currentBatch, batchExport.rows);
+    }
+    const reset = window.setTimeout(() => setExportKind(null), 0);
+    return () => window.clearTimeout(reset);
+  }, [batchExport, currentBatch, exportKind]);
   const router = useRouter();
   if (dataSource !== "convex") return <div className="state-panel">Data batch belum tersedia.</div>;
-  if (currentBatch === undefined || currentBatchUnassigned === undefined) {
+  if (currentBatch === undefined) {
     return (
-      <LoadingRegion label="Memuat operasi batch">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-      </LoadingRegion>
+      <div className="page admin-page">
+        <PageHeader eyebrow="Operasi batch" title="Operasi batch" description="Memuat detail batch…" />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content">
+            <LoadingRegion label="Memuat operasi batch">
+              <SkeletonForm />
+              <SkeletonPanel lines={4} />
+              <SkeletonTableBlock />
+              <SkeletonPanel lines={6} />
+              <SkeletonTableBlock />
+              <SkeletonPanel lines={5} />
+            </LoadingRegion>
+          </div>
+        </div>
+      </div>
     );
   }
   if (!currentBatch) {
@@ -139,10 +174,13 @@ function AdminBatchDetail() {
     );
   }
   const assignmentPage = currentBatch.assignmentPage || { isDone: true, continueCursor: "" };
-  const unassignedPage = Array.isArray(currentBatchUnassigned)
-    ? { page: currentBatchUnassigned, isDone: true, continueCursor: "" }
-    : currentBatchUnassigned;
-  const unassignedRows = unassignedPage.page;
+  const unassignedPage =
+    currentBatchUnassigned === undefined
+      ? null
+      : Array.isArray(currentBatchUnassigned)
+        ? { page: currentBatchUnassigned, isDone: true, continueCursor: "" }
+        : currentBatchUnassigned;
+  const unassignedRows = unassignedPage?.page || [];
   const currentIndex = currentBatch.currentShipmentStage
     ? shipmentStages.indexOf(currentBatch.currentShipmentStage)
     : -1;
@@ -231,10 +269,24 @@ function AdminBatchDetail() {
         description={currentBatch.referenceCode || "Tanpa referensi"}
         actions={
           <ActionGroup>
-            <Button type="button" variant="primary" onClick={() => downloadCustomerDetail(currentBatch)}>
+            <Button
+              type="button"
+              variant="primary"
+              loading={exportKind === "customer-detail"}
+              loadingLabel="Menyiapkan…"
+              disabled={exportKind !== null}
+              onClick={() => setExportKind("customer-detail")}
+            >
               Unduh customer CSV
             </Button>
-            <Button type="button" variant="secondary" onClick={() => downloadPurchaseSummary(currentBatch)}>
+            <Button
+              type="button"
+              variant="secondary"
+              loading={exportKind === "purchase"}
+              loadingLabel="Menyiapkan…"
+              disabled={exportKind !== null}
+              onClick={() => setExportKind("purchase")}
+            >
               {currentBatch.rosterLocked ? "Unduh purchase CSV" : "Unduh preview CSV"}
             </Button>
             <LinkButton href="/admin/batches" variant="secondary">
@@ -735,57 +787,68 @@ function AdminBatchDetail() {
             <div className="summary-line">
               <span>Rekap assignment</span>
               <strong>
-                {currentBatch.assignmentCount} masuk Batch · {unassignedRows.length} perlu tindakan
+                {currentBatch.assignmentCount} masuk Batch ·{" "}
+                {currentBatchUnassigned === undefined ? "…" : unassignedRows.length} perlu tindakan
               </strong>
             </div>
-            {unassignedRows.length ? <h3>Perlu tindakan</h3> : null}
-            {unassignedRows.length ? (
-              unassignedRows.map((item) => (
-                <div className="summary-line" key={item.orderItemId}>
-                  <span>
-                    {item.remainingQuantity} × {item.bookTitle} · {item.publisherName} · {item.format} ·{" "}
-                    {item.customerName}
-                    <br />
-                    <span className="subtle">
-                      memberCode: {item.customerMemberCode || "—"} · {item.isbn} · {item.catalogName}
-                      <br />
-                      Order: {item.orderCode || `BFG-ORD-LEGACY-${String(item.orderId).slice(-8).toUpperCase()}`}
-                      <br />
-                      Status: {item.assignmentState}
-                    </span>
-                  </span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    loading={pendingAction === `assign-${item.orderItemId}`}
-                    loadingLabel="Memasukkan…"
-                    disabled={rosterLocked || pendingAction !== null}
-                    onClick={() =>
-                      void run(
-                        () =>
-                          assignOrderItem(
-                            item.orderItemId,
-                            batchId,
-                            item.assignedToBatchQuantity + item.remainingQuantity,
-                          ),
-                        "Sisa jumlah ditugaskan.",
-                        `assign-${item.orderItemId}`,
-                      )
-                    }
-                  >
-                    Masukkan ke Batch
-                  </Button>
-                </div>
-              ))
-            ) : unassignedPage.isDone ? (
-              <p className="subtle">Semua pesanan eligible sudah masuk otomatis atau belum memiliki pengecualian.</p>
-            ) : null}
-            <AdminPagination
-              {...currentBatchUnassignedPagination}
-              rowCount={unassignedRows.length}
-              isDone={unassignedPage.isDone}
-              continueCursor={unassignedPage.continueCursor}
-            />
+            {currentBatchUnassigned === undefined ? (
+              <LoadingRegion label="Memuat roster yang perlu ditindaklanjuti">
+                <SkeletonTableBlock />
+              </LoadingRegion>
+            ) : (
+              <>
+                {unassignedRows.length ? <h3>Perlu tindakan</h3> : null}
+                {unassignedRows.length ? (
+                  unassignedRows.map((item) => (
+                    <div className="summary-line" key={item.orderItemId}>
+                      <span>
+                        {item.remainingQuantity} × {item.bookTitle} · {item.publisherName} · {item.format} ·{" "}
+                        {item.customerName}
+                        <br />
+                        <span className="subtle">
+                          memberCode: {item.customerMemberCode || "—"} · {item.isbn} · {item.catalogName}
+                          <br />
+                          Order: {item.orderCode || `BFG-ORD-LEGACY-${String(item.orderId).slice(-8).toUpperCase()}`}
+                          <br />
+                          Status: {item.assignmentState}
+                        </span>
+                      </span>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        loading={pendingAction === `assign-${item.orderItemId}`}
+                        loadingLabel="Memasukkan…"
+                        disabled={rosterLocked || pendingAction !== null}
+                        onClick={() =>
+                          void run(
+                            () =>
+                              assignOrderItem(
+                                item.orderItemId,
+                                batchId,
+                                item.assignedToBatchQuantity + item.remainingQuantity,
+                              ),
+                            "Sisa jumlah ditugaskan.",
+                            `assign-${item.orderItemId}`,
+                          )
+                        }
+                      >
+                        Masukkan ke Batch
+                      </Button>
+                    </div>
+                  ))
+                ) : unassignedPage?.isDone ? (
+                  <p className="subtle">
+                    Semua pesanan eligible sudah masuk otomatis atau belum memiliki pengecualian.
+                  </p>
+                ) : null}
+                <AdminPagination
+                  {...currentBatchUnassignedPagination}
+                  rowCount={unassignedRows.length}
+                  isDone={unassignedPage?.isDone ?? true}
+                  continueCursor={unassignedPage?.continueCursor ?? ""}
+                />
+              </>
+            )}
           </Card>
 
           <Card style={{ order: 8 }}>

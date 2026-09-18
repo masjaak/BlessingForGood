@@ -66,7 +66,6 @@ const batch = {
   assignments: [],
   customerRoster: [],
   purchaseSummary: [],
-  customerDetail: [],
   history: [],
 };
 

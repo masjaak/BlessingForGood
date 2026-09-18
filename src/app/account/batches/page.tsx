@@ -37,9 +37,9 @@ function CustomerBatches() {
               </div>
               <div className="customer-batch-list-meta">
                 <p>
-                  {batch.items.length
-                    ? `${batch.items.reduce((total, item) => total + item.quantity, 0)} buku di pesananmu.`
-                    : `${batch.availableItems.length} item tersedia melalui akses katalog.`}
+                  {batch.ownedQuantity
+                    ? `${batch.ownedQuantity} buku di pesananmu.`
+                    : `${batch.availableItemCount} item tersedia melalui akses katalog.`}
                 </p>
                 {batch.poDeadlineAt ? (
                   <p className="subtle">
