@@ -14,6 +14,7 @@ describe("BFG batch roster and assisted orders", () => {
       paginationOpts: { numItems: 10, cursor: null },
     });
     expect(batches.page).toEqual([]);
+    expect(await admin.query(api.batches.countActiveForAdmin, {})).toBe(0);
   });
 
   it("returns customer roster, purchase summary, and unassigned work", async () => {

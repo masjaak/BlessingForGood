@@ -13,12 +13,12 @@ import { SiteShell } from "@/components/site-shell";
 
 function AdminOverview() {
   const { state, dataSource, sessionRole, catalogsLoading } = useProduct();
-  const { batchList, adminInvoiceList, adminPaymentQueue } = useOperations();
+  const { activeBatchCount, adminInvoiceList, adminPaymentQueue } = useOperations();
   const orderSummaries = useQuery(
     api.orders.listSummariesForAdmin,
     dataSource === "convex" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
-  const joinRequests = useQuery(api.joinRequests.listForAdmin, dataSource === "convex" ? {} : "skip");
+  const pendingAdmissionCount = useQuery(api.joinRequests.pendingCount, dataSource === "convex" ? {} : "skip");
   const exceptions = useQuery(
     api.orderExceptions.listForAdmin,
     dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
@@ -27,18 +27,17 @@ function AdminOverview() {
   if (
     catalogsLoading ||
     (dataSource === "convex" && orderSummaries === undefined) ||
-    batchList === undefined ||
+    (dataSource === "convex" && activeBatchCount === undefined) ||
     adminInvoiceList === undefined ||
     adminPaymentQueue === undefined ||
-    joinRequests === undefined ||
+    (dataSource === "convex" && pendingAdmissionCount === undefined) ||
     exceptions === undefined ||
     refunds === undefined
   ) {
     return <PageAwareSkeleton workspace="admin" pathname="/admin" />;
   }
-  const pendingAdmissions =
-    joinRequests?.filter((item) => item.status === "submitted" || item.status === "under_review").length || 0;
-  const activeBatches = batchList?.page.filter((batch) => !batch.isArchived).length || 0;
+  const pendingAdmissions = dataSource === "convex" ? pendingAdmissionCount || 0 : 0;
+  const activeBatches = dataSource === "convex" ? activeBatchCount || 0 : 0;
   const openInvoices =
     adminInvoiceList?.page.filter((invoice) => invoice.status === "issued" && invoice.outstandingAmount > 0).length ||
     0;

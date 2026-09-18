@@ -422,6 +422,19 @@ export const listForAdmin = query({
   },
 });
 
+export const countActiveForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "batches.read");
+    return (
+      await ctx.db
+        .query("batches")
+        .withIndex("by_archived", (query) => query.eq("isArchived", false))
+        .collect()
+    ).length;
+  },
+});
+
 export const getForAdmin = query({
   args: { batchId: v.id("batches") },
   handler: async (ctx, args) => {
