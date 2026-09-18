@@ -400,6 +400,25 @@ export const listForAdmin = query({
   },
 });
 
+export const countPendingForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "refunds.read.all");
+    // ponytail: two indexed lifecycle scans keep pending counts exact; add a counter if refund volume makes it slow.
+    const [pending, partiallyPaid] = await Promise.all([
+      ctx.db
+        .query("refundObligations")
+        .withIndex("by_status_and_created_at", (index) => index.eq("status", "pending"))
+        .collect(),
+      ctx.db
+        .query("refundObligations")
+        .withIndex("by_status_and_created_at", (index) => index.eq("status", "partially_paid"))
+        .collect(),
+    ]);
+    return pending.length + partiallyPaid.length;
+  },
+});
+
 export const getMine = query({
   args: { obligationId: v.id("refundObligations") },
   handler: async (ctx, args) => {

@@ -910,6 +910,20 @@ export const listSummariesForAdmin = query({
   },
 });
 
+export const countSubmittedForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "orders.read.all");
+    // ponytail: one indexed scan keeps the count truthful; add a maintained counter if order volume makes it slow.
+    return (
+      await ctx.db
+        .query("orders")
+        .withIndex("by_status", (index) => index.eq("status", "submitted"))
+        .collect()
+    ).length;
+  },
+});
+
 export const backfillOrderCodes = mutation({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {

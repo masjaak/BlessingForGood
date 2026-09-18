@@ -54,7 +54,6 @@ export interface OperationsContextValue {
   dataSource: ProductDataSource;
   sessionRole?: "owner" | "admin" | "customer" | null;
   batchList: BatchPage | undefined;
-  activeBatchCount: number | undefined;
   adminInvoiceList: InvoicePage | undefined;
   customerInvoiceList: InvoicePage | undefined;
   currentBatch: BatchDetail | undefined;
@@ -150,11 +149,8 @@ export function ConvexOperationsProvider({
   const adminBatchListRoute = Boolean(
     isAdmin && (pathname === "/admin/batches" || Boolean(batchId) || Boolean(adminOrderId)),
   );
-  const adminBatchCountRoute = Boolean(isAdmin && pathname === "/admin");
-  const adminInvoiceListRoute = Boolean(
-    isAdmin && (pathname === "/admin" || pathname === "/admin/invoices" || Boolean(adminCustomerId)),
-  );
-  const adminPaymentRoute = Boolean(isAdmin && (pathname === "/admin" || pathname === "/admin/payments"));
+  const adminInvoiceListRoute = Boolean(isAdmin && (pathname === "/admin/invoices" || Boolean(adminCustomerId)));
+  const adminPaymentRoute = Boolean(isAdmin && pathname === "/admin/payments");
   const adminPaymentHistoryRoute = Boolean(isAdmin && pathname === "/admin/payments");
   const batchListPagination = useAdminCursorPagination();
   const currentBatchPagination = useAdminCursorPagination();
@@ -175,7 +171,6 @@ export function ConvexOperationsProvider({
       ? { paginationOpts: { numItems: batchListPagination.pageSize, cursor: batchListPagination.cursor } }
       : "skip",
   );
-  const activeBatchCount = useQuery(api.batches.countActiveForAdmin, adminBatchCountRoute ? {} : "skip");
   const adminInvoiceList = useQuery(
     api.invoices.listForAdmin,
     adminInvoiceListRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
@@ -277,7 +272,6 @@ export function ConvexOperationsProvider({
       dataSource: "convex",
       sessionRole: role,
       batchList,
-      activeBatchCount,
       adminInvoiceList,
       customerInvoiceList,
       currentBatch,
@@ -308,7 +302,6 @@ export function ConvexOperationsProvider({
       adminAllocations,
       adminInvoiceList,
       adminTransactions,
-      activeBatchCount,
       batchList,
       batchListPagination,
       customerAccount,
@@ -351,7 +344,6 @@ export function UnavailableOperationsProvider({ children }: { children: ReactNod
       dataSource: "unavailable",
       sessionRole: null,
       batchList: undefined,
-      activeBatchCount: undefined,
       adminInvoiceList: undefined,
       customerInvoiceList: undefined,
       currentBatch: undefined,

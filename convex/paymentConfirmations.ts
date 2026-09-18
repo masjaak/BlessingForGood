@@ -410,6 +410,25 @@ export const listPendingForAdmin = query({
   },
 });
 
+export const countPendingForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "invoices.read.all");
+    // ponytail: two indexed status scans keep the queue count exact; add a counter if payment volume makes it slow.
+    const [submitted, underReview] = await Promise.all([
+      ctx.db
+        .query("paymentConfirmations")
+        .withIndex("by_status_and_created_at", (index) => index.eq("status", "submitted"))
+        .collect(),
+      ctx.db
+        .query("paymentConfirmations")
+        .withIndex("by_status_and_created_at", (index) => index.eq("status", "under_review"))
+        .collect(),
+    ]);
+    return submitted.length + underReview.length;
+  },
+});
+
 export const listForAdmin = query({
   args: {
     status: v.optional(paymentConfirmationStatusValidator),

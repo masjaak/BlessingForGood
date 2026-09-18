@@ -256,16 +256,15 @@ export const pendingCount = query({
   args: {},
   handler: async (ctx) => {
     await requirePermission(ctx, "customers.read");
-    // ponytail: 200 per review state is the existing Admin queue ceiling; use a counter if this queue outgrows it.
     const [submitted, underReview] = await Promise.all([
       ctx.db
         .query("joinRequests")
         .withIndex("by_status_and_submitted_at", (index) => index.eq("status", "submitted"))
-        .take(200),
+        .collect(),
       ctx.db
         .query("joinRequests")
         .withIndex("by_status_and_submitted_at", (index) => index.eq("status", "under_review"))
-        .take(200),
+        .collect(),
     ]);
     return submitted.length + underReview.length;
   },

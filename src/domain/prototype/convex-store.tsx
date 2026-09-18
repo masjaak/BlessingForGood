@@ -204,7 +204,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const me = useQuery(api.users.current, isAuthenticated ? {} : "skip");
   const myJoinRequests = useQuery(
     api.joinRequests.mine,
-    isAuthenticated && me?.role !== "admin" && me?.role !== "owner" ? {} : "skip",
+    isAuthenticated && me !== undefined && me?.role !== "admin" && me?.role !== "owner" ? {} : "skip",
   );
   const activeUser = me?.status === "active" && isAuthenticated;
   const adminWorkspace = pathname.startsWith("/admin");

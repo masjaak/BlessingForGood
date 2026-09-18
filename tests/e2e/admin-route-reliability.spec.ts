@@ -98,4 +98,36 @@ test.describe("@admin authenticated route reliability", () => {
     expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
     expect(settled.map((result) => result.route)).toEqual([...adminRoutes]);
   });
+
+  test("Dashboard settles independently, refreshes, and survives return navigation", async ({ page }) => {
+    const browserErrors: string[] = [];
+    page.on("pageerror", (error) => browserErrors.push(`pageerror: ${error.message}`));
+    page.on("console", (message) => {
+      if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
+    });
+
+    await page.goto("/");
+    await clerk.signIn({ emailAddress: ownerEmail!, page });
+
+    async function settleDashboard() {
+      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      await expect(page).not.toHaveURL(/\/sign-in/);
+      await expect(page.getByRole("heading", { name: "Pekerjaan penting hari ini." })).toBeVisible({ timeout: 45_000 });
+      await expect(page.locator(".workspace-skeleton")).toHaveCount(0, { timeout: 45_000 });
+      await expect(page.locator('[data-dashboard-state="ready"]')).toHaveCount(7, { timeout: 45_000 });
+      await page.waitForTimeout(15_000);
+      await expect(page.locator('[data-dashboard-state="ready"]')).toHaveCount(7);
+    }
+
+    await settleDashboard();
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator('[data-dashboard-state="ready"]')).toHaveCount(7, { timeout: 45_000 });
+    await page.waitForTimeout(15_000);
+    await page.goto("/admin/orders", { waitUntil: "domcontentloaded" });
+    await expect(page).not.toHaveURL(/\/sign-in/);
+    await settleDashboard();
+    await page.waitForTimeout(15_000);
+
+    expect(browserErrors, browserErrors.join("\n")).toEqual([]);
+  });
 });

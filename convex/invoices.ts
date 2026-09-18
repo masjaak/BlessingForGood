@@ -513,11 +513,7 @@ export const listReadyForIssuance = query({
     const selectedBatch = args.batchId ? await ctx.db.get(args.batchId) : null;
     const batchPage = args.batchId
       ? { page: selectedBatch ? [selectedBatch] : [], isDone: true, continueCursor: "" }
-      : await ctx.db
-          .query("batches")
-          .withIndex("by_created_at")
-          .order("desc")
-          .paginate(args.paginationOpts);
+      : await ctx.db.query("batches").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     const rows = [];
     for (const batch of batchPage.page) {
       if (batch.isArchived || !batch.currentShipmentStage) continue;
@@ -614,6 +610,19 @@ export const listForAdmin = query({
     await requirePermission(ctx, "invoices.read.all");
     const page = await ctx.db.query("invoices").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: await Promise.all(page.page.map((invoice) => invoiceView(ctx, invoice._id))) };
+  },
+});
+
+export const countOpenForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "invoices.read.all");
+    // ponytail: one indexed scan keeps outstanding invoice counts exact; add a counter if invoice volume makes it slow.
+    const issued = await ctx.db
+      .query("invoices")
+      .withIndex("by_status", (index) => index.eq("status", "issued"))
+      .collect();
+    return issued.filter((invoice) => invoice.outstandingAmount > 0).length;
   },
 });
 

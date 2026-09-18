@@ -670,6 +670,24 @@ export const listForAdmin = query({
   },
 });
 
+export const countOpenForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    await requirePermission(ctx, "orders.read.all");
+    // ponytail: three indexed scans keep actionable counts exact; add a counter if exception volume makes it slow.
+    const counts = await Promise.all(
+      (["opened", "under_review", "resolution_selected"] as const).map((status) =>
+        ctx.db
+          .query("orderExceptions")
+          .withIndex("by_status_and_created_at", (index) => index.eq("status", status))
+          .collect()
+          .then((exceptions) => exceptions.length),
+      ),
+    );
+    return counts.reduce((total, count) => total + count, 0);
+  },
+});
+
 export const listForOrderAdmin = query({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {

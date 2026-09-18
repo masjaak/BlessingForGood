@@ -1,86 +1,136 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery_experimental as useQueryState } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
-import { PageAwareSkeleton } from "@/components/page-aware-skeleton";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
-import { useOperations } from "@/domain/prototype/operations-context";
+import { Card, LinkButton, PageHeader, Skeleton, SkeletonText, StatusBadge } from "@/components/ui";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 
-function AdminOverview() {
-  const { state, dataSource, sessionRole, catalogsLoading } = useProduct();
-  const { activeBatchCount, adminInvoiceList, adminPaymentQueue } = useOperations();
-  const orderSummaries = useQuery(
-    api.orders.listSummariesForAdmin,
-    dataSource === "convex" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
-  );
-  const pendingAdmissionCount = useQuery(api.joinRequests.pendingCount, dataSource === "convex" ? {} : "skip");
-  const exceptions = useQuery(
-    api.orderExceptions.listForAdmin,
-    dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
-  );
-  const refunds = useQuery(api.refunds.listForAdmin, dataSource === "convex" ? {} : "skip");
-  if (
-    catalogsLoading ||
-    (dataSource === "convex" && orderSummaries === undefined) ||
-    (dataSource === "convex" && activeBatchCount === undefined) ||
-    adminInvoiceList === undefined ||
-    adminPaymentQueue === undefined ||
-    (dataSource === "convex" && pendingAdmissionCount === undefined) ||
-    exceptions === undefined ||
-    refunds === undefined
-  ) {
-    return <PageAwareSkeleton workspace="admin" pathname="/admin" />;
-  }
-  const pendingAdmissions = dataSource === "convex" ? pendingAdmissionCount || 0 : 0;
-  const activeBatches = dataSource === "convex" ? activeBatchCount || 0 : 0;
-  const openInvoices =
-    adminInvoiceList?.page.filter((invoice) => invoice.status === "issued" && invoice.outstandingAmount > 0).length ||
-    0;
-  const openExceptions =
-    exceptions?.page.filter((item) => item.status !== "resolved" && item.status !== "rejected").length || 0;
-  const pendingPayments = adminPaymentQueue?.length || 0;
-  const newOrders = (dataSource === "convex" ? orderSummaries?.page || [] : state.orders).filter(
-    (order) => order.status === "submitted",
-  ).length;
-  const pendingRefunds = refunds.filter((item) => item.status !== "paid").length;
+type DashboardCountResult =
+  { status: "pending" } | { status: "error"; error: Error } | { status: "success"; data: number };
 
-  const queues = [
-    [
-      "Join Requests",
-      pendingAdmissions,
-      "/admin/join-requests",
-      pendingAdmissions
-        ? `${pendingAdmissions} permintaan Blessfriends baru`
-        : "Tidak ada permintaan Blessfriends baru",
-    ],
-    ["Pesanan baru", newOrders, "/admin/orders", "Pesanan yang belum masuk proses PO"],
-    ["Pembayaran", pendingPayments, "/admin/payments", "Konfirmasi pembayaran menunggu verifikasi"],
-    ["Masalah", openExceptions, "/admin/exceptions", "OOS, defect, atau pembatalan aktif"],
-    ["Batch aktif", activeBatches, "/admin/batches", "Batch yang sedang dioperasikan"],
-    ["Invoice terbuka", openInvoices, "/admin/invoices", "Invoice dengan saldo yang belum selesai"],
-    ["Refund", pendingRefunds, "/admin/refunds", "Kewajiban refund menunggu payout"],
-  ] as const;
-  const queueCards = (items: ReadonlyArray<(typeof queues)[number]>) =>
-    items.map(([label, count, href, description]) => (
-      <Card className="metric" key={label}>
+type QueueDefinition = {
+  label: string;
+  count: DashboardCountResult;
+  href: string;
+  description: string;
+};
+
+function DashboardQueueCard({ label, count, href, description }: QueueDefinition) {
+  if (count.status === "pending") {
+    return (
+      <Card className="metric" data-dashboard-block={label} data-dashboard-state="loading" aria-busy="true">
+        <div className="split-heading">
+          <SkeletonText className="skeleton-queue-label" width="58%" />
+          <Skeleton className="skeleton-queue-status" />
+        </div>
+        <Skeleton className="metric-value skeleton-queue-value" />
+        <p className="skeleton-queue-description">
+          <SkeletonText width="92%" />
+          <SkeletonText width="68%" />
+        </p>
+        <div className="skeleton-queue-action-slot">
+          <Skeleton className="skeleton-queue-action" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (count.status === "error") {
+    return (
+      <Card className="metric" data-dashboard-block={label} data-dashboard-state="unavailable" role="status">
         <div className="split-heading">
           <span className="card-kicker">{label}</span>
-          <StatusBadge tone={count ? "warning" : "positive"}>{count ? "Perlu tindakan" : "Bersih"}</StatusBadge>
+          <StatusBadge tone="warning">Tidak tersedia</StatusBadge>
         </div>
-        <strong className="metric-value">{count}</strong>
+        <strong className="metric-value">—</strong>
         <div className="action-region">
-          <p className="action-support">{description}</p>
+          <p className="action-support">Data belum tersedia saat ini.</p>
           <LinkButton href={href} variant="tertiary">
             {href === "/admin/join-requests" ? "Review" : `Buka ${label.toLowerCase()} →`}
           </LinkButton>
         </div>
       </Card>
-    ));
+    );
+  }
+
+  return (
+    <Card className="metric" data-dashboard-block={label} data-dashboard-state="ready">
+      <div className="split-heading">
+        <span className="card-kicker">{label}</span>
+        <StatusBadge tone={count.data ? "warning" : "positive"}>{count.data ? "Perlu tindakan" : "Bersih"}</StatusBadge>
+      </div>
+      <strong className="metric-value">{count.data}</strong>
+      <div className="action-region">
+        <p className="action-support">{description}</p>
+        <LinkButton href={href} variant="tertiary">
+          {href === "/admin/join-requests" ? "Review" : `Buka ${label.toLowerCase()} →`}
+        </LinkButton>
+      </div>
+    </Card>
+  );
+}
+
+function AdminOverview() {
+  const { dataSource, sessionRole } = useProduct();
+  const queryArgs = dataSource === "convex" ? {} : "skip";
+  const pendingAdmissions = useQueryState({ query: api.joinRequests.pendingCount, args: queryArgs });
+  const newOrders = useQueryState({ query: api.orders.countSubmittedForAdmin, args: queryArgs });
+  const pendingPayments = useQueryState({ query: api.paymentConfirmations.countPendingForAdmin, args: queryArgs });
+  const openExceptions = useQueryState({ query: api.orderExceptions.countOpenForAdmin, args: queryArgs });
+  const activeBatches = useQueryState({ query: api.batches.countActiveForAdmin, args: queryArgs });
+  const openInvoices = useQueryState({ query: api.invoices.countOpenForAdmin, args: queryArgs });
+  const pendingRefunds = useQueryState({ query: api.refunds.countPendingForAdmin, args: queryArgs });
+
+  const queues: ReadonlyArray<QueueDefinition> = [
+    {
+      label: "Join Requests",
+      count: pendingAdmissions,
+      href: "/admin/join-requests",
+      description: "Permintaan Blessfriends baru yang menunggu review",
+    },
+    {
+      label: "Pesanan baru",
+      count: newOrders,
+      href: "/admin/orders",
+      description: "Pesanan yang belum masuk proses PO",
+    },
+    {
+      label: "Pembayaran",
+      count: pendingPayments,
+      href: "/admin/payments",
+      description: "Konfirmasi pembayaran menunggu verifikasi",
+    },
+    {
+      label: "Masalah",
+      count: openExceptions,
+      href: "/admin/exceptions",
+      description: "OOS, defect, atau pembatalan aktif",
+    },
+    {
+      label: "Batch aktif",
+      count: activeBatches,
+      href: "/admin/batches",
+      description: "Batch yang sedang dioperasikan",
+    },
+    {
+      label: "Invoice terbuka",
+      count: openInvoices,
+      href: "/admin/invoices",
+      description: "Invoice dengan saldo yang belum selesai",
+    },
+    {
+      label: "Refund",
+      count: pendingRefunds,
+      href: "/admin/refunds",
+      description: "Kewajiban refund menunggu payout",
+    },
+  ];
+  const queueCards = (items: ReadonlyArray<QueueDefinition>) =>
+    items.map((item) => <DashboardQueueCard {...item} key={item.label} />);
 
   return (
     <div className="page admin-page">
