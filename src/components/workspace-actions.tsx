@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery_experimental as useQueryState } from "convex/react";
 import {
   createContext,
   useContext,
@@ -72,7 +72,11 @@ export function WorkspaceActivityProvider({
   workspace: "admin" | "customer";
   children: ReactNode;
 }) {
-  const activity = useQuery(api.notifications.unreadActivityCount, enabled ? { workspace } : "skip");
+  const activityState = useQueryState({
+    query: api.notifications.unreadActivityCount,
+    args: enabled ? { workspace } : "skip",
+  });
+  const activity = activityState.status === "success" ? activityState.data : undefined;
 
   return <WorkspaceActivityContext.Provider value={{ activity }}>{children}</WorkspaceActivityContext.Provider>;
 }

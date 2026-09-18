@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery_experimental as useQueryState } from "convex/react";
 import { useContext, useEffect } from "react";
 import { api } from "../../convex/_generated/api";
 import { AdminShellContext } from "@/components/site-shell";
@@ -205,7 +205,10 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
   const product = useContext(ProductContext);
   const sessionRole = product?.sessionRole;
   const canReadAdminNav = product?.dataSource === "convex" && roleCanAccess(sessionRole || null, "admin");
-  const pendingJoinRequests = useQuery(api.joinRequests.pendingCount, canReadAdminNav ? {} : "skip");
+  const pendingJoinRequests = useQueryState({
+    query: api.joinRequests.pendingCount,
+    args: canReadAdminNav ? {} : "skip",
+  });
   const markReadByContext = useMutation(api.notifications.markReadByContext);
   useEffect(() => {
     if (!canReadAdminNav || product?.authState !== "authenticated") return;
@@ -244,9 +247,14 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
                   <AdminNavIcon name={link.icon} />
                 </span>
                 <span className="admin-nav-label">{link.label}</span>
-                {link.href === "/admin/join-requests" && pendingJoinRequests ? (
-                  <span className="admin-nav-badge" aria-label={`${pendingJoinRequests} permintaan bergabung menunggu`}>
-                    {pendingJoinRequests}
+                {link.href === "/admin/join-requests" &&
+                pendingJoinRequests.status === "success" &&
+                pendingJoinRequests.data ? (
+                  <span
+                    className="admin-nav-badge"
+                    aria-label={`${pendingJoinRequests.data} permintaan bergabung menunggu`}
+                  >
+                    {pendingJoinRequests.data}
                   </span>
                 ) : null}
               </Link>

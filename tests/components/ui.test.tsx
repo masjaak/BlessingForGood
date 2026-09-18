@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useQuery } from "convex/react";
+import { useQuery_experimental as useQueryState } from "convex/react";
 import HomePage from "@/app/page";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { AdminNav } from "@/components/admin-nav";
@@ -23,12 +23,12 @@ vi.mock("@clerk/nextjs", () => ({
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => vi.fn()),
-  useQuery: vi.fn(() => 0),
+  useQuery_experimental: vi.fn(() => ({ status: "success", data: 0 })),
 }));
 
 beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({ isLoaded: true, isSignedIn: false } as never);
-  vi.mocked(useQuery).mockReturnValue(0 as never);
+  vi.mocked(useQueryState).mockReturnValue({ status: "success", data: 0 } as never);
 });
 
 describe("public UI foundation", () => {
@@ -237,7 +237,7 @@ describe("public UI foundation", () => {
   });
 
   it("shows only the live pending Join Requests count in the Admin sidebar", () => {
-    vi.mocked(useQuery).mockReturnValue(3 as never);
+    vi.mocked(useQueryState).mockReturnValue({ status: "success", data: 3 } as never);
     render(
       <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
         <AdminNav />
@@ -247,7 +247,7 @@ describe("public UI foundation", () => {
     expect(screen.getByText("3")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Permintaan bergabung.*3/ })).toBeTruthy();
 
-    vi.mocked(useQuery).mockReturnValue(0 as never);
+    vi.mocked(useQueryState).mockReturnValue({ status: "success", data: 0 } as never);
     render(
       <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
         <AdminNav />
@@ -256,8 +256,20 @@ describe("public UI foundation", () => {
     expect(screen.queryByText("0")).toBeNull();
   });
 
+  it("keeps the Admin sidebar usable when the pending count is unavailable", () => {
+    vi.mocked(useQueryState).mockReturnValue({ status: "error", error: new Error("query failed") } as never);
+    render(
+      <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
+        <AdminNav />
+      </ProductContext.Provider>,
+    );
+
+    expect(screen.getByRole("navigation", { name: "Navigasi admin" })).toBeTruthy();
+    expect(screen.queryByLabelText(/permintaan bergabung menunggu/)).toBeNull();
+  });
+
   it("shows the full System section to active Admin roles", () => {
-    vi.mocked(useQuery).mockReturnValue(0 as never);
+    vi.mocked(useQueryState).mockReturnValue({ status: "success", data: 0 } as never);
     render(
       <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "admin" } as never}>
         <AdminNav />

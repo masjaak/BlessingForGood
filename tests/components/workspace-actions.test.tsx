@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { useQuery_experimental as useQueryState } from "convex/react";
 import { CustomerBottomNav } from "@/components/site-shell";
 import {
   calculateActivityPanelGeometry,
@@ -9,7 +10,9 @@ import {
 } from "@/components/workspace-actions";
 
 vi.mock("convex/react", () => ({
-  useQuery: vi.fn((_query, args) => (args === "skip" ? undefined : 4)),
+  useQuery_experimental: vi.fn(({ args }) =>
+    args === "skip" ? { status: "pending" } : { status: "success", data: 4 },
+  ),
 }));
 
 describe("authenticated workspace actions", () => {
@@ -33,6 +36,17 @@ describe("authenticated workspace actions", () => {
     expect(screen.getByRole("button", { name: /Aktivitas.*4 belum dibaca/ })).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Notifikasi/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /Kotak masuk/ })).toBeNull();
+  });
+
+  it("keeps the workspace trigger usable when the activity count is unavailable", () => {
+    vi.mocked(useQueryState).mockReturnValue({ status: "error", error: new Error("query failed") } as never);
+    render(
+      <WorkspaceActivityProvider enabled workspace="admin">
+        <WorkspaceActions workspace="admin" enabled />
+      </WorkspaceActivityProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Aktivitas" })).toBeTruthy();
   });
 
   it("signals unread customer activity on the Akun bottom-nav item", () => {
