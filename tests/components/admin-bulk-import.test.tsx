@@ -5,6 +5,7 @@ import { AdminBulkImport } from "@/components/admin-bulk-import";
 vi.mock("convex/react", () => ({
   useMutation: () => vi.fn(),
   useQuery: () => undefined,
+  useQuery_experimental: () => ({ status: "success", data: 0 }),
 }));
 
 vi.mock("@/domain/prototype/store", () => ({

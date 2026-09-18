@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { getFunctionName } from "convex/server";
 import AccountPage from "@/app/account/page";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -13,7 +14,13 @@ vi.mock("@clerk/nextjs", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(() => 0),
-  useQuery_experimental: vi.fn(() => ({ status: "success", data: { retainedQuantity: 0 } })),
+  useQuery_experimental: vi.fn(({ query }) =>
+    getFunctionName(query as never) === "carts:getMine"
+      ? { status: "success", data: { retainedQuantity: 0 } }
+      : getFunctionName(query as never) === "notifications:unreadActivityCount"
+        ? { status: "success", data: 0 }
+        : { status: "success", data: 4 },
+  ),
 }));
 
 vi.mock("next/navigation", () => ({

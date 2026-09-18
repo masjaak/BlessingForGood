@@ -19,6 +19,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => vi.fn()),
   useQuery: vi.fn(),
+  useQuery_experimental: vi.fn(() => ({ status: "success", data: 0 })),
 }));
 
 vi.mock("@/domain/prototype/store", () => ({
