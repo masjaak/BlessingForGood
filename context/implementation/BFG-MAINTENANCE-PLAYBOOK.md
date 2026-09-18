@@ -34,9 +34,11 @@ evidence before implementation:
   boundary, and same-route Production proof.
 
 Consumer-shaped reads are intentional: `SUMMARY != LIST != DETAIL` when their
-field requirements differ. `GREEN + not directly implicated = DO NOT TOUCH`.
-Global fixes stay within the directly implicated domain; they do not authorize
-repo-wide refactors.
+field requirements differ. Extend the boundary when workload differs:
+`EXPORT != DETAIL`. Loading ownership follows the async component it replaces:
+`LOADING GEOMETRY ≈ RESOLVED GEOMETRY`. `GREEN + not directly implicated = DO
+NOT TOUCH`. Global fixes stay within the directly implicated domain; they do
+not authorize repo-wide refactors.
 
 ## Permanent visual contracts
 

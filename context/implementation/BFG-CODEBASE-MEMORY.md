@@ -1,5 +1,58 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Phase 2C Batch read boundaries + Admin loading geometry — 2026-09-18
+
+### CURRENT
+
+- `convex/batches.ts:getBatchListSummary` owns the Admin Batch list projection:
+  Batch metadata plus Catalog-link metadata only. `getBatchSummary` remains the
+  selected-Batch detail/mutation projection.
+- `convex/batchTracking.ts:getForAdmin` owns selected-Batch metadata, purchase
+  summary, and paged assignment/unassigned data. `getExport({ kind })` owns
+  one explicit export workload at a time; `EXPORT != DETAIL` because detail no
+  longer hydrates customer-detail export rows.
+- Customer Batch discovery is ownership-first: `customerOwnedBatchAssignments`
+  scans the authenticated Customer's own Orders through the Customer/time and
+  OrderItem/assignment indexes before deriving Batch rows. It does not take a
+  global assignment window and filter afterward.
+- `getBookOverview` uses the Customer Order `submittedAt` range index, so
+  Buku Saya history is not limited to the former fixed 2,000-row source window.
+- Admin async loading owns feature-specific compositions beside the resolved
+  surface. `LOADING GEOMETRY ≈ RESOLVED GEOMETRY`; independent Dashboard and
+  Batch-detail regions retain progressive loading rather than whole-page gates.
+
+### PROTECTED
+
+- Batch lifecycle, shipment transitions, assignment rules, effective quantity,
+  cancellation, invoice readiness, Customer visibility/security, export values,
+  Catalog/Book/Order/Finance semantics, the closed Admin incident series, and
+  the resolved Admin visual system.
+
+### UNPROVEN
+
+- Authenticated Production proof for the new Batch list/detail/export and
+  historical Customer paths remains pending without an approved Clerk Admin /
+  Customer session and safe populated fixtures. Local browser proof is also
+  blocked by missing local Clerk publishable-key configuration.
+
+### SUPERSEDED
+
+- Customer Batch discovery through a global `.take(500)` assignment window and
+  Buku Saya through a fixed `.take(2000)` invoice/history window are no longer
+  valid ownership/range contracts.
+- Treating `getBatchSummary` as the Admin list owner, or bundling both export
+  datasets into Batch detail, is no longer valid when consumer requirements
+  differ.
+
+### Scale harness
+
+- `convex/batchPhase2c.test.ts` covers 1,000+ / 2,000+ history thresholds,
+  501 unrelated assignments before an owned historical Batch, multiple
+  Catalogs, many Customers, exception/cancellation rows, and both export kinds.
+- Existing `convex/batchAutoAssignment.test.ts` and `convex/batchRoster.test.ts`
+  retain the 1,000/2,000 assignment, pagination, exception, cancellation,
+  Customer/Cargo identity, and export-column regression anchors.
+
 ## Post-diff memory — Admin Catalog list reliability — 2026-09-18
 
 ### CURRENT
