@@ -71,17 +71,15 @@ describe("Admin Dashboard progressive loading", () => {
     expect(document.querySelector('[data-dashboard-block="Refund"][data-dashboard-state="loading"]')).toBeTruthy();
   });
 
-  it("keeps healthy cards available when one non-critical source fails", () => {
+  it.each(countQueryNames)("keeps healthy cards available when %s fails", (failedQuery) => {
     const states = successCounts();
-    states["orderExceptions:countOpenForAdmin"] = { status: "error", error: new Error("query failed") };
+    states[failedQuery] = { status: "error", error: new Error("query failed") };
     setupQueryStates(states);
 
     render(<AdminPage />);
 
-    expect(document.querySelector('[data-dashboard-block="Masalah"][data-dashboard-state="unavailable"]')).toBeTruthy();
-    expect(
-      document.querySelector('[data-dashboard-block="Invoice terbuka"][data-dashboard-state="ready"]'),
-    ).toBeTruthy();
+    expect(document.querySelectorAll('[data-dashboard-state="unavailable"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-dashboard-state="ready"]')).toHaveLength(6);
     expect(screen.getByText("Data belum tersedia saat ini.")).toBeTruthy();
     expect(document.querySelector(".workspace-skeleton")).toBeNull();
   });
