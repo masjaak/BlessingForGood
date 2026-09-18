@@ -1,5 +1,38 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Catalog read contracts — 2026-09-18
+
+### CURRENT
+
+- `convex/lib/catalogSummary.ts:getCatalogSummary` is the root-only Catalog
+  Summary owner. Its fields are `id`, `name`, effective `status`, `closingAt`,
+  `estimatedArrivalMonth`, and `createdAt`; it does not read Catalog Items,
+  Variants, Books, Publishers, covers, galleries, or Book media.
+- `secretCatalogs.listSummaries` owns the Admin Dashboard summary read, and
+  `catalogAccess.listForSession` uses the same root-only contract for the
+  Catalog selector. Summary cost is bounded by Catalog roots plus access-root
+  checks, not Catalog Item × Book/Variant/media fan-out.
+- `convex/lib/catalogView.ts:getCatalogView` remains the full/detail owner.
+  The `includeBooks: false` seam remains for existing non-summary callers until
+  a separate regression proves it can be removed.
+
+### PROTECTED
+
+- Catalog access/session/grant semantics, effective close status, ordering,
+  detail/search/curation, mutation returns, Batch, Cart, Orders, Book Master,
+  media, finance, Auth, navigation, and global CSS.
+
+### SUPERSEDED
+
+- Treating one full Catalog projection as the owner for both summary and
+  detail consumers is no longer valid.
+
+### UNPROVEN
+
+- `catalogAccess.listAccessible` has no active UI field consumer in the current
+  source and remains on the full projection pending a separately proven
+  summary contract. Batch detail remains intentionally out of Phase 2A.
+
 ## Post-diff memory — Catalog search + multi-Catalog Cart rollout — 2026-09-15
 
 ### CURRENT

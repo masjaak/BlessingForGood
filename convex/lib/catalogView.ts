@@ -1,5 +1,6 @@
 import type { QueryCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
+import { catalogSummaryFromCatalog } from "./catalogSummary";
 import { fail } from "./errors";
 import { sortCatalogItems } from "./catalogOrdering";
 
@@ -15,14 +16,7 @@ export async function getCatalogView(
 ) {
   const catalog = await ctx.db.get(catalogId);
   if (!catalog) fail("CATALOG_NOT_FOUND");
-  const metadata = {
-    id: catalog._id,
-    name: catalog.name,
-    status: catalog.status === "open" && catalog.closesAt && catalog.closesAt <= Date.now() ? "closed" : catalog.status,
-    closingAt: catalog.closesAt ? new Date(catalog.closesAt).toISOString() : null,
-    estimatedArrivalMonth: catalog.estimatedArrivalMonth ?? null,
-    createdAt: new Date(catalog.createdAt).toISOString(),
-  };
+  const metadata = catalogSummaryFromCatalog(catalog);
   if (options?.includeBooks === false) return { ...metadata, titleCount: undefined, books: [] };
   // ponytail: bounded 500-item customer projection for the requested hundreds-scale Catalog; paginate if a Catalog exceeds 500 items.
   const items = sortCatalogItems(

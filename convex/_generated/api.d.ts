@@ -39,6 +39,7 @@ import type * as lib_cancellationEligibility from "../lib/cancellationEligibilit
 import type * as lib_cartProjection from "../lib/cartProjection.js";
 import type * as lib_catalogAccess from "../lib/catalogAccess.js";
 import type * as lib_catalogOrdering from "../lib/catalogOrdering.js";
+import type * as lib_catalogSummary from "../lib/catalogSummary.js";
 import type * as lib_catalogView from "../lib/catalogView.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_depositLedger from "../lib/depositLedger.js";
@@ -116,6 +117,7 @@ declare const fullApi: ApiFromModules<{
   "lib/cartProjection": typeof lib_cartProjection;
   "lib/catalogAccess": typeof lib_catalogAccess;
   "lib/catalogOrdering": typeof lib_catalogOrdering;
+  "lib/catalogSummary": typeof lib_catalogSummary;
   "lib/catalogView": typeof lib_catalogView;
   "lib/crypto": typeof lib_crypto;
   "lib/depositLedger": typeof lib_depositLedger;

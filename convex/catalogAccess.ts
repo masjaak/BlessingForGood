@@ -11,6 +11,7 @@ import {
 } from "./lib/accessCodes";
 import { findCurrentUser, requireActiveCustomer, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
+import { catalogSummaryFromCatalog, getCatalogSummary } from "./lib/catalogSummary";
 import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
 import { constantTimeEqual, keyedDigest } from "./lib/crypto";
 import { fail } from "./lib/errors";
@@ -638,23 +639,21 @@ export const listForSession = query({
       if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return [];
       if (code.scope === "global") {
         const catalogs = await eligibleGlobalCatalogs(ctx);
-        const views = await Promise.all(catalogs.map((catalog) => getCatalogView(ctx, catalog._id)));
-        return views.map(catalogAccessSummary);
+        return catalogs.map((catalog) => catalogSummaryFromCatalog(catalog));
       }
     }
     if (session.accessPeriodId) {
       const period = await ctx.db.get(session.accessPeriodId);
       if (!period || accessPeriodStatus(period) !== "active") return [];
       const catalogs = await periodCatalogs(ctx, session.accessPeriodId);
-      const views = await Promise.all(catalogs.map((catalog) => getCatalogView(ctx, catalog._id)));
-      return views.map(catalogAccessSummary);
+      return catalogs.map((catalog) => catalogSummaryFromCatalog(catalog));
     }
     if (!session.accessCodeId) return [];
     const code = await ctx.db.get(session.accessCodeId);
     if (!code || code.scope === "global" || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now()))
       return [];
     if (!(await catalogIsOpen(ctx, session.catalogId))) return [];
-    return [catalogAccessSummary(await getCatalogView(ctx, session.catalogId))];
+    return [await getCatalogSummary(ctx, session.catalogId)];
   },
 });
 

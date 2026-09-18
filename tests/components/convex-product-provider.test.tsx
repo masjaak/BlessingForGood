@@ -109,10 +109,10 @@ describe("authenticated customer bootstrap caller", () => {
     resolveFirst({ role: "customer", status: "active" });
   });
 
-  it("uses the lightweight Catalog projection on the Admin Dashboard", () => {
+  it("uses the explicit Catalog summary contract on the Admin Dashboard", () => {
     vi.mocked(usePathname).mockReturnValue("/admin");
     queryValues.set("users:current", { role: "owner", status: "active" });
-    queryValues.set("secretCatalogs:list", { page: [], isDone: true, continueCursor: "" });
+    queryValues.set("secretCatalogs:listSummaries", { page: [], isDone: true, continueCursor: "" });
 
     render(
       <ConvexProductProvider>
@@ -121,8 +121,13 @@ describe("authenticated customer bootstrap caller", () => {
     );
 
     const catalogQuery = queryCalls.find(
-      ([reference]) => getFunctionName(reference as never) === "secretCatalogs:list",
+      ([reference]) => getFunctionName(reference as never) === "secretCatalogs:listSummaries",
     );
-    expect(catalogQuery?.[1]).toEqual({ paginationOpts: { numItems: 50, cursor: null }, includeBooks: false });
+    expect(catalogQuery?.[1]).toEqual({ paginationOpts: { numItems: 50, cursor: null } });
+    expect(
+      queryCalls.some(
+        ([reference, args]) => getFunctionName(reference as never) === "secretCatalogs:list" && args !== "skip",
+      ),
+    ).toBe(false);
   });
 });

@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { accessCodeDigests, randomAccessCode } from "./lib/accessCodes";
 import { requirePermission } from "./lib/auth";
+import { catalogSummaryFromCatalog } from "./lib/catalogSummary";
 import { getCatalogView } from "./lib/catalogView";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
@@ -38,6 +39,19 @@ export const list = query({
         page.page.map((catalog) => getCatalogView(ctx, catalog._id, { includeBooks: args.includeBooks !== false })),
       ),
     };
+  },
+});
+
+export const listSummaries = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "catalog.manage");
+    const page = await ctx.db
+      .query("secretCatalogs")
+      .withIndex("by_created_at")
+      .order("desc")
+      .paginate(args.paginationOpts);
+    return { ...page, page: page.page.map((catalog) => catalogSummaryFromCatalog(catalog)) };
   },
 });
 

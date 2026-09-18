@@ -200,7 +200,11 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const customerProfileDisplayName = customerProfile === undefined ? undefined : (customerProfile?.displayName ?? null);
   const adminCatalogs = useQuery(
     api.secretCatalogs.list,
-    isAdmin ? { paginationOpts: { numItems: 50, cursor: null }, includeBooks: pathname !== "/admin" } : "skip",
+    isAdmin && pathname !== "/admin" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+  );
+  const adminCatalogSummaries = useQuery(
+    api.secretCatalogs.listSummaries,
+    isAdmin && pathname === "/admin" ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const adminOrders = useQuery(
     api.orders.listForAdmin,
@@ -329,7 +333,6 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       status: normalizeCatalogStatus(option.status),
       closingAt: option.closingAt,
       estimatedArrivalMonth: option.estimatedArrivalMonth,
-      titleCount: option.titleCount,
     }));
     if (sessionOptions.length) return sessionOptions;
     const current = asCatalog(unlocked as CatalogView | null | undefined);
@@ -499,7 +502,9 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     (catalogSessionClaimKey !== null && claimedCatalogSessionKey !== catalogSessionClaimKey) ||
     (unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null))),
   );
-  const catalogsLoading = Boolean(isAdmin && adminCatalogs === undefined);
+  const catalogsLoading = Boolean(
+    isAdmin && (pathname === "/admin" ? adminCatalogSummaries === undefined : adminCatalogs === undefined),
+  );
   const ordersLoading = Boolean((isCustomer && customerOrders === undefined) || (isAdmin && adminOrders === undefined));
 
   const value = useMemo<ProductContextValue>(
