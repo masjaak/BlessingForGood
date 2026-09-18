@@ -334,6 +334,9 @@ export default defineSchema({
     closesAt: v.optional(v.number()),
     estimatedArrivalMonth: v.optional(v.string()),
     accessPeriodId: v.optional(v.id("catalogAccessPeriods")),
+    // Maintained by the Admin-list write contract; backfilled for historical Catalogs.
+    titleCount: v.optional(v.number()),
+    previewCatalogItemId: v.optional(v.id("catalogItems")),
     createdAt: v.number(),
     updatedAt: v.number(),
     createdByUserId: v.id("appUsers"),
@@ -380,6 +383,8 @@ export default defineSchema({
   catalogItems: defineTable({
     catalogId: v.id("secretCatalogs"),
     bookVariantId: v.id("bookVariants"),
+    // Optional until the Admin-list backfill completes for historical rows.
+    bookId: v.optional(v.id("books")),
     priceOverrideAmount: v.optional(v.number()),
     isAvailable: v.boolean(),
     sortOrder: v.optional(v.number()),
@@ -388,7 +393,17 @@ export default defineSchema({
   })
     .index("by_catalog", ["catalogId"])
     .index("by_variant", ["bookVariantId"])
-    .index("by_catalog_and_variant", ["catalogId", "bookVariantId"]),
+    .index("by_catalog_and_variant", ["catalogId", "bookVariantId"])
+    .index("by_catalog_and_book", ["catalogId", "bookId"]),
+
+  catalogTitles: defineTable({
+    catalogId: v.id("secretCatalogs"),
+    bookId: v.id("books"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_catalog_and_book", ["catalogId", "bookId"])
+    .index("by_book", ["bookId"]),
 
   catalogAccessGrants: defineTable({
     appUserId: v.id("appUsers"),

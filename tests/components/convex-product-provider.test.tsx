@@ -165,6 +165,29 @@ describe("authenticated customer bootstrap caller", () => {
     ).toBe(false);
   });
 
+  it("does not mount the full Catalog detail projection on the Admin Catalog list route", () => {
+    vi.mocked(usePathname).mockReturnValue("/admin/catalogs");
+    queryValues.set("users:current", { role: "owner", status: "active" });
+
+    render(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+
+    expect(
+      queryCalls.some(
+        ([reference, args]) => getFunctionName(reference as never) === "secretCatalogs:list" && args !== "skip",
+      ),
+    ).toBe(false);
+    expect(
+      queryCalls.some(
+        ([reference, args]) =>
+          getFunctionName(reference as never) === "secretCatalogs:listSummaries" && args !== "skip",
+      ),
+    ).toBe(false);
+  });
+
   it("does not mount Admin Catalog or Order lists on an unrelated Admin route", () => {
     vi.mocked(usePathname).mockReturnValue("/admin/join-requests");
     queryValues.set("users:current", { role: "owner", status: "active" });

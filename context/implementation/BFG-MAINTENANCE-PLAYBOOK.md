@@ -19,6 +19,25 @@ the public seed still has no stored cover, so cover mutation remains a
 This playbook is not a new feature backlog and does not authorize new Product
 behavior.
 
+## Permanent Production bug-fix standard
+
+For every incident, use the smallest durable owner-level fix and record the
+evidence before implementation:
+
+- **Context Engineering:** trace the actual UI → component → state/provider →
+  query/mutation → projection/helper → index/data → render topology.
+- **Prompt Engineering:** define starting state, action, expected state, exact
+  failure state, scale contract, regression boundary, and stop condition.
+- **Memory Engineering:** maintain explicit `CURRENT`, `PROTECTED`,
+  `UNPROVEN`, and `SUPERSEDED` states.
+- **Harness Engineering:** add happy, exact failure, repeat/reactive, scale,
+  boundary, and same-route Production proof.
+
+Consumer-shaped reads are intentional: `SUMMARY != LIST != DETAIL` when their
+field requirements differ. `GREEN + not directly implicated = DO NOT TOUCH`.
+Global fixes stay within the directly implicated domain; they do not authorize
+repo-wide refactors.
+
 ## Permanent visual contracts
 
 - How To Order is one seven-step journey: connected desktop timeline, vertical

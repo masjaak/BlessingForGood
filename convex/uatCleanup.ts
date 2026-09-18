@@ -1194,6 +1194,11 @@ export const purgeCatalog = mutation({
     for (const assignment of plan.assignmentsToDelete) await ctx.db.delete(assignment._id);
     for (const link of plan.links) await ctx.db.delete(link._id);
     for (const item of plan.items) await ctx.db.delete(item._id);
+    const titleMemberships = await ctx.db
+      .query("catalogTitles")
+      .withIndex("by_catalog_and_book", (index) => index.eq("catalogId", plan.catalog._id))
+      .collect();
+    for (const membership of titleMemberships) await ctx.db.delete(membership._id);
     for (const code of plan.codes) await ctx.db.delete(code._id);
     for (const grant of plan.grants) await ctx.db.delete(grant._id);
     for (const session of plan.sessions) await ctx.db.delete(session._id);

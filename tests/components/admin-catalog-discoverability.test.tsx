@@ -49,7 +49,11 @@ vi.mock("@/domain/prototype/store", () => ({
 
 beforeEach(() => {
   vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
-  vi.mocked(useQuery).mockReturnValue(undefined as never);
+  vi.mocked(useQuery).mockImplementation((...args) =>
+    getFunctionName(args[0]) === "secretCatalogs:listAdminRows"
+      ? ({ page: [], isDone: true, continueCursor: "" } as never)
+      : (undefined as never),
+  );
   vi.mocked(useProduct).mockReturnValue({
     state: { catalogs: [] },
     catalogsLoading: false,
@@ -88,6 +92,35 @@ describe("Secret Catalog operational discoverability", () => {
     await waitFor(() => expect(screen.getByText("1 buku/format ditemukan")).toBeTruthy());
   });
   it("keeps stacked actions and supporting copy in semantic action regions", () => {
+    vi.mocked(useQuery).mockImplementation((...args) => {
+      if (getFunctionName(args[0]) !== "secretCatalogs:listAdminRows") return undefined as never;
+      return {
+        page: [
+          {
+            id: "catalog-open",
+            name: "Open",
+            status: "open",
+            closingAt: null,
+            estimatedArrivalMonth: null,
+            createdAt: "2026-08-21T00:00:00.000Z",
+            titleCount: 0,
+            preview: null,
+          },
+          {
+            id: "catalog-draft",
+            name: "Draft",
+            status: "draft",
+            closingAt: null,
+            estimatedArrivalMonth: null,
+            createdAt: "2026-08-21T00:00:00.000Z",
+            titleCount: 0,
+            preview: null,
+          },
+        ],
+        isDone: true,
+        continueCursor: "",
+      } as never;
+    });
     vi.mocked(useProduct).mockReturnValue({
       state: {
         catalogs: [

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
 import { AdminNav } from "@/components/admin-nav";
@@ -95,7 +95,10 @@ function CatalogForm() {
 }
 
 function CatalogList() {
-  const { state, closeCatalog, catalogsLoading } = useProduct();
+  const { closeCatalog } = useProduct();
+  const catalogRows = useQuery(api.secretCatalogs.listAdminRows, {
+    paginationOpts: { numItems: 50, cursor: null },
+  });
   const [pendingAction, setPendingAction] = useState("");
   const [error, setError] = useState("");
   const [confirmCatalogId, setConfirmCatalogId] = useState<string | null>(null);
@@ -111,7 +114,7 @@ function CatalogList() {
       setPendingAction("");
     }
   }
-  if (catalogsLoading) {
+  if (catalogRows === undefined) {
     return (
       <LoadingRegion label="Memuat katalog">
         <SkeletonCard />
@@ -119,7 +122,7 @@ function CatalogList() {
       </LoadingRegion>
     );
   }
-  if (state.catalogs.length === 0)
+  if (catalogRows.page.length === 0)
     return (
       <EmptyState
         title="Daftar katalog masih kosong"
@@ -129,16 +132,15 @@ function CatalogList() {
     );
   return (
     <div className="content-stack">
-      {state.catalogs.map((catalog) => {
-        const firstBook = catalog.books[0];
+      {catalogRows.page.map((catalog) => {
         const statusTone = catalog.status === "open" ? "positive" : catalog.status === "draft" ? "warning" : "neutral";
         return (
           <Card frame="list" key={catalog.id}>
             <div className="split-heading">
               <div>
                 <span className="card-kicker">
-                  {catalog.titleCount ?? catalog.books.length} judul
-                  {firstBook?.publisher ? ` · ${firstBook.publisher}` : ""}
+                  {catalog.titleCount} judul
+                  {catalog.preview?.publisher ? ` · ${catalog.preview.publisher}` : ""}
                 </span>
                 <h2>{catalog.name}</h2>
               </div>
@@ -150,8 +152,8 @@ function CatalogList() {
                 : "Belum ada batas pemesanan."}
             </p>
             <div className="summary-line">
-              <span>{firstBook?.title || "Belum ada produk yang ditambahkan"}</span>
-              <span>{firstBook ? `${firstBook.variants.length} format` : "Buka detail untuk kurasi"}</span>
+              <span>{catalog.preview?.title || "Belum ada produk yang ditambahkan"}</span>
+              <span>{catalog.preview ? `${catalog.preview.formatCount} format` : "Buka detail untuk kurasi"}</span>
             </div>
             {error ? <p className="error-text">{error}</p> : null}
             <div className="action-region action-region-separated">

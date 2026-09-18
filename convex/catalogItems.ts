@@ -6,6 +6,7 @@ import { matchesAdminCatalogRecord, normalizeDiscoveryQuery } from "../src/lib/c
 import { mutation, query } from "./_generated/server";
 import { fail } from "./lib/errors";
 import { requirePermission } from "./lib/auth";
+import { refreshAdminCatalogPreview, syncAdminCatalogTitle } from "./lib/adminCatalogList";
 import { nonNegativeMoney } from "./lib/validation";
 import { recordAudit } from "./lib/audit";
 import { sortCatalogItems } from "./lib/catalogOrdering";
@@ -157,6 +158,7 @@ export const add = mutation({
     const itemId = await ctx.db.insert("catalogItems", {
       catalogId: args.catalogId,
       bookVariantId: args.bookVariantId,
+      bookId: variant.bookId,
       priceOverrideAmount:
         args.priceOverrideAmount === undefined ? undefined : nonNegativeMoney(args.priceOverrideAmount),
       isAvailable: true,
@@ -164,6 +166,8 @@ export const add = mutation({
       createdAt: now,
       updatedAt: now,
     });
+    await syncAdminCatalogTitle(ctx, args.catalogId, variant.bookId);
+    await refreshAdminCatalogPreview(ctx, args.catalogId);
     await recordAudit(ctx, user._id, "catalog.item_added", "catalog", args.catalogId, {
       variantId: String(args.bookVariantId),
     });
@@ -183,7 +187,10 @@ export const remove = mutation({
       .filter((query) => query.eq(query.field("catalogItemId"), item._id))
       .first();
     if (orderItem) fail("ENTITY_IN_USE", "catalog item has order history");
+    const variant = await ctx.db.get(item.bookVariantId);
     await ctx.db.delete(item._id);
+    if (variant) await syncAdminCatalogTitle(ctx, item.catalogId, variant.bookId);
+    await refreshAdminCatalogPreview(ctx, item.catalogId);
     await recordAudit(ctx, user._id, "catalog.item_removed", "catalog", item.catalogId, {
       variantId: String(item.bookVariantId),
     });
@@ -235,6 +242,7 @@ export const move = mutation({
     for (const [index, catalogItem] of reordered.entries()) {
       await ctx.db.patch(catalogItem._id, { sortOrder: index, updatedAt: now });
     }
+    await refreshAdminCatalogPreview(ctx, item.catalogId);
     await recordAudit(ctx, user._id, "catalog.item_reordered", "catalog", item.catalogId, {
       direction: args.direction ?? "drag",
       position: String(nextIndex + 1),

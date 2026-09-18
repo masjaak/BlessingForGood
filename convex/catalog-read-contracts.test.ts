@@ -13,15 +13,31 @@ async function addDuplicateItems(
 ) {
   await t.run(async (ctx) => {
     const now = Date.now();
+    const variant = await ctx.db.get(bookVariantId);
+    if (!variant) throw new Error("scale variant missing");
     for (let index = 0; index < count; index += 1) {
       await ctx.db.insert("catalogItems", {
         catalogId,
         bookVariantId,
+        bookId: variant.bookId,
         isAvailable: true,
         sortOrder: index + 1,
         createdAt: now + index,
         updatedAt: now + index,
       });
+    }
+    const membership = await ctx.db
+      .query("catalogTitles")
+      .withIndex("by_catalog_and_book", (query) => query.eq("catalogId", catalogId).eq("bookId", variant.bookId))
+      .unique();
+    if (!membership) {
+      await ctx.db.insert("catalogTitles", {
+        catalogId,
+        bookId: variant.bookId,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.patch(catalogId, { titleCount: 1 });
     }
   });
 }
@@ -78,6 +94,24 @@ describe("Catalog read contract characterization", () => {
     expect(byId.get(String(large.catalogId))).toMatchObject({ books: [] });
     expect(page.page.length).toBeGreaterThanOrEqual(55);
 
+    const adminRows = await admin.query(api.secretCatalogs.listAdminRows, {
+      paginationOpts: { numItems: 100, cursor: null },
+    });
+    const adminRowById = new Map(adminRows.page.map((catalog) => [String(catalog.id), catalog]));
+    expect(adminRows.page.length).toBeGreaterThanOrEqual(55);
+    expect(adminRowById.get(String(emptyCatalogId))).toMatchObject({ titleCount: 0, preview: null });
+    expect(adminRowById.get(String(small.catalogId))).toMatchObject({
+      titleCount: 1,
+      preview: { title: "501 item scale catalog Book", formatCount: 501 },
+    });
+    expect(adminRowById.get(String(large.catalogId))).toMatchObject({
+      titleCount: 1,
+      preview: { title: "1000 item scale catalog Book", formatCount: 1000 },
+    });
+    expect(adminRowById.get(String(detail.catalogId))).toMatchObject({ titleCount: 1, preview: { formatCount: 1 } });
+    expect(JSON.stringify(adminRows)).not.toContain("gallery");
+    expect(JSON.stringify(adminRows)).not.toContain("coverStorageId");
+
     const summaries = await admin.query(api.secretCatalogs.listSummaries, {
       paginationOpts: { numItems: 100, cursor: null },
     });
@@ -102,6 +136,45 @@ describe("Catalog read contract characterization", () => {
     expect(detailView?.view.books[0]).toMatchObject({
       id: detail.bookId,
       variants: [{ id: detail.variantIds[0] }],
+    });
+  });
+
+  it("keeps the Admin-list title counter idempotent across concurrent formats and eligibility changes", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Admin list invariant catalog", "5011", "scale-invariant");
+    const secondVariantId = await admin.mutation(api.bookVariants.create, {
+      bookId: catalog.bookId,
+      format: "HB",
+      isbn: "978000050112",
+      priceAmount: 150000,
+    });
+    const thirdVariantId = await admin.mutation(api.bookVariants.create, {
+      bookId: catalog.bookId,
+      format: "FLEXIBOUND",
+      isbn: "978000050113",
+      priceAmount: 165000,
+    });
+
+    await Promise.all([
+      admin.mutation(api.catalogItems.add, { catalogId: catalog.catalogId, bookVariantId: secondVariantId }),
+      admin.mutation(api.catalogItems.add, { catalogId: catalog.catalogId, bookVariantId: thirdVariantId }),
+    ]);
+
+    const list = () =>
+      admin.query(api.secretCatalogs.listAdminRows, { paginationOpts: { numItems: 10, cursor: null } });
+    const row = (await list()).page.find((candidate) => candidate.id === catalog.catalogId);
+    expect(row).toMatchObject({ titleCount: 1, preview: { formatCount: 3 } });
+
+    await admin.mutation(api.books.update, { bookId: catalog.bookId, publicationStatus: "draft" });
+    expect((await list()).page.find((candidate) => candidate.id === catalog.catalogId)).toMatchObject({
+      titleCount: 0,
+      preview: null,
+    });
+    await admin.mutation(api.books.update, { bookId: catalog.bookId, publicationStatus: "special" });
+    expect((await list()).page.find((candidate) => candidate.id === catalog.catalogId)).toMatchObject({
+      titleCount: 1,
+      preview: { formatCount: 3 },
     });
   });
 

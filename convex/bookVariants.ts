@@ -6,6 +6,7 @@ import { fail } from "./lib/errors";
 import { nonNegativeMoney, positiveMoney, requiredText } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 import { insertVariant, refreshAdminBookSearchText } from "./lib/productDomain";
+import { refreshAdminCatalogsForBook } from "./lib/adminCatalogList";
 
 export const listForBook = query({
   args: { bookId: v.id("books") },
@@ -77,6 +78,7 @@ export const update = mutation({
       updatedAt: Date.now(),
     });
     await refreshAdminBookSearchText(ctx, variant.bookId);
+    await refreshAdminCatalogsForBook(ctx, variant.bookId);
     await recordAudit(ctx, user._id, "book_variant.updated", "bookVariant", variant._id);
     return variant._id;
   },

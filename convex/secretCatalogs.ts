@@ -1,7 +1,13 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { accessCodeDigests, randomAccessCode } from "./lib/accessCodes";
+import {
+  backfillAdminCatalogList,
+  getAdminCatalogListRow,
+  refreshAdminCatalogPreview,
+  syncAdminCatalogTitle,
+} from "./lib/adminCatalogList";
 import { requirePermission } from "./lib/auth";
 import { catalogSummaryFromCatalog } from "./lib/catalogSummary";
 import { getCatalogView } from "./lib/catalogView";
@@ -53,6 +59,24 @@ export const listSummaries = query({
       .paginate(args.paginationOpts);
     return { ...page, page: page.page.map((catalog) => catalogSummaryFromCatalog(catalog)) };
   },
+});
+
+export const listAdminRows = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "catalog.manage");
+    const page = await ctx.db
+      .query("secretCatalogs")
+      .withIndex("by_created_at")
+      .order("desc")
+      .paginate(args.paginationOpts);
+    return { ...page, page: await Promise.all(page.page.map((catalog) => getAdminCatalogListRow(ctx, catalog))) };
+  },
+});
+
+export const backfillAdminList = internalMutation({
+  args: { catalogId: v.id("secretCatalogs") },
+  handler: async (ctx, args) => backfillAdminCatalogList(ctx, args.catalogId),
 });
 
 export const getForAdmin = query({
@@ -120,6 +144,7 @@ export const create = mutation({
       status: "draft",
       closesAt: args.closesAt,
       estimatedArrivalMonth: normalizeEstimatedArrivalMonth(args.estimatedArrivalMonth),
+      titleCount: 0,
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,
@@ -246,6 +271,11 @@ export const remove = mutation({
         .first(),
     ]);
     if (code || grant || session) fail("ENTITY_IN_USE", "catalog has access history");
+    const titleMemberships = await ctx.db
+      .query("catalogTitles")
+      .withIndex("by_catalog_and_book", (query) => query.eq("catalogId", catalog._id))
+      .collect();
+    for (const membership of titleMemberships) await ctx.db.delete(membership._id);
     await ctx.db.delete(catalog._id);
     await recordAudit(ctx, user._id, "catalog.deleted", "catalog", catalog._id);
     return { removed: true };
@@ -343,6 +373,7 @@ export const createBundle = mutation({
       status: "draft",
       closesAt: args.closesAt,
       estimatedArrivalMonth: normalizeEstimatedArrivalMonth(args.estimatedArrivalMonth),
+      titleCount: 0,
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,
@@ -361,12 +392,15 @@ export const createBundle = mutation({
       await ctx.db.insert("catalogItems", {
         catalogId,
         bookVariantId: variantId,
+        bookId: book._id,
         isAvailable: true,
         sortOrder: index,
         createdAt: now,
         updatedAt: now,
       });
     }
+    await syncAdminCatalogTitle(ctx, catalogId, book._id);
+    await refreshAdminCatalogPreview(ctx, catalogId);
     await recordAudit(ctx, user._id, "catalog.created", "catalog", catalogId);
     return { catalogId, publisherId: publisher._id, bookId: book._id, variantIds, accessCode };
   },

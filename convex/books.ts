@@ -11,6 +11,7 @@ import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
 import { bookPublicationStatusValidator } from "./validators";
 import { insertBook, refreshAdminBookSearchText } from "./lib/productDomain";
+import { refreshAdminCatalogPreview, refreshAdminCatalogsForBook, syncAdminCatalogTitle } from "./lib/adminCatalogList";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { consumeClaim } from "./uploads";
 
@@ -533,6 +534,7 @@ export const update = mutation({
       updatedAt: Date.now(),
     });
     await refreshAdminBookSearchText(ctx, book._id);
+    await refreshAdminCatalogsForBook(ctx, book._id);
     await recordAudit(
       ctx,
       user._id,
@@ -698,17 +700,25 @@ export const remove = mutation({
       }
     }
 
+    const affectedCatalogIds = new Set<Id<"secretCatalogs">>();
     for (const variant of variants) {
       const catalogItems = await ctx.db
         .query("catalogItems")
         .withIndex("by_variant", (query) => query.eq("bookVariantId", variant._id))
         .take(500);
-      for (const catalogItem of catalogItems) await ctx.db.delete(catalogItem._id);
+      for (const catalogItem of catalogItems) {
+        affectedCatalogIds.add(catalogItem.catalogId);
+        await ctx.db.delete(catalogItem._id);
+      }
       const inventory = await ctx.db
         .query("readyStockInventory")
         .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
         .unique();
       if (inventory) await ctx.db.delete(inventory._id);
+    }
+    for (const catalogId of affectedCatalogIds) {
+      await syncAdminCatalogTitle(ctx, catalogId, book._id);
+      await refreshAdminCatalogPreview(ctx, catalogId);
     }
     const coverStorageId = book.coverStorageId;
     for (const image of media) {

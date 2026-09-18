@@ -210,7 +210,6 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const adminWorkspace = pathname.startsWith("/admin");
   const isAdmin = activeUser && adminWorkspace && roleCanAccess(me?.role || null, "admin");
   const isCustomer = activeUser && !adminWorkspace && roleCanAccess(me?.role || null, "customer");
-  const adminCatalogDetailRoute = Boolean(isAdmin && pathname === "/admin/catalogs");
   const adminCatalogSummaryRoute = Boolean(
     isAdmin &&
     (pathname === "/admin" ||
@@ -224,10 +223,6 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   );
   const customerProfile = useQuery(api.customerProfiles.getMine, isCustomer ? {} : "skip");
   const customerProfileDisplayName = customerProfile === undefined ? undefined : (customerProfile?.displayName ?? null);
-  const adminCatalogs = useQuery(
-    api.secretCatalogs.list,
-    adminCatalogDetailRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
-  );
   const adminCatalogSummaries = useQuery(
     api.secretCatalogs.listSummaries,
     adminCatalogSummaryRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
@@ -346,15 +341,11 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   const catalogs = useMemo(
     () =>
       isAdmin
-        ? adminCatalogDetailRoute
-          ? pageOf(adminCatalogs)
-              .map((catalog) => asCatalog(catalog as CatalogView))
-              .filter(Boolean)
-          : adminCatalogSummaryRoute
-            ? pageOf(adminCatalogSummaries).map(asCatalogSummary)
-            : []
+        ? adminCatalogSummaryRoute
+          ? pageOf(adminCatalogSummaries).map(asCatalogSummary)
+          : []
         : [asCatalog(unlocked as CatalogView | null | undefined)].filter(Boolean),
-    [adminCatalogDetailRoute, adminCatalogs, adminCatalogSummaries, adminCatalogSummaryRoute, isAdmin, unlocked],
+    [adminCatalogSummaries, adminCatalogSummaryRoute, isAdmin, unlocked],
   ) as SecretCatalog[];
   const catalogOptions = useMemo<CatalogAccessOption[]>(() => {
     const sessionOptions = (sessionCatalogs || []).map((option) => ({
@@ -532,10 +523,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     (catalogSessionClaimKey !== null && claimedCatalogSessionKey !== catalogSessionClaimKey) ||
     (unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null))),
   );
-  const catalogsLoading = Boolean(
-    (adminCatalogDetailRoute && adminCatalogs === undefined) ||
-    (adminCatalogSummaryRoute && adminCatalogSummaries === undefined),
-  );
+  const catalogsLoading = Boolean(adminCatalogSummaryRoute && adminCatalogSummaries === undefined);
   const ordersLoading = Boolean(
     (isCustomer && customerOrders === undefined) || (adminOrderStateRoute && adminOrders === undefined),
   );

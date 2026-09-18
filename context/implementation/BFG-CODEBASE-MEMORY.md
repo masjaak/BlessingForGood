@@ -1,5 +1,53 @@
 # BFG CODEBASE MEMORY
 
+## Post-diff memory — Admin Catalog list reliability — 2026-09-18
+
+### CURRENT
+
+- `/admin/catalogs` owns `secretCatalogs.listAdminRows`, a bounded list
+  projection of Catalog metadata, exact maintained eligible-title count, and
+  one ordered preview Book `{ title, publisher, formatCount }`.
+- The list contract reads no full Book graph, gallery, cover, storage, or
+  unrelated Catalog Items. `secretCatalogs.list` and `getCatalogView` remain
+  the explicit full/detail owners.
+- `secretCatalogs.titleCount`, `previewCatalogItemId`, `catalogItems.bookId`,
+  and `catalogTitles` are the maintained Admin-list state. Historical rows are
+  repaired by the one-Catalog-at-a-time internal backfill.
+
+### PROTECTED
+
+- Catalog detail, access, search, add-product, duplicate prevention, sibling
+  Variant behavior, ordering, create form, Customer Catalog, Cart, checkout,
+  Orders, Batch, Book Master, media, finance, Auth, navigation, and the other
+  Admin surfaces.
+
+### UNPROVEN
+
+- Authenticated Production browser acceptance remains manual when no approved
+  Admin session is available to the execution environment. Convex Production
+  logs are the direct backend evidence; public HTTP only proves the auth gate.
+
+### SUPERSEDED
+
+- The assumption that an Admin Catalog list needs `getCatalogView` for every
+  Catalog root is superseded. `SUMMARY != ADMIN LIST != DETAIL` whenever their
+  consumers need materially different data.
+
+### Permanent bug-fix standard
+
+- **Context Engineering:** trace UI → component → provider/query/mutation →
+  projection/helper → index/data → render and name the canonical owner before
+  editing.
+- **Prompt Engineering:** write measurable start/action/expected/failure,
+  scale, regression boundary, and stop contracts; never use a vague “works”.
+- **Memory Engineering:** record `CURRENT`, `PROTECTED`, `UNPROVEN`, and
+  `SUPERSEDED`; do not turn assumptions into facts or reopen superseded paths
+  without new evidence.
+- **Harness Engineering:** cover happy, exact failure, repeat/reactive,
+  list/detail boundary, scale, and same-route Production proof.
+- `GREEN + not directly implicated = DO NOT TOUCH`; global fixes stay global
+  only within the directly implicated Catalog-list domain.
+
 ## Post-diff memory — Catalog read contracts — 2026-09-18
 
 ### CURRENT
