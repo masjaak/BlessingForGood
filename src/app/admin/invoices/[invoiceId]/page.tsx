@@ -51,6 +51,41 @@ export function invoiceVoidBlockReason({
   return null;
 }
 
+function InvoiceDetailSkeleton() {
+  return (
+    <>
+      <Card className="invoice-card workspace-skeleton-panel" aria-hidden="true">
+        <div className="split-heading">
+          <div>
+            <SkeletonText width="34%" />
+            <SkeletonText className="skeleton-list-title" width="44%" />
+          </div>
+          <Skeleton className="skeleton-status" />
+        </div>
+        {Array.from({ length: 6 }, (_, index) => (
+          <div className="summary-line" key={index}>
+            <SkeletonText width={index % 2 ? "58%" : "72%"} />
+            <SkeletonText width="28%" />
+          </div>
+        ))}
+        <Skeleton className="skeleton-cta" />
+      </Card>
+      <Card className="workspace-skeleton-panel" aria-hidden="true">
+        <SkeletonText width="34%" />
+        <SkeletonText className="skeleton-list-title" width="58%" />
+        <SkeletonText width="66%" />
+        <div className="workspace-skeleton-inline-order-form">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-cta" />
+        </div>
+      </Card>
+      <SkeletonPanel lines={4} />
+      <SkeletonPanel lines={5} />
+    </>
+  );
+}
+
 function AdminInvoiceDetail() {
   const params = useParams<{ invoiceId: string }>();
   const invoiceId = String(params.invoiceId);
@@ -96,7 +131,12 @@ function AdminInvoiceDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Operasi invoice"
-          title="Detail invoice"
+          title={
+            <>
+              <SkeletonText className="skeleton-page-title" width="220px" />
+              <span className="sr-only">Detail invoice</span>
+            </>
+          }
           description="Ringkasan invoice, akun deposit, alokasi, dan transaksi."
           actions={<Skeleton className="skeleton-cta" />}
         />
@@ -104,10 +144,7 @@ function AdminInvoiceDetail() {
           <AdminNav />
           <div className="admin-content">
             <LoadingRegion label="Memuat invoice">
-              <SkeletonPanel lines={8} />
-              <SkeletonPanel lines={5} />
-              <SkeletonPanel lines={4} />
-              <SkeletonPanel lines={4} />
+              <InvoiceDetailSkeleton />
             </LoadingRegion>
           </div>
         </div>

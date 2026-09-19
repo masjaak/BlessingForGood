@@ -8,6 +8,7 @@ import { api } from "../../convex/_generated/api";
 import { AdminShellContext } from "@/components/site-shell";
 import { ProductContext } from "@/domain/prototype/context";
 import { roleCanAccess, type ProductRole } from "@/domain/prototype/session";
+import { Skeleton, SkeletonText } from "@/components/ui";
 
 type AdminIconName =
   | "dashboard"
@@ -265,6 +266,35 @@ export function AdminNav({ preview = false, persistent = false }: { preview?: bo
       <Link className="admin-nav-external" href="/catalog">
         Lihat sisi pelanggan →
       </Link>
+    </nav>
+  );
+}
+
+export function AdminNavSkeleton() {
+  const pathname = usePathname() || "/admin";
+  const systemLinks: AdminNavLink[] = [
+    { href: "/admin/users", label: "Pengguna", icon: "users" },
+    { href: "/admin/audit", label: "Log aktivitas", icon: "audit" },
+    { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
+  ];
+  return (
+    <nav className="admin-nav admin-nav-skeleton" aria-label="Menyiapkan navigasi admin" aria-hidden="true">
+      {[...groups, { label: "System", links: systemLinks }].map((group) => (
+        <div className="admin-nav-group" key={group.label}>
+          <SkeletonText className="admin-nav-skeleton-label" width="42%" />
+          {group.links.map((link) => (
+            <div className={`admin-nav-link${isCurrent(pathname, link.href) ? " is-current" : ""}`} key={link.href}>
+              <span className="admin-nav-icon-wrap">
+                <Skeleton className="admin-nav-skeleton-icon" />
+              </span>
+              <SkeletonText className="admin-nav-skeleton-item" width={link.label.length > 15 ? "88%" : "64%"} />
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className="admin-nav-external">
+        <SkeletonText width="72%" />
+      </div>
     </nav>
   );
 }

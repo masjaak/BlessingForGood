@@ -4,6 +4,48 @@
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
 
+## Admin loading ownership — 2026-09-19
+
+### CURRENT
+
+- Admin bootstrap loading is owned by `AdminLayoutShell`, `AdminShell`, and
+  `AdminNavSkeleton`; it covers only unresolved Auth/Admin workspace identity.
+- After identity resolves, the navbar and sidebar remain real persistent shell
+  chrome. Route and section `LoadingRegion` boundaries own only their unresolved
+  data, using feature-specific compositions beside the resolved surface.
+- Dynamic Admin detail titles and metadata, cards, tables, forms, operational
+  rows, timelines, and import/report regions use matching loading geometry.
+
+### PROTECTED
+
+- Resolved Admin UI, navigation information architecture, progressive loading,
+  Auth/RBAC, Convex read contracts, Orders, Catalog, Batch, Dashboard,
+  Finance, Customer flows, and all business rules remain GREEN and frozen.
+
+### UNPROVEN
+
+- Authenticated Production loading/reveal acceptance remains pending because no
+  approved Clerk Admin session is available. Local authenticated rendering is
+  blocked by missing local Clerk publishable-key configuration.
+
+### SUPERSEDED
+
+- One generic Admin page skeleton is not a valid loading contract.
+- Whole-page loading gates are not valid for pages with independently resolving
+  route sections.
+
+### Permanent rules
+
+- `SHELL != ROUTE != SECTION`
+- `LOADING GEOMETRY ≈ RESOLVED GEOMETRY`
+- `LOADING != EMPTY != ERROR`
+- `STATIC UI SHOULD NOT FAKE LOADING`
+- `RESOLVED APP SHELL MUST NOT RE-SKELETONIZE DURING NORMAL ROUTE NAVIGATION`
+- `UNRESOLVED ENTITY TEXT/METADATA REQUIRES MATCHING LOADING GEOMETRY`
+
+Four Engineering and GREEN Freeze remain mandatory for future Admin loading
+changes.
+
 ### CURRENT
 
 - `orders.listForAdmin` owns the Admin Order list/search row contract. Normal

@@ -12,7 +12,7 @@ export function AdminOperationalPage({
   children,
 }: {
   eyebrow: string;
-  title: string;
+  title: ReactNode;
   description: string;
   actions?: ReactNode;
   children: ReactNode;

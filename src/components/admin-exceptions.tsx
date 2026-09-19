@@ -17,9 +17,10 @@ import {
   LinkButton,
   LoadingRegion,
   Money,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonForm, SkeletonListCard } from "@/components/workspace-skeleton-primitives";
+import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 import { productErrorMessage } from "@/domain/prototype/errors";
@@ -480,7 +481,9 @@ export function AdminExceptions() {
         <LoadingRegion label="Memuat operasi masalah">
           <SkeletonListCard />
           <SkeletonListCard />
-          <SkeletonForm />
+          <div className="admin-operations-disclosure" aria-hidden="true">
+            <SkeletonText width="128px" />
+          </div>
         </LoadingRegion>
       ) : (
         <>

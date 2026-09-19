@@ -6,7 +6,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
-import { Button, Card, LinkButton, LoadingRegion, StatusBadge } from "@/components/ui";
+import { Button, Card, LinkButton, LoadingRegion, Skeleton, SkeletonText, StatusBadge } from "@/components/ui";
 import {
   BULK_IMPORT_HEADERS,
   bulkImportTransition,
@@ -16,6 +16,7 @@ import {
   type BulkImportState,
 } from "@/lib/bulk-import";
 import { toExcelCsv } from "@/lib/excel-export";
+import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 
 type Preview = FunctionReturnType<typeof api.bulkImport.preview>;
 type ImportResult = FunctionReturnType<typeof api.bulkImport.confirm>;
@@ -193,6 +194,50 @@ function Result({ result, onReset }: { result: ImportResult; onReset: () => void
   );
 }
 
+function BulkImportValidationSkeleton() {
+  return (
+    <>
+      <Card className="bulk-import-summary" aria-hidden="true">
+        {Array.from({ length: 11 }, (_, index) => (
+          <div key={index}>
+            <SkeletonText width={index % 2 ? "72%" : "84%"} />
+            <Skeleton className="skeleton-import-summary-value" />
+          </div>
+        ))}
+      </Card>
+      <SkeletonTableBlock rows={8} columnWidths={["0.45fr", "1.1fr", "1.35fr", "0.8fr", "1fr", "0.8fr", "0.9fr"]} />
+      <Card frame="attention" className="bulk-import-confirmation" aria-hidden="true">
+        <div className="split-heading">
+          <div>
+            <SkeletonText width="34%" />
+            <SkeletonText className="skeleton-list-title" width="62%" />
+          </div>
+          <Skeleton className="skeleton-status" />
+        </div>
+        <SkeletonText width="88%" />
+        <Skeleton className="skeleton-cta" />
+      </Card>
+    </>
+  );
+}
+
+function BulkImportCommitSkeleton() {
+  return (
+    <Card frame="summary" className="bulk-import-result" aria-hidden="true">
+      <SkeletonText width="24%" />
+      <SkeletonText className="skeleton-list-title" width="44%" />
+      <div className="bulk-import-result-grid">
+        {Array.from({ length: 4 }, (_, index) => (
+          <span key={index}>
+            <SkeletonText width="76%" />
+            <Skeleton className="skeleton-import-summary-value" />
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function AdminBulkImport() {
   const [state, setState] = useState<BulkImportState>("IDLE");
   const [file, setFile] = useState<File | null>(null);
@@ -350,18 +395,12 @@ export function AdminBulkImport() {
 
       {visibleState === "PARSING" ? (
         <LoadingRegion label="Membaca file CSV">
-          <Card>
-            <h2>Membaca file…</h2>
-            <p className="subtle">Memeriksa struktur CSV tanpa menulis data.</p>
-          </Card>
+          <BulkImportValidationSkeleton />
         </LoadingRegion>
       ) : null}
       {visibleState === "VALIDATING" ? (
         <LoadingRegion label="Memvalidasi file CSV">
-          <Card>
-            <h2>Memvalidasi file…</h2>
-            <p className="subtle">Server sedang mencocokkan penerbit, buku, varian, ISBN, dan harga.</p>
-          </Card>
+          <BulkImportValidationSkeleton />
         </LoadingRegion>
       ) : null}
 
@@ -377,10 +416,7 @@ export function AdminBulkImport() {
 
       {visibleState === "IMPORTING" ? (
         <LoadingRegion label="Mengimpor buku">
-          <Card>
-            <h2>Mengimpor buku…</h2>
-            <p className="subtle">Satu transaksi aman sedang diproses. Jangan tutup halaman ini.</p>
-          </Card>
+          <BulkImportCommitSkeleton />
         </LoadingRegion>
       ) : null}
       {visibleState === "IMPORT_FAILED" ? (

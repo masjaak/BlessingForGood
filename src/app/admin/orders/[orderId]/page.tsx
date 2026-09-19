@@ -17,9 +17,11 @@ import {
   LoadingRegion,
   Money,
   PageHeader,
+  Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { SkeletonListCard, SkeletonTimeline } from "@/components/workspace-skeleton-primitives";
 import { fulfillmentStageLabels, fulfillmentStages, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabel } from "@/domain/prototype/logic";
@@ -30,6 +32,39 @@ import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { invoiceStatusLabel } from "@/domain/prototype/operations";
 import { productErrorMessage } from "@/domain/prototype/errors";
+
+function OrderDetailSkeleton() {
+  return (
+    <>
+      <Card aria-hidden="true">
+        <div className="split-heading">
+          <div>
+            <SkeletonText width="36%" />
+            <SkeletonText className="skeleton-list-title" width="42%" />
+          </div>
+          <Skeleton className="skeleton-status" />
+        </div>
+        <SkeletonText width="84%" />
+        <SkeletonText width="70%" />
+        <SkeletonText width="78%" />
+        <Skeleton className="skeleton-cta" />
+      </Card>
+      <SkeletonListCard />
+      <Card aria-hidden="true">
+        <SkeletonText width="42%" />
+        <SkeletonText className="skeleton-list-title" width="70%" />
+        <SkeletonText width="86%" />
+        <SkeletonText width="64%" />
+        <div className="workspace-skeleton-inline-order-form">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-cta" />
+        </div>
+      </Card>
+      <SkeletonTimeline rows={4} />
+    </>
+  );
+}
 import { AdminOrderItemCancellation } from "@/features/admin-orders/cancellation/admin-order-item-cancellation";
 
 function AdminOrderDetail() {
@@ -66,17 +101,14 @@ function AdminOrderDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Operasi pesanan"
-          title="Detail pesanan"
+          title={<SkeletonText className="skeleton-page-title" width="224px" />}
           description="Memuat snapshot, tracking, invoice, dan exception…"
         />
         <div className="admin-workspace">
           <AdminNav />
           <div className="admin-content">
             <LoadingRegion label="Memuat operasi pesanan">
-              <SkeletonPanel lines={6} />
-              <SkeletonTableBlock />
-              <SkeletonPanel lines={5} />
-              <SkeletonPanel lines={5} />
+              <OrderDetailSkeleton />
             </LoadingRegion>
           </div>
         </div>

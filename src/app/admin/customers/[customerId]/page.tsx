@@ -6,8 +6,17 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, EmptyState, LinkButton, LoadingRegion, Money, PageHeader, StatusBadge } from "@/components/ui";
-import { SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import {
+  Card,
+  EmptyState,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  PageHeader,
+  SkeletonText,
+  StatusBadge,
+} from "@/components/ui";
+import { SkeletonListCard, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
@@ -64,7 +73,7 @@ function CustomerDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Detail pelanggan"
-          title="Detail pelanggan"
+          title={<SkeletonText className="skeleton-page-title" width="224px" />}
           description="Profil, alamat, pesanan, invoice, dan masalah pelanggan dari sumber operasional yang sama."
         />
         <div className="admin-workspace">
@@ -75,9 +84,9 @@ function CustomerDetail() {
                 <SkeletonPanel lines={4} />
                 <SkeletonPanel lines={3} />
               </div>
-              <SkeletonTableBlock />
-              <SkeletonPanel lines={5} />
-              <SkeletonPanel lines={4} />
+              <SkeletonListCard />
+              <SkeletonListCard />
+              <SkeletonListCard />
             </LoadingRegion>
           </div>
         </div>

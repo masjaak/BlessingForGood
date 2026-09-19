@@ -19,9 +19,9 @@ import {
   LoadingRegion,
   PageHeader,
   Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonForm, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { AdminBookMedia } from "@/features/admin-books/media/admin-book-media";
@@ -38,6 +38,47 @@ const publicationLabels: Record<PublicationStatus, string> = {
   special: "Khusus / privat",
   archived: "Diarsipkan",
 };
+
+function BookDetailSkeleton() {
+  return (
+    <>
+      <Card className="admin-book-detail-card workspace-skeleton-book-detail" aria-hidden="true">
+        <SkeletonText width="38%" />
+        <SkeletonText className="skeleton-list-title" width="58%" />
+        <div className="workspace-skeleton-form-grid">
+          {Array.from({ length: 6 }, (_, index) => (
+            <Skeleton className="skeleton-field" key={index} />
+          ))}
+        </div>
+        <Skeleton className="workspace-skeleton-book-media" />
+        <SkeletonText width="32%" />
+        <SkeletonText className="skeleton-list-title" width="64%" />
+        <div className="workspace-skeleton-form-grid">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-field" />
+        </div>
+        <Skeleton className="skeleton-field workspace-skeleton-book-description" />
+        <Skeleton className="skeleton-cta" />
+      </Card>
+      <Card aria-hidden="true">
+        <SkeletonText width="48%" />
+        <SkeletonText className="skeleton-list-title" width="62%" />
+        {Array.from({ length: 3 }, (_, index) => (
+          <div className="summary-line" key={index}>
+            <SkeletonText width={index % 2 ? "68%" : "82%"} />
+            <Skeleton className="skeleton-status" />
+          </div>
+        ))}
+        <div className="workspace-skeleton-form-grid">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton className="skeleton-field" key={index} />
+          ))}
+        </div>
+        <Skeleton className="skeleton-cta" />
+      </Card>
+    </>
+  );
+}
 
 function VariantRow({ variant }: { variant: Variant }) {
   const updateVariant = useMutation(api.bookVariants.update);
@@ -620,17 +661,16 @@ function ConnectedAdminBookDetail({ bookId }: { bookId: Id<"books"> }) {
   if (book === undefined) {
     return (
       <div className="page admin-page">
-        <PageHeader eyebrow="Master Buku" title="Detail buku" description="Memuat metadata, varian, dan media buku…" />
+        <PageHeader
+          eyebrow="Master Buku"
+          title={<SkeletonText className="skeleton-page-title" width="196px" />}
+          description="Memuat metadata, varian, dan media buku…"
+        />
         <div className="admin-workspace">
           <AdminNav />
           <div className="admin-content">
             <LoadingRegion label="Memuat buku">
-              <SkeletonForm />
-              <div className="two-column">
-                <SkeletonPanel lines={5} />
-                <SkeletonPanel lines={5} />
-              </div>
-              <Skeleton className="skeleton-field" />
+              <BookDetailSkeleton />
             </LoadingRegion>
           </div>
         </div>

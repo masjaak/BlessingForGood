@@ -4,7 +4,17 @@ import { useState } from "react";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, PageHeader, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  PageHeader,
+  SkeletonText,
+  StatusBadge,
+} from "@/components/ui";
 import { SkeletonForm, SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -96,7 +106,7 @@ function CreateBatchForm() {
 
 function AdminBatches() {
   const { batchList, batchListPagination } = useOperations();
-  const { state } = useProduct();
+  const { state, catalogsLoading } = useProduct();
   if (!batchList) {
     return (
       <div className="page admin-page">
@@ -190,7 +200,14 @@ function AdminBatches() {
             isDone={batchList.isDone}
             continueCursor={batchList.continueCursor}
           />
-          <p className="subtle">Katalog yang tersedia untuk operasi batch: {state.catalogs.length}.</p>
+          {catalogsLoading ? (
+            <LoadingRegion label="Memuat katalog yang tersedia">
+              <span className="sr-only">Memuat katalog yang tersedia untuk operasi batch…</span>
+              <SkeletonText width="46%" />
+            </LoadingRegion>
+          ) : (
+            <p className="subtle">Katalog yang tersedia untuk operasi batch: {state.catalogs.length}.</p>
+          )}
         </div>
       </div>
     </div>

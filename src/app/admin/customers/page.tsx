@@ -32,7 +32,7 @@ function CustomerList() {
         <div className="admin-content">
           {!customers ? (
             <LoadingRegion label="Memuat pelanggan">
-              <SkeletonTableBlock />
+              <SkeletonTableBlock rows={8} columnWidths={["1.35fr", "1.2fr", "0.7fr"]} />
             </LoadingRegion>
           ) : customerRows.length ? (
             <div className="table-wrap">

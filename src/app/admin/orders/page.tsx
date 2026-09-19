@@ -17,9 +17,10 @@ import {
   LoadingRegion,
   Money,
   PageHeader,
+  Skeleton,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { SkeletonTableBlock, SkeletonTimeline } from "@/components/workspace-skeleton-primitives";
 import { nextOrderStatuses, orderStatusLabel, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -59,7 +60,7 @@ function OrderTable({ onFirstOrderId }: { onFirstOrderId: (orderId: string | nul
   if (ordersLoading || (dataSource === "convex" && adminOrders === undefined)) {
     return (
       <LoadingRegion label="Memuat pesanan">
-        <SkeletonTableBlock />
+        <SkeletonTableBlock rows={8} columnWidths={["1.25fr", "0.8fr", "0.7fr", "0.85fr", "0.9fr", "1.1fr"]} />
       </LoadingRegion>
     );
   }
@@ -222,7 +223,7 @@ function OrderTable({ onFirstOrderId }: { onFirstOrderId: (orderId: string | nul
 }
 
 function ConvexAssistedOrderForm() {
-  const { state } = useProduct();
+  const { state, catalogsLoading } = useProduct();
   const customerPagination = useAdminCursorPagination();
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerFormShown, setCustomerFormShown] = useState(false);
@@ -272,6 +273,7 @@ function ConvexAssistedOrderForm() {
         price: row.priceAmount,
       })) || [];
   const variants = source === "ready_stock" ? readyStockVariants : preorderVariants;
+  const productOptionsLoading = source === "preorder" ? catalogsLoading : readyStockRows === undefined;
   const selectedVariant = variants.find((variant) => variant.id === variantId);
   const normalizedCatalogSearch = normalizeDiscoveryQuery(catalogSearch);
   const filteredCatalogs = catalogs.filter(
@@ -336,7 +338,17 @@ function ConvexAssistedOrderForm() {
       <p className="subtle">
         Pilih pelanggan BFG aktif yang sudah ada. Server menentukan snapshot pelanggan dan harga.
       </p>
-      {customers === undefined ? <div className="state-panel">Memuat pelanggan yang memenuhi syarat…</div> : null}
+      {customers === undefined || productOptionsLoading ? (
+        <LoadingRegion label="Memuat pilihan pesanan">
+          <div className="workspace-skeleton-inline-order-form" aria-hidden="true">
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-cta" />
+          </div>
+        </LoadingRegion>
+      ) : null}
       {(customerRows.length > 0 || customerFormShown) &&
       (source === "preorder"
         ? catalogs.length > 0
@@ -497,7 +509,7 @@ function ConvexAssistedOrderForm() {
             continueCursor={customerPage?.continueCursor ?? ""}
           />
         </>
-      ) : customers !== undefined ? (
+      ) : customers !== undefined && !productOptionsLoading ? (
         <p className="subtle">Pelanggan aktif dan sumber produk yang tersedia diperlukan.</p>
       ) : null}
     </Card>
@@ -510,8 +522,21 @@ function OrderTimeline({ orderId }: { orderId: string }) {
     api.orders.getForAdmin,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
   );
+  if (detail === undefined) {
+    return (
+      <LoadingRegion label="Memuat detail pesanan">
+        <SkeletonTimeline />
+      </LoadingRegion>
+    );
+  }
   const order = asOrder(detail as OrderView);
-  if (!order) return null;
+  if (!order) {
+    return (
+      <Card>
+        <p className="subtle">Detail pesanan belum tersedia.</p>
+      </Card>
+    );
+  }
   return (
     <Card>
       <div className="split-heading">

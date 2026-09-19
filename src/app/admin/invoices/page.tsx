@@ -20,6 +20,7 @@ import {
   Money,
   PageHeader,
   Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
 import { SkeletonForm, SkeletonListCard } from "@/components/workspace-skeleton-primitives";
@@ -32,6 +33,34 @@ import { productErrorMessage } from "@/domain/prototype/errors";
 import { percentageToBasisPoints } from "@/lib/percentage";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 import { UatPurgeDialog } from "@/components/uat-purge-dialog";
+
+function InvoiceQueueSkeleton() {
+  return (
+    <Card className="workspace-skeleton-invoice-queue" aria-hidden="true">
+      <div className="split-heading">
+        <div>
+          <SkeletonText width="42%" />
+          <SkeletonText className="skeleton-list-title" width="68%" />
+        </div>
+        <Skeleton className="skeleton-status" />
+      </div>
+      <SkeletonText width="88%" />
+      <div className="workspace-skeleton-invoice-filters">
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-cta" />
+      </div>
+      <Skeleton className="skeleton-field" />
+      {Array.from({ length: 3 }, (_, index) => (
+        <div className="summary-line" key={index}>
+          <SkeletonText width={index % 2 ? "66%" : "82%"} />
+          <Skeleton className="skeleton-status" />
+          <Skeleton className="skeleton-cta" />
+        </div>
+      ))}
+    </Card>
+  );
+}
 
 export function PersistentRequirementForm({ orderId }: { orderId: string }) {
   const { createInvoice, issueInvoice } = useOperations();
@@ -407,7 +436,20 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           </span>
         ) : null}
       </ActionGroup>
-      {rows === undefined ? <p className="subtle">Memuat pool Customer × Batch…</p> : null}
+      {rows === undefined ? (
+        <LoadingRegion label="Memuat pool Customer dan Batch">
+          <span className="sr-only">Memuat pool Customer × Batch…</span>
+          <div className="workspace-skeleton-invoice-rows" aria-hidden="true">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div className="summary-line" key={index}>
+                <SkeletonText width={index % 2 ? "68%" : "82%"} />
+                <Skeleton className="skeleton-status" />
+                <Skeleton className="skeleton-cta" />
+              </div>
+            ))}
+          </div>
+        </LoadingRegion>
+      ) : null}
       {pageRows.length ? (
         <div className="content-stack invoice-issue-list">
           {pageRows.map((row) => {
@@ -535,7 +577,7 @@ function PersistentAdminInvoices() {
           <div className="admin-content">
             <LoadingRegion label="Memuat invoice">
               <SkeletonForm />
-              <SkeletonListCard />
+              <InvoiceQueueSkeleton />
               <SkeletonListCard />
             </LoadingRegion>
           </div>
@@ -565,9 +607,10 @@ function PersistentAdminInvoices() {
               />
             </Field>
             {invoiceSearch.trim() && searchedInvoice === undefined ? (
-              <p className="subtle" role="status">
-                Mencari invoice…
-              </p>
+              <LoadingRegion label="Mencari invoice">
+                <span className="sr-only">Mencari invoice…</span>
+                <SkeletonText width="42%" />
+              </LoadingRegion>
             ) : null}
             {invoiceSearch.trim() && searchedInvoice === null ? (
               <p className="subtle" role="status">

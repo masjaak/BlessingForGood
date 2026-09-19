@@ -8,8 +8,8 @@ import { BrandLogo } from "@/components/brand";
 import { AdminShellLink } from "@/components/admin-shell-link";
 import { bfgClerkAppearance } from "@/config/clerk";
 import { useWorkspaceActivity, WorkspaceActivityProvider, WorkspaceActions } from "@/components/workspace-actions";
-import { LinkButton } from "@/components/ui";
-import { isProductIdentityAuthenticated, ProductContext } from "@/domain/prototype/context";
+import { LinkButton, Skeleton, SkeletonText } from "@/components/ui";
+import { isProductIdentityAuthenticated, ProductContext, type ProductContextValue } from "@/domain/prototype/context";
 import { customerBottomLinks, customerLinks, publicLinks } from "@/components/customer-navigation";
 import { CustomerMiniCart } from "@/features/customer-cart/customer-mini-cart";
 
@@ -21,6 +21,15 @@ const supportLinks = [
 ];
 
 export const AdminShellContext = createContext(false);
+
+export function isAdminShellBootstrapLoading(product: ProductContextValue | null) {
+  return Boolean(
+    !product ||
+    ["loading", "convex-loading", "provisioning"].includes(product.authState) ||
+    ["AUTH_LOADING", "MEMBERSHIP_RECONCILING"].includes(product.membershipState) ||
+    (product.authState !== "authenticated" && !product.hydrated),
+  );
+}
 
 function CustomerNavIcon({ name }: { name: (typeof customerBottomLinks)[number]["icon"] }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const };
@@ -99,23 +108,43 @@ export function CustomerBottomNav({ pathname }: { pathname: string }) {
 export function AdminShell({ children }: { children: ReactNode }) {
   const product = useContext(ProductContext);
   const activityEnabled = product?.dataSource === "convex" && product.authState === "authenticated";
+  const shellLoading = isAdminShellBootstrapLoading(product);
 
   return (
     <WorkspaceActivityProvider enabled={activityEnabled} workspace="admin">
-      <div className="site-shell admin-shell">
-        <header className="admin-topbar">
-          <BrandLogo variant="admin" />
-          <div className="admin-brand-copy">
-            <strong>Operasional BFG</strong>
-            <span>Kelola toko buku dan komunitas</span>
-          </div>
-          <div className="admin-account">
-            <span className="admin-topbar-status">Ruang kerja operasional</span>
-            <Link href="/">Lihat sisi pelanggan</Link>
-            <WorkspaceActions workspace="admin" enabled={activityEnabled} />
-            <UserButton appearance={bfgClerkAppearance} />
-          </div>
-        </header>
+      <div
+        className="site-shell admin-shell"
+        aria-busy={shellLoading || undefined}
+        aria-label={shellLoading ? "Menyiapkan ruang kerja BFG" : undefined}
+      >
+        {shellLoading ? (
+          <header className="admin-topbar admin-shell-skeleton-topbar" aria-hidden="true">
+            <Skeleton className="admin-shell-skeleton-logo" />
+            <div className="admin-shell-skeleton-brand">
+              <SkeletonText className="admin-shell-skeleton-title" />
+              <SkeletonText className="admin-shell-skeleton-subtitle" />
+            </div>
+            <div className="admin-shell-skeleton-account">
+              <Skeleton className="admin-shell-skeleton-status" />
+              <Skeleton className="admin-shell-skeleton-action" />
+              <Skeleton className="admin-shell-skeleton-avatar" />
+            </div>
+          </header>
+        ) : (
+          <header className="admin-topbar">
+            <BrandLogo variant="admin" />
+            <div className="admin-brand-copy">
+              <strong>Operasional BFG</strong>
+              <span>Kelola toko buku dan komunitas</span>
+            </div>
+            <div className="admin-account">
+              <span className="admin-topbar-status">Ruang kerja operasional</span>
+              <Link href="/">Lihat sisi pelanggan</Link>
+              <WorkspaceActions workspace="admin" enabled={activityEnabled} />
+              <UserButton appearance={bfgClerkAppearance} />
+            </div>
+          </header>
+        )}
         <main>{children}</main>
       </div>
     </WorkspaceActivityProvider>

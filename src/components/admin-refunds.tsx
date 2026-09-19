@@ -16,7 +16,7 @@ import {
   Money,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonListCard, SkeletonMetric } from "@/components/workspace-skeleton-primitives";
+import { SkeletonRefundCard, SkeletonStatusSummary } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 
@@ -279,13 +279,9 @@ export function AdminRefunds() {
     >
       {refunds === undefined ? (
         <LoadingRegion label="Memuat antrian refund">
-          <Card className="admin-status-summary" aria-hidden="true">
-            <SkeletonMetric />
-            <SkeletonMetric />
-            <SkeletonMetric />
-          </Card>
-          <SkeletonListCard />
-          <SkeletonListCard />
+          <SkeletonStatusSummary />
+          <SkeletonRefundCard />
+          <SkeletonRefundCard />
         </LoadingRegion>
       ) : (
         <RefundQueueContent refunds={refunds} />

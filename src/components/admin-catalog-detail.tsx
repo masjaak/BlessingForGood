@@ -15,9 +15,11 @@ import {
   Field,
   LinkButton,
   LoadingRegion,
+  Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonForm, SkeletonPanel, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { SkeletonForm } from "@/components/workspace-skeleton-primitives";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { matchesAdminCatalogRecord } from "@/lib/catalog-discovery";
@@ -52,6 +54,32 @@ function releaseCatalogPointerCapture(target: HTMLButtonElement, pointerId: numb
 const catalogProtectionReason =
   "Katalog ini tidak dapat dihapus permanen karena sudah memiliki produk, akses, pesanan, Batch, " +
   "atau riwayat operasional yang perlu dipertahankan.";
+
+function CatalogDetailSkeleton() {
+  return (
+    <>
+      <SkeletonForm />
+      <Card frame="list" className="workspace-skeleton-catalog-list" aria-hidden="true">
+        <SkeletonText width="38%" />
+        <SkeletonText className="skeleton-list-title" width="62%" />
+        <div className="workspace-skeleton-catalog-controls">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-cta" />
+        </div>
+        <SkeletonText width="34%" />
+        <div className="workspace-skeleton-catalog-items">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div className="summary-line" key={index}>
+              <SkeletonText width={index % 2 ? "72%" : "84%"} />
+              <Skeleton className="skeleton-cta" />
+            </div>
+          ))}
+        </div>
+      </Card>
+    </>
+  );
+}
 
 export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
@@ -112,13 +140,11 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     return (
       <AdminOperationalPage
         eyebrow="Secret Catalog"
-        title="Kelola katalog"
+        title={<SkeletonText className="skeleton-page-title" width="218px" />}
         description="Memuat metadata, kurasi produk, dan status katalog…"
       >
         <LoadingRegion label="Memuat katalog">
-          <SkeletonForm />
-          <SkeletonTableBlock />
-          <SkeletonPanel lines={5} />
+          <CatalogDetailSkeleton />
         </LoadingRegion>
       </AdminOperationalPage>
     );
@@ -509,13 +535,18 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             Tambah produk
           </Button>
         </form>
-        <p className="catalog-result-count" role="status" aria-live="polite">
-          {searchingAssignable
-            ? "Mencari buku/format…"
-            : assignableSearch.trim()
+        {searchingAssignable ? (
+          <LoadingRegion label="Mencari buku dan format">
+            <span className="sr-only">Mencari buku/format…</span>
+            <SkeletonText width="34%" />
+          </LoadingRegion>
+        ) : (
+          <p className="catalog-result-count" role="status" aria-live="polite">
+            {assignableSearch.trim()
               ? `${filteredAssignable.length} buku/format ditemukan`
               : `${filteredAssignable.length} buku/format tersedia`}
-        </p>
+          </p>
+        )}
         {assignableResult && !assignableResult.isDone && !searchingAssignable ? (
           <Button
             type="button"

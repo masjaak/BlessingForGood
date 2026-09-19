@@ -224,15 +224,24 @@ export function SkeletonCard({
   );
 }
 
-export function SkeletonTable({ rows = 4 }: { rows?: number }) {
+export function SkeletonTable({
+  rows = 4,
+  columnWidths = ["1.5fr", "0.8fr", "1fr", "0.6fr"],
+}: {
+  rows?: number;
+  columnWidths?: string[];
+}) {
+  const gridTemplateColumns = columnWidths.join(" ");
   return (
     <div className="skeleton-table" aria-hidden="true">
       {Array.from({ length: rows }, (_, index) => (
-        <div className="skeleton-table-row" key={index}>
-          <SkeletonText width="32%" />
-          <SkeletonText width="18%" />
-          <SkeletonText width="22%" />
-          <SkeletonText width="12%" />
+        <div className="skeleton-table-row" key={index} style={{ gridTemplateColumns }}>
+          {columnWidths.map((_, columnIndex) => (
+            <SkeletonText
+              key={columnIndex}
+              width={columnIndex === 0 ? "72%" : columnIndex === columnWidths.length - 1 ? "58%" : "64%"}
+            />
+          ))}
         </div>
       ))}
     </div>
@@ -246,7 +255,7 @@ export function PageHeader({
   actions,
 }: {
   eyebrow: string;
-  title: string;
+  title: ReactNode;
   description?: string;
   actions?: ReactNode;
 }) {

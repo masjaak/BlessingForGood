@@ -12,6 +12,7 @@ import {
   LoadingRegion,
   PageHeader,
   Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
 import { SkeletonListCard, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
@@ -226,7 +227,20 @@ function AdminPayments() {
               description="Konfirmasi pembayaran dari pelanggan akan tampil di sini untuk ditinjau."
             />
           )}
-          {resolvedHistory.length ? (
+          {adminPaymentHistory === undefined ? (
+            <LoadingRegion label="Memuat riwayat tinjauan">
+              <Card aria-hidden="true">
+                <div className="split-heading">
+                  <div>
+                    <SkeletonText width="34%" />
+                    <SkeletonText className="skeleton-list-title" width="58%" />
+                  </div>
+                </div>
+                <SkeletonText width="84%" />
+                <SkeletonText width="68%" />
+              </Card>
+            </LoadingRegion>
+          ) : resolvedHistory.length ? (
             <Card>
               <div className="split-heading">
                 <div>

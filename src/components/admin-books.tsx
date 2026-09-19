@@ -287,7 +287,7 @@ function ConnectedAdminBooks() {
           </Card>
           {books === undefined ? (
             <LoadingRegion label="Memuat Master Buku">
-              <SkeletonTableBlock />
+              <SkeletonTableBlock rows={8} columnWidths={["1.45fr", "1fr", "0.9fr", "0.95fr", "0.65fr", "0.95fr"]} />
             </LoadingRegion>
           ) : null}
           {books?.page.length ? (

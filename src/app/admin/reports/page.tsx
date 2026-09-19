@@ -6,18 +6,8 @@ import { api } from "../../../../convex/_generated/api";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
-import {
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  LoadingRegion,
-  Money,
-  Skeleton,
-  SkeletonText,
-  StatusBadge,
-} from "@/components/ui";
-import { SkeletonSummaryGrid, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonText, StatusBadge } from "@/components/ui";
+import { SkeletonMetric, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { orderAnalyticsCsvRows } from "@/lib/analytics-export";
 import { toExcelCsv } from "@/lib/excel-export";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -101,12 +91,19 @@ function Reports() {
       </Card>
       {report === undefined ? (
         <LoadingRegion label="Memuat laporan">
-          <SkeletonSummaryGrid />
-          <SkeletonTableBlock />
+          <section className="account-metrics" aria-label="Memuat ringkasan penjualan">
+            <SkeletonMetric />
+            <SkeletonMetric />
+            <SkeletonMetric />
+            <SkeletonMetric />
+          </section>
+          <SkeletonTableBlock rows={8} columnWidths={["1.25fr", "1.1fr", "0.8fr", "0.9fr", "0.8fr"]} />
           <Card aria-hidden="true">
             <SkeletonText width="30%" />
             <SkeletonText width="52%" />
-            <Skeleton className="skeleton-field" />
+            <SkeletonText width="86%" />
+            <SkeletonText width="68%" />
+            <SkeletonText width="74%" />
           </Card>
         </LoadingRegion>
       ) : (

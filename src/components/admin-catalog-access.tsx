@@ -6,8 +6,51 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
-import { ActionGroup, Button, Card, EmptyState, Field, LinkButton, LoadingRegion, StatusBadge } from "@/components/ui";
-import { SkeletonForm, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import {
+  ActionGroup,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  SkeletonText,
+  Skeleton,
+  StatusBadge,
+} from "@/components/ui";
+
+function CatalogAccessSkeleton() {
+  return (
+    <>
+      <Card frame="form" className="workspace-skeleton-catalog-access" aria-hidden="true">
+        <SkeletonText width="44%" />
+        <SkeletonText className="skeleton-list-title" width="72%" />
+        <SkeletonText width="86%" />
+        <div className="workspace-skeleton-catalog-access-form">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-cta" />
+        </div>
+        <SkeletonText width="82%" />
+        <SkeletonText width="64%" />
+      </Card>
+      <Card frame="list" className="workspace-skeleton-catalog-access" aria-hidden="true">
+        <SkeletonText width="32%" />
+        <SkeletonText className="skeleton-list-title" width="72%" />
+        <div className="workspace-skeleton-catalog-access-form">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-cta" />
+        </div>
+        {Array.from({ length: 3 }, (_, index) => (
+          <div className="summary-line" key={index}>
+            <SkeletonText width={index % 2 ? "66%" : "80%"} />
+            <Skeleton className="skeleton-status" />
+          </div>
+        ))}
+      </Card>
+    </>
+  );
+}
 
 export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
@@ -42,12 +85,11 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
     return (
       <AdminOperationalPage
         eyebrow="Secret Catalog"
-        title="Kelola akses katalog"
+        title={<SkeletonText className="skeleton-page-title" width="236px" />}
         description="Memuat kode akses, grant pelanggan, dan status katalog…"
       >
         <LoadingRegion label="Memuat akses katalog">
-          <SkeletonForm />
-          <SkeletonTableBlock />
+          <CatalogAccessSkeleton />
         </LoadingRegion>
       </AdminOperationalPage>
     );

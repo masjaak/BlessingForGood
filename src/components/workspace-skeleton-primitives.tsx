@@ -45,16 +45,21 @@ export function SkeletonToolbar() {
   );
 }
 
-export function SkeletonTableBlock() {
+export function SkeletonTableBlock({
+  rows = 6,
+  columnWidths = ["1.5fr", "0.8fr", "1fr", "0.6fr"],
+}: {
+  rows?: number;
+  columnWidths?: string[];
+} = {}) {
   return (
     <Card frame="table" className="workspace-skeleton-table-card" aria-hidden="true">
-      <div className="workspace-skeleton-table-head">
-        <SkeletonText width="24%" />
-        <SkeletonText width="18%" />
-        <SkeletonText width="16%" />
-        <SkeletonText width="12%" />
+      <div className="workspace-skeleton-table-head" style={{ gridTemplateColumns: columnWidths.join(" ") }}>
+        {columnWidths.map((_, index) => (
+          <SkeletonText key={index} width={index === 0 ? "54%" : index === columnWidths.length - 1 ? "42%" : "48%"} />
+        ))}
       </div>
-      <SkeletonTable rows={6} />
+      <SkeletonTable rows={rows} columnWidths={columnWidths} />
     </Card>
   );
 }
@@ -121,6 +126,71 @@ export function SkeletonListCard() {
       <SkeletonText width="88%" />
       <SkeletonText width="62%" />
       <Skeleton className="skeleton-cta" />
+    </Card>
+  );
+}
+
+export function SkeletonStatusSummary({ items = 5 }: { items?: number }) {
+  return (
+    <Card className="admin-status-summary workspace-skeleton-status-summary" aria-hidden="true">
+      {Array.from({ length: items }, (_, index) => (
+        <div key={index}>
+          <SkeletonText width={index % 2 ? "72%" : "84%"} />
+          <Skeleton className="skeleton-status-summary-value" />
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+export function SkeletonRefundCard() {
+  return (
+    <Card className="workspace-skeleton-refund-card" aria-hidden="true">
+      <div className="split-heading">
+        <div>
+          <SkeletonText width="58%" />
+          <Skeleton className="skeleton-refund-value" />
+          <SkeletonText width="74%" />
+        </div>
+        <Skeleton className="skeleton-status" />
+      </div>
+      <div className="workspace-skeleton-refund-form">
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-cta" />
+      </div>
+      <SkeletonText width="82%" />
+      <SkeletonText width="62%" />
+    </Card>
+  );
+}
+
+export function SkeletonTimeline({ rows = 4 }: { rows?: number }) {
+  return (
+    <Card className="workspace-skeleton-timeline" aria-hidden="true">
+      <div className="split-heading">
+        <div>
+          <SkeletonText width="46%" />
+          <SkeletonText className="skeleton-list-title" width="68%" />
+        </div>
+        <Skeleton className="skeleton-status" />
+      </div>
+      <div className="content-stack">
+        <SkeletonText width="82%" />
+        <SkeletonText width="62%" />
+      </div>
+      <div className="workspace-skeleton-timeline-list">
+        {Array.from({ length: rows }, (_, index) => (
+          <div className="workspace-skeleton-timeline-row" key={index}>
+            <Skeleton className="skeleton-timeline-dot" />
+            <div>
+              <SkeletonText width={index % 2 ? "68%" : "82%"} />
+              <SkeletonText width="54%" />
+            </div>
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }

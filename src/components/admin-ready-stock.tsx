@@ -128,7 +128,10 @@ function ConnectedAdminReadyStock() {
       {rows === undefined ? (
         <LoadingRegion label="Memuat Ready Stock">
           <SkeletonSummaryGrid />
-          <SkeletonTableBlock />
+          <SkeletonTableBlock
+            rows={8}
+            columnWidths={["1.8fr", "0.8fr", "0.85fr", "0.7fr", "0.7fr", "0.7fr", "0.65fr"]}
+          />
         </LoadingRegion>
       ) : (
         <ReadyStockContent rows={rows} />

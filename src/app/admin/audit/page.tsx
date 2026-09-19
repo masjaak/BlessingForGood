@@ -18,7 +18,7 @@ function AuditLog() {
     >
       {events === undefined ? (
         <LoadingRegion label="Memuat log aktivitas">
-          <SkeletonTableBlock />
+          <SkeletonTableBlock rows={8} columnWidths={["1.2fr", "1fr", "1.1fr", "1.35fr"]} />
         </LoadingRegion>
       ) : events.page.length ? (
         <div className="table-wrap">

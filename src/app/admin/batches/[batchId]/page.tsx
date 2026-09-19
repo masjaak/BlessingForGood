@@ -21,6 +21,7 @@ import {
   LoadingRegion,
   PageHeader,
   Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
 import {
@@ -155,7 +156,7 @@ function AdminBatchDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Operasi batch"
-          title="Operasi batch"
+          title={<SkeletonText className="skeleton-page-title" width="232px" />}
           description="Memuat detail batch…"
           actions={
             <>
