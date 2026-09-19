@@ -1,6 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireActiveCustomer, requireActiveUser, requireOwnedResource, requirePermission } from "./lib/auth";
@@ -10,16 +10,18 @@ import { catalogIsOpen } from "./lib/catalogView";
 import { fail } from "./lib/errors";
 import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
-import { fulfillableQuantityForOrderItem, hasUnresolvedException, needsResolution } from "./lib/orderExceptionState";
+import { fulfillableQuantityFromExceptions, hasUnresolvedException, needsResolution } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
 import { nonNegativeMoney, positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
 import { enforceRateLimit } from "./lib/rateLimit";
 import { autoAssignOrderItemsForCatalog, eligibleReceivingBatches } from "./batches";
 import { resolveCartCatalogItem } from "./lib/cartProjection";
+import { buildOrderSearchText, normalizeOrderSearchQuery } from "./lib/orderSearch";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 const customerOrderItemInput = orderItemInput.extend({ expectedUnitPriceAmount: v.number() });
+const orderStatusFilter = v.union(v.literal("submitted"), v.literal("cancelled"), v.literal("completed"));
 type DataCtx = QueryCtx | MutationCtx;
 type ReadyStockStage =
   | "auth"
@@ -79,29 +81,40 @@ async function assertCatalogBatchReceivable(ctx: MutationCtx, catalogId: Id<"sec
   if (!(await eligibleReceivingBatches(ctx, catalogId)).length) fail("NO_ELIGIBLE_BATCH");
 }
 
-async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
-  const order = await ctx.db.get(orderId);
-  if (!order) fail("ORDER_NOT_FOUND");
+async function orderProjection(
+  ctx: DataCtx,
+  order: Doc<"orders">,
+  options: { includeCustomer: boolean; includeHistory: boolean },
+) {
   const [customer, items, history, exceptions] = await Promise.all([
-    ctx.db.get(order.customerUserId),
+    options.includeCustomer ? ctx.db.get(order.customerUserId) : Promise.resolve(null),
     ctx.db
       .query("orderItems")
-      .withIndex("by_order", (query) => query.eq("orderId", orderId))
+      .withIndex("by_order", (query) => query.eq("orderId", order._id))
       .order("asc")
       .take(200),
-    ctx.db
-      .query("orderStatusHistory")
-      .withIndex("by_order_and_changed_at", (query) => query.eq("orderId", orderId))
-      .order("asc")
-      .take(100),
+    options.includeHistory
+      ? ctx.db
+          .query("orderStatusHistory")
+          .withIndex("by_order_and_changed_at", (query) => query.eq("orderId", order._id))
+          .order("asc")
+          .take(100)
+      : Promise.resolve([]),
     ctx.db
       .query("orderExceptions")
-      .withIndex("by_order", (query) => query.eq("orderId", orderId))
+      .withIndex("by_order", (query) => query.eq("orderId", order._id))
       .take(200),
   ]);
-  const effectiveItems = await Promise.all(
-    items.map(async (item) => ({ item, quantity: await fulfillableQuantityForOrderItem(ctx, item) })),
-  );
+  const exceptionsByItem = new Map<string, Doc<"orderExceptions">[]>();
+  for (const exception of exceptions) {
+    const itemExceptions = exceptionsByItem.get(String(exception.orderItemId)) || [];
+    itemExceptions.push(exception);
+    exceptionsByItem.set(String(exception.orderItemId), itemExceptions);
+  }
+  const effectiveItems = items.map((item) => ({
+    item,
+    quantity: fulfillableQuantityFromExceptions(item, exceptionsByItem.get(String(item._id)) || []),
+  }));
   const activeItems = effectiveItems.filter(({ quantity }) => quantity > 0);
   const activeTotalAmount = activeItems.reduce(
     (total, { item, quantity }) => total + item.unitPriceAmountSnapshot * quantity,
@@ -116,33 +129,103 @@ async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
         needsResolution(exception),
     );
   return {
+    customer,
+    activeItems,
+    activeTotalAmount,
+    cancellationPending,
+    history,
+  };
+}
+
+async function orderView(ctx: DataCtx, orderId: Id<"orders">) {
+  const order = await ctx.db.get(orderId);
+  if (!order) fail("ORDER_NOT_FOUND");
+  const projection = await orderProjection(ctx, order, { includeCustomer: true, includeHistory: true });
+  return {
     orderId: order._id,
     id: order._id,
     customerUserId: order.customerUserId,
     catalogId: order.catalogId ?? null,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
-    customerMemberCode: customer?.memberCode ?? null,
+    customerMemberCode: projection.customer?.memberCode ?? null,
     orderCode: order.orderCode || null,
     source: order.source ?? "customer_self_service",
     status: order.status,
     currency: order.currency,
-    subtotalAmount: activeTotalAmount,
-    totalAmount: activeTotalAmount,
-    cancellationPending,
+    subtotalAmount: projection.activeTotalAmount,
+    totalAmount: projection.activeTotalAmount,
+    cancellationPending: projection.cancellationPending,
     createdAt: new Date(order.createdAt).toISOString(),
     updatedAt: new Date(order.updatedAt).toISOString(),
     submittedAt: new Date(order.submittedAt).toISOString(),
     editableUntil: new Date(order.editableUntil).toISOString(),
-    items: activeItems.map(({ item, quantity }) => ({
+    items: projection.activeItems.map(({ item, quantity }) => ({
       ...item,
       quantity,
       subtotalAmount: item.unitPriceAmountSnapshot * quantity,
     })),
-    statusHistory: history.map((event) => ({
+    statusHistory: projection.history.map((event) => ({
       status: event.toStatus,
       at: new Date(event.changedAt).toISOString(),
       note: event.note,
+    })),
+  };
+}
+
+async function orderListRow(
+  ctx: DataCtx,
+  order: Doc<"orders">,
+  options: { includeCustomer: boolean; includeHistory: boolean },
+) {
+  const projection = await orderProjection(ctx, order, options);
+  return {
+    orderId: order._id,
+    customerUserId: order.customerUserId,
+    ...(options.includeCustomer
+      ? {
+          customerEmail: order.customerEmail ?? null,
+          customerMemberCode: projection.customer?.memberCode ?? null,
+        }
+      : {}),
+    customerName: order.customerName,
+    orderCode: order.orderCode ?? null,
+    source: order.source ?? "customer_self_service",
+    status: order.status,
+    subtotalAmount: projection.activeTotalAmount,
+    totalAmount: projection.activeTotalAmount,
+    cancellationPending: projection.cancellationPending,
+    createdAt: new Date(order.createdAt).toISOString(),
+    updatedAt: new Date(order.updatedAt).toISOString(),
+    items: projection.activeItems.map(({ item, quantity }) => ({
+      _id: item._id,
+      bookTitleSnapshot: item.bookTitleSnapshot,
+      formatSnapshot: item.formatSnapshot,
+      quantity,
+      subtotalAmount: item.unitPriceAmountSnapshot * quantity,
+    })),
+    ...(options.includeHistory
+      ? {
+          statusHistory: projection.history.map((event) => ({
+            status: event.toStatus,
+            at: new Date(event.changedAt).toISOString(),
+          })),
+        }
+      : {}),
+  };
+}
+
+async function orderExceptionSupportRow(ctx: DataCtx, order: Doc<"orders">) {
+  const projection = await orderProjection(ctx, order, { includeCustomer: false, includeHistory: false });
+  return {
+    orderId: order._id,
+    orderCode: order.orderCode ?? null,
+    customerName: order.customerName,
+    items: projection.activeItems.map(({ item, quantity }) => ({
+      _id: item._id,
+      bookTitleSnapshot: item.bookTitleSnapshot,
+      formatSnapshot: item.formatSnapshot,
+      quantity,
     })),
   };
 }
@@ -243,6 +326,15 @@ async function insertOrder(
     updatedAt: now,
     submittedAt: now,
     editableUntil,
+  });
+  await ctx.db.patch(orderId, {
+    orderSearchText: buildOrderSearchText({
+      orderId: String(orderId),
+      orderCode,
+      customerName: input.customerName,
+      customerEmail: input.customerEmail,
+      itemTitles: resolved.map((item) => item.book.title),
+    }),
   });
   for (const item of resolved) {
     await ctx.db.insert("orderItems", {
@@ -619,6 +711,15 @@ async function createReadyStockOrder(
       submittedAt: now,
       editableUntil: now,
     });
+    await ctx.db.patch(orderId, {
+      orderSearchText: buildOrderSearchText({
+        orderId: String(orderId),
+        orderCode,
+        customerName,
+        customerEmail: customer.emailSnapshot,
+        itemTitles: [item.book.title],
+      }),
+    });
     const orderItemId = await ctx.db.insert("orderItems", {
       orderId,
       bookId: item.book._id,
@@ -888,16 +989,90 @@ export const listMine = query({
       .withIndex("by_customer_user_id_and_created_at", (query) => query.eq("customerUserId", user._id))
       .order("desc")
       .paginate(args.paginationOpts);
-    return { ...page, page: await Promise.all(page.page.map((order) => orderView(ctx, order._id))) };
+    return {
+      ...page,
+      page: await Promise.all(
+        page.page.map((order) => orderListRow(ctx, order, { includeCustomer: false, includeHistory: true })),
+      ),
+    };
   },
 });
 
 export const listForAdmin = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    search: v.optional(v.string()),
+    status: v.optional(orderStatusFilter),
+    customerUserId: v.optional(v.id("appUsers")),
+  },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "orders.read.all");
+    const search = normalizeOrderSearchQuery(args.search || "");
+    let page;
+    if (search) {
+      if (args.status && args.customerUserId) {
+        page = await ctx.db
+          .query("orders")
+          .withSearchIndex("by_order_search", (query) =>
+            query
+              .search("orderSearchText", search)
+              .eq("status", args.status!)
+              .eq("customerUserId", args.customerUserId!),
+          )
+          .paginate(args.paginationOpts);
+      } else if (args.status) {
+        page = await ctx.db
+          .query("orders")
+          .withSearchIndex("by_order_search", (query) =>
+            query.search("orderSearchText", search).eq("status", args.status!),
+          )
+          .paginate(args.paginationOpts);
+      } else if (args.customerUserId) {
+        page = await ctx.db
+          .query("orders")
+          .withSearchIndex("by_order_search", (query) =>
+            query.search("orderSearchText", search).eq("customerUserId", args.customerUserId!),
+          )
+          .paginate(args.paginationOpts);
+      } else {
+        page = await ctx.db
+          .query("orders")
+          .withSearchIndex("by_order_search", (query) => query.search("orderSearchText", search))
+          .paginate(args.paginationOpts);
+      }
+    } else if (args.customerUserId) {
+      page = await ctx.db
+        .query("orders")
+        .withIndex("by_customer_user_id_and_created_at", (query) => query.eq("customerUserId", args.customerUserId!))
+        .order("desc")
+        .paginate(args.paginationOpts);
+    } else if (args.status) {
+      page = await ctx.db
+        .query("orders")
+        .withIndex("by_status_and_created_at", (query) => query.eq("status", args.status!))
+        .order("desc")
+        .paginate(args.paginationOpts);
+    } else {
+      page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
+    }
+    return {
+      ...page,
+      page: await Promise.all(
+        page.page.map((order) => orderListRow(ctx, order, { includeCustomer: true, includeHistory: false })),
+      ),
+    };
+  },
+});
+
+export const listForExceptionSupport = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "orders.read.all");
     const page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
-    return { ...page, page: await Promise.all(page.page.map((order) => orderView(ctx, order._id))) };
+    return {
+      ...page,
+      page: await Promise.all(page.page.map((order) => orderExceptionSupportRow(ctx, order))),
+    };
   },
 });
 
@@ -907,6 +1082,39 @@ export const listSummariesForAdmin = query({
     await requirePermission(ctx, "orders.read.all");
     const page = await ctx.db.query("orders").withIndex("by_created_at").order("desc").paginate(args.paginationOpts);
     return { ...page, page: page.page.map((order) => ({ orderId: order._id, status: order.status })) };
+  },
+});
+
+export const backfillOrderSearchText = mutation({
+  args: { cursor: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "orders.manage");
+    const page = await ctx.db
+      .query("orders")
+      .withIndex("by_created_at")
+      .order("asc")
+      .paginate({ numItems: 100, cursor: args.cursor ?? null });
+    for (const order of page.page) {
+      const items = await ctx.db
+        .query("orderItems")
+        .withIndex("by_order", (query) => query.eq("orderId", order._id))
+        .order("asc")
+        .take(200);
+      await ctx.db.patch(order._id, {
+        orderSearchText: buildOrderSearchText({
+          orderId: String(order._id),
+          orderCode: order.orderCode,
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+          itemTitles: items.map((item) => item.bookTitleSnapshot),
+        }),
+      });
+    }
+    return {
+      updated: page.page.length,
+      isDone: page.isDone,
+      continueCursor: page.isDone ? "" : page.continueCursor,
+    };
   },
 });
 
@@ -984,6 +1192,7 @@ export const edit = mutation({
     if (!(await catalogIsOpen(ctx, order.catalogId))) fail("ORDER_LOCKED");
     const resolved = await resolveItems(ctx, order.catalogId, args.items);
     const totalAmount = resolved.reduce((total, item) => total + item.subtotalAmount, 0);
+    const customerName = requiredText(args.customerName, "customer name");
     const now = Date.now();
     const oldItems = await ctx.db
       .query("orderItems")
@@ -1023,10 +1232,17 @@ export const edit = mutation({
       });
     }
     await ctx.db.patch(order._id, {
-      customerName: requiredText(args.customerName, "customer name"),
+      customerName,
       customerEmail: args.customerEmail?.trim() || undefined,
       subtotalAmount: totalAmount,
       totalAmount,
+      orderSearchText: buildOrderSearchText({
+        orderId: String(order._id),
+        orderCode: order.orderCode,
+        customerName,
+        customerEmail: args.customerEmail,
+        itemTitles: resolved.map((item) => item.book.title),
+      }),
       updatedAt: now,
     });
     await ctx.db.insert("orderStatusHistory", {

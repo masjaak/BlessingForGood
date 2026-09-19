@@ -490,6 +490,7 @@ export default defineSchema({
     source: v.optional(orderSourceValidator),
     assistedSubmissionKey: v.optional(v.string()),
     orderCode: v.optional(v.string()),
+    orderSearchText: v.optional(v.string()),
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     status: orderStatus,
@@ -511,7 +512,12 @@ export default defineSchema({
     .index("by_customer_user_id_and_created_at", ["customerUserId", "createdAt"])
     .index("by_customer_user_id_and_submitted_at", ["customerUserId", "submittedAt"])
     .index("by_assisted_submission_key", ["assistedSubmissionKey"])
-    .index("by_created_at", ["createdAt"]),
+    .index("by_created_at", ["createdAt"])
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .searchIndex("by_order_search", {
+      searchField: "orderSearchText",
+      filterFields: ["status", "customerUserId"],
+    }),
 
   orderReferenceCounters: defineTable({
     key: v.literal("primary"),

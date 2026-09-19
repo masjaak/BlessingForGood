@@ -1,5 +1,5 @@
 import type { CustomerExceptionPage, InvoicePage, TransactionPage } from "@/domain/prototype/operations-context";
-import type { Order } from "@/domain/prototype/types";
+import type { OrderListRow } from "@/domain/prototype/types";
 import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { orderStatusLabels } from "@/domain/prototype/logic";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
@@ -20,7 +20,7 @@ export function outstandingRefundObligation(invoices: InvoicePage["page"]): numb
 }
 
 export function customerActivity(
-  orders: Order[],
+  orders: OrderListRow[],
   invoices: InvoicePage["page"],
   transactions: TransactionPage["page"],
   exceptions: CustomerExceptionPage["page"],
@@ -28,7 +28,7 @@ export function customerActivity(
 ): CustomerActivity[] {
   return [
     ...orders.flatMap((order) =>
-      order.statusHistory.map((event) => ({
+      (order.statusHistory || []).map((event) => ({
         id: `order-${order.id}-${event.at}-${event.status}`,
         at: event.at,
         title: orderStatusLabels[event.status],

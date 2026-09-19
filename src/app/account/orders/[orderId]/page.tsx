@@ -1,6 +1,9 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import { useParams } from "next/navigation";
+import { api } from "../../../../../convex/_generated/api";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 import { CustomerOrderExceptions } from "@/components/customer-order-exceptions";
 import {
   Card,
@@ -17,6 +20,7 @@ import { fulfillmentStageLabels, formatCargoEta, shipmentStageLabels } from "@/d
 import { useOperations } from "@/domain/prototype/operations-context";
 import { formatIdr, orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
+import { asOrder, type OrderView } from "@/domain/prototype/convex-store";
 import { SiteShell } from "@/components/site-shell";
 import { BackButton } from "@/components/back-button";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -48,13 +52,17 @@ function Timeline({
 function CustomerOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
-  const { dataSource, ordersLoading, state } = useProduct();
+  const { dataSource } = useProduct();
+  const orderRecord = useQuery(
+    api.orders.getMine,
+    dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
+  );
   const { currentCustomerTracking, currentCustomerFulfillment, customerInvoiceList } = useOperations();
-  const order = state.orders.find((candidate) => candidate.id === orderId);
+  const order = asOrder(orderRecord as OrderView);
   if (dataSource !== "convex") {
     return <div className="state-panel">Pelacakan belum tersedia saat ini.</div>;
   }
-  if (ordersLoading || currentCustomerTracking === undefined || currentCustomerFulfillment === undefined) {
+  if (orderRecord === undefined || currentCustomerTracking === undefined || currentCustomerFulfillment === undefined) {
     return (
       <LoadingRegion label="Memuat pelacakan pesanan">
         <SkeletonCard variant="order" />

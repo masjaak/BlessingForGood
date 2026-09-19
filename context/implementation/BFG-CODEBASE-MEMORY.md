@@ -1,5 +1,53 @@
 # BFG CODEBASE MEMORY
 
+## Phase 2D Order read boundaries — 2026-09-19
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+### CURRENT
+
+- `orders.listForAdmin` owns the Admin Order list/search row contract. Normal
+  browsing uses the created-at cursor index; supported search uses the
+  canonical `orders.orderSearchText` search index before pagination and can
+  filter by status or Customer.
+- `orders.listMine` owns the Customer account list row contract. Customer
+  ownership is applied by the Customer/created-at index before pagination.
+- `orders.getForAdmin` and `orders.getMine` remain the selected Order DETAIL
+  owners with full item snapshots, effective quantities, history, and current
+  detail semantics. `listForExceptionSupport` is the separate bounded
+  transaction-support projection used by the Admin exception form.
+- New Orders and edits maintain `orderSearchText`; the bounded Admin
+  `orders.backfillOrderSearchText` mutation repairs legacy rows without
+  changing Order or finance semantics.
+
+### PROTECTED
+
+- Direct preorder, Cart-created Orders, Ready Stock Orders, Order snapshots,
+  status history, canonical effective quantity/cancellation behavior,
+  exception state, invoices/finance snapshots, Batch consumers, Dashboard
+  summary counts, Auth, and the resolved Order UI.
+
+### UNPROVEN
+
+- Authenticated Production proof of the Phase 2D Admin/Customer list, search,
+  detail, and historical Order paths; Production source mapping and legacy
+  search-text backfill completion remain unverified until an approved session
+  and deployment access are available.
+
+### SUPERSEDED
+
+- Reusing full `orderView` for every Admin or Customer list row is no longer a
+  valid read boundary.
+- Reading a bounded newest Order window and filtering it in the client is no
+  longer a valid Admin search contract.
+
+### Scale harness
+
+- `convex/order-read-contracts.test.ts` covers shallow list fields versus full
+  detail fields, effective quantity after cancellation, a 1,000-Order search
+  boundary beyond the old window, partial search, and legacy search-text
+  backfill.
+
 ## Post-diff memory — Phase 2C Batch read boundaries + Admin loading geometry — 2026-09-18
 
 ### CURRENT

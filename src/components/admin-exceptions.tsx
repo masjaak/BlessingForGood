@@ -28,7 +28,7 @@ import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 type AdminExceptionPage = NonNullable<FunctionReturnType<typeof api.orderExceptions.listForAdmin>>;
 type AdminException = AdminExceptionPage["page"][number];
-type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForAdmin>>;
+type AdminOrdersPage = NonNullable<FunctionReturnType<typeof api.orders.listForExceptionSupport>>;
 type AdminOrder = AdminOrdersPage["page"][number];
 type Resolution = "remove_item" | "deposit_release" | "refund_required" | "replacement" | "no_action";
 
@@ -462,7 +462,7 @@ export function AdminExceptions() {
   const { dataSource } = useProduct();
   const pagination = useAdminCursorPagination();
   const orders = useQuery(
-    api.orders.listForAdmin,
+    api.orders.listForExceptionSupport,
     dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
   );
   const exceptions = useQuery(

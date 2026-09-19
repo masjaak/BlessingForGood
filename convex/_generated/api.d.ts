@@ -54,6 +54,7 @@ import type * as lib_notifications from "../lib/notifications.js";
 import type * as lib_orderCodes from "../lib/orderCodes.js";
 import type * as lib_orderExceptionState from "../lib/orderExceptionState.js";
 import type * as lib_orderExceptionViews from "../lib/orderExceptionViews.js";
+import type * as lib_orderSearch from "../lib/orderSearch.js";
 import type * as lib_previewCapability from "../lib/previewCapability.js";
 import type * as lib_productDomain from "../lib/productDomain.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   "lib/orderCodes": typeof lib_orderCodes;
   "lib/orderExceptionState": typeof lib_orderExceptionState;
   "lib/orderExceptionViews": typeof lib_orderExceptionViews;
+  "lib/orderSearch": typeof lib_orderSearch;
   "lib/previewCapability": typeof lib_previewCapability;
   "lib/productDomain": typeof lib_productDomain;
   "lib/rateLimit": typeof lib_rateLimit;

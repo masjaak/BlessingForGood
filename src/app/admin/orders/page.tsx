@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { AdminPagination } from "@/components/admin-pagination";
@@ -26,26 +26,36 @@ import { orderReference } from "@/domain/prototype/order-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
-import { asOrder, type OrderView } from "@/domain/prototype/convex-store";
+import { asOrder, asOrderList, type OrderListView, type OrderView } from "@/domain/prototype/convex-store";
 import { SiteShell } from "@/components/site-shell";
 import { matchesAdminCatalogRecord, normalizeDiscoveryQuery } from "@/lib/catalog-discovery";
 
-function OrderTable() {
+function OrderTable({ onFirstOrderId }: { onFirstOrderId: (orderId: string | null) => void }) {
   const { state, updateOrderStatus, dataSource, ordersLoading } = useProduct();
   const pagination = useAdminCursorPagination();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Extract<OrderStatus, "submitted" | "cancelled" | "completed"> | "">(
+    "",
+  );
   const adminOrders = useQuery(
     api.orders.listForAdmin,
-    dataSource === "convex" ? { paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor } } : "skip",
+    dataSource === "convex"
+      ? {
+          paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
+          search: search.trim() || undefined,
+          status: statusFilter || undefined,
+        }
+      : "skip",
   );
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
   const pageOrders = Array.isArray(adminOrders)
     ? state.orders
     : adminOrders?.page
-        .map((order) => asOrder(order as OrderView))
+        .map((order) => asOrderList(order as OrderListView))
         .filter((order): order is NonNullable<typeof order> => Boolean(order));
   const orders = dataSource === "convex" ? pageOrders || [] : state.orders;
+  const firstOrderId = orders[0]?.id || null;
+  useEffect(() => onFirstOrderId(firstOrderId), [firstOrderId, onFirstOrderId]);
   if (ordersLoading || (dataSource === "convex" && adminOrders === undefined)) {
     return (
       <LoadingRegion label="Memuat pesanan">
@@ -53,7 +63,7 @@ function OrderTable() {
       </LoadingRegion>
     );
   }
-  if (orders.length === 0)
+  if (orders.length === 0 && !search.trim() && !statusFilter)
     return (
       <EmptyState
         title="Belum ada pesanan untuk ditinjau"
@@ -65,22 +75,7 @@ function OrderTable() {
         }
       />
     );
-  const rows = orders.filter((order) => {
-    if (statusFilter && order.status !== statusFilter) return false;
-    const needle = search.trim().toLowerCase();
-    return (
-      !needle ||
-      [
-        orderReference(order),
-        order.id,
-        order.customerName,
-        order.customerEmail,
-        ...order.items.map((item) => item.bookTitle),
-      ]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(needle))
-    );
-  });
+  const rows = orders;
   return (
     <div className="content-stack">
       <Card className="admin-book-filters">
@@ -102,7 +97,7 @@ function OrderTable() {
             value={statusFilter}
             onChange={(event) => {
               pagination.reset();
-              setStatusFilter(event.target.value as OrderStatus | "");
+              setStatusFilter(event.target.value as Extract<OrderStatus, "submitted" | "cancelled" | "completed"> | "");
             }}
           >
             <option value="">Semua</option>
@@ -510,8 +505,12 @@ function ConvexAssistedOrderForm() {
 }
 
 function OrderTimeline({ orderId }: { orderId: string }) {
-  const { state } = useProduct();
-  const order = state.orders.find((candidate) => candidate.id === orderId);
+  const { dataSource } = useProduct();
+  const detail = useQuery(
+    api.orders.getForAdmin,
+    dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
+  );
+  const order = asOrder(detail as OrderView);
   if (!order) return null;
   return (
     <Card>
@@ -548,7 +547,8 @@ function OrderTimeline({ orderId }: { orderId: string }) {
 }
 
 function AdminOrders() {
-  const { state, dataSource } = useProduct();
+  const { dataSource } = useProduct();
+  const [firstOrderId, setFirstOrderId] = useState<string | null>(null);
   return (
     <div className="page admin-page">
       <PageHeader
@@ -561,8 +561,8 @@ function AdminOrders() {
         <AdminNav />
         <div className="admin-content">
           {dataSource === "convex" ? <ConvexAssistedOrderForm /> : null}
-          <OrderTable />
-          {state.orders[0] ? <OrderTimeline orderId={state.orders[0].id} /> : null}
+          <OrderTable onFirstOrderId={setFirstOrderId} />
+          {firstOrderId ? <OrderTimeline orderId={firstOrderId} /> : null}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { useQuery } from "convex/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CustomerOrderDetailPage from "@/app/account/orders/[orderId]/page";
 import { useOperations } from "@/domain/prototype/operations-context";
@@ -14,6 +15,10 @@ vi.mock("@/domain/prototype/operations-context", () => ({
 
 vi.mock("@/domain/prototype/store", () => ({
   useProduct: vi.fn(),
+}));
+
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(),
 }));
 
 vi.mock("@/components/product-access-guard", () => ({
@@ -42,6 +47,41 @@ const order = {
 };
 
 const fulfillment = { currentStage: null, history: [] };
+const orderDetail = {
+  orderId: "order-1",
+  id: "order-1",
+  customerUserId: "customer-1",
+  catalogId: "catalog-1",
+  customerName: "A Customer",
+  customerEmail: "customer@example.com",
+  customerMemberCode: "BFG-0001",
+  orderCode: "BFG-ORD-001",
+  source: "customer_self_service",
+  status: "submitted",
+  currency: "IDR",
+  subtotalAmount: 300000,
+  totalAmount: 300000,
+  cancellationPending: false,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  submittedAt: "2026-01-01T00:00:00.000Z",
+  editableUntil: "2026-01-02T00:00:00.000Z",
+  items: [
+    {
+      _id: "item-1",
+      bookId: "book-1",
+      bookTitleSnapshot: "A Book",
+      publisherNameSnapshot: "A Publisher",
+      bookVariantId: "variant-1",
+      formatSnapshot: "PB",
+      isbnSnapshot: "9780000000001",
+      unitPriceAmountSnapshot: 150000,
+      quantity: 2,
+      subtotalAmount: 300000,
+    },
+  ],
+  statusHistory: [{ status: "submitted", at: "2026-01-01T00:00:00.000Z" }],
+};
 
 function setup(batches: unknown[]) {
   vi.mocked(useProduct).mockReturnValue({
@@ -54,6 +94,7 @@ function setup(batches: unknown[]) {
     currentCustomerFulfillment: fulfillment,
     customerInvoiceList: { page: [] },
   } as never);
+  vi.mocked(useQuery).mockReturnValue(orderDetail as never);
 }
 
 describe("Customer Order Batch tracking", () => {

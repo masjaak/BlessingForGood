@@ -24,6 +24,7 @@ import { fulfillmentStageLabels, fulfillmentStages, shipmentStageLabels } from "
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
+import { asOrder, type OrderView } from "@/domain/prototype/convex-store";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
@@ -34,7 +35,11 @@ import { AdminOrderItemCancellation } from "@/features/admin-orders/cancellation
 function AdminOrderDetail() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId);
-  const { dataSource, ordersLoading, state } = useProduct();
+  const { dataSource } = useProduct();
+  const orderRecord = useQuery(
+    api.orders.getForAdmin,
+    dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
+  );
   const adminExceptions = useQuery(
     api.orderExceptions.listForOrderAdmin,
     dataSource === "convex" ? { orderId: orderId as Id<"orders"> } : "skip",
@@ -47,10 +52,10 @@ function AdminOrderDetail() {
   );
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const order = state.orders.find((candidate) => candidate.id === orderId);
+  const order = asOrder(orderRecord as OrderView);
   if (dataSource !== "convex") return <div className="state-panel">Data pesanan belum tersedia.</div>;
   if (
-    ordersLoading ||
+    orderRecord === undefined ||
     adminExceptions === undefined ||
     currentAdminOrderTracking === undefined ||
     currentAdminFulfillment === undefined ||

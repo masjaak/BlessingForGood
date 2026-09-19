@@ -29,6 +29,13 @@ export async function blockedQuantityForOrderItem(
   excludeExceptionId?: Id<"orderExceptions">,
 ): Promise<number> {
   const exceptions = await exceptionsForOrderItem(ctx, orderItemId);
+  return blockedQuantityFromExceptions(exceptions, excludeExceptionId);
+}
+
+export function blockedQuantityFromExceptions(
+  exceptions: Doc<"orderExceptions">[],
+  excludeExceptionId?: Id<"orderExceptions">,
+): number {
   return exceptions.reduce(
     (total, exception) =>
       total +
@@ -37,8 +44,15 @@ export async function blockedQuantityForOrderItem(
   );
 }
 
+export function fulfillableQuantityFromExceptions(
+  orderItem: Doc<"orderItems">,
+  exceptions: Doc<"orderExceptions">[],
+): number {
+  return Math.max(0, orderItem.quantity - blockedQuantityFromExceptions(exceptions));
+}
+
 export async function fulfillableQuantityForOrderItem(ctx: DataCtx, orderItem: Doc<"orderItems">): Promise<number> {
-  return Math.max(0, orderItem.quantity - (await blockedQuantityForOrderItem(ctx, orderItem._id)));
+  return fulfillableQuantityFromExceptions(orderItem, await exceptionsForOrderItem(ctx, orderItem._id));
 }
 
 export async function hasUnresolvedException(ctx: DataCtx, orderId: Id<"orders">): Promise<boolean> {

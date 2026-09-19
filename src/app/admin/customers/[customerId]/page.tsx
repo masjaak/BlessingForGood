@@ -14,11 +14,12 @@ import { invoicePaymentStatusLabel } from "@/domain/prototype/operations";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
+import { asOrderList, type OrderListView } from "@/domain/prototype/convex-store";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 
 function CustomerDetail() {
   const customerId = String(useParams<{ customerId: string }>().customerId);
-  const { state, dataSource } = useProduct();
+  const { dataSource } = useProduct();
   const { adminInvoiceList } = useOperations();
   const user = useQuery(
     api.users.getForAdmin,
@@ -36,7 +37,16 @@ function CustomerDetail() {
     api.orderExceptions.listForAdmin,
     dataSource === "convex" ? { paginationOpts: { numItems: 100, cursor: null } } : "skip",
   );
-  const orders = state.orders.filter((order) => order.customerUserId === customerId);
+  const ordersPage = useQuery(
+    api.orders.listForAdmin,
+    dataSource === "convex"
+      ? { paginationOpts: { numItems: 100, cursor: null }, customerUserId: customerId as Id<"appUsers"> }
+      : "skip",
+  );
+  const orders =
+    ordersPage?.page
+      .map((order) => asOrderList(order as OrderListView))
+      .filter((order): order is NonNullable<typeof order> => Boolean(order)) || [];
   const invoices = (adminInvoiceList?.page || []).filter((invoice) => String(invoice.customerUserId) === customerId);
   const customerExceptions = (Array.isArray(exceptions) ? exceptions : exceptions?.page || []).filter(
     (exception) => String(exception.customerUserId) === customerId,
@@ -46,6 +56,7 @@ function CustomerDetail() {
     profile === undefined ||
     user === undefined ||
     addresses === undefined ||
+    ordersPage === undefined ||
     !adminInvoiceList ||
     exceptions === undefined
   ) {

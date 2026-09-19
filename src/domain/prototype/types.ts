@@ -95,6 +95,14 @@ export interface OrderItem {
   subtotal: number;
 }
 
+export interface OrderListItem {
+  id: string;
+  bookTitle: string;
+  format: BookFormat;
+  quantity: number;
+  subtotal: number;
+}
+
 export interface OrderStatusEvent {
   status: OrderStatus;
   at: string;
@@ -115,6 +123,23 @@ export interface Order {
   status: OrderStatus;
   cancellationPending?: boolean;
   statusHistory: OrderStatusEvent[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderListRow {
+  id: string;
+  orderCode?: string;
+  customerUserId?: string;
+  customerName: string;
+  customerEmail?: string | null;
+  customerMemberCode?: string | null;
+  source: OrderSource;
+  items: OrderListItem[];
+  total: number;
+  status: OrderStatus;
+  cancellationPending?: boolean;
+  statusHistory?: OrderStatusEvent[];
   createdAt: string;
   updatedAt: string;
 }
@@ -150,7 +175,7 @@ export interface Invoice {
 
 export interface PrototypeState {
   catalogs: SecretCatalog[];
-  orders: Order[];
+  orders: OrderListRow[];
   invoices: Invoice[];
 }
 

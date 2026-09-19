@@ -33,6 +33,7 @@ import type {
   CreateCatalogResult,
   CreateOrderInput,
   Order,
+  OrderListRow,
   OrderStatus,
   PrototypeState,
   SecretCatalog,
@@ -42,7 +43,8 @@ import { useConvexRetry } from "@/providers/convex-provider";
 
 type CatalogView = NonNullable<FunctionReturnType<typeof api.catalogAccess.getUnlocked>>;
 type CatalogSummaryRecord = FunctionReturnType<typeof api.secretCatalogs.listSummaries>["page"][number];
-export type OrderView = Awaited<FunctionReturnType<typeof api.orders.submit>>;
+export type OrderView = Awaited<FunctionReturnType<typeof api.orders.getForAdmin>>;
+export type OrderListView = Awaited<FunctionReturnType<typeof api.orders.listForAdmin>>["page"][number];
 type CatalogRecord = {
   id: string;
   name: string;
@@ -101,6 +103,29 @@ type OrderRecord = {
     subtotalAmount: number;
   }>;
   statusHistory: Array<{ status: OrderStatus; at: string }>;
+};
+
+type OrderListRecord = {
+  orderId: string;
+  customerUserId: string;
+  customerName: string;
+  customerEmail?: string | null;
+  customerMemberCode?: string | null;
+  orderCode?: string | null;
+  source?: "customer_self_service" | "admin_assisted" | "ready_stock";
+  status: OrderStatus;
+  cancellationPending?: boolean;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  items: Array<{
+    _id: string;
+    bookTitleSnapshot: string;
+    formatSnapshot: BookFormat;
+    quantity: number;
+    subtotalAmount: number;
+  }>;
+  statusHistory?: Array<{ status: OrderStatus; at: string }>;
 };
 
 function asCatalog(value: CatalogView | null | undefined): SecretCatalog | undefined {
@@ -171,6 +196,38 @@ export function asOrder(value: OrderView | null | undefined): Order | undefined 
   };
 }
 
+export function asOrderList(value: OrderListView | null | undefined): OrderListRow | undefined {
+  if (!value) return undefined;
+  const record = value as unknown as OrderListRecord;
+  return {
+    id: record.orderId,
+    orderCode: record.orderCode || undefined,
+    customerUserId: record.customerUserId,
+    customerName: record.customerName,
+    customerEmail: record.customerEmail || null,
+    customerMemberCode: record.customerMemberCode || null,
+    source:
+      record.source === "admin_assisted"
+        ? "admin_assisted"
+        : record.source === "ready_stock"
+          ? "ready_stock"
+          : "preorder",
+    items: record.items.map((item) => ({
+      id: item._id,
+      bookTitle: item.bookTitleSnapshot,
+      format: item.formatSnapshot,
+      quantity: item.quantity,
+      subtotal: item.subtotalAmount,
+    })),
+    total: record.totalAmount,
+    status: record.status,
+    cancellationPending: record.cancellationPending,
+    statusHistory: record.statusHistory?.map((event) => ({ status: event.status, at: event.at })),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
+}
+
 function pageOf<T>(value: { page: T[] } | undefined): T[] {
   return value?.page || [];
 }
@@ -217,19 +274,12 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
       pathname === "/admin/batches" ||
       pathname.startsWith("/admin/batches/")),
   );
-  const adminOrderStateRoute = Boolean(
-    isAdmin &&
-    (pathname === "/admin/orders" || pathname.startsWith("/admin/orders/") || pathname.startsWith("/admin/customers/")),
-  );
+  const customerOrderListRoute = Boolean(isCustomer && pathname === "/account");
   const customerProfile = useQuery(api.customerProfiles.getMine, isCustomer ? {} : "skip");
   const customerProfileDisplayName = customerProfile === undefined ? undefined : (customerProfile?.displayName ?? null);
   const adminCatalogSummaries = useQuery(
     api.secretCatalogs.listSummaries,
     adminCatalogSummaryRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
-  );
-  const adminOrders = useQuery(
-    api.orders.listForAdmin,
-    adminOrderStateRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
   const unlocked = useQuery(
     api.catalogAccess.getUnlocked,
@@ -248,7 +298,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   );
   const customerOrders = useQuery(
     api.orders.listMine,
-    isCustomer ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    customerOrderListRoute ? { paginationOpts: { numItems: 50, cursor: null } } : "skip",
   );
 
   useEffect(() => {
@@ -372,11 +422,11 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
   }, [sessionCatalogs, unlocked]);
   const orders = useMemo(
     () =>
-      (isAdmin ? pageOf(adminOrders) : pageOf(customerOrders))
-        .map((order) => asOrder(order as OrderView))
+      (customerOrderListRoute ? pageOf(customerOrders) : [])
+        .map((order) => asOrderList(order as OrderListView))
         .filter(Boolean),
-    [adminOrders, customerOrders, isAdmin],
-  ) as Order[];
+    [customerOrderListRoute, customerOrders],
+  ) as OrderListRow[];
   const state = useMemo<PrototypeState>(() => ({ catalogs, orders, invoices: [] }), [catalogs, orders]);
 
   const createCatalog = useCallback(
@@ -524,9 +574,7 @@ export function ConvexProductProvider({ children }: { children: ReactNode }) {
     (unlocked === undefined && (catalogSession !== null || (isCustomer && unlockedCatalogId !== null))),
   );
   const catalogsLoading = Boolean(adminCatalogSummaryRoute && adminCatalogSummaries === undefined);
-  const ordersLoading = Boolean(
-    (isCustomer && customerOrders === undefined) || (adminOrderStateRoute && adminOrders === undefined),
-  );
+  const ordersLoading = Boolean(customerOrderListRoute && customerOrders === undefined);
 
   const value = useMemo<ProductContextValue>(
     () => ({
