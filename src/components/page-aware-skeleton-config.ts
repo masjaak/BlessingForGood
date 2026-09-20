@@ -49,7 +49,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       kind: "detail",
       eyebrow: "Master Buku",
       title: "Detail buku",
-      description: "Metadata, cover, variant, dan status publikasi.",
+      description: "",
       actionWidths: ["74px", "112px", "132px"],
     };
   }

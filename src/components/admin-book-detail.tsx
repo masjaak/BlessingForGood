@@ -664,9 +664,8 @@ function ConnectedAdminBookDetail({ bookId }: { bookId: Id<"books"> }) {
         <PageHeader
           eyebrow="Master Buku"
           title="Detail buku"
-          description="Metadata, cover, variant, dan status publikasi."
           loading
-          skeleton={{ titleWidth: "52%", descriptionWidths: ["78%"], actionWidths: ["74px", "112px", "132px"] }}
+          skeleton={{ titleWidth: "52%", actionWidths: ["74px", "112px", "132px"] }}
         />
         <div className="admin-workspace">
           <AdminNav />
