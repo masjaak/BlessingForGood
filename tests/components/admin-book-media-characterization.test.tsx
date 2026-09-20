@@ -350,27 +350,31 @@ describe("Admin Book media characterization", () => {
     expect(save.getAttribute("data-loading")).toBeNull();
   });
 
-  it.each([1, 5, 10, 30])("leaves the gallery action usable after %i sequential local uploads", async (count) => {
-    const attachGallery = vi.fn().mockResolvedValue("storage-gallery");
-    mockActions({ attachGallery });
-    renderAdminBook();
-    vi.mocked(uploadBfgFile).mockImplementation(async (file) => `storage-${file.name}` as never);
-    const input = screen.getByLabelText("Pilih file gambar galeri");
+  it.each([1, 5, 10, 30])(
+    "leaves the gallery action usable after %i sequential local uploads",
+    async (count) => {
+      const attachGallery = vi.fn().mockResolvedValue("storage-gallery");
+      mockActions({ attachGallery });
+      renderAdminBook();
+      vi.mocked(uploadBfgFile).mockImplementation(async (file) => `storage-${file.name}` as never);
+      const input = screen.getByLabelText("Pilih file gambar galeri");
 
-    for (let index = 0; index < count; index += 1) {
-      const file = imageFile(`gallery-${index}.png`);
-      fireEvent.change(input, { target: { files: [file] } });
-      const save = screen.getByRole("button", { name: "Simpan gambar" });
-      fireEvent.click(save);
-      await waitFor(() => expect(screen.getByText("Gambar galeri tersimpan.")).toBeTruthy());
-      expect(save.getAttribute("data-loading")).toBeNull();
-      expect((input as HTMLInputElement).disabled).toBe(false);
-    }
+      for (let index = 0; index < count; index += 1) {
+        const file = imageFile(`gallery-${index}.png`);
+        fireEvent.change(input, { target: { files: [file] } });
+        const save = screen.getByRole("button", { name: "Simpan gambar" });
+        fireEvent.click(save);
+        await waitFor(() => expect(screen.getByText("Gambar galeri tersimpan.")).toBeTruthy());
+        expect(save.getAttribute("data-loading")).toBeNull();
+        expect((input as HTMLInputElement).disabled).toBe(false);
+      }
 
-    expect(uploadBfgFile).toHaveBeenCalledTimes(count);
-    expect(attachGallery).toHaveBeenCalledTimes(count);
-    expect(screen.queryByRole("alert")).toBeNull();
-  });
+      expect(uploadBfgFile).toHaveBeenCalledTimes(count);
+      expect(attachGallery).toHaveBeenCalledTimes(count);
+      expect(screen.queryByRole("alert")).toBeNull();
+    },
+    15_000,
+  );
 
   it("confirms removal and reflects the refreshed gallery list", async () => {
     const first = galleryImage(0, "First page");

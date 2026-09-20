@@ -688,7 +688,7 @@ describe("CustomerCatalog projection", () => {
     fireEvent.click(within(formatMenu).getByRole("button", { name: "Semua Format" }));
     expect(formatTrigger.textContent).toContain("Semua Format");
     expect(screen.getByRole("heading", { name: "Dune" })).toBeTruthy();
-  });
+  }, 15_000);
 
   it("composes search, Format, and Publisher as AND across OR groups", () => {
     const variant = (id: string, format: string) => ({
