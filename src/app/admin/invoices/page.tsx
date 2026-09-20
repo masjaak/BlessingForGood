@@ -570,7 +570,8 @@ function PersistentAdminInvoices() {
           eyebrow="Operasi invoice dan deposit"
           title="Jaga status keuangan tetap jelas."
           description="Invoice memakai snapshot pesanan. Deposit memakai ledger append-only; alokasi, pelepasan, dan pembalikan tetap terpisah."
-          actions={<Skeleton className="skeleton-cta" />}
+          loading
+          skeleton={{ titleWidth: "70%", descriptionWidths: ["92%", "66%"] }}
         />
         <div className="admin-workspace">
           <AdminNav />

@@ -21,7 +21,6 @@ import {
   LoadingRegion,
   PageHeader,
   Skeleton,
-  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
 import {
@@ -156,8 +155,10 @@ function AdminBatchDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Operasi batch"
-          title={<SkeletonText className="skeleton-page-title" width="232px" />}
-          description="Memuat detail batch…"
+          title="Detail operasi batch"
+          description="Status, roster, dan tindakan batch."
+          loading
+          skeleton={{ titleWidth: "58%", descriptionWidths: ["72%"], actionWidths: ["148px", "148px", "108px"] }}
           actions={
             <>
               <Skeleton className="skeleton-cta" />

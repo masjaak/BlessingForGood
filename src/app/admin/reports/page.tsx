@@ -7,7 +7,7 @@ import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
 import { Button, Card, EmptyState, Field, LoadingRegion, Money, SkeletonText, StatusBadge } from "@/components/ui";
-import { SkeletonMetric, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { SkeletonMetric, SkeletonTableBlock, SkeletonToolbar } from "@/components/workspace-skeleton-primitives";
 import { orderAnalyticsCsvRows } from "@/lib/analytics-export";
 import { toExcelCsv } from "@/lib/excel-export";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -60,35 +60,47 @@ function Reports() {
       eyebrow="Laporan & analitik"
       title="Rekap operasional BFG"
       description="Ringkasan penjualan, kinerja batch, pencarian pesanan, dan ekspor memakai data kanonik pada periode terpilih."
+      loading={report === undefined}
+      skeleton={{ titleWidth: "58%", descriptionWidths: ["92%", "66%"], actionWidths: ["188px"] }}
       actions={
         <Button onClick={() => void download()} disabled={!report}>
           Ekspor CSV yang kompatibel dengan Excel
         </Button>
       }
     >
-      <Card className="admin-book-filters">
-        <Field label="Dari">
-          <input
-            className="input"
-            type="date"
-            value={from}
-            max={to}
-            onChange={(event) => setFrom(event.target.value)}
-          />
-        </Field>
-        <Field label="Sampai">
-          <input className="input" type="date" value={to} min={from} onChange={(event) => setTo(event.target.value)} />
-        </Field>
-        <Field label="Cari pesanan">
-          <input
-            className="input"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Pelanggan atau ID pesanan"
-          />
-        </Field>
-      </Card>
+      {report === undefined ? (
+        <SkeletonToolbar />
+      ) : (
+        <Card className="admin-book-filters">
+          <Field label="Dari">
+            <input
+              className="input"
+              type="date"
+              value={from}
+              max={to}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+          </Field>
+          <Field label="Sampai">
+            <input
+              className="input"
+              type="date"
+              value={to}
+              min={from}
+              onChange={(event) => setTo(event.target.value)}
+            />
+          </Field>
+          <Field label="Cari pesanan">
+            <input
+              className="input"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Pelanggan atau ID pesanan"
+            />
+          </Field>
+        </Card>
+      )}
       {report === undefined ? (
         <LoadingRegion label="Memuat laporan">
           <section className="account-metrics" aria-label="Memuat ringkasan penjualan">

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { forwardRef } from "react";
-import { type ButtonHTMLAttributes, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
+import {
+  type ButtonHTMLAttributes,
+  type ComponentProps,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import { BrandMascot, type BrandMascotVariant } from "@/components/brand";
 import { formatIdr } from "@/domain/prototype/logic";
 
@@ -181,8 +187,8 @@ export function LoadingRegion({
   );
 }
 
-export function Skeleton({ className = "" }: { className?: string }) {
-  return <span aria-hidden="true" className={`bfg-skeleton ${className}`.trim()} />;
+export function Skeleton({ className = "", style }: { className?: string; style?: CSSProperties }) {
+  return <span aria-hidden="true" className={`bfg-skeleton ${className}`.trim()} style={style} />;
 }
 
 export function SkeletonText({ width = "100%", className = "" }: { width?: string; className?: string }) {
@@ -248,25 +254,64 @@ export function SkeletonTable({
   );
 }
 
+export type PageHeaderSkeleton = {
+  eyebrowWidth?: string;
+  titleWidth?: string;
+  descriptionWidths?: string[];
+  actionWidths?: string[];
+};
+
 export function PageHeader({
   eyebrow,
   title,
   description,
   actions,
+  loading = false,
+  skeleton,
 }: {
   eyebrow: string;
   title: ReactNode;
   description?: string;
   actions?: ReactNode;
+  loading?: boolean;
+  skeleton?: PageHeaderSkeleton;
 }) {
+  const titleText = typeof title === "string" ? title : "";
+  const titleWidth =
+    skeleton?.titleWidth || `${Math.min(92, Math.max(34, Math.round(Math.max(titleText.length, 18) * 1.35)))}%`;
+  const eyebrowWidth = skeleton?.eyebrowWidth || `${Math.min(180, Math.max(96, eyebrow.length * 8))}px`;
+  const descriptionWidths =
+    skeleton?.descriptionWidths || (description && description.length > 110 ? ["92%", "58%"] : ["88%"]);
+  const actionWidths = skeleton?.actionWidths || (actions ? ["124px"] : []);
+  const hasLoadingActions = loading && actionWidths.length > 0;
   return (
-    <header className="page-header">
+    <header className={`page-header${loading ? " page-header-loading" : ""}`} aria-busy={loading || undefined}>
       <div>
-        <span className="eyebrow">{eyebrow}</span>
-        <h1>{title}</h1>
-        {description ? <p className="lede">{description}</p> : null}
+        {loading ? (
+          <SkeletonText className="page-header-skeleton-eyebrow" width={eyebrowWidth} />
+        ) : (
+          <span className="eyebrow">{eyebrow}</span>
+        )}
+        <h1>{loading ? <SkeletonText className="page-header-skeleton-title" width={titleWidth} /> : title}</h1>
+        {description ? (
+          loading ? (
+            <p className="lede page-header-skeleton-description">
+              {descriptionWidths.map((width, index) => (
+                <SkeletonText key={index} width={width} />
+              ))}
+            </p>
+          ) : (
+            <p className="lede">{description}</p>
+          )
+        ) : null}
       </div>
-      {actions ? <ActionGroup className="page-header-actions">{actions}</ActionGroup> : null}
+      {actions || hasLoadingActions ? (
+        <ActionGroup className="page-header-actions">
+          {loading
+            ? actionWidths.map((width, index) => <Skeleton className="skeleton-cta" key={index} style={{ width }} />)
+            : actions}
+        </ActionGroup>
+      ) : null}
     </header>
   );
 }

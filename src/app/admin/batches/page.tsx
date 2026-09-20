@@ -114,6 +114,8 @@ function AdminBatches() {
           eyebrow="Operasi batch"
           title="Jalankan cargo dengan catatan yang jelas."
           description="Hubungkan katalog, susun roster, kunci PO, dan catat perjalanan kiriman dalam satu alur."
+          loading
+          skeleton={{ titleWidth: "76%", descriptionWidths: ["92%", "64%"] }}
         />
         <div className="admin-workspace">
           <AdminNav />

@@ -22,6 +22,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { SkeletonToolbar } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
@@ -318,34 +319,40 @@ function ConnectedJoinRequests() {
         eyebrow="Operasi admission"
         title="Tinjau permintaan Blessfriends."
         description="Setujui permintaan Customer untuk mengirim panduan aktivasi dan menunggu Customer menyelesaikan akses BFG."
+        loading={filteredRequests === undefined}
+        skeleton={{ titleWidth: "68%", descriptionWidths: ["92%", "64%"] }}
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content content-stack">
-          <Card className="form-actions">
-            <Field label="Status">
-              <BFGSelect
-                className="select"
-                value={status}
-                onChange={(event) => setStatus(event.target.value as JoinRequestStatus | "")}
-              >
-                <option value="">Semua permintaan</option>
-                <option value="submitted">Dikirim</option>
-                <option value="under_review">Sedang ditinjau</option>
-                <option value="approved">Disetujui</option>
-                <option value="rejected">Ditolak</option>
-              </BFGSelect>
-            </Field>
-            <Field label="Cari">
-              <input
-                className="input"
-                type="search"
-                placeholder="Nama, email, atau kontak"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </Field>
-          </Card>
+          {filteredRequests === undefined ? (
+            <SkeletonToolbar />
+          ) : (
+            <Card className="form-actions">
+              <Field label="Status">
+                <BFGSelect
+                  className="select"
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value as JoinRequestStatus | "")}
+                >
+                  <option value="">Semua permintaan</option>
+                  <option value="submitted">Dikirim</option>
+                  <option value="under_review">Sedang ditinjau</option>
+                  <option value="approved">Disetujui</option>
+                  <option value="rejected">Ditolak</option>
+                </BFGSelect>
+              </Field>
+              <Field label="Cari">
+                <input
+                  className="input"
+                  type="search"
+                  placeholder="Nama, email, atau kontak"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </Field>
+            </Card>
+          )}
           {filteredRequests === undefined ? (
             <LoadingRegion label="Memuat permintaan join">
               <JoinRequestSkeleton />

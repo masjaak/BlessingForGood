@@ -101,8 +101,10 @@ function AdminOrderDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Operasi pesanan"
-          title={<SkeletonText className="skeleton-page-title" width="224px" />}
-          description="Memuat snapshot, tracking, invoice, dan exception…"
+          title="Detail pesanan"
+          description="Snapshot, tracking, invoice, dan exception pesanan."
+          loading
+          skeleton={{ titleWidth: "54%", descriptionWidths: ["82%"], actionWidths: ["124px"] }}
         />
         <div className="admin-workspace">
           <AdminNav />

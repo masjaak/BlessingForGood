@@ -131,13 +131,10 @@ function AdminInvoiceDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Operasi invoice"
-          title={
-            <>
-              <SkeletonText className="skeleton-page-title" width="220px" />
-              <span className="sr-only">Detail invoice</span>
-            </>
-          }
+          title="Detail invoice"
           description="Ringkasan invoice, akun deposit, alokasi, dan transaksi."
+          loading
+          skeleton={{ titleWidth: "52%", descriptionWidths: ["82%"], actionWidths: ["124px"] }}
           actions={<Skeleton className="skeleton-cta" />}
         />
         <div className="admin-workspace">

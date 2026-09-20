@@ -15,6 +15,8 @@ function AuditLog() {
       eyebrow="Keamanan Admin"
       title="Log aktivitas"
       description="Riwayat immutable untuk tindakan operasional dan perubahan akses yang sensitif."
+      loading={events === undefined}
+      skeleton={{ titleWidth: "42%", descriptionWidths: ["86%"] }}
     >
       {events === undefined ? (
         <LoadingRegion label="Memuat log aktivitas">

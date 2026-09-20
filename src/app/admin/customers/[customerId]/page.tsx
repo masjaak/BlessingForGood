@@ -6,16 +6,7 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import {
-  Card,
-  EmptyState,
-  LinkButton,
-  LoadingRegion,
-  Money,
-  PageHeader,
-  SkeletonText,
-  StatusBadge,
-} from "@/components/ui";
+import { Card, EmptyState, LinkButton, LoadingRegion, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { SkeletonListCard, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -73,8 +64,10 @@ function CustomerDetail() {
       <div className="page admin-page">
         <PageHeader
           eyebrow="Detail pelanggan"
-          title={<SkeletonText className="skeleton-page-title" width="224px" />}
+          title="Detail pelanggan"
           description="Profil, alamat, pesanan, invoice, dan masalah pelanggan dari sumber operasional yang sama."
+          loading
+          skeleton={{ titleWidth: "60%", descriptionWidths: ["92%", "72%"], actionWidths: ["112px", "132px", "86px"] }}
         />
         <div className="admin-workspace">
           <AdminNav />

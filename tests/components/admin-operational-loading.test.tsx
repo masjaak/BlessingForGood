@@ -53,7 +53,8 @@ describe("Admin operational loading grammar", () => {
   ] as const)("keeps the Admin page frame mounted while %s loads", (_name, Page, heading) => {
     const { container } = render(<Page />);
 
-    expect(screen.getByRole("heading", { name: heading })).toBeTruthy();
+    expect(container.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText(heading)).toBeNull();
     expect(container.querySelector(".admin-page.admin-operational-page")).toBeTruthy();
     expect(container.querySelector(".admin-workspace")).toBeTruthy();
     expect(container.querySelector(".admin-nav")).toBeTruthy();

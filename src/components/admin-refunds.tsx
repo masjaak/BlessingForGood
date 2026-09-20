@@ -276,6 +276,8 @@ export function AdminRefunds() {
       eyebrow="Antrian refund"
       title="Kewajiban refund dan payout."
       description="Catat transfer tanpa menghapus invoice atau pembayaran historis."
+      loading={refunds === undefined}
+      skeleton={{ titleWidth: "68%", descriptionWidths: ["86%"] }}
     >
       {refunds === undefined ? (
         <LoadingRegion label="Memuat antrian refund">

@@ -20,7 +20,7 @@ import {
   Skeleton,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonTableBlock, SkeletonTimeline } from "@/components/workspace-skeleton-primitives";
+import { SkeletonForm, SkeletonTableBlock, SkeletonTimeline } from "@/components/workspace-skeleton-primitives";
 import { nextOrderStatuses, orderStatusLabel, orderStatusLabels } from "@/domain/prototype/logic";
 import type { OrderStatus } from "@/domain/prototype/types";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -31,7 +31,13 @@ import { asOrder, asOrderList, type OrderListView, type OrderView } from "@/doma
 import { SiteShell } from "@/components/site-shell";
 import { matchesAdminCatalogRecord, normalizeDiscoveryQuery } from "@/lib/catalog-discovery";
 
-function OrderTable({ onFirstOrderId }: { onFirstOrderId: (orderId: string | null) => void }) {
+function OrderTable({
+  onFirstOrderId,
+  onLoadingChange,
+}: {
+  onFirstOrderId: (orderId: string | null) => void;
+  onLoadingChange: (loading: boolean) => void;
+}) {
   const { state, updateOrderStatus, dataSource, ordersLoading } = useProduct();
   const pagination = useAdminCursorPagination();
   const [search, setSearch] = useState("");
@@ -56,8 +62,10 @@ function OrderTable({ onFirstOrderId }: { onFirstOrderId: (orderId: string | nul
         .filter((order): order is NonNullable<typeof order> => Boolean(order));
   const orders = dataSource === "convex" ? pageOrders || [] : state.orders;
   const firstOrderId = orders[0]?.id || null;
+  const tableLoading = ordersLoading || (dataSource === "convex" && adminOrders === undefined);
   useEffect(() => onFirstOrderId(firstOrderId), [firstOrderId, onFirstOrderId]);
-  if (ordersLoading || (dataSource === "convex" && adminOrders === undefined)) {
+  useEffect(() => onLoadingChange(tableLoading), [onLoadingChange, tableLoading]);
+  if (tableLoading) {
     return (
       <LoadingRegion label="Memuat pesanan">
         <SkeletonTableBlock rows={8} columnWidths={["1.25fr", "0.8fr", "0.7fr", "0.85fr", "0.9fr", "1.1fr"]} />
@@ -574,6 +582,7 @@ function OrderTimeline({ orderId }: { orderId: string }) {
 function AdminOrders() {
   const { dataSource } = useProduct();
   const [firstOrderId, setFirstOrderId] = useState<string | null>(null);
+  const [routeLoading, setRouteLoading] = useState(dataSource === "convex");
   return (
     <div className="page admin-page">
       <PageHeader
@@ -581,13 +590,19 @@ function AdminOrders() {
         title="Tinjau pesanan, lalu lanjutkan tahapnya."
         description="Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan Convex kanonik."
         actions={<div className="form-actions">{dataSource === "convex" ? <BackfillOrderReferences /> : null}</div>}
+        loading={routeLoading}
+        skeleton={{ titleWidth: "76%", descriptionWidths: ["92%", "62%"] }}
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
-          {dataSource === "convex" ? <ConvexAssistedOrderForm /> : null}
-          <OrderTable onFirstOrderId={setFirstOrderId} />
-          {firstOrderId ? <OrderTimeline orderId={firstOrderId} /> : null}
+          {routeLoading && dataSource === "convex" ? (
+            <SkeletonForm />
+          ) : dataSource === "convex" ? (
+            <ConvexAssistedOrderForm />
+          ) : null}
+          <OrderTable onFirstOrderId={setFirstOrderId} onLoadingChange={setRouteLoading} />
+          {!routeLoading && firstOrderId ? <OrderTimeline orderId={firstOrderId} /> : null}
         </div>
       </div>
     </div>

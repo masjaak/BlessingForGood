@@ -36,6 +36,8 @@ function ContentEditor() {
         eyebrow="Manajemen konten"
         title="Konten terstruktur"
         description="Edit field yang disetujui tanpa mengubah kode. Draf tidak tampil ke pelanggan sampai dipublikasikan."
+        loading
+        skeleton={{ titleWidth: "54%", descriptionWidths: ["92%", "66%"] }}
       >
         <LoadingRegion label="Memuat konten">
           <Card className="notice-card" aria-hidden="true">

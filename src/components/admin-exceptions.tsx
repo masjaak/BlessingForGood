@@ -20,7 +20,7 @@ import {
   SkeletonText,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
+import { SkeletonForm, SkeletonListCard } from "@/components/workspace-skeleton-primitives";
 import { useProduct } from "@/domain/prototype/store";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 import { productErrorMessage } from "@/domain/prototype/errors";
@@ -476,9 +476,12 @@ export function AdminExceptions() {
       eyebrow="Operasi masalah pesanan"
       title="Selesaikan masalah tanpa menghapus riwayat."
       description="OOS, defect, pembatalan, pelepasan deposit, dan kewajiban refund tetap tercatat per item."
+      loading={orders === undefined || exceptions === undefined}
+      skeleton={{ titleWidth: "82%", descriptionWidths: ["92%", "62%"] }}
     >
       {!orders || !exceptions ? (
         <LoadingRegion label="Memuat operasi masalah">
+          <SkeletonForm />
           <SkeletonListCard />
           <SkeletonListCard />
           <div className="admin-operations-disclosure" aria-hidden="true">

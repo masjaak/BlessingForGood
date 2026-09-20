@@ -37,7 +37,7 @@ export function AdminSkeletonContent({ kind, variant }: { kind: AdminSkeletonKin
     return (
       <>
         <SkeletonSummaryGrid />
-        <SkeletonTableBlock />
+        <SkeletonTableBlock columnWidths={["1.8fr", "0.8fr", "0.85fr", "0.7fr", "0.7fr", "0.7fr", "0.65fr"]} />
       </>
     );
   if (variant === "book-master")
@@ -71,7 +71,7 @@ export function AdminSkeletonContent({ kind, variant }: { kind: AdminSkeletonKin
             <Skeleton className="skeleton-field" />
           </div>
         </Card>
-        <SkeletonTableBlock />
+        <SkeletonTableBlock columnWidths={["1.6fr", "1.2fr", "0.8fr", "0.8fr", "0.7fr", "0.9fr"]} />
       </>
     );
   if (variant === "catalog-list")

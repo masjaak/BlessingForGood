@@ -19,11 +19,17 @@ import {
   LinkButton,
   LoadingRegion,
   Money,
+  Skeleton,
+  SkeletonText,
   StatusBadge,
 } from "@/components/ui";
 import { formatIdr } from "@/domain/prototype/logic";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
-import { SkeletonDepositHistory, SkeletonDepositTopUpRow } from "@/components/workspace-skeleton-primitives";
+import {
+  SkeletonDepositHistory,
+  SkeletonDepositTopUpRow,
+  SkeletonForm,
+} from "@/components/workspace-skeleton-primitives";
 
 function customerOptionLabel(customer: { displayName: string; memberCode: string | null }) {
   return `${customer.displayName} · ${customer.memberCode || "tanpa kode"}`;
@@ -92,6 +98,31 @@ function historyDate(value: string) {
   return new Date(value).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 }
 
+function DepositRouteSkeleton() {
+  return (
+    <LoadingRegion label="Memuat operasi deposit">
+      <Card className="deposit-topup-card" aria-hidden="true">
+        <SkeletonText width="34%" />
+        <SkeletonText width="62%" />
+        <SkeletonDepositTopUpRow actionCount={3} />
+        <SkeletonDepositTopUpRow actionCount={4} />
+        <SkeletonDepositTopUpRow actionCount={2} />
+      </Card>
+      <SkeletonForm />
+      <Card className="deposit-history-card" aria-hidden="true">
+        <SkeletonText width="34%" />
+        <SkeletonText width="58%" />
+        <SkeletonText width="86%" />
+        <div className="deposit-history-filters">
+          <Skeleton className="skeleton-field" />
+          <Skeleton className="skeleton-field" />
+        </div>
+        <SkeletonDepositHistory />
+      </Card>
+    </LoadingRegion>
+  );
+}
+
 function DepositOperations() {
   const requestedCustomerId = useSearchParams().get("customerId") || "";
   const topUps = useQuery(api.depositTopUps.listForAdmin, {});
@@ -114,6 +145,7 @@ function DepositOperations() {
     direction: historyDirection || undefined,
   });
   const historyRows = history?.page || [];
+  const routeLoading = topUps === undefined || history === undefined;
   async function run(key: string, action: () => Promise<unknown>, success: string) {
     setPending(key);
     setMessage("");
@@ -125,6 +157,19 @@ function DepositOperations() {
     } finally {
       setPending("");
     }
+  }
+  if (routeLoading) {
+    return (
+      <AdminOperationalPage
+        eyebrow="Keuangan"
+        title="Deposit & top-up"
+        description="Verifikasi bukti top-up, lihat status, dan catat penyesuaian manual yang selalu masuk activity log."
+        loading
+        skeleton={{ titleWidth: "52%", descriptionWidths: ["92%", "66%"] }}
+      >
+        <DepositRouteSkeleton />
+      </AdminOperationalPage>
+    );
   }
   return (
     <AdminOperationalPage

@@ -26,6 +26,8 @@ function CustomerList() {
         eyebrow="Operasional pelanggan"
         title="Pelanggan aktif"
         description="Buka satu pelanggan untuk melihat profil dan riwayat operasional yang terkait dengan akun tersebut."
+        loading={customers === undefined}
+        skeleton={{ titleWidth: "42%", descriptionWidths: ["92%", "60%"] }}
       />
       <div className="admin-workspace">
         <AdminNav />

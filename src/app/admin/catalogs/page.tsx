@@ -2,27 +2,20 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
-import { AdminNav } from "@/components/admin-nav";
+import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import {
-  Button,
-  Card,
-  ConfirmationDialog,
-  EmptyState,
-  Field,
-  LinkButton,
-  LoadingRegion,
-  PageHeader,
-  StatusBadge,
-} from "@/components/ui";
-import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
+import { Button, Card, ConfirmationDialog, EmptyState, Field, LinkButton, StatusBadge } from "@/components/ui";
+import { AdminSkeletonContent } from "@/components/workspace-skeleton-content";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
 import { calendarDateToEndTimestamp, formatBfgCalendarDate } from "@/lib/calendar-date";
+
+type CatalogRows = FunctionReturnType<typeof api.secretCatalogs.listAdminRows>;
 
 function CatalogForm() {
   const createCatalog = useMutation(api.secretCatalogs.create);
@@ -94,11 +87,8 @@ function CatalogForm() {
   );
 }
 
-function CatalogList() {
+function CatalogList({ catalogRows }: { catalogRows: CatalogRows }) {
   const { closeCatalog } = useProduct();
-  const catalogRows = useQuery(api.secretCatalogs.listAdminRows, {
-    paginationOpts: { numItems: 50, cursor: null },
-  });
   const [pendingAction, setPendingAction] = useState("");
   const [error, setError] = useState("");
   const [confirmCatalogId, setConfirmCatalogId] = useState<string | null>(null);
@@ -113,14 +103,6 @@ function CatalogList() {
     } finally {
       setPendingAction("");
     }
-  }
-  if (catalogRows === undefined) {
-    return (
-      <LoadingRegion label="Memuat katalog">
-        <SkeletonListCard />
-        <SkeletonListCard />
-      </LoadingRegion>
-    );
   }
   if (catalogRows.page.length === 0)
     return (
@@ -201,25 +183,28 @@ function CatalogList() {
 }
 
 function AdminCatalogs() {
+  const catalogRows = useQuery(api.secretCatalogs.listAdminRows, {
+    paginationOpts: { numItems: 50, cursor: null },
+  });
   return (
-    <div className="page admin-page">
-      <PageHeader
-        eyebrow="Operasional katalog"
-        title="Kelola Secret Catalog dengan akses yang aman."
-        description="Akses katalog tetap terpisah dari kata sandi akun dan hanya diberikan melalui kode serta grant yang sah."
-      />
-      <div className="admin-workspace">
-        <AdminNav />
-        <div className="admin-content">
-          <div className="two-column">
-            <CatalogForm />
-            <div>
-              <CatalogList />
-            </div>
+    <AdminOperationalPage
+      eyebrow="Operasional katalog"
+      title="Kelola Secret Catalog dengan akses yang aman."
+      description="Akses katalog tetap terpisah dari kata sandi akun dan hanya diberikan melalui kode serta grant yang sah."
+      loading={catalogRows === undefined}
+      skeleton={{ titleWidth: "88%", descriptionWidths: ["92%", "64%"] }}
+    >
+      {catalogRows === undefined ? (
+        <AdminSkeletonContent kind="form-list" variant="catalog-list" />
+      ) : (
+        <div className="two-column">
+          <CatalogForm />
+          <div>
+            <CatalogList catalogRows={catalogRows} />
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AdminOperationalPage>
   );
 }
 

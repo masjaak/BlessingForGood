@@ -2,24 +2,35 @@
 
 import type { ReactNode } from "react";
 import { AdminNav } from "@/components/admin-nav";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, type PageHeaderSkeleton } from "@/components/ui";
 
 export function AdminOperationalPage({
   eyebrow,
   title,
   description,
   actions,
+  loading = false,
+  skeleton,
   children,
 }: {
   eyebrow: string;
   title: ReactNode;
   description: string;
   actions?: ReactNode;
+  loading?: boolean;
+  skeleton?: PageHeaderSkeleton;
   children: ReactNode;
 }) {
   return (
     <div className="page admin-page admin-operational-page">
-      <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
+      <PageHeader
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        actions={actions}
+        loading={loading}
+        skeleton={skeleton}
+      />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content admin-operational-content">{children}</div>

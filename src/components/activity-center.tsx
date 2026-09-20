@@ -136,6 +136,8 @@ export function ActivityCenter({
       eyebrow="Pusat aktivitas"
       title="Aktivitas"
       description="Satu feed kronologis untuk perubahan sistem dan pesan operasional BFG."
+      loading={activity === undefined}
+      skeleton={{ titleWidth: "36%", descriptionWidths: ["92%", "62%"] }}
     >
       {content}
     </AdminOperationalPage>
@@ -145,6 +147,7 @@ export function ActivityCenter({
         eyebrow="Akun Blessfriends"
         title="Aktivitas"
         description="Satu feed kronologis untuk perubahan sistem dan pesan operasional BFG."
+        loading={activity === undefined}
       />
       {content}
     </div>

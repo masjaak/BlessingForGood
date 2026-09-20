@@ -19,6 +19,7 @@ export type SkeletonConfig = {
   eyebrow: string;
   title: string;
   description: string;
+  actionWidths?: string[];
   narrow?: boolean;
   variant?: SkeletonVariant;
 };
@@ -30,6 +31,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Operasional BFG",
       title: "Pekerjaan penting hari ini.",
       description: "Antrian utama dari pesanan, batch, pembayaran, invoice, dan penanganan masalah.",
+      actionWidths: ["124px"],
     };
   }
   if (pathname === "/admin/books") {
@@ -38,6 +40,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Master Buku",
       title: "Kelola buku dan Ready Stock",
       description: "Metadata buku dipakai ulang; Secret Catalog dan Ready Stock hanya mengatur konteksnya.",
+      actionWidths: ["108px"],
       variant: "book-master",
     };
   }
@@ -47,6 +50,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Master Buku",
       title: "Detail buku",
       description: "Metadata, cover, variant, dan status publikasi.",
+      actionWidths: ["74px", "112px", "132px"],
     };
   }
   if (pathname === "/admin/catalogs") {
@@ -73,6 +77,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Ready Stock",
       title: "Pantau stok siap proses.",
       description: "Stok fisik, dipesan, dan tersedia dalam satu antrian operasional.",
+      actionWidths: ["142px"],
       variant: "ready-stock",
     };
   }
@@ -91,6 +96,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Operasi batch",
       title: "Detail operasi batch",
       description: "Status, roster, dan tindakan batch.",
+      actionWidths: ["148px", "148px", "108px"],
     };
   }
   if (pathname === "/admin/orders") {
@@ -99,6 +105,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Operasi pesanan",
       title: "Tinjau pesanan, lalu lanjutkan tahapnya.",
       description: "Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan kanonik.",
+      actionWidths: ["188px"],
       variant: "orders",
     };
   }
@@ -108,6 +115,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Operasi pesanan",
       title: "Detail pesanan",
       description: "Pelacakan, pemenuhan, batch, dan masalah.",
+      actionWidths: ["124px"],
     };
   }
   if (pathname === "/admin/customers") {
@@ -136,6 +144,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Detail pelanggan",
       title: "Detail pelanggan",
       description: "Profil, alamat, pesanan, invoice, dan masalah pelanggan.",
+      actionWidths: ["112px", "132px", "86px"],
     };
   }
   if (pathname === "/admin/invoices") {
@@ -153,6 +162,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Operasi invoice",
       title: "Detail invoice",
       description: "Tagihan, akun, alokasi, dan catatan transaksi.",
+      actionWidths: ["124px"],
     };
   }
   if (["/admin/payments", "/admin/deposits", "/admin/refunds"].includes(pathname)) {
@@ -161,6 +171,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Operasi pembayaran",
       title: "Tinjau status keuangan.",
       description: "Antrian, bukti, dan riwayat tetap terbaca tanpa nilai palsu.",
+      actionWidths: ["132px"],
       variant: "card-list",
     };
   }
@@ -170,6 +181,7 @@ export function adminConfig(pathname: string): SkeletonConfig {
       eyebrow: "Laporan & analitik",
       title: "Lihat performa operasional.",
       description: "Ringkasan berbasis periode dan ekspor.",
+      actionWidths: ["188px"],
       variant: "report",
     };
   }

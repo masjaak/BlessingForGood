@@ -5,7 +5,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { adminConfig, customerConfig, skeletonName } from "@/components/page-aware-skeleton-config";
 import type { AdminSkeletonKind, CustomerSkeletonKind, Workspace } from "@/components/page-aware-skeleton-config";
 import { AdminSkeletonContent, CustomerSkeletonContent } from "@/components/workspace-skeleton-content";
-import { PageHeader, Skeleton } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 
 export function PageAwareSkeleton({ workspace, pathname: pathnameProp }: { workspace: Workspace; pathname?: string }) {
   const routePathname = usePathname() || "/";
@@ -25,7 +25,8 @@ export function PageAwareSkeleton({ workspace, pathname: pathnameProp }: { works
             eyebrow={config.eyebrow}
             title={config.title}
             description={config.description}
-            actions={<Skeleton className="skeleton-cta" />}
+            skeleton={{ actionWidths: config.actionWidths }}
+            loading
           />
           <div className="admin-workspace">
             <AdminNav preview />
@@ -36,7 +37,7 @@ export function PageAwareSkeleton({ workspace, pathname: pathnameProp }: { works
         </>
       ) : (
         <>
-          <PageHeader eyebrow={config.eyebrow} title={config.title} description={config.description} />
+          <PageHeader eyebrow={config.eyebrow} title={config.title} description={config.description} loading />
           <div className="customer-skeleton-content">
             <CustomerSkeletonContent kind={config.kind as CustomerSkeletonKind} variant={config.variant} />
           </div>

@@ -8,6 +8,7 @@ import { Card, LinkButton, PageHeader, Skeleton, SkeletonText, StatusBadge } fro
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useProduct } from "@/domain/prototype/store";
 import { SiteShell } from "@/components/site-shell";
+import { AdminSkeletonContent } from "@/components/workspace-skeleton-content";
 
 type DashboardCountResult =
   { status: "pending" } | { status: "error"; error: Error } | { status: "success"; data: number };
@@ -129,6 +130,7 @@ function AdminOverview() {
       description: "Kewajiban refund menunggu payout",
     },
   ];
+  const routeLoading = queues.some((queue) => queue.count.status === "pending");
   const queueCards = (items: ReadonlyArray<QueueDefinition>) =>
     items.map((item) => <DashboardQueueCard {...item} key={item.label} />);
 
@@ -139,58 +141,65 @@ function AdminOverview() {
         title="Pekerjaan penting hari ini."
         description="Antrian utama dari pesanan, batch, pembayaran, invoice, dan penanganan masalah."
         actions={<LinkButton href="/admin/orders">Kelola pesanan</LinkButton>}
+        loading={routeLoading}
       />
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
-          <section className="admin-dashboard-section" aria-labelledby="admin-attention-heading">
-            <div className="admin-section-heading">
-              <div>
-                <span className="card-kicker">Prioritas operasi</span>
-                <h2 id="admin-attention-heading">Perlu tindakan</h2>
-              </div>
-              <p>Mulai dari antrian yang mengubah langkah berikutnya.</p>
-            </div>
-            <div className="admin-queue-grid admin-queue-grid-primary">{queueCards(queues.slice(0, 4))}</div>
-          </section>
+          {routeLoading ? (
+            <AdminSkeletonContent kind="dashboard" />
+          ) : (
+            <>
+              <section className="admin-dashboard-section" aria-labelledby="admin-attention-heading">
+                <div className="admin-section-heading">
+                  <div>
+                    <span className="card-kicker">Prioritas operasi</span>
+                    <h2 id="admin-attention-heading">Perlu tindakan</h2>
+                  </div>
+                  <p>Mulai dari antrian yang mengubah langkah berikutnya.</p>
+                </div>
+                <div className="admin-queue-grid admin-queue-grid-primary">{queueCards(queues.slice(0, 4))}</div>
+              </section>
 
-          <section className="admin-dashboard-section" aria-labelledby="admin-context-heading">
-            <div className="admin-section-heading">
-              <div>
-                <span className="card-kicker">Konteks operasi</span>
-                <h2 id="admin-context-heading">Ringkasan kerja</h2>
-              </div>
-              <p>Status yang membantu membaca antrian utama.</p>
-            </div>
-            <div className="admin-queue-grid admin-queue-grid-secondary">{queueCards(queues.slice(4))}</div>
-          </section>
-          <Card>
-            <div className="split-heading">
-              <div>
-                <span className="card-kicker">Akses cepat</span>
-                <h2>Operasi utama</h2>
-              </div>
-            </div>
-            <div className="actions admin-quick-actions">
-              <LinkButton href="/admin/books" variant="secondary">
-                Master Buku
-              </LinkButton>
-              <LinkButton href="/admin/catalogs" variant="secondary">
-                Secret Catalog
-              </LinkButton>
-              <LinkButton href="/admin/batches" variant="secondary">
-                Batch PO
-              </LinkButton>
-              <LinkButton href="/admin/invoices" variant="secondary">
-                Invoice & deposit
-              </LinkButton>
-              {roleCanAccess(sessionRole, "admin") ? (
-                <LinkButton href="/admin/users" variant="secondary">
-                  Pengguna
-                </LinkButton>
-              ) : null}
-            </div>
-          </Card>
+              <section className="admin-dashboard-section" aria-labelledby="admin-context-heading">
+                <div className="admin-section-heading">
+                  <div>
+                    <span className="card-kicker">Konteks operasi</span>
+                    <h2 id="admin-context-heading">Ringkasan kerja</h2>
+                  </div>
+                  <p>Status yang membantu membaca antrian utama.</p>
+                </div>
+                <div className="admin-queue-grid admin-queue-grid-secondary">{queueCards(queues.slice(4))}</div>
+              </section>
+              <Card>
+                <div className="split-heading">
+                  <div>
+                    <span className="card-kicker">Akses cepat</span>
+                    <h2>Operasi utama</h2>
+                  </div>
+                </div>
+                <div className="actions admin-quick-actions">
+                  <LinkButton href="/admin/books" variant="secondary">
+                    Master Buku
+                  </LinkButton>
+                  <LinkButton href="/admin/catalogs" variant="secondary">
+                    Secret Catalog
+                  </LinkButton>
+                  <LinkButton href="/admin/batches" variant="secondary">
+                    Batch PO
+                  </LinkButton>
+                  <LinkButton href="/admin/invoices" variant="secondary">
+                    Invoice & deposit
+                  </LinkButton>
+                  {roleCanAccess(sessionRole, "admin") ? (
+                    <LinkButton href="/admin/users" variant="secondary">
+                      Pengguna
+                    </LinkButton>
+                  ) : null}
+                </div>
+              </Card>
+            </>
+          )}
         </div>
       </div>
     </div>

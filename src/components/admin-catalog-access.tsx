@@ -85,8 +85,10 @@ export function AdminCatalogAccess({ catalogId }: { catalogId: string }) {
     return (
       <AdminOperationalPage
         eyebrow="Secret Catalog"
-        title={<SkeletonText className="skeleton-page-title" width="236px" />}
-        description="Memuat kode akses, grant pelanggan, dan status katalog…"
+        title="Kelola akses katalog"
+        description="Kode akses, grant pelanggan, dan status katalog."
+        loading
+        skeleton={{ titleWidth: "72%", descriptionWidths: ["80%"], actionWidths: ["132px"] }}
       >
         <LoadingRegion label="Memuat akses katalog">
           <CatalogAccessSkeleton />

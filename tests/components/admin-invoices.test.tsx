@@ -219,7 +219,8 @@ describe("Admin invoice issue entry", () => {
 
     const { container } = render(<AdminInvoiceDetailPage />);
 
-    expect(screen.getByRole("heading", { name: "Detail invoice" })).toBeTruthy();
+    expect(container.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText("Detail invoice")).toBeNull();
     expect(container.querySelector('[aria-label="Admin navigation"]')).toBeTruthy();
     expect(container.querySelectorAll(".workspace-skeleton-panel")).toHaveLength(4);
   });

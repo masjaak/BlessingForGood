@@ -57,18 +57,19 @@ beforeEach(() => {
   } as never);
 });
 
-describe("Admin Dashboard progressive loading", () => {
-  it("keeps the shell and healthy cards visible while one source is slow", () => {
+describe("Admin Dashboard loading", () => {
+  it("skeletonizes the route header with the body while one source is slow", () => {
     const states = successCounts();
     states["refunds:countPendingForAdmin"] = { status: "pending" };
     setupQueryStates(states);
 
     render(<AdminPage />);
 
-    expect(screen.getByRole("heading", { name: "Pekerjaan penting hari ini." })).toBeTruthy();
-    expect(document.querySelector(".workspace-skeleton")).toBeNull();
-    expect(document.querySelector('[data-dashboard-block="Pesanan baru"][data-dashboard-state="ready"]')).toBeTruthy();
-    expect(document.querySelector('[data-dashboard-block="Refund"][data-dashboard-state="loading"]')).toBeTruthy();
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText("Pekerjaan penting hari ini.")).toBeNull();
+    expect(document.querySelectorAll(".admin-dashboard-section")).toHaveLength(2);
+    expect(document.querySelector('[data-dashboard-block="Pesanan baru"][data-dashboard-state="ready"]')).toBeNull();
+    expect(document.querySelector('[data-dashboard-block="Refund"][data-dashboard-state="loading"]')).toBeNull();
   });
 
   it.each(countQueryNames)("keeps healthy cards available when %s fails", (failedQuery) => {
@@ -84,7 +85,7 @@ describe("Admin Dashboard progressive loading", () => {
     expect(document.querySelector(".workspace-skeleton")).toBeNull();
   });
 
-  it("settles each card as its count resolves instead of re-entering a page skeleton", () => {
+  it("keeps the initial route skeleton until every dashboard count resolves", () => {
     const states = Object.fromEntries(countQueryNames.map((name) => [name, { status: "pending" }])) as Record<
       (typeof countQueryNames)[number],
       QueryState
@@ -92,11 +93,12 @@ describe("Admin Dashboard progressive loading", () => {
     setupQueryStates(states);
     const view = render(<AdminPage />);
 
-    expect(document.querySelectorAll('[data-dashboard-state="loading"]')).toHaveLength(7);
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(document.querySelectorAll(".admin-dashboard-section")).toHaveLength(2);
     states["orders:countSubmittedForAdmin"] = { status: "success", data: 12 };
     view.rerender(<AdminPage />);
-    expect(document.querySelector('[data-dashboard-block="Pesanan baru"][data-dashboard-state="ready"]')).toBeTruthy();
-    expect(document.querySelectorAll('[data-dashboard-state="loading"]')).toHaveLength(6);
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(document.querySelectorAll(".admin-dashboard-section")).toHaveLength(2);
 
     for (const name of countQueryNames) states[name] = { status: "success", data: 0 };
     view.rerender(<AdminPage />);

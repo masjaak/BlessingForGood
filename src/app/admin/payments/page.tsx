@@ -180,6 +180,8 @@ function AdminPayments() {
           eyebrow="Operasi pembayaran"
           title="Tinjau konfirmasi pembayaran."
           description="Setujui hanya setelah bukti pembayaran cocok dengan kiriman pelanggan. Jumlah yang disetujui dihitung satu kali terhadap invoice."
+          loading
+          skeleton={{ titleWidth: "74%", descriptionWidths: ["92%", "72%"], actionWidths: ["132px"] }}
           actions={<Skeleton className="skeleton-cta" />}
         />
         <div className="admin-workspace">

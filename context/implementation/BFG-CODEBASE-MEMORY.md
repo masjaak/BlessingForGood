@@ -4,6 +4,16 @@
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
 
+## Environment ownership — 2026-09-19
+
+- `CONFIG != SECRET`: issuer domains, publishable keys, and feature flags are
+  configuration by purpose; private credentials and deploy keys remain
+  secrets even when a client-facing key is stored by a platform.
+- Environment ownership is explicit: Convex owns runtime auth configuration;
+  Vercel owns build/runtime inputs and deployment credentials; Clerk owns the
+  provider instance and key provenance. Do not remove or reclassify a value
+  from one owner based on a dashboard warning alone.
+
 ## Admin loading ownership — 2026-09-19
 
 ### CURRENT
@@ -45,6 +55,51 @@ Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
 
 Four Engineering and GREEN Freeze remain mandatory for future Admin loading
 changes.
+
+## Admin skeleton parity correction — 2026-09-20
+
+Status: `ADMIN_SKELETON_COVERAGE_INCOMPLETE`
+
+Fresh authenticated Production evidence supersedes the prior source-level
+`ALL_ADMIN_ROUTES_MATCHED` conclusion. On `/admin`, the shell and body were
+loading while `OPERASIONAL BFG`, the hero title, and the hero subtitle were
+already final. The same review found incomplete or inconsistent coverage from
+`/admin/books` through routes below it.
+
+### CURRENT
+
+- `APP SHELL != ROUTE CONTENT != SECTION REFRESH`.
+- During genuine initial route loading, the complete route-content composition
+  loads together: eyebrow, H1, subtitle, actions, filters, forms, cards,
+  tables, lists, metadata, and detail regions use loading geometry.
+- After route reveal, independently refreshing sections may load without
+  re-skeletonizing the real hero.
+- The persistent navbar and sidebar do not re-skeletonize during normal route
+  navigation.
+- `LOADING GEOMETRY ≈ RESOLVED GEOMETRY`; `LOADING != EMPTY != ERROR`.
+- `SOURCE-LEVEL MATCH != VISUAL MATCH`; fresh browser evidence outranks source
+  classification.
+
+### PROTECTED
+
+- Business logic, Auth, navigation IA, resolved copy/design, Catalog, Orders,
+  Batch, Dashboard, Finance, reports, and Phase 2A/2C/2D behavior remain
+  frozen under the GREEN Code Freeze.
+- No artificial loading delay, minimum skeleton duration, or Production query
+  slowdown is permitted.
+
+### UNPROVEN
+
+- Any route not compared in deterministic loading/resolved fixtures or an
+  authenticated Production session remains unproven.
+
+### SUPERSEDED
+
+- `Static route header text should always remain real during initial loading.`
+- `Source-level skeleton presence proves full visual coverage.`
+- `ALL_ADMIN_ROUTES_MATCHED` as a Product acceptance verdict.
+
+Four Engineering remains mandatory: Context, Prompt, Memory, and Harness.
 
 ### CURRENT
 

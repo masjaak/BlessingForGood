@@ -119,6 +119,8 @@ function ConnectedAdminReadyStock() {
       eyebrow="Ready Stock"
       title="Stok yang siap diproses."
       description="Stok fisik adalah jumlah yang tercatat. Dipesan berasal dari pesanan aktif. Tersedia selalu dihitung server."
+      loading={rows === undefined}
+      skeleton={{ titleWidth: "54%", descriptionWidths: ["92%", "56%"], actionWidths: ["142px"] }}
       actions={
         <LinkButton href="/admin/books" variant="secondary">
           Kelola Master Buku

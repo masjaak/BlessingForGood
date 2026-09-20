@@ -42,7 +42,8 @@ describe("page-aware workspace skeletons", () => {
       </ProductContext.Provider>,
     );
 
-    expect(screen.getByRole("heading", { name: "Jaga status keuangan tetap jelas." })).toBeTruthy();
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText("Jaga status keuangan tetap jelas.")).toBeNull();
     expect(document.querySelector('[data-skeleton="ADMIN_FINANCE_SKELETON"]')).toBeTruthy();
     expect(document.querySelector(".admin-page > .admin-workspace")).toBeTruthy();
     expect(document.querySelector(".admin-nav")).toBeTruthy();
@@ -53,7 +54,8 @@ describe("page-aware workspace skeletons", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account/inbox" />);
 
     expect(document.querySelector('[data-skeleton="CUSTOMER_ACTIVITY_SKELETON"]')).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Aktivitas" })).toBeTruthy();
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText("Aktivitas")).toBeNull();
     expect(document.querySelector(".admin-nav")).toBeNull();
   });
 
@@ -112,7 +114,8 @@ describe("page-aware workspace skeletons", () => {
 
     unmount();
     render(<PageAwareSkeleton workspace="admin" pathname="/admin/users" />);
-    expect(screen.getByRole("heading", { name: "Kelola pengguna BFG" })).toBeTruthy();
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText("Kelola pengguna BFG")).toBeNull();
     expect(document.querySelector(".workspace-skeleton-users-onboarding")).toBeTruthy();
     expect(document.querySelector(".workspace-skeleton-users-filters")).toBeTruthy();
   });
@@ -128,7 +131,8 @@ describe("page-aware workspace skeletons", () => {
   it("uses Cart loading anatomy before the Cart query resolves", () => {
     render(<PageAwareSkeleton workspace="customer" pathname="/account/cart" />);
 
-    expect(screen.getByRole("heading", { name: "Keranjang" })).toBeTruthy();
+    expect(document.querySelector(".page-header[aria-busy='true'] h1")).toBeTruthy();
+    expect(screen.queryByText("Keranjang")).toBeNull();
     expect(document.querySelector('[data-skeleton="CUSTOMER_LIST_SKELETON"]')).toBeTruthy();
     expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(4);
   });

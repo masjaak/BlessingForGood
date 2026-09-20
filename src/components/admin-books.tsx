@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { AdminNav } from "@/components/admin-nav";
 import { AdminPagination } from "@/components/admin-pagination";
 import { BFGSelect } from "@/components/bfg-select";
 import {
@@ -17,11 +16,10 @@ import {
   Field,
   InlineBooleanField,
   LinkButton,
-  LoadingRegion,
-  PageHeader,
   StatusBadge,
 } from "@/components/ui";
-import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { AdminOperationalPage } from "@/components/admin-operational-page";
+import { AdminSkeletonContent } from "@/components/workspace-skeleton-content";
 import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
@@ -123,21 +121,24 @@ function ConnectedAdminBooks() {
   }
 
   const selectedBook = books?.page.find((book) => book._id === deleteState?.bookId);
+  const routeLoading = publishers === undefined || allPublishers === undefined || books === undefined;
   return (
-    <div className="page admin-page">
-      <PageHeader
-        eyebrow="Master Buku"
-        title="Kelola buku dan Ready Stock"
-        description="Metadata buku dipakai ulang; Secret Catalog dan Ready Stock hanya mengatur konteksnya."
-        actions={
-          <LinkButton href="/admin/import" variant="secondary">
-            Import Buku
-          </LinkButton>
-        }
-      />
-      <div className="admin-workspace">
-        <AdminNav />
-        <div className="admin-content">
+    <AdminOperationalPage
+      eyebrow="Master Buku"
+      title="Kelola buku dan Ready Stock"
+      description="Metadata buku dipakai ulang; Secret Catalog dan Ready Stock hanya mengatur konteksnya."
+      actions={
+        <LinkButton href="/admin/import" variant="secondary">
+          Import Buku
+        </LinkButton>
+      }
+      loading={routeLoading}
+      skeleton={{ titleWidth: "62%", descriptionWidths: ["92%"], actionWidths: ["108px"] }}
+    >
+      {routeLoading ? (
+        <AdminSkeletonContent kind="form-list" variant="book-master" />
+      ) : (
+        <>
           <Card className="admin-book-create">
             <form className="form-actions" onSubmit={addPublisher}>
               <Field label="Penerbit baru">
@@ -285,12 +286,7 @@ function ConnectedAdminBooks() {
               </BFGSelect>
             </Field>
           </Card>
-          {books === undefined ? (
-            <LoadingRegion label="Memuat Master Buku">
-              <SkeletonTableBlock rows={8} columnWidths={["1.45fr", "1fr", "0.9fr", "0.95fr", "0.65fr", "0.95fr"]} />
-            </LoadingRegion>
-          ) : null}
-          {books?.page.length ? (
+          {books.page.length ? (
             <div className="table-wrap">
               <table className="data-table admin-books-table">
                 <thead>
@@ -340,7 +336,7 @@ function ConnectedAdminBooks() {
                 </tbody>
               </table>
             </div>
-          ) : books ? (
+          ) : (
             <EmptyState
               title={search || status || availability ? "Tidak ada buku yang cocok" : "Master Buku kosong"}
               description={
@@ -349,7 +345,7 @@ function ConnectedAdminBooks() {
                   : "Buat penerbit dan buku pertama untuk mulai menata katalog."
               }
             />
-          ) : null}
+          )}
           <AdminPagination
             {...pagination}
             rowCount={books?.page.length ?? 0}
@@ -370,9 +366,9 @@ function ConnectedAdminBooks() {
             onCancel={() => setDeleteState(null)}
             onConfirm={() => void deleteBook()}
           />
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </AdminOperationalPage>
   );
 }
 

@@ -20,6 +20,7 @@ import {
   SkeletonText,
 } from "@/components/ui";
 import { SkeletonListCard } from "@/components/workspace-skeleton-primitives";
+import { AdminSkeletonContent } from "@/components/workspace-skeleton-content";
 import { useProduct } from "@/domain/prototype/store";
 import { roleCanAccess } from "@/domain/prototype/session";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
@@ -55,6 +56,7 @@ function UserManagement() {
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [removeUserId, setRemoveUserId] = useState<Id<"appUsers"> | null>(null);
+  const routeLoading = users === undefined || invitations === undefined;
 
   async function run(action: Promise<unknown>, actionId: string) {
     setMessage("");
@@ -67,6 +69,26 @@ function UserManagement() {
     } finally {
       setPendingAction(null);
     }
+  }
+
+  if (routeLoading) {
+    return (
+      <div className="page admin-page">
+        <PageHeader
+          eyebrow="Keamanan Admin"
+          title="Kelola pengguna BFG"
+          description="Admin aktif dapat mengelola role dan status pengguna biasa. Owner tetap dilindungi untuk urusan kepemilikan dan undangan staf."
+          loading
+          skeleton={{ titleWidth: "64%", descriptionWidths: ["92%", "74%"] }}
+        />
+        <div className="admin-workspace">
+          <AdminNav />
+          <div className="admin-content content-stack">
+            <AdminSkeletonContent kind="settings" variant="users" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -135,7 +157,9 @@ function UserManagement() {
                         variant="danger"
                         onClick={() =>
                           void run(
-                            revokeStaffInvitation({ invitationId: invitation.invitationId as Id<"staffInvitations"> }),
+                            revokeStaffInvitation({
+                              invitationId: invitation.invitationId as Id<"staffInvitations">,
+                            }),
                             `revoke:${invitation.invitationId}`,
                           )
                         }

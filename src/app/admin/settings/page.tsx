@@ -19,6 +19,8 @@ function SettingsEditor() {
         eyebrow="Kontrol operasional"
         title="Pengaturan"
         description="Instruksi penting untuk toko, kontak, dan pembayaran. Ini tidak mengaktifkan otomasi WhatsApp API atau gateway pembayaran."
+        loading
+        skeleton={{ titleWidth: "38%", descriptionWidths: ["92%", "68%"] }}
       >
         <LoadingRegion label="Memuat pengaturan">
           <Card aria-hidden="true">
