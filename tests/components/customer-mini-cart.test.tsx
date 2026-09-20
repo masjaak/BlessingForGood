@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useQuery_experimental } from "convex/react";
+import { getFunctionName } from "convex/server";
 import { CustomerMiniCart } from "@/features/customer-cart/customer-mini-cart";
 import { usePathname } from "next/navigation";
 import { useProduct } from "@/domain/prototype/store";
@@ -30,15 +31,15 @@ function context(overrides: Record<string, unknown> = {}) {
   } as never;
 }
 
-function result(retainedQuantity: number, activeQuantity = retainedQuantity) {
+function result(retainedQuantity: number) {
   return {
     status: "success",
-    data: { retainedQuantity, activeQuantity, lines: [] },
+    data: { id: "cart-1", retainedLineCount: retainedQuantity ? 1 : 0, retainedQuantity },
   } as never;
 }
 
 function lastRequest() {
-  return query.mock.calls[query.mock.calls.length - 1]?.[0] as { args: unknown };
+  return query.mock.calls[query.mock.calls.length - 1]?.[0] as { args: unknown; query: unknown };
 }
 
 describe("CustomerMiniCart", () => {
@@ -55,10 +56,11 @@ describe("CustomerMiniCart", () => {
     expect(screen.queryByTestId("customer-mini-cart")).toBeNull();
     expect(query).toHaveBeenCalledTimes(1);
     expect(lastRequest().args).toEqual({});
+    expect(getFunctionName(lastRequest().query as never)).toBe("carts:getMineSummary");
   });
 
   it("renders the retained quantity and the canonical Cart destination", () => {
-    query.mockReturnValue(result(3, 2));
+    query.mockReturnValue(result(3));
 
     render(<CustomerMiniCart />);
 
@@ -70,12 +72,12 @@ describe("CustomerMiniCart", () => {
   });
 
   it("keeps unavailable retained intent visible and follows reactive Cart changes", () => {
-    query.mockReturnValue(result(3, 0));
+    query.mockReturnValue(result(3));
     const view = render(<CustomerMiniCart />);
 
     expect(screen.getByText("3 buku")).toBeTruthy();
 
-    query.mockReturnValue(result(5, 1));
+    query.mockReturnValue(result(5));
     view.rerender(<CustomerMiniCart />);
     expect(screen.getByText("5 buku")).toBeTruthy();
 

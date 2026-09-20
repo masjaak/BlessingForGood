@@ -496,12 +496,15 @@ export const submitCart = mutation({
       fail("ORDER_EMPTY");
     }
 
+    // ponytail: one retained-line identity scan preserves legacy rows without denormalizing catalogId; add a cart-item catalog index if this scan becomes a measured ceiling.
+    const cartItemsWithCatalog = await Promise.all(
+      cartItems.map(async (item) => ({ item, catalogItem: await ctx.db.get(item.catalogItemId) })),
+    );
     let catalogId = args.catalogId;
     if (!catalogId) {
       const catalogIds = new Set<string>();
-      for (const item of cartItems) {
-        const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
-        if (resolved.catalog) catalogIds.add(resolved.catalog._id);
+      for (const { catalogItem } of cartItemsWithCatalog) {
+        if (catalogItem) catalogIds.add(catalogItem.catalogId);
       }
       if (catalogIds.size !== 1) fail("CART_CHECKOUT_CATALOG_REQUIRED");
       catalogId = [...catalogIds][0] as Id<"secretCatalogs">;
@@ -525,19 +528,33 @@ export const submitCart = mutation({
     await requireActiveCatalogGrant(ctx, user._id, catalog._id);
     await assertCatalogBatchReceivable(ctx, catalog._id);
 
-    const selectedItems = [];
-    for (const item of cartItems) {
-      const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
-      if (!resolved.catalog || resolved.catalog._id !== catalog._id) continue;
-      selectedItems.push({ item, resolved });
-    }
+    const selectedItems = await Promise.all(
+      cartItemsWithCatalog
+        .filter(({ catalogItem }) => catalogItem?.catalogId === catalog._id)
+        .map(async ({ item, catalogItem }) => ({
+          item,
+          // ponytail: Catalog and receiving-Batch state was validated once above for this selected group.
+          resolved: await resolveCartCatalogItem(ctx, item.catalogItemId, catalogItem, {
+            skipCatalogStateChecks: true,
+          }),
+        })),
+    );
     if (!selectedItems.length) fail("ORDER_EMPTY");
 
-    const requestedItems = [];
+    const resolvedItems: ResolvedOrderItems = [];
+    const seenVariants = new Set<string>();
     for (const { item, resolved } of selectedItems) {
       if (resolved.availability === "catalog_closed") fail("CATALOG_NOT_OPEN");
       if (resolved.availability === "po_closed") fail("NO_ELIGIBLE_BATCH");
-      if (resolved.availability !== "active" || !resolved.variant) {
+      if (
+        resolved.availability !== "active" ||
+        !resolved.catalogItem ||
+        !resolved.catalog ||
+        !resolved.variant ||
+        !resolved.book ||
+        !resolved.publisher ||
+        resolved.currentUnitPriceAmount === null
+      ) {
         fail("BOOK_VARIANT_UNAVAILABLE", "Cart item is not currently available", {
           availability: resolved.availability,
         });
@@ -560,14 +577,22 @@ export const submitCart = mutation({
         }
         fail("CART_CHECKOUT_REQUIRES_ACKNOWLEDGEMENT");
       }
-      requestedItems.push({
-        variantId: resolved.variant._id,
-        quantity: positiveQuantity(item.quantity),
-        expectedUnitPriceAmount: item.observedUnitPriceAmount,
+      if (seenVariants.has(String(resolved.variant._id))) fail("VALIDATION_FAILED", "duplicate order item");
+      seenVariants.add(String(resolved.variant._id));
+      const quantity = positiveQuantity(item.quantity);
+      const expectedUnitPriceAmount = nonNegativeMoney(item.observedUnitPriceAmount);
+      resolvedItems.push({
+        catalogItem: resolved.catalogItem,
+        variant: resolved.variant,
+        book: resolved.book,
+        publisher: resolved.publisher,
+        quantity,
+        expectedUnitPriceAmount,
+        unitPriceAmount: resolved.currentUnitPriceAmount,
+        subtotalAmount: resolved.currentUnitPriceAmount * quantity,
       });
     }
 
-    const resolvedItems = await resolveItems(ctx, catalog._id, requestedItems);
     assertExpectedPrices(resolvedItems);
     const identity = await currentCustomerOrderIdentity(ctx, user);
     const order = await submitResolvedCustomerOrder(ctx, {

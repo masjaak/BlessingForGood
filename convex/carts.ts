@@ -4,7 +4,14 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { requireActiveCatalogGrant } from "./lib/catalogAccess";
 import { requireActiveCustomer } from "./lib/auth";
-import { emptyCartView, nextAvailabilityState, projectCart, resolveCartCatalogItem } from "./lib/cartProjection";
+import {
+  emptyCartSummary,
+  emptyCartView,
+  nextAvailabilityState,
+  projectCart,
+  projectCartSummary,
+  resolveCartCatalogItem,
+} from "./lib/cartProjection";
 import { fail } from "./lib/errors";
 
 function cartQuantity(value: number): number {
@@ -61,6 +68,15 @@ export const getMine = query({
     const user = await requireActiveCustomer(ctx);
     const cart = await findCart(ctx, user._id);
     return cart ? projectCart(ctx, cart) : emptyCartView();
+  },
+});
+
+export const getMineSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireActiveCustomer(ctx);
+    const cart = await findCart(ctx, user._id);
+    return cart ? projectCartSummary(ctx, cart) : emptyCartSummary();
   },
 });
 

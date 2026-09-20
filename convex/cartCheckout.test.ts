@@ -5,6 +5,19 @@ import type { Id } from "./_generated/dataModel";
 import { api } from "./_generated/api";
 import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
+const checkoutScaleFormats = [
+  "BB",
+  "PB",
+  "HB",
+  "Cards",
+  "Pack",
+  "Slipcase HB",
+  "Slipcase PB",
+  "Boxset PB",
+  "Boxset HB",
+  "FLEXIBOUND",
+] as const;
+
 async function catalogItemId(
   t: ReturnType<typeof testConvex>,
   catalogId: Id<"secretCatalogs">,
@@ -49,6 +62,113 @@ async function addLine(
   return customer.mutation(api.carts.addItem, {
     catalogItemId: await catalogItemId(t, catalogId, variantId),
     quantity,
+  });
+}
+
+async function createScaleCheckoutCart(
+  t: ReturnType<typeof testConvex>,
+  admin: Awaited<ReturnType<typeof setupUsers>>["admin"],
+  customer: Awaited<ReturnType<typeof setupUsers>>["customer"],
+) {
+  const bundle = await admin.mutation(api.secretCatalogs.createBundle, {
+    name: "Cart Checkout Scale",
+    publisherName: "Cart Checkout Scale Publisher",
+    bookTitle: "Cart Checkout Scale Book",
+    accessCode: "cart-checkout-scale-code",
+    variants: checkoutScaleFormats.map((format, index) => ({
+      format,
+      isbn: `9780000005${String(index).padStart(3, "0")}`,
+      priceAmount: 125000 + index * 1000,
+    })),
+  });
+  await admin.mutation(api.secretCatalogs.open, { catalogId: bundle.catalogId });
+  await customer.mutation(api.catalogAccess.unlock, { accessCode: "cart-checkout-scale-code" });
+  const customerUser = await customer.query(api.users.current, {});
+  if (!customerUser) throw new Error("checkout scale Customer missing");
+
+  return t.run(async (ctx) => {
+    const firstVariant = await ctx.db.get(bundle.variantIds[0]);
+    if (!firstVariant) throw new Error("checkout scale Variant missing");
+    const firstBook = await ctx.db.get(firstVariant.bookId);
+    if (!firstBook) throw new Error("checkout scale Book missing");
+    const now = Date.now();
+    const cartId = await ctx.db.insert("carts", {
+      customerUserId: customerUser.appUserId,
+      catalogId: bundle.catalogId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    let totalAmount = 0;
+    let lineCount = 0;
+
+    for (const variantId of bundle.variantIds) {
+      const catalogItem = await ctx.db
+        .query("catalogItems")
+        .withIndex("by_catalog_and_variant", (query) =>
+          query.eq("catalogId", bundle.catalogId).eq("bookVariantId", variantId),
+        )
+        .unique();
+      if (!catalogItem) throw new Error("checkout scale Catalog Item missing");
+      await ctx.db.insert("cartItems", {
+        cartId,
+        catalogItemId: catalogItem._id,
+        quantity: 1,
+        observedUnitPriceAmount: catalogItem.priceOverrideAmount ?? firstVariant.priceAmount + lineCount * 1000,
+        availabilityState: "active",
+        createdAt: now + lineCount,
+        updatedAt: now + lineCount,
+      });
+      totalAmount += catalogItem.priceOverrideAmount ?? firstVariant.priceAmount + lineCount * 1000;
+      lineCount += 1;
+    }
+
+    for (let bookIndex = 1; bookIndex < 5; bookIndex += 1) {
+      const bookId = await ctx.db.insert("books", {
+        publisherId: firstBook.publisherId,
+        title: `Cart Checkout Scale Book ${bookIndex}`,
+        slug: `cart-checkout-scale-book-${bookIndex}`,
+        categories: [],
+        publicationStatus: "special",
+        isActive: true,
+        createdAt: now + bookIndex,
+        updatedAt: now + bookIndex,
+        createdByUserId: customerUser.appUserId,
+      });
+      for (const [formatIndex, format] of checkoutScaleFormats.entries()) {
+        const priceAmount = 125000 + formatIndex * 1000;
+        const variantId = await ctx.db.insert("bookVariants", {
+          bookId,
+          format,
+          isbn: `9780000006${bookIndex}${String(formatIndex).padStart(2, "0")}`,
+          priceAmount,
+          currency: "IDR",
+          isAvailable: true,
+          createdAt: now + lineCount,
+          updatedAt: now + lineCount,
+        });
+        const catalogItemId = await ctx.db.insert("catalogItems", {
+          catalogId: bundle.catalogId,
+          bookVariantId: variantId,
+          bookId,
+          isAvailable: true,
+          createdAt: now + lineCount,
+          updatedAt: now + lineCount,
+        });
+        await ctx.db.insert("cartItems", {
+          cartId,
+          catalogItemId,
+          quantity: 1,
+          observedUnitPriceAmount: priceAmount,
+          availabilityState: "active",
+          createdAt: now + lineCount,
+          updatedAt: now + lineCount,
+        });
+        totalAmount += priceAmount;
+        lineCount += 1;
+      }
+    }
+
+    return { cartId, lineCount, totalAmount };
   });
 }
 
@@ -116,6 +236,29 @@ describe("BFG Cart checkout", () => {
     ).resolves.toMatchObject({ orderId: order.orderId });
     await expectCheckoutError(customer, "cart-checkout-other-tab", "CART_CHECKOUT_ALREADY_SUBMITTED");
   });
+
+  it("scales selected-group checkout to 50 lines without retained Product graph work", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createScaleCheckoutCart(t, admin, customer);
+
+    const order = await customer.mutation(api.orders.submitCart, {
+      requestKey: "cart-checkout-selected-50",
+      catalogId: await t.run(async (ctx) => {
+        const cart = await ctx.db.get(fixture.cartId);
+        if (!cart?.catalogId) throw new Error("checkout scale Catalog missing");
+        return cart.catalogId;
+      }),
+    });
+
+    expect(order).toMatchObject({ totalAmount: fixture.totalAmount });
+    expect(order.items).toHaveLength(fixture.lineCount);
+    expect(await graphCounts(t)).toMatchObject({ orders: 1, orderItems: fixture.lineCount, statusHistory: 1 });
+    await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
+      retainedLineCount: 0,
+      retainedQuantity: 0,
+    });
+  }, 30000);
 
   it("rejects empty and non-Customer checkout without creating an Order", async () => {
     const t = testConvex();

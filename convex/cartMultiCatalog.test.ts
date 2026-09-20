@@ -250,6 +250,66 @@ describe("Multi-Catalog Cart M2 projection", () => {
     });
   });
 
+  it("characterizes ten Catalog groups and 100 retained lines without changing the page contract", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixtures: Array<{ catalogId: Id<"secretCatalogs">; itemId: Id<"catalogItems"> }> = [];
+    for (let index = 0; index < 10; index += 1) {
+      const bundle = await admin.mutation(api.secretCatalogs.createBundle, {
+        name: `Cart Scale Catalog ${index}`,
+        publisherName: `Cart Scale Publisher ${index}`,
+        bookTitle: `Cart Scale Book ${index}`,
+        accessCode: `cart-scale-${index}-code`,
+        variants: [{ format: "PB", isbn: `9780000003${String(index).padStart(3, "0")}`, priceAmount: 125000 }],
+      });
+      await admin.mutation(api.secretCatalogs.open, { catalogId: bundle.catalogId });
+      await customer.mutation(api.catalogAccess.unlock, { accessCode: `cart-scale-${index}-code` });
+      fixtures.push({
+        catalogId: bundle.catalogId,
+        itemId: await catalogItemId(t, bundle.catalogId, bundle.variantIds[0]),
+      });
+    }
+
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("scale Customer missing");
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      const cartId = await ctx.db.insert("carts", {
+        customerUserId: customerUser.appUserId,
+        catalogId: fixtures[0].catalogId,
+        createdAt: now,
+        updatedAt: now,
+      });
+      for (const [groupIndex, fixture] of fixtures.entries()) {
+        const catalogItem = await ctx.db.get(fixture.itemId);
+        if (!catalogItem) throw new Error("scale Catalog Item missing");
+        const variant = await ctx.db.get(catalogItem.bookVariantId);
+        if (!variant) throw new Error("scale Variant missing");
+        const unitPriceAmount = catalogItem.priceOverrideAmount ?? variant.priceAmount;
+        for (let lineIndex = 0; lineIndex < 10; lineIndex += 1) {
+          await ctx.db.insert("cartItems", {
+            cartId,
+            catalogItemId: fixture.itemId,
+            quantity: 1,
+            observedUnitPriceAmount: unitPriceAmount,
+            availabilityState: "active",
+            createdAt: now + groupIndex * 10 + lineIndex,
+            updatedAt: now + groupIndex * 10 + lineIndex,
+          });
+        }
+      }
+    });
+
+    await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
+      retainedLineCount: 100,
+      retainedQuantity: 100,
+    });
+    const cart = await customer.query(api.carts.getMine, {});
+    expect(cart).toMatchObject({ retainedLineCount: 100, retainedQuantity: 100 });
+    expect(cart.groups).toHaveLength(10);
+    expect(cart.groups.every((group) => group.lines.length === 10)).toBe(true);
+  }, 30000);
+
   it("isolates availability, price, and PO failures to one Catalog group", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
@@ -419,6 +479,64 @@ describe("Multi-Catalog Cart M2 projection", () => {
     expect(futureOrder.orderId).not.toBe(firstOrder.orderId);
     expect(await t.run((ctx) => ctx.db.query("orders").collect())).toHaveLength(3);
   });
+
+  it("checks out a selected group while 250 retained lines remain in another group", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createCatalogFixture(t, admin);
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-a-code" });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-b-code" });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId });
+    await addDirectLine(t, customer, fixture.secondItemId, 1);
+
+    const cart = await customer.query(api.carts.getMine, {});
+    if (!cart.id) throw new Error("scale Cart root missing");
+    const secondItem = await t.run((ctx) => ctx.db.get(fixture.secondItemId));
+    if (!secondItem) throw new Error("scale second Catalog Item missing");
+    const secondVariant = await t.run((ctx) => ctx.db.get(secondItem.bookVariantId));
+    if (!secondVariant) throw new Error("scale second Variant missing");
+    const unitPriceAmount = secondItem.priceOverrideAmount ?? secondVariant.priceAmount;
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      for (let index = 0; index < 250; index += 1) {
+        await ctx.db.insert("cartItems", {
+          cartId: cart.id as Id<"carts">,
+          catalogItemId: fixture.secondItemId,
+          quantity: 1,
+          observedUnitPriceAmount: unitPriceAmount,
+          availabilityState: "active",
+          createdAt: now + index,
+          updatedAt: now + index,
+        });
+      }
+    });
+
+    await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
+      retainedLineCount: 252,
+      retainedQuantity: 252,
+    });
+    const order = await customer.mutation(api.orders.submitCart, {
+      requestKey: "selected-group-with-retained-lines",
+      catalogId: fixture.first.catalogId,
+    });
+    expect(order).toMatchObject({ catalogId: fixture.first.catalogId, totalAmount: 125000 });
+
+    const remaining = await t.run(async (ctx) => {
+      const lines = await ctx.db
+        .query("cartItems")
+        .withIndex("by_cart", (query) => query.eq("cartId", cart.id as Id<"carts">))
+        .collect();
+      return {
+        count: lines.length,
+        allSecondCatalogItem: lines.every((line) => line.catalogItemId === fixture.secondItemId),
+      };
+    });
+    expect(remaining).toEqual({ count: 251, allSecondCatalogItem: true });
+    await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
+      retainedLineCount: 251,
+      retainedQuantity: 251,
+    });
+  }, 30000);
 
   it("checks out different Catalog groups independently under concurrency", async () => {
     const t = testConvex();

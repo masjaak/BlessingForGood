@@ -34,7 +34,7 @@ export function CustomerMiniCart() {
 }
 
 function CustomerMiniCartQuery() {
-  const result = useQuery_experimental({ query: api.carts.getMine, args: {} });
+  const result = useQuery_experimental({ query: api.carts.getMineSummary, args: {} });
 
   if (result.status !== "success" || result.data.retainedQuantity === 0) return null;
 

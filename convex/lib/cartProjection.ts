@@ -31,11 +31,17 @@ export type CartCatalogResolution = {
   availability: CartAvailability;
 };
 
+type CartCatalogResolutionOptions = {
+  skipCatalogStateChecks?: boolean;
+};
+
 export async function resolveCartCatalogItem(
   ctx: DataCtx,
   catalogItemId: Id<"catalogItems">,
+  knownCatalogItem?: Doc<"catalogItems"> | null,
+  options?: CartCatalogResolutionOptions,
 ): Promise<CartCatalogResolution> {
-  const catalogItem = await ctx.db.get(catalogItemId);
+  const catalogItem = knownCatalogItem === undefined ? await ctx.db.get(catalogItemId) : knownCatalogItem;
   if (!catalogItem) return removedResolution();
 
   const [catalog, variant] = await Promise.all([
@@ -56,7 +62,7 @@ export async function resolveCartCatalogItem(
       availability: "removed",
     };
   }
-  if (!(await catalogIsOpen(ctx, catalog._id))) {
+  if (!options?.skipCatalogStateChecks && !(await catalogIsOpen(ctx, catalog._id))) {
     return {
       catalogItem,
       catalog,
@@ -117,12 +123,14 @@ export async function resolveCartCatalogItem(
     };
   }
 
-  const linkedBatch = await ctx.db
-    .query("catalogBatchLinks")
-    .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
-    .first();
-  if (linkedBatch && !(await eligibleReceivingBatches(ctx, catalog._id)).length) {
-    return { catalogItem, catalog, variant, book, publisher, currentUnitPriceAmount, availability: "po_closed" };
+  if (!options?.skipCatalogStateChecks) {
+    const linkedBatch = await ctx.db
+      .query("catalogBatchLinks")
+      .withIndex("by_catalog", (query) => query.eq("catalogId", catalog._id))
+      .first();
+    if (linkedBatch && !(await eligibleReceivingBatches(ctx, catalog._id)).length) {
+      return { catalogItem, catalog, variant, book, publisher, currentUnitPriceAmount, availability: "po_closed" };
+    }
   }
   return { catalogItem, catalog, variant, book, publisher, currentUnitPriceAmount, availability: "active" };
 }
@@ -157,6 +165,18 @@ async function coverUrl(ctx: DataCtx, book: Doc<"books"> | null) {
 export async function projectCartLine(ctx: DataCtx, item: Doc<"cartItems">) {
   const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId);
   return projectResolvedCartLine(ctx, item, resolved, "granted");
+}
+
+export async function projectCartSummary(ctx: DataCtx, cart: Doc<"carts">) {
+  const items = await ctx.db
+    .query("cartItems")
+    .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
+    .collect();
+  return {
+    id: cart._id,
+    retainedLineCount: items.length,
+    retainedQuantity: items.reduce((total, item) => total + item.quantity, 0),
+  };
 }
 
 async function projectResolvedCartLine(
@@ -345,4 +365,8 @@ export function emptyCartView() {
     activeQuantity: 0,
     estimatedSubtotalAmount: 0,
   };
+}
+
+export function emptyCartSummary() {
+  return { id: null, retainedLineCount: 0, retainedQuantity: 0 };
 }

@@ -1,5 +1,68 @@
 # BFG CODEBASE MEMORY
 
+## Phase 2E Cart read and checkout boundaries — 2026-09-20
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+Product-owner lock: `ADMIN_SKELETON_FULL_ROUTE_PARITY_GREEN_PRODUCTION`.
+That current manual Production verification supersedes earlier source-only
+skeleton coverage notes for this release.
+
+### CURRENT
+
+- `carts.getMineSummary` owns the Mini Cart contract: Cart root identity plus
+  retained line count and quantity from Cart-line metadata only. It does not
+  resolve Catalog, Variant, Book, Publisher, Batch, access, price, or media
+  relationships.
+- `carts.getMine` and `projectCart` own the Customer Cart Page contract:
+  grouped Catalog lines, visible Product fields, current price, availability,
+  acknowledgement, checkout eligibility, and totals.
+- `orders.submitCart` remains the server-authoritative checkout owner. It
+  scans retained Cart Items only for Catalog identity, fully resolves the
+  selected Catalog group, validates Catalog/access/Batch state once at group
+  scope, and preserves one Order per selected Catalog.
+- Checkout keeps the existing Cart Item reconciliation, current-price
+  validation, immutable Order snapshots, access/grant rules, and idempotency
+  records. The optional Cart-root `catalogId` remains compatibility metadata,
+  not the grouping authority.
+
+### PROTECTED
+
+- Multi-Catalog Cart grouping, direct preorder, Ready Stock exclusion,
+  add-after-checkout, retained-line reconciliation, Orders Phase 2D, Batch
+  Phase 2C, cancellation, finance, Auth, resolved UI, and the Admin skeleton
+  system remain frozen unless directly implicated by fresh evidence.
+
+### UNPROVEN
+
+- Exact Production document-read counts and authenticated Production Cart UAT
+  remain pending without an approved disposable Customer session. Local scale
+  characterization proves structural boundaries, not a Product support limit.
+
+### SUPERSEDED
+
+- Mounting the full `carts.getMine` projection in the Mini Cart is no longer a
+  valid consumer boundary.
+- Resolving every retained Cart line's full Product graph and then resolving
+  the selected lines again in checkout is no longer valid.
+
+### Permanent rules
+
+- `CART SUMMARY != CART PAGE != CHECKOUT SUPPORT`
+- `CHECKOUT COST SHOULD FOLLOW SELECTED GROUP + RETAINED-LINE IDENTITY`
+- Keep the retained-line identity scan until a measured ceiling justifies a
+  Cart Item Catalog index; do not denormalize Cart grouping speculatively.
+
+### Scale harness
+
+- `convex/carts.test.ts` characterizes the summary contract through 500
+  retained lines, including missing Product relation tolerance.
+- `convex/cartMultiCatalog.test.ts` covers 10 Catalog groups / 100 retained
+  lines and checkout of one group with 250 retained lines in another.
+- `convex/cartCheckout.test.ts` covers a 50-line selected Catalog checkout.
+- These are architecture-pressure fixtures, not declarations of supported
+  Production Cart limits.
+
 ## Phase 2D Order read boundaries — 2026-09-19
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

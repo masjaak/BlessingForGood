@@ -88,6 +88,49 @@ describe("Customer Cart server domain", () => {
     expect(cleared).toMatchObject({ id: updated.id, catalogId: null, lines: [], retainedQuantity: 0 });
   });
 
+  it("keeps the Mini Cart summary on Cart-line metadata through 500 retained-line characterization", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const bundle = await createCartCatalog(admin, "Cart Summary Scale");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "cart-summary-scale-code" });
+    const itemId = await catalogItemId(t, bundle.catalogId, bundle.variantIds[0]);
+    await customer.mutation(api.carts.addItem, { catalogItemId: itemId });
+
+    const cart = await t.run((ctx) => ctx.db.query("carts").withIndex("by_customer_user_id").unique());
+    if (!cart) throw new Error("summary Cart missing");
+    const catalogItem = await t.run((ctx) => ctx.db.get(itemId));
+    if (!catalogItem) throw new Error("summary Catalog Item missing");
+    const checkpoints = [1, 15, 100, 250, 500];
+    let previousCount = 1;
+    for (const count of checkpoints) {
+      await t.run(async (ctx) => {
+        for (let index = previousCount; index < count; index += 1) {
+          await ctx.db.insert("cartItems", {
+            cartId: cart._id,
+            catalogItemId: catalogItem._id,
+            quantity: 1,
+            observedUnitPriceAmount: 125000,
+            availabilityState: "active",
+            createdAt: Date.now() + index,
+            updatedAt: Date.now() + index,
+          });
+        }
+      });
+      await expect(customer.query(api.carts.getMineSummary, {})).resolves.toEqual({
+        id: cart._id,
+        retainedLineCount: count,
+        retainedQuantity: count,
+      });
+      previousCount = count;
+    }
+
+    await t.run((ctx) => ctx.db.delete(catalogItem._id));
+    await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
+      retainedLineCount: 500,
+      retainedQuantity: 500,
+    });
+  }, 30000);
+
   it("adds valid items from different Catalogs while preserving the legacy root metadata", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
