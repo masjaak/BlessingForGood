@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -7,6 +8,15 @@ import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { nonNegativeQuantity } from "./lib/validation";
 import { bookFormatValidator, bookSortValidator } from "./validators";
+
+async function availableStockQuantity(ctx: QueryCtx, variant: Doc<"bookVariants">) {
+  if (!variant.isAvailable) return 0;
+  const inventory = await ctx.db
+    .query("readyStockInventory")
+    .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
+    .unique();
+  return inventory ? Math.max(0, inventory.quantity - (inventory.reservedQuantity ?? 0)) : 0;
+}
 
 async function publicBookView(ctx: QueryCtx, book: Doc<"books">, includeMedia = false) {
   const [publisher, variants, gallery] = await Promise.all([
@@ -27,13 +37,8 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">, includeMedia = 
   const stocked = (
     await Promise.all(
       variants.map(async (variant) => {
-        const inventory = await ctx.db
-          .query("readyStockInventory")
-          .withIndex("by_book_variant_id", (query) => query.eq("bookVariantId", variant._id))
-          .unique();
-        const reservedQuantity = inventory?.reservedQuantity ?? 0;
-        const availableQuantity = inventory ? Math.max(0, inventory.quantity - reservedQuantity) : 0;
-        return variant.isAvailable && inventory && availableQuantity > 0
+        const availableQuantity = await availableStockQuantity(ctx, variant);
+        return availableQuantity > 0
           ? {
               id: variant._id,
               format: variant.format,
@@ -135,6 +140,30 @@ export const list = query({
         formats: [...new Set(allItems.flatMap((book) => book.variants.map((variant) => variant.format)))].sort(),
       },
     };
+  },
+});
+
+export const listForSitemap = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    const page = await ctx.db
+      .query("books")
+      .withIndex("by_publication_status", (index) => index.eq("publicationStatus", "published"))
+      .order("desc")
+      .paginate(args.paginationOpts);
+    const items = await Promise.all(
+      page.page.map(async (book) => {
+        const variants = await ctx.db
+          .query("bookVariants")
+          .withIndex("by_book", (query) => query.eq("bookId", book._id))
+          .collect();
+        const hasStock = (await Promise.all(variants.map((variant) => availableStockQuantity(ctx, variant)))).some(
+          (quantity) => quantity > 0,
+        );
+        return hasStock ? { slug: book.slug } : null;
+      }),
+    );
+    return { ...page, page: items.filter((item): item is { slug: string } => item !== null) };
   },
 });
 

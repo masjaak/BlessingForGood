@@ -43,6 +43,36 @@ describe("BFG Ready Stock and Book Master", () => {
     expect((await t.query(api.readyStock.list, {})).items).toEqual([]);
   });
 
+  it("returns only published positive-stock slugs through the minimal sitemap projection", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Sitemap House" });
+    const publicBookId = await admin.mutation(api.books.create, { publisherId, title: "Sitemap Book" });
+    const publicVariantId = await admin.mutation(api.bookVariants.create, {
+      bookId: publicBookId,
+      format: "PB",
+      isbn: "9780000041091",
+      priceAmount: 110000,
+    });
+    const emptyBookId = await admin.mutation(api.books.create, { publisherId, title: "Empty Sitemap Book" });
+    const emptyVariantId = await admin.mutation(api.bookVariants.create, {
+      bookId: emptyBookId,
+      format: "PB",
+      isbn: "9780000041092",
+      priceAmount: 110000,
+    });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: publicVariantId, quantity: 2 });
+    await admin.mutation(api.readyStock.setQuantity, { bookVariantId: emptyVariantId, quantity: 0 });
+    await admin.mutation(api.books.update, { bookId: publicBookId, publicationStatus: "published" });
+    await admin.mutation(api.books.update, { bookId: emptyBookId, publicationStatus: "published" });
+
+    const result = await t.query(api.readyStock.listForSitemap, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(result.page).toEqual([{ slug: "sitemap-book" }]);
+    expect(result.isDone).toBe(true);
+  });
+
   it("searches and filters public stock on the server", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);

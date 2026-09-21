@@ -12,6 +12,7 @@ const HOMEPAGE_DESCRIPTION =
 
 export type PublicReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
 export type PublicReadyStockList = FunctionReturnType<typeof api.readyStock.list>;
+export type PublicReadyStockSitemapPage = FunctionReturnType<typeof api.readyStock.listForSitemap>;
 
 function publicDataClient() {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -26,6 +27,23 @@ export const getPublicReadyStockBook = cache(async (slug: string): Promise<Publi
 export async function getPublicReadyStockList(): Promise<PublicReadyStockList | undefined> {
   const client = publicDataClient();
   return client ? client.query(api.readyStock.list, {}) : undefined;
+}
+
+export async function getPublicReadyStockSlugs(): Promise<string[] | undefined> {
+  const client = publicDataClient();
+  if (!client) return undefined;
+  const slugs: string[] = [];
+  let cursor: string | null = null;
+  let isDone = false;
+  while (!isDone) {
+    const page: PublicReadyStockSitemapPage = await client.query(api.readyStock.listForSitemap, {
+      paginationOpts: { numItems: 100, cursor },
+    });
+    slugs.push(...page.page.map((book) => book.slug));
+    cursor = page.continueCursor;
+    isDone = page.isDone;
+  }
+  return slugs;
 }
 
 export function publicBookUrl(book: Pick<PublicReadyStockBook, "slug">) {

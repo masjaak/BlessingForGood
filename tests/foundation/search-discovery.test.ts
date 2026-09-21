@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
-import sitemap from "@/app/sitemap";
+import sitemap, { buildSitemapEntries } from "@/app/sitemap";
 import {
   createBookMetadata,
   createBookStructuredData,
@@ -70,6 +70,24 @@ describe("BFG search discovery foundation", () => {
     ]);
     expect(new Set(urls).size).toBe(urls.length);
     expect(urls.some((url) => /admin|account|catalog|sign-in|sign-up|invoice|payment/i.test(url))).toBe(false);
+  });
+
+  it("reconciles the intended public sitemap fixture without private URLs or duplicates", () => {
+    const urls = buildSitemapEntries(["the-public-book", "the-public-book", "second-public-book"]).map(
+      (entry) => entry.url,
+    );
+
+    expect(urls).toEqual([
+      "https://www.blessingforgood.com/",
+      "https://www.blessingforgood.com/ready-stock",
+      "https://www.blessingforgood.com/community",
+      "https://www.blessingforgood.com/how-to-order",
+      "https://www.blessingforgood.com/help",
+      "https://www.blessingforgood.com/ready-stock/the-public-book",
+      "https://www.blessingforgood.com/ready-stock/second-public-book",
+    ]);
+    expect(urls.some((url) => /admin|account|catalog|sign-in|sign-up|invoice|payment/i.test(url))).toBe(false);
+    expect(readFileSync("src/app/sitemap.ts", "utf8")).toContain("getPublicReadyStockSlugs");
   });
 
   it("keeps homepage entity markup factual and product markup tied to live public fields", () => {
