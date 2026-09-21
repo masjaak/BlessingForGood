@@ -5,8 +5,8 @@ import { ClerkInvitationAcceptance } from "@/components/clerk-invitation-accepta
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Aktivasi Undangan | Blessing For Goods",
-  description: "Selesaikan aktivasi akun Blessing For Goods melalui undangan yang masih berlaku.",
+  title: "Aktivasi Undangan | Blessing For Good",
+  description: "Selesaikan aktivasi akun Blessing For Good melalui undangan yang masih berlaku.",
   path: "/sign-up",
   index: false,
 });

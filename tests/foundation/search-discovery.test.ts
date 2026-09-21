@@ -98,6 +98,12 @@ describe("BFG search discovery foundation", () => {
     expect(homepage).toMatchObject({ "@context": "https://schema.org" });
     expect(JSON.stringify(homepage)).toContain("OnlineStore");
     expect(JSON.stringify(homepage)).toContain("WebSite");
+    expect(homepage["@graph"]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ "@type": "OnlineStore", name: "Blessing For Good" }),
+        expect.objectContaining({ "@type": "WebSite", name: "Blessing For Good" }),
+      ]),
+    );
     expect(product).toMatchObject({
       "@type": "Product",
       name: book.title,
@@ -118,7 +124,7 @@ describe("BFG search discovery foundation", () => {
 
   it("generates unique canonical book metadata from real fields", () => {
     expect(createBookMetadata(book)).toMatchObject({
-      title: "The Public Book — Ready Stock | Blessing For Goods",
+      title: "The Public Book — Ready Stock | Blessing For Good",
       alternates: { canonical: "/ready-stock/the-public-book" },
       robots: { index: true, follow: true },
     });

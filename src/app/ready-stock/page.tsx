@@ -7,8 +7,8 @@ import { getPublicReadyStockList, createPageMetadata } from "@/lib/seo";
 export const revalidate = 60;
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Ready Stock — Buku Tersedia Sekarang | Blessing For Goods",
-  description: "Temukan judul pilihan, format, harga, dan ketersediaan buku Ready Stock di Blessing For Goods.",
+  title: "Ready Stock — Buku Tersedia Sekarang | Blessing For Good",
+  description: "Temukan judul pilihan, format, harga, dan ketersediaan buku Ready Stock di Blessing For Good.",
   path: "/ready-stock",
 });
 

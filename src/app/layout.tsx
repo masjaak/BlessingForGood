@@ -6,10 +6,10 @@ import { ProductProvider } from "@/domain/prototype/store";
 import { FloatingBlessyGuide } from "@/features/floating-blessy";
 import "./globals.css";
 
-const SITE_TITLE = "Blessing For Goods — Imported Bookstore & Community";
+const SITE_TITLE = "Blessing For Good — Imported Bookstore & Community";
 const SITE_DESCRIPTION =
-  "Blessing For Goods adalah community-led imported bookstore untuk menemukan Ready Stock, preorder, dan curated titles pilihan.";
-const SOCIAL_IMAGE_ALT = "Blessing For Goods — Imported Bookstore & Community";
+  "Blessing For Good adalah community-led imported bookstore untuk menemukan Ready Stock, preorder, dan curated titles pilihan.";
+const SOCIAL_IMAGE_ALT = "Blessing For Good — Imported Bookstore & Community";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.blessingforgood.com"),
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
-    siteName: "Blessing For Goods",
+    siteName: "Blessing For Good",
     type: "website",
     images: [
       {

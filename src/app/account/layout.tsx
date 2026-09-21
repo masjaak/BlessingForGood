@@ -1,8 +1,8 @@
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Akun | Blessing For Goods",
-  description: "Ruang akun pribadi Blessing For Goods.",
+  title: "Akun | Blessing For Good",
+  description: "Ruang akun pribadi Blessing For Good.",
   path: "/account",
   index: false,
 });

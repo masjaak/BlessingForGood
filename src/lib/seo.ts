@@ -6,9 +6,9 @@ import { api } from "../../convex/_generated/api";
 import { isValidBackendUrl } from "./environment";
 
 export const SITE_URL = "https://www.blessingforgood.com";
-const SITE_NAME = "Blessing For Goods";
+const SITE_NAME = "Blessing For Good";
 const HOMEPAGE_DESCRIPTION =
-  "Blessing For Goods adalah community-led imported bookstore untuk menemukan Ready Stock, preorder, dan curated titles pilihan.";
+  "Blessing For Good adalah community-led imported bookstore untuk menemukan Ready Stock, preorder, dan curated titles pilihan.";
 
 export type PublicReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
 export type PublicReadyStockList = FunctionReturnType<typeof api.readyStock.list>;

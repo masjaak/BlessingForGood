@@ -1,7 +1,7 @@
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Komunitas Blessfriends | Blessing For Goods",
+  title: "Komunitas Blessfriends | Blessing For Good",
   description: "Kenali komunitas Blessfriends dan cara BFG membantu menemukan buku impor pilihan.",
   path: "/community",
 });

@@ -8,8 +8,8 @@ import { LinkButton } from "@/components/ui";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Masuk | Blessing For Goods",
-  description: "Masuk ke akun Blessing For Goods melalui undangan BFG.",
+  title: "Masuk | Blessing For Good",
+  description: "Masuk ke akun Blessing For Good melalui undangan BFG.",
   path: "/sign-in",
   index: false,
 });

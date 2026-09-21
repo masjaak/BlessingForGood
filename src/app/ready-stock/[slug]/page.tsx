@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: ReadyStockDetailPageProps): P
   return book
     ? createBookMetadata(book)
     : createPageMetadata({
-        title: "Buku Ready Stock Tidak Tersedia | Blessing For Goods",
+        title: "Buku Ready Stock Tidak Tersedia | Blessing For Good",
         description: "Buku Ready Stock yang diminta tidak tersedia untuk dilihat.",
         path: `/ready-stock/${slug}`,
         index: false,

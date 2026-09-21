@@ -33,7 +33,7 @@ async function assertBottomClearance(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>${globalsCss}</style>
     <div class="site-shell customer-shell">
-      <header class="site-header"><span>Blessing For Goods</span></header>
+      <header class="site-header"><span>Blessing For Good</span></header>
       <main>${content}</main>
       ${customerBottomNav()}
     </div>
