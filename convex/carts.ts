@@ -4,6 +4,7 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { requireActiveCatalogGrant } from "./lib/catalogAccess";
 import { requireActiveCustomer } from "./lib/auth";
+import { recordCartIntentEvent } from "./analytics";
 import {
   emptyCartSummary,
   emptyCartView,
@@ -50,11 +51,16 @@ function assertAddable(availability: Awaited<ReturnType<typeof resolveCartCatalo
     fail("CART_LINE_UNAVAILABLE", "Cart item is not currently available", { availability });
 }
 
-async function clearCatalogCheckout(
-  ctx: MutationCtx,
-  cartId: Id<"carts">,
-  catalogId: Id<"secretCatalogs">,
-) {
+function cartIntentMetadata(resolved: Awaited<ReturnType<typeof resolveCartCatalogItem>>) {
+  return {
+    bookId: resolved.book?._id,
+    bookVariantId: resolved.variant?._id,
+    bookTitle: resolved.book?.title,
+    format: resolved.variant?.format,
+  };
+}
+
+async function clearCatalogCheckout(ctx: MutationCtx, cartId: Id<"carts">, catalogId: Id<"secretCatalogs">) {
   const checkout = await ctx.db
     .query("cartCheckouts")
     .withIndex("by_cart_and_catalog", (query) => query.eq("cartId", cartId).eq("catalogId", catalogId))
@@ -119,10 +125,12 @@ export const addItem = mutation({
         query.eq("cartId", cart!._id).eq("catalogItemId", args.catalogItemId),
       )
       .unique();
+    let cartItemId: Id<"cartItems">;
     if (existing) {
       await ctx.db.patch(existing._id, { quantity: mergedQuantity(existing.quantity, quantity), updatedAt: now });
+      cartItemId = existing._id;
     } else {
-      await ctx.db.insert("cartItems", {
+      cartItemId = await ctx.db.insert("cartItems", {
         cartId: cart._id,
         catalogItemId: args.catalogItemId,
         quantity,
@@ -133,6 +141,16 @@ export const addItem = mutation({
       });
     }
     await ctx.db.patch(cart._id, { lastCheckout: undefined, updatedAt: now });
+    await recordCartIntentEvent(ctx, {
+      eventType: "cart_item_added",
+      customerUserId: user._id,
+      cartId: cart._id,
+      cartItemId,
+      catalogItemId: args.catalogItemId,
+      ...cartIntentMetadata(resolved),
+      quantity,
+      createdAt: now,
+    });
     return projectCart(ctx, (await ctx.db.get(cart._id))!);
   },
 });
@@ -154,12 +172,22 @@ export const removeItem = mutation({
   handler: async (ctx, args) => {
     const user = await requireActiveCustomer(ctx);
     const { cart, item } = await ownedLine(ctx, user._id, args.cartItemId);
+    const now = Date.now();
+    await recordCartIntentEvent(ctx, {
+      eventType: "cart_item_removed",
+      customerUserId: user._id,
+      cartId: cart._id,
+      cartItemId: item._id,
+      catalogItemId: item.catalogItemId,
+      quantity: item.quantity,
+      createdAt: now,
+    });
     await ctx.db.delete(item._id);
     const remaining = await ctx.db
       .query("cartItems")
       .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
       .first();
-    await ctx.db.patch(cart._id, { catalogId: remaining ? cart.catalogId : undefined, updatedAt: Date.now() });
+    await ctx.db.patch(cart._id, { catalogId: remaining ? cart.catalogId : undefined, updatedAt: now });
     return projectCart(ctx, (await ctx.db.get(cart._id))!);
   },
 });
@@ -174,13 +202,25 @@ export const clear = mutation({
       .query("cartItems")
       .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
       .collect();
-    for (const item of items) await ctx.db.delete(item._id);
+    const now = Date.now();
+    for (const item of items) {
+      await recordCartIntentEvent(ctx, {
+        eventType: "cart_item_removed",
+        customerUserId: user._id,
+        cartId: cart._id,
+        cartItemId: item._id,
+        catalogItemId: item.catalogItemId,
+        quantity: item.quantity,
+        createdAt: now,
+      });
+      await ctx.db.delete(item._id);
+    }
     const checkouts = await ctx.db
       .query("cartCheckouts")
       .withIndex("by_cart_and_catalog", (query) => query.eq("cartId", cart._id))
       .collect();
     for (const checkout of checkouts) await ctx.db.delete(checkout._id);
-    await ctx.db.patch(cart._id, { catalogId: undefined, lastCheckout: undefined, updatedAt: Date.now() });
+    await ctx.db.patch(cart._id, { catalogId: undefined, lastCheckout: undefined, updatedAt: now });
     return projectCart(ctx, (await ctx.db.get(cart._id))!);
   },
 });

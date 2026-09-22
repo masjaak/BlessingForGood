@@ -199,13 +199,20 @@ describe("public UI foundation", () => {
   });
 
   it("links the grouped admin workspace destinations", () => {
-    render(<AdminNav />);
+    render(
+      <ProductContext.Provider value={{ dataSource: "convex", sessionRole: "owner" } as never}>
+        <AdminNav />
+      </ProductContext.Provider>,
+    );
 
     expect(screen.getByRole("link", { name: "Dasbor" }).getAttribute("href")).toBe("/admin");
+    expect(screen.getByRole("link", { name: "Analytics" }).getAttribute("href")).toBe("/admin/analytics");
     expect(screen.getByRole("link", { name: "Katalog" }).getAttribute("href")).toBe("/admin/catalogs");
     expect(screen.getByRole("link", { name: "Buku" }).getAttribute("href")).toBe("/admin/books");
     expect(screen.getByRole("link", { name: "Ready Stock" }).getAttribute("href")).toBe("/admin/ready-stock");
     expect(screen.getByRole("link", { name: "Pembayaran" }).getAttribute("href")).toBe("/admin/payments");
+    expect(screen.getByRole("link", { name: "Pengaturan" }).getAttribute("href")).toBe("/admin/settings");
+    expect(screen.getByRole("link", { name: /Lihat sisi pelanggan/ }).getAttribute("href")).toBe("/catalog");
     expect(document.querySelectorAll(".admin-nav-icon-wrap").length).toBe(
       document.querySelectorAll(".admin-nav-link").length,
     );

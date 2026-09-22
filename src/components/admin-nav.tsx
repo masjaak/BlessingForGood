@@ -37,6 +37,7 @@ const groups: AdminNavGroup[] = [
     label: "Ikhtisar",
     links: [
       { href: "/admin", label: "Dasbor", icon: "dashboard" },
+      { href: "/admin/analytics", label: "Analytics", icon: "reports" },
       { href: "/admin/content", label: "Konten", icon: "content" },
     ],
   },

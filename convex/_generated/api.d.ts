@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as analytics from "../analytics.js";
 import type * as auditEvents from "../auditEvents.js";
 import type * as batchTracking from "../batchTracking.js";
 import type * as batches from "../batches.js";
@@ -88,6 +89,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
   auditEvents: typeof auditEvents;
   batchTracking: typeof batchTracking;
   batches: typeof batches;

@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 const ownerEmail = process.env.BFG_E2E_OWNER_EMAIL;
 const adminRoutes = [
   "/admin",
+  "/admin/analytics",
   "/admin/content",
   "/admin/join-requests",
   "/admin/customers",

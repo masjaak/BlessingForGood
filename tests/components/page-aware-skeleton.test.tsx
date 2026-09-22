@@ -99,6 +99,11 @@ describe("page-aware workspace skeletons", () => {
     expect(document.querySelector('[data-skeleton-layout="batch"]')).toBeTruthy();
     expect(document.querySelector(".workspace-skeleton-form")).toBeTruthy();
     expect(document.querySelectorAll(".workspace-skeleton-list-card")).toHaveLength(3);
+
+    unmount();
+    render(<PageAwareSkeleton workspace="admin" pathname="/admin/analytics" />);
+    expect(document.querySelector('[data-skeleton-layout="analytics"]')).toBeTruthy();
+    expect(document.querySelector('[aria-label="Memuat analytics"]')).toBeTruthy();
   });
 
   it("preserves the populated geometry for Books, Catalogs, and Users", () => {

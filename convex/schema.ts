@@ -476,6 +476,27 @@ export default defineSchema({
     .index("by_cart", ["cartId"])
     .index("by_cart_and_catalog_item", ["cartId", "catalogItemId"]),
 
+  cartIntentEvents: defineTable({
+    eventType: v.union(
+      v.literal("cart_item_added"),
+      v.literal("cart_item_removed"),
+      v.literal("cart_item_converted_to_order"),
+    ),
+    customerUserId: v.id("appUsers"),
+    cartId: v.id("carts"),
+    cartItemId: v.id("cartItems"),
+    catalogItemId: v.optional(v.id("catalogItems")),
+    bookId: v.optional(v.id("books")),
+    bookVariantId: v.optional(v.id("bookVariants")),
+    bookTitle: v.optional(v.string()),
+    format: v.optional(v.string()),
+    quantity: v.number(),
+    orderId: v.optional(v.id("orders")),
+    createdAt: v.number(),
+  })
+    .index("by_created_at", ["createdAt"])
+    .index("by_cart_item_id", ["cartItemId"]),
+
   cartCheckouts: defineTable({
     cartId: v.id("carts"),
     catalogId: v.id("secretCatalogs"),

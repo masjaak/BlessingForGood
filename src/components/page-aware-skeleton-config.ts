@@ -9,6 +9,7 @@ export type SkeletonVariant =
   | "customer-card-list"
   | "deposit"
   | "financial-list"
+  | "analytics"
   | "orders"
   | "ready-stock"
   | "report"
@@ -183,6 +184,15 @@ export function adminConfig(pathname: string): SkeletonConfig {
       description: "Ringkasan berbasis periode dan ekspor.",
       actionWidths: ["188px"],
       variant: "report",
+    };
+  }
+  if (pathname === "/admin/analytics") {
+    return {
+      kind: "finance",
+      eyebrow: "Analytics",
+      title: "Analytics",
+      description: "Lihat minat Customer dari aktivitas keranjang sebelum menjadi pesanan.",
+      variant: "analytics",
     };
   }
   if (pathname === "/admin/notifications" || pathname === "/admin/inbox") {

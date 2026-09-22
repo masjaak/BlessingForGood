@@ -43,7 +43,7 @@ describe("Admin bootstrap shell loading contract", () => {
     const { container } = render(<AdminNavSkeleton />);
 
     expect(container.querySelectorAll(".admin-nav-group")).toHaveLength(6);
-    expect(container.querySelectorAll(".admin-nav-link")).toHaveLength(18);
-    expect(container.querySelectorAll(".admin-nav-skeleton-icon")).toHaveLength(18);
+    expect(container.querySelectorAll(".admin-nav-link")).toHaveLength(19);
+    expect(container.querySelectorAll(".admin-nav-skeleton-icon")).toHaveLength(19);
   });
 });

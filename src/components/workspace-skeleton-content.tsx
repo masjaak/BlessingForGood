@@ -1,4 +1,5 @@
 import { Card, Skeleton, SkeletonText } from "@/components/ui";
+import { AnalyticsSkeleton } from "@/features/admin-analytics/analytics-skeleton";
 import type { AdminSkeletonKind, CustomerSkeletonKind, SkeletonVariant } from "@/components/page-aware-skeleton-config";
 import {
   SkeletonDashboardSection,
@@ -153,6 +154,7 @@ export function AdminSkeletonContent({ kind, variant }: { kind: AdminSkeletonKin
       </>
     );
   }
+  if (variant === "analytics") return <AnalyticsSkeleton />;
   if (kind === "table-queue")
     return (
       <>

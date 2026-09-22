@@ -18,6 +18,7 @@ import { enforceRateLimit } from "./lib/rateLimit";
 import { autoAssignOrderItemsForCatalog, eligibleReceivingBatches } from "./batches";
 import { resolveCartCatalogItem } from "./lib/cartProjection";
 import { buildOrderSearchText, normalizeOrderSearchQuery } from "./lib/orderSearch";
+import { recordCartIntentEvent } from "./analytics";
 
 const orderItemInput = v.object({ variantId: v.id("bookVariants"), quantity: v.number() });
 const customerOrderItemInput = orderItemInput.extend({ expectedUnitPriceAmount: v.number() });
@@ -606,7 +607,24 @@ export const submitCart = mutation({
     });
 
     const now = Date.now();
-    for (const { item } of selectedItems) await ctx.db.delete(item._id);
+    for (const { item, resolved } of selectedItems) {
+      if (!resolved.catalogItem || !resolved.book || !resolved.variant) fail("BOOK_VARIANT_UNAVAILABLE");
+      await recordCartIntentEvent(ctx, {
+        eventType: "cart_item_converted_to_order",
+        customerUserId: user._id,
+        cartId: cart._id,
+        cartItemId: item._id,
+        catalogItemId: resolved.catalogItem._id,
+        bookId: resolved.book._id,
+        bookVariantId: resolved.variant._id,
+        bookTitle: resolved.book.title,
+        format: resolved.variant.format,
+        quantity: item.quantity,
+        orderId: order.orderId,
+        createdAt: now,
+      });
+      await ctx.db.delete(item._id);
+    }
     const remaining = await ctx.db
       .query("cartItems")
       .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
