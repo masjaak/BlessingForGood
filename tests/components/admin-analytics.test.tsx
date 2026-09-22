@@ -20,6 +20,7 @@ vi.mock("convex/react", () => ({
 }));
 
 const data = {
+  trackingStartedAt: Date.UTC(2026, 8, 22),
   metrics: { addActions: 3, interestedCustomers: 2, unconvertedIntents: 2, convertedIntents: 1 },
   books: [
     {
@@ -67,6 +68,7 @@ describe("Admin Analytics V1", () => {
 
     expect(screen.getByRole("heading", { name: "Analytics" })).toBeTruthy();
     expect(screen.getByText("Lihat minat Customer dari aktivitas keranjang sebelum menjadi pesanan.")).toBeTruthy();
+    expect(screen.getByText(/Riwayat aktivitas keranjang mulai direkam sejak/)).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Periode analytics" })).toBeTruthy();
     expect(screen.getByText("3")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Buku paling sering masuk keranjang" })).toBeTruthy();
@@ -97,5 +99,23 @@ describe("Admin Analytics V1", () => {
     };
     rerender(<AdminAnalyticsContent />);
     expect(screen.getByText("Belum ada aktivitas keranjang")).toBeTruthy();
+  });
+
+  it("keeps current-cart activity visible when no tracked add exists", () => {
+    analyticsState = {
+      status: "success",
+      data: {
+        ...data,
+        trackingStartedAt: null,
+        metrics: { addActions: 0, interestedCustomers: 0, unconvertedIntents: 0, convertedIntents: 0 },
+        books: [],
+      },
+    };
+    render(<AdminAnalyticsContent />);
+
+    expect(screen.getByRole("heading", { name: "Aktivitas Customer" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Undo" })).toBeTruthy();
+    expect(screen.getByText(/Riwayat aktivitas dihitung sejak Analytics diaktifkan/)).toBeTruthy();
+    expect(screen.queryByText("Belum ada aktivitas keranjang")).toBeNull();
   });
 });

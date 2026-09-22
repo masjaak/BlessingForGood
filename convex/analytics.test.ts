@@ -91,6 +91,7 @@ describe("BFG cart intent analytics", () => {
         expect.objectContaining({ itemCount: 1, status: "in_cart" }),
       ]),
     );
+    expect(new Set(report.customers.map((row) => row.customerId)).size).toBe(report.customers.length);
     expect(report.customers.every((row) => !("email" in row) && !("phone" in row))).toBe(true);
     await expect(owner.query(api.analytics.get, { days: 30 })).resolves.toMatchObject({
       metrics: report.metrics,
@@ -111,6 +112,95 @@ describe("BFG cart intent analytics", () => {
     );
   });
 
+  it("projects a pre-release current cart without fabricating historical activity", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Analytics Pre-release Cart", "3104", "analytics-pre-release");
+    const catalogItem = await catalogItemId(t, catalog.catalogId, catalog.variantIds[0]);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("Analytics customer fixture missing");
+    const createdAt = Date.now() - 45 * 24 * 60 * 60 * 1000;
+
+    await t.run(async (ctx) => {
+      const cartId = await ctx.db.insert("carts", {
+        customerUserId: customerUser.appUserId,
+        catalogId: catalog.catalogId,
+        createdAt,
+        updatedAt: createdAt,
+      });
+      await ctx.db.insert("cartItems", {
+        cartId,
+        catalogItemId: catalogItem,
+        quantity: 2,
+        observedUnitPriceAmount: 125000,
+        availabilityState: "active",
+        createdAt,
+        updatedAt: createdAt,
+      });
+    });
+
+    const report = await admin.query(api.analytics.get, { days: 30 });
+    expect(report.trackingStartedAt).toBeNull();
+    expect(report.metrics).toEqual({
+      addActions: 0,
+      interestedCustomers: 0,
+      unconvertedIntents: 0,
+      convertedIntents: 0,
+    });
+    expect(report.books).toEqual([]);
+    expect(report.customers).toEqual([
+      expect.objectContaining({
+        customerId: customerUser.appUserId,
+        itemCount: 1,
+        quantity: 2,
+        status: "in_cart",
+        items: [{ title: "Analytics Pre-release Cart Book", quantity: 2 }],
+      }),
+    ]);
+    await expect(t.run(async (ctx) => ctx.db.query("cartIntentEvents").collect())).resolves.toEqual([]);
+  });
+
+  it("keeps canonical conversion truth when the conversion event is unavailable", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Analytics Canonical Conversion", "3105", "analytics-canonical");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "analytics-canonical" });
+    const itemId = await catalogItemId(t, catalog.catalogId, catalog.variantIds[0]);
+    await customer.mutation(api.carts.addItem, { catalogItemId: itemId });
+    const order = await customer.mutation(api.orders.submitCart, {
+      catalogId: catalog.catalogId,
+      requestKey: "analytics-canonical-conversion",
+    });
+
+    await t.run(async (ctx) => {
+      const event = await ctx.db
+        .query("cartIntentEvents")
+        .withIndex("by_created_at")
+        .order("desc")
+        .first();
+      if (!event || event.eventType !== "cart_item_converted_to_order") {
+        throw new Error("Analytics conversion event fixture missing");
+      }
+      await ctx.db.delete(event._id);
+    });
+
+    const report = await admin.query(api.analytics.get, { days: 30 });
+    expect(report.metrics).toMatchObject({ addActions: 1, unconvertedIntents: 0, convertedIntents: 1 });
+    expect(report.customers).toEqual([expect.objectContaining({ status: "converted", itemCount: 1 })]);
+
+    const repeatedOrder = await customer.mutation(api.orders.submitCart, {
+      catalogId: catalog.catalogId,
+      requestKey: "analytics-canonical-conversion",
+    });
+    expect(repeatedOrder.orderId).toBe(order.orderId);
+    await expect(
+      t.run(async (ctx) => ({
+        orders: (await ctx.db.query("orders").collect()).length,
+        cartItems: (await ctx.db.query("cartItems").collect()).length,
+      })),
+    ).resolves.toEqual({ orders: 1, cartItems: 0 });
+  });
+
   it("filters add intent by the selected period without changing Cart authority", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
@@ -127,7 +217,7 @@ describe("BFG cart intent analytics", () => {
     await expect(admin.query(api.analytics.get, { days: 7 })).resolves.toMatchObject({
       metrics: { addActions: 0, interestedCustomers: 0, unconvertedIntents: 0, convertedIntents: 0 },
       books: [],
-      customers: [],
+      customers: [expect.objectContaining({ quantity: 1, status: "in_cart" })],
     });
     await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
       retainedLineCount: 1,

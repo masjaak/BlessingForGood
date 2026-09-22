@@ -14,6 +14,7 @@ import { AnalyticsSkeleton } from "./analytics-skeleton";
 type PeriodDays = 7 | 30 | 90;
 type AnalyticsStatus = "in_cart" | "converted" | "removed" | "unconverted";
 type AnalyticsData = {
+  trackingStartedAt: number | null;
   metrics: {
     addActions: number;
     interestedCustomers: number;
@@ -61,7 +62,7 @@ function statusTone(status: AnalyticsStatus): "neutral" | "positive" | "warning"
 }
 
 function AnalyticsContent({ data }: { data: AnalyticsData }) {
-  if (!data.metrics.addActions) {
+  if (!data.metrics.addActions && !data.customers.length) {
     return (
       <EmptyState
         title="Belum ada aktivitas keranjang"
@@ -201,6 +202,7 @@ export function AdminAnalyticsContent() {
   const [days, setDays] = useState<PeriodDays>(30);
   const result = useQueryState({ query: api.analytics.get, args: { days } });
   const loading = result.status === "pending";
+  const data = result.status === "success" ? (result.data as AnalyticsData) : null;
 
   return (
     <AdminOperationalPage
@@ -231,7 +233,12 @@ export function AdminAnalyticsContent() {
               </BFGSelect>
             </Field>
           </Card>
-          <AnalyticsContent data={result.data as AnalyticsData} />
+          <p className="subtle">
+            {data?.trackingStartedAt
+              ? `Riwayat aktivitas keranjang mulai direkam sejak ${new Date(data.trackingStartedAt).toLocaleDateString("id-ID")}. Item yang masih ada di keranjang tetap ditampilkan dari data saat ini.`
+              : "Riwayat aktivitas dihitung sejak Analytics diaktifkan. Keranjang aktif tetap mencakup data yang sudah ada."}
+          </p>
+          <AnalyticsContent data={data!} />
         </>
       ) : null}
     </AdminOperationalPage>

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { query, type MutationCtx } from "./_generated/server";
+import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
 
 export type CartIntentEventType = "cart_item_added" | "cart_item_removed" | "cart_item_converted_to_order";
@@ -34,14 +34,19 @@ export async function recordCartIntentEvent(ctx: MutationCtx, event: CartIntentE
 
 const periodDays = v.union(v.literal(7), v.literal(30), v.literal(90));
 const MAX_ACTIVITY_ROWS = 100;
+type BookFormat = Doc<"bookVariants">["format"];
 
 type IntentAggregate = {
-  cartItemId: Id<"cartItems">;
+  cartId: Id<"carts">;
+  cartItemId: Id<"cartItems"> | null;
   customerUserId: Id<"appUsers">;
+  catalogItemId?: Id<"catalogItems">;
   bookId: Id<"books">;
   bookVariantId: Id<"bookVariants">;
   bookTitle: string;
   format: string;
+  quantity: number;
+  startedAt: number;
   addActions: number;
 };
 
@@ -52,15 +57,126 @@ type IntentState = IntentAggregate & {
   lastActivityAt: number;
 };
 
+type CurrentCartLine = {
+  cartId: Id<"carts">;
+  cartItemId: Id<"cartItems">;
+  customerUserId: Id<"appUsers">;
+  catalogItemId: Id<"catalogItems">;
+  bookId: Id<"books">;
+  bookVariantId: Id<"bookVariants">;
+  bookTitle: string;
+  format: BookFormat;
+  quantity: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type CanonicalConversion = {
+  cartId: Id<"carts">;
+  customerUserId: Id<"appUsers">;
+  orderId: Id<"orders">;
+  orderItemId: Id<"orderItems">;
+  catalogItemId?: Id<"catalogItems">;
+  bookId: Id<"books">;
+  bookVariantId: Id<"bookVariants">;
+  bookTitle: string;
+  format: BookFormat;
+  quantity: number;
+  createdAt: number;
+};
+
+async function currentCartLines(ctx: QueryCtx): Promise<CurrentCartLine[]> {
+  const [carts, cartItems, customers] = await Promise.all([
+    ctx.db.query("carts").collect(),
+    ctx.db.query("cartItems").collect(),
+    ctx.db
+      .query("appUsers")
+      .withIndex("by_role_and_status", (index) => index.eq("role", "customer").eq("status", "active"))
+      .collect(),
+  ]);
+  const cartsById = new Map(carts.map((cart) => [String(cart._id), cart]));
+  const activeCustomerIds = new Set(customers.map((customer) => String(customer._id)));
+  const lines = await Promise.all(
+    cartItems.map(async (item) => {
+      const cart = cartsById.get(String(item.cartId));
+      if (!cart || !activeCustomerIds.has(String(cart.customerUserId))) return null;
+      const catalogItem = await ctx.db.get(item.catalogItemId);
+      const variant = catalogItem ? await ctx.db.get(catalogItem.bookVariantId) : null;
+      const book = variant ? await ctx.db.get(variant.bookId) : null;
+      if (!catalogItem || !variant || !book) return null;
+      return {
+        cartId: cart._id,
+        cartItemId: item._id,
+        customerUserId: cart.customerUserId,
+        catalogItemId: catalogItem._id,
+        bookId: book._id,
+        bookVariantId: variant._id,
+        bookTitle: book.title,
+        format: variant.format,
+        quantity: item.quantity,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      } satisfies CurrentCartLine;
+    }),
+  );
+  return lines.filter((line): line is CurrentCartLine => line !== null);
+}
+
+async function canonicalCartConversions(ctx: QueryCtx, from: number, to: number): Promise<CanonicalConversion[]> {
+  const checkouts = (await ctx.db.query("cartCheckouts").collect()).filter(
+    (checkout) => checkout.createdAt >= from && checkout.createdAt <= to,
+  );
+  const conversions = await Promise.all(
+    checkouts.map(async (checkout) => {
+      const order = await ctx.db.get(checkout.orderId);
+      if (!order) return [];
+      const items = await ctx.db
+        .query("orderItems")
+        .withIndex("by_order", (index) => index.eq("orderId", order._id))
+        .collect();
+      return items.map(
+        (item): CanonicalConversion => ({
+          cartId: checkout.cartId,
+          customerUserId: order.customerUserId,
+          orderId: order._id,
+          orderItemId: item._id,
+          catalogItemId: item.catalogItemId,
+          bookId: item.bookId,
+          bookVariantId: item.bookVariantId,
+          bookTitle: item.bookTitleSnapshot,
+          format: item.formatSnapshot,
+          quantity: item.quantity,
+          createdAt: checkout.createdAt,
+        }),
+      );
+    }),
+  );
+  return conversions.flat();
+}
+
 function latestEvent(events: Doc<"cartIntentEvents">[], type: CartIntentEventType) {
   return events.find((event) => event.eventType === type) ?? null;
 }
 
-function statusForIntent(history: Doc<"cartIntentEvents">[], currentQuantity: number | null): IntentState["status"] {
-  if (latestEvent(history, "cart_item_converted_to_order")) return "converted";
+function statusForIntent(
+  history: Doc<"cartIntentEvents">[],
+  currentQuantity: number | null,
+  canonicalConverted: boolean,
+): IntentState["status"] {
+  if (canonicalConverted || latestEvent(history, "cart_item_converted_to_order")) return "converted";
   if (currentQuantity !== null) return "in_cart";
   if (latestEvent(history, "cart_item_removed")) return "removed";
   return "unconverted";
+}
+
+function matchesCanonicalConversion(intent: IntentAggregate, conversion: CanonicalConversion) {
+  return (
+    intent.cartId === conversion.cartId &&
+    intent.customerUserId === conversion.customerUserId &&
+    intent.bookVariantId === conversion.bookVariantId &&
+    conversion.createdAt >= intent.startedAt &&
+    (!intent.catalogItemId || !conversion.catalogItemId || intent.catalogItemId === conversion.catalogItemId)
+  );
 }
 
 export const get = query({
@@ -69,6 +185,11 @@ export const get = query({
     await requirePermission(ctx, "orders.read.all");
     const to = Date.now();
     const from = to - args.days * 24 * 60 * 60 * 1000;
+    const [trackingStartEvent, currentLines, canonicalConversions] = await Promise.all([
+      ctx.db.query("cartIntentEvents").withIndex("by_created_at").order("asc").first(),
+      currentCartLines(ctx),
+      canonicalCartConversions(ctx, from, to),
+    ]);
     // ponytail: a bounded 90-day server-side scan keeps raw events out of the browser; add rollups when measured volume needs them.
     const events = await ctx.db
       .query("cartIntentEvents")
@@ -93,41 +214,103 @@ export const get = query({
       const existing = aggregates.get(key);
       if (existing) {
         existing.addActions += 1;
+        existing.quantity = event.quantity;
         continue;
       }
       aggregates.set(key, {
+        cartId: event.cartId,
         cartItemId: event.cartItemId,
         customerUserId: event.customerUserId,
+        catalogItemId: event.catalogItemId,
         bookId: event.bookId,
         bookVariantId: event.bookVariantId,
         bookTitle: event.bookTitle,
         format: event.format,
+        quantity: event.quantity,
+        startedAt: event.createdAt,
         addActions: 1,
+      });
+    }
+
+    const currentLinesById = new Map(currentLines.map((line) => [String(line.cartItemId), line]));
+    for (const line of currentLines) {
+      const key = String(line.cartItemId);
+      const existing = aggregates.get(key);
+      if (existing) {
+        existing.cartId = line.cartId;
+        existing.catalogItemId = line.catalogItemId;
+        existing.bookId = line.bookId;
+        existing.bookVariantId = line.bookVariantId;
+        existing.bookTitle = line.bookTitle;
+        existing.format = line.format;
+        existing.quantity = line.quantity;
+        continue;
+      }
+      aggregates.set(key, {
+        cartId: line.cartId,
+        cartItemId: line.cartItemId,
+        customerUserId: line.customerUserId,
+        catalogItemId: line.catalogItemId,
+        bookId: line.bookId,
+        bookVariantId: line.bookVariantId,
+        bookTitle: line.bookTitle,
+        format: line.format,
+        quantity: line.quantity,
+        startedAt: line.createdAt,
+        addActions: 0,
+      });
+    }
+
+    for (const conversion of canonicalConversions) {
+      const existing = [...aggregates.values()].find((intent) => matchesCanonicalConversion(intent, conversion));
+      if (existing) continue;
+      const key = `order:${String(conversion.orderId)}:${String(conversion.orderItemId)}`;
+      aggregates.set(key, {
+        cartId: conversion.cartId,
+        cartItemId: null,
+        customerUserId: conversion.customerUserId,
+        catalogItemId: conversion.catalogItemId,
+        bookId: conversion.bookId,
+        bookVariantId: conversion.bookVariantId,
+        bookTitle: conversion.bookTitle,
+        format: conversion.format,
+        quantity: conversion.quantity,
+        startedAt: conversion.createdAt,
+        addActions: 0,
       });
     }
 
     const intents: IntentState[] = await Promise.all(
       [...aggregates.values()].map(async (aggregate) => {
-        const history = await ctx.db
-          .query("cartIntentEvents")
-          .withIndex("by_cart_item_id", (index) => index.eq("cartItemId", aggregate.cartItemId))
-          .order("desc")
-          .collect();
-        const currentItem = await ctx.db.get(aggregate.cartItemId);
-        const currentCart = currentItem ? await ctx.db.get(currentItem.cartId) : null;
-        const currentQuantity =
-          currentItem && currentCart?.customerUserId === aggregate.customerUserId ? currentItem.quantity : null;
+        const history = aggregate.cartItemId
+          ? await ctx.db
+              .query("cartIntentEvents")
+              .withIndex("by_cart_item_id", (index) => index.eq("cartItemId", aggregate.cartItemId!))
+              .order("desc")
+              .collect()
+          : [];
+        const currentLine = aggregate.cartItemId ? currentLinesById.get(String(aggregate.cartItemId)) : undefined;
+        const currentQuantity = currentLine?.quantity ?? null;
         const selectedPeriodEvents = history.filter((event) => event.createdAt >= from && event.createdAt <= to);
+        const canonicalConversionAt = canonicalConversions
+          .filter((conversion) => matchesCanonicalConversion(aggregate, conversion))
+          .reduce((latest, conversion) => Math.max(latest, conversion.createdAt), 0);
         return {
           ...aggregate,
           history,
           currentQuantity,
-          status: statusForIntent(history, currentQuantity),
-          lastActivityAt: selectedPeriodEvents.reduce((latest, event) => Math.max(latest, event.createdAt), from),
+          status: statusForIntent(history, currentQuantity, canonicalConversionAt > 0),
+          lastActivityAt: Math.max(
+            aggregate.startedAt,
+            currentLine?.updatedAt ?? 0,
+            canonicalConversionAt,
+            ...selectedPeriodEvents.map((event) => event.createdAt),
+          ),
         };
       }),
     );
 
+    const historicalIntents = intents.filter((intent) => intent.addActions > 0);
     const convertedIntents = intents.filter((intent) => intent.status === "converted").length;
     const bookAggregates = new Map<
       string,
@@ -142,7 +325,7 @@ export const get = query({
         convertedIntents: number;
       }
     >();
-    for (const intent of intents) {
+    for (const intent of historicalIntents) {
       const key = `${String(intent.bookId)}:${String(intent.bookVariantId)}`;
       const existing = bookAggregates.get(key);
       if (existing) {
@@ -246,10 +429,11 @@ export const get = query({
       periodDays: args.days,
       from,
       to,
+      trackingStartedAt: trackingStartEvent?.createdAt ?? null,
       metrics: {
         addActions: additions.length,
         interestedCustomers: new Set(additions.map((event) => String(event.customerUserId))).size,
-        unconvertedIntents: intents.length - convertedIntents,
+        unconvertedIntents: historicalIntents.filter((intent) => intent.status !== "converted").length,
         convertedIntents,
       },
       books,
