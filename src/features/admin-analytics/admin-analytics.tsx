@@ -154,7 +154,7 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
 
   return (
     <>
-      <section className="account-metrics" aria-label="Ringkasan minat Customer">
+      <section className="account-metrics analytics-metric-grid" aria-label="Ringkasan minat Customer">
         <AnalyticsMetricCard
           label="Add ke keranjang"
           value={data.metrics.addActions}
@@ -323,6 +323,7 @@ export function AdminAnalyticsContent() {
       eyebrow="Analytics"
       title="Analytics"
       description="Lihat minat Customer dari aktivitas keranjang sebelum menjadi pesanan."
+      className="analytics-route"
       loading={loading}
       skeleton={{ titleWidth: "34%", descriptionWidths: ["88%"], actionWidths: [] }}
     >
@@ -332,7 +333,7 @@ export function AdminAnalyticsContent() {
       ) : null}
       {result.status === "success" ? (
         <>
-          <Card className="admin-book-filters">
+          <Card className="admin-book-filters analytics-period-filter">
             <Field label="Periode">
               <BFGSelect
                 aria-label="Periode analytics"
@@ -347,7 +348,7 @@ export function AdminAnalyticsContent() {
               </BFGSelect>
             </Field>
           </Card>
-          <p className="subtle">
+          <p className="subtle analytics-tracking-note">
             {data?.trackingStartedAt
               ? `Cohort memakai bukti pertama nyata (event atau Cart line). Event tertua tercatat sejak ${new Date(data.trackingStartedAt).toLocaleDateString("id-ID")}; Cart lama di luar periode tidak dihitung.`
               : "Cohort memakai bukti pertama nyata dari event atau Cart line; Cart lama di luar periode tidak dihitung."}

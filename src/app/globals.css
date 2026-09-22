@@ -9113,3 +9113,175 @@ p {
     transition-duration: 180ms;
   }
 }
+
+/* Analytics responsive composition: keep the accepted data presentation, reduce mobile chrome. */
+@media (max-width: 900px) {
+  .admin-layout-workspace > .admin-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-xs);
+    max-height: none;
+    margin-bottom: var(--space-md);
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: var(--space-xs);
+    scrollbar-width: none;
+  }
+
+  .admin-layout-workspace > .admin-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-layout-workspace > .admin-nav .admin-nav-group {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: var(--space-xxs);
+  }
+
+  .admin-layout-workspace > .admin-nav .admin-nav-group-label {
+    display: none;
+  }
+
+  .admin-layout-workspace > .admin-nav .admin-nav-link,
+  .admin-layout-workspace > .admin-nav .admin-nav-external {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .admin-layout-workspace > .admin-nav .admin-nav-external {
+    margin-top: 0;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  .analytics-route > .page-header {
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .analytics-route .admin-content {
+    gap: var(--space-sm);
+  }
+
+  .analytics-route .admin-content > *,
+  .analytics-route .table-wrap {
+    min-width: 0;
+  }
+
+  .analytics-period-filter {
+    padding: var(--space-md);
+  }
+
+  .analytics-period-filter .field {
+    gap: var(--space-xs);
+  }
+
+  .analytics-period-filter .select {
+    width: 100%;
+  }
+
+  .analytics-tracking-note {
+    max-width: 68ch;
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .analytics-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+    margin-bottom: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .analytics-metric-card,
+  .workspace-skeleton .analytics-skeleton-metric {
+    display: grid;
+    min-height: 0;
+    grid-template-rows: auto auto minmax(2.7em, auto) auto;
+    padding: var(--space-md);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+
+  .analytics-metric-card .card-kicker {
+    margin: 0;
+  }
+
+  .analytics-metric-card .metric-value {
+    margin: 6px 0 4px;
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .analytics-metric-card > p {
+    min-height: 2.7em;
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .analytics-trend-chart,
+  .analytics-skeleton-trend {
+    height: 44px;
+    margin-top: 8px;
+  }
+
+  .analytics-trend-chart svg {
+    height: 44px;
+  }
+
+  .analytics-trend-chart circle {
+    r: 2px;
+  }
+
+  .analytics-trend-chart.is-empty circle {
+    r: 1.5px;
+  }
+
+  .analytics-route .table-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-shell .admin-topbar {
+    min-height: 64px;
+  }
+
+  .admin-shell .admin-account > a {
+    display: none;
+  }
+
+  .analytics-route > .page-header {
+    margin-bottom: var(--space-sm);
+  }
+
+  .analytics-period-filter {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .analytics-metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .analytics-route .admin-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin-bottom: var(--space-sm);
+  }
+
+  .analytics-route .admin-section-heading p {
+    max-width: 100%;
+    text-align: left;
+  }
+}

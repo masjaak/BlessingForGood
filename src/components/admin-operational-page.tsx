@@ -11,6 +11,7 @@ export function AdminOperationalPage({
   actions,
   loading = false,
   skeleton,
+  className = "",
   children,
 }: {
   eyebrow: string;
@@ -19,10 +20,11 @@ export function AdminOperationalPage({
   actions?: ReactNode;
   loading?: boolean;
   skeleton?: PageHeaderSkeleton;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="page admin-page admin-operational-page">
+    <div className={`page admin-page admin-operational-page ${className}`.trim()}>
       <PageHeader
         eyebrow={eyebrow}
         title={title}
