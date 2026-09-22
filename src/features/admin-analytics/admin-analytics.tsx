@@ -14,6 +14,7 @@ import { AnalyticsSkeleton } from "./analytics-skeleton";
 type PeriodDays = 7 | 30 | 90;
 type AnalyticsStatus = "in_cart" | "converted" | "removed" | "unconverted";
 type AnalyticsData = {
+  periodDays: PeriodDays;
   trackingStartedAt: number | null;
   metrics: {
     addActions: number;
@@ -21,14 +22,24 @@ type AnalyticsData = {
     unconvertedIntents: number;
     convertedIntents: number;
   };
+  trends: {
+    buckets: Array<{ startAt: number; endAt: number }>;
+    addActions: number[];
+    interestedCustomers: number[];
+    unconvertedIntents: number[];
+    convertedIntents: number[];
+  };
   books: Array<{
+    intentCount: number;
+    distinctCustomerCount: number;
+    unconvertedCount: number;
+    convertedCount: number;
     bookTitle: string;
     format: string;
-    addActions: number;
-    customers: number;
-    convertedIntents: number;
     conversionRate: number;
   }>;
+  bookInterestTotal: number;
+  bookInterestTruncated: boolean;
   customers: Array<{
     customerId: string;
     name: string;
@@ -37,6 +48,7 @@ type AnalyticsData = {
     quantity: number;
     lastActivityAt: number;
     status: AnalyticsStatus;
+    statusCounts: Record<AnalyticsStatus, number>;
     items: Array<{ title: string; quantity: number }>;
   }>;
   customerActivityTruncated: boolean;
@@ -47,6 +59,74 @@ const periodOptions = [
   { value: "30", label: "30 hari terakhir" },
   { value: "90", label: "90 hari terakhir" },
 ];
+
+function AnalyticsTrendChart({
+  label,
+  unit,
+  buckets,
+  values,
+}: {
+  label: string;
+  unit: "intent" | "Customer";
+  buckets: Array<{ startAt: number; endAt: number }>;
+  values: number[];
+}) {
+  const width = 240;
+  const height = 52;
+  const max = Math.max(0, ...values);
+  const points = values
+    .map((value, index) => {
+      const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
+      const y = max ? height - 4 - (value / max) * (height - 8) : height / 2;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const dateFormatter = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" });
+
+  return (
+    <div className={`analytics-trend-chart${max ? "" : " is-empty"}`}>
+      <svg role="img" aria-label={label} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        <polyline points={points} />
+        {values.map((value, index) => {
+          const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
+          const y = max ? height - 4 - (value / max) * (height - 8) : height / 2;
+          return (
+            <circle key={`${buckets[index]?.startAt ?? index}-${value}`} cx={x} cy={y} r="2.5">
+              <title>{`${dateFormatter.format(buckets[index]?.startAt ?? 0)}\n${value} ${unit}`}</title>
+            </circle>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function AnalyticsMetricCard({
+  label,
+  value,
+  helper,
+  chartLabel,
+  chartUnit,
+  buckets,
+  values,
+}: {
+  label: string;
+  value: number;
+  helper: string;
+  chartLabel: string;
+  chartUnit: "intent" | "Customer";
+  buckets: Array<{ startAt: number; endAt: number }>;
+  values: number[];
+}) {
+  return (
+    <Card className="metric analytics-metric-card">
+      <span className="card-kicker">{label}</span>
+      <strong className="metric-value">{value}</strong>
+      <p>{helper}</p>
+      <AnalyticsTrendChart label={chartLabel} unit={chartUnit} buckets={buckets} values={values} />
+    </Card>
+  );
+}
 
 function statusLabel(status: AnalyticsStatus) {
   if (status === "in_cart") return "Masih di keranjang";
@@ -75,46 +155,67 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
   return (
     <>
       <section className="account-metrics" aria-label="Ringkasan minat Customer">
-        <Card className="metric">
-          <span className="card-kicker">Add ke keranjang</span>
-          <strong className="metric-value">{data.metrics.addActions}</strong>
-          <p>Aksi tambah yang berhasil.</p>
-        </Card>
-        <Card className="metric">
-          <span className="card-kicker">Customer berminat</span>
-          <strong className="metric-value">{data.metrics.interestedCustomers}</strong>
-          <p>Customer unik pada periode ini.</p>
-        </Card>
-        <Card className="metric">
-          <span className="card-kicker">Belum checkout</span>
-          <strong className="metric-value">{data.metrics.unconvertedIntents}</strong>
-          <p>Intent buku yang belum menjadi pesanan.</p>
-        </Card>
-        <Card className="metric">
-          <span className="card-kicker">Menjadi pesanan</span>
-          <strong className="metric-value">{data.metrics.convertedIntents}</strong>
-          <p>Intent dengan Order kanonik.</p>
-        </Card>
+        <AnalyticsMetricCard
+          label="Add ke keranjang"
+          value={data.metrics.addActions}
+          helper="Intent buku yang tercatat pada periode ini."
+          chartLabel={`Tren Add ke keranjang ${data.periodDays} hari terakhir`}
+          chartUnit="intent"
+          buckets={data.trends.buckets}
+          values={data.trends.addActions}
+        />
+        <AnalyticsMetricCard
+          label="Customer berminat"
+          value={data.metrics.interestedCustomers}
+          helper="Customer unik dari cohort yang sama."
+          chartLabel={`Tren Customer berminat ${data.periodDays} hari terakhir`}
+          chartUnit="Customer"
+          buckets={data.trends.buckets}
+          values={data.trends.interestedCustomers}
+        />
+        <AnalyticsMetricCard
+          label="Belum checkout"
+          value={data.metrics.unconvertedIntents}
+          helper="Intent yang belum menjadi pesanan."
+          chartLabel={`Tren Belum checkout ${data.periodDays} hari terakhir`}
+          chartUnit="intent"
+          buckets={data.trends.buckets}
+          values={data.trends.unconvertedIntents}
+        />
+        <AnalyticsMetricCard
+          label="Menjadi pesanan"
+          value={data.metrics.convertedIntents}
+          helper="Intent dengan Order kanonik."
+          chartLabel={`Tren Menjadi pesanan ${data.periodDays} hari terakhir`}
+          chartUnit="intent"
+          buckets={data.trends.buckets}
+          values={data.trends.convertedIntents}
+        />
       </section>
 
       <section className="admin-dashboard-section" aria-labelledby="analytics-books-heading">
         <div className="admin-section-heading">
           <div>
             <span className="card-kicker">Minat &amp; keranjang</span>
-            <h2 id="analytics-books-heading">Buku paling sering masuk keranjang</h2>
+            <h2 id="analytics-books-heading">Buku paling diminati</h2>
           </div>
-          <p>Diurutkan dari aksi tambah terbanyak.</p>
+          <p>
+            {data.bookInterestTruncated ? "10 buku dengan intent tertinggi" : "Semua intent buku"} · Total{" "}
+            {data.bookInterestTotal}
+            intent.
+          </p>
         </div>
         {data.books.length ? (
           <div className="table-wrap">
             <table className="data-table">
-              <caption className="sr-only">Buku paling sering masuk keranjang</caption>
+              <caption className="sr-only">Buku paling diminati</caption>
               <thead>
                 <tr>
                   <th>Buku</th>
                   <th>Format</th>
-                  <th>Add ke keranjang</th>
+                  <th>Intent</th>
                   <th>Customer</th>
+                  <th>Belum checkout</th>
                   <th>Menjadi pesanan</th>
                   <th>Konversi</th>
                 </tr>
@@ -124,9 +225,10 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
                   <tr key={`${book.bookTitle}-${book.format}`}>
                     <td>{book.bookTitle}</td>
                     <td>{book.format}</td>
-                    <td>{book.addActions}</td>
-                    <td>{book.customers}</td>
-                    <td>{book.convertedIntents}</td>
+                    <td>{book.intentCount}</td>
+                    <td>{book.distinctCustomerCount}</td>
+                    <td>{book.unconvertedCount}</td>
+                    <td>{book.convertedCount}</td>
                     <td>{Math.round(book.conversionRate * 100)}%</td>
                   </tr>
                 ))}
@@ -183,7 +285,19 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
                   </td>
                   <td>{new Date(customer.lastActivityAt).toLocaleDateString("id-ID")}</td>
                   <td>
-                    <StatusBadge tone={statusTone(customer.status)}>{statusLabel(customer.status)}</StatusBadge>
+                    {Object.entries(customer.statusCounts).filter(([, count]) => count > 0).length > 1 ? (
+                      <div className="analytics-status-summary">
+                        {Object.entries(customer.statusCounts)
+                          .filter(([, count]) => count > 0)
+                          .map(([status, count]) => (
+                            <span className="table-secondary" key={status}>
+                              {count} · {statusLabel(status as AnalyticsStatus)}
+                            </span>
+                          ))}
+                      </div>
+                    ) : (
+                      <StatusBadge tone={statusTone(customer.status)}>{statusLabel(customer.status)}</StatusBadge>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -235,8 +349,8 @@ export function AdminAnalyticsContent() {
           </Card>
           <p className="subtle">
             {data?.trackingStartedAt
-              ? `Riwayat aktivitas keranjang mulai direkam sejak ${new Date(data.trackingStartedAt).toLocaleDateString("id-ID")}. Item yang masih ada di keranjang tetap ditampilkan dari data saat ini.`
-              : "Riwayat aktivitas dihitung sejak Analytics diaktifkan. Keranjang aktif tetap mencakup data yang sudah ada."}
+              ? `Cohort memakai bukti pertama nyata (event atau Cart line). Event tertua tercatat sejak ${new Date(data.trackingStartedAt).toLocaleDateString("id-ID")}; Cart lama di luar periode tidak dihitung.`
+              : "Cohort memakai bukti pertama nyata dari event atau Cart line; Cart lama di luar periode tidak dihitung."}
           </p>
           <AnalyticsContent data={data!} />
         </>

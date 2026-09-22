@@ -6,6 +6,8 @@ import { api } from "./_generated/api";
 import { recordCartIntentEvent } from "./analytics";
 import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 async function catalogItemId(
   t: ReturnType<typeof testConvex>,
   catalogId: Id<"secretCatalogs">,
@@ -93,6 +95,12 @@ describe("BFG cart intent analytics", () => {
     );
     expect(new Set(report.customers.map((row) => row.customerId)).size).toBe(report.customers.length);
     expect(report.customers.every((row) => !("email" in row) && !("phone" in row))).toBe(true);
+    expect(report.bookInterestTotal).toBe(report.metrics.addActions);
+    expect(report.books.reduce((total, book) => total + book.intentCount, 0)).toBe(report.bookInterestTotal);
+    report.trends.addActions.forEach((count, index) => {
+      expect(count).toBe(report.trends.unconvertedIntents[index] + report.trends.convertedIntents[index]);
+    });
+    expect(report.metrics.addActions).toBe(report.metrics.unconvertedIntents + report.metrics.convertedIntents);
     await expect(owner.query(api.analytics.get, { days: 30 })).resolves.toMatchObject({
       metrics: report.metrics,
     });
@@ -112,14 +120,14 @@ describe("BFG cart intent analytics", () => {
     );
   });
 
-  it("projects a pre-release current cart without fabricating historical activity", async () => {
+  it("reconciles a pre-release current cart without fabricating events", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const catalog = await createOpenCatalog(admin, "Analytics Pre-release Cart", "3104", "analytics-pre-release");
     const catalogItem = await catalogItemId(t, catalog.catalogId, catalog.variantIds[0]);
     const customerUser = await customer.query(api.users.current, {});
     if (!customerUser) throw new Error("Analytics customer fixture missing");
-    const createdAt = Date.now() - 45 * 24 * 60 * 60 * 1000;
+    const createdAt = Date.now() - 10 * 24 * 60 * 60 * 1000;
 
     await t.run(async (ctx) => {
       const cartId = await ctx.db.insert("carts", {
@@ -142,12 +150,19 @@ describe("BFG cart intent analytics", () => {
     const report = await admin.query(api.analytics.get, { days: 30 });
     expect(report.trackingStartedAt).toBeNull();
     expect(report.metrics).toEqual({
-      addActions: 0,
-      interestedCustomers: 0,
-      unconvertedIntents: 0,
+      addActions: 1,
+      interestedCustomers: 1,
+      unconvertedIntents: 1,
       convertedIntents: 0,
     });
-    expect(report.books).toEqual([]);
+    expect(report.books).toEqual([
+      expect.objectContaining({
+        addActions: 1,
+        customers: 1,
+        convertedIntents: 0,
+        conversionRate: 0,
+      }),
+    ]);
     expect(report.customers).toEqual([
       expect.objectContaining({
         customerId: customerUser.appUserId,
@@ -158,6 +173,165 @@ describe("BFG cart intent analytics", () => {
       }),
     ]);
     await expect(t.run(async (ctx) => ctx.db.query("cartIntentEvents").collect())).resolves.toEqual([]);
+  });
+
+  it("reconciles current carts and canonical conversions when event history is absent", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(
+      admin,
+      "Analytics Production Contradiction",
+      "3106",
+      "analytics-contradiction",
+    );
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "analytics-contradiction" });
+    await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode: "analytics-contradiction" });
+    const itemId = await catalogItemId(t, catalog.catalogId, catalog.variantIds[0]);
+
+    await customer.mutation(api.carts.addItem, { catalogItemId: itemId });
+    await customer.mutation(api.orders.submitCart, {
+      catalogId: catalog.catalogId,
+      requestKey: "analytics-contradiction-order",
+    });
+
+    const secondCustomerUser = await secondCustomer.query(api.users.current, {});
+    if (!secondCustomerUser) throw new Error("Analytics second customer fixture missing");
+    const createdAt = Date.now() - 5 * DAY_MS;
+    await t.run(async (ctx) => {
+      const cartId = await ctx.db.insert("carts", {
+        customerUserId: secondCustomerUser.appUserId,
+        catalogId: catalog.catalogId,
+        createdAt,
+        updatedAt: createdAt,
+      });
+      await ctx.db.insert("cartItems", {
+        cartId,
+        catalogItemId: itemId,
+        quantity: 1,
+        observedUnitPriceAmount: 125000,
+        availabilityState: "active",
+        createdAt,
+        updatedAt: createdAt,
+      });
+      for (const event of await ctx.db.query("cartIntentEvents").collect()) await ctx.db.delete(event._id);
+    });
+
+    const report = await admin.query(api.analytics.get, { days: 30 });
+    expect(report.metrics).toEqual({
+      addActions: 2,
+      interestedCustomers: 2,
+      unconvertedIntents: 1,
+      convertedIntents: 1,
+    });
+    expect(report.customers).toHaveLength(2);
+    expect(report.bookInterestTotal).toBe(2);
+    expect(report.books[0]).toMatchObject({
+      intentCount: 2,
+      distinctCustomerCount: 2,
+      unconvertedCount: 1,
+      convertedCount: 1,
+    });
+    expect(await t.run(async (ctx) => ctx.db.query("cartIntentEvents").collect())).toEqual([]);
+  });
+
+  it("counts multiple books as intents but one interested Customer", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalogs: Array<Awaited<ReturnType<typeof createOpenCatalog>>> = [];
+    for (const suffix of ["A", "B", "C"]) {
+      const accessCode = `analytics-book-${suffix}`;
+      const catalog = await createOpenCatalog(admin, `Analytics Multiple Books ${suffix}`, `310${suffix}`, accessCode);
+      await customer.mutation(api.catalogAccess.unlock, { accessCode });
+      catalogs.push(catalog);
+    }
+    const itemIds = await Promise.all(
+      catalogs.map((catalog) => catalogItemId(t, catalog.catalogId, catalog.variantIds[0])),
+    );
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("Analytics customer fixture missing");
+    const createdAt = Date.now() - 5 * DAY_MS;
+
+    await t.run(async (ctx) => {
+      const cartId = await ctx.db.insert("carts", {
+        customerUserId: customerUser.appUserId,
+        catalogId: catalogs[0].catalogId,
+        createdAt,
+        updatedAt: createdAt,
+      });
+      for (const itemId of itemIds) {
+        await ctx.db.insert("cartItems", {
+          cartId,
+          catalogItemId: itemId,
+          quantity: 1,
+          observedUnitPriceAmount: 125000,
+          availabilityState: "active",
+          createdAt,
+          updatedAt: createdAt,
+        });
+      }
+    });
+
+    const report = await admin.query(api.analytics.get, { days: 30 });
+    expect(report.metrics).toMatchObject({
+      addActions: 3,
+      interestedCustomers: 1,
+      unconvertedIntents: 3,
+      convertedIntents: 0,
+    });
+    expect(report.customers).toEqual([expect.objectContaining({ itemCount: 3, status: "in_cart" })]);
+    expect(report.trends.interestedCustomers.filter((count) => count > 0)).toEqual([1]);
+    expect(report.trends.addActions.filter((count) => count > 0)).toEqual([3]);
+    expect(report.bookInterestTotal).toBe(3);
+  });
+
+  it("keeps Customer trend counts distinct per bucket across the same period", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const firstCatalog = await createOpenCatalog(admin, "Analytics Trend Day One", "3107", "analytics-trend-one");
+    const secondCatalog = await createOpenCatalog(admin, "Analytics Trend Day Two", "3108", "analytics-trend-two");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "analytics-trend-one" });
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "analytics-trend-two" });
+    const firstItemId = await catalogItemId(t, firstCatalog.catalogId, firstCatalog.variantIds[0]);
+    const secondItemId = await catalogItemId(t, secondCatalog.catalogId, secondCatalog.variantIds[0]);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("Analytics customer fixture missing");
+    const dayOne = Date.now() - 2 * DAY_MS;
+    const dayTwo = Date.now() - DAY_MS;
+
+    await t.run(async (ctx) => {
+      const cartId = await ctx.db.insert("carts", {
+        customerUserId: customerUser.appUserId,
+        catalogId: firstCatalog.catalogId,
+        createdAt: dayTwo,
+        updatedAt: dayTwo,
+      });
+      await ctx.db.insert("cartItems", {
+        cartId,
+        catalogItemId: firstItemId,
+        quantity: 1,
+        observedUnitPriceAmount: 125000,
+        availabilityState: "active",
+        createdAt: dayOne,
+        updatedAt: dayOne,
+      });
+      await ctx.db.insert("cartItems", {
+        cartId,
+        catalogItemId: secondItemId,
+        quantity: 1,
+        observedUnitPriceAmount: 125000,
+        availabilityState: "active",
+        createdAt: dayTwo,
+        updatedAt: dayTwo,
+      });
+    });
+
+    const report = await admin.query(api.analytics.get, { days: 30 });
+    expect(report.metrics.interestedCustomers).toBe(1);
+    expect(report.trends.interestedCustomers.filter((count) => count > 0)).toEqual([1, 1]);
+    expect(report.trends.addActions.reduce((total, count) => total + count, 0)).toBe(2);
+    report.trends.addActions.forEach((count, index) => {
+      expect(count).toBe(report.trends.unconvertedIntents[index] + report.trends.convertedIntents[index]);
+    });
   });
 
   it("keeps canonical conversion truth when the conversion event is unavailable", async () => {
@@ -173,11 +347,7 @@ describe("BFG cart intent analytics", () => {
     });
 
     await t.run(async (ctx) => {
-      const event = await ctx.db
-        .query("cartIntentEvents")
-        .withIndex("by_created_at")
-        .order("desc")
-        .first();
+      const event = await ctx.db.query("cartIntentEvents").withIndex("by_created_at").order("desc").first();
       if (!event || event.eventType !== "cart_item_converted_to_order") {
         throw new Error("Analytics conversion event fixture missing");
       }
@@ -217,7 +387,7 @@ describe("BFG cart intent analytics", () => {
     await expect(admin.query(api.analytics.get, { days: 7 })).resolves.toMatchObject({
       metrics: { addActions: 0, interestedCustomers: 0, unconvertedIntents: 0, convertedIntents: 0 },
       books: [],
-      customers: [expect.objectContaining({ quantity: 1, status: "in_cart" })],
+      customers: [],
     });
     await expect(customer.query(api.carts.getMineSummary, {})).resolves.toMatchObject({
       retainedLineCount: 1,

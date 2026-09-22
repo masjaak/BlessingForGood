@@ -1,5 +1,16 @@
 import { Card, LoadingRegion, Skeleton, SkeletonText } from "@/components/ui";
-import { SkeletonMetric, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+import { SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
+
+function AnalyticsSkeletonMetric() {
+  return (
+    <Card frame="summary" className="workspace-skeleton-metric analytics-skeleton-metric" aria-hidden="true">
+      <SkeletonText width="42%" />
+      <Skeleton className="skeleton-metric-value" />
+      <SkeletonText width="76%" />
+      <Skeleton className="analytics-skeleton-trend" />
+    </Card>
+  );
+}
 
 export function AnalyticsSkeleton() {
   return (
@@ -11,10 +22,10 @@ export function AnalyticsSkeleton() {
         </div>
       </Card>
       <div className="account-metrics" aria-hidden="true">
-        <SkeletonMetric />
-        <SkeletonMetric />
-        <SkeletonMetric />
-        <SkeletonMetric />
+        <AnalyticsSkeletonMetric />
+        <AnalyticsSkeletonMetric />
+        <AnalyticsSkeletonMetric />
+        <AnalyticsSkeletonMetric />
       </div>
       <section className="admin-dashboard-section" aria-hidden="true">
         <SkeletonText width="34%" />
