@@ -429,6 +429,14 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
           resultCount={resultCount}
           noun="buku"
           loading={pageLoading}
+          onPageSizeChange={(next) => updateCatalogBrowse({ pageSize: next })}
+        />
+        <CatalogPageNavigation
+          pageNumber={pageNumber}
+          pageSize={pageSize}
+          resultCount={resultCount}
+          noun="buku"
+          loading={pageLoading}
           onPageNumberChange={(next) => updateCatalogBrowse({ pageNumber: next })}
           onPageSizeChange={(next) => updateCatalogBrowse({ pageSize: next })}
         />
@@ -531,6 +539,12 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                             <strong className="book-format-value">{selectedFormat || "—"}</strong>
                           </div>
                         )}
+                        <div className="book-card-category">
+                          <span className="book-format-label">Kategori</span>
+                          <strong className="book-format-value">
+                            {book.categories?.length ? book.categories.join(", ") : "—"}
+                          </strong>
+                        </div>
                       </div>
                       <div className="quantity-row">
                         <span>Jumlah</span>

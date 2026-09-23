@@ -1,5 +1,30 @@
 # BFG Project Status
 
+## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The Customer `/catalog` route now shows top-of-results pagination context and
+navigation in addition to the existing bottom navigation. Phone cards use a
+centered 220px portrait cover at 390/430px; the 190px horizontal layout remains
+at tablet and desktop widths. A responsive browser check measured 220px covers
+at 390/430 and 190px at 768/834/1024/1280/1440, with no document overflow. The
+bottom control clears the fixed Customer nav and Blessy at 390/430.
+
+Admin `/admin/customers` now uses a dedicated `customers.read` query with
+cursor pagination, name/email/member-code search, 25/50/100 page sizes, result
+ranges, and stable detail links. Directory pages continue through all active
+Customers. Exact totals and search use a bounded 2,000-Customer window; the UI
+labels when that window is exceeded. An indexed search projection plus
+aggregate count is the upgrade path if the directory grows beyond the ceiling.
+
+The focused component and Convex regressions, full frontend and Convex suites,
+responsive cover/collision checks, typecheck, lint, format, build, and
+`convex:check` are tracked with this correction. Admin layout checks at
+390/430/1280px confirm the table scrolls internally without document overflow.
+Authenticated Customer and Admin Production UAT remains unverified because no
+authenticated browser session is available in this checkout.
+
 ## Onboarding card simplification + Catalog pagination — 2026-09-23
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

@@ -546,6 +546,73 @@ export const list = query({
   },
 });
 
+const CUSTOMER_DIRECTORY_SCAN_LIMIT = 2000;
+
+async function customerDirectoryRow(ctx: QueryCtx, user: Doc<"appUsers">) {
+  const profile = await ctx.db
+    .query("customerProfiles")
+    .withIndex("by_user_id", (query) => query.eq("userId", user._id))
+    .unique();
+  return {
+    customerUserId: user._id,
+    displayName: profile?.displayName || user.displayNameSnapshot || user.emailSnapshot || "BFG customer",
+    email: user.emailSnapshot || null,
+    memberCode: user.memberCode || null,
+  };
+}
+
+export const listCustomersForAdmin = query({
+  args: { paginationOpts: paginationOptsValidator, search: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "customers.read");
+    const pageSize = args.paginationOpts.numItems;
+    if (![25, 50, 100].includes(pageSize)) fail("VALIDATION_FAILED", "customer page size must be 25, 50, or 100");
+    const customerQuery = () =>
+      ctx.db
+        .query("appUsers")
+        .withIndex("by_role_and_status", (query) => query.eq("role", "customer").eq("status", "active"))
+        .order("desc");
+    const customers = customerQuery();
+    const search = args.search?.trim().toLowerCase().slice(0, 120) || "";
+
+    if (search) {
+      // ponytail: search scans the 2,000 newest active Customers; add an indexed search projection if that ceiling matters.
+      const scanned = await customers.take(CUSTOMER_DIRECTORY_SCAN_LIMIT + 1);
+      const truncated = scanned.length > CUSTOMER_DIRECTORY_SCAN_LIMIT;
+      const rows = await Promise.all(scanned.slice(0, CUSTOMER_DIRECTORY_SCAN_LIMIT).map((user) => customerDirectoryRow(ctx, user)));
+      const filtered = rows.filter((row) =>
+        [row.displayName, row.email, row.memberCode].some((value) => value?.toLowerCase().includes(search)),
+      );
+      const cursor = args.paginationOpts.cursor;
+      if (cursor !== null && !/^\d{1,6}$/.test(cursor)) fail("VALIDATION_FAILED", "customer search cursor is invalid");
+      const offset = cursor === null ? 0 : Number(cursor);
+      const page = filtered.slice(offset, offset + pageSize);
+      const nextOffset = offset + page.length;
+      return {
+        page,
+        isDone: nextOffset >= filtered.length,
+        continueCursor: nextOffset >= filtered.length ? "" : String(nextOffset),
+        totalCount: filtered.length,
+        totalCountKnown: !truncated,
+        truncated,
+      };
+    }
+
+    // ponytail: directory total is exact through 2,000 Customers; cursor pages stay unbounded and upgrade the count with an aggregate if needed.
+    const [page, countWindow] = await Promise.all([
+      customers.paginate(args.paginationOpts),
+      customerQuery().take(CUSTOMER_DIRECTORY_SCAN_LIMIT + 1),
+    ]);
+    return {
+      ...page,
+      page: await Promise.all(page.page.map((user) => customerDirectoryRow(ctx, user))),
+      totalCount: Math.min(countWindow.length, CUSTOMER_DIRECTORY_SCAN_LIMIT),
+      totalCountKnown: countWindow.length <= CUSTOMER_DIRECTORY_SCAN_LIMIT,
+      truncated: countWindow.length > CUSTOMER_DIRECTORY_SCAN_LIMIT,
+    };
+  },
+});
+
 export const getForAdmin = query({
   args: { userId: v.id("appUsers") },
   handler: async (ctx, args) => {

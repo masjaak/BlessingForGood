@@ -70,16 +70,28 @@ describe("CustomerCatalog projection", () => {
     render(<CustomerCatalog />);
 
     expect(screen.getByText("Menampilkan 1–25 dari 134 buku")).toBeTruthy();
-    expect(screen.getByText("Halaman 1 dari 6")).toBeTruthy();
-    expect((screen.getByRole("button", { name: /Sebelumnya/ }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: /Berikutnya/ }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getAllByText("Halaman 1 dari 6")).toHaveLength(2);
+    expect(screen.getAllByRole("navigation", { name: "Navigasi halaman buku" })).toHaveLength(2);
+    const topPagination = document.querySelector(".catalog-page-navigation");
+    const productGrid = document.querySelector(".catalog-grid");
+    expect(
+      Boolean(
+        topPagination &&
+        productGrid &&
+        topPagination.compareDocumentPosition(productGrid) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
+    const previousButtons = screen.getAllByRole("button", { name: /Sebelumnya/ }) as HTMLButtonElement[];
+    const nextButtons = screen.getAllByRole("button", { name: /Berikutnya/ }) as HTMLButtonElement[];
+    expect(previousButtons.every((button) => button.disabled)).toBe(true);
+    expect(nextButtons.every((button) => !button.disabled)).toBe(true);
     const pageSize = screen.getByRole("combobox", { name: "buku per halaman" });
     fireEvent.click(pageSize);
     expect(screen.getByRole("option", { name: "25" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "100" })).toBeTruthy();
     fireEvent.click(screen.getByRole("option", { name: "50" }));
     expect(updateCatalogBrowse).toHaveBeenCalledWith({ pageSize: 50 });
-    fireEvent.click(screen.getByRole("button", { name: /Berikutnya/ }));
+    fireEvent.click(nextButtons[0]);
     expect(updateCatalogBrowse).toHaveBeenCalledWith({ pageNumber: 2 });
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Cari judul atau ISBN" }), {
@@ -146,7 +158,7 @@ describe("CustomerCatalog projection", () => {
       covers.every((cover) => cover.getAttribute("loading") === "lazy" && cover.getAttribute("decoding") === "async"),
     ).toBe(true);
     expect(screen.getByText("Menampilkan 1–100 dari 101 buku")).toBeTruthy();
-    expect(screen.getByText("Halaman 1 dari 2")).toBeTruthy();
+    expect(screen.getAllByText("Halaman 1 dari 2")).toHaveLength(2);
   });
 
   it("prefills the editable preorder name from the BFG Profile display name", async () => {

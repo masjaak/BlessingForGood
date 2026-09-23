@@ -1,5 +1,34 @@
 # BFG SOURCE OF TRUTH
 
+## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
+
+The real Customer Catalog route is `/catalog` → `CustomerCatalog` →
+`catalogAccess.getUnlocked`. Its authorized, filtered result remains server
+paginated at 25/50/100 (default 25). The range and page-size control appear
+above results; Previous/Next navigation appears above and below the result
+grid. Search, category, publisher, format, and page-size changes reset to page
+one. Existing session/grant authorization, visibility filters, curated order,
+and lazy cover loading remain authoritative.
+
+Phone cards at 390/430px use a centered 220px portrait cover above title and
+metadata. At 768px and wider, the existing 190px horizontal cover layout is
+preserved. The original cover image retains its natural aspect ratio; the
+loading card uses the matching portrait geometry. Mobile bottom pagination
+clears the fixed Customer navigation and default floating Blessy position.
+
+`/admin/customers` uses `users.listCustomersForAdmin`, guarded by
+`customers.read`, and lists active Customer accounts with cursor pages of
+25/50/100 (default 25). Search covers name, email, and member code before page
+selection; search and page-size changes reset to page one. Unfiltered cursor
+pages continue beyond the bounded count window. Exact directory counts and
+search cover the 2,000 newest active Customers; above that ceiling the UI says
+`2.000+` and reports that search is limited to the newest 2,000. If customer
+volume reaches this ceiling, replace the bounded scan with an indexed search
+projection and aggregate count.
+
+No Catalog, Cart, Order, Inventory, Finance, Batch, Analytics, membership, or
+authorization semantics changed.
+
 ## Onboarding card simplification and Catalog pagination — 2026-09-23
 
 The signed-out homepage keeps the two approved steps as full-card links. The

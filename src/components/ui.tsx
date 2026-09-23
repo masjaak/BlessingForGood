@@ -209,7 +209,19 @@ export function SkeletonCard({
             <SkeletonText width="42%" />
             <SkeletonText width="86%" />
             <SkeletonText width="62%" />
-            <SkeletonText width="74%" />
+            <Skeleton className="skeleton-detail-action" />
+            <div className="skeleton-book-metadata">
+              <div>
+                <SkeletonText width="42%" />
+                <SkeletonText width="76%" />
+              </div>
+              <div>
+                <SkeletonText width="48%" />
+                <SkeletonText width="64%" />
+              </div>
+            </div>
+            <Skeleton className="skeleton-quantity" />
+            <Skeleton className="skeleton-cart" />
           </div>
         </div>
       </Card>

@@ -1,5 +1,28 @@
 # Decisions
 
+## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- On phones, the Customer Catalog uses a centered full-ratio 220px cover above
+  title and metadata. The existing 190px horizontal cover layout stays at
+  tablet and desktop widths. Lazy loading, Cart actions, quantity behavior,
+  and the native BookCover image containment remain unchanged.
+- The real `/catalog` path keeps 25/50/100 server pages (default 25), range
+  text, page-size control, and Previous/Next navigation before and after
+  results. Existing session/grant security and post-filter ordering remain
+  canonical.
+- `/admin/customers` gets a dedicated `customers.read`-guarded active-customer
+  directory query, cursor pagination, name/email/member-code search, range
+  text, and 25/50/100 sizes. Search occurs before its page slice; Customer,
+  Owner, and suspended-staff authorization behavior is unchanged.
+- Directory search and exact totals are bounded to the 2,000 newest active
+  Customers and are labeled when truncated. If growth reaches that ceiling,
+  add a denormalized search projection and aggregate count; do not return the
+  full Customer dataset to the browser.
+- Cart, Orders, Finance, Inventory, Batch, Analytics, membership, Catalog
+  authorization, and Security S1.1 semantics remain unchanged.
+
 ## Onboarding cards and Catalog pagination — 2026-09-23
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

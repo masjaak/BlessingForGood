@@ -2,11 +2,37 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-23
+last_updated: 2026-09-24
 source: conversation
 ---
 
 # Changelog
+
+## [mobile-catalog-admin-customer-pagination-correction] — 2026-09-24
+
+### Changed
+
+- Replaced the phone Catalog thumbnail row with a centered portrait cover,
+  title-first details, readable category/format/price, and full-width detail
+  and Cart actions. Added matching loading geometry.
+- Kept Customer Catalog pagination visible above the result cards and below
+  the grid. Added bottom clearance so the lower control avoids Blessy and the
+  fixed Customer navigation at 390/430px.
+- Added `/admin/customers` directory search and server cursor paging through a
+  dedicated `customers.read` query with 25/50/100 pages and range text.
+
+### QA and scope
+
+- Responsive browser measurements: 220px covers at 390/430px; 190px at
+  768/834/1024/1280/1440px. The long-title card check passes without overflow.
+  Pagination collision checks pass at 390/430px; Admin directory layout and
+  internal table scrolling pass at 390/430/1280px.
+- Full frontend suite: 121 files / 785 tests passed. Full Convex suite: 48
+  files / 316 tests passed. Typecheck, lint, format, `convex:check`, and
+  focused Customer/Admin pagination tests pass. Authenticated Production
+  Customer/Admin UAT remains pending.
+- Catalog/Cart/Order/Finance/Inventory/Batch/Analytics/Auth/security semantics
+  remain unchanged.
 
 ## [onboarding-pagination-follow-up] — 2026-09-23
 
