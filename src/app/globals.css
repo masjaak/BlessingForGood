@@ -8768,6 +8768,8 @@ p {
 }
 
 .customer-shell .home-onboarding-step-card {
+  position: relative;
+  z-index: 31;
   display: grid;
   height: 100%;
   grid-template-rows: auto auto 1fr auto;
