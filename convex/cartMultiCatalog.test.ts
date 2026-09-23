@@ -310,7 +310,7 @@ describe("Multi-Catalog Cart M2 projection", () => {
     expect(cart.groups.every((group) => group.lines.length === 10)).toBe(true);
   }, 30000);
 
-  it("isolates availability, price, and PO failures to one Catalog group", async () => {
+  it("isolates availability, price, and PO failures to one Catalog group and clears it on close", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const fixture = await createCatalogFixture(t, admin);
@@ -379,9 +379,11 @@ describe("Multi-Catalog Cart M2 projection", () => {
     });
 
     await admin.mutation(api.secretCatalogs.close, { catalogId: fixture.first.catalogId });
-    expect(groupFor(await assertSecondGroupActive(), fixture.first.catalogId)).toMatchObject({
-      blockedReason: "catalog_closed",
-      checkoutEligible: false,
+    const afterClose = await assertSecondGroupActive();
+    expect(groupFor(afterClose, fixture.first.catalogId)).toBeUndefined();
+    expect(afterClose).toMatchObject({
+      retainedQuantity: 2,
+      groups: [expect.objectContaining({ id: fixture.second.catalogId })],
     });
   });
 

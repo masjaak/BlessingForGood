@@ -33,6 +33,36 @@ describe("Secret Catalog discovery and global access", () => {
     expect(second.catalogId).not.toBe(first.catalogId);
   });
 
+  it("persists canonical Master Book categories and leaves legacy books uncategorized", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const catalog = await createOpenCatalog(admin, "Category Discovery", "1003", "category-discovery");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "category-discovery" });
+
+    const legacy = await customer.query(api.catalogAccess.getUnlocked, { catalogId: catalog.catalogId });
+    expect(legacy?.books[0]?.categories).toEqual([]);
+
+    await admin.mutation(api.books.update, {
+      bookId: catalog.bookId,
+      categories: ["Children Books"],
+    });
+    await expect(
+      customer.query(api.catalogAccess.getUnlocked, { catalogId: catalog.catalogId }),
+    ).resolves.toMatchObject({
+      books: [expect.objectContaining({ categories: ["Children Books"] })],
+    });
+
+    await admin.mutation(api.books.update, {
+      bookId: catalog.bookId,
+      categories: ["Adult Books"],
+    });
+    await expect(
+      customer.query(api.catalogAccess.getUnlocked, { catalogId: catalog.catalogId }),
+    ).resolves.toMatchObject({
+      books: [expect.objectContaining({ categories: ["Adult Books"] })],
+    });
+  });
+
   it("starts global access on the Catalog that generated the code", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

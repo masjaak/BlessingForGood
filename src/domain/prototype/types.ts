@@ -12,6 +12,8 @@ export const BOOK_FORMATS = [
 ] as const;
 
 export type BookFormat = (typeof BOOK_FORMATS)[number];
+export const BOOK_CATEGORIES = ["Children Books", "Adult Books"] as const;
+export type BookCategory = (typeof BOOK_CATEGORIES)[number];
 export type CatalogStatus = "draft" | "open" | "closed" | "archived";
 export type Availability = "available" | "unavailable";
 export type OrderSource = "preorder" | "ready_stock" | "admin_assisted";
@@ -52,6 +54,7 @@ export interface Book {
   publisher: string;
   author?: string | null;
   description?: string | null;
+  categories?: string[];
   coverImageUrl?: string | null;
   coverPresentation?: { zoom: number; x: number; y: number } | null;
   gallery?: Array<{ mediaId: string; displayOrder: number; altText: string; url: string }>;

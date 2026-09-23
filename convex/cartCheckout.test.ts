@@ -340,8 +340,9 @@ describe("BFG Cart checkout", () => {
     await t.run((ctx) => ctx.db.patch(cartLineId, { catalogItemId: firstItemId }));
 
     await admin.mutation(api.secretCatalogs.close, { catalogId: first.catalogId });
-    await expectCheckoutError(customer, "closed-catalog", "CATALOG_NOT_OPEN");
+    await expectCheckoutError(customer, "closed-catalog", "ORDER_EMPTY");
     await admin.mutation(api.secretCatalogs.reopen, { catalogId: first.catalogId });
+    await customer.mutation(api.carts.addItem, { catalogItemId: firstItemId });
     const access = await admin.query(api.catalogAccess.listForAdmin, { catalogId: first.catalogId });
     await admin.mutation(api.catalogAccess.revokeGrant, { grantId: access.grants[0].grantId });
     await expectCheckoutError(customer, "revoked-access", "ACCESS_GRANT_REQUIRED");

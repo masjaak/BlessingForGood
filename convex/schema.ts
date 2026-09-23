@@ -474,7 +474,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_cart", ["cartId"])
-    .index("by_cart_and_catalog_item", ["cartId", "catalogItemId"]),
+    .index("by_cart_and_catalog_item", ["cartId", "catalogItemId"])
+    .index("by_catalog_item", ["catalogItemId"]),
 
   cartIntentEvents: defineTable({
     eventType: v.union(

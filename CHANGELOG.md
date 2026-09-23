@@ -8,6 +8,30 @@ source: conversation
 
 # Changelog
 
+## [catalog-onboarding-improvement] — 2026-09-23
+
+### Changed
+
+- Catalog close now removes only unsubmitted Cart lines from that Catalog in
+  the canonical close mutation; Orders, Order Items, checkout history, and
+  unrelated Cart sources remain untouched.
+- Reused Master Book `categories[]` for Children Books and Adult Books, added
+  Admin management, and added a composable Customer Catalog category filter.
+- Increased Secret Catalog cover geometry on responsive cards and aligned the
+  loading skeleton with the cover-first layout.
+- Added state-aware homepage onboarding for social visitors, with the
+  configured WhatsApp group entry, canonical Blessfriend Join path, native
+  How-to/ongoing-PO disclosure, and optional configured tutorial link.
+
+### QA and scope
+
+- Added Convex, component, and responsive-geometry coverage for the exact
+  changes. Full frontend regression, Convex regression, typecheck, lint,
+  format check, and production build pass.
+- Analytics, Auth, Join Request authority, Orders, Finance, Ready Stock,
+  Secret Catalog authorization, Security S1.1, and unrelated working-tree
+  changes remain outside this scope.
+
 ## [flexibound-book-format] — 2026-09-17
 
 ### Changed

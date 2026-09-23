@@ -16,6 +16,7 @@ import { fail } from "./lib/errors";
 import { requiredText, slugify } from "./lib/validation";
 import { buildAdminBookSearchText, insertVariant } from "./lib/productDomain";
 import { bookFormatValidator } from "./validators";
+import { clearUnsubmittedCatalogItems } from "./carts";
 
 const variantInput = v.object({
   format: bookFormatValidator,
@@ -177,6 +178,7 @@ export const close = mutation({
     if (!catalog) fail("CATALOG_NOT_FOUND");
     const now = Date.now();
     await ctx.db.patch(args.catalogId, { status: "closed", updatedAt: now });
+    await clearUnsubmittedCatalogItems(ctx, args.catalogId, now);
     await recordAudit(ctx, user._id, "catalog.closed", "catalog", args.catalogId);
     return getCatalogView(ctx, args.catalogId);
   },

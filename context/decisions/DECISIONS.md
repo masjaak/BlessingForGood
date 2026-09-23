@@ -1,5 +1,26 @@
 # Decisions
 
+## Catalog closure cleanup, canonical categories, and social entry — 2026-09-23
+
+Status: `ACTIVE / ENGINEERING GREEN; DEPLOYMENT PENDING`
+
+- The existing `secretCatalogs.close` mutation owns cleanup. It marks the
+  Catalog closed and deletes only its unsubmitted Cart lines in the same
+  Convex transaction. It reuses the existing Cart intent event and does not
+  delete Orders, Order Items, Cart checkout records, or unrelated Cart lines.
+- The existing `books.categories[]` field is reused. `Children Books` and
+  `Adult Books` are the only supported UI categories; no legacy category
+  backfill is performed. The Admin editor and Customer Catalog filter share
+  the same constants.
+- Homepage onboarding is additive and state-gated by the existing Product
+  Context. It explains WhatsApp as community/PO information and the website
+  as the ordering/tracking surface, while `/join` remains the membership
+  authority. Configured external links are HTTPS-only; the tutorial CTA is
+  omitted when no approved URL is configured.
+- This scope intentionally leaves Analytics semantics, Auth architecture,
+  Join Request approval, Order insertion, Finance, Ready Stock, Secret
+  Catalog authorization, and Security S1.1 unchanged.
+
 ## FLEXIBOUND Book Variant format — 2026-09-17
 
 Status: `ACTIVE / ENGINEERING GREEN; DEPLOYMENT PENDING`

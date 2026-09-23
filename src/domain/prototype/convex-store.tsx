@@ -59,6 +59,7 @@ type CatalogRecord = {
     publisher: string;
     author?: string | null;
     description?: string | null;
+    categories?: string[];
     coverImageUrl?: string | null;
     coverPresentation?: { zoom: number; x: number; y: number } | null;
     gallery?: Array<{ mediaId: string; displayOrder: number; altText: string; url: string }>;

@@ -1,5 +1,34 @@
 # BFG SOURCE OF TRUTH
 
+## Catalog close, book categories, and social entry — 2026-09-23
+
+Status: `IMPLEMENTED; ENGINEERING GREEN; DEPLOYMENT PENDING`
+
+`secretCatalogs.close` is the canonical Catalog-close mutation. After the
+Catalog status transition, the same Convex transaction removes only
+unsubmitted `cartItems` whose canonical `catalogItem` belongs to that Catalog.
+It preserves other open-Catalog lines, Ready Stock (which has no shared Cart
+source), existing Orders and Order Items, Cart checkout records, invoices,
+payments, assignments, and activity history. Repeated close is idempotent.
+
+`books.categories[]` remains the canonical Master Book category field. The
+supported UI values are `Children Books` and `Adult Books`; existing books are
+not backfilled, so an unset category remains valid and visible under “Semua
+kategori”. The Admin Book editor manages the canonical category and the
+Customer Catalog filter composes with existing search, format, and publisher
+filters.
+
+The homepage adds a small social-entry onboarding layer using the existing
+membership/auth state. Signed-out and admission-required visitors see the
+WhatsApp community step, the Blessfriend website step, and the existing
+canonical `/join` flow. Active Customers do not see false registration copy;
+Admin and Owner workspace behavior is unchanged. `BFG_JOIN_WHATSAPP_GROUP_URL`
+and optional `BFG_TUTORIAL_VIDEO_URL` are HTTPS-only configuration values;
+without a configured tutorial URL, no dead video CTA is rendered. WhatsApp
+does not grant membership or bypass Join Request approval. Analytics, Auth,
+Order, Finance, Security S1.1, Ready Stock, and Secret Catalog authorization
+semantics remain frozen.
+
 ## Catalog search and multi-Catalog Cart — 2026-09-15
 
 The approved Cart model is one Customer, one persistent Cart, multiple Secret

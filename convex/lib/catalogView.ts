@@ -73,6 +73,7 @@ export async function getCatalogView(
       publisher: string;
       author: string | null;
       description: string | null;
+      categories: string[];
       coverImageUrl: string | null;
       coverPresentation: { zoom: number; x: number; y: number } | null;
       gallery: Array<{ mediaId: string; displayOrder: number; altText: string; url: string }>;
@@ -101,6 +102,7 @@ export async function getCatalogView(
       publisher: publisher.name,
       author: book.author ?? null,
       description: book.description ?? null,
+      categories: book.categories,
       coverImageUrl: coverUrls[index],
       coverPresentation: book.coverPresentation ?? null,
       gallery: (galleries.get(book._id) || []).filter((item) => Boolean(item.url)),

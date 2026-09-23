@@ -13,7 +13,13 @@ import { catalogDeadlineLabel, formatIdr } from "@/domain/prototype/logic";
 import { formatCargoEta } from "@/domain/prototype/operations";
 import type { ProductContextValue } from "@/domain/prototype/context";
 import { useProduct } from "@/domain/prototype/store";
-import { BOOK_FORMATS, type BookFormat, type Order } from "@/domain/prototype/types";
+import {
+  BOOK_CATEGORIES,
+  BOOK_FORMATS,
+  type BookCategory,
+  type BookFormat,
+  type Order,
+} from "@/domain/prototype/types";
 import { matchesCustomerCatalogBook } from "@/lib/catalog-discovery";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 import { AddToCartAction } from "@/features/customer-cart/add-to-cart-action";
@@ -103,6 +109,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<BookCategory | "">("");
   const [publisherFilters, setPublisherFilters] = useState<string[]>([]);
   const [formatFilters, setFormatFilters] = useState<BookFormat[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
@@ -161,15 +168,17 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
       catalog?.books.filter(
         (book) =>
           matchesCustomerCatalogBook(book, searchQuery) &&
+          (!categoryFilter || book.categories?.includes(categoryFilter)) &&
           (!publisherFilters.length || publisherFilters.includes(book.publisher)) &&
           (!formatFilters.length || book.variants.some((variant) => formatFilters.includes(variant.format))),
       ) || [],
-    [catalog, formatFilters, publisherFilters, searchQuery],
+    [catalog, categoryFilter, formatFilters, publisherFilters, searchQuery],
   );
-  const hasFilters = Boolean(searchQuery.trim() || publisherFilters.length || formatFilters.length);
+  const hasFilters = Boolean(searchQuery.trim() || categoryFilter || publisherFilters.length || formatFilters.length);
 
   function resetDiscovery() {
     setSearchQuery("");
+    setCategoryFilter("");
     setPublisherFilters([]);
     setFormatFilters([]);
   }
@@ -336,6 +345,20 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             />
           </Field>
           <div className="catalog-filter-row">
+            <Field label="Kategori">
+              <BFGSelect
+                aria-label="Kategori"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value as BookCategory | "")}
+              >
+                <option value="">Semua kategori</option>
+                {BOOK_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </BFGSelect>
+            </Field>
             <Field label="Format">
               <BFGMultiSelect
                 aria-label="Format"

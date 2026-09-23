@@ -203,6 +203,89 @@ describe("CustomerCatalog projection", () => {
     expect(detail.getAttribute("href")).toBe("/catalog/catalog-single/book-single");
   });
 
+  it("filters canonical book categories without hiding legacy uncategorized books from All", () => {
+    vi.mocked(useProduct).mockReturnValue({
+      unlockedCatalog: {
+        id: "catalog-categories",
+        name: "Category Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        books: [
+          {
+            id: "book-children",
+            title: "Children Stories",
+            publisher: "BFG Press",
+            categories: ["Children Books"],
+            variants: [
+              {
+                id: "variant-children",
+                format: "PB",
+                isbn: "9780000000012",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+          {
+            id: "book-adult",
+            title: "Adult Stories",
+            publisher: "BFG Press",
+            categories: ["Adult Books"],
+            variants: [
+              {
+                id: "variant-adult",
+                format: "PB",
+                isbn: "9780000000013",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+          {
+            id: "book-legacy",
+            title: "Legacy Stories",
+            publisher: "BFG Press",
+            variants: [
+              {
+                id: "variant-legacy",
+                format: "PB",
+                isbn: "9780000000014",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogLoading: false,
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    expect(screen.getByRole("heading", { name: "Children Stories" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Adult Stories" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Legacy Stories" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Kategori" }));
+    fireEvent.click(screen.getByRole("option", { name: "Children Books" }));
+    expect(screen.getByRole("heading", { name: "Children Stories" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Adult Stories" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Legacy Stories" })).toBeNull();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Cari judul atau ISBN" }), {
+      target: { value: "Children" },
+    });
+    expect(screen.getByText("1 buku ditemukan")).toBeTruthy();
+  });
+
   it("uses compact multi-format choices and submits the selected variant price and id", async () => {
     vi.mocked(useUser).mockReturnValue({
       isLoaded: true,

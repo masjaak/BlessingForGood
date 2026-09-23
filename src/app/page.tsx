@@ -1,9 +1,21 @@
 import { BrandLogo, BrandMascot } from "@/components/brand";
+import { HomeOnboarding } from "@/components/home-onboarding";
 import { HowToOrderSteps } from "@/components/how-to-order";
 import { JsonLd } from "@/components/json-ld";
 import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { createHomepageStructuredData } from "@/lib/seo";
+
+function configuredExternalUrl(name: "BFG_JOIN_WHATSAPP_GROUP_URL" | "BFG_TUTORIAL_VIDEO_URL") {
+  const value = process.env[name]?.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function HomePage() {
   return (
@@ -58,6 +70,11 @@ export default function HomePage() {
             </ol>
           </div>
         </section>
+
+        <HomeOnboarding
+          whatsappGroupUrl={configuredExternalUrl("BFG_JOIN_WHATSAPP_GROUP_URL")}
+          tutorialVideoUrl={configuredExternalUrl("BFG_TUTORIAL_VIDEO_URL")}
+        />
 
         <section className="section-block discovery-section" id="book-discovery" aria-labelledby="discovery-title">
           <div className="section-heading">

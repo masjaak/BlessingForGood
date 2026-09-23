@@ -8618,6 +8618,250 @@ p {
   accent-color: var(--accent);
 }
 
+/* Catalog entry polish: keep the shared cover renderer, but give Secret Catalog covers the lead. */
+.customer-shell .book-card-layout {
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+.customer-shell .book-cover {
+  width: 100%;
+  max-width: 100%;
+}
+
+.customer-shell .book-card-skeleton .skeleton-cover {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 2 / 3;
+}
+
+@media (max-width: 900px) {
+  .customer-shell .catalog-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .customer-shell .book-card-layout {
+    grid-template-columns: minmax(112px, 36%) minmax(0, 1fr);
+    gap: var(--space-md);
+  }
+
+  .customer-shell .book-card-skeleton .skeleton-cover {
+    aspect-ratio: 2 / 3;
+  }
+}
+
+/* Social entry layer: native details keeps the How-to interaction accessible without another client state machine. */
+.customer-shell .home-onboarding {
+  display: grid;
+  gap: var(--space-md);
+  margin-top: var(--homepage-section-gap-mobile);
+}
+
+.customer-shell .home-onboarding-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
+  gap: var(--space-xl);
+  align-items: center;
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.customer-shell .home-onboarding-copy {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.customer-shell .home-onboarding-copy h2,
+.customer-shell .home-onboarding-copy p,
+.customer-shell .home-onboarding-helper {
+  margin: 0;
+}
+
+.customer-shell .home-onboarding-copy h2 {
+  max-width: 660px;
+  font-size: clamp(1.8rem, 3vw, 2.55rem);
+}
+
+.customer-shell .home-onboarding-copy > p {
+  max-width: 680px;
+}
+
+.customer-shell .home-onboarding-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: home-onboarding-step;
+}
+
+.customer-shell .home-onboarding-steps li {
+  display: grid;
+  gap: var(--space-xxs);
+  min-width: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--control-surface-hover);
+  counter-increment: home-onboarding-step;
+}
+
+.customer-shell .home-onboarding-steps li::before {
+  color: var(--accent);
+  content: "0" counter(home-onboarding-step);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.customer-shell .home-onboarding-steps strong {
+  color: var(--ink);
+}
+
+.customer-shell .home-onboarding-steps span,
+.customer-shell .home-onboarding-helper {
+  color: var(--ink-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.customer-shell .home-onboarding-art {
+  display: grid;
+  min-height: 180px;
+  place-items: end center;
+  overflow: hidden;
+}
+
+.customer-shell .home-onboarding-mascot {
+  width: min(100%, 200px);
+  height: auto;
+  transform: scale(1.12);
+  transform-origin: bottom center;
+}
+
+.customer-shell .home-onboarding-how-to {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.customer-shell .home-onboarding-how-to > summary {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+.customer-shell .home-onboarding-how-to > summary::-webkit-details-marker {
+  display: none;
+}
+
+.customer-shell .home-onboarding-how-to > summary:focus-visible {
+  box-shadow: var(--focus);
+  outline: none;
+}
+
+.customer-shell .home-onboarding-how-to > summary > span:first-child {
+  display: grid;
+  gap: var(--space-xxs);
+}
+
+.customer-shell .home-onboarding-how-to > summary .eyebrow {
+  color: var(--accent);
+}
+
+.customer-shell .home-onboarding-summary-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  color: var(--accent-dark);
+  border-radius: 50%;
+  background: var(--mint);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.customer-shell .home-onboarding-how-to[open] .home-onboarding-summary-icon {
+  transform: rotate(45deg);
+}
+
+.customer-shell .home-onboarding-how-to-content {
+  display: grid;
+  gap: var(--space-lg);
+  padding: 0 var(--space-lg) var(--space-lg);
+  border-top: 1px solid var(--line);
+}
+
+.customer-shell .home-onboarding-how-to-content > p {
+  margin: var(--space-lg) 0 0;
+  color: var(--ink-muted);
+}
+
+.customer-shell .home-onboarding-how-to-content .order-steps {
+  margin: 0;
+}
+
+.customer-shell .home-onboarding-how-to-actions {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 900px) {
+  .customer-shell .home-onboarding-main {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+    gap: var(--space-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  .customer-shell .home-onboarding {
+    margin-top: var(--space-lg);
+  }
+
+  .customer-shell .home-onboarding-main {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+  }
+
+  .customer-shell .home-onboarding-art {
+    min-height: 112px;
+  }
+
+  .customer-shell .home-onboarding-mascot {
+    width: 128px;
+  }
+
+  .customer-shell .home-onboarding-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .home-onboarding-how-to > summary {
+    min-height: 60px;
+    padding-inline: var(--space-md);
+  }
+
+  .customer-shell .home-onboarding-how-to-content {
+    padding-inline: var(--space-md);
+  }
+}
+
 .admin-shell .invoice-issue-main,
 .admin-shell .invoice-issue-status,
 .admin-shell .invoice-issue-action,

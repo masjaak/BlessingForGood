@@ -26,7 +26,7 @@ import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { AdminBookMedia } from "@/features/admin-books/media/admin-book-media";
 import { formatGbpMinor, normalizeGbpInput, parseGbpMinor } from "@/lib/gbp";
-import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
+import { BOOK_CATEGORIES, BOOK_FORMATS, type BookCategory, type BookFormat } from "@/domain/prototype/types";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type Variant = AdminBook["variants"][number];
@@ -217,7 +217,12 @@ function BookEditor({ book }: { book: AdminBook }) {
   const [slug, setSlug] = useState(book.slug);
   const [author, setAuthor] = useState(book.author || "");
   const [description, setDescription] = useState(book.description || "");
-  const [categories, setCategories] = useState(book.categories.join(", "));
+  const [categories, setCategories] = useState(
+    book.categories.filter((category) => !BOOK_CATEGORIES.includes(category as BookCategory)).join(", "),
+  );
+  const [bookCategory, setBookCategory] = useState<BookCategory | "">(
+    BOOK_CATEGORIES.find((category) => book.categories.includes(category)) || "",
+  );
   const [publicationStatus, setPublicationStatus] = useState<PublicationStatus>(book.publicationStatus);
   const [format, setFormat] = useState<BookFormat>("PB");
   const [isbn, setIsbn] = useState("");
@@ -236,6 +241,9 @@ function BookEditor({ book }: { book: AdminBook }) {
   >(null);
 
   function bookInput(nextPublicationStatus?: PublicationStatus) {
+    const extraCategories = categories
+      .split(",")
+      .filter((category) => category.trim() && !BOOK_CATEGORIES.includes(category.trim() as BookCategory));
     return {
       bookId: book._id,
       publisherId,
@@ -243,7 +251,7 @@ function BookEditor({ book }: { book: AdminBook }) {
       slug,
       author,
       description,
-      categories: categories.split(","),
+      categories: bookCategory ? [bookCategory, ...extraCategories] : extraCategories,
       publicationStatus: nextPublicationStatus,
     };
   }
@@ -434,7 +442,21 @@ function BookEditor({ book }: { book: AdminBook }) {
                   <Field label="Penulis">
                     <input className="input" value={author} onChange={(event) => setAuthor(event.target.value)} />
                   </Field>
-                  <Field label="Kategori" hint="Pisahkan dengan koma.">
+                  <Field label="Kategori buku">
+                    <BFGSelect
+                      className="select"
+                      value={bookCategory}
+                      onChange={(event) => setBookCategory(event.target.value as BookCategory | "")}
+                    >
+                      <option value="">Belum dikategorikan</option>
+                      {BOOK_CATEGORIES.map((category) => (
+                        <option value={category} key={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </BFGSelect>
+                  </Field>
+                  <Field label="Kategori tambahan" hint="Opsional; pisahkan dengan koma.">
                     <input
                       className="input"
                       value={categories}

@@ -68,6 +68,54 @@ async function clearCatalogCheckout(ctx: MutationCtx, cartId: Id<"carts">, catal
   if (checkout) await ctx.db.delete(checkout._id);
 }
 
+export async function clearUnsubmittedCatalogItems(
+  ctx: MutationCtx,
+  catalogId: Id<"secretCatalogs">,
+  now = Date.now(),
+) {
+  const catalogItems = await ctx.db
+    .query("catalogItems")
+    .withIndex("by_catalog", (query) => query.eq("catalogId", catalogId))
+    .collect();
+  const removedCartIds = new Set<Id<"carts">>();
+
+  for (const catalogItem of catalogItems) {
+    const cartItems = await ctx.db
+      .query("cartItems")
+      .withIndex("by_catalog_item", (query) => query.eq("catalogItemId", catalogItem._id))
+      .collect();
+    for (const item of cartItems) {
+      const cart = await ctx.db.get(item.cartId);
+      if (!cart) continue;
+      const resolved = await resolveCartCatalogItem(ctx, item.catalogItemId, catalogItem, {
+        skipCatalogStateChecks: true,
+      });
+      await recordCartIntentEvent(ctx, {
+        eventType: "cart_item_removed",
+        customerUserId: cart.customerUserId,
+        cartId: cart._id,
+        cartItemId: item._id,
+        catalogItemId: item.catalogItemId,
+        ...cartIntentMetadata(resolved),
+        quantity: item.quantity,
+        createdAt: now,
+      });
+      await ctx.db.delete(item._id);
+      removedCartIds.add(cart._id);
+    }
+  }
+
+  for (const cartId of removedCartIds) {
+    const cart = await ctx.db.get(cartId);
+    if (!cart) continue;
+    const remaining = await ctx.db
+      .query("cartItems")
+      .withIndex("by_cart", (query) => query.eq("cartId", cart._id))
+      .first();
+    await ctx.db.patch(cart._id, { catalogId: remaining ? cart.catalogId : undefined, updatedAt: now });
+  }
+}
+
 export const getMine = query({
   args: {},
   handler: async (ctx) => {

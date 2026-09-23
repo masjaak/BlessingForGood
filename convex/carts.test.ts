@@ -194,7 +194,7 @@ describe("Customer Cart server domain", () => {
     });
   });
 
-  it("uses exact Rp1 comparisons and records unavailable-to-reopened acknowledgement state", async () => {
+  it("uses exact Rp1 comparisons and clears lines when a Catalog closes", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const bundle = await admin.mutation(api.secretCatalogs.createBundle, {
@@ -221,27 +221,76 @@ describe("Customer Cart server domain", () => {
 
     await admin.mutation(api.secretCatalogs.close, { catalogId: bundle.catalogId });
     let cart = await customer.query(api.carts.getMine, {});
-    expect(cart.lines[0]).toMatchObject({ availability: "catalog_closed", checkoutEligible: false });
+    expect(cart).toMatchObject({ lines: [], retainedQuantity: 0 });
     cart = await customer.mutation(api.carts.reconcile, {});
-    expect(cart.lines[0]).toMatchObject({ reconciliationState: "unavailable" });
+    expect(cart).toMatchObject({ lines: [], retainedQuantity: 0 });
     await admin.mutation(api.secretCatalogs.reopen, { catalogId: bundle.catalogId });
     cart = await customer.query(api.carts.getMine, {});
-    expect(cart.lines[0]).toMatchObject({
-      availability: "active",
-      reconciliationState: "unavailable",
-      checkoutEligible: false,
+    expect(cart).toMatchObject({ lines: [], retainedQuantity: 0 });
+  });
+
+  it("clears only unsubmitted Catalog lines across Customers and preserves Orders", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const closed = await createCartCatalog(admin, "Cart Close Target");
+    const other = await createCartCatalog(admin, "Cart Close Other");
+    for (const accessCode of ["cart-close-target-code", "cart-close-other-code"]) {
+      await customer.mutation(api.catalogAccess.unlock, { accessCode });
+      await secondCustomer.mutation(api.catalogAccess.unlock, { accessCode });
+    }
+    const closedItemId = await catalogItemId(t, closed.catalogId, closed.variantIds[0]);
+    const otherItemId = await catalogItemId(t, other.catalogId, other.variantIds[0]);
+
+    await customer.mutation(api.carts.addItem, { catalogItemId: closedItemId });
+    await customer.mutation(api.carts.addItem, { catalogItemId: otherItemId });
+    const order = await customer.mutation(api.orders.submitCart, {
+      catalogId: closed.catalogId,
+      requestKey: "cart-close-preserved-order",
     });
-    cart = await customer.mutation(api.carts.reconcile, {});
-    expect(cart.lines[0]).toMatchObject({
-      reconciliationState: "available_pending_acknowledgement",
-      checkoutEligible: false,
+    await secondCustomer.mutation(api.carts.addItem, { catalogItemId: closedItemId });
+    await secondCustomer.mutation(api.carts.addItem, { catalogItemId: otherItemId });
+
+    await admin.mutation(api.secretCatalogs.close, { catalogId: closed.catalogId });
+
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({
+      retainedQuantity: 1,
+      lines: [expect.objectContaining({ catalogItemId: otherItemId })],
     });
-    cart = await customer.mutation(api.carts.acknowledgeCurrentLineState, { cartItemId: cart.lines[0].id });
-    expect(cart.lines[0]).toMatchObject({
-      reconciliationState: "active",
-      observedUnitPriceAmount: 255001,
-      checkoutEligible: true,
+    await expect(secondCustomer.query(api.carts.getMine, {})).resolves.toMatchObject({
+      retainedQuantity: 1,
+      lines: [expect.objectContaining({ catalogItemId: otherItemId })],
     });
+    await expect(
+      t.run(async (ctx) => ({
+        targetLines: (
+          await ctx.db
+            .query("cartItems")
+            .withIndex("by_catalog_item", (query) => query.eq("catalogItemId", closedItemId))
+            .collect()
+        ).length,
+        otherLines: (
+          await ctx.db
+            .query("cartItems")
+            .withIndex("by_catalog_item", (query) => query.eq("catalogItemId", otherItemId))
+            .collect()
+        ).length,
+        orders: (await ctx.db.query("orders").collect()).length,
+        orderItems: (await ctx.db.query("orderItems").collect()).length,
+        cartCheckouts: (await ctx.db.query("cartCheckouts").collect()).length,
+        preservedOrder: await ctx.db.get(order.orderId),
+      })),
+    ).resolves.toMatchObject({
+      targetLines: 0,
+      otherLines: 2,
+      orders: 1,
+      orderItems: 1,
+      cartCheckouts: 1,
+      preservedOrder: expect.objectContaining({ _id: order.orderId }),
+    });
+
+    await admin.mutation(api.secretCatalogs.close, { catalogId: closed.catalogId });
+    await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedQuantity: 1 });
+    await expect(secondCustomer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedQuantity: 1 });
   });
 
   it("projects item, Variant, Book, Publisher, PO, and missing-data states without deleting intent", async () => {

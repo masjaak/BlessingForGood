@@ -1,5 +1,21 @@
 # BFG Project Status
 
+## Catalog + onboarding improvement — 2026-09-23
+
+Status: `ENGINEERING GREEN; DEPLOYMENT PENDING`
+
+The four scoped improvements are implemented: Catalog close clears only
+unsubmitted related Cart lines; the existing Master Book category field now
+supports Children Books and Adult Books with a composable Customer filter;
+Secret Catalog cards use larger cover-first geometry with matching skeletons;
+and the homepage has a responsive, state-aware social-entry onboarding layer
+with WhatsApp, Blessfriend, ongoing PO, and optional tutorial entry points.
+
+Convex tests, frontend tests, typecheck, lint, formatting, and production
+build pass. Authenticated Customer and Admin/Owner production UAT still
+requires an approved live session; no real Customer Cart or Order was mutated
+for testing. Existing unrelated working-tree changes remain uncommitted.
+
 ## FLEXIBOUND Book Variant extension — 2026-09-17
 
 Status: `ENGINEERING GREEN; DEPLOYMENT PENDING`
