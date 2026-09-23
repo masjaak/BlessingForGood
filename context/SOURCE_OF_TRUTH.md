@@ -6,7 +6,8 @@ The signed-out homepage keeps the two approved steps as full-card links. The
 first uses the approved HTTPS `BFG_JOIN_WHATSAPP_GROUP_URL` when configured;
 otherwise it uses the existing `/join` request flow. The second always uses
 `/join`. Existing pending, invitation-pending, active Customer, Admin, and
-Owner state behavior remains authoritative.
+Owner state behavior remains authoritative. On narrow screens, the card layer
+keeps the primary CTA visible above Blessy's floating message.
 
 Customer Catalog browse requests are made only after the existing session or
 grant authorization succeeds. The query applies visibility, search, category,
@@ -19,10 +20,11 @@ last available page. Filter and page-size changes return to page one.
 The current schema stores searchable/sortable fields across joined Catalog
 Item, Variant, Book, and Publisher records. These exact filters and curated
 ordering therefore scan the authorized Catalog on the server before slicing;
-only one page and its cover URLs are returned to the Customer. The list
-projection omits cover galleries. If the Catalog scan approaches Convex read
-limits, the upgrade path is a denormalized indexed Catalog browse projection.
-URL query-state persistence is not part of this change.
+only one page and its cover URLs are returned to the Customer. Cover images
+use native lazy loading and async decoding, and the list projection omits cover
+galleries. If the Catalog scan approaches Convex read limits, the upgrade path
+is a denormalized indexed Catalog browse projection. URL query-state
+persistence is not part of this change.
 
 ## Catalog close, book categories, and social entry — 2026-09-23
 

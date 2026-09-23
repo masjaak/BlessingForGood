@@ -2,7 +2,7 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-17
+last_updated: 2026-09-23
 source: conversation
 ---
 
@@ -19,12 +19,14 @@ source: conversation
   server-side filters, result position/count, and previous/next navigation.
 - Customer Catalog pagination runs after authorization and returns only the
   selected page; cover-first sizing and list skeleton geometry remain intact.
+  Customer covers use native lazy loading and async decoding; mobile onboarding
+  actions remain above Blessy's floating message.
 
 ### QA and scope
 
 - Added pagination boundary/filter/authorization tests and onboarding,
   Customer, and Admin control tests. Full frontend verification passed
-  (119 files / 780 tests), Convex passed (47 files / 313 tests), and
+  (119 files / 781 tests), Convex passed (47 files / 313 tests), and
   typecheck, lint, format, production build, and diff checks passed. Authenticated
   Customer/Admin Production UAT remains pending.
 - Analytics, Auth architecture, Orders, Finance, Ready Stock, Batch, and

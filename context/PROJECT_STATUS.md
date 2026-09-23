@@ -15,14 +15,17 @@ The Customer response contains only the authorized page, result count, and
 publisher options, and resolves cover URLs only for that page. The existing
 schema requires a server-side scan to preserve joined-field filters and
 manually curated order; indexed denormalization is the documented upgrade if
-Catalog reads approach Convex limits.
+Catalog reads approach Convex limits. Cover images use browser-native lazy
+loading and async decoding, and mobile card actions stay above Blessy's
+floating message.
 
-The full frontend suite passes (119 files / 780 tests), Convex suite passes
+The full frontend suite passes (119 files / 781 tests), Convex suite passes
 (47 files / 313 tests), and typecheck, lint, format, production build, and
 diff checks pass. Authenticated Customer/Admin Production UAT and a real-data
-100-item browser profile require approved sessions and remain unverified. The
-local browser could not hydrate the homepage because this checkout has no
-working Clerk/Convex credentials; no account or business data was used.
+100-item browser performance profile require approved sessions and remain
+unverified. The local browser could not hydrate the homepage because this
+checkout has no working Clerk/Convex credentials; no account or business data
+was used.
 
 ## Catalog + onboarding improvement — 2026-09-23
 

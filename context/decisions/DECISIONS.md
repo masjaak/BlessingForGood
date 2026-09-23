@@ -6,10 +6,13 @@ Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
 
 - Signed-out onboarding uses two self-contained semantic links with the CTA
   inside each card. The configured WhatsApp destination is used when present;
-  otherwise both steps use the canonical `/join` admission path.
+  otherwise both steps use the canonical `/join` admission path. On mobile the
+  cards layer over the floating guide bubble so it cannot cover their actions.
 - Customer browse remains behind existing Catalog authorization. The server
   applies search, category, publisher, format, and ordering before slicing
   25/50/100-row pages; Admin uses a separate permission-guarded projection.
+- Customer cover images lazy-load and decode asynchronously. A deterministic
+  100-item UI render verifies the bounded page and image attributes.
 - The present joined-field schema requires a server-side Catalog scan for exact
   filters and curated order. A denormalized indexed browse projection is the
   upgrade path if Catalog size reaches Convex read limits. URL persistence is

@@ -31,6 +31,8 @@ export function BookCover({
           className="book-cover-image"
           src={imageSource}
           alt={alt || `${title} cover`}
+          loading="lazy"
+          decoding="async"
           onError={() => setImageFailed(true)}
         />
       ) : (

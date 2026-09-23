@@ -91,6 +91,64 @@ describe("CustomerCatalog projection", () => {
     expect(updateCatalogBrowse).toHaveBeenCalledWith({ category: "Children Books" });
   });
 
+  it("renders a 100-product page with covers set to lazy-load", () => {
+    const books = Array.from({ length: 100 }, (_, index) => {
+      const number = String(index + 1).padStart(3, "0");
+      return {
+        id: `book-page-${number}`,
+        title: `Page Book ${number}`,
+        publisher: "BFG Press",
+        categories: ["Children Books"],
+        coverImageUrl: `https://test.convex.cloud/api/storage/cover-${number}`,
+        variants: [
+          {
+            id: `variant-page-${number}`,
+            format: "PB",
+            isbn: `978000000${number}`,
+            price: 125000,
+            currency: "IDR",
+            availability: "available",
+          },
+        ],
+      };
+    });
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      unlockedCatalog: {
+        id: "catalog-page-100",
+        name: "100 Page Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        titleCount: 101,
+        resultCount: 101,
+        pageNumber: 1,
+        pageSize: 100,
+        publisherOptions: ["BFG Press"],
+        books,
+      },
+      catalogBrowse: { pageNumber: 1, pageSize: 100, search: "", category: "", publishers: [], formats: [] },
+      updateCatalogBrowse: vi.fn(),
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    expect(document.querySelectorAll(".book-card")).toHaveLength(100);
+    const covers = Array.from(document.querySelectorAll<HTMLImageElement>(".book-cover-image"));
+    expect(covers).toHaveLength(100);
+    expect(
+      covers.every((cover) => cover.getAttribute("loading") === "lazy" && cover.getAttribute("decoding") === "async"),
+    ).toBe(true);
+    expect(screen.getByText("Menampilkan 1–100 dari 101 buku")).toBeTruthy();
+    expect(screen.getByText("Halaman 1 dari 2")).toBeTruthy();
+  });
+
   it("prefills the editable preorder name from the BFG Profile display name", async () => {
     vi.mocked(useUser).mockReturnValue({
       isLoaded: true,
