@@ -1,5 +1,29 @@
 # BFG Project Status
 
+## Onboarding card simplification + Catalog pagination — 2026-09-23
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+The homepage now puts each of the two signed-out onboarding actions inside its
+own full-card link and removes the duplicate detached action row. Existing
+membership states and the canonical `/join` flow remain in place.
+
+Customer and Admin Catalog screens now request 25, 50, or 100 results per
+page, defaulting to 25. Search/category/publisher/format filters run before
+Customer slicing; Admin search and Publisher filtering run before its slice.
+The Customer response contains only the authorized page, result count, and
+publisher options, and resolves cover URLs only for that page. The existing
+schema requires a server-side scan to preserve joined-field filters and
+manually curated order; indexed denormalization is the documented upgrade if
+Catalog reads approach Convex limits.
+
+The full frontend suite passes (119 files / 780 tests), Convex suite passes
+(47 files / 313 tests), and typecheck, lint, format, production build, and
+diff checks pass. Authenticated Customer/Admin Production UAT and a real-data
+100-item browser profile require approved sessions and remain unverified. The
+local browser could not hydrate the homepage because this checkout has no
+working Clerk/Convex credentials; no account or business data was used.
+
 ## Catalog + onboarding improvement — 2026-09-23
 
 Status: `ENGINEERING GREEN; DEPLOYED; AUTHENTICATED PRODUCTION UAT PENDING`

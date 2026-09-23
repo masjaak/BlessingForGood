@@ -71,6 +71,10 @@ export interface SecretCatalog {
   estimatedArrivalMonth?: string | null;
   books: Book[];
   titleCount?: number;
+  resultCount?: number;
+  pageNumber?: number;
+  pageSize?: number;
+  publisherOptions?: string[];
   createdAt: string;
 }
 

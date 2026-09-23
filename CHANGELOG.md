@@ -8,6 +8,28 @@ source: conversation
 
 # Changelog
 
+## [onboarding-pagination-follow-up] — 2026-09-23
+
+### Changed
+
+- Combined each signed-out onboarding step and its CTA into one full-card link;
+  configured WhatsApp or canonical `/join` destinations preserve the existing
+  admission flow and state handling.
+- Added 25/50/100 page controls to Customer and Admin Catalog browsing, with
+  server-side filters, result position/count, and previous/next navigation.
+- Customer Catalog pagination runs after authorization and returns only the
+  selected page; cover-first sizing and list skeleton geometry remain intact.
+
+### QA and scope
+
+- Added pagination boundary/filter/authorization tests and onboarding,
+  Customer, and Admin control tests. Full frontend verification passed
+  (119 files / 780 tests), Convex passed (47 files / 313 tests), and
+  typecheck, lint, format, production build, and diff checks passed. Authenticated
+  Customer/Admin Production UAT remains pending.
+- Analytics, Auth architecture, Orders, Finance, Ready Stock, Batch, and
+  Security S1.1 remain outside this follow-up.
+
 ## [catalog-onboarding-improvement] — 2026-09-23
 
 ### Changed

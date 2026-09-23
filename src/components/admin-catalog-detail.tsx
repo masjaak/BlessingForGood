@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { BFGSelect } from "@/components/bfg-select";
+import { CatalogPageNavigation, CatalogResultToolbar } from "@/components/catalog-pagination";
 import {
   Button,
   Card,
@@ -22,7 +23,6 @@ import {
 import { SkeletonForm } from "@/components/workspace-skeleton-primitives";
 import { catalogStatusLabels } from "@/domain/prototype/logic";
 import { productErrorMessage } from "@/domain/prototype/errors";
-import { matchesAdminCatalogRecord } from "@/lib/catalog-discovery";
 import { calendarDateInputValue, calendarDateToEndTimestamp } from "@/lib/calendar-date";
 import { useProduct } from "@/domain/prototype/store";
 import { UatPurgeDialog } from "@/components/uat-purge-dialog";
@@ -85,8 +85,24 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const id = catalogId as Id<"secretCatalogs">;
   const router = useRouter();
   const { sessionRole } = useProduct();
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogPublisher, setCatalogPublisher] = useState("");
+  const [catalogPageNumber, setCatalogPageNumber] = useState(1);
+  const [catalogPageSize, setCatalogPageSize] = useState<25 | 50 | 100>(25);
   const catalog = useQuery(api.secretCatalogs.getForAdmin, { catalogId: id });
-  const items = useQuery(api.catalogItems.listForCatalog, { catalogId: id });
+  const catalogItemsQuery = useQuery(api.catalogItems.listForCatalogPage, {
+    catalogId: id,
+    pageNumber: catalogPageNumber,
+    pageSize: catalogPageSize,
+    search: catalogSearch || undefined,
+    publisher: catalogPublisher || undefined,
+  });
+  const [lastCatalogItems, setLastCatalogItems] = useState<typeof catalogItemsQuery>();
+  if (catalogItemsQuery !== undefined && catalogItemsQuery !== lastCatalogItems) {
+    setLastCatalogItems(catalogItemsQuery);
+  }
+  const catalogItemsData = catalogItemsQuery ?? lastCatalogItems;
+  const catalogItemsLoading = catalogItemsQuery === undefined && Boolean(lastCatalogItems);
   const [assignableSearch, setAssignableSearch] = useState("");
   const [assignableCursor, setAssignableCursor] = useState<string | null>(null);
   const assignableResult = useQuery(api.catalogItems.listAssignable, {
@@ -117,8 +133,6 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const [closesAt, setClosesAt] = useState<string | null>(null);
   const [estimatedArrivalMonth, setEstimatedArrivalMonth] = useState<string | null>(null);
   const [variantId, setVariantId] = useState("");
-  const [catalogSearch, setCatalogSearch] = useState("");
-  const [catalogPublisher, setCatalogPublisher] = useState("");
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [pending, setPending] = useState("");
@@ -136,7 +150,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     action: () => void;
   } | null>(null);
 
-  if (catalog === undefined || items === undefined) {
+  if (catalog === undefined || catalogItemsData === undefined) {
     return (
       <AdminOperationalPage
         eyebrow="Secret Catalog"
@@ -152,28 +166,24 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     );
   }
   if (!catalog) return <div className="state-panel">Katalog tidak ditemukan.</div>;
-  const catalogItems = items;
+  const catalogItems = catalogItemsLoading ? [] : catalogItemsData.page;
+  const effectiveCatalogPageNumber = catalogItemsLoading ? catalogPageNumber : catalogItemsData.pageNumber;
   const effectiveName = name ?? catalog.name;
   const effectiveDescription = description ?? catalog.description ?? "";
   const effectiveClosesAt = closesAt ?? calendarDateInputValue(catalog.closesAt);
   const effectiveEstimatedArrivalMonth = estimatedArrivalMonth ?? catalog.estimatedArrivalMonth ?? "";
   const filteredAssignable = assignable ?? [];
   const searchingAssignable = !assignableResult || (!assignableResult.isDone && !assignableResult.page.length);
-  const catalogPublishers = Array.from(
-    new Set(items.map((item) => item.publisherName).filter((publisher): publisher is string => Boolean(publisher))),
-  ).sort((left, right) => left.localeCompare(right));
-  const filteredCatalogItems = items.filter(
-    (item) =>
-      matchesAdminCatalogRecord(item, catalogSearch) && (!catalogPublisher || item.publisherName === catalogPublisher),
-  );
-  const catalogTitleCount = (records: typeof items) =>
-    new Set(records.map((item) => String(item.bookId || item.title))).size;
+  const catalogPublishers = catalogItemsData.publisherOptions;
+  const filteredCatalogItems = catalogItems;
   const hasCatalogFilters = Boolean(catalogSearch.trim() || catalogPublisher);
-  const catalogItemPositions = new Map(items.map((item, index) => [item._id, index]));
-  const canReorderCatalog = !hasCatalogFilters && items.length > 1 && !pending;
+  const catalogItemPositions = new Map(catalogItems.map((item) => [item._id, item.position]));
+  const canMoveCatalog = !hasCatalogFilters && !pending;
+  const canReorderCatalog =
+    canMoveCatalog && catalogItemsData.catalogItemCount <= catalogItemsData.pageSize && catalogItems.length > 1;
   const catalogIsDraft = catalog.status === "draft";
   const catalogIsArchived = catalog.status === "archived";
-  const catalogMayBeDeleted = catalogIsDraft && catalogItems.length === 0 && !catalog.accessPeriodId;
+  const catalogMayBeDeleted = catalogIsDraft && catalogItemsData.catalogItemCount === 0 && !catalog.accessPeriodId;
 
   async function run(key: string, action: () => Promise<unknown>, success: string) {
     setPending(key);
@@ -307,8 +317,12 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     releaseCatalogPointerCapture(event.currentTarget, event.pointerId);
   }
 
-  const draggedCatalogItem = catalogDragState ? items.find((item) => item._id === catalogDragState.itemId) : null;
-  const remainingCatalogItems = catalogDragState ? items.filter((item) => item._id !== catalogDragState.itemId) : [];
+  const draggedCatalogItem = catalogDragState
+    ? catalogItems.find((item) => item._id === catalogDragState.itemId)
+    : null;
+  const remainingCatalogItems = catalogDragState
+    ? catalogItems.filter((item) => item._id !== catalogDragState.itemId)
+    : [];
   const catalogDropBeforeItemId =
     catalogDragState && catalogDragState.targetIndex < remainingCatalogItems.length
       ? remainingCatalogItems[catalogDragState.targetIndex]?._id
@@ -569,14 +583,20 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 type="search"
                 placeholder="Cari judul, publisher, ISBN, atau penulis"
                 value={catalogSearch}
-                onChange={(event) => setCatalogSearch(event.target.value)}
+                onChange={(event) => {
+                  setCatalogSearch(event.target.value);
+                  setCatalogPageNumber(1);
+                }}
               />
             </Field>
             <Field label="Publisher">
               <BFGSelect
                 aria-label="Publisher dalam Catalog"
                 value={catalogPublisher}
-                onChange={(event) => setCatalogPublisher(event.target.value)}
+                onChange={(event) => {
+                  setCatalogPublisher(event.target.value);
+                  setCatalogPageNumber(1);
+                }}
               >
                 <option value="">Semua Publisher</option>
                 {catalogPublishers.map((publisher) => (
@@ -593,24 +613,43 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 onClick={() => {
                   setCatalogSearch("");
                   setCatalogPublisher("");
+                  setCatalogPageNumber(1);
                 }}
               >
                 Reset pencarian
               </Button>
             ) : null}
           </div>
-          <p className="catalog-result-count" role="status" aria-live="polite">
-            {hasCatalogFilters
-              ? `${catalogTitleCount(filteredCatalogItems)} judul ditemukan`
-              : `${catalogTitleCount(items)} judul di Catalog`}
-          </p>
+          <CatalogResultToolbar
+            pageNumber={effectiveCatalogPageNumber}
+            pageSize={catalogPageSize}
+            resultCount={catalogItemsData.totalCount}
+            noun="produk"
+            loading={catalogItemsLoading}
+            onPageNumberChange={setCatalogPageNumber}
+            onPageSizeChange={(pageSize) => {
+              setCatalogPageSize(pageSize);
+              setCatalogPageNumber(1);
+            }}
+          />
           {hasCatalogFilters ? (
             <p className="subtle catalog-ordering-filter-hint">
               Reset pencarian atau Publisher untuk mengatur ulang urutan.
             </p>
           ) : null}
         </section>
-        {items.length && filteredCatalogItems.length ? (
+        {catalogItemsLoading ? (
+          <LoadingRegion label="Memuat halaman produk">
+            <div className="content-stack catalog-item-list">
+              {Array.from({ length: 4 }, (_, index) => (
+                <div className="summary-line" key={index}>
+                  <SkeletonText width={index % 2 ? "72%" : "84%"} />
+                  <Skeleton className="skeleton-cta" />
+                </div>
+              ))}
+            </div>
+          </LoadingRegion>
+        ) : filteredCatalogItems.length ? (
           <div className="content-stack catalog-item-list">
             {catalogDragState ? (
               <p className="sr-only" role="status" aria-live="polite">
@@ -664,7 +703,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                       variant="tertiary"
                       size="compact"
                       aria-label={`Naikkan ${item.title}`}
-                      disabled={!canReorderCatalog || (catalogItemPositions.get(item._id) ?? 0) === 0}
+                      disabled={!canMoveCatalog || (catalogItemPositions.get(item._id) ?? 0) === 0}
                       loading={pending === `move-up-${item._id}`}
                       loadingLabel="Memindahkan…"
                       onClick={() =>
@@ -682,7 +721,10 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                       variant="tertiary"
                       size="compact"
                       aria-label={`Turunkan ${item.title}`}
-                      disabled={!canReorderCatalog || (catalogItemPositions.get(item._id) ?? 0) === items.length - 1}
+                      disabled={
+                        !canMoveCatalog ||
+                        (catalogItemPositions.get(item._id) ?? 0) === catalogItemsData.catalogItemCount - 1
+                      }
                       loading={pending === `move-down-${item._id}`}
                       loadingLabel="Memindahkan…"
                       onClick={() =>
@@ -728,7 +770,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
               </div>
             ) : null}
           </div>
-        ) : items.length ? (
+        ) : catalogItemsData.catalogItemCount ? (
           <EmptyState
             title="Tidak ada buku yang cocok."
             description="Coba kata kunci lain atau hapus filter Publisher."
@@ -740,6 +782,7 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
                 onClick={() => {
                   setCatalogSearch("");
                   setCatalogPublisher("");
+                  setCatalogPageNumber(1);
                 }}
               >
                 Reset pencarian
@@ -753,6 +796,18 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
             mascotVariant={false}
           />
         )}
+        <CatalogPageNavigation
+          pageNumber={effectiveCatalogPageNumber}
+          pageSize={catalogPageSize}
+          resultCount={catalogItemsData.totalCount}
+          noun="produk"
+          loading={catalogItemsLoading}
+          onPageNumberChange={setCatalogPageNumber}
+          onPageSizeChange={(pageSize) => {
+            setCatalogPageSize(pageSize);
+            setCatalogPageNumber(1);
+          }}
+        />
       </Card>
       {message ? (
         <p className={messageIsError ? "error-text" : "success-banner"} role={messageIsError ? "alert" : "status"}>

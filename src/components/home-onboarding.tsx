@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext } from "react";
+import Link from "next/link";
 import { BrandMascot } from "@/components/brand";
 import { HowToOrderSteps } from "@/components/how-to-order";
 import { ProductContext } from "@/domain/prototype/context";
@@ -18,6 +19,40 @@ function WhatsAppAction({ href }: { href: string | null }) {
     </LinkButton>
   ) : (
     <LinkButton href="/join">Gabung Grup WhatsApp</LinkButton>
+  );
+}
+
+function OnboardingStepCard({
+  number,
+  title,
+  description,
+  href,
+  action,
+  external = false,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  href: string;
+  action: string;
+  external?: boolean;
+}) {
+  return (
+    <li>
+      <Link
+        className="home-onboarding-step-card"
+        href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+      >
+        <span className="home-onboarding-step-number">{number}</span>
+        <strong>{title}</strong>
+        <span className="home-onboarding-step-description">{description}</span>
+        <span className="home-onboarding-step-action">
+          {action} <span aria-hidden="true">→</span>
+        </span>
+      </Link>
+    </li>
   );
 }
 
@@ -68,30 +103,32 @@ export function HomeOnboarding({ whatsappGroupUrl, tutorialVideoUrl }: HomeOnboa
           <p>{description}</p>
           {showFullOnboarding ? (
             <ol className="home-onboarding-steps">
-              <li>
-                <strong>Gabung grup WhatsApp BFG</strong>
-                <span>Ruang komunitas dan info PO.</span>
-              </li>
-              <li>
-                <strong>Daftar sebagai Blessfriend di website</strong>
-                <span>Website untuk browsing, memesan, dan memantau pesanan.</span>
-              </li>
+              <OnboardingStepCard
+                number="01"
+                title="Gabung grup WhatsApp BFG"
+                description={
+                  whatsappGroupUrl
+                    ? "Dapatkan update PO, info katalog, dan bergabung dengan komunitas Blessfriends."
+                    : "Ajukan permintaan bergabung untuk mendapat info PO dan komunitas Blessfriends."
+                }
+                href={whatsappGroupUrl || "/join"}
+                action={whatsappGroupUrl ? "Gabung grup" : "Ajukan permintaan"}
+                external={Boolean(whatsappGroupUrl)}
+              />
+              <OnboardingStepCard
+                number="02"
+                title="Daftar sebagai Blessfriend di website"
+                description="Ajukan permintaan bergabung untuk membuka katalog, memesan buku, dan memantau pesanan setelah disetujui."
+                href="/join"
+                action="Daftar sekarang"
+              />
             </ol>
           ) : null}
-          <ActionGroup variant="responsive" className="home-onboarding-actions">
-            {showFullOnboarding || pending || invitationPending ? <WhatsAppAction href={whatsappGroupUrl} /> : null}
-            {showFullOnboarding ? (
-              <LinkButton href="/join" variant="secondary">
-                Daftar sebagai Blessfriend
-              </LinkButton>
-            ) : activeCustomer ? (
-              <LinkButton href="/catalog">Lihat Katalog PO Berjalan</LinkButton>
-            ) : null}
-          </ActionGroup>
-          {showFullOnboarding && !whatsappGroupUrl ? (
-            <p className="home-onboarding-helper">
-              Tautan grup akan muncul setelah permintaan bergabung berhasil dikirim.
-            </p>
+          {!showFullOnboarding ? (
+            <ActionGroup variant="responsive" className="home-onboarding-actions">
+              {pending || invitationPending ? <WhatsAppAction href={whatsappGroupUrl} /> : null}
+              {activeCustomer ? <LinkButton href="/catalog">Lihat Katalog PO Berjalan</LinkButton> : null}
+            </ActionGroup>
           ) : null}
         </div>
         <div className="home-onboarding-art">

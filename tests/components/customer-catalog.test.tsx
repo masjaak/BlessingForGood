@@ -23,6 +23,74 @@ beforeEach(() => {
 });
 
 describe("CustomerCatalog projection", () => {
+  it("requests server pages and resets paging for search and category changes", () => {
+    const updateCatalogBrowse = vi.fn();
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      unlockedCatalog: {
+        id: "catalog-pagination",
+        name: "Pagination Catalog",
+        accessCodeHash: "convex-managed",
+        status: "open",
+        closingAt: null,
+        createdAt: "2030-08-15T00:00:00.000Z",
+        titleCount: 134,
+        resultCount: 134,
+        pageNumber: 1,
+        pageSize: 25,
+        publisherOptions: ["BFG Press"],
+        books: [
+          {
+            id: "book-page-one",
+            title: "Page One Book",
+            publisher: "BFG Press",
+            categories: ["Children Books"],
+            variants: [
+              {
+                id: "variant-page-one",
+                format: "PB",
+                isbn: "9780000000101",
+                price: 125000,
+                currency: "IDR",
+                availability: "available",
+              },
+            ],
+          },
+        ],
+      },
+      catalogBrowse: { pageNumber: 1, pageSize: 25, search: "", category: "", publishers: [], formats: [] },
+      updateCatalogBrowse,
+      catalogLoading: false,
+      authState: "authenticated",
+      sessionRole: "customer",
+      unlockCatalog: vi.fn(),
+      submitOrder: vi.fn(),
+    } as never);
+
+    render(<CustomerCatalog />);
+
+    expect(screen.getByText("Menampilkan 1–25 dari 134 buku")).toBeTruthy();
+    expect(screen.getByText("Halaman 1 dari 6")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Sebelumnya/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /Berikutnya/ }) as HTMLButtonElement).disabled).toBe(false);
+    const pageSize = screen.getByRole("combobox", { name: "buku per halaman" });
+    fireEvent.click(pageSize);
+    expect(screen.getByRole("option", { name: "25" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "100" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("option", { name: "50" }));
+    expect(updateCatalogBrowse).toHaveBeenCalledWith({ pageSize: 50 });
+    fireEvent.click(screen.getByRole("button", { name: /Berikutnya/ }));
+    expect(updateCatalogBrowse).toHaveBeenCalledWith({ pageNumber: 2 });
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Cari judul atau ISBN" }), {
+      target: { value: "page two" },
+    });
+    expect(updateCatalogBrowse).toHaveBeenCalledWith({ search: "page two" });
+    fireEvent.click(screen.getByRole("combobox", { name: "Kategori" }));
+    fireEvent.click(screen.getByRole("option", { name: "Children Books" }));
+    expect(updateCatalogBrowse).toHaveBeenCalledWith({ category: "Children Books" });
+  });
+
   it("prefills the editable preorder name from the BFG Profile display name", async () => {
     vi.mocked(useUser).mockReturnValue({
       isLoaded: true,
@@ -283,7 +351,7 @@ describe("CustomerCatalog projection", () => {
     fireEvent.change(screen.getByRole("searchbox", { name: "Cari judul atau ISBN" }), {
       target: { value: "Children" },
     });
-    expect(screen.getByText("1 buku ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–1 dari 1 buku")).toBeTruthy();
   });
 
   it("uses compact multi-format choices and submits the selected variant price and id", async () => {
@@ -607,19 +675,19 @@ describe("CustomerCatalog projection", () => {
     expect(document.getElementById("order-summary")).toBeTruthy();
 
     expect(screen.getByRole("heading", { name: "September Discovery" })).toBeTruthy();
-    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(2);
+    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(1);
     expect(screen.getByText("30 Sep 2030")).toBeTruthy();
     expect(screen.getByText("Nov 2030")).toBeTruthy();
 
     const search = screen.getByRole("searchbox", { name: "Cari judul atau ISBN" });
     fireEvent.change(search, { target: { value: "science" } });
-    expect(screen.getByText("2 buku ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–2 dari 2 buku")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Science Around Us" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Science Experiments" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Forest Stories" })).toBeNull();
 
     fireEvent.change(search, { target: { value: "978 0 01 1111" } });
-    expect(screen.getByText("1 buku ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–1 dari 1 buku")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Science Around Us" })).toBeTruthy();
 
     fireEvent.change(search, { target: { value: "" } });
@@ -628,19 +696,19 @@ describe("CustomerCatalog projection", () => {
     const publisherMenu = await screen.findByRole("dialog", { name: "Publisher" });
     expect(within(publisherMenu).getAllByRole("checkbox")).toHaveLength(2);
     fireEvent.click(within(publisherMenu).getByRole("checkbox", { name: "DK" }));
-    expect(screen.getByText("2 buku ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–2 dari 2 buku")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Forest Stories" })).toBeNull();
     fireEvent.click(within(publisherMenu).getByRole("checkbox", { name: "Nosy Crow" }));
-    expect(screen.getByText("3 buku ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–3 dari 3 buku")).toBeTruthy();
     expect(publisherTrigger.textContent).toContain("DK, Nosy Crow");
     fireEvent.click(within(publisherMenu).getByRole("button", { name: "Semua Publisher" }));
-    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(2);
+    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(1);
     fireEvent.click(publisherTrigger);
 
     fireEvent.change(search, { target: { value: "experiments" } });
-    expect(screen.getByText("1 buku ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–1 dari 1 buku")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Reset pencarian" }));
-    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(2);
+    expect(screen.getAllByText("3 buku tersedia")).toHaveLength(1);
 
     fireEvent.change(search, { target: { value: "does-not-exist" } });
     expect(screen.getByText("Tidak ada buku yang cocok.")).toBeTruthy();

@@ -1,17 +1,18 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatBfgCalendarDate } from "@/lib/calendar-date";
 import { BrandMascot } from "@/components/brand";
 import { BookCover } from "@/components/book-cover";
 import { BFGMultiSelect } from "@/components/bfg-multi-select";
 import { BFGSelect } from "@/components/bfg-select";
+import { CatalogPageNavigation, CatalogResultToolbar } from "@/components/catalog-pagination";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { orderReference } from "@/domain/prototype/order-reference";
 import { catalogDeadlineLabel, formatIdr } from "@/domain/prototype/logic";
 import { formatCargoEta } from "@/domain/prototype/operations";
-import type { ProductContextValue } from "@/domain/prototype/context";
+import { DEFAULT_CATALOG_BROWSE_STATE, type ProductContextValue } from "@/domain/prototype/context";
 import { useProduct } from "@/domain/prototype/store";
 import {
   BOOK_CATEGORIES,
@@ -90,8 +91,14 @@ function CatalogHeader({ catalog }: { catalog: NonNullable<ReturnType<typeof use
 
 export function CustomerCatalog() {
   const product = useProduct();
-  return <CustomerCatalogView key={product.unlockedCatalog?.id ?? "locked"} product={product} />;
+  return <CustomerCatalogView product={product} />;
 }
+
+type SelectedPreorderItem = {
+  variantId: string;
+  quantity: number;
+  expectedUnitPriceAmount: number;
+};
 
 function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   const {
@@ -106,19 +113,38 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     selectCatalog = () => undefined,
   } = product;
   const { isLoaded: clerkUserLoaded, user } = useUser();
+  const [fallbackBrowse, setFallbackBrowse] = useState(DEFAULT_CATALOG_BROWSE_STATE);
+  const catalogBrowse = product.catalogBrowse ?? fallbackBrowse;
+  const updateCatalogBrowse =
+    product.updateCatalogBrowse ??
+    ((updates) => setFallbackBrowse((current) => ({ ...current, ...updates, pageNumber: updates.pageNumber ?? 1 })));
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<BookCategory | "">("");
-  const [publisherFilters, setPublisherFilters] = useState<string[]>([]);
-  const [formatFilters, setFormatFilters] = useState<BookFormat[]>([]);
+  const [lastCatalog, setLastCatalog] = useState(catalog);
+  const previousCatalogId = useRef(catalog?.id);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedItemsByBook, setSelectedItemsByBook] = useState<Record<string, SelectedPreorderItem>>({});
   const [customerEmail, setCustomerEmail] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  if (!catalogLoading && catalog !== lastCatalog) setLastCatalog(catalog);
+  const displayCatalog = catalog ?? (catalogLoading ? lastCatalog : undefined);
+  const pageLoading = catalogLoading && Boolean(lastCatalog);
+
+  useEffect(() => {
+    if (catalog?.id) {
+      if (previousCatalogId.current && previousCatalogId.current !== catalog.id) {
+        setSelectedVariants({});
+        setSelectedItemsByBook({});
+      }
+      previousCatalogId.current = catalog.id;
+    } else if (!catalogLoading) {
+      previousCatalogId.current = undefined;
+    }
+  }, [catalog, catalogLoading]);
+
   const { customerName, onCustomerNameChange } = usePreorderCustomerName({
     enabled: authState === "authenticated" && sessionRole === "customer",
     profileLoaded: product.dataSource !== "convex" || customerProfileDisplayName !== undefined,
@@ -129,58 +155,64 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
   });
 
   const selectedItems = useMemo(() => {
-    if (!catalog) return [];
-    return catalog.books.flatMap((book) => {
-      const variantId =
-        selectedVariants[book.id] || book.variants.find((variant) => variant.availability === "available")?.id;
-      const quantity = variantId ? quantities[variantId] || 0 : 0;
-      const variant = book.variants.find((candidate) => candidate.id === variantId);
-      return variantId && variant && quantity > 0
-        ? [{ variantId, quantity, expectedUnitPriceAmount: variant.price }]
-        : [];
-    });
-  }, [catalog, quantities, selectedVariants]);
+    return Object.values(selectedItemsByBook).filter((item) => item.quantity > 0);
+  }, [selectedItemsByBook]);
 
-  const total = catalog
-    ? selectedItems.reduce((sum, item) => {
-        const variant = catalog.books
-          .flatMap((book) => book.variants)
-          .find((candidate) => candidate.id === item.variantId);
-        return sum + (variant?.price || 0) * item.quantity;
-      }, 0)
-    : 0;
+  const total = selectedItems.reduce((sum, item) => sum + item.expectedUnitPriceAmount * item.quantity, 0);
 
-  const publishers = useMemo(
-    () =>
-      catalog
-        ? Array.from(new Set(catalog.books.map((book) => book.publisher))).sort((left, right) =>
-            left.localeCompare(right),
-          )
-        : [],
-    [catalog],
-  );
+  const publishers =
+    displayCatalog?.publisherOptions ??
+    Array.from(new Set(displayCatalog?.books.map((book) => book.publisher) ?? [])).sort((left, right) =>
+      left.localeCompare(right),
+    );
   const publisherOptions = useMemo(
     () => publishers.map((publisher) => ({ value: publisher, label: publisher })),
     [publishers],
   );
-  const filteredBooks = useMemo(
+  const localFilteredBooks = useMemo(
     () =>
-      catalog?.books.filter(
+      displayCatalog?.books.filter(
         (book) =>
-          matchesCustomerCatalogBook(book, searchQuery) &&
-          (!categoryFilter || book.categories?.includes(categoryFilter)) &&
-          (!publisherFilters.length || publisherFilters.includes(book.publisher)) &&
-          (!formatFilters.length || book.variants.some((variant) => formatFilters.includes(variant.format))),
+          matchesCustomerCatalogBook(book, catalogBrowse.search) &&
+          (!catalogBrowse.category || book.categories?.includes(catalogBrowse.category)) &&
+          (!catalogBrowse.publishers.length || catalogBrowse.publishers.includes(book.publisher)) &&
+          (!catalogBrowse.formats.length ||
+            book.variants.some((variant) => catalogBrowse.formats.includes(variant.format))),
       ) || [],
-    [catalog, categoryFilter, formatFilters, publisherFilters, searchQuery],
+    [catalogBrowse, displayCatalog],
   );
-  const hasFilters = Boolean(searchQuery.trim() || categoryFilter || publisherFilters.length || formatFilters.length);
+  const localPageStart = (catalogBrowse.pageNumber - 1) * catalogBrowse.pageSize;
+  const filteredBooks =
+    product.dataSource === "convex"
+      ? (catalog?.books ?? [])
+      : localFilteredBooks.slice(localPageStart, localPageStart + catalogBrowse.pageSize);
+  const resultCount =
+    product.dataSource === "convex"
+      ? (displayCatalog?.resultCount ?? displayCatalog?.titleCount ?? filteredBooks.length)
+      : localFilteredBooks.length;
+  const pageNumber = pageLoading ? catalogBrowse.pageNumber : (displayCatalog?.pageNumber ?? catalogBrowse.pageNumber);
+  const pageSize = catalogBrowse.pageSize;
+  const hasFilters = Boolean(
+    catalogBrowse.search.trim() ||
+    catalogBrowse.category ||
+    catalogBrowse.publishers.length ||
+    catalogBrowse.formats.length,
+  );
 
   function resetDiscovery() {
-    setSearchQuery("");
-    setCategoryFilter("");
-    setPublisherFilters([]);
-    setFormatFilters([]);
+    updateCatalogBrowse({ search: "", category: "", publishers: [], formats: [] });
+  }
+
+  function updatePreorderQuantity(bookId: string, variantId: string, price: number, quantity: number) {
+    setSelectedItemsByBook((current) => {
+      if (quantity <= 0) {
+        if (!current[bookId]) return current;
+        const next = { ...current };
+        delete next[bookId];
+        return next;
+      }
+      return { ...current, [bookId]: { variantId, quantity, expectedUnitPriceAmount: price } };
+    });
   }
 
   async function handleUnlock(event: React.FormEvent<HTMLFormElement>) {
@@ -242,7 +274,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     );
   }
 
-  if (!catalog && catalogLoading) {
+  if (!displayCatalog && catalogLoading) {
     return (
       <LoadingRegion label="Memuat katalog">
         <SkeletonCard variant="book" />
@@ -251,7 +283,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     );
   }
 
-  if (!catalog) {
+  if (!displayCatalog) {
     return (
       <div className="catalog-access">
         <Card frame="form" className="form-card">
@@ -293,10 +325,10 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
     );
   }
 
-  if (catalog.books.length === 0) {
+  if ((displayCatalog.titleCount ?? displayCatalog.books.length) === 0) {
     return (
       <div className="content-stack">
-        <CatalogHeader catalog={catalog} />
+        <CatalogHeader catalog={displayCatalog} />
         <EmptyState
           title="Belum ada buku di katalog"
           description="Admin BFG perlu menambahkan judul dan varian nyata sebelum preorder dapat dicatat."
@@ -312,7 +344,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
 
   return (
     <div className="content-stack">
-      <CatalogHeader catalog={catalog} />
+      <CatalogHeader catalog={displayCatalog} />
       {catalogOptions.length > 1 ? (
         <Card frame="list" className="catalog-session-switcher">
           <div>
@@ -321,7 +353,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
           </div>
           <BFGSelect
             aria-label="Katalog dalam periode"
-            value={catalog.id}
+            value={displayCatalog.id}
             onChange={(event) => selectCatalog(event.target.value)}
           >
             {catalogOptions.map((option) => (
@@ -340,16 +372,16 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
               type="search"
               aria-label="Cari judul atau ISBN"
               placeholder="Cari judul atau ISBN"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              value={catalogBrowse.search}
+              onChange={(event) => updateCatalogBrowse({ search: event.target.value })}
             />
           </Field>
           <div className="catalog-filter-row">
             <Field label="Kategori">
               <BFGSelect
                 aria-label="Kategori"
-                value={categoryFilter}
-                onChange={(event) => setCategoryFilter(event.target.value as BookCategory | "")}
+                value={catalogBrowse.category}
+                onChange={(event) => updateCatalogBrowse({ category: event.target.value as BookCategory | "" })}
               >
                 <option value="">Semua kategori</option>
                 {BOOK_CATEGORIES.map((category) => (
@@ -364,9 +396,9 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                 aria-label="Format"
                 defaultLabel="Semua Format"
                 options={CATALOG_FORMAT_FILTERS}
-                selectedLabel={filterSummary(formatFilters, CATALOG_FORMAT_FILTERS, "Semua Format", "format")}
-                value={formatFilters}
-                onChange={(next) => setFormatFilters(next as BookFormat[])}
+                selectedLabel={filterSummary(catalogBrowse.formats, CATALOG_FORMAT_FILTERS, "Semua Format", "format")}
+                value={catalogBrowse.formats}
+                onChange={(next) => updateCatalogBrowse({ formats: next as BookFormat[] })}
               />
             </Field>
             <Field label="Publisher">
@@ -374,9 +406,14 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                 aria-label="Publisher"
                 defaultLabel="Semua Publisher"
                 options={publisherOptions}
-                selectedLabel={filterSummary(publisherFilters, publisherOptions, "Semua Publisher", "publisher")}
-                value={publisherFilters}
-                onChange={setPublisherFilters}
+                selectedLabel={filterSummary(
+                  catalogBrowse.publishers,
+                  publisherOptions,
+                  "Semua Publisher",
+                  "publisher",
+                )}
+                value={catalogBrowse.publishers}
+                onChange={(next) => updateCatalogBrowse({ publishers: next })}
               />
             </Field>
           </div>
@@ -386,11 +423,15 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
             </Button>
           ) : null}
         </div>
-        <p className="catalog-result-count" role="status" aria-live="polite">
-          {hasFilters
-            ? `${filteredBooks.length} buku ditemukan`
-            : `${catalog.titleCount ?? catalog.books.length} buku tersedia`}
-        </p>
+        <CatalogResultToolbar
+          pageNumber={pageNumber}
+          pageSize={pageSize}
+          resultCount={resultCount}
+          noun="buku"
+          loading={pageLoading}
+          onPageNumberChange={(next) => updateCatalogBrowse({ pageNumber: next })}
+          onPageSizeChange={(next) => updateCatalogBrowse({ pageSize: next })}
+        />
       </section>
       <LinkButton
         href="#order-summary"
@@ -405,10 +446,18 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
       </LinkButton>
       <div className="catalog-grid">
         <div className="book-list">
-          {filteredBooks.length ? (
+          {pageLoading ? (
+            <LoadingRegion label="Memuat halaman buku">
+              <SkeletonCard variant="book" />
+              <SkeletonCard variant="book" />
+              <SkeletonCard variant="book" />
+            </LoadingRegion>
+          ) : filteredBooks.length ? (
             filteredBooks.map((book) => {
-              const selectedVariantId = selectedVariants[book.id] || book.variants[0]?.id;
-              const selectedQuantity = selectedVariantId ? quantities[selectedVariantId] || 0 : 0;
+              const selectedVariantId =
+                selectedVariants[book.id] || book.variants.find((variant) => variant.availability === "available")?.id;
+              const selection = selectedItemsByBook[book.id];
+              const selectedQuantity = selection?.variantId === selectedVariantId ? selection.quantity : 0;
               const selectedVariant = book.variants.find((variant) => variant.id === selectedVariantId);
               const selectedFormat = selectedVariant?.format;
               const hasMultipleVariants = book.variants.length > 1;
@@ -430,7 +479,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                               ISBN: {book.variants.map((variant) => variant.isbn).join(" · ")}
                             </p>
                             <LinkButton
-                              href={`/catalog/${catalog.id}/${book.id}`}
+                              href={`/catalog/${displayCatalog.id}/${book.id}`}
                               variant="secondary"
                               size="compact"
                               className="book-detail-action"
@@ -456,9 +505,16 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                                     name={book.id}
                                     value={variant.id}
                                     checked={selectedVariantId === variant.id}
-                                    onChange={() =>
-                                      setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }))
-                                    }
+                                    onChange={() => {
+                                      setSelectedVariants((current) => ({ ...current, [book.id]: variant.id }));
+                                      setSelectedItemsByBook((current) => {
+                                        if (!current[book.id] || current[book.id].variantId === variant.id)
+                                          return current;
+                                        const next = { ...current };
+                                        delete next[book.id];
+                                        return next;
+                                      });
+                                    }}
                                     disabled={variant.availability !== "available"}
                                   />
                                   <span className="variant-option-format">{variant.format}</span>
@@ -485,10 +541,13 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                             disabled={!selectedVariantId || selectedQuantity === 0}
                             onClick={() =>
                               selectedVariantId &&
-                              setQuantities((current) => ({
-                                ...current,
-                                [selectedVariantId]: Math.max(0, selectedQuantity - 1),
-                              }))
+                              selectedVariant &&
+                              updatePreorderQuantity(
+                                book.id,
+                                selectedVariantId,
+                                selectedVariant.price,
+                                selectedQuantity - 1,
+                              )
                             }
                           >
                             −
@@ -499,7 +558,13 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                             aria-label={`Tambah jumlah ${book.title}`}
                             onClick={() =>
                               selectedVariantId &&
-                              setQuantities((current) => ({ ...current, [selectedVariantId]: selectedQuantity + 1 }))
+                              selectedVariant &&
+                              updatePreorderQuantity(
+                                book.id,
+                                selectedVariantId,
+                                selectedVariant.price,
+                                selectedQuantity + 1,
+                              )
                             }
                           >
                             +
@@ -584,7 +649,7 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
                 type="submit"
                 loading={isSubmitting}
                 loadingLabel="Mencatat…"
-                disabled={selectedItems.length === 0}
+                disabled={selectedItems.length === 0 || pageLoading}
               >
                 Catat preorder
               </Button>
@@ -604,6 +669,15 @@ function CustomerCatalogView({ product }: { product: ProductContextValue }) {
           )}
         </Card>
       </div>
+      <CatalogPageNavigation
+        pageNumber={pageNumber}
+        pageSize={pageSize}
+        resultCount={resultCount}
+        noun="buku"
+        loading={pageLoading}
+        onPageNumberChange={(next) => updateCatalogBrowse({ pageNumber: next })}
+        onPageSizeChange={(next) => updateCatalogBrowse({ pageSize: next })}
+      />
     </div>
   );
 }

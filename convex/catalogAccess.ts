@@ -559,8 +559,34 @@ export const claimSession = mutation({
 });
 
 export const getUnlocked = query({
-  args: { catalogId: v.id("secretCatalogs"), sessionToken: v.optional(v.string()) },
+  args: {
+    catalogId: v.id("secretCatalogs"),
+    sessionToken: v.optional(v.string()),
+    pageNumber: v.optional(v.number()),
+    pageSize: v.optional(v.union(v.literal(25), v.literal(50), v.literal(100))),
+    search: v.optional(v.string()),
+    category: v.optional(v.union(v.literal("Children Books"), v.literal("Adult Books"))),
+    publishers: v.optional(v.array(v.string())),
+    formats: v.optional(v.array(v.string())),
+  },
   handler: async (ctx, args) => {
+    const browse =
+      args.pageSize === undefined &&
+      args.pageNumber === undefined &&
+      args.search === undefined &&
+      args.category === undefined &&
+      args.publishers === undefined &&
+      args.formats === undefined
+        ? undefined
+        : {
+            pageNumber: args.pageNumber ?? 1,
+            pageSize: args.pageSize ?? 25,
+            search: (args.search ?? "").slice(0, 120),
+            category: args.category,
+            publishers: (args.publishers ?? []).slice(0, 100),
+            formats: (args.formats ?? []).slice(0, 20),
+          };
+    const viewOptions = browse ? { browse } : undefined;
     if (args.sessionToken) {
       const sessionDigest = await catalogSessionDigest(args.sessionToken);
       const session = await ctx.db
@@ -576,7 +602,7 @@ export const getUnlocked = query({
         if (code.scope === "global") {
           const catalogs = await eligibleGlobalCatalogs(ctx);
           if (!catalogs.some((catalog) => catalog._id === args.catalogId)) return null;
-          return getCatalogView(ctx, args.catalogId);
+          return getCatalogView(ctx, args.catalogId, viewOptions);
         }
       }
       if (session.accessPeriodId) {
@@ -591,7 +617,7 @@ export const getUnlocked = query({
         ) {
           return null;
         }
-        return getCatalogView(ctx, args.catalogId);
+        return getCatalogView(ctx, args.catalogId, viewOptions);
       }
       if (session.catalogId !== args.catalogId) return null;
       if (!session.accessCodeId) return null;
@@ -599,7 +625,7 @@ export const getUnlocked = query({
       if (!code || code.scope === "global" || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now()))
         return null;
       if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
-      return getCatalogView(ctx, args.catalogId);
+      return getCatalogView(ctx, args.catalogId, viewOptions);
     }
     const user = await requirePermission(ctx, "catalog.read");
     const grant = await ctx.db
@@ -610,7 +636,7 @@ export const getUnlocked = query({
       .first();
     if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) return null;
     if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
-    return getCatalogView(ctx, args.catalogId);
+    return getCatalogView(ctx, args.catalogId, viewOptions);
   },
 });
 

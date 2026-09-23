@@ -7,6 +7,7 @@ import { AdminCatalogDetail } from "@/components/admin-catalog-detail";
 import { useMutation, useQuery } from "convex/react";
 import { useProduct } from "@/domain/prototype/store";
 import { getFunctionName } from "convex/server";
+import { matchesAdminCatalogRecord } from "@/lib/catalog-discovery";
 
 vi.mock("convex/react", async () => {
   const { getFunctionName } = await import("convex/server");
@@ -47,13 +48,50 @@ vi.mock("@/domain/prototype/store", () => ({
   useProduct: vi.fn(),
 }));
 
+function catalogPage(
+  rows: Array<Record<string, unknown>> = [],
+  options: { pageNumber?: number; pageSize?: 25 | 50 | 100; totalCount?: number; catalogItemCount?: number } = {},
+) {
+  const pageNumber = options.pageNumber ?? 1;
+  const pageSize = options.pageSize ?? 25;
+  return {
+    page: rows.map((row, index) => ({ ...row, position: row.position ?? (pageNumber - 1) * pageSize + index })),
+    pageNumber,
+    pageSize,
+    totalCount: options.totalCount ?? rows.length,
+    catalogItemCount: options.catalogItemCount ?? options.totalCount ?? rows.length,
+    titleCount: new Set(rows.map((row) => String(row.bookId || row.title))).size,
+    publisherOptions: [
+      ...new Set(rows.map((row) => row.publisherName).filter((value): value is string => typeof value === "string")),
+    ],
+  };
+}
+
+const emptyCatalogPage = catalogPage();
+
+function mockCatalogDetailQueries(
+  catalog: Record<string, unknown>,
+  items = emptyCatalogPage,
+  assignable: Array<Record<string, unknown>> = [],
+) {
+  vi.mocked(useQuery).mockImplementation((...args) => {
+    const reference = args[0];
+    const name = getFunctionName(reference);
+    if (name === "secretCatalogs:getForAdmin") return catalog as never;
+    if (name === "catalogItems:listForCatalogPage") return items as never;
+    if (name === "catalogItems:listAssignable") return assignable as never;
+    return undefined as never;
+  });
+}
+
 beforeEach(() => {
   vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
-  vi.mocked(useQuery).mockImplementation((...args) =>
-    getFunctionName(args[0]) === "secretCatalogs:listAdminRows"
-      ? ({ page: [], isDone: true, continueCursor: "" } as never)
-      : (undefined as never),
-  );
+  vi.mocked(useQuery).mockImplementation((...args) => {
+    const name = getFunctionName(args[0]);
+    if (name === "secretCatalogs:listAdminRows") return { page: [], isDone: true, continueCursor: "" } as never;
+    if (name === "catalogItems:listForCatalogPage") return emptyCatalogPage as never;
+    return undefined as never;
+  });
   vi.mocked(useProduct).mockReturnValue({
     state: { catalogs: [] },
     catalogsLoading: false,
@@ -69,6 +107,7 @@ describe("Secret Catalog operational discoverability", () => {
     vi.mocked(useQuery).mockImplementation((reference, args?) => {
       const name = getFunctionName(reference);
       if (name === "secretCatalogs:getForAdmin") return { name: "CARGO 2", status: "open" } as never;
+      if (name === "catalogItems:listForCatalogPage") return emptyCatalogPage as never;
       if (name !== "catalogItems:listAssignable") return [] as never;
       const input = args as { search: string; paginationOpts: { cursor: string | null } };
       return {
@@ -174,16 +213,13 @@ describe("Secret Catalog operational discoverability", () => {
   });
 
   it("exposes Kelola akses from catalog detail", () => {
-    vi.mocked(useQuery)
-      .mockReturnValueOnce({
-        id: "catalog-1",
-        name: "Spring",
-        status: "draft",
-        description: null,
-        closesAt: null,
-      } as never)
-      .mockReturnValueOnce([] as never)
-      .mockReturnValueOnce([] as never);
+    mockCatalogDetailQueries({
+      id: "catalog-1",
+      name: "Spring",
+      status: "draft",
+      description: null,
+      closesAt: null,
+    });
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
 
@@ -204,7 +240,7 @@ describe("Secret Catalog operational discoverability", () => {
       description: null,
       closesAt: null,
     };
-    const queryResults = [catalog, [], []];
+    const queryResults = [catalog, catalogPage(), []];
     let queryIndex = 0;
     vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
 
@@ -219,16 +255,13 @@ describe("Secret Catalog operational discoverability", () => {
   });
 
   it("uses a date-only deadline input for an existing catalog", () => {
-    vi.mocked(useQuery)
-      .mockReturnValueOnce({
-        id: "catalog-1",
-        name: "August",
-        status: "draft",
-        description: null,
-        closesAt: Date.parse("2030-08-30T20:21:00.000+07:00"),
-      } as never)
-      .mockReturnValueOnce([] as never)
-      .mockReturnValueOnce([] as never);
+    mockCatalogDetailQueries({
+      id: "catalog-1",
+      name: "August",
+      status: "draft",
+      description: null,
+      closesAt: Date.parse("2030-08-30T20:21:00.000+07:00"),
+    });
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
 
@@ -249,13 +282,7 @@ describe("Secret Catalog operational discoverability", () => {
       closesAt: null,
       estimatedArrivalMonth: null,
     };
-    let queryIndex = 0;
-    vi.mocked(useQuery).mockReset();
-    vi.mocked(useQuery).mockImplementation(() => {
-      const result = queryIndex % 3 === 0 ? catalog : [];
-      queryIndex += 1;
-      return result as never;
-    });
+    mockCatalogDetailQueries(catalog);
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
 
@@ -282,11 +309,7 @@ describe("Secret Catalog operational discoverability", () => {
       description: null,
       closesAt: null,
     };
-    let queryIndex = 0;
-    vi.mocked(useQuery).mockImplementation(() => {
-      const result = queryIndex++ % 3 === 0 ? catalog : [];
-      return result as never;
-    });
+    mockCatalogDetailQueries(catalog);
 
     render(<AdminCatalogDetail catalogId="catalog-archived" />);
 
@@ -312,11 +335,7 @@ describe("Secret Catalog operational discoverability", () => {
       description: null,
       closesAt: null,
     };
-    let queryIndex = 0;
-    vi.mocked(useQuery).mockImplementation(() => {
-      const result = queryIndex++ % 3 === 0 ? catalog : [];
-      return result as never;
-    });
+    mockCatalogDetailQueries(catalog);
 
     render(<AdminCatalogDetail catalogId="catalog-open" />);
 
@@ -454,57 +473,76 @@ describe("Secret Catalog operational discoverability", () => {
   it("searches eligible assignment records and current Catalog records without changing mutations", async () => {
     const add = vi.fn().mockResolvedValue("catalog-item-new");
     vi.mocked(useMutation).mockReturnValue(add as never);
-    const queryResults = [
+    const catalog = {
+      id: "catalog-1",
+      name: "September",
+      status: "open",
+      description: null,
+      closesAt: null,
+    };
+    const catalogRows = [
       {
-        id: "catalog-1",
-        name: "September",
-        status: "open",
-        description: null,
-        closesAt: null,
+        _id: "catalog-item-forest",
+        bookId: "book-forest",
+        title: "Forest Stories",
+        publisherName: "Nosy Crow",
+        author: "Bea Reader",
+        format: "BB",
+        isbn: "978-0-02-2222-22-2",
       },
-      [
-        {
-          _id: "catalog-item-forest",
-          title: "Forest Stories",
-          publisherName: "Nosy Crow",
-          author: "Bea Reader",
-          format: "BB",
-          isbn: "978-0-02-2222-22-2",
-        },
-        {
-          _id: "catalog-item-history",
-          title: "History Atlas",
-          publisherName: "Usborne",
-          author: "Cleo Curious",
-          format: "PB",
-          isbn: "978-0-03-3333-33-3",
-        },
-      ],
-      [
-        {
-          variantId: "variant-science",
-          bookId: "book-science",
-          title: "Science Around Us",
-          publisherName: "DK",
-          author: "Ada Lovelace",
-          format: "PB",
-          isbn: "978-0-01-1111-11-1",
-          priceAmount: 125000,
-        },
-        {
-          variantId: "variant-forest",
-          bookId: "book-forest",
-          title: "Forest Stories",
-          publisherName: "Nosy Crow",
-          author: "Bea Reader",
-          format: "BB",
-          isbn: "978-0-02-2222-22-2",
-          priceAmount: 135000,
-        },
-      ],
+      {
+        _id: "catalog-item-history",
+        bookId: "book-history",
+        title: "History Atlas",
+        publisherName: "Usborne",
+        author: "Cleo Curious",
+        format: "PB",
+        isbn: "978-0-03-3333-33-3",
+      },
     ];
-    let queryIndex = 0;
-    vi.mocked(useQuery).mockImplementation(() => queryResults[queryIndex++ % queryResults.length] as never);
+    const assignableRows = [
+      {
+        variantId: "variant-science",
+        bookId: "book-science",
+        title: "Science Around Us",
+        publisherName: "DK",
+        author: "Ada Lovelace",
+        format: "PB",
+        isbn: "978-0-01-1111-11-1",
+        priceAmount: 125000,
+      },
+      {
+        variantId: "variant-forest",
+        bookId: "book-forest",
+        title: "Forest Stories",
+        publisherName: "Nosy Crow",
+        author: "Bea Reader",
+        format: "BB",
+        isbn: "978-0-02-2222-22-2",
+        priceAmount: 135000,
+      },
+    ];
+    const pageCache = new Map<string, ReturnType<typeof catalogPage>>();
+    vi.mocked(useQuery).mockImplementation((reference, args?) => {
+      const name = getFunctionName(reference);
+      if (name === "secretCatalogs:getForAdmin") return catalog as never;
+      if (name === "catalogItems:listAssignable") return assignableRows as never;
+      if (name !== "catalogItems:listForCatalogPage") return undefined as never;
+      const input = args as { pageNumber: number; pageSize: 25 | 50 | 100; search?: string; publisher?: string };
+      const cacheKey = JSON.stringify(input);
+      if (pageCache.has(cacheKey)) return pageCache.get(cacheKey) as never;
+      const filteredRows = catalogRows.filter(
+        (row) =>
+          matchesAdminCatalogRecord(row, input.search ?? "") &&
+          (!input.publisher || row.publisherName === input.publisher),
+      );
+      const result = catalogPage(
+        filteredRows.slice((input.pageNumber - 1) * input.pageSize, input.pageNumber * input.pageSize),
+        { ...input, totalCount: filteredRows.length, catalogItemCount: catalogRows.length },
+      );
+      pageCache.set(cacheKey, result);
+      return result as never;
+    });
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
 
@@ -525,7 +563,7 @@ describe("Secret Catalog operational discoverability", () => {
 
     const trackingSearch = screen.getAllByPlaceholderText("Cari judul, publisher, ISBN, atau penulis")[1];
     fireEvent.change(trackingSearch, { target: { value: "9780033333333" } });
-    expect(screen.getByText("1 judul ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–1 dari 1 produk")).toBeTruthy();
     expect(screen.getByText("History Atlas")).toBeTruthy();
     expect(screen.queryByText("Forest Stories")).toBeNull();
 
@@ -533,30 +571,104 @@ describe("Secret Catalog operational discoverability", () => {
     fireEvent.click(screen.getByRole("combobox", { name: "Publisher dalam Catalog" }));
     await waitFor(() => expect(screen.getByRole("option", { name: "Nosy Crow" })).toBeTruthy());
     fireEvent.click(screen.getByRole("option", { name: "Nosy Crow" }));
-    expect(screen.getByText("1 judul ditemukan")).toBeTruthy();
+    expect(screen.getByText("Menampilkan 1–1 dari 1 produk")).toBeTruthy();
     expect(screen.getByText("Forest Stories")).toBeTruthy();
     expect(screen.queryByText("History Atlas")).toBeNull();
   });
 
+  it("paginates Admin Catalog results and resets to the first page when filters change", async () => {
+    const catalog = {
+      id: "catalog-pages",
+      name: "Paged Catalog",
+      status: "open",
+      description: null,
+      closesAt: null,
+    };
+    const rows = Array.from({ length: 61 }, (_, index) => ({
+      _id: `item-${index + 1}`,
+      title: `Admin Book ${String(index + 1).padStart(2, "0")}`,
+      publisherName: index % 2 ? "North Press" : "South Press",
+      format: "PB",
+      isbn: `978000000${String(index + 1).padStart(4, "0")}`,
+    }));
+    const queryInputs: Array<{ pageNumber: number; pageSize: number; search?: string; publisher?: string }> = [];
+    const pageCache = new Map<string, ReturnType<typeof catalogPage>>();
+    vi.mocked(useQuery).mockImplementation((reference, args?) => {
+      const name = getFunctionName(reference);
+      if (name === "secretCatalogs:getForAdmin") return catalog as never;
+      if (name === "catalogItems:listAssignable") {
+        return { page: [], isDone: true, continueCursor: "" } as never;
+      }
+      if (name !== "catalogItems:listForCatalogPage") return undefined as never;
+      const input = args as { pageNumber: number; pageSize: 25 | 50 | 100; search?: string; publisher?: string };
+      const cacheKey = JSON.stringify(input);
+      if (pageCache.has(cacheKey)) return pageCache.get(cacheKey) as never;
+      queryInputs.push(input);
+      const filtered = rows.filter(
+        (row) =>
+          matchesAdminCatalogRecord(row, input.search ?? "") &&
+          (!input.publisher || row.publisherName === input.publisher),
+      );
+      const result = catalogPage(
+        filtered.slice((input.pageNumber - 1) * input.pageSize, input.pageNumber * input.pageSize),
+        {
+          ...input,
+          totalCount: filtered.length,
+          catalogItemCount: rows.length,
+        },
+      );
+      pageCache.set(cacheKey, result);
+      return result as never;
+    });
+
+    render(<AdminCatalogDetail catalogId="catalog-pages" />);
+
+    expect(screen.getByText("Menampilkan 1–25 dari 61 produk")).toBeTruthy();
+    expect(screen.getByText("Halaman 1 dari 3")).toBeTruthy();
+    const pageSize = screen.getByRole("combobox", { name: "produk per halaman" });
+    fireEvent.click(pageSize);
+    expect(screen.getByRole("option", { name: "25" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("option", { name: "50" }));
+    expect(screen.getByText("Menampilkan 1–50 dari 61 produk")).toBeTruthy();
+    expect(screen.getByText("Halaman 1 dari 2")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Berikutnya/ }));
+    expect(screen.getByText("Menampilkan 51–61 dari 61 produk")).toBeTruthy();
+    expect(screen.getByText("Halaman 2 dari 2")).toBeTruthy();
+    expect(screen.getByText("Admin Book 61")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Sebelumnya/ }));
+    expect(screen.getByText("Halaman 1 dari 2")).toBeTruthy();
+
+    fireEvent.click(pageSize);
+    expect(screen.getByRole("option", { name: "100" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("option", { name: "100" }));
+    expect(screen.getByText("Menampilkan 1–61 dari 61 produk")).toBeTruthy();
+    expect(screen.queryByText("Halaman 1 dari 1")).toBeNull();
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Publisher dalam Catalog" }));
+    fireEvent.click(screen.getByRole("option", { name: "North Press" }));
+    expect(queryInputs.at(-1)).toMatchObject({ pageNumber: 1, pageSize: 100, publisher: "North Press" });
+    expect(screen.getByText("Menampilkan 1–30 dari 30 produk")).toBeTruthy();
+  });
+
   it("exposes scoped move controls for deterministic Catalog item order", async () => {
     const move = vi.fn().mockResolvedValue({ moved: true, position: 1 });
-    const mutationFns = Array.from({ length: 9 }, () => vi.fn());
-    mutationFns.push(move);
-    let mutationIndex = 0;
-    vi.mocked(useMutation).mockImplementation(() => mutationFns[mutationIndex++] as never);
-    vi.mocked(useQuery)
-      .mockReturnValueOnce({
+    vi.mocked(useMutation).mockImplementation(
+      (reference) => (getFunctionName(reference) === "catalogItems:move" ? move : vi.fn()) as never,
+    );
+    mockCatalogDetailQueries(
+      {
         id: "catalog-1",
         name: "Series Catalog",
         status: "open",
         description: null,
         closesAt: null,
-      } as never)
-      .mockReturnValueOnce([
+      },
+      catalogPage([
         { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
         { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
-      ] as never)
-      .mockReturnValueOnce([] as never);
+      ]),
+    );
 
     render(<AdminCatalogDetail catalogId="catalog-1" />);
 
@@ -580,12 +692,12 @@ describe("Secret Catalog operational discoverability", () => {
         description: null,
         closesAt: null,
       },
-      [
+      catalogPage([
         { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
         { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
         { _id: "item-three", title: "Series Three", format: "PB", isbn: "9780000000003" },
         { _id: "item-four", title: "Series Four", format: "PB", isbn: "9780000000004" },
-      ],
+      ]),
       [],
     ];
     let queryIndex = 0;
@@ -623,10 +735,10 @@ describe("Secret Catalog operational discoverability", () => {
         description: null,
         closesAt: null,
       },
-      [
+      catalogPage([
         { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
         { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
-      ],
+      ]),
       [],
     ];
     let queryIndex = 0;
@@ -660,10 +772,10 @@ describe("Secret Catalog operational discoverability", () => {
         description: null,
         closesAt: null,
       },
-      [
+      catalogPage([
         { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
         { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
-      ],
+      ]),
       [],
     ];
     let queryIndex = 0;
@@ -699,10 +811,10 @@ describe("Secret Catalog operational discoverability", () => {
         description: null,
         closesAt: null,
       },
-      [
+      catalogPage([
         { _id: "item-one", title: "Series One", format: "PB", isbn: "9780000000001" },
         { _id: "item-two", title: "Series Two", format: "PB", isbn: "9780000000002" },
-      ],
+      ]),
       [],
     ];
     let queryIndex = 0;

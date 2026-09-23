@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AdminNavSkeleton } from "@/components/admin-nav";
 import { isAdminShellBootstrapLoading } from "@/components/site-shell";
-import type { ProductContextValue } from "@/domain/prototype/context";
+import { DEFAULT_CATALOG_BROWSE_STATE, type ProductContextValue } from "@/domain/prototype/context";
 
 function product(overrides: Partial<ProductContextValue> = {}) {
   return {
@@ -19,6 +19,8 @@ function product(overrides: Partial<ProductContextValue> = {}) {
     retryAuth: () => undefined,
     state: {} as ProductContextValue["state"],
     unlockedCatalog: undefined,
+    catalogBrowse: DEFAULT_CATALOG_BROWSE_STATE,
+    updateCatalogBrowse: () => undefined,
     catalogOptions: [],
     selectCatalog: () => undefined,
     createCatalog: async () => ({}) as never,

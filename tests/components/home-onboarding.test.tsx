@@ -34,17 +34,31 @@ describe("Homepage social entry onboarding", () => {
     expect(screen.getByRole("heading", { name: "Mulai dari komunitas BFG." })).toBeTruthy();
     expect(screen.getByText("Gabung grup WhatsApp BFG")).toBeTruthy();
     expect(screen.getByText("Daftar sebagai Blessfriend di website")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Gabung Grup WhatsApp" })).toMatchObject({
+    const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>(".home-onboarding-step-card"));
+    expect(cards).toHaveLength(2);
+    expect(cards[0]).toMatchObject({
       href: "https://chat.whatsapp.com/bfg-group",
       target: "_blank",
       rel: "noopener noreferrer",
     });
-    expect(screen.getByRole("link", { name: "Daftar sebagai Blessfriend" }).getAttribute("href")).toBe("/join");
+    expect(cards[0]?.textContent).toContain("Dapatkan update PO, info katalog");
+    expect(cards[0]?.textContent).toContain("Gabung grup");
+    expect(cards[1]?.getAttribute("href")).toBe("/join");
+    expect(cards[1]?.textContent).toContain("Daftar sekarang");
+    expect(document.querySelector(".home-onboarding-actions")).toBeNull();
     expect(screen.getByRole("link", { name: "Tonton Video Cara Pesan ↗" })).toMatchObject({
       href: "https://drive.google.com/file/d/bfg-tutorial/view",
       target: "_blank",
       rel: "noopener noreferrer",
     });
+  });
+
+  it("uses the canonical Join flow when no approved WhatsApp group URL is configured", () => {
+    renderOnboarding(signedOutProduct, { whatsappGroupUrl: null });
+    const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>(".home-onboarding-step-card"));
+    expect(cards[0]?.getAttribute("href")).toBe("/join");
+    expect(cards[0]?.textContent).toContain("Ajukan permintaan");
+    expect(cards[1]?.getAttribute("href")).toBe("/join");
   });
 
   it("does not prompt pending or active customers to submit a duplicate join request", () => {
@@ -56,7 +70,20 @@ describe("Homepage social entry onboarding", () => {
     } as never;
     const { unmount } = renderOnboarding(pendingProduct);
     expect(screen.getByRole("heading", { name: "Permintaanmu sedang ditinjau." })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Daftar sebagai Blessfriend" })).toBeNull();
+    expect(document.querySelectorAll(".home-onboarding-step-card")).toHaveLength(0);
+    expect(screen.queryByRole("link", { name: "Daftar sekarang" })).toBeNull();
+    unmount();
+
+    const invitationProduct = {
+      hydrated: true,
+      authState: "admission-required",
+      membershipState: "APPROVED_INVITATION_PENDING",
+      sessionRole: null,
+    } as never;
+    renderOnboarding(invitationProduct);
+    expect(screen.getByRole("heading", { name: "Undangan BFG sedang diproses." })).toBeTruthy();
+    expect(document.querySelectorAll(".home-onboarding-step-card")).toHaveLength(0);
+    expect(screen.queryByRole("link", { name: "Daftar sekarang" })).toBeNull();
     unmount();
 
     const activeProduct = {

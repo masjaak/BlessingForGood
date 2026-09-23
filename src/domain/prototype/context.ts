@@ -11,6 +11,8 @@ import type {
   OrderStatus,
   PrototypeState,
   SecretCatalog,
+  BookCategory,
+  BookFormat,
 } from "@/domain/prototype/types";
 import type { ProductRole } from "@/domain/prototype/session";
 
@@ -37,6 +39,24 @@ export type ProductMembershipState =
   | "ACTIVE"
   | "SUSPENDED"
   | "REMOVED";
+
+export type CatalogBrowseState = {
+  pageNumber: number;
+  pageSize: 25 | 50 | 100;
+  search: string;
+  category: BookCategory | "";
+  publishers: string[];
+  formats: BookFormat[];
+};
+
+export const DEFAULT_CATALOG_BROWSE_STATE: CatalogBrowseState = {
+  pageNumber: 1,
+  pageSize: 25,
+  search: "",
+  category: "",
+  publishers: [],
+  formats: [],
+};
 
 type MembershipRequestState = {
   status: "submitted" | "under_review" | "approved" | "rejected";
@@ -144,6 +164,8 @@ export interface ProductContextValue {
   retryAuth: () => void;
   state: PrototypeState;
   unlockedCatalog: SecretCatalog | undefined;
+  catalogBrowse: CatalogBrowseState;
+  updateCatalogBrowse: (updates: Partial<CatalogBrowseState>) => void;
   catalogOptions: CatalogAccessOption[];
   selectCatalog: (catalogId: string) => void;
   createCatalog: (input: CreateCatalogInput) => Promise<CreateCatalogResult>;

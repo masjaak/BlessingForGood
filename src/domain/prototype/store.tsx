@@ -2,7 +2,7 @@
 
 import { useCallback, useContext, useMemo, type ReactNode } from "react";
 import { ConvexProductProvider } from "@/domain/prototype/convex-store";
-import { ProductContext, type ProductContextValue } from "@/domain/prototype/context";
+import { DEFAULT_CATALOG_BROWSE_STATE, ProductContext, type ProductContextValue } from "@/domain/prototype/context";
 import { UnavailableOperationsProvider } from "@/domain/prototype/operations-context";
 import { emptyPrototypeState } from "@/domain/prototype/logic";
 import { isValidBackendUrl } from "@/lib/environment";
@@ -28,6 +28,8 @@ function UnavailableProductProvider({ children }: { children: ReactNode }) {
       retryAuth,
       state: emptyPrototypeState(),
       unlockedCatalog: undefined,
+      catalogBrowse: DEFAULT_CATALOG_BROWSE_STATE,
+      updateCatalogBrowse: () => undefined,
       catalogOptions: [],
       selectCatalog: () => undefined,
       createCatalog: unavailable,

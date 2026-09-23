@@ -1,5 +1,22 @@
 # Decisions
 
+## Onboarding cards and Catalog pagination — 2026-09-23
+
+Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
+
+- Signed-out onboarding uses two self-contained semantic links with the CTA
+  inside each card. The configured WhatsApp destination is used when present;
+  otherwise both steps use the canonical `/join` admission path.
+- Customer browse remains behind existing Catalog authorization. The server
+  applies search, category, publisher, format, and ordering before slicing
+  25/50/100-row pages; Admin uses a separate permission-guarded projection.
+- The present joined-field schema requires a server-side Catalog scan for exact
+  filters and curated order. A denormalized indexed browse projection is the
+  upgrade path if Catalog size reaches Convex read limits. URL persistence is
+  deferred because browse state remains owned by the existing Product Context.
+- Auth, membership approval, private Catalog visibility, Orders, Cart, Finance,
+  Analytics, Ready Stock, Batch, and Security S1.1 behavior remain unchanged.
+
 ## Catalog closure cleanup, canonical categories, and social entry — 2026-09-23
 
 Status: `ACTIVE / ENGINEERING GREEN; DEPLOYED; AUTHENTICATED PRODUCTION UAT PENDING`

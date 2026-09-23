@@ -50,34 +50,75 @@ async function addableCatalogVariant(
   return assigned ? null : row;
 }
 
+async function adminCatalogRows(ctx: QueryCtx, catalogId: Id<"secretCatalogs">, limit?: number) {
+  const catalogItems = ctx.db
+    .query("catalogItems")
+    .withIndex("by_catalog", (query) => query.eq("catalogId", catalogId));
+  const items = sortCatalogItems(limit ? await catalogItems.take(limit) : await catalogItems.collect());
+  return Promise.all(
+    items.map(async (item, position) => {
+      const variant = await ctx.db.get(item.bookVariantId);
+      const book = variant ? await ctx.db.get(variant.bookId) : null;
+      const publisher = book ? await ctx.db.get(book.publisherId) : null;
+      return {
+        ...item,
+        bookId: book?._id ?? null,
+        title: book?.title || "Unknown book",
+        publisherName: publisher?.name ?? null,
+        author: book?.author ?? null,
+        format: variant?.format || null,
+        isbn: variant?.isbn || null,
+        priceAmount: item.priceOverrideAmount ?? variant?.priceAmount ?? 0,
+        position,
+      };
+    }),
+  );
+}
+
 export const listForCatalog = query({
   args: { catalogId: v.id("secretCatalogs") },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "catalog.manage");
-    // ponytail: bounded 500-item Admin tracking projection; paginate when a Catalog exceeds 500 items.
-    const items = sortCatalogItems(
-      await ctx.db
-        .query("catalogItems")
-        .withIndex("by_catalog", (query) => query.eq("catalogId", args.catalogId))
-        .take(500),
+    // ponytail: retained 500-item compatibility projection; the Admin screen uses listForCatalogPage.
+    const rows = await adminCatalogRows(ctx, args.catalogId, 500);
+    return rows.map(({ position: _position, ...row }) => {
+      void _position;
+      return row;
+    });
+  },
+});
+
+export const listForCatalogPage = query({
+  args: {
+    catalogId: v.id("secretCatalogs"),
+    pageNumber: v.optional(v.number()),
+    pageSize: v.optional(v.union(v.literal(25), v.literal(50), v.literal(100))),
+    search: v.optional(v.string()),
+    publisher: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "catalog.manage");
+    // ponytail: join-based filters and custom sort scan the Catalog; index these fields if query read cost becomes material.
+    const rows = await adminCatalogRows(ctx, args.catalogId);
+    const search = normalizeDiscoveryQuery(args.search ?? "").slice(0, 120);
+    const filtered = rows.filter(
+      (item) => matchesAdminCatalogRecord(item, search) && (!args.publisher || item.publisherName === args.publisher),
     );
-    return Promise.all(
-      items.map(async (item) => {
-        const variant = await ctx.db.get(item.bookVariantId);
-        const book = variant ? await ctx.db.get(variant.bookId) : null;
-        const publisher = book ? await ctx.db.get(book.publisherId) : null;
-        return {
-          ...item,
-          bookId: book?._id ?? null,
-          title: book?.title || "Unknown book",
-          publisherName: publisher?.name ?? null,
-          author: book?.author ?? null,
-          format: variant?.format || null,
-          isbn: variant?.isbn || null,
-          priceAmount: item.priceOverrideAmount ?? variant?.priceAmount ?? 0,
-        };
-      }),
-    );
+    const pageSize = args.pageSize ?? 25;
+    const pageCount = Math.ceil(filtered.length / pageSize);
+    const pageNumber = Math.min(Math.max(1, Math.floor(args.pageNumber ?? 1) || 1), Math.max(1, pageCount));
+    const first = (pageNumber - 1) * pageSize;
+    return {
+      page: filtered.slice(first, first + pageSize),
+      pageNumber,
+      pageSize,
+      totalCount: filtered.length,
+      catalogItemCount: rows.length,
+      titleCount: new Set(filtered.map((item) => String(item.bookId || item.title))).size,
+      publisherOptions: [...new Set(rows.map((item) => item.publisherName))]
+        .filter((publisher): publisher is string => Boolean(publisher))
+        .sort((left, right) => left.localeCompare(right)),
+    };
   },
 });
 
