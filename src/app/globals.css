@@ -8669,12 +8669,6 @@ p {
   aspect-ratio: 2 / 3;
 }
 
-@media (max-width: 900px) {
-  .customer-shell .catalog-filter-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 640px) {
   .customer-shell .book-card-layout {
     grid-template-columns: minmax(112px, 36%) minmax(0, 1fr);
