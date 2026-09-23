@@ -2,7 +2,7 @@
 
 ## Catalog + onboarding improvement — 2026-09-23
 
-Status: `ENGINEERING GREEN; DEPLOYMENT PENDING`
+Status: `ENGINEERING GREEN; DEPLOYED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 The four scoped improvements are implemented: Catalog close clears only
 unsubmitted related Cart lines; the existing Master Book category field now

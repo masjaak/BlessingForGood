@@ -2,7 +2,7 @@
 
 ## Catalog closure cleanup, canonical categories, and social entry — 2026-09-23
 
-Status: `ACTIVE / ENGINEERING GREEN; DEPLOYMENT PENDING`
+Status: `ACTIVE / ENGINEERING GREEN; DEPLOYED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 - The existing `secretCatalogs.close` mutation owns cleanup. It marks the
   Catalog closed and deletes only its unsubmitted Cart lines in the same

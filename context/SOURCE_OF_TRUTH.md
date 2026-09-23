@@ -2,7 +2,7 @@
 
 ## Catalog close, book categories, and social entry — 2026-09-23
 
-Status: `IMPLEMENTED; ENGINEERING GREEN; DEPLOYMENT PENDING`
+Status: `IMPLEMENTED; ENGINEERING GREEN; DEPLOYED; AUTHENTICATED PRODUCTION UAT PENDING`
 
 `secretCatalogs.close` is the canonical Catalog-close mutation. After the
 Catalog status transition, the same Convex transaction removes only
