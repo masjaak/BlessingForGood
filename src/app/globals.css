@@ -4245,6 +4245,35 @@ p {
   margin-top: 20px;
 }
 
+.customer-shell .home-hero-entry-note {
+  display: grid;
+  gap: var(--space-xs);
+  max-width: 700px;
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--control-surface-hover);
+}
+
+.customer-shell .home-hero-entry-note p,
+.customer-shell .home-hero-entry-note a {
+  margin: 0;
+}
+
+.customer-shell .home-hero-entry-note p {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.customer-shell .home-hero-entry-note a {
+  width: fit-content;
+  color: var(--accent-dark);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .customer-shell .home-journey {
   width: min(100%, 860px);
   max-width: 860px;
@@ -4669,6 +4698,11 @@ p {
     flex-direction: column;
     gap: var(--button-stack-gap);
     margin-top: 14px;
+  }
+
+  .customer-shell .home-hero-entry-note {
+    margin-top: var(--space-sm);
+    padding: var(--space-sm);
   }
 
   .customer-shell .home-hero-actions > .button {

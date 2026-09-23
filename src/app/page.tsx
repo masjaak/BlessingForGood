@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { HomeOnboarding } from "@/components/home-onboarding";
 import { HowToOrderSteps } from "@/components/how-to-order";
@@ -40,6 +41,14 @@ export default function HomePage() {
                 Buka Secret Catalog <span aria-hidden="true">→</span>
               </LinkButton>
             </div>
+            <aside className="home-hero-entry-note" aria-label="Cara mulai bersama BFG">
+              <span className="eyebrow">Baru di BFG?</span>
+              <p>
+                WhatsApp adalah ruang komunitas dan info PO BFG; website adalah tempat Blessfriends melihat katalog,
+                memesan, dan memantau pesanan.
+              </p>
+              <Link href="/how-to-order">Pelajari alur BFG →</Link>
+            </aside>
           </div>
           <div className="home-journey" aria-labelledby="journey-title">
             <h2 id="journey-title" className="eyebrow">
