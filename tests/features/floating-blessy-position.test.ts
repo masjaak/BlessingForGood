@@ -78,4 +78,24 @@ describe("Floating Blessy geometry", () => {
     expect(result.top + 64).toBeLessThanOrEqual(645 - 16);
     expect(result.left + 300).toBeLessThanOrEqual(348 - 6);
   });
+
+  it("keeps the greeting bubble clear of the homepage CTA", () => {
+    const cta = { x: 150, y: 205, width: 240, height: 90 };
+    const result = resolveFloatingBlessyBubble({
+      anchor: { x: 260, y: 300, ...mascot },
+      mascot: { x: 260, y: 300, ...mascot },
+      bubble: { width: 220, height: 70 },
+      mascotGap: 16,
+      obstacle: cta,
+      bounds,
+    });
+
+    expect(result.placement).toBe("bottom-right");
+    expect(
+      result.left + 220 <= cta.x ||
+        result.left >= cta.x + cta.width ||
+        result.top + 70 <= cta.y ||
+        result.top >= cta.y + cta.height,
+    ).toBe(true);
+  });
 });
