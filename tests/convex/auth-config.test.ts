@@ -17,10 +17,16 @@ describe("Convex Clerk auth configuration", () => {
     expect(requireClerkIssuer("https://clerk.blessingforgood.com")).toBe("https://clerk.blessingforgood.com");
   });
 
-  it("keeps Production Convex issuer synchronization in the release command", () => {
+  it("keeps Convex issuer synchronization in the Production build case", () => {
     const { buildCommand } = JSON.parse(readFileSync("vercel.json", "utf8")) as { buildCommand: string };
-    expect(buildCommand).toContain("convex env set CLERK_JWT_ISSUER_DOMAIN");
-    expect(buildCommand).toContain("convex env set CLERK_SECRET_KEY");
-    expect(buildCommand).toContain("--prod");
+    const buildScript = readFileSync("scripts/vercel-build.sh", "utf8");
+    const productionCase = buildScript.split("  production)\n")[1]?.split("  *)")[0] ?? "";
+
+    expect(buildCommand).toBe("sh scripts/vercel-build.sh");
+    expect(productionCase).toContain(
+      "printf '%s' \"$CLERK_JWT_ISSUER_DOMAIN\" | npx convex env set --prod CLERK_JWT_ISSUER_DOMAIN",
+    );
+    expect(productionCase).toContain("printf '%s' \"$CLERK_SECRET_KEY\" | npx convex env set --prod CLERK_SECRET_KEY");
+    expect(productionCase).toContain("--prod");
   });
 });
