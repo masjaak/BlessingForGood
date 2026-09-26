@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const viewports = [
   { width: 320, height: 700 },
@@ -16,6 +16,16 @@ const viewports = [
   { width: 1440, height: 900 },
 ];
 
+async function clearHomepageCopy(page: Page) {
+  await page.evaluate(() => {
+    const hero = document.querySelector<HTMLElement>(".home-hero");
+    if (hero) window.scrollTo(0, hero.getBoundingClientRect().bottom + window.scrollY);
+  });
+  const blessy = page.locator("[data-testid='floating-blessy']");
+  await expect(blessy).toHaveAttribute("data-obstructing-home-copy", "false");
+  await expect(blessy).toBeVisible();
+}
+
 test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
   test("stays contained above the mobile nav across the viewport matrix", async ({ page }, testInfo) => {
     test.skip(
@@ -29,7 +39,10 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       await page.goto("/", { waitUntil: "domcontentloaded" });
       await expect(page.locator("[data-testid='floating-blessy']")).toHaveCount(0);
       await page.waitForTimeout(1700);
-      await expect(page.locator("[data-testid='floating-blessy']")).toBeVisible();
+      await expect(page.locator("[data-testid='floating-blessy']")).toHaveAttribute(
+        "data-obstructing-home-copy",
+        /^(true|false)$/,
+      );
 
       const geometry = await page.evaluate(() => {
         const widget = document.querySelector<HTMLElement>("[data-testid='floating-blessy']");
@@ -61,12 +74,22 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           first.right > second.left &&
           first.top < second.bottom &&
           first.bottom > second.top;
+        const homepageCopy = [
+          ...document.querySelectorAll<HTMLElement>(
+            ".home-hero .eyebrow, .home-hero .display, .home-hero .lede, .home-hero-actions > *, .home-hero-entry-note p, .home-hero-entry-note a",
+          ),
+        ];
         const gapAlongPlacement = (
           bubbleRect: ReturnType<typeof rect>,
           mascotRect: ReturnType<typeof rect>,
           placement: string,
         ) => (placement.startsWith("top") ? mascotRect.top - bubbleRect.bottom : bubbleRect.top - mascotRect.bottom);
         const bubblePlacement = bubble.dataset.placement || "";
+        const obstructedByHomeCopy = widget.dataset.obstructingHomeCopy === "true";
+        const overlays = [rect(mascot), rect(close), ...(bubble.dataset.visible === "true" ? [rect(bubble)] : [])];
+        const overlapsHomepageCopy = homepageCopy.some((element) =>
+          overlays.some((overlay) => overlaps(overlay, rect(element))),
+        );
         return {
           viewport: { width: window.innerWidth, height: window.innerHeight },
           widget: rect(widget),
@@ -83,6 +106,11 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           scrollWidth: document.documentElement.scrollWidth,
           animationName: getComputedStyle(document.querySelector(".floating-blessy__idle")!).animationName,
           pointerEvents: getComputedStyle(widget).pointerEvents,
+          visibility: getComputedStyle(widget).visibility,
+          bubbleVisibility: getComputedStyle(bubble).visibility,
+          ariaHidden: widget.getAttribute("aria-hidden"),
+          obstructedByHomeCopy,
+          overlapsHomepageCopy,
         };
       });
 
@@ -94,6 +122,10 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       expect(geometry.close.right, viewport.width + "px close right").toBeLessThanOrEqual(viewport.width - 8);
       expect(geometry.scrollWidth, viewport.width + "px document width").toBeLessThanOrEqual(viewport.width + 1);
       expect(geometry.pointerEvents).toBe("none");
+      expect(geometry.visibility === "hidden").toBe(geometry.obstructedByHomeCopy);
+      expect(geometry.bubbleVisibility === "hidden").toBe(geometry.obstructedByHomeCopy);
+      expect(geometry.ariaHidden).toBe(String(geometry.obstructedByHomeCopy));
+      expect(geometry.overlapsHomepageCopy).toBe(geometry.obstructedByHomeCopy);
       expect(geometry.bubbleOverlapsClose).toBe(false);
       expect(geometry.bubbleOverlapsMascot).toBe(false);
       expect(geometry.bubbleOverlapsHomepageCta).toBe(false);
@@ -123,6 +155,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1700);
+    await clearHomepageCopy(page);
     await page.getByRole("button", { name: "Tutup Blessy" }).click();
     await expect(page.locator("[data-testid='floating-blessy']")).toHaveCount(0);
 
@@ -151,6 +184,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1700);
+    await clearHomepageCopy(page);
     await expect(page.locator("[data-testid='floating-blessy']")).toBeVisible();
     await expect
       .poll(() => page.locator(".floating-blessy__idle").evaluate((element) => getComputedStyle(element).animationName))
@@ -439,6 +473,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       await page.setViewportSize(viewport);
       await page.goto("/", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(9000);
+      if (viewport.width <= 800) await clearHomepageCopy(page);
       await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-bubble-mode", "cta", {
         timeout: 15_000,
       });
@@ -482,6 +517,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1700);
+    await clearHomepageCopy(page);
 
     const mascot = page.getByRole("link", { name: "Chat Admin BFG lewat WhatsApp" });
     await expect(mascot).toHaveAttribute("href", "https://wa.me/6288973465977");
@@ -510,7 +546,9 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
     test.skip(testInfo.project.name !== "customer-390", "The CTA harness runs once from the 390px customer project.");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1700 + 7200);
+    await page.waitForTimeout(1700);
+    await clearHomepageCopy(page);
+    await page.waitForTimeout(7200);
     await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-visible", "true");
     await expect(page.locator("[data-testid='floating-blessy-bubble']")).toHaveAttribute("data-bubble-mode", "cta");
     await expect(page.getByText("Klik aku kalau mau ngobrol langsung ya")).toBeVisible();
