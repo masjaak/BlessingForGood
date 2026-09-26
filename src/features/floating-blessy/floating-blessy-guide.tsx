@@ -48,6 +48,7 @@ export function FloatingBlessyGuide() {
     const label = bubbleRef.current;
     const close = closeRef.current;
     const mascot = mascotRef.current;
+    const homepageCta = pathname === "/" ? document.querySelector<HTMLElement>(".home-hero-actions") : null;
     if (!root || !label || !close || !mascot) return;
 
     const updateGeometry = () => {
@@ -55,6 +56,7 @@ export function FloatingBlessyGuide() {
       const labelRect = label.getBoundingClientRect();
       const closeRect = close.getBoundingClientRect();
       const mascotRect = mascot.getBoundingClientRect();
+      const ctaRect = homepageCta?.getBoundingClientRect();
       const next = resolveFloatingBlessyBubble({
         anchor: {
           x: rootRect.left,
@@ -71,6 +73,10 @@ export function FloatingBlessyGuide() {
         bubble: { width: labelRect.width, height: labelRect.height },
         mascotGap: getFloatingBlessyMascotExclusionGap(window.innerWidth),
         close: { x: closeRect.left, y: closeRect.top, width: closeRect.width, height: closeRect.height },
+        obstacle:
+          ctaRect && ctaRect.width > 0 && ctaRect.height > 0
+            ? { x: ctaRect.left, y: ctaRect.top, width: ctaRect.width, height: ctaRect.height }
+            : undefined,
         bounds: getFloatingBlessyBounds(),
       });
       const local = { placement: next.placement, left: next.left - rootRect.left, top: next.top - rootRect.top };
@@ -89,12 +95,13 @@ export function FloatingBlessyGuide() {
     observer?.observe(label);
     observer?.observe(close);
     observer?.observe(mascot);
+    if (homepageCta) observer?.observe(homepageCta);
     return () => {
       window.removeEventListener("resize", updateGeometry);
       window.removeEventListener("orientationchange", updateGeometry);
       observer?.disconnect();
     };
-  }, [enabled, message, navigation.bubbleAlign, pose, position?.x, position?.y, state.bubbleMode]);
+  }, [enabled, message, navigation.bubbleAlign, pathname, pose, position?.x, position?.y, state.bubbleMode]);
 
   useLayoutEffect(() => {
     if (!enabled) return;

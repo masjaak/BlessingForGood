@@ -34,10 +34,13 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       const geometry = await page.evaluate(() => {
         const widget = document.querySelector<HTMLElement>("[data-testid='floating-blessy']");
         const bubble = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
+        const homepageCta = document.querySelector<HTMLElement>(".home-hero-actions");
         const mascot = document.querySelector<HTMLElement>(".floating-blessy__image");
         const close = document.querySelector<HTMLElement>(".floating-blessy__close");
         const nav = document.querySelector<HTMLElement>(".customer-bottom-nav");
-        if (!widget || !bubble || !mascot || !close || !nav) throw new Error("Blessy geometry fixture is incomplete");
+        if (!widget || !bubble || !homepageCta || !mascot || !close || !nav) {
+          throw new Error("Blessy geometry fixture is incomplete");
+        }
         if (document.querySelectorAll("[data-testid='floating-blessy-bubble']").length !== 1) {
           throw new Error("Blessy must render one bubble frame");
         }
@@ -72,6 +75,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
           close: rect(close),
           bubbleOverlapsClose: overlaps(rect(bubble), rect(close)),
           bubbleOverlapsMascot: overlaps(rect(bubble), rect(mascot)),
+          bubbleOverlapsHomepageCta: overlaps(rect(bubble), rect(homepageCta)),
           bubbleMascotGap: gapAlongPlacement(rect(bubble), rect(mascot), bubblePlacement),
           bubblePlacement,
           bubbleMode: bubble.dataset.bubbleMode || "",
@@ -92,6 +96,7 @@ test.describe("@customer @floating-blessy Phase 1 rendered harness", () => {
       expect(geometry.pointerEvents).toBe("none");
       expect(geometry.bubbleOverlapsClose).toBe(false);
       expect(geometry.bubbleOverlapsMascot).toBe(false);
+      expect(geometry.bubbleOverlapsHomepageCta).toBe(false);
       expect(geometry.bubbleMode).toBe("context");
       expect(geometry.bubbleMascotGap, viewport.width + "px bubble/mascot gap").toBeGreaterThanOrEqual(
         (viewport.width <= 800 ? 12 : 16) - 0.5,
