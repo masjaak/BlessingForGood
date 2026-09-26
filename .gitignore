@@ -16,3 +16,5 @@ artifacts/visual-convergence/
 
 # clerk configuration (can include secrets)
 /.clerk/
+/.vercel/
+/.env.local
