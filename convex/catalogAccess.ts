@@ -136,6 +136,12 @@ async function rejectUnlock(
   };
   if (attempt) await ctx.db.patch(attempt._id, values);
   else await ctx.db.insert("catalogAccessAttempts", { appUserId: user._id, ...values });
+  if (failedCount === MAX_FAILED_ATTEMPTS) {
+    await recordAudit(ctx, user._id, "security.catalog_unlock_lockout", "appUser", String(user._id), {
+      role: user.role,
+      reason: "repeated_catalog_unlock_failures",
+    });
+  }
   return { errorCode: code };
 }
 
