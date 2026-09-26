@@ -32,7 +32,7 @@ describe("Vercel Preview credential gate", () => {
     writeFileSync(npx, '#!/bin/sh\n: > "$BFG_NPX_MARKER"\n');
     chmodSync(npx, 0o755);
     const npm = join(temp, "npm");
-    writeFileSync(npm, '#!/bin/sh\nprintf "%s" "$*" > "$BFG_NPM_MARKER"\n');
+    writeFileSync(npm, '#!/bin/sh\n[ -z "${CONVEX_DEPLOY_KEY:-}" ] || exit 1\nprintf "%s" "$*" > "$BFG_NPM_MARKER"\n');
     chmodSync(npm, 0o755);
   });
 

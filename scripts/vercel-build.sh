@@ -65,6 +65,7 @@ case "${SECURITY_STAGING_MODE:-}" in
       'CONVEX_URL_TYPE=DEVELOPMENT' \
       'CONVEX_SITE_URL_TYPE=DEVELOPMENT' \
       'CREDENTIAL_GATE=PASS'
+    unset CONVEX_DEPLOY_KEY
     npm run build
     exit 0
     ;;
