@@ -72,10 +72,10 @@ describe("Vercel Preview credential gate", () => {
       SECURITY_STAGING_MODE: "convex-dev",
       CONVEX_DEPLOY_KEY: "unclassified-test-value",
       CONVEX_TARGET_TYPE: "DEVELOPMENT",
-      CONVEX_TARGET_REFERENCE: "dev/masjak",
-      CONVEX_TARGET_DEPLOYMENT: "content-snake-214",
-      NEXT_PUBLIC_CONVEX_URL: "https://content-snake-214.convex.cloud",
-      NEXT_PUBLIC_CONVEX_SITE_URL: "https://content-snake-214.convex.site",
+      CONVEX_TARGET_REFERENCE: "dev/security-fixture",
+      CONVEX_TARGET_DEPLOYMENT: "audit-fixture",
+      NEXT_PUBLIC_CONVEX_URL: "https://audit-fixture.convex.cloud",
+      NEXT_PUBLIC_CONVEX_SITE_URL: "https://audit-fixture.convex.site",
     });
 
     expect(result.status).toBe(0);
@@ -92,15 +92,15 @@ describe("Vercel Preview credential gate", () => {
   it.each([
     ["non-preview environment", { VERCEL_ENV: "production" }],
     ["production target", { CONVEX_TARGET_TYPE: "PRODUCTION", CONVEX_TARGET_REFERENCE: "prod" }],
-    ["production deployment reference", { CONVEX_TARGET_REFERENCE: "prod/clean-eel-522" }],
+    ["production deployment reference", { CONVEX_TARGET_REFERENCE: "prod/production-fixture" }],
     ["invalid URL", { NEXT_PUBLIC_CONVEX_URL: "https://example.com" }],
     [
       "production URL mismatched with Development metadata",
-      { NEXT_PUBLIC_CONVEX_URL: "https://clean-eel-522.convex.cloud" },
+      { NEXT_PUBLIC_CONVEX_URL: "https://production-fixture.convex.cloud" },
     ],
     [
       "production site URL mismatched with Development metadata",
-      { NEXT_PUBLIC_CONVEX_SITE_URL: "https://clean-eel-522.convex.site" },
+      { NEXT_PUBLIC_CONVEX_SITE_URL: "https://production-fixture.convex.site" },
     ],
     ["missing URL", { NEXT_PUBLIC_CONVEX_URL: "" }],
     ["production Clerk secret", { CLERK_SECRET_KEY: "sk_live_" }],
@@ -110,10 +110,10 @@ describe("Vercel Preview credential gate", () => {
     const result = run({
       SECURITY_STAGING_MODE: "convex-dev",
       CONVEX_TARGET_TYPE: "DEVELOPMENT",
-      CONVEX_TARGET_REFERENCE: "dev/masjak",
-      CONVEX_TARGET_DEPLOYMENT: "content-snake-214",
-      NEXT_PUBLIC_CONVEX_URL: "https://content-snake-214.convex.cloud",
-      NEXT_PUBLIC_CONVEX_SITE_URL: "https://content-snake-214.convex.site",
+      CONVEX_TARGET_REFERENCE: "dev/security-fixture",
+      CONVEX_TARGET_DEPLOYMENT: "audit-fixture",
+      NEXT_PUBLIC_CONVEX_URL: "https://audit-fixture.convex.cloud",
+      NEXT_PUBLIC_CONVEX_SITE_URL: "https://audit-fixture.convex.site",
       ...overrides,
     });
 

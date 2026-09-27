@@ -14,7 +14,9 @@ export default defineConfig({
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
     baseURL,
-    extraHTTPHeaders: protectionBypass ? { "x-vercel-protection-bypass": protectionBypass } : undefined,
+    extraHTTPHeaders: protectionBypass
+      ? { "x-vercel-protection-bypass": protectionBypass, "x-vercel-set-bypass-cookie": "true" }
+      : undefined,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
