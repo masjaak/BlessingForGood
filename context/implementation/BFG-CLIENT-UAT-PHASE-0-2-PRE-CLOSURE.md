@@ -94,8 +94,10 @@ configuration still overlaps Security QA and requires reconciliation.
 
 The first route named varies with static worker scheduling. The failing
 boundary is the same and the guarded presentation fixture produced no new
-prerender failure. Security QA owns the existing advisories and release/build
-reconciliation.
+prerender failure. The build blocker is owned by the pre-existing application
+route/provider boundary; the evidence does not assign it to Phase 2, local
+runtime configuration, or Security QA release settings. Security QA owns
+remediation of the unchanged audit advisories.
 
 ## Phase 2 Rendered Responsive Evidence
 
