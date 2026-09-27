@@ -11,7 +11,7 @@ performed.
 | Worktree | Branch / HEAD | State | Intended changes and overlap |
 | --- | --- | --- | --- |
 | `/Users/masjak/Developer/BlessingForGood` | Detached `58a4ff6` | Dirty | Contains Security QA working changes. The path does not currently have `security/blessingforgood-hardening` checked out. Left untouched. |
-| `/private/tmp/bfg-hardening-release` | `security/blessingforgood-hardening`, `b281624aacc6975c80d94cf30d99696172834d78` | Dirty | Actual named Security QA branch worktree; local `.gitignore`, Playwright/build-guard changes, and `security-audits/`. Left untouched. |
+| `/private/tmp/bfg-hardening-release` | `security/blessingforgood-hardening`, `b281624aacc6975c80d94cf30d99696172834d78` | Dirty | Actual named Security QA branch worktree; local `.gitignore`, Playwright/build-guard changes, `security-audits/`, and a QA `tsconfig.tsbuildinfo` update observed at 23:40. Left untouched. |
 | `/Users/masjak/Developer/BlessingForGood-client-uat` | `fix/client-uat-p0-2026-09-27`, `58a4ff6` | Dirty | Existing P0 Cart/Session changes in six files. Left untouched. |
 | `/Users/masjak/Developer/BlessingForGood-client-onboarding` | `feat/client-onboarding-phase-2-2026-09-27`, `58a4ff6` before freeze commit | Dirty | Phase 2 onboarding/UI/tests and this report. No identical changed file paths with Security QA or P0. |
 
@@ -25,8 +25,10 @@ has no dependency or lockfile changes. `git worktree list` also showed the pre-e
 clean-base verification worktree was removed after the A/B comparison. No
 stash, reset, rebase, checkout, or cross-branch absorption occurred. The
 canonical path / Security QA branch-path mismatch is recorded for later
-reconciliation. Phase 2 styles the existing floating Blessy element only to
-hide it while an onboarding status card is present; Security QA changes the
+reconciliation. The later QA build-info update has a distinct inode from the
+Phase 2 worktree file and did not alter Phase 2. Phase 2 styles the existing
+floating Blessy element only to hide it while an onboarding status card is
+present; Security QA changes the
 Blessy component and position helper in different files. That visual seam
 must be rechecked when branches are reconciled.
 
