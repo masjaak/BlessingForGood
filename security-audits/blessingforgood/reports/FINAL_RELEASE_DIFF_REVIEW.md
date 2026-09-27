@@ -41,14 +41,15 @@ uses only an environment variable reference for authorized automation access.
 
 ## Environment verification note
 
-Vercel's current Clerk Development Preview variables are scoped to the tested
-branch. The local Vercel CLI withheld the protected publishable key when
-running the wrapper against the release branch, and the wrapper correctly
-returned `CREDENTIAL_GATE=FAIL`. No credentials were copied or the guard
-weakened. The release build itself passed with Preview-scoped Development
-Convex variables. A Vercel Preview deployment for this release branch remains
-unverified until the existing Development Preview configuration is authorized
-for that branch.
+Vercel's current Development Preview variables are scoped to the tested
+branch. The PR Preview deployment (`dpl_8sCAxPR1PkwSREARePSaJC983FiT`) ran the
+build wrapper with unknown Convex/Clerk credential types and correctly stopped
+at `CREDENTIAL_GATE=FAIL` before deploying Convex. The local Vercel CLI also
+withheld the protected key. No credentials were copied and the guard was not
+weakened. The standalone release build passed with Preview-scoped Development
+Convex variables, but the Vercel Preview deployment for this branch failed.
+The existing Development Preview configuration must be authorized for this
+branch before the release gate can pass.
 
 ## Release regression evidence
 
@@ -56,11 +57,15 @@ for that branch.
 - Lint: PASS
 - Typecheck: PASS
 - Full tests: PASS (120 files, 780 tests)
-- Build: PASS (Next.js 16.3.6, Preview-scoped Development environment)
+- Local build: PASS (Next.js 16.3.6, Preview-scoped Development environment)
+- Vercel PR Preview build: FAIL (branch had no authorized Preview credential scope; guard stopped before Convex deploy)
 - npm audit: PASS (0 vulnerabilities)
 - Security regression harness: PASS (48 focused tests; target and credential guard self-checks)
 - Secret leak check: PASS (29 staged files; no credential values printed)
 - Whitespace check: PASS
+
+The source diff is safe, but `RELEASE_GATE=BLOCKED` until the Vercel Preview
+environment is approved for this release branch and its deployment succeeds.
 
 Production smoke and deployment identifiers are recorded after merge in
 `docs/security/SECURITY_BASELINE.md` and the final audit reports.
