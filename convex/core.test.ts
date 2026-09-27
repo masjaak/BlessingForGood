@@ -256,6 +256,20 @@ describe("BFG Convex core persistence", () => {
     expect(await customer.mutation(api.catalogAccess.unlock, { accessCode: "wrong-after-lock" })).toMatchObject({
       errorCode: "ACCESS_CODE_RATE_LIMITED",
     });
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+    await expect(
+      t.run(async (ctx) =>
+        (await ctx.db.query("auditEvents").collect()).find(
+          (event) => event.action === "security.catalog_unlock_lockout",
+        ),
+      ),
+    ).resolves.toMatchObject({
+      actorUserId: customerUser.appUserId,
+      targetType: "appUser",
+      targetId: String(customerUser.appUserId),
+      safeMetadata: { role: "customer", reason: "repeated_catalog_unlock_failures" },
+    });
   });
 
   it("submits price snapshots and isolates customer ownership", async () => {

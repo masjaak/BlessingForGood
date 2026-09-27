@@ -71,10 +71,19 @@ type BubbleGeometryInput = {
   bubble: FloatingBlessySize;
   mascotGap?: number;
   close?: FloatingBlessyPosition & FloatingBlessySize;
+  obstacle?: FloatingBlessyPosition & FloatingBlessySize;
   bounds: FloatingBlessyBounds;
 };
 
-export function resolveFloatingBlessyBubble({ anchor, mascot, bubble, mascotGap, close, bounds }: BubbleGeometryInput) {
+export function resolveFloatingBlessyBubble({
+  anchor,
+  mascot,
+  bubble,
+  mascotGap,
+  close,
+  obstacle,
+  bounds,
+}: BubbleGeometryInput) {
   const mascotRect = mascot || anchor;
   const gap = mascot ? (mascotGap ?? MASCOT_GAP_PX.desktop) : BUBBLE_GAP_PX;
   const candidates: Array<{ placement: FloatingBlessyBubblePlacement; left: number; top: number }> = [
@@ -103,6 +112,7 @@ export function resolveFloatingBlessyBubble({ anchor, mascot, bubble, mascotGap,
   const exclusions = [
     ...(mascot ? [expandRect(mascot, gap)] : []),
     ...(close ? [expandRect(close, CLOSE_EXCLUSION_GAP_PX)] : []),
+    ...(obstacle ? [obstacle] : []),
   ];
 
   const fits = (candidate: (typeof candidates)[number]) =>

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { MAX_STORED_FILE_BYTES } from "./lib/storage";
 import { configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
 
 const progressiveExifJpeg = new Uint8Array([
@@ -127,6 +128,22 @@ describe("BFG owned upload HTTP boundary", () => {
       body: new TextEncoder().encode("not an image"),
     });
     expect(response.status).toBe(400);
+    expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toEqual([]);
+  });
+
+  it("rejects oversized request bodies even when the client size header is forged", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const response = await admin.fetch(`/bfg/upload?purpose=book-cover&fileName=oversized.webp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "image/webp",
+        "X-BFG-File-Size": "1",
+      },
+      body: new Uint8Array(MAX_STORED_FILE_BYTES + 1),
+    });
+
+    expect(response.status).toBe(413);
     expect(await t.run(async (ctx) => ctx.db.query("uploadClaims").collect())).toEqual([]);
   });
 

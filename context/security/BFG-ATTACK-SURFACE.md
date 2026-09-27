@@ -1,6 +1,6 @@
 # BFG ATTACK-SURFACE INVENTORY
 
-Status: `GREEN_EVIDENCE` for the source inventory reviewed 2026-08-22.
+Status: `SOURCE_REVIEWED` for the inventory refreshed 2026-09-26.
 The manifest below is generated from active `convex/**/*.ts` exports matching
 `query`, `mutation`, or `action`; it contains 179 client-invokable Convex
 functions. Constants, validators, test helpers, and generated files are not
@@ -25,9 +25,9 @@ counted.
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Next.js route handlers                  | `0 found` under `src/app/**/route.*`                                                                                              |
 | Server Actions                          | `0 found` (`use server` absent)                                                                                                   |
-| Convex HTTP actions/router              | `0 found` in application source                                                                                                   |
-| Custom API/CORS state-changing endpoint | `0 found`; observed `Access-Control-Allow-Origin: *` is a Vercel/static document response, not an application privileged endpoint |
-| Upload transport                        | Convex Storage generated upload URL, then server-side attachment/reference mutation                                               |
+| Convex HTTP actions/router              | `/bfg/upload` POST (authorized, rate-limited, file-purpose allowlist) and OPTIONS preflight                                        |
+| Custom API/CORS state-changing endpoint | One Convex upload action; CORS response uses an explicit origin allowlist                                                         |
+| Upload transport                        | Bounded request stream to `/bfg/upload`; server validates bytes and registers an owner claim                                      |
 
 ## Convex Function Manifest
 
@@ -116,8 +116,10 @@ the implementation evidence.
 
 ## Current Evidence
 
-- Static export inventory: 179 runtime functions, 0 HTTP actions, 0 Next route
-  handlers, 0 Server Actions.
+- Static export inventory: 179 runtime functions, one Convex HTTP path (POST and
+  OPTIONS), 0 Next route handlers, 0 Server Actions.
+- `convex/upload-http.test.ts`: authentication, file validation, upload claims,
+  rate limits, and oversized request rejection.
 - `convex/phase091-security.test.ts`: cross-customer and privilege denial.
 - `convex/phase091-concurrency.test.ts`: stock/payment/deposit contention.
 - `context/security/BFG-AUTHORIZATION-TEST-MATRIX.md`: adversarial matrix.

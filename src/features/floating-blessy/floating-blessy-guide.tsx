@@ -38,6 +38,7 @@ export function FloatingBlessyGuide() {
   const closeRef = useRef<HTMLDivElement | null>(null);
   const mascotRef = useRef<HTMLImageElement | null>(null);
   const [labelGeometry, setLabelGeometry] = useState(emptyGeometry);
+  const [obstructingHomeCopy, setObstructingHomeCopy] = useState(false);
   const { position, isDragging, dragHandlers } = useDraggableBlessy(enabled && !state.dismissed, rootRef);
   const message = state.currentMessage || navigation.message;
   const bubbleAlign = state.bubbleAlign || navigation.bubbleAlign;
@@ -48,6 +49,15 @@ export function FloatingBlessyGuide() {
     const label = bubbleRef.current;
     const close = closeRef.current;
     const mascot = mascotRef.current;
+    const homepageCta = pathname === "/" ? document.querySelector<HTMLElement>(".home-hero-actions") : null;
+    const homepageCopy =
+      pathname === "/"
+        ? Array.from(
+            document.querySelectorAll<HTMLElement>(
+              ".home-hero .eyebrow, .home-hero .display, .home-hero .lede, .home-hero-actions > *, .home-hero-entry-note p, .home-hero-entry-note a",
+            ),
+          )
+        : [];
     if (!root || !label || !close || !mascot) return;
 
     const updateGeometry = () => {
@@ -55,6 +65,20 @@ export function FloatingBlessyGuide() {
       const labelRect = label.getBoundingClientRect();
       const closeRect = close.getBoundingClientRect();
       const mascotRect = mascot.getBoundingClientRect();
+      const ctaRect = homepageCta?.getBoundingClientRect();
+      const bubbleIsVisible =
+        state.bubbleMode !== "hidden" && state.stage !== "bubble-exit" && state.stage !== "pose-transition";
+      const coversCopy = (overlay: DOMRect, copy: DOMRect) =>
+        overlay.left < copy.right &&
+        overlay.right > copy.left &&
+        overlay.top < copy.bottom &&
+        overlay.bottom > copy.top;
+      const overlays = [mascotRect, closeRect, ...(bubbleIsVisible ? [labelRect] : [])];
+      const nextObstructingHomeCopy = homepageCopy.some((element) => {
+        const copyRect = element.getBoundingClientRect();
+        return copyRect.width > 0 && copyRect.height > 0 && overlays.some((overlay) => coversCopy(overlay, copyRect));
+      });
+      setObstructingHomeCopy((previous) => (previous === nextObstructingHomeCopy ? previous : nextObstructingHomeCopy));
       const next = resolveFloatingBlessyBubble({
         anchor: {
           x: rootRect.left,
@@ -71,6 +95,10 @@ export function FloatingBlessyGuide() {
         bubble: { width: labelRect.width, height: labelRect.height },
         mascotGap: getFloatingBlessyMascotExclusionGap(window.innerWidth),
         close: { x: closeRect.left, y: closeRect.top, width: closeRect.width, height: closeRect.height },
+        obstacle:
+          ctaRect && ctaRect.width > 0 && ctaRect.height > 0
+            ? { x: ctaRect.left, y: ctaRect.top, width: ctaRect.width, height: ctaRect.height }
+            : undefined,
         bounds: getFloatingBlessyBounds(),
       });
       const local = { placement: next.placement, left: next.left - rootRect.left, top: next.top - rootRect.top };
@@ -84,17 +112,34 @@ export function FloatingBlessyGuide() {
     updateGeometry();
     window.addEventListener("resize", updateGeometry);
     window.addEventListener("orientationchange", updateGeometry);
+    window.addEventListener("scroll", updateGeometry, { passive: true });
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateGeometry);
     observer?.observe(root);
     observer?.observe(label);
     observer?.observe(close);
     observer?.observe(mascot);
+    if (homepageCta) observer?.observe(homepageCta);
+    homepageCopy.forEach((element) => observer?.observe(element));
     return () => {
       window.removeEventListener("resize", updateGeometry);
       window.removeEventListener("orientationchange", updateGeometry);
+      window.removeEventListener("scroll", updateGeometry);
       observer?.disconnect();
     };
-  }, [enabled, message, navigation.bubbleAlign, pose, position?.x, position?.y, state.bubbleMode]);
+  }, [
+    enabled,
+    labelGeometry.left,
+    labelGeometry.placement,
+    labelGeometry.top,
+    message,
+    navigation.bubbleAlign,
+    pathname,
+    pose,
+    position?.x,
+    position?.y,
+    state.bubbleMode,
+    state.stage,
+  ]);
 
   useLayoutEffect(() => {
     if (!enabled) return;
@@ -122,13 +167,15 @@ export function FloatingBlessyGuide() {
     <aside
       ref={rootRef}
       className="floating-blessy"
-      style={positionStyle}
+      style={{ ...positionStyle, visibility: obstructingHomeCopy ? "hidden" : undefined }}
       data-pose-id={pose.id}
       data-navigation-context={state.navigationContext || navigation.navigationContext}
       data-semantic-context={state.semanticContext || navigation.semanticContext}
       data-stage={state.stage}
       data-testid="floating-blessy"
       data-dragging={isDragging ? "true" : "false"}
+      data-obstructing-home-copy={obstructingHomeCopy ? "true" : "false"}
+      aria-hidden={obstructingHomeCopy}
       data-transition-phase={state.transitionPhase || undefined}
       aria-label="Blessy"
     >
@@ -147,7 +194,7 @@ export function FloatingBlessyGuide() {
       <div
         ref={bubbleRef}
         className={bubbleClass}
-        style={labelStyle}
+        style={{ ...labelStyle, visibility: obstructingHomeCopy ? "hidden" : undefined }}
         data-placement={labelGeometry.placement}
         data-align={state.bubbleMode === "cta" ? "center" : bubbleAlign}
         data-bubble-mode={state.bubbleMode}

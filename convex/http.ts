@@ -67,6 +67,36 @@ function isUploadPurpose(value: string | null): value is UploadPurpose {
   return value !== null && value in purposeContracts;
 }
 
+async function readBoundedBody(request: Request, maxBytes: number): Promise<Uint8Array<ArrayBuffer> | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return new Uint8Array();
+
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 http.route({
   path: "/bfg/upload",
   method: "OPTIONS",
@@ -88,23 +118,34 @@ http.route({
       return json(origin, { error: "file upload rejected" }, 400);
     }
 
-    const contentLength = Number(request.headers.get("X-BFG-File-Size") || request.headers.get("Content-Length"));
-    if (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > MAX_STORED_FILE_BYTES) {
+    const declaredSizeHeader = request.headers.get("X-BFG-File-Size");
+    const contentLengthHeader = request.headers.get("Content-Length");
+    const declaredSize = declaredSizeHeader === null ? null : Number(declaredSizeHeader);
+    const contentLength = contentLengthHeader === null ? null : Number(contentLengthHeader);
+    if (
+      (declaredSize !== null &&
+        (!Number.isSafeInteger(declaredSize) || declaredSize < 0 || declaredSize > MAX_STORED_FILE_BYTES)) ||
+      (contentLength !== null &&
+        (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > MAX_STORED_FILE_BYTES))
+    ) {
       return json(origin, { error: "file upload rejected" }, 413);
     }
 
     try {
       await ctx.runMutation(internal.uploads.authorize, { purpose });
-      const body = await request.blob();
-      if (body.size !== contentLength || body.size > MAX_STORED_FILE_BYTES) {
+      const bytes = await readBoundedBody(request, MAX_STORED_FILE_BYTES);
+      if (
+        !bytes ||
+        (declaredSize !== null && bytes.byteLength !== declaredSize) ||
+        (contentLength !== null && bytes.byteLength !== contentLength)
+      ) {
         return json(origin, { error: "file upload rejected" }, 413);
       }
-      const bytes = new Uint8Array(await body.arrayBuffer());
       validateUploadedContent(
         fileName,
         declaredMimeType,
         declaredMimeType,
-        body.size,
+        bytes.byteLength,
         bytes,
         purposeContracts[purpose],
         "file upload rejected",
@@ -122,7 +163,11 @@ http.route({
       if (limited) {
         return json(
           origin,
-          { code: "RATE_LIMITED", error: "upload temporarily rate limited", retryAfterSeconds: limited.retryAfterSeconds },
+          {
+            code: "RATE_LIMITED",
+            error: "upload temporarily rate limited",
+            retryAfterSeconds: limited.retryAfterSeconds,
+          },
           429,
           { "Retry-After": String(limited.retryAfterSeconds) },
         );

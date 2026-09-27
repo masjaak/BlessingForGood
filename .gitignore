@@ -11,8 +11,13 @@ coverage/
 .vercel/
 test-results/
 playwright-report/
+playwright/.auth/
+security-audits/blessingforgood/raw/
+security-audits/blessingforgood/screenshots/
 artifacts/browser-qa/
 artifacts/visual-convergence/
 
 # clerk configuration (can include secrets)
 /.clerk/
+/.vercel/
+/.env.local
