@@ -53,6 +53,7 @@ describe("BFG owned upload HTTP boundary", () => {
       "https://blessingforgood.vercel.app",
       "https://blessing-for-good.vercel.app",
       "https://blessing-for-good-masjaaks-projects.vercel.app",
+      "https://blessing-for-good-git-feat-clerk-ident-497d03-masjaaks-projects.vercel.app",
     ]) {
       const productionAlias = await t.fetch("/bfg/upload", {
         method: "OPTIONS",
