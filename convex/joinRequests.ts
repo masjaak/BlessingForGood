@@ -214,17 +214,7 @@ export const submit = mutation({
       relatedEntityType: "joinRequest",
       relatedEntityId: String(joinRequestId),
     });
-    const configuredGroupUrl = process.env.BFG_JOIN_WHATSAPP_GROUP_URL;
-    let whatsappGroupUrl: string | null = null;
-    if (configuredGroupUrl) {
-      try {
-        const url = new URL(configuredGroupUrl);
-        if (url.protocol === "https:" || url.protocol === "http:") whatsappGroupUrl = url.toString();
-      } catch {
-        whatsappGroupUrl = null;
-      }
-    }
-    return { joinRequestId, status: "submitted" as const, whatsappGroupUrl };
+    return { joinRequestId, status: "submitted" as const };
   },
 });
 

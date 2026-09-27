@@ -94,8 +94,15 @@ path provisions the one active `appUser` and links the request.
 sidebar hides the badge at zero and shows the live count otherwise. The
 dashboard reuses the same queue as a Join Requests attention item. The queue
 shows applicant, WhatsApp, area, interest, requested time, status, and a
-Review action. Review exposes context plus Approve/Reject; only Admin/Owner
-may perform those actions.
+Review action. Before approval, Admin manually checks that the applicant has
+joined the WhatsApp Group using the submitted contact. Review exposes context
+plus Approve/Reject; only Admin/Owner may perform those actions. No
+WhatsApp-verification field is persisted.
+
+After the public request mutation commits, the Join page offers a direct chat
+to the fixed BFG WhatsApp contact `6282347278881` with a prefilled request
+follow-up. The application neither stores nor exposes a group invitation URL
+and never sends the message automatically.
 
 ## Failure recovery and schema scope
 

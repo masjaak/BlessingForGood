@@ -11,6 +11,7 @@ import { SiteShell } from "@/components/site-shell";
 import { isProductIdentityAuthenticated } from "@/domain/prototype/context";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import { useProduct } from "@/domain/prototype/store";
+import { WHATSAPP_HANDOFF_URL } from "@/domain/whatsapp-handoff";
 
 const bookInterestOptions = [
   "Children & Picture Books",
@@ -47,7 +48,6 @@ function ConnectedJoinForm() {
   const submit = useMutation(api.joinRequests.submit);
   const [form, setForm] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
-  const [whatsappGroupUrl, setWhatsappGroupUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,7 +60,7 @@ function ConnectedJoinForm() {
     setError("");
     setIsSubmitting(true);
     try {
-      const result = await submit({
+      await submit({
         name: form.name,
         email: form.email,
         contact: form.contact,
@@ -69,7 +69,6 @@ function ConnectedJoinForm() {
         note: form.note || undefined,
         acknowledged: form.acknowledged,
       });
-      setWhatsappGroupUrl(result.whatsappGroupUrl);
       setSubmitted(true);
     } catch (reason) {
       setError(productErrorMessage(reason, "Permintaan belum berhasil dikirim. Silakan coba lagi."));
@@ -84,19 +83,14 @@ function ConnectedJoinForm() {
         <BrandMascot variant="success" className="success-mascot" />
         <div className="join-success-content">
           <span className="card-kicker">Permintaan diterima</span>
-          <h2>Permintaanmu sudah dikirim.</h2>
+          <h2>Langkah berikutnya: gabung WhatsApp Group BFG</h2>
           <p>
-            Tim BFG akan meninjaunya terlebih dahulu. Jika disetujui, undangan akan dikirim ke email yang kamu gunakan.
+            Klik tombol di bawah untuk meminta link WhatsApp Group. Setelah kamu bergabung, Admin BFG akan memeriksa
+            pendaftaranmu sebelum undangan akun dikirim.
           </p>
-          {whatsappGroupUrl ? (
-            <LinkButton variant="primary" href={whatsappGroupUrl} target="_blank" rel="noreferrer">
-              Gabung WhatsApp Group
-            </LinkButton>
-          ) : (
-            <p className="success-banner" role="status">
-              Permintaanmu sudah kami terima. Link grup sedang disiapkan.
-            </p>
-          )}
+          <LinkButton variant="primary" href={WHATSAPP_HANDOFF_URL} target="_blank" rel="noopener noreferrer">
+            Minta link WhatsApp Group
+          </LinkButton>
           <div className="actions">
             <LinkButton href="/community" variant="secondary">
               Kenali komunitas BFG

@@ -1,5 +1,24 @@
 # BFG SOURCE OF TRUTH
 
+## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
+
+Visitors who are not active Blessfriends see a dismissible, in-flow Blessy
+welcome with the two prerequisites: join the BFG WhatsApp Group and submit the
+existing website Blessfriend request. A successful `/join` request keeps the
+existing `joinRequests.submit` mutation and then offers a fixed direct WhatsApp
+chat handoff to `6282347278881` with the approved request-follow-up message.
+The web app does not expose or store a group invitation URL and does not send
+messages automatically.
+
+WhatsApp membership is checked operationally by Admin before approval. The
+Join Request, Admin decision, Clerk invitation, and `appUsers.role/status`
+remain the only admission and membership path; no WhatsApp proof field or
+parallel membership record is added. Pending applicants get the existing
+request state plus WhatsApp guidance, approved invitation-pending applicants
+get activation guidance, active Customers get no Join CTA, suspended users
+keep the existing suspension behavior, and Admin/Owner remain in their own
+workspace. The previous `BFG_JOIN_WHATSAPP_GROUP_URL` handoff is superseded.
+
 ## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
 
 The real Customer Catalog route is `/catalog` → `CustomerCatalog` →
@@ -31,12 +50,12 @@ authorization semantics changed.
 
 ## Onboarding card simplification and Catalog pagination — 2026-09-23
 
-The signed-out homepage keeps the two approved steps as full-card links. The
-first uses the approved HTTPS `BFG_JOIN_WHATSAPP_GROUP_URL` when configured;
-otherwise it uses the existing `/join` request flow. The second always uses
-`/join`. Existing pending, invitation-pending, active Customer, Admin, and
-Owner state behavior remains authoritative. On narrow screens, the card layer
-keeps the primary CTA visible above Blessy's floating message.
+The 2026-09-23 homepage used two signed-out entry links. Its configured
+`BFG_JOIN_WHATSAPP_GROUP_URL` behavior was superseded on 2026-09-27 by the
+fixed direct-chat handoff described in the current onboarding entry above.
+Existing pending, invitation-pending, active Customer, Admin, and Owner state
+behavior remains authoritative. On narrow screens, the card layer keeps the
+primary CTA visible above Blessy's floating message.
 
 Customer Catalog browse requests are made only after the existing session or
 grant authorization succeeds. The query applies visibility, search, category,
@@ -75,16 +94,12 @@ kategori”. The Admin Book editor manages the canonical category and the
 Customer Catalog filter composes with existing search, format, and publisher
 filters.
 
-The homepage adds a small social-entry onboarding layer using the existing
-membership/auth state. Signed-out and admission-required visitors see the
-WhatsApp community step, the Blessfriend website step, and the existing
-canonical `/join` flow. Active Customers do not see false registration copy;
-Admin and Owner workspace behavior is unchanged. `BFG_JOIN_WHATSAPP_GROUP_URL`
-and optional `BFG_TUTORIAL_VIDEO_URL` are HTTPS-only configuration values;
-without a configured tutorial URL, no dead video CTA is rendered. WhatsApp
-does not grant membership or bypass Join Request approval. Analytics, Auth,
-Order, Finance, Security S1.1, Ready Stock, and Secret Catalog authorization
-semantics remain frozen.
+The homepage's former social-entry layer used membership/auth state. Its
+WhatsApp destination is superseded by the current onboarding entry above;
+optional `BFG_TUTORIAL_VIDEO_URL` remains HTTPS-only and no dead tutorial CTA
+is rendered when it is absent. WhatsApp does not grant membership or bypass
+Join Request approval. Analytics, Auth, Order, Finance, Security S1.1, Ready
+Stock, and Secret Catalog authorization semantics remain frozen.
 
 ## Catalog search and multi-Catalog Cart — 2026-09-15
 
