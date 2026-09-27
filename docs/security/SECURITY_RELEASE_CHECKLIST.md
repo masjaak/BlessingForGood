@@ -2,6 +2,9 @@
 
 ## Before Audit
 
+- [ ] Required Preview Development variables apply to Preview without branch scope
+- [ ] Preview metadata checked without reading or recording variable values
+- [ ] Preview Clerk and Convex build target classify as Development
 - [ ] Preview exists
 - [ ] Preview protection automation access ready
 - [ ] Clerk Development ready
@@ -25,6 +28,8 @@
 
 ## Before Release
 
+- [ ] Clean release branch can receive the branch-independent Preview configuration
+- [ ] Preview credential gate PASS; Convex deploy command disabled
 - [ ] Critical = 0
 - [ ] Unacceptable High = 0
 - [ ] Release-blocking Medium = 0
@@ -39,6 +44,9 @@
 - [ ] Security regression PASS
 - [ ] Secret scan PASS
 - [ ] Release diff review PASS
+- [ ] Preview routes, auth boundary, and four viewport widths PASS
+- [ ] Blessy does not overlap homepage CTA or important copy
+- [ ] Preview console, first-party network, and 5xx checks PASS
 
 ## After Production Deploy
 

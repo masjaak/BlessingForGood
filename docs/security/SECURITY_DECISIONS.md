@@ -52,3 +52,19 @@ Production synchronization and Convex Production deploy behavior.
 **Reason:** the guard prevents Preview builds from using Production
 credentials or deploying Convex Production. `SECURITY_STAGING_MODE=convex-dev`
 is accepted only for `VERCEL_ENV=preview` and does not run in Production.
+
+## ADR-SEC-007 — Preview Development Credentials
+
+**Decision:** scope Development credentials and target metadata intended for
+normal Preview testing to the Vercel Preview environment without tying them to
+one temporary Git branch. Keep Production variables Production-only. Do not
+use an ambiguous `CONVEX_DEPLOY_KEY` as the Preview Development target.
+
+**Reason:** branch-specific Preview settings blocked the clean release PR even
+though the same security fixes had completed verification on the testing
+branch.
+
+**Safety:** the fail-closed build gate still requires Clerk Development and
+Convex Development in Preview. The `convex-dev` path disables Convex deploy
+and removes the deploy key before the frontend build; Production continues to
+use its separate Production configuration.

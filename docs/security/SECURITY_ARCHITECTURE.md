@@ -1,6 +1,6 @@
 # Blessingforgood Security Architecture
 
-Last verified on the testing environment: 2026-09-27. Audit evidence and tool
+Last verified on the testing environment: 2026-09-28. Audit evidence and tool
 availability are summarized in [SECURITY_BASELINE.md](SECURITY_BASELINE.md).
 
 ## Environment map
@@ -8,28 +8,31 @@ availability are summarized in [SECURITY_BASELINE.md](SECURITY_BASELINE.md).
 | Environment | Application | Identity | Backend | Intended data |
 |---|---|---|---|---|
 | Production | Vercel Production (`main`) | Clerk Production | Convex Production | Real business data; smoke checks are read-only |
-| Security testing | Protected Vercel Preview | Vercel authorized automation access, then Clerk Development | Convex Development | Disposable test identities and test records only |
+| Security testing and release Preview | Protected Vercel Preview on an authorized branch | Vercel authorized automation access, then Clerk Development | Convex Development | Disposable test identities and test records only |
 | Local | Developer checkout | Configured non-production Clerk instance | Canonical Convex Development deployment | Local QA and deterministic fixtures |
 
 ```text
 Production:
 Vercel Production → Clerk Production → Convex Production
 
-Security testing:
-Vercel Preview → Vercel authorized automation access
-              → Clerk Development → Convex Development
+Security testing and release Preview:
+Vercel Preview (authorized branch) → Vercel authorized automation access
+                                   → Clerk Development → Convex Development
 ```
 
 The Preview hostname is deployment-specific. Record and approve the exact host
 or a narrowly scoped project pattern for each audit; do not make a temporary
 Preview URL a permanent default.
 
-The verified Clerk Development and Convex Development Preview variables are
-currently scoped to `feat/clerk-identity-authorization-v0.1` in Vercel. Before
-testing another branch, confirm that its Preview environment receives the
-same Development configuration. Vercel CLI may withhold variables marked as
-secrets, so use the build credential gate and deployment metadata without
-printing or copying their values.
+The verified Clerk Development and Convex Development variables are scoped to
+Vercel Preview without a Git-branch restriction, so authorized release and
+security branches receive the same Development configuration. Production
+variables remain Production-only. Preflight checks environment-variable names,
+IDs, target, branch scope, and type without reading values; the Vercel build
+credential gate verifies the actual Clerk and Convex classifications. The
+Preview `CONVEX_DEPLOY_KEY` is not part of the Development configuration:
+`SECURITY_STAGING_MODE=convex-dev` disables the Convex deploy command and
+unsets that key before the frontend build.
 
 ## Environment boundaries
 

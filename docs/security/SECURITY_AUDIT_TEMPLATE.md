@@ -11,6 +11,8 @@
 
 - Environment label:
 - Vercel:
+- Preview variable metadata scope verified (name/ID/target/gitBranch/type only):
+- Preview Development variables apply without branch scope:
 - Authentication provider/environment:
 - Backend/environment:
 - Storage:
@@ -31,6 +33,8 @@
 - Production path:
 - Test path:
 - Environment isolation evidence:
+- Preview credential gate and Convex deploy-command classification:
+- Production side-effect credentials excluded from Preview:
 
 ## Tools
 
@@ -111,6 +115,7 @@
 - Reviewed branch/base:
 - PR:
 - Merge SHA:
+- Vercel Preview build and responsive smoke:
 
 ## Production Smoke
 

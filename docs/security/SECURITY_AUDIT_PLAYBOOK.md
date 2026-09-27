@@ -36,16 +36,36 @@ Playwright, Nuclei, ZAP or a running Docker daemon, Vercel CLI, Convex CLI,
 Node, npm, and Git. If a required scanner is missing, install it from its
 official distribution and rerun preflight before discovery.
 
+### VERIFY_PREVIEW_ENV_SCOPE
+
+Preflight inspects Vercel environment-variable metadata only: name, ID,
+target, Git branch scope, and type. It requires the Clerk Development settings
+and Convex Development URL/target/staging settings to apply to Preview without
+a branch restriction. It also checks authorized Preview access, Preview
+availability, test identities, and disabled external side effects. Never
+pull, print, or copy variable values.
+
+The Preview `CONVEX_DEPLOY_KEY` is not a Development target or a release
+preview prerequisite. Do not use it for Preview Development builds; the
+`convex-dev` build path must report `CONVEX_DEPLOY_COMMAND=DISABLED` and unset
+the key before building the frontend. The deployment's `CREDENTIAL_GATE`
+confirms actual Development credential classifications.
+
 **Expected output:** readiness lines for `PLAYWRIGHT`, `NUCLEI`, `ZAP`,
-`VERCEL`, and `CONVEX`, each `READY` or `MISSING`.
+`VERCEL`, and `CONVEX`, each `READY` or `MISSING`, plus
+`PREVIEW_ENV_CONFIG`, `CLERK_DEVELOPMENT_CONFIG`,
+`CONVEX_DEVELOPMENT_CONFIG`, `RELEASE_PREVIEW_CAPABLE`, and the final
+`PREFLIGHT` result.
 
 When tools live outside `PATH`, pass their executable paths without exposing
 credentials: `NUCLEI_BIN`, `ZAP_BIN`, `VERCEL_BIN`, and `CONVEX_BIN`.
 
-**PASS:** required tools are ready; Vercel automation access works; Clerk
-Development Customer and Owner identities are available; Preview and
-Development targets are identified; Production protection is enabled; payment,
-email, and webhook effects are disabled or test-only.
+**PASS:** required tools and Preview metadata scope are ready; Clerk
+Development Customer and Owner identities are available; the protected
+Preview is reachable through authorized automation; Preview and Development
+targets are identified; active scans reject Production; payment, email, and
+webhook effects are disabled or test-only. The build credential gate must
+report Development classifications before application testing.
 
 **FAIL / stop:** any required tool, identity, access method, environment label,
 or side-effect boundary is unknown. Install or resolve it here, then rerun
@@ -63,8 +83,8 @@ environment, test identities, storage, and side-effect systems.
 
 **Expected output:** Production and test paths are explicitly distinguished;
 the active target resolves to Preview + Clerk Development + Convex Development.
-Record any Vercel branch-specific Preview variable scope so a new audit branch
-does not silently lose its Development configuration.
+Verify that required Preview Development variables have no Git-branch scope,
+so a clean release branch receives the same safe Development configuration.
 
 **PASS:** the Vercel Preview build reports `CREDENTIAL_GATE=PASS`; Production
 credential types are absent from Preview; Preview's Convex URL matches its
