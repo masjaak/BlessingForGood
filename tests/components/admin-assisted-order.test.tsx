@@ -74,6 +74,36 @@ const catalogs = [
   },
 ];
 
+const assistedCatalogRows = [
+  {
+    bookVariantId: "variant-doctor",
+    title: "Doctor Fairytale",
+    publisherName: "Walker Books",
+    author: "Alice Author",
+    format: "HB",
+    isbn: "9781529509243",
+    priceAmount: 150000,
+  },
+  {
+    bookVariantId: "variant-elsewhere",
+    title: "Elsewhere Title",
+    publisherName: "Other Publisher",
+    author: "Other Author",
+    format: "PB",
+    isbn: "9780000000002",
+    priceAmount: 125000,
+  },
+  {
+    bookVariantId: "variant-carry-me",
+    title: "Carry Me!",
+    publisherName: "Beyond Window Press",
+    author: "Tail Author",
+    format: "BB",
+    isbn: "9780000000502",
+    priceAmount: 175000,
+  },
+];
+
 describe("Admin assisted-order discovery", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,9 +113,38 @@ describe("Admin assisted-order discovery", () => {
       ordersLoading: false,
     } as never);
     vi.mocked(useQuery).mockImplementation((query, args?) => {
-      void args;
-      if (getFunctionName(query as never).endsWith(":getForAdmin")) return { view: catalogs[0] } as never;
-      return [{ customerUserId: "customer-1", displayName: "A Customer", memberCode: "BFG-0001" }] as never;
+      const functionName = getFunctionName(query as never);
+      if (functionName.endsWith(":listEligibleCustomers")) {
+        return {
+          page: [{ customerUserId: "customer-1", displayName: "A Customer", memberCode: "BFG-0001" }],
+          isDone: true,
+          continueCursor: "",
+        } as never;
+      }
+      if (functionName.endsWith(":listForCatalogPage")) {
+        const search =
+          args && typeof args === "object" && "search" in args && typeof args.search === "string"
+            ? args.search.trim().toLowerCase()
+            : "";
+        const page = assistedCatalogRows.filter((row) =>
+          [row.title, row.publisherName, row.author, row.isbn].some((value) => value.toLowerCase().includes(search)),
+        );
+        return {
+          page,
+          pageNumber: 1,
+          pageSize: 100,
+          totalCount: page.length,
+          catalogItemCount: 503,
+          titleCount: page.length,
+          publisherOptions: [],
+        } as never;
+      }
+      if (functionName.endsWith(":listForAdmin")) {
+        return args && typeof args === "object" && "paginationOpts" in args
+          ? ({ page: [], isDone: true, continueCursor: "" } as never)
+          : ([] as never);
+      }
+      return [] as never;
     });
     vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
   });
@@ -109,6 +168,11 @@ describe("Admin assisted-order discovery", () => {
       expect(screen.getByRole("option", { name: /Doctor Fairytale · Walker Books · HB · 9781529509243/ })).toBeTruthy();
       fireEvent.keyDown(variantSelect, { key: "Escape" });
     }
+
+    fireEvent.change(variantSearch, { target: { value: "carry me" } });
+    expect(
+      screen.getByRole("option", { name: /Carry Me! · Beyond Window Press · BB · 9780000000502/ }),
+    ).toBeTruthy();
 
     fireEvent.change(variantSearch, { target: { value: "elsewhere author" } });
     expect(screen.getByText("Tidak ada varian yang cocok.")).toBeTruthy();
