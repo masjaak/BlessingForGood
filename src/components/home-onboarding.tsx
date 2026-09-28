@@ -99,7 +99,12 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
           {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
         </div>
         <div className="home-onboarding-art">
-          <BrandMascot variant="warm" className="home-onboarding-mascot" />
+          <BrandMascot
+            variant="warm"
+            className="home-onboarding-mascot"
+            sizes="(max-width: 640px) 82px, 92px"
+            priority
+          />
         </div>
         {primaryAction ? (
           <ActionGroup variant="responsive" className="home-onboarding-actions">

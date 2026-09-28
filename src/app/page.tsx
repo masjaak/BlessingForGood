@@ -27,7 +27,7 @@ export default function HomePage() {
           <div className="hero-copy">
             <span className="eyebrow">official website blessing for good</span>
             <h1 id="home-title" className="display">
-              SPECIALIST CHILDREN &amp; COLLECTOR BOOKS 📚
+              SPECIALIST CHILDREN &amp; COLLECTOR BOOKS
             </h1>
             <p className="lede">kami mengkurasi buku-buku children books, novel books dan collector special edition</p>
             <div className="home-hero-actions" aria-label="Akses buku">
@@ -104,7 +104,12 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="discovery-card-art-slot community-art" aria-hidden="true">
-                <BrandMascot variant="warm" className="community-mascot" />
+                <BrandMascot
+                  variant="warm"
+                  className="community-mascot"
+                  sizes="(max-width: 640px) 82px, 92px"
+                  priority
+                />
               </div>
               <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
                 Minta link WhatsApp Group
