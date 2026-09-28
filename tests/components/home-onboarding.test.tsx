@@ -34,8 +34,8 @@ describe("Homepage Blessfriend onboarding", () => {
       ),
     ).toBeTruthy();
     expect(
-      screen.getByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
-    ).toBeTruthy();
+      screen.queryByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
+    ).toBeNull();
     expect(document.querySelector(".home-onboarding-mascot")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
     expect(screen.getByRole("button", { name: "Tutup informasi selamat datang" })).toBeTruthy();

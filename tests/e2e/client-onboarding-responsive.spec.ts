@@ -150,6 +150,9 @@ test("renders the client redline homepage and guide at responsive widths @custom
         "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
       ),
     ).toBeVisible();
+    await expect(
+      region.getByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
+    ).toHaveCount(0);
     await expect(region.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
 
     const orderGuide = page.locator(".home-onboarding-how-to");
