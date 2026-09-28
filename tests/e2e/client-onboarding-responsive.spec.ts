@@ -381,6 +381,13 @@ test("keeps in-flow Blessy clear of copy, actions, and mobile navigation @custom
       await page.setViewportSize({ width, height: 900 });
       await page.goto(route, { waitUntil: "domcontentloaded" });
       const widget = page.getByTestId("floating-blessy");
+      if (route.includes("/verification/onboarding")) {
+        await page.evaluate(() => {
+          const hero = document.querySelector<HTMLElement>(".home-hero");
+          if (hero) window.scrollTo(0, hero.getBoundingClientRect().bottom + window.scrollY);
+        });
+        await expect(widget).toHaveAttribute("data-obstructing-home-copy", "false");
+      }
       await expect(widget).toBeVisible();
       const geometry = await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
