@@ -51,6 +51,7 @@ export function HomeOnboarding() {
     <section
       className={`home-onboarding-main${welcome ? " home-onboarding-main-welcome" : ""}`}
       id="blessfriend-account"
+      data-testid="blessfriend-account"
       aria-labelledby="home-onboarding-title"
       aria-label={welcome ? "Selamat datang di Blessing For Good" : "Account Blessfriend"}
       role="region"
@@ -74,8 +75,8 @@ export function HomeOnboarding() {
           ) : null}
         </div>
         <p>
-          Account Blessfriend digunakan untuk melihat katalog PO, memesan buku, mengecek riwayat pesanan, tagihan, dan
-          perjalanan buku.
+          wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group /
+          pembelian di website
         </p>
         {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
         {welcome ? (

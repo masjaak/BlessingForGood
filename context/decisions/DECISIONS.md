@@ -1,5 +1,23 @@
 # Decisions
 
+## Client content Phase 3C literal redlines — 2026-09-28
+
+Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`
+
+- Treat the client's yellow/green overlays as exact replacements, red X marks
+  as removals, arrows as card moves, and unmarked UI as preserved. This
+  supersedes the previous Phase 3 layout interpretation.
+- Keep the existing homepage Hero and journey; remove the duplicate lower
+  journey and any crossed Temukan Buku block. The access-card sequence is Join
+  WhatsApp Group → Secret Catalog → Ready Stock → Blessfriend account.
+- Use the exact copy in the Phase 3C report. Keep the How To Order seven-step
+  timeline and preserve Steps 04 and 07 where the screenshot has no replacement.
+- H+1/H+2 invoice timing, DP 30%, and 4-5 months are display copy only. They do
+  not change Invoice, Payment, Batch ETA, or other business behavior.
+- Keep existing Clerk, membership, Catalog authorization, Ready Stock, Cart,
+  Order, Finance, and Batch paths. No Security QA changes, Phase 4 work, or
+  Production deployment are included.
+
 ## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`

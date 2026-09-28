@@ -8,7 +8,38 @@ source: conversation
 
 # Changelog
 
+## [client-content-phase-3c-literal-redlines] — 2026-09-28
+
+### Changed
+
+- Applied the exact client copy to the existing Hero, WhatsApp/website card,
+  three-step journey, access cards, account card, and seven-step order timeline.
+- Kept the access-card order Join WhatsApp Group → Secret Catalog → Ready
+  Stock → Blessfriend account. Removed the duplicate lower homepage journey.
+- Restored How To Order Step 04 from canonical source (`Pesanan diproses` /
+  `Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.`),
+  kept the client DP 30% copy only at Step 05, and retained Step 07.
+- Kept Clerk, membership, Catalog authorization, Ready Stock, Cart, Order,
+  Invoice, Payment, Finance, and Batch behavior unchanged. Invoice timing,
+  deposit, and ETA phrases are display copy only.
+
+### QA and scope
+
+- Responsive production-component renders pass at six requested widths.
+  Frontend: 75 files / 476 tests. Convex: 47 files / 310 tests. Focused
+  redline correction (38 tests), responsive screenshots (2 browser tests at
+  six widths), Phase 2 onboarding/auth (23), Catalog (50), Ready Stock
+  (9), and Cart (23) tests pass.
+- The combined Vitest command hit the existing large Batch backfill's default
+  120-second timeout; frontend and Convex suites passed separately, with the
+  Convex timeout set to 180 seconds.
+- Direct real-runtime authentication remains unverified locally because Clerk
+  keys are missing. No Phase 4 work, Security QA changes, or deployment.
+
 ## [client-content-phase-3b-visual-reconciliation] — 2026-09-28
+
+Superseded by Phase 3C literal redlines below; this entry records the prior
+incorrect Phase 3 interpretation.
 
 ### Changed
 

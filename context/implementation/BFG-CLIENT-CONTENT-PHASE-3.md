@@ -1,171 +1,279 @@
-# BFG CLIENT PHASE 3 VISUAL RECONCILIATION REPORT
+# BFG PHASE 3C LITERAL CLIENT REDLINE REPORT
 
 Date: 2026-09-28
-Status: PHASE_3_CLIENT_VISUAL_GREEN_PENDING_RECONCILIATION
 
-The user chose to continue from written annotations because annotated image
-files were not present in the worktree. Final browser renders are captured
-below. Literal image overlay against the missing source screenshots remains
-unavailable; the status stays pending reconciliation.
+Branch: `feat/client-content-phase-3-2026-09-27`
 
-## Isolation
+Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`
 
-- Worktree: /Users/masjak/Developer/BlessingForGood-client-content
-- Branch: feat/client-content-phase-3-2026-09-27
-- Parent: 3ba8a388c20e50cc2986a77ac7cd2fab13f768cd
-- Initial Phase 3 HEAD: 3ba8a388c20e50cc2986a77ac7cd2fab13f768cd
-- Final HEAD: reported by `git rev-parse HEAD` in the final UAT response.
-- Other worktrees, origin/main, production, and Security QA were left untouched.
-  No merge or deployment was performed.
+Phase 3C applies the latest client annotations literally to the existing
+production components. This supersedes the prior Phase 3 visual
+interpretation. No Phase 4 work or deployment was performed.
 
-## Four Engineering Understandings
+## Redline Interpretation
 
-- Prompt: Implement the written client structure and copy, then inspect actual
-  desktop and mobile browser renders.
-- Context: Presentation changed; Phase 2 onboarding, commerce, auth, membership,
-  and business policy behavior stayed on existing paths.
-- Harness: Browser renders verified section and card order, protected Catalog
-  access, onboarding states, responsive geometry, and Blessy placement.
-- Memory: The website remains the ordering and account system; WhatsApp remains
-  community, curation, PO information, and communication. Phase 2 owns admission.
-  Secret Catalog remains protected. PO Random remains frozen for Phase 4.
+- Yellow/green text overlay: replace the exact text underneath.
+- Red X: remove the marked existing element.
+- Arrow: move the existing card or section to the marked position.
+- No annotation: preserve the existing UI and behavior.
 
-## Client Annotation Matrix
+The three-step Home journey remains in the Hero. The duplicate lower Home
+journey was removed. The existing WhatsApp group section was moved into the
+access-card sequence and reused; it was not cloned. The access-card DOM order is
+`join-whatsapp` → `secret-catalog` → `ready-stock` → `blessfriend-account`.
 
-| Request | Previous Phase 3 state at reopen | Final state | Evidence | Result |
-| --- | --- | --- | --- | --- |
-| Hero | Generic “Rumah buku pilihan…” positioning did not use the requested hierarchy. | Requested eyebrow, specialist headline, and supporting copy; existing CTAs remain. | [home-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-390.png), [home-1024.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-1024.png) | PASS |
-| WhatsApp / website information | Channel roles were less direct and did not use the requested explanation/action. | Requested WhatsApp-community and website-order copy with /how-to-order link. | [home-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-390.png) | PASS |
-| Cara Pembelian | Visible three steps did not follow the annotated group → account → purchase wording. | Kept the compact timeline and replaced its copy with the requested wording. | [home-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-390.png) | PASS |
-| Remove Temukan Buku intro | Intro and supporting paragraph remained in the homepage hierarchy. | Removed both from the rendered DOM; no spacer remains. | Browser DOM assertions at all eight widths. | PASS |
-| Join WhatsApp Group | No distinct group-information block preceded the access/account journey. | Added requested heading, prerequisite/community copy, and canonical https://wa.me/6282347278881 action. | [home-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-390.png), [home-1024.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-1024.png) | PASS |
-| Secret Catalog | Was not positioned after community and before account/Ready Stock. | First access card; /catalog route and code gate remain. No private titles/grid render publicly. | Homepage renders and protected-gateway browser assertion. | PASS |
-| Blessfriend account | Was not the middle block in the requested customer journey. | Between Secret Catalog and Ready Stock. Phase 2 states control actions: new can register; pending has no duplicate registration; approved gets activation guidance; active has account access; suspended has no bypass. | [state-signed-out-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/state-signed-out-390.png), [state-pending-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/state-pending-390.png), [state-approved-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/state-approved-390.png), [state-active-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/state-active-390.png), [state-suspended-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/state-suspended-390.png) | PASS |
-| Ready Stock | “Pilihan Utama” and old supporting copy remained. | Removed “Pilihan Utama”, updated copy, kept Ready Stock and its /ready-stock action. | Homepage renders and all-width DOM assertions. | PASS |
-| Quick guidance | Could substitute for the missing visible access/commerce blocks. | Retained two secondary disclosures after the cards: Cara pesan di BFG and Lihat PO yang sedang berjalan. | [home-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-390.png) | PASS |
-| Blessy | Previous report said Blessy was hidden on Home and How To Order. | Visible in normal flow after the site shell on both routes; bubble suppressed. Checks confirm copy/action/nav clearance on mobile and CTA/mascot/close clearance. | [home-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/home-390.png), [how-to-order-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/how-to-order-390.png), Blessy suite 10/10. | PASS |
-| How To Order | Copy/headings did not match the annotated seven-step hierarchy. | Timeline retained, framing and all seven headings updated. Invoice, DP, ETA, OOS/defect, and refund copy stays policy-safe. | [how-to-order-390.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/how-to-order-390.png), [how-to-order-768.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/how-to-order-768.png), [how-to-order-1440.png](../../test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/how-to-order-1440.png) | PASS |
-| Mobile hierarchy | Previous order and collision behavior had not passed client review. | Join precedes cards; cards stack Secret Catalog → account → Ready Stock; CTAs wrap without overflow; Blessy stays below content and clears fixed navigation. | Home/How To Order at eight widths; responsive and Blessy geometry assertions. | PASS |
+## Homepage Replacement Map
 
-## Final Homepage DOM Order
+All changed Home copy is in [`src/app/page.tsx`](../../src/app/page.tsx), except
+the Blessfriend account copy in [`src/components/home-onboarding.tsx`](../../src/components/home-onboarding.tsx).
+The responsive assertions are in
+[`tests/e2e/client-onboarding-responsive.spec.ts`](../../tests/e2e/client-onboarding-responsive.spec.ts).
 
-hero (home-hero) → WhatsApp/website information (home-channel-section) →
-Cara Pembelian (cara-order) → Join WhatsApp Group (join-whatsapp) → access and
-commerce (akses-buku: Secret Catalog → Blessfriend account → Ready Stock) →
-quick guidance (home-quick-guidance) → story (bfg-story).
+| Client target | Old source copy or baseline state → final client copy | Screenshot evidence |
+| --- | --- | --- |
+| Hero eyebrow | `Official website Blessing For Good` → `official website blessing for good` | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Hero headline | `Specialist Children & Collector Books` → `SPECIALIST CHILDREN & COLLECTOR BOOKS 📚` | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Hero description | `Kami mengkurasi children books, novel books, dan collector special edition pilihan untuk Blessfriends.` → `kami mengkurasi buku-buku children books, novel books dan collector special edition` | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| WhatsApp/website info | `Dapatkan kurasi buku, informasi PO, dan update terbaru melalui WhatsApp Group BFG. Website digunakan untuk belanja, melihat pesanan, tagihan, dan tracking buku.` → `WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi pengalaman yang menyenangkan` | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Info action | `Pelajari ketentuan PO buku di BFG →` → `pelajari ketentuan PO buku di kami`; `/how-to-order` retained | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Existing Hero journey | `Perjalanan bukumu`; `Temukan` / `Pilih Ready Stock atau katalog pilihan.`; `Pesan` / `Pilih buku, format, dan jumlah.`; `Ikuti` / `Pantau tagihan sampai pengiriman.` → `cara pembelian di Blessing for good`; steps `gabung ke whatsapp group`, `buat account di website kami`, `pilih buku yang ingin dibeli` with the exact client bodies below | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Join WhatsApp card | Existing `Komunitas BFG`, `Gabung WhatsApp Group Blessing For Good`, and old supporting paragraph → eyebrow `GABUNG WHATSAPP GROUP`, heading `BLESSING FOR GOOD`, and `wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari`. Existing `https://wa.me/6282347278881` handoff retained. | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Secret Catalog | `Katalog buku dari PO yang sedang berjalan. Access code Secret Catalog dibagikan melalui WhatsApp Group BFG.` → `katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group`. `Buka Secret Catalog` and protected `/catalog` gateway retained. | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Ready Stock | `Buku Ready Stock tersedia untuk dipesan langsung oleh Blessfriends melalui website.` → `buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi Blessfriends`. `Lihat Ready Stock` and route retained. | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
+| Blessfriend account | `Account Blessfriend digunakan untuk melihat katalog PO, memesan buku, mengecek riwayat pesanan, tagihan, dan perjalanan buku.` → `wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website`. Signed-out heading was already `Buat account website untuk Blessfriends` and remains exact. | [Home 390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png) |
 
-Join uses the existing canonical WhatsApp contact. Secret Catalog links to
-/catalog; protected catalog data is not rendered on the homepage.
+The old lower Home preview in `src/app/page.tsx` and its `previewOrderSteps`
+array in `src/components/how-to-order.tsx` were removed to avoid a second
+three-step journey below the existing Hero journey. Both existing Hero CTA
+buttons and their routes remain intact.
 
-## Hero
+The red-X `TEMUKAN BUKU` block and the exact supporting line `Mulai dari buku
+yang ingin kamu temukan.` were already absent from the branch baseline. The
+final DOM still asserts both are absent, and the direct Home section-order
+assertion confirms no spacer or extra section was introduced. `PILIHAN UTAMA`
+was also absent at baseline; the final rendered page asserts it remains absent.
+The old `Komunitas BFG` eyebrow was present in the old Join card and was removed
+when that existing card was replaced and moved. Other uses of words such as
+“Temukan”, “Pesan”, and “Ikuti” elsewhere remain untouched.
 
-- Supporting line: Official website Blessing For Good
-- Headline: Specialist Children & Collector Books
-- Description: Kami mengkurasi children books, novel books, dan collector
-  special edition pilihan untuk Blessfriends.
-- CTAs: Lihat Ready Stock → /ready-stock; Buka Secret Catalog → /catalog.
+The responsive E2E test asserts exact Hero and journey copy, absence of the old
+Hero headline and old journey labels inside `.home-journey`, absence of the
+removed Temukan block and crossed labels, and exact card order using stable
+`data-testid` values. All six Home screenshots are captured:
+[375](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-375.png),
+[390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-390.png),
+[430](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-430.png),
+[768](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-768.png),
+[1024](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-1024.png), and
+[1440](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/home-1440.png).
 
-## WhatsApp / Website
+## Removed
 
-Lead: WhatsApp jadi ruang utama komunitas Blessfriends. The body explains
-curation, PO information, and updates in WhatsApp; the website is used for
-shopping, orders, invoices, and tracking. Secondary action: Pelajari ketentuan
-PO buku di BFG → /how-to-order.
+- Temukan Buku intro: already absent at baseline; final DOM checks assert the
+  marked heading and tagline are absent and no empty section remains.
+- Pilihan Utama: already absent at baseline; final DOM check confirms absence.
+- Komunitas BFG: removed from the existing Join card when its annotated label
+  and card content were replaced.
+- Old Hero journey labels Temukan, Pesan, and Ikuti: replaced within the
+  existing `.home-journey` component. The same words in unrelated UI remain.
+- Duplicate lower Home journey: removed so the Hero journey is not repeated.
 
-## Cara Pembelian
+## Final Card Order
 
-1. Gabung ke WhatsApp Group — join for updates, curation, and PO information.
-2. Buat account di website kami — use the Blessfriend account for orders, open
-   POs, invoices, and tracking.
-3. Pilih buku yang ingin dibeli — order on the website or confirm through the
-   WhatsApp Group; no automatic import is implied.
+1. Join WhatsApp Group
+2. Secret Catalog
+3. Ready Stock
+4. Blessfriend account
 
-## Access / Commerce
-
-- Join WhatsApp: prerequisite/community copy; CTA uses Phase 2 contact number
-  6282347278881, without an expiring group URL.
-- Secret Catalog: explains current PO books and that access codes are shared
-  through the WhatsApp Group. Existing /catalog gateway and access rules remain.
-- Blessfriend account: explains PO catalog access, ordering, history, invoices,
-  and tracking. Existing ProductContext and Phase 2 admission govern state.
-- Ready Stock: says available books can be ordered directly by Blessfriends
-  through the website. Existing route and behavior remain.
-
-## Removed Elements
-
-- Temukan Buku intro, tagline, and supporting paragraph are absent from the DOM.
-- Pilihan Utama is absent.
-- No second onboarding form, duplicate membership source, automatic WhatsApp
-  order import, PO Random UI, or private Catalog content was added.
-
-## Blessy
-
-- Homepage / How To Order: visible after the site shell in document flow; the
-  bubble is suppressed, while the close control stays attached to the artwork.
-- Mobile: 72px artwork follows page content with bottom-nav clearance. Browser
-  checks confirmed it stays below copy/actions and the nav remains hit-testable.
-- Responsive clearance and standalone floating Blessy suite passed.
+The Playwright DOM assertion compares those exact `data-testid` values in the
+`.home-access-grid`. Secret Catalog and Ready Stock are existing cards; neither
+was cloned. Their existing routes and authorization behavior remain.
 
 ## How To Order
 
-Framing: Ketentuan order di BFG; Dari memilih buku sampai tiba di tanganmu.
-Support: Harap baca ketentuan order agar Blessfriends memahami proses
-pembelian di BFG.
+The route keeps the production layout and seven-step timeline. The annotated
+eyebrow, intro, and steps were replaced in
+[`src/components/how-to-order-page-heading.tsx`](../../src/components/how-to-order-page-heading.tsx)
+and [`src/components/how-to-order.tsx`](../../src/components/how-to-order.tsx).
 
-Seven-step timeline: Pilih bukunya → History order buku kamu → Invoice →
-Pembayaran → Pelunasan → Cek perjalanan buku kamu → Buku sampai.
+Correction 2026-09-28: the unannotated Step 04 was restored from the canonical
+`origin/main` source at `e4fe092`. Focused tests assert the exact preserved copy,
+one payment heading at Step 05, and absence of the earlier duplicate payment
+text. The responsive run passed at 375, 390, 430, 768, 1024, and 1440px.
 
-Copy does not promise H+1/H+2 invoice timing, a universal 30% DP, unconditional
-100% refund, or a fixed delivery guarantee. Existing approximate operating
-copy remains approximate. No Finance behavior changed. The page retains its
-existing published CMS heading override; the local browser fixture rendered the
-new default because it has no published block. Check any live override during
-client reconciliation.
+Page intro:
 
-## Responsive
+> harap dibaca untuk ketentuan order di kami, agar setelahnya Blessfriends mengetahui sistem pembelian di kami
 
-- Home and How To Order rendered at 375, 390, 430, 768, 834, 1024, 1280, and
-  1440px.
-- Required captures include Home 375, 390, 430, 768, 1024, 1440 and How To
-  Order 390, 768, 1440, plus the other widths and eight onboarding states.
-- Browser checks passed for DOM/card order, copy, CTA routes, no horizontal
-  overflow, timeline layout, mobile-nav hit testing, and Blessy placement.
-- Screenshot directory:
-  test-results/client-onboarding-responsi-76af1--responsive-widths-customer-customer-390/
+Step 01:
 
-## Green Preservation
+- Heading: `pilih bukunya`
+- Body: `bisa fix lewat wa group (nantinya admin akan merekap ke account website masing2 blessfriends) atau bisa dilakukan pembelian via website langsung`
 
-- Phase 2 onboarding/membership/auth paths: full frontend and eight-state
-  browser matrix passed; no admission logic changed.
-- Secret Catalog: frontend/Convex coverage passed; browser reached the access
-  code form without public Catalog rows.
-- Ready Stock, Cart, Finance: frontend/Convex regressions passed; focused Cart
-  check passed 4 files / 23 tests.
-- Security QA: separate worktree was not entered or modified.
-- No commerce, auth, membership, or business-policy implementation changed.
+Step 02:
+
+- Heading: `history order buku kamu`
+- Body: `setiap pembelian baik di wa / di website akan langsung muncul di account masing2 blessfriends buku apa yang sudah dibeli di kami`
+
+Step 03:
+
+- Heading: `invoice`
+- Body: `invoice akan muncul di website h+1/h+2 setelah close PO, karena kami membuka banyak cargo setiap batch, maka diperhatikan di bagian tagihan pada account website kamu, admin invoice kami akan pc masing2 customer menginfokan bahwa invoice sudah terbit di website`
+
+Step 04 is the exact unannotated source content from `origin/main` at
+`e4fe092`:
+
+- Heading: `Pesanan diproses`
+- Body: `Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.`
+
+Step 05:
+
+- Heading: `pembayaran`
+- Body: `pembayaran di kami adalah DP 30% atau jika ada DP tertentu di tiap cargo akan kami infokan saat kami menurunkan matprom di group whatsapp`
+
+Step 05 contains the only payment heading and the exact client DP 30% display
+copy. Regression checks assert the seven-step sequence and reject a duplicated
+payment heading.
+
+Step 06:
+
+- Heading: `cek perjalanan buku kamu`
+- Body: `PO reguler membutuhkan waktu 4-5 bulan sejak di order pertama kali, pembelian bukumu bisa langsung di tracking di account website kamu`
+
+Step 07 preserved exactly:
+
+- Heading: `Buku sampai`
+- Body: `Setelah buku tiba dan selesai diproses oleh BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.`
+
+[`tests/components/how-to-order.test.tsx`](../../tests/components/how-to-order.test.tsx)
+asserts the exact six replacements, the preserved Step 04 and Step 07 copy,
+and that seven steps remain. The responsive browser test repeats the seven
+headings and step count at each requested width. How To Order screenshots:
+[375](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/how-to-order-375.png),
+[390](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/how-to-order-390.png),
+[430](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/how-to-order-430.png),
+[768](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/how-to-order-768.png),
+[1024](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/how-to-order-1024.png), and
+[1440](../../test-results/client-onboarding-responsi-89364--responsive-widths-customer-customer-390/how-to-order-1440.png).
+
+## Operational Copy and Behavior Check
+
+H+1/H+2, DP 30%, and 4-5 months remain client-provided display copy. No
+automation or guarantee was added. The existing implementation differs from
+the text where verified:
+
+| Client display copy | Existing business behavior | Phase 3C action |
+| --- | --- | --- |
+| Invoice appears H+1/H+2 after PO close | Invoices are issued through Admin-authorized mutations; the batch issuance path requires a current shipment stage. No H+1/H+2 scheduler was found. | Copy only; Invoice behavior unchanged. |
+| DP is 30%, or a cargo-specific DP | Invoice requirements support `none`, `fixed`, or `percentage` values; a global 30% rule is not enforced. | Copy only; Finance calculations unchanged. |
+| PO takes 4-5 months from first order | Batch ETA is an optional Admin-maintained cargo month. No universal 4-5-month ETA is computed. | Copy only; Batch ETA logic unchanged. |
+
+These are operational copy/logic mismatches to reconcile during client or
+Production UAT. No behavioral state machine was modified in this phase.
+
+## Runtime
+
+- `/`: direct authenticated Clerk runtime could not be verified locally because
+  the local Clerk `publishableKey` is unavailable. No Clerk secret was added.
+- `/how-to-order`: the production `HowToOrderPage` rendered locally through the
+  display-only harness and was also reached through its real route from Home;
+  real authenticated Clerk runtime remains unverified.
+- Verification harness: the existing guarded routes import the exact production
+  `HomePage` and `HowToOrderPage`; they contain no alternate homepage copy and
+  return 404 in production. The local-only
+  `BFG_PRESENTATION_VERIFICATION=true` path omits Clerk and provides only a
+  local Convex context needed by the real shell hooks.
+- Recorded state: `REAL_AUTH_RUNTIME_UNVERIFIED_LOCAL`. Component-level
+  screenshots are not Production UAT.
 
 ## QA
 
 | Check | Result |
 | --- | --- |
-| Focused Phase 3 components | 4 files / 40 tests passed. |
-| Focused Cart regression | 4 files / 23 tests passed. |
-| Full frontend suite | 75 files / 476 tests passed, serially. |
-| Convex suite | 47 files / 310 tests passed using a 180-second Vitest timeout for the known 2,000-item backfill. The default combined run hit that existing test's 120-second timeout; no Convex code changed. |
-| Responsive browser | 2 tests passed; eight widths, eight onboarding states, protected Catalog gate; screenshots retained. |
-| Blessy browser | 10 tests passed in isolation. One earlier combined attempt hit a 30-second local navigation timeout; isolated rerun passed without a product-code change. |
+| Focused Phase 3C | 3 files / 17 tests passed. |
+| Phase 2 onboarding and membership/auth | 4 files / 23 tests passed; state-dependent onboarding assertions remain in component coverage. |
+| Secret Catalog / Catalog | 4 files / 50 tests passed. |
+| Ready Stock | 1 file / 9 tests passed. |
+| Cart | 4 files / 23 tests passed. |
+| Responsive Playwright | 2 tests passed. Home and How To Order rendered at 375, 390, 430, 768, 1024, and 1440px. Screenshots captured at every width. |
+| Broader Phase 07.1 surface E2E | 6 passed; 3 route-dependent checks failed in the keyless local harness: two Ready Stock select/anchor checks and the authenticated Activity route. The changed Home and How To Order assertions passed. |
+| Full frontend | 75 files / 476 tests passed with `npm run test:run -- --project=frontend`. |
+| Full Convex | 47 files / 310 tests passed with `--testTimeout=180000` for the existing large backfill test. |
+| Combined Vitest command | One Convex test timed out at its default 120 seconds (`convex/batchAutoAssignment.test.ts`, 2,000-item backfill); the full frontend and Convex projects passed when run separately. |
 | TypeScript | Passed with `npm run typecheck`. |
 | ESLint | Passed with `npm run lint`. |
 | Format | Passed with `npm run format:check`. |
-| git diff --check | Passed. |
-| Build | Not rerun; the known Phase 2 Convex provider prerender issue was left untouched. |
+| `git diff --check` | Passed after the report update. |
+| Production runtime / authenticated UAT | Unverified locally; Clerk local keys are missing. |
+| Security QA / Phase 4 / deployment | Not modified / not started / not deployed. |
 
-## Commit
+The final responsive test checks horizontal overflow, Hero/card copy wrapping,
+exact card order, minimum 44px action targets, no removed-section spacer,
+Blessy placement, and mobile navigation clearance. The signed-out component
+render was used because local Clerk keys are unavailable. Phase 2 onboarding
+state behavior is covered by the full frontend suite; no live authenticated
+state matrix was claimed.
 
-Commit: feat(client-content): align homepage and order guidance with client UAT.
-The final branch HEAD is reported in the UAT response. No merge, Phase 4 work,
-or deploy.
+## Source Audit: Old String → Source → Result
+
+- `Official website Blessing For Good` → `src/app/page.tsx` → replaced with
+  `official website blessing for good`.
+- `Specialist Children & Collector Books` → `src/app/page.tsx` → replaced with
+  `SPECIALIST CHILDREN & COLLECTOR BOOKS 📚`; exact old heading absent in the
+  final component.
+- Old Hero description → `src/app/page.tsx` → replaced with the exact client
+  description in the Homepage Replacement Map.
+- `Perjalanan bukumu`, `Temukan`, `Pesan`, and `Ikuti` plus their old step
+  bodies → `src/app/page.tsx` → replaced inside the existing Hero journey.
+- Old WhatsApp/website paragraph and `Pelajari ketentuan PO buku di BFG →` →
+  `src/app/page.tsx` → replaced with the exact client paragraph and action.
+- Old community eyebrow, Join heading, and supporting copy → `src/app/page.tsx`
+  → replaced as the Join WhatsApp card and moved to position 1.
+- Old duplicate `home-order-section` and its three preview steps →
+  `src/app/page.tsx`, `src/components/how-to-order.tsx`, and `src/app/globals.css`
+  → removed; the existing Hero journey is the sole three-step Home component.
+- Old Secret Catalog description → `src/app/page.tsx` → replaced; CTA and
+  protected gateway retained.
+- Old Ready Stock description → `src/app/page.tsx` → replaced; CTA and route
+  retained. `PILIHAN UTAMA` was already absent at branch baseline.
+- `Account Blessfriend digunakan untuk melihat katalog PO, memesan buku,
+  mengecek riwayat pesanan, tagihan, dan perjalanan buku.` →
+  `src/components/home-onboarding.tsx` → replaced with the exact client body;
+  the signed-out account heading was already exact and remains so.
+- `TEMUKAN BUKU` and `Mulai dari buku yang ingin kamu temukan.` → no matching
+  source block at branch baseline → remain absent; E2E checks both and verifies
+  no extra Home section.
+- `Ketentuan order di BFG` and `Harap baca ketentuan order agar Blessfriends
+  memahami proses pembelian di BFG.` →
+  `src/components/how-to-order-page-heading.tsx` → replaced with the exact
+  client eyebrow and intro above; the old published-content override no longer
+  supersedes the annotated client copy. `Dari memilih buku sampai tiba di
+  tanganmu.` is retained.
+- Step 01 `Pilih bukunya` and `Pilih buku melalui website atau konfirmasi
+  pilihan di WhatsApp Group BFG. Admin dapat mencatat pesanan WhatsApp secara
+  manual ke akun Blessfriend.` → `src/components/how-to-order.tsx` → replaced
+  with the exact client Step 01 copy above.
+- Step 02 `History order buku kamu` and `Buku yang sudah dicatat dapat kamu
+  lihat kembali melalui Buku Saya di account Blessfriend.` →
+  `src/components/how-to-order.tsx` → replaced with the exact client Step 02
+  copy above.
+- Step 03 `Invoice` and `Admin menerbitkan invoice sesuai proses BFG. Saat
+  tersedia, cek menu Tagihan; notifikasi akan muncul di akun Blessfriend.` →
+  `src/components/how-to-order.tsx` → replaced with the exact client Step 03
+  copy above. H+1/H+2 remains display copy only.
+- Step 05 `Pelunasan` and `Pelunasan buku akan ditagihkan sekitar 3–5 minggu
+  sebelum diperkirakan tiba di warehouse BFG.` →
+  `src/components/how-to-order.tsx` → replaced with the exact client
+  `pembayaran` / DP 30% copy above.
+- Step 06 `Cek perjalanan buku kamu` and `PO reguler umumnya membutuhkan
+  sekitar 4–5 bulan sejak pemesanan awal. Pantau perkembangan pesanan di Buku
+  Saya.` → `src/components/how-to-order.tsx` → replaced with the exact client
+  Step 06 copy above.
+- Step 04 and Step 07 → `src/components/how-to-order.tsx` → preserved with
+  exact existing title and body.
+
+The source scan found the unrelated Help heading `Perjalanan bukumu tersimpan di akun.` in `src/app/help/page.tsx`; it remains untouched. This is outside the replaced Home journey.
 
 ## Final Verdict
 
-PHASE_3_CLIENT_VISUAL_GREEN_PENDING_RECONCILIATION
+`PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`

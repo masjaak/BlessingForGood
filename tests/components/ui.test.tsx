@@ -180,11 +180,13 @@ describe("public UI foundation", () => {
     expect(screen.getByRole("link", { name: "Minta link WhatsApp Group" }).getAttribute("href")).toBe(
       "https://wa.me/6282347278881",
     );
-    expect(screen.getByRole("link", { name: /Lihat cara memesan/ }).getAttribute("href")).toBe("/how-to-order");
+    expect(screen.getByRole("link", { name: "pelajari ketentuan PO buku di kami" }).getAttribute("href")).toBe(
+      "/how-to-order",
+    );
     expect(screen.getByRole("heading", { name: "Ready Stock" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Secret Catalog" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Gabung WhatsApp Group Blessing For Good" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Perjalanan bukumu" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "BLESSING FOR GOOD" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "cara pembelian di Blessing for good" })).toBeTruthy();
     expect(document.querySelector(".hero-panel")).toBeNull();
     expect(screen.queryByText("Kenalan dulu, lalu pilih langkahmu.")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Cara memesan" })[0].getAttribute("href")).toBe("/how-to-order");

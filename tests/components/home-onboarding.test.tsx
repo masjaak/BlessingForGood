@@ -30,7 +30,7 @@ describe("Homepage Blessfriend onboarding", () => {
     expect(screen.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
     expect(
       screen.getByText(
-        "Account Blessfriend digunakan untuk melihat katalog PO, memesan buku, mengecek riwayat pesanan, tagihan, dan perjalanan buku.",
+        "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
       ),
     ).toBeTruthy();
     expect(

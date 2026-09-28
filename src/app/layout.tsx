@@ -4,6 +4,7 @@ import { BfgSplash } from "@/components/bfg-splash";
 import { bfgClerkAppearance, bfgClerkLocalization } from "@/config/clerk";
 import { ProductProvider } from "@/domain/prototype/store";
 import { FloatingBlessyGuide } from "@/features/floating-blessy";
+import { LocalPresentationConvexProvider } from "@/app/verification/local-presentation-convex-provider";
 import "./globals.css";
 
 const SITE_TITLE = "Blessing For Good — Imported Bookstore & Community";
@@ -48,16 +49,26 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const localPresentationVerification =
+    process.env.NODE_ENV !== "production" && process.env.BFG_PRESENTATION_VERIFICATION === "true";
+  const content = (
+    <ProductProvider>
+      <BfgSplash />
+      {children}
+      <FloatingBlessyGuide />
+    </ProductProvider>
+  );
+
   return (
     <html lang="id">
       <body>
-        <ClerkProvider appearance={bfgClerkAppearance} localization={bfgClerkLocalization}>
-          <ProductProvider>
-            <BfgSplash />
-            {children}
-            <FloatingBlessyGuide />
-          </ProductProvider>
-        </ClerkProvider>
+        {localPresentationVerification ? (
+          <LocalPresentationConvexProvider>{content}</LocalPresentationConvexProvider>
+        ) : (
+          <ClerkProvider appearance={bfgClerkAppearance} localization={bfgClerkLocalization}>
+            {content}
+          </ClerkProvider>
+        )}
       </body>
     </html>
   );

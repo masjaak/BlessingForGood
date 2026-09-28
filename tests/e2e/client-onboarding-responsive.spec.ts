@@ -1,13 +1,9 @@
 import { mkdir } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
-const states = ["signed-out", "unadmitted", "pending", "approved", "active", "suspended", "admin", "owner"] as const;
-const whatsappMessage =
-  "Halo BFG, aku sudah mengisi pendaftaran Blessfriends di website. Aku ingin meminta link untuk bergabung ke WhatsApp Group BFG.";
+const states = ["signed-out"] as const;
 
-test("renders onboarding state matrix and Phase 3 homepage and guide at responsive widths @customer", async ({
-  page,
-}, testInfo) => {
+test("renders the client redline homepage and guide at responsive widths @customer", async ({ page }, testInfo) => {
   test.skip(
     testInfo.project.name !== "customer-390",
     "This explicit responsive matrix runs once from the 390px customer project.",
@@ -36,128 +32,160 @@ test("renders onboarding state matrix and Phase 3 homepage and guide at responsi
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Dapatkan kurasi buku, informasi PO, dan update terbaru melalui WhatsApp Group BFG. Website digunakan untuk belanja, melihat pesanan, tagihan, dan tracking buku.",
+        "WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi pengalaman yang menyenangkan",
       ),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Gabung WhatsApp Group Blessing For Good" })).toBeVisible();
+    await expect(
+      page.getByText(
+        "Dapatkan kurasi buku, informasi PO, dan update terbaru melalui WhatsApp Group BFG. Website digunakan untuk belanja, melihat pesanan, tagihan, dan tracking buku.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    const joinCard = page.getByTestId("join-whatsapp");
+    await expect(joinCard.getByText("GABUNG WHATSAPP GROUP", { exact: true })).toBeVisible();
+    await expect(joinCard.getByRole("heading", { name: "BLESSING FOR GOOD" })).toBeVisible();
+    await expect(
+      joinCard.getByText(
+        "wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari",
+      ),
+    ).toBeVisible();
+    await expect(joinCard.getByRole("heading", { name: "Gabung WhatsApp Group Blessing For Good" })).toHaveCount(0);
+    await expect(joinCard.getByText("Komunitas BFG", { exact: true })).toHaveCount(0);
+    await expect(
+      joinCard.getByText(
+        "Wajib bergabung sebelum menyelesaikan pendaftaran Blessfriend. Di WhatsApp Group BFG kami membagikan kurasi buku, informasi PO, dan update terbaru.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
     const joinGroup = page.getByRole("link", { name: "Minta link WhatsApp Group" }).first();
     await expect(joinGroup).toHaveAttribute("href", "https://wa.me/6282347278881");
     await expect(page.getByRole("heading", { name: "Secret Catalog" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Ready Stock", exact: true })).toBeVisible();
-    await expect(page.getByText("Pilihan Utama", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("Temukan Buku", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("PILIHAN UTAMA", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("KOMUNITAS BFG", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("TEMUKAN BUKU", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Mulai dari buku yang ingin kamu temukan.", { exact: true })).toHaveCount(0);
     await expect(quickGuidance.locator(".home-guidance-disclosure")).toHaveCount(2);
     await expect(
-      page.getByText("Buku Ready Stock tersedia untuk dipesan langsung oleh Blessfriends melalui website."),
+      page.getByText(
+        "buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi Blessfriends",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText("katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group"),
     ).toBeVisible();
     await expect(
       page.getByText(
         "Katalog buku dari PO yang sedang berjalan. Access code Secret Catalog dibagikan melalui WhatsApp Group BFG.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("Buku Ready Stock tersedia untuk dipesan langsung oleh Blessfriends melalui website.", {
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "Account Blessfriend digunakan untuk melihat katalog PO, memesan buku, mengecek riwayat pesanan, tagihan, dan perjalanan buku.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    const journey = page.locator(".home-journey");
+    await expect(journey.getByRole("heading", { name: "cara pembelian di Blessing for good" })).toBeVisible();
+    await expect(journey.locator(".hero-sequence > li")).toHaveCount(3);
+    await expect(journey.locator(".hero-sequence strong")).toHaveText([
+      "gabung ke whatsapp group",
+      "buat account di website kami",
+      "pilih buku yang ingin dibeli",
+    ]);
+    await expect(journey.getByText("Temukan", { exact: true })).toHaveCount(0);
+    await expect(journey.getByText("Pesan", { exact: true })).toHaveCount(0);
+    await expect(journey.getByText("Ikuti", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".home-order-section, .community-section, .order-steps-preview")).toHaveCount(0);
+    expect((await page.locator(".home-hero h1").textContent())?.trim()).not.toBe(
+      "Specialist Children & Collector Books",
+    );
+    await expect(page.getByText("Official website Blessing For Good", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "Kami mengkurasi children books, novel books, dan collector special edition pilihan untuk Blessfriends.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
+    await expect(page.locator(".home-hero h1")).toHaveText("SPECIALIST CHILDREN & COLLECTOR BOOKS 📚");
+    await expect(page.locator(".home-hero .lede")).toHaveText(
+      "kami mengkurasi buku-buku children books, novel books dan collector special edition",
+    );
+    await expect(page.getByRole("link", { name: "pelajari ketentuan PO buku di kami" })).toHaveAttribute(
+      "href",
+      "/how-to-order",
+    );
+
+    await expect(region).toBeVisible();
+    await expect(region.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
+    await expect(
+      region.getByText(
+        "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
       ),
     ).toBeVisible();
+    await expect(region.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
 
-    if (state === "signed-out" || state === "unadmitted") {
-      await expect(region).toBeVisible();
-      await expect(region.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
-    } else if (state === "pending") {
-      await expect(page.getByRole("heading", { name: "Pendaftaranmu sudah diterima." })).toBeVisible();
-      const whatsapp = onboarding.getByRole("link", { name: "Minta link WhatsApp Group" });
-      const url = new URL((await whatsapp.getAttribute("href"))!);
-      expect(url.origin).toBe("https://wa.me");
-      expect(url.pathname).toBe("/6282347278881");
-      expect(url.searchParams.get("text")).toBe(whatsappMessage);
-      await expect(onboarding.getByRole("link", { name: "Daftar Blessfriend" })).toHaveCount(0);
-    } else if (state === "approved") {
-      await expect(page.getByRole("heading", { name: "Pendaftaranmu sudah disetujui." })).toBeVisible();
-      await expect(page.getByText("Cek email untuk menyelesaikan aktivasi akun.")).toBeVisible();
-      await expect(onboarding.getByRole("link", { name: "Daftar Blessfriend" })).toHaveCount(0);
-      await expect(onboarding.getByRole("link", { name: "Minta link WhatsApp Group" })).toHaveCount(0);
-    } else if (state === "active") {
-      await expect(onboarding).toBeVisible();
-      await expect(onboarding.getByRole("heading", { name: "Account Blessfriend" })).toBeVisible();
-      await expect(onboarding.getByRole("link", { name: "Buka account Blessfriend" })).toHaveAttribute(
-        "href",
-        "/account",
-      );
-      await expect(onboarding.getByRole("link", { name: "Daftar Blessfriend" })).toHaveCount(0);
-    } else if (state === "suspended") {
-      await expect(onboarding).toBeVisible();
-      await expect(onboarding.getByText("Akun Blessfriend ini sedang ditangguhkan.")).toBeVisible();
-      await expect(onboarding.getByRole("link", { name: "Daftar Blessfriend" })).toHaveCount(0);
-      await expect(onboarding.getByRole("link", { name: "Buka account Blessfriend" })).toHaveCount(0);
-    } else {
-      await expect(onboarding).toHaveCount(0);
-      await expect(region).toHaveCount(0);
-    }
+    const orderGuide = quickGuidance.locator("details").nth(0);
+    await orderGuide.locator("summary").click();
+    const orderLink = orderGuide.getByRole("link", { name: "Lihat cara pesan" });
+    await expect(orderLink).toHaveAttribute("href", "/how-to-order");
+    await orderLink.click();
+    await expect(page).toHaveURL(/\/how-to-order$/);
+    await expect(
+      page.locator(".how-to-order-page:visible").first().getByRole("heading", {
+        name: "Dari memilih buku sampai tiba di tanganmu.",
+      }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(".how-to-order-page:visible")
+        .first()
+        .getByText(
+          "harap dibaca untuk ketentuan order di kami, agar setelahnya Blessfriends mengetahui sistem pembelian di kami",
+        ),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(".how-to-order-page:visible")
+        .first()
+        .getByText(/invoice akan muncul di website h\+1\/h\+2/),
+    ).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/verification\/onboarding\?state=signed-out$/);
 
-    if (state === "signed-out") {
-      const orderGuide = quickGuidance.locator("details").nth(0);
-      await orderGuide.locator("summary").click();
-      const orderLink = orderGuide.getByRole("link", { name: "Lihat cara pesan" });
-      await expect(orderLink).toHaveAttribute("href", "/how-to-order");
-      await orderLink.click();
-      await expect(page).toHaveURL(/\/how-to-order$/);
-      await expect(
-        page.locator(".how-to-order-page:visible").first().getByRole("heading", {
-          name: "Dari memilih buku sampai tiba di tanganmu.",
-        }),
-      ).toBeVisible();
-      await expect(
-        page
-          .locator(".how-to-order-page:visible")
-          .first()
-          .getByText(/Admin menerbitkan invoice sesuai proses BFG/),
-      ).toBeVisible();
-      await expect(
-        page
-          .locator(".how-to-order-page:visible")
-          .first()
-          .getByText(/notifikasi akan muncul di akun Blessfriend/),
-      ).toBeVisible();
-      await page.goBack();
-      await expect(page).toHaveURL(/\/verification\/onboarding\?state=signed-out$/);
-
-      const ongoingPo = page.locator(".home-quick-guidance:visible").first().locator("details").nth(1);
-      await ongoingPo.locator("summary").click();
-      const catalogLink = ongoingPo.getByRole("link", { name: "Buka Secret Catalog" });
-      await expect(catalogLink).toHaveAttribute("href", "/catalog");
-      await catalogLink.click();
-      await expect(page).toHaveURL(/\/catalog$/);
-      await expect(page.locator(".catalog-access:visible")).toBeVisible();
-      await expect(page.getByLabel("Kode akses Secret Catalog")).toBeVisible();
-      await expect(page.locator(".catalog-grid")).toHaveCount(0);
-      await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("onboarding-presentation-state")).toHaveAttribute("data-state", "signed-out");
-    }
-
-    const anchor = state === "active" ? quickGuidance : onboarding;
+    const anchor = onboarding;
     if (await anchor.count()) await anchor.scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${evidenceDirectory}/state-${state}-390.png`, fullPage: true });
   }
 
-  await page.goto("/verification/onboarding?state=active", { waitUntil: "domcontentloaded" });
+  await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("onboarding-presentation-state")).toHaveAttribute("data-state", "active");
+  await expect(page.getByTestId("onboarding-presentation-state")).toHaveAttribute("data-state", "signed-out");
   await expect(page.locator(".home-onboarding-main")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Account Blessfriend" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Daftar Blessfriend" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
 
-  const widths = [375, 390, 430, 768, 834, 1024, 1280, 1440];
+  const widths = [375, 390, 430, 768, 1024, 1440];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/verification/onboarding?state=active", { waitUntil: "domcontentloaded" });
+    await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
     const widget = page.getByTestId("floating-blessy");
     await expect(widget).toBeVisible();
     const quickGuidance = page.locator(".home-quick-guidance:visible").first();
     await expect(quickGuidance).toBeVisible();
-    await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("Official website Blessing For Good");
-    await expect(page.getByRole("heading", { name: "Specialist Children & Collector Books" })).toBeVisible();
+    await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
+    await expect(page.getByRole("heading", { name: "SPECIALIST CHILDREN & COLLECTOR BOOKS 📚" })).toBeVisible();
     await expect(
-      page.getByText(
-        "Kami mengkurasi children books, novel books, dan collector special edition pilihan untuk Blessfriends.",
-      ),
+      page.getByText("kami mengkurasi buku-buku children books, novel books dan collector special edition"),
     ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "cara pembelian di Blessing for good" })).toBeVisible();
     await expect(
       page
         .locator(".home-page > section")
@@ -167,33 +195,21 @@ test("renders onboarding state matrix and Phase 3 homepage and guide at responsi
               section.id || [...section.classList].find((name) => !["section", "section-block", "hero"].includes(name)),
           ),
         ),
-    ).resolves.toEqual([
-      "home-hero",
-      "home-channel-section",
-      "cara-order",
-      "join-whatsapp",
-      "akses-buku",
-      "home-quick-guidance",
-      "bfg-story",
-    ]);
+    ).resolves.toEqual(["home-hero", "home-channel-section", "akses-buku", "home-quick-guidance", "bfg-story"]);
     await expect(
       page
         .locator(".home-access-grid > *")
-        .evaluateAll((cards) =>
-          cards.map((card) =>
-            card.classList.contains("discovery-card-secret")
-              ? "secret"
-              : card.classList.contains("home-onboarding-main")
-                ? "account"
-                : "ready",
-          ),
-        ),
-    ).resolves.toEqual(["secret", "account", "ready"]);
-    await expect(page.getByRole("heading", { name: "Cara Pembelian di Blessing For Good" })).toBeVisible();
-    await expect(page.locator(".home-order-section .order-step-content p")).toHaveText([
-      "Bergabung ke WhatsApp Group BFG untuk mendapatkan update, kurasi buku, dan informasi PO.",
-      "Gunakan account Blessfriend untuk melihat pesanan, PO yang sedang berjalan, tagihan, dan tracking buku.",
-      "Pemesanan dapat dilakukan melalui website atau dikonfirmasi melalui WhatsApp Group BFG.",
+        .evaluateAll((cards) => cards.map((card) => card.getAttribute("data-testid"))),
+    ).resolves.toEqual(["join-whatsapp", "secret-catalog", "ready-stock", "blessfriend-account"]);
+    const accessButtonHeights = await page
+      .locator(".home-access-grid .button")
+      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+    expect(accessButtonHeights).toHaveLength(5);
+    expect(accessButtonHeights.every((height) => height >= 44)).toBe(true);
+    await expect(page.locator(".home-journey .hero-sequence small")).toHaveText([
+      "agar kami lebih mudah reachout customer, kami mewajibkan customer kami bergabung di WA group",
+      "untuk memantau pesanan buku, check buku PO berjalan & melakukan pemesanan",
+      "bisa melakukan pembelian via website / fix langsung di WA group kami",
     ]);
     await expect(page.getByRole("link", { name: "Lihat Ready Stock" }).first()).toHaveAttribute("href", "/ready-stock");
     await expect(page.getByRole("link", { name: "Buka Secret Catalog" }).first()).toHaveAttribute("href", "/catalog");
@@ -212,7 +228,7 @@ test("renders onboarding state matrix and Phase 3 homepage and guide at responsi
       const summary = guidance?.querySelector("summary") ?? null;
       const ready = document.querySelector(".discovery-card-ready");
       const secret = document.querySelector(".discovery-card-secret");
-      const join = document.querySelector(".community-section");
+      const join = document.querySelector("[data-testid='join-whatsapp']");
       const account = document.querySelector(".home-onboarding-main");
       const widget = document.querySelector<HTMLElement>("[data-testid='floating-blessy']");
       const bubble = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
@@ -270,29 +286,52 @@ test("renders onboarding state matrix and Phase 3 homepage and guide at responsi
 
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/verification/how-to-order?state=active", { waitUntil: "domcontentloaded" });
+    await page.goto("/verification/how-to-order?state=signed-out", { waitUntil: "domcontentloaded" });
     const howToPage = page.locator(".how-to-order-page:visible").first();
     await expect(page.locator(".how-to-order-page:visible")).toHaveCount(1);
     await expect(howToPage.getByRole("heading", { name: "Dari memilih buku sampai tiba di tanganmu." })).toBeVisible();
     const journey = howToPage.getByRole("list", { name: "Langkah cara memesan" });
     await expect(journey.locator(":scope > li")).toHaveCount(7);
     await expect(journey.locator("h3")).toHaveText([
-      "Pilih bukunya",
-      "History order buku kamu",
-      "Invoice",
-      "Pembayaran",
-      "Pelunasan",
-      "Cek perjalanan buku kamu",
+      "pilih bukunya",
+      "history order buku kamu",
+      "invoice",
+      "Pesanan diproses",
+      "pembayaran",
+      "cek perjalanan buku kamu",
       "Buku sampai",
     ]);
-    await expect(howToPage.getByText("Ketentuan order di BFG")).toBeVisible();
+    await expect(journey.getByRole("heading", { name: "pembayaran", exact: true })).toHaveCount(1);
+    await expect(journey.getByRole("heading", { name: "Pembayaran", exact: true })).toHaveCount(0);
+    await expect(howToPage.getByText("ketentuan order di BFG")).toBeVisible();
     await expect(
-      howToPage.getByText("Harap baca ketentuan order agar Blessfriends memahami proses pembelian di BFG."),
+      howToPage.getByText(
+        "harap dibaca untuk ketentuan order di kami, agar setelahnya Blessfriends mengetahui sistem pembelian di kami",
+      ),
     ).toBeVisible();
-    await expect(howToPage.getByText(/Admin menerbitkan invoice sesuai proses BFG/)).toBeVisible();
-    await expect(howToPage.getByText(/Ketentuan DP mengikuti masing-masing PO/)).toBeVisible();
-    await expect(howToPage.getByText(/sekitar 3–5 minggu/)).toBeVisible();
-    await expect(howToPage.getByText(/sekitar 4–5 bulan/)).toBeVisible();
+    await expect(journey.locator("li").nth(0).locator("p")).toHaveText(
+      "bisa fix lewat wa group (nantinya admin akan merekap ke account website masing2 blessfriends) atau bisa dilakukan pembelian via website langsung",
+    );
+    await expect(journey.locator("li").nth(1).locator("p")).toHaveText(
+      "setiap pembelian baik di wa / di website akan langsung muncul di account masing2 blessfriends buku apa yang sudah dibeli di kami",
+    );
+    await expect(journey.locator("li").nth(2).locator("p")).toHaveText(
+      "invoice akan muncul di website h+1/h+2 setelah close PO, karena kami membuka banyak cargo setiap batch, maka diperhatikan di bagian tagihan pada account website kamu, admin invoice kami akan pc masing2 customer menginfokan bahwa invoice sudah terbit di website",
+    );
+    await expect(journey.locator("li").nth(3).locator("p")).toHaveText(
+      "Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.",
+    );
+    await expect(journey.locator("li").nth(4).locator("p")).toHaveText(
+      "pembayaran di kami adalah DP 30% atau jika ada DP tertentu di tiap cargo akan kami infokan saat kami menurunkan matprom di group whatsapp",
+    );
+    await expect(journey.locator("li").nth(5).locator("p")).toHaveText(
+      "PO reguler membutuhkan waktu 4-5 bulan sejak di order pertama kali, pembelian bukumu bisa langsung di tracking di account website kamu",
+    );
+    await expect(journey.locator("li").nth(6).locator("p")).toHaveText(
+      "Setelah buku tiba dan selesai diproses oleh BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
+    );
+    await expect(howToPage.getByText(/Admin menerbitkan invoice sesuai proses BFG/)).toHaveCount(0);
+    await expect(howToPage.getByText(/sekitar 3–5 minggu/)).toHaveCount(0);
     await expect(howToPage.getByText(/Jika ada buku OOS atau ditemukan defect/)).toBeVisible();
     const widget = page.getByTestId("floating-blessy");
     await expect(widget).toBeVisible();
@@ -322,8 +361,7 @@ test("renders onboarding state matrix and Phase 3 homepage and guide at responsi
 
   await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
   const close = page.getByRole("button", { name: "Tutup informasi selamat datang" });
-  await close.focus();
-  await page.keyboard.press("Enter");
+  await close.press("Enter");
   await expect(page.locator(".home-onboarding-main")).toHaveCount(0);
 });
 
@@ -339,7 +377,7 @@ test("keeps in-flow Blessy clear of copy, actions, and mobile navigation @custom
     document.addEventListener("DOMContentLoaded", () => document.head.append(style), { once: true });
   });
   for (const width of [375, 390, 430, 768, 834]) {
-    for (const route of ["/verification/onboarding?state=active", "/verification/how-to-order?state=active"]) {
+    for (const route of ["/verification/onboarding?state=signed-out", "/verification/how-to-order?state=signed-out"]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(route, { waitUntil: "domcontentloaded" });
       const widget = page.getByTestId("floating-blessy");

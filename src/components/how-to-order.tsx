@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { Card, LinkButton } from "@/components/ui";
 
 type OrderStepIconName = "discover" | "select" | "send" | "process" | "invoice" | "track" | "arrive";
@@ -12,54 +11,38 @@ type OrderStep = {
 
 export const orderSteps: OrderStep[] = [
   {
-    title: "Pilih bukunya",
-    description: (
-      <>
-        Pilih buku melalui website atau konfirmasi pilihan di WhatsApp Group BFG. Admin dapat mencatat pesanan WhatsApp
-        secara manual ke akun Blessfriend.
-      </>
-    ),
+    title: "pilih bukunya",
+    description:
+      "bisa fix lewat wa group (nantinya admin akan merekap ke account website masing2 blessfriends) atau bisa dilakukan pembelian via website langsung",
     icon: "discover",
   },
   {
-    title: "History order buku kamu",
-    description: (
-      <>
-        Buku yang sudah dicatat dapat kamu lihat kembali melalui <Link href="/account/orders">Buku Saya</Link> di
-        account Blessfriend.
-      </>
-    ),
+    title: "history order buku kamu",
+    description:
+      "setiap pembelian baik di wa / di website akan langsung muncul di account masing2 blessfriends buku apa yang sudah dibeli di kami",
     icon: "select",
   },
   {
-    title: "Invoice",
-    description: (
-      <>
-        Admin menerbitkan invoice sesuai proses BFG. Saat tersedia, cek menu{" "}
-        <Link href="/account/invoices">Tagihan</Link>; notifikasi akan muncul di akun Blessfriend.
-      </>
-    ),
-    icon: "invoice",
-  },
-  {
-    title: "Pembayaran",
+    title: "invoice",
     description:
-      "Ketentuan DP mengikuti masing-masing PO. Untuk PO reguler, nominal atau persentasenya diumumkan melalui WhatsApp Group BFG dan tercantum pada tagihan.",
+      "invoice akan muncul di website h+1/h+2 setelah close PO, karena kami membuka banyak cargo setiap batch, maka diperhatikan di bagian tagihan pada account website kamu, admin invoice kami akan pc masing2 customer menginfokan bahwa invoice sudah terbit di website",
     icon: "send",
   },
   {
-    title: "Pelunasan",
-    description: "Pelunasan buku akan ditagihkan sekitar 3–5 minggu sebelum diperkirakan tiba di warehouse BFG.",
+    title: "Pesanan diproses",
+    description: "Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.",
     icon: "process",
   },
   {
-    title: "Cek perjalanan buku kamu",
-    description: (
-      <>
-        PO reguler umumnya membutuhkan sekitar 4–5 bulan sejak pemesanan awal. Pantau perkembangan pesanan di{" "}
-        <Link href="/account/orders">Buku Saya</Link>.
-      </>
-    ),
+    title: "pembayaran",
+    description:
+      "pembayaran di kami adalah DP 30% atau jika ada DP tertentu di tiap cargo akan kami infokan saat kami menurunkan matprom di group whatsapp",
+    icon: "invoice",
+  },
+  {
+    title: "cek perjalanan buku kamu",
+    description:
+      "PO reguler membutuhkan waktu 4-5 bulan sejak di order pertama kali, pembelian bukumu bisa langsung di tracking di account website kamu",
     icon: "track",
   },
   {
@@ -82,25 +65,6 @@ const compactOrderSteps: OrderStep[] = [
   {
     title: "Ikuti sampai tiba",
     description: "Pantau perjalanan fulfillment dan pengiriman dari Buku Saya.",
-    icon: "arrive",
-  },
-];
-
-const previewOrderSteps: OrderStep[] = [
-  {
-    title: "Gabung ke WhatsApp Group",
-    description: "Bergabung ke WhatsApp Group BFG untuk mendapatkan update, kurasi buku, dan informasi PO.",
-    icon: "discover",
-  },
-  {
-    title: "Buat account di website kami",
-    description:
-      "Gunakan account Blessfriend untuk melihat pesanan, PO yang sedang berjalan, tagihan, dan tracking buku.",
-    icon: "process",
-  },
-  {
-    title: "Pilih buku yang ingin dibeli",
-    description: "Pemesanan dapat dilakukan melalui website atau dikonfirmasi melalui WhatsApp Group BFG.",
     icon: "arrive",
   },
 ];
@@ -184,14 +148,12 @@ function JourneyIcon({ name }: { name: OrderStepIconName }) {
   );
 }
 
-export function HowToOrderSteps({ compact = false, preview = false }: { compact?: boolean; preview?: boolean }) {
-  const steps = preview ? previewOrderSteps : compact ? compactOrderSteps : orderSteps;
+export function HowToOrderSteps({ compact = false }: { compact?: boolean }) {
+  const steps = compact ? compactOrderSteps : orderSteps;
   return (
     <ol
-      className={`order-steps${compact ? " order-steps-compact" : ""}${preview ? " order-steps-preview" : ""}`}
-      aria-label={
-        preview ? "Ringkasan cara memesan" : compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"
-      }
+      className={`order-steps${compact ? " order-steps-compact" : ""}`}
+      aria-label={compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"}
     >
       {steps.map((step, index) => (
         <li className="order-step" key={`${step.title}-${index}`}>
@@ -205,7 +167,7 @@ export function HowToOrderSteps({ compact = false, preview = false }: { compact?
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </div>
-          {index < steps.length - 1 && (preview || (compact ? index % 3 !== 2 : index % 4 !== 3)) ? (
+          {index < steps.length - 1 && (compact ? index % 3 !== 2 : index % 4 !== 3) ? (
             <span className="order-step-arrow" aria-hidden="true">
               →
             </span>
