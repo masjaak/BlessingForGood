@@ -54,8 +54,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ClerkProvider appearance={bfgClerkAppearance} localization={bfgClerkLocalization}>
           <ProductProvider>
             <BfgSplash />
-            <FloatingBlessyGuide />
             {children}
+            <FloatingBlessyGuide />
           </ProductProvider>
         </ClerkProvider>
       </body>

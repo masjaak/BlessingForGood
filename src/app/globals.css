@@ -3729,6 +3729,12 @@ p {
   line-height: 1.45;
 }
 
+.customer-shell .order-step p a {
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-underline-offset: 0.18em;
+}
+
 .customer-shell .order-step-arrow {
   display: none;
 }
@@ -4288,9 +4294,16 @@ p {
   background: var(--control-surface-hover);
 }
 
+.customer-shell .home-hero-entry-note h2,
 .customer-shell .home-hero-entry-note p,
 .customer-shell .home-hero-entry-note a {
   margin: 0;
+}
+
+.customer-shell .home-hero-entry-note h2 {
+  max-width: 620px;
+  font-size: 1.08rem;
+  line-height: 1.3;
 }
 
 .customer-shell .home-hero-entry-note p {
@@ -4387,17 +4400,30 @@ p {
   line-height: 1.4;
 }
 
+.customer-shell .home-channel-section,
 .customer-shell .discovery-section,
+.customer-shell .home-quick-guidance,
 .customer-shell .community-section,
 .customer-shell .home-order-section,
 .customer-shell .story-section {
   padding-top: var(--homepage-section-gap-desktop);
 }
 
-.customer-shell .discovery-grid {
+.customer-shell .home-channel-section .home-hero-entry-note {
+  max-width: 940px;
+  margin-top: 0;
+}
+
+.customer-shell .home-access-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
   gap: 16px;
+}
+
+.customer-shell .home-access-grid .discovery-card,
+.customer-shell .home-access-grid .home-onboarding-main {
+  min-height: 320px;
 }
 
 .customer-shell .discovery-card {
@@ -4533,6 +4559,28 @@ p {
   transform-origin: bottom center;
 }
 
+.customer-shell .home-access-grid .home-onboarding-main {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: var(--space-md);
+  min-width: 0;
+  padding: 22px;
+}
+
+.customer-shell .home-access-grid .home-onboarding-copy h2 {
+  font-size: clamp(1.35rem, 1.8vw, 1.75rem);
+}
+
+.customer-shell .home-access-grid .home-onboarding-art {
+  min-height: 76px;
+  place-items: center;
+}
+
+.customer-shell .home-access-grid .home-onboarding-mascot {
+  width: 84px;
+  transform: none;
+}
+
 .customer-shell .home-order-section .section-heading {
   margin-bottom: 24px;
 }
@@ -4647,15 +4695,37 @@ p {
     max-width: 680px;
   }
 
-  .customer-shell .discovery-grid {
+  .customer-shell .home-access-grid {
     grid-template-columns: 1fr;
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-main {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+    grid-template-rows: auto;
+    min-height: 278px;
+    gap: var(--space-lg);
+    padding: var(--space-xl);
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-copy h2 {
+    font-size: clamp(1.8rem, 3vw, 2.55rem);
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-art {
+    min-height: 180px;
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-mascot {
+    width: min(100%, 160px);
   }
 
   .customer-shell .community-banner {
     grid-template-columns: minmax(0, 1fr) minmax(180px, 0.45fr);
   }
 
+  .customer-shell .home-channel-section,
   .customer-shell .discovery-section,
+  .customer-shell .home-quick-guidance,
   .customer-shell .community-section,
   .customer-shell .home-order-section,
   .customer-shell .story-section {
@@ -4732,8 +4802,7 @@ p {
     margin-top: 14px;
   }
 
-  .customer-shell .home-hero-entry-note {
-    margin-top: var(--space-sm);
+  .customer-shell .home-channel-section .home-hero-entry-note {
     padding: var(--space-sm);
   }
 
@@ -4782,7 +4851,9 @@ p {
     font-size: 0.8rem;
   }
 
+  .customer-shell .home-channel-section,
   .customer-shell .discovery-section,
+  .customer-shell .home-quick-guidance,
   .customer-shell .community-section,
   .customer-shell .home-order-section,
   .customer-shell .story-section {
@@ -4792,6 +4863,20 @@ p {
   .customer-shell .discovery-card {
     min-height: 0;
     padding: 22px;
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-main {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-art {
+    min-height: 112px;
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-mascot {
+    width: 128px;
   }
 
   .customer-shell .discovery-card .button,
@@ -7096,6 +7181,19 @@ p {
   margin-top: var(--journey-section-gap);
 }
 
+.customer-shell .how-to-order-page > .how-to-order-policy-note,
+.customer-shell .how-to-order-page > .how-to-order-video-guide {
+  display: grid;
+  gap: var(--title-description-gap);
+  margin-top: var(--journey-section-gap);
+}
+
+.customer-shell .how-to-order-policy-note p,
+.customer-shell .how-to-order-video-guide p,
+.customer-shell .how-to-order-video-guide h2 {
+  margin-bottom: 0;
+}
+
 .customer-shell .how-to-order-page > .communication-card h2,
 .customer-shell .how-to-order-page > .communication-card p {
   margin-bottom: 0;
@@ -8789,13 +8887,7 @@ p {
   }
 }
 
-/* Social entry layer: native details keeps the How-to interaction accessible without another client state machine. */
-.customer-shell .home-onboarding {
-  display: grid;
-  gap: var(--space-md);
-  margin-top: var(--homepage-section-gap-mobile);
-}
-
+/* Blessfriend account card shares the discovery card family. */
 .customer-shell .home-onboarding-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
@@ -8806,10 +8898,6 @@ p {
   border-radius: 18px;
   background: var(--surface);
   box-shadow: var(--shadow);
-}
-
-.customer-shell:has(.home-onboarding-main) .floating-blessy {
-  visibility: hidden;
 }
 
 .customer-shell .home-onboarding-copy {
@@ -8836,8 +8924,7 @@ p {
 }
 
 .customer-shell .home-onboarding-copy h2,
-.customer-shell .home-onboarding-copy p,
-.customer-shell .home-onboarding-helper {
+.customer-shell .home-onboarding-copy p {
   margin: 0;
 }
 
@@ -8936,14 +9023,19 @@ p {
   transform-origin: bottom center;
 }
 
-.customer-shell .home-onboarding-how-to {
+.customer-shell .home-quick-guidance-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.customer-shell .home-guidance-disclosure {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
 }
 
-.customer-shell .home-onboarding-how-to > summary {
+.customer-shell .home-guidance-disclosure > summary {
   display: flex;
   min-height: 64px;
   align-items: center;
@@ -8956,25 +9048,28 @@ p {
   list-style: none;
 }
 
-.customer-shell .home-onboarding-how-to > summary::-webkit-details-marker {
+.customer-shell .home-guidance-disclosure > summary::-webkit-details-marker {
   display: none;
 }
 
-.customer-shell .home-onboarding-how-to > summary:focus-visible {
+.customer-shell .home-guidance-disclosure > summary:focus-visible {
   box-shadow: var(--focus);
   outline: none;
 }
 
-.customer-shell .home-onboarding-how-to > summary > span:first-child {
+.customer-shell .home-guidance-disclosure > summary > span:first-child {
   display: grid;
   gap: var(--space-xxs);
 }
 
-.customer-shell .home-onboarding-how-to > summary .eyebrow {
-  color: var(--accent);
+.customer-shell .home-guidance-disclosure > summary small {
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.45;
 }
 
-.customer-shell .home-onboarding-summary-icon {
+.customer-shell .home-guidance-summary-icon {
   display: grid;
   width: 32px;
   height: 32px;
@@ -8987,29 +9082,30 @@ p {
   line-height: 1;
 }
 
-.customer-shell .home-onboarding-how-to[open] .home-onboarding-summary-icon {
+.customer-shell .home-guidance-disclosure[open] .home-guidance-summary-icon {
   transform: rotate(45deg);
 }
 
-.customer-shell .home-onboarding-how-to-content {
-  display: grid;
-  gap: var(--space-lg);
-  padding: 0 var(--space-lg) var(--space-lg);
+.customer-shell .home-guidance-disclosure-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
   border-top: 1px solid var(--line);
 }
 
-.customer-shell .home-onboarding-how-to-content > p {
-  margin: var(--space-lg) 0 0;
+.customer-shell .home-guidance-disclosure-content p {
+  margin: 0 auto 0 0;
   color: var(--ink-muted);
 }
 
-.customer-shell .home-onboarding-how-to-content .order-steps {
-  margin: 0;
+.customer-shell .home-guidance-disclosure-content .button {
+  flex: 0 0 auto;
 }
 
-.customer-shell .home-onboarding-how-to-actions {
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--line);
+.customer-shell .home-quick-guidance .section-heading {
+  margin-bottom: 18px;
 }
 
 @media (max-width: 900px) {
@@ -9020,10 +9116,6 @@ p {
 }
 
 @media (max-width: 640px) {
-  .customer-shell .home-onboarding {
-    margin-top: var(--space-lg);
-  }
-
   .customer-shell .home-onboarding-main {
     grid-template-columns: 1fr;
     gap: var(--space-md);
@@ -9042,13 +9134,17 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .customer-shell .home-onboarding-how-to > summary {
+  .customer-shell .home-guidance-disclosure > summary {
     min-height: 60px;
     padding-inline: var(--space-md);
   }
 
-  .customer-shell .home-onboarding-how-to-content {
+  .customer-shell .home-guidance-disclosure-content {
     padding-inline: var(--space-md);
+  }
+
+  .customer-shell .home-guidance-disclosure-content .button {
+    width: 100%;
   }
 
   .catalog-result-toolbar {
@@ -9560,6 +9656,34 @@ p {
 
   .floating-blessy {
     width: clamp(108px, 30vw, 136px);
+  }
+}
+
+body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy {
+  position: relative !important;
+  inset: auto !important;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  top: auto;
+  width: clamp(72px, 8vw, 104px);
+  margin: 24px auto;
+  z-index: auto;
+}
+
+body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy__bubble {
+  display: none;
+}
+
+body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy__close-layer {
+  top: 0;
+  right: 0;
+}
+
+@media (max-width: 800px) {
+  body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy {
+    width: 72px;
+    margin: 24px auto calc(80px + env(safe-area-inset-bottom));
   }
 }
 

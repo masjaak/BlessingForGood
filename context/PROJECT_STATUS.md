@@ -1,5 +1,28 @@
 # BFG Project Status
 
+## Client Content Phase 3B — 2026-09-28
+
+Status: `PHASE_3_CLIENT_VISUAL_GREEN_PENDING_RECONCILIATION`
+
+Reconciled homepage structure and copy to the written client annotations.
+Homepage order is hero, WhatsApp/website information, Cara Pembelian, Join
+WhatsApp, Secret Catalog, Blessfriend account, Ready Stock, quick guidance, and
+story. The Temukan Buku intro and Pilihan Utama label are removed. Blessy is
+visible in document flow on Home and How To Order.
+
+Responsive browser renders and DOM checks pass at 375, 390, 430, 768, 834,
+1024, 1280, and 1440px. All eight onboarding presentation states and the
+protected Catalog access form were checked. Frontend passes (75 files / 476
+tests), Convex passes (47 files / 310 tests with a 180-second timeout for the
+known large backfill), Cart focus passes (4 files / 23 tests), and Blessy passes
+(10 browser tests). TypeScript, ESLint, formatting, and diff checks are recorded
+in the report. No Phase 0–2 or business state machine changed. Security QA
+remains isolated. No Phase 4, merge, or deployment.
+
+Annotated screenshot files were not in the worktree; the user selected written
+annotations. Final browser renders are retained under ignored `test-results/`.
+See [the Phase 3B report](implementation/BFG-CLIENT-CONTENT-PHASE-3.md).
+
 ## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
 
 Status: `PHASE_2_ENGINEERING_GREEN_PENDING_RECONCILIATION`

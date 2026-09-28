@@ -1,47 +1,70 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { Card, LinkButton } from "@/components/ui";
 
 type OrderStepIconName = "discover" | "select" | "send" | "process" | "invoice" | "track" | "arrive";
 
 type OrderStep = {
   title: string;
-  description: string;
+  description: ReactNode;
   icon: OrderStepIconName;
 };
 
 export const orderSteps: OrderStep[] = [
   {
-    title: "Temukan bukunya",
-    description: "Jelajahi Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
+    title: "Pilih bukunya",
+    description: (
+      <>
+        Pilih buku melalui website atau konfirmasi pilihan di WhatsApp Group BFG. Admin dapat mencatat pesanan WhatsApp
+        secara manual ke akun Blessfriend.
+      </>
+    ),
     icon: "discover",
   },
   {
-    title: "Pilih buku & variannya",
-    description: "Pilih judul, format, ISBN, dan jumlah yang tersedia.",
+    title: "History order buku kamu",
+    description: (
+      <>
+        Buku yang sudah dicatat dapat kamu lihat kembali melalui <Link href="/account/orders">Buku Saya</Link> di
+        account Blessfriend.
+      </>
+    ),
     icon: "select",
   },
   {
-    title: "Kirim pesanan",
-    description: "BFG mencatat pesananmu dan menyimpan detail pilihan saat dibuat.",
-    icon: "send",
-  },
-  {
-    title: "Pesanan diproses",
-    description: "Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.",
-    icon: "process",
-  },
-  {
-    title: "Cek tagihan & konfirmasi pembayaran",
-    description: "Invoice muncul saat diterbitkan; kirim konfirmasi pembayaran dari halaman Tagihan.",
+    title: "Invoice",
+    description: (
+      <>
+        Admin menerbitkan invoice sesuai proses BFG. Saat tersedia, cek menu{" "}
+        <Link href="/account/invoices">Tagihan</Link>; notifikasi akan muncul di akun Blessfriend.
+      </>
+    ),
     icon: "invoice",
   },
   {
-    title: "Pantau perjalanannya",
-    description: "Lihat batch, shipment, fulfillment, dan pembaruan pesanan dari Buku Saya.",
+    title: "Pembayaran",
+    description:
+      "Ketentuan DP mengikuti masing-masing PO. Untuk PO reguler, nominal atau persentasenya diumumkan melalui WhatsApp Group BFG dan tercantum pada tagihan.",
+    icon: "send",
+  },
+  {
+    title: "Pelunasan",
+    description: "Pelunasan buku akan ditagihkan sekitar 3–5 minggu sebelum diperkirakan tiba di warehouse BFG.",
+    icon: "process",
+  },
+  {
+    title: "Cek perjalanan buku kamu",
+    description: (
+      <>
+        PO reguler umumnya membutuhkan sekitar 4–5 bulan sejak pemesanan awal. Pantau perkembangan pesanan di{" "}
+        <Link href="/account/orders">Buku Saya</Link>.
+      </>
+    ),
     icon: "track",
   },
   {
     title: "Buku sampai",
-    description: "Setelah diproses BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
+    description: "Setelah buku tiba dan selesai diproses oleh BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
     icon: "arrive",
   },
 ];
@@ -65,18 +88,19 @@ const compactOrderSteps: OrderStep[] = [
 
 const previewOrderSteps: OrderStep[] = [
   {
-    title: "Temukan bukunya",
-    description: "Pilih Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
+    title: "Gabung ke WhatsApp Group",
+    description: "Bergabung ke WhatsApp Group BFG untuk mendapatkan update, kurasi buku, dan informasi PO.",
     icon: "discover",
   },
   {
-    title: "Pesan & tunggu proses BFG",
-    description: "Pilih varian, kirim pesanan, lalu cek invoice dan pembayaran.",
+    title: "Buat account di website kami",
+    description:
+      "Gunakan account Blessfriend untuk melihat pesanan, PO yang sedang berjalan, tagihan, dan tracking buku.",
     icon: "process",
   },
   {
-    title: "Pantau sampai buku datang",
-    description: "Ikuti batch, fulfillment, dan pengiriman dari Buku Saya.",
+    title: "Pilih buku yang ingin dibeli",
+    description: "Pemesanan dapat dilakukan melalui website atau dikonfirmasi melalui WhatsApp Group BFG.",
     icon: "arrive",
   },
 ];
@@ -189,5 +213,25 @@ export function HowToOrderSteps({ compact = false, preview = false }: { compact?
         </li>
       ))}
     </ol>
+  );
+}
+
+export function HowToOrderVideoGuide({ url }: { url: string | null }) {
+  if (!url) return null;
+  try {
+    if (new URL(url).protocol !== "https:") return null;
+  } catch {
+    return null;
+  }
+
+  return (
+    <Card className="how-to-order-video-guide">
+      <span className="card-kicker">Panduan website</span>
+      <h2>Butuh panduan?</h2>
+      <p>Lihat video singkat cara menggunakan website Blessing For Good.</p>
+      <LinkButton href={url} target="_blank" rel="noopener noreferrer" variant="secondary">
+        Tonton panduan penggunaan (buka tab baru) <span aria-hidden="true">↗</span>
+      </LinkButton>
+    </Card>
   );
 }

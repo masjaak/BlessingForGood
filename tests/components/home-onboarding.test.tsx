@@ -17,24 +17,27 @@ const signedOutProduct = {
 function renderOnboarding(product: unknown = signedOutProduct) {
   return render(
     <ProductContext.Provider value={product as never}>
-      <HomeOnboarding tutorialVideoUrl={null} />
+      <HomeOnboarding />
     </ProductContext.Provider>,
   );
 }
 
 describe("Homepage Blessfriend onboarding", () => {
-  it("welcomes signed-out visitors, explains both requirements, and links to the existing flows", () => {
+  it("shows the Blessfriend account guidance and the existing Join Request entry", () => {
     renderOnboarding();
 
-    expect(screen.getByRole("region", { name: "Selamat datang di Blessing For Good" })).toBeTruthy();
-    expect(screen.getByText(/mengakses Secret Catalog BFG, ada dua langkah/)).toBeTruthy();
-    expect(screen.getByText(/bergabung ke WhatsApp Group BFG dan mendaftar sebagai Blessfriend/)).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
     expect(
-      screen.getByText(/WhatsApp digunakan untuk update buku, informasi PO, dan akses Secret Catalog/),
+      screen.getByText(
+        "Account Blessfriend digunakan untuk melihat katalog PO, memesan buku, mengecek riwayat pesanan, tagihan, dan perjalanan buku.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
     ).toBeTruthy();
     expect(document.querySelector(".home-onboarding-mascot")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Gabung Blessfriends" }).getAttribute("href")).toBe("/join");
-    expect(screen.getByRole("link", { name: "Pelajari cara pesan" }).getAttribute("href")).toBe("/how-to-order");
+    expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
     expect(screen.getByRole("button", { name: "Tutup informasi selamat datang" })).toBeTruthy();
   });
 
@@ -46,8 +49,8 @@ describe("Homepage Blessfriend onboarding", () => {
       sessionRole: null,
     });
 
-    expect(screen.getByRole("region", { name: "Selamat datang di Blessing For Good" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Gabung Blessfriends" }).getAttribute("href")).toBe("/join");
+    expect(screen.getByRole("region", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
   });
 
   it("shows accepted-request and WhatsApp guidance without another Join CTA", () => {
@@ -66,7 +69,7 @@ describe("Homepage Blessfriend onboarding", () => {
     expect(whatsapp.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/6282347278881\?text=/);
     expect(whatsapp.getAttribute("target")).toBe("_blank");
     expect(whatsapp.getAttribute("rel")).toBe("noopener noreferrer");
-    expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Daftar Blessfriend" })).toBeNull();
   });
 
   it("shows invitation activation guidance without a Join or WhatsApp CTA", () => {
@@ -79,33 +82,34 @@ describe("Homepage Blessfriend onboarding", () => {
 
     expect(screen.getByRole("heading", { name: "Pendaftaranmu sudah disetujui." })).toBeTruthy();
     expect(screen.getByText("Cek email untuk menyelesaikan aktivasi akun.")).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Daftar Blessfriend" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Minta link WhatsApp Group" })).toBeNull();
   });
 
-  it("does not show onboarding content to an active Customer", () => {
-    const { container } = renderOnboarding({
+  it("shows the account context to an active Customer without a registration CTA", () => {
+    renderOnboarding({
       hydrated: true,
       authState: "authenticated",
       membershipState: "ACTIVE",
       sessionRole: "customer",
     });
 
-    expect(container.querySelector(".home-onboarding-how-to")).toBeTruthy();
-    expect(screen.queryByRole("region", { name: "Selamat datang di Blessing For Good" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Account Blessfriend" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Buka account Blessfriend" }).getAttribute("href")).toBe("/account");
+    expect(screen.queryByRole("link", { name: "Daftar Blessfriend" })).toBeNull();
   });
 
-  it("does not offer re-registration to suspended Customers", () => {
-    const { container } = renderOnboarding({
+  it("shows suspended account guidance without a registration bypass", () => {
+    renderOnboarding({
       hydrated: true,
       authState: "suspended",
       membershipState: "SUSPENDED",
       sessionRole: "customer",
     });
 
-    expect(container.firstChild).toBeNull();
-    expect(screen.queryByRole("link", { name: "Gabung Blessfriends" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Account Blessfriend" })).toBeTruthy();
+    expect(screen.getByText("Akun Blessfriend ini sedang ditangguhkan.")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Daftar Blessfriend" })).toBeNull();
   });
 
   it.each(["admin", "owner"] as const)("keeps %s outside Customer onboarding", (role) => {
@@ -124,6 +128,7 @@ describe("Homepage Blessfriend onboarding", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tutup informasi selamat datang" }));
 
-    expect(screen.queryByRole("region", { name: "Selamat datang di Blessing For Good" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Buat account website untuk Blessfriends" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Daftar Blessfriend" })).toBeNull();
   });
 });

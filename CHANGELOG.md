@@ -2,11 +2,40 @@
 title: Project Changelog
 status: approved
 owner: MasJak
-last_updated: 2026-09-24
+last_updated: 2026-09-28
 source: conversation
 ---
 
 # Changelog
+
+## [client-content-phase-3b-visual-reconciliation] — 2026-09-28
+
+### Changed
+
+- Reconciled the homepage order to the written client annotations: hero, channel
+  information, Cara Pembelian, Join WhatsApp, Secret Catalog, account, Ready
+  Stock, then secondary guidance. Removed the Temukan Buku intro and Pilihan
+  Utama label.
+- Used the existing Phase 2 WhatsApp contact and membership states. Kept the
+  protected `/catalog` gateway and Ready Stock route. No new admission,
+  commerce, auth, or membership behavior was added.
+- Rewrote the seven How To Order headings and copy while retaining its timeline.
+  No H+1/H+2 invoice promise, universal 30% DP, or unconditional 100% refund
+  promise was added.
+- Restored Blessy on Home and How To Order in normal page flow and verified its
+  mobile navigation and content clearance.
+
+### QA and scope
+
+- Frontend: 75 files / 476 tests passed. Convex: 47 files / 310 tests passed
+  with a 180-second runner timeout for the existing 2,000-item backfill.
+  Responsive browser checks passed at eight widths and eight presentation
+  states; Blessy regression passed 10 tests; focused Cart passed 23 tests.
+- TypeScript, ESLint, formatting, and `git diff --check` are recorded in the
+  Phase 3B reconciliation report. Build was not rerun; the known Convex
+  prerender issue was left untouched. Dependencies are unchanged.
+- Phase 0–2 status and Security QA worktree remain isolated and unchanged. No
+  Phase 4 work, merge, or deployment.
 
 ## [blessfriend-onboarding-whatsapp-phase-2] — 2026-09-27
 
