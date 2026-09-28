@@ -4409,52 +4409,109 @@ p {
 
 .customer-shell .home-access-grid .discovery-card,
 .customer-shell .home-access-grid .home-onboarding-main {
-  min-height: 320px;
-  padding: 22px;
-}
-
-.customer-shell .discovery-card {
-  display: flex;
-  min-height: 278px;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 28px;
-  border: 1px solid var(--line);
+  display: grid;
+  min-width: 0;
+  min-height: 460px;
+  grid-template-rows: auto minmax(88px, 1fr) auto;
+  align-content: stretch;
+  gap: 18px;
+  padding: 24px;
   border-radius: 16px;
 }
 
-.customer-shell .discovery-card h3,
-.customer-shell .discovery-card p {
-  margin-bottom: 0;
+.customer-shell .discovery-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
-.customer-shell .discovery-card h3 {
-  margin-top: 12px;
-  font-size: clamp(1.85rem, 3vw, 2.5rem);
+.customer-shell .discovery-card-copy,
+.customer-shell .home-access-grid .home-onboarding-copy {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 14px;
 }
 
-.customer-shell .discovery-card p {
-  max-width: 520px;
-  margin-top: 12px;
+.customer-shell .discovery-card-heading {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
 }
 
-.customer-shell .discovery-card .button {
-  width: max-content;
-  max-width: 100%;
+.customer-shell .discovery-card-heading .eyebrow {
+  margin: 0;
+}
+
+.customer-shell .discovery-card-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  color: var(--accent-dark);
+  border-radius: 50%;
+  background: var(--mint);
+}
+
+.customer-shell .discovery-card-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.customer-shell .discovery-card-copy h3,
+.customer-shell .home-access-grid .home-onboarding-copy h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2rem, 2.55vw, 2.75rem);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.customer-shell .discovery-card-copy p,
+.customer-shell .home-access-grid .home-onboarding-copy > p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.customer-shell .discovery-card-art-slot,
+.customer-shell .home-access-grid .home-onboarding-art {
+  display: grid;
+  min-height: 96px;
+  align-self: stretch;
+  place-items: center;
+}
+
+.customer-shell .community-mascot,
+.customer-shell .home-access-grid .home-onboarding-mascot {
+  width: 92px;
+  height: auto;
+  transform: none;
+}
+
+.customer-shell .home-access-grid .discovery-card > .button,
+.customer-shell .home-access-grid .home-onboarding-actions,
+.customer-shell .home-access-grid .home-onboarding-actions > .button {
+  width: 100%;
+}
+
+.customer-shell .home-access-grid .discovery-card > .button,
+.customer-shell .home-access-grid .home-onboarding-actions > .button {
   min-height: var(--button-height-default);
-  align-self: flex-start;
   justify-content: center;
 }
 
 .customer-shell .home-access-grid .home-onboarding-actions {
-  width: max-content;
-  align-items: flex-start;
-}
-
-.customer-shell .home-access-grid .home-onboarding-actions > .button {
-  min-height: var(--button-height-default);
-  justify-content: center;
+  align-self: stretch;
 }
 
 .customer-shell .discovery-card-ready {
@@ -4464,13 +4521,14 @@ p {
   box-shadow: var(--shadow-raised);
 }
 
+.customer-shell .discovery-card-ready .discovery-card-icon {
+  color: var(--surface);
+  background: rgb(255 255 255 / 12%);
+}
+
 .customer-shell .discovery-card-ready .eyebrow,
 .customer-shell .discovery-card-ready p {
   color: #d4e0d7;
-}
-
-.customer-shell .discovery-card-ready .eyebrow {
-  color: var(--color-brand-gold);
 }
 
 .customer-shell .discovery-card-ready h3 {
@@ -4482,113 +4540,33 @@ p {
 }
 
 .customer-shell .discovery-card-whatsapp {
-  min-height: 460px;
-  align-items: stretch;
-  gap: 16px;
-  padding: 24px;
   background: var(--bfg-peach);
-}
-
-.customer-shell .discovery-card-whatsapp .community-copy {
-  align-self: auto;
-  max-width: none;
-  min-width: 0;
 }
 
 .customer-shell .discovery-card-whatsapp .community-copy h3 span {
   display: block;
 }
 
-.customer-shell .discovery-card-whatsapp .community-art {
-  min-height: 136px;
-  place-items: center;
-  flex: 0 0 136px;
+.customer-shell .home-access-grid .home-onboarding-main {
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
-.customer-shell .discovery-card-whatsapp > .button {
-  width: 100%;
-  align-self: stretch;
-}
-
-.customer-shell .discovery-card-heading {
+.customer-shell .home-access-grid .home-onboarding-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
 }
 
-.customer-shell .discovery-card-heading .eyebrow {
-  margin: 0;
-}
-
-.customer-shell .discovery-lock {
+.customer-shell .home-access-grid .home-onboarding-title-block {
   display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  color: var(--accent-dark);
-  border-radius: 50%;
-  background: var(--mint);
-}
-
-.customer-shell .discovery-lock svg {
-  width: 20px;
-  height: 20px;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-}
-
-.customer-shell .community-copy {
-  display: grid;
-  align-content: start;
-}
-
-.customer-shell .community-art {
-  display: grid;
-  place-items: center;
-}
-
-.customer-shell .community-mascot {
-  width: 104px;
-  height: auto;
-}
-
-.customer-shell .home-access-grid .home-onboarding-main {
-  display: flex;
-  min-height: 460px;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--space-md);
   min-width: 0;
-  border-radius: 16px;
+  gap: 14px;
 }
 
-.customer-shell .home-access-grid .home-onboarding-copy {
-  display: flex;
-  flex-direction: column;
-  align-self: auto;
-  gap: var(--space-sm);
-}
-
-.customer-shell .home-access-grid .home-onboarding-copy h2 {
-  font-size: clamp(1.35rem, 2vw, 1.58rem);
-}
-
-.customer-shell .home-access-grid .home-onboarding-art {
-  min-height: 136px;
-  place-items: center;
-  flex: 0 0 136px;
-}
-
-.customer-shell .home-access-grid .home-onboarding-mascot {
-  width: 84px;
-  height: auto;
-  transform: none;
-}
-
-.customer-shell .home-access-grid .home-onboarding-actions {
-  align-self: flex-start;
+.customer-shell .home-access-grid .home-onboarding-dismiss {
+  flex: 0 0 auto;
 }
 
 .customer-shell .home-access-grid .home-onboarding-how-to {
@@ -4739,20 +4717,30 @@ p {
 
   .customer-shell .home-access-grid .discovery-card,
   .customer-shell .home-access-grid .home-onboarding-main {
-    min-height: 280px;
+    min-height: 420px;
+    grid-template-rows: auto minmax(72px, 1fr) auto;
+    padding: 20px;
   }
 
-  .customer-shell .discovery-card-whatsapp {
-    min-height: 460px;
-    padding: 22px;
+  .customer-shell .discovery-card-copy h3,
+  .customer-shell .home-access-grid .home-onboarding-copy h2 {
+    font-size: clamp(1.8rem, 8.2vw, 2.25rem);
   }
 
-  .customer-shell .home-access-grid .home-onboarding-main {
-    min-height: 460px;
+  .customer-shell .discovery-card-copy p,
+  .customer-shell .home-access-grid .home-onboarding-copy > p {
+    max-width: none;
+    font-size: 0.92rem;
   }
 
-  .customer-shell .discovery-card-whatsapp .community-copy p {
-    font-size: 0.9rem;
+  .customer-shell .discovery-card-art-slot,
+  .customer-shell .home-access-grid .home-onboarding-art {
+    min-height: 84px;
+  }
+
+  .customer-shell .community-mascot,
+  .customer-shell .home-access-grid .home-onboarding-mascot {
+    width: 82px;
   }
 }
 
