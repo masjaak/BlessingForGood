@@ -112,10 +112,13 @@
 ## Release Gate
 
 - Result:
+- Evidence phase being closed:
 - Reviewed branch/base:
 - PR:
 - Merge SHA:
 - Vercel Preview build and responsive smoke:
+- Current release gate result (evaluate from this release's evidence):
+- Future-audit preflight result (required before a new audit; not a substitute for this release gate):
 
 ## Production Smoke
 

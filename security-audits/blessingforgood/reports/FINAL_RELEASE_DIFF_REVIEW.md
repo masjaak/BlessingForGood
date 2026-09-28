@@ -45,10 +45,10 @@ The eight Clerk Development and Convex Development Preview settings are now
 Preview-wide, with no Git-branch restriction. Vercel variable IDs, names,
 targets, types, and branch scopes were inspected; update requests changed only
 `target` and `gitBranch`. No variable values were read, changed, or copied.
-The existing Preview `CONVEX_DEPLOY_KEY` and the four Production-only
-variables were left unchanged. Production still points to the READY deployment
-for `main` at `58a4ff6e157fa4c9be78ebdbcb92e5a07591dcab`, with its domains
-unchanged.
+The existing Preview `CONVEX_DEPLOY_KEY` and four Production-only variables
+were left unchanged. Production deployment
+`dpl_5KAMZBsi3SEHXGdZ2yLxwH173i69` is Ready from `main` at
+`d946fe433841d868c301399f283a9edb2f4e9ac6`; Production domains are unchanged.
 
 Metadata inventory (values intentionally omitted):
 
@@ -75,11 +75,13 @@ No value field was included in any update request. The Preview deploy key was
 not promoted or used as a Preview build mechanism. No payment, transactional
 email, or webhook credential names were present in the inspected inventory.
 
-The redeployed PR Preview (`dpl_24oyfTPuZ8dq7XQPq6VJwxMWjDjQ`) is READY.
-Its build reports `VERCEL_ENV=preview`, Development Clerk and Convex,
+The latest docs-only PR Preview (`dpl_8cBPFB3SEfZTfYY5BWxJL1KvC12R`) is READY
+at release SHA `484d4b01fd6c5e9064acd22cb8c31233809bca62`. Its build reports
+`VERCEL_ENV=preview`, Development Clerk and Convex,
 `SECURITY_STAGING_MODE=convex-dev`, `CONVEX_DEPLOY_COMMAND=DISABLED`,
-`CREDENTIAL_GATE=PASS`, Next.js 16.3.6, a successful build, and static
-prerendering of `/ready-stock`. The build wrapper unsets the Preview deploy
+`CREDENTIAL_GATE=PASS`, Next.js 16.3.6, and a successful build. The
+`/ready-stock` prerender was verified on the same application source before
+the documentation-only commit. The build wrapper unsets the Preview deploy
 key before the frontend build.
 
 Authenticated Vercel CLI HTTP checks returned 200 for the homepage,
@@ -105,10 +107,10 @@ navigation and mobile Catalog/home navigation both worked.
 - Typecheck: PASS
 - Full tests: PASS (120 files, 780 tests)
 - Vercel PR Preview build: PASS (Next.js 16.3.6; Development credential gate; Convex deploy disabled)
-- Direct local build: BLOCKED (this worktree has no Clerk/Convex build configuration; no values were pulled)
+- Direct local build: BLOCKED (this worktree has no Clerk/Convex build configuration; no values were pulled); Vercel release Preview build: PASS
 - npm audit: PASS (0 vulnerabilities)
 - Security regression harness: PASS (48 focused tests; target and credential guard self-checks)
-- Secret leak check: PASS (31 changed paths; no environment files or credential values)
+- Secret leak check: PASS (36 release/closure paths; zero known credential-pattern hits; no values emitted)
 - Preview HTTP/browser smoke: PASS (homepage, Ready Stock, Catalog, Community, Help, How To Order, Join, Sign In, and anonymous `/admin` redirect)
 - Responsive: PASS at 1440, 768, 390, and 320 CSS pixels; no horizontal overflow; CTA visible and clickable
 - QA-001 runtime: PASS (Blessy hides on homepage-copy collision and reappears when the copy clears; no CTA overlap)
@@ -117,9 +119,29 @@ navigation and mobile Catalog/home navigation both worked.
 - Whitespace check: PASS
 
 `RELEASE_DIFF_SAFE=PASS`, `VERIFIED_FIX_EQUIVALENCE=PASS`,
-`VERCEL_PR_PREVIEW=READY`, and `PREVIEW_SMOKE=PASS`. Recheck the newest PR
-Preview after the pending documentation commit before setting the final
-`RELEASE_GATE`.
+`VERCEL_PR_PREVIEW=READY`, and `PREVIEW_SMOKE=PASS`. PR #2 was merged normally;
+`RELEASE_GATE=PASS`.
 
-Production smoke and deployment identifiers are recorded after merge in
-`docs/security/SECURITY_BASELINE.md` and the final audit reports.
+## Production closure — 2026-09-28
+
+Production deployment `dpl_5KAMZBsi3SEHXGdZ2yLxwH173i69` reached Ready from
+`main` SHA `d946fe433841d868c301399f283a9edb2f4e9ac6`. Its build reported
+`VERCEL_ENV=production`; production Clerk variables and the Convex deploy key
+remain Production-scoped. The production build rejects
+`SECURITY_STAGING_MODE` and uses the normal Convex Production deployment path.
+No credential values were inspected or changed.
+
+Production browser smoke passed public routes, mobile navigation and CTA,
+sign-in entry, anonymous `/admin` redirect, and the 1440/768/390/320 matrix.
+Blessy hid on copy collision and reappeared after the hero cleared. Application
+console/CSP errors, first-party 5xx responses, and critical first-party request
+failures were 0. Nineteen errors at 768 px originated in a browser extension
+and were excluded as tooling noise. HTTPS returned HTTP 200 with TLS
+verification result 0; HSTS, CSP, `X-Content-Type-Options`,
+`X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy` were present;
+`X-Powered-By` was absent.
+
+The six final audit reports and `SECURITY_BASELINE.md` now record the release
+and Production evidence. Final finding states are `SEC-001=ACCEPTED_RISK`,
+`SEC-002=FIXED`, `SEC-003=FIXED`, and `QA-001=FIXED`. No active scanners,
+Production accounts, uploads, form submissions, or mutations were run.

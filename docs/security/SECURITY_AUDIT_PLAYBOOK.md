@@ -14,6 +14,19 @@ must be a protected Vercel Preview using Clerk Development and Convex
 Development. Production is excluded from active scanning and mutation tests.
 Do not print or store credential values.
 
+## Current release gate vs future audit preflight
+
+`scripts/security/preflight.sh` decides whether a **new full audit** may start.
+It is not the current release gate. A future-audit `PREFLIGHT=FAIL` caused by
+missing workstation automation, scanners, identities, or side-effect sinks
+does not invalidate completed audit phases or a release backed by recorded
+evidence. Continue from the first incomplete release phase and evaluate the
+release checklist; do not rerun completed discovery or authenticated testing
+solely to make future-audit preflight pass.
+
+For a new audit, use the entrypoint below and do not start discovery until
+`PREFLIGHT=PASS`.
+
 ## Audit acceleration rules
 
 1. Solve authentication during preflight, before starting scanners.
@@ -70,6 +83,12 @@ report Development classifications before application testing.
 **FAIL / stop:** any required tool, identity, access method, environment label,
 or side-effect boundary is unknown. Install or resolve it here, then rerun
 preflight. Do not begin discovery until this phase passes.
+
+**New-audit entrypoint:**
+
+1. Read `docs/security/SECURITY_AUDIT_PLAYBOOK.md`.
+2. Run `scripts/security/preflight.sh`.
+3. Do not begin a new audit until `PREFLIGHT=PASS`.
 
 ## Phase 1 — ENVIRONMENT MAP
 

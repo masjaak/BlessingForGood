@@ -32,14 +32,19 @@
 
 ## Production Release Record
 
-Complete after merge and Production smoke:
-
+- Verified on: 2026-09-28
 - Release branch: `security/blessingforgood-hardening`
-- Pull request: pending
-- Merge SHA: pending
-- Vercel Production deployment ID/time: pending
+- Release PR: #2, merged
+- Release branch SHA: `484d4b01fd6c5e9064acd22cb8c31233809bca62`
+- Production/main merge SHA: `d946fe433841d868c301399f283a9edb2f4e9ac6`
+- Vercel Production deployment: `dpl_5KAMZBsi3SEHXGdZ2yLxwH173i69`, Ready; created 2026-09-28 06:11:45 Asia/Jakarta
+- Production deployment source: `main` at `d946fe433841d868c301399f283a9edb2f4e9ac6`
 - Production URL: `https://www.blessingforgood.com`
-- Production smoke: pending
-- Release gate: pending
+- Production environment: `VERCEL_ENV=production`; Clerk variables and Convex deploy key remain scoped to Production; the build rejects `SECURITY_STAGING_MODE` and runs the normal Production Convex deploy path. No credential values were read or changed.
+- Production smoke: **PASS** — public routes and assets, mobile navigation/CTA, sign-in entry, anonymous `/admin` redirect, 1440/768/390/320 responsive layout, QA-001, zero application console errors, zero first-party 5xx/request failures, HTTPS/TLS verification, HSTS/CSP/`X-Content-Type-Options`/`X-Frame-Options`/`Referrer-Policy`/`Permissions-Policy` present, and `X-Powered-By` absent.
+- Release gate: **PASS**
+- Security audit: **COMPLETE_WITH_ACCEPTED_RISK**
+
+Findings: `SEC-001=ACCEPTED_RISK`; `SEC-002=FIXED`; `SEC-003=FIXED`; `QA-001=FIXED`. Critical, high, and medium release-blocking open findings: 0.
 
 Update this section and the audit reports only from observed release evidence.

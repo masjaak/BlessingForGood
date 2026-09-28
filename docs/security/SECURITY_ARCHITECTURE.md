@@ -1,7 +1,8 @@
 # Blessingforgood Security Architecture
 
-Last verified on the testing environment: 2026-09-28. Audit evidence and tool
-availability are summarized in [SECURITY_BASELINE.md](SECURITY_BASELINE.md).
+Last verified on the testing environment and after the Production smoke:
+2026-09-28. The Production release SHA, deployment ID, and smoke evidence are
+recorded in [SECURITY_BASELINE.md](SECURITY_BASELINE.md).
 
 ## Environment map
 
