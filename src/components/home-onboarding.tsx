@@ -68,8 +68,16 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
       >
         <div className="home-onboarding-copy">
           <div className="home-onboarding-heading">
-            <div>
-              <span className="eyebrow">ACCOUNT BLESSFRIEND</span>
+            <div className="home-onboarding-title-block">
+              <div className="discovery-card-heading">
+                <span className="discovery-card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 20c.8-4 3.1-6 7-6s6.2 2 7 6" />
+                  </svg>
+                </span>
+                <span className="eyebrow">ACCOUNT BLESSFRIEND</span>
+              </div>
               <h2 id="home-onboarding-title">{heading}</h2>
             </div>
             {welcome ? (
@@ -90,14 +98,14 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
           </p>
           {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
         </div>
+        <div className="home-onboarding-art">
+          <BrandMascot variant="warm" className="home-onboarding-mascot" />
+        </div>
         {primaryAction ? (
           <ActionGroup variant="responsive" className="home-onboarding-actions">
             {primaryAction}
           </ActionGroup>
         ) : null}
-        <div className="home-onboarding-art">
-          <BrandMascot variant="warm" className="home-onboarding-mascot" />
-        </div>
       </section>
       <details className="home-onboarding-how-to">
         <summary>

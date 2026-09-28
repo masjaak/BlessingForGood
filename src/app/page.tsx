@@ -87,8 +87,15 @@ export default function HomePage() {
               data-testid="join-whatsapp"
               aria-labelledby="join-title"
             >
-              <div className="community-copy">
-                <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+              <div className="discovery-card-copy community-copy">
+                <div className="discovery-card-heading">
+                  <span className="discovery-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M7 8h10M7 12h7M5 19l1.8-3.2A7 7 0 1 1 19 14.5 7 7 0 0 1 8.4 17H5Z" />
+                    </svg>
+                  </span>
+                  <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+                </div>
                 <h3 id="join-title">
                   <span>BLESSING FOR</span> <span>GOOD</span>
                 </h3>
@@ -96,12 +103,12 @@ export default function HomePage() {
                   wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
                 </p>
               </div>
+              <div className="discovery-card-art-slot community-art" aria-hidden="true">
+                <BrandMascot variant="warm" className="community-mascot" />
+              </div>
               <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
                 Minta link WhatsApp Group
               </LinkButton>
-              <div className="community-art" aria-hidden="true">
-                <BrandMascot variant="warm" className="community-mascot" />
-              </div>
             </article>
 
             <article
@@ -109,19 +116,20 @@ export default function HomePage() {
               data-testid="secret-catalog"
               aria-labelledby="secret-catalog-title"
             >
-              <div className="discovery-card-heading">
-                <span className="discovery-lock" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <rect x="5" y="10" width="14" height="10" rx="2" />
-                    <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" />
-                  </svg>
-                </span>
-                <span className="eyebrow">AKSES PRIVAT</span>
-              </div>
-              <div>
+              <div className="discovery-card-copy">
+                <div className="discovery-card-heading">
+                  <span className="discovery-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <rect x="5" y="10" width="14" height="10" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" />
+                    </svg>
+                  </span>
+                  <span className="eyebrow">AKSES PRIVAT</span>
+                </div>
                 <h3 id="secret-catalog-title">Secret Catalog</h3>
                 <p>katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group</p>
               </div>
+              <div className="discovery-card-art-slot" aria-hidden="true" />
               <LinkButton href="/catalog" variant="secondary">
                 Buka Secret Catalog
               </LinkButton>
@@ -132,13 +140,23 @@ export default function HomePage() {
               data-testid="ready-stock"
               aria-labelledby="ready-stock-title"
             >
-              <div>
+              <div className="discovery-card-copy">
+                <div className="discovery-card-heading">
+                  <span className="discovery-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4 8.5 12 4l8 4.5v9L12 22l-8-4.5v-9Z" />
+                      <path d="m4 8.5 8 4.5 8-4.5M12 13v9" />
+                    </svg>
+                  </span>
+                  <span className="eyebrow">BUKU TERSEDIA</span>
+                </div>
                 <h3 id="ready-stock-title">Ready Stock</h3>
                 <p>
                   buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi
                   Blessfriends
                 </p>
               </div>
+              <div className="discovery-card-art-slot" aria-hidden="true" />
               <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
             </article>
 
