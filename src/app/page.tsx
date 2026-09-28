@@ -1,11 +1,23 @@
+import Link from "next/link";
 import { BrandLogo, BrandMascot } from "@/components/brand";
-import { HomeQuickGuidance } from "@/components/home-quick-guidance";
 import { HomeOnboarding } from "@/components/home-onboarding";
+import { HowToOrderSteps } from "@/components/how-to-order";
 import { JsonLd } from "@/components/json-ld";
 import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { WHATSAPP_CONTACT_URL } from "@/domain/whatsapp-handoff";
 import { createHomepageStructuredData } from "@/lib/seo";
+
+function configuredVideoUrl() {
+  const value = process.env.BFG_TUTORIAL_VIDEO_URL?.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function HomePage() {
   return (
@@ -27,6 +39,14 @@ export default function HomePage() {
                 Buka Secret Catalog <span aria-hidden="true">→</span>
               </LinkButton>
             </div>
+            <aside className="home-hero-entry-note" aria-label="Cara mulai bersama BFG">
+              <span className="eyebrow">Baru di BFG?</span>
+              <p>
+                WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi
+                pengalaman yang menyenangkan
+              </p>
+              <Link href="/how-to-order">pelajari ketentuan PO buku di kami</Link>
+            </aside>
           </div>
           <div className="home-journey" aria-labelledby="journey-title">
             <h2 id="journey-title" className="eyebrow">
@@ -60,25 +80,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="section-block home-channel-section" aria-labelledby="home-channel-title">
-          <aside className="home-hero-entry-note" aria-label="Informasi WhatsApp dan website BFG">
-            <h2 id="home-channel-title">WhatsApp jadi ruang utama komunitas Blessfriends.</h2>
-            <p>
-              WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi
-              pengalaman yang menyenangkan
-            </p>
-            <a href="/how-to-order">pelajari ketentuan PO buku di kami</a>
-          </aside>
-        </section>
-
-        <section className="section-block discovery-section" id="akses-buku" aria-labelledby="discovery-title">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Akses &amp; belanja</span>
-              <h2 id="discovery-title">Akses buku untuk Blessfriends</h2>
-            </div>
-            <p>Pilih katalog sesuai aksesmu, lalu gunakan account Blessfriend untuk mengelola pesanan.</p>
-          </div>
+        <section className="section-block discovery-section" id="akses-buku">
           <div className="home-access-grid">
             <article
               className="discovery-card discovery-card-whatsapp"
@@ -131,11 +133,30 @@ export default function HomePage() {
               <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
             </article>
 
-            <HomeOnboarding />
+            <HomeOnboarding tutorialVideoUrl={configuredVideoUrl()} />
           </div>
         </section>
 
-        <HomeQuickGuidance />
+        <section
+          className="section-block order-section home-order-section"
+          id="cara-order"
+          aria-labelledby="order-title"
+        >
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Cara memesan</span>
+              <h2 id="order-title">Pesan dengan alur yang jelas.</h2>
+              <p>Kenali tiga momen utamanya sebelum masuk ke panduan lengkap.</p>
+            </div>
+          </div>
+          <HowToOrderSteps preview />
+          <div className="home-order-footer">
+            <span>Butuh detail dari akses sampai buku tiba?</span>
+            <LinkButton href="/how-to-order" variant="tertiary">
+              Lihat cara memesan <span aria-hidden="true">→</span>
+            </LinkButton>
+          </div>
+        </section>
 
         <section className="section-block story-section" id="bfg-story" aria-labelledby="story-title">
           <div className="section-heading">

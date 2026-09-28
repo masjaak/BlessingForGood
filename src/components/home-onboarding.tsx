@@ -2,11 +2,12 @@
 
 import { useContext, useState } from "react";
 import { BrandMascot } from "@/components/brand";
+import { HowToOrderSteps } from "@/components/how-to-order";
 import { ProductContext } from "@/domain/prototype/context";
 import { ActionGroup, IconButton, LinkButton } from "@/components/ui";
 import { WHATSAPP_HANDOFF_URL } from "@/domain/whatsapp-handoff";
 
-export function HomeOnboarding() {
+export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?: string | null }) {
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const product = useContext(ProductContext);
   const { hydrated, authState, membershipState, sessionRole } = product ?? {
@@ -48,60 +49,85 @@ export function HomeOnboarding() {
           : null;
 
   return (
-    <section
-      className={`home-onboarding-main${welcome ? " home-onboarding-main-welcome" : ""}`}
-      id="blessfriend-account"
-      data-testid="blessfriend-account"
-      aria-labelledby="home-onboarding-title"
-      aria-label={welcome ? "Selamat datang di Blessing For Good" : "Account Blessfriend"}
-      role="region"
-    >
-      <div className="home-onboarding-copy">
-        <div className="home-onboarding-heading">
-          <div>
-            <span className="eyebrow">{welcome ? "Account Blessfriend" : "Status Blessfriend"}</span>
-            <h2 id="home-onboarding-title">{heading}</h2>
+    <div className="home-onboarding" id="blessfriend-account" data-testid="blessfriend-account">
+      <section
+        className={`home-onboarding-main${welcome ? " home-onboarding-main-welcome" : ""}`}
+        aria-labelledby="home-onboarding-title"
+        aria-label={welcome ? "Selamat datang di Blessing For Good" : "Account Blessfriend"}
+        role="region"
+      >
+        <div className="home-onboarding-copy">
+          <div className="home-onboarding-heading">
+            <div>
+              <span className="eyebrow">{welcome ? "Account Blessfriend" : "Status Blessfriend"}</span>
+              <h2 id="home-onboarding-title">{heading}</h2>
+            </div>
+            {welcome ? (
+              <IconButton
+                type="button"
+                variant="tertiary"
+                className="home-onboarding-dismiss"
+                aria-label="Tutup informasi selamat datang"
+                onClick={() => setWelcomeDismissed(true)}
+              >
+                <span aria-hidden="true">×</span>
+              </IconButton>
+            ) : null}
           </div>
+          <p>
+            wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group /
+            pembelian di website
+          </p>
+          {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
           {welcome ? (
-            <IconButton
-              type="button"
-              variant="tertiary"
-              className="home-onboarding-dismiss"
-              aria-label="Tutup informasi selamat datang"
-              onClick={() => setWelcomeDismissed(true)}
-            >
-              <span aria-hidden="true">×</span>
-            </IconButton>
+            <ActionGroup variant="responsive" className="home-onboarding-actions">
+              <LinkButton href="/join">Daftar Blessfriend</LinkButton>
+            </ActionGroup>
+          ) : null}
+          {pending ? (
+            <ActionGroup variant="responsive" className="home-onboarding-actions">
+              <LinkButton href={WHATSAPP_HANDOFF_URL} target="_blank" rel="noopener noreferrer">
+                Minta link WhatsApp Group
+              </LinkButton>
+            </ActionGroup>
+          ) : null}
+          {activeCustomer ? (
+            <ActionGroup variant="responsive" className="home-onboarding-actions">
+              <LinkButton href="/account" variant="secondary">
+                Buka account Blessfriend
+              </LinkButton>
+            </ActionGroup>
           ) : null}
         </div>
-        <p>
-          wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group /
-          pembelian di website
-        </p>
-        {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
-        {welcome ? (
-          <ActionGroup variant="responsive" className="home-onboarding-actions">
-            <LinkButton href="/join">Daftar Blessfriend</LinkButton>
-          </ActionGroup>
-        ) : null}
-        {pending ? (
-          <ActionGroup variant="responsive" className="home-onboarding-actions">
-            <LinkButton href={WHATSAPP_HANDOFF_URL} target="_blank" rel="noopener noreferrer">
-              Minta link WhatsApp Group
+        <div className="home-onboarding-art">
+          <BrandMascot variant="warm" className="home-onboarding-mascot" />
+        </div>
+      </section>
+      <details className="home-onboarding-how-to">
+        <summary>
+          <span>
+            <span className="eyebrow">Panduan BFG</span>
+            Cara Pesan &amp; Cek Katalog PO
+          </span>
+          <span className="home-onboarding-summary-icon" aria-hidden="true">
+            +
+          </span>
+        </summary>
+        <div className="home-onboarding-how-to-content">
+          <p>Ikuti alur singkat ini untuk menemukan buku, membuat pesanan, dan memantau perjalanannya.</p>
+          <HowToOrderSteps />
+          <ActionGroup variant="responsive" className="home-onboarding-how-to-actions">
+            <LinkButton href="/catalog" variant="secondary">
+              Lihat Katalog PO Berjalan
             </LinkButton>
+            {tutorialVideoUrl ? (
+              <LinkButton href={tutorialVideoUrl} target="_blank" rel="noopener noreferrer" variant="tertiary">
+                Tonton Video Cara Pesan ↗
+              </LinkButton>
+            ) : null}
           </ActionGroup>
-        ) : null}
-        {activeCustomer ? (
-          <ActionGroup variant="responsive" className="home-onboarding-actions">
-            <LinkButton href="/account" variant="secondary">
-              Buka account Blessfriend
-            </LinkButton>
-          </ActionGroup>
-        ) : null}
-      </div>
-      <div className="home-onboarding-art">
-        <BrandMascot variant="warm" className="home-onboarding-mascot" />
-      </div>
-    </section>
+        </div>
+      </details>
+    </div>
   );
 }

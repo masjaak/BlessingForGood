@@ -4406,16 +4406,10 @@ p {
   line-height: 1.4;
 }
 
-.customer-shell .home-channel-section,
 .customer-shell .discovery-section,
-.customer-shell .home-quick-guidance,
+.customer-shell .home-order-section,
 .customer-shell .story-section {
   padding-top: var(--homepage-section-gap-desktop);
-}
-
-.customer-shell .home-channel-section .home-hero-entry-note {
-  max-width: 940px;
-  margin-top: 0;
 }
 
 .customer-shell .home-access-grid {
@@ -4547,6 +4541,111 @@ p {
   height: 104px;
 }
 
+.customer-shell .home-order-section .section-heading {
+  margin-bottom: 24px;
+}
+
+.customer-shell .home-order-section .section-heading p {
+  margin: 12px 0 0;
+}
+
+.customer-shell .home-page .order-steps-preview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  overflow: visible;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.customer-shell .home-page .order-steps-preview::before {
+  display: none;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step {
+  display: flex;
+  flex-direction: column;
+  min-height: 214px;
+  grid-template-columns: none;
+  grid-template-rows: none;
+  padding: 24px 28px 24px 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step + .order-step {
+  padding-left: 28px;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step:hover {
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-topline {
+  flex-direction: row;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-content {
+  text-align: left;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-icon-wrap {
+  width: 62px;
+  height: 62px;
+  border: 0;
+  background: var(--mint);
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step h3 {
+  max-width: 240px;
+  margin-top: 2px;
+  font-size: 1.2rem;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step p {
+  max-width: 250px;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.customer-shell .home-page .order-steps-preview .order-step-arrow {
+  display: block;
+  right: -9px;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.customer-shell .home-order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 16px;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+
+.customer-shell .home-order-footer .button {
+  flex: 0 0 auto;
+}
+
 .customer-shell .discovery-card-whatsapp .community-art {
   min-height: 80px;
 }
@@ -4615,9 +4714,8 @@ p {
     min-height: 72px;
   }
 
-  .customer-shell .home-channel-section,
   .customer-shell .discovery-section,
-  .customer-shell .home-quick-guidance,
+  .customer-shell .home-order-section,
   .customer-shell .story-section {
     padding-top: var(--homepage-section-gap-tablet);
   }
@@ -4656,6 +4754,10 @@ p {
   .customer-shell .home-hero .hero-sequence small {
     max-width: none;
   }
+
+  .customer-shell .home-page .order-steps-preview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -4686,10 +4788,6 @@ p {
     flex-direction: column;
     gap: var(--button-stack-gap);
     margin-top: 14px;
-  }
-
-  .customer-shell .home-channel-section .home-hero-entry-note {
-    padding: var(--space-sm);
   }
 
   .customer-shell .home-hero-actions > .button {
@@ -4737,9 +4835,8 @@ p {
     font-size: 0.8rem;
   }
 
-  .customer-shell .home-channel-section,
   .customer-shell .discovery-section,
-  .customer-shell .home-quick-guidance,
+  .customer-shell .home-order-section,
   .customer-shell .story-section {
     padding-top: var(--homepage-section-gap-mobile);
   }
@@ -4770,6 +4867,37 @@ p {
 
   .customer-shell .community-copy p {
     font-size: 0.9rem;
+  }
+
+  .customer-shell .home-page .order-steps-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-shell .home-page .order-steps-preview .order-step,
+  .customer-shell .home-page .order-steps-preview .order-step + .order-step {
+    min-height: 0;
+    padding: 20px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .customer-shell .home-page .order-steps-preview .order-step:last-child {
+    padding-bottom: 20px;
+    border-bottom: 0;
+  }
+
+  .customer-shell .home-page .order-steps-preview .order-step-arrow {
+    display: none;
+  }
+
+  .customer-shell .home-order-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .customer-shell .home-order-footer .button {
+    width: auto;
   }
 }
 
@@ -8855,19 +8983,25 @@ p {
   transform-origin: bottom center;
 }
 
-.customer-shell .home-quick-guidance-list {
+/* The existing account guide moves with the account card into the access sequence. */
+.customer-shell .home-onboarding {
   display: grid;
-  gap: var(--space-sm);
+  gap: var(--space-md);
+  min-width: 0;
 }
 
-.customer-shell .home-guidance-disclosure {
+.customer-shell .home-access-grid > .home-onboarding {
+  margin: 0;
+}
+
+.customer-shell .home-onboarding-how-to {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
 }
 
-.customer-shell .home-guidance-disclosure > summary {
+.customer-shell .home-onboarding-how-to > summary {
   display: flex;
   min-height: 64px;
   align-items: center;
@@ -8880,28 +9014,25 @@ p {
   list-style: none;
 }
 
-.customer-shell .home-guidance-disclosure > summary::-webkit-details-marker {
+.customer-shell .home-onboarding-how-to > summary::-webkit-details-marker {
   display: none;
 }
 
-.customer-shell .home-guidance-disclosure > summary:focus-visible {
+.customer-shell .home-onboarding-how-to > summary:focus-visible {
   box-shadow: var(--focus);
   outline: none;
 }
 
-.customer-shell .home-guidance-disclosure > summary > span:first-child {
+.customer-shell .home-onboarding-how-to > summary > span:first-child {
   display: grid;
   gap: var(--space-xxs);
 }
 
-.customer-shell .home-guidance-disclosure > summary small {
-  color: var(--ink-muted);
-  font-size: 0.88rem;
-  font-weight: 400;
-  line-height: 1.45;
+.customer-shell .home-onboarding-how-to > summary .eyebrow {
+  color: var(--accent);
 }
 
-.customer-shell .home-guidance-summary-icon {
+.customer-shell .home-onboarding-summary-icon {
   display: grid;
   width: 32px;
   height: 32px;
@@ -8914,30 +9045,29 @@ p {
   line-height: 1;
 }
 
-.customer-shell .home-guidance-disclosure[open] .home-guidance-summary-icon {
+.customer-shell .home-onboarding-how-to[open] .home-onboarding-summary-icon {
   transform: rotate(45deg);
 }
 
-.customer-shell .home-guidance-disclosure-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  align-items: center;
-  padding: var(--space-md) var(--space-lg);
+.customer-shell .home-onboarding-how-to-content {
+  display: grid;
+  gap: var(--space-lg);
+  padding: 0 var(--space-lg) var(--space-lg);
   border-top: 1px solid var(--line);
 }
 
-.customer-shell .home-guidance-disclosure-content p {
-  margin: 0 auto 0 0;
+.customer-shell .home-onboarding-how-to-content > p {
+  margin: var(--space-lg) 0 0;
   color: var(--ink-muted);
 }
 
-.customer-shell .home-guidance-disclosure-content .button {
-  flex: 0 0 auto;
+.customer-shell .home-onboarding-how-to-content .order-steps {
+  margin: 0;
 }
 
-.customer-shell .home-quick-guidance .section-heading {
-  margin-bottom: 18px;
+.customer-shell .home-onboarding-how-to-actions {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--line);
 }
 
 @media (max-width: 900px) {
@@ -8966,17 +9096,13 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .customer-shell .home-guidance-disclosure > summary {
+  .customer-shell .home-onboarding-how-to > summary {
     min-height: 60px;
     padding-inline: var(--space-md);
   }
 
-  .customer-shell .home-guidance-disclosure-content {
+  .customer-shell .home-onboarding-how-to-content {
     padding-inline: var(--space-md);
-  }
-
-  .customer-shell .home-guidance-disclosure-content .button {
-    width: 100%;
   }
 
   .catalog-result-toolbar {

@@ -39,6 +39,10 @@ describe("Homepage Blessfriend onboarding", () => {
     expect(document.querySelector(".home-onboarding-mascot")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
     expect(screen.getByRole("button", { name: "Tutup informasi selamat datang" })).toBeTruthy();
+    const guide = screen.getByText("Cara Pesan & Cek Katalog PO", { exact: true }).closest("details");
+    expect(guide).not.toBeNull();
+    fireEvent.click(guide!.querySelector("summary")!);
+    expect(screen.getByRole("list", { name: "Langkah cara memesan" }).querySelectorAll("li")).toHaveLength(7);
   });
 
   it("shows contextual onboarding for a signed-in applicant who has not applied", () => {
