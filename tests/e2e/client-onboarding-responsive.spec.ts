@@ -61,15 +61,17 @@ test("renders the client redline homepage and guide at responsive widths @custom
     const joinGroup = page.getByRole("link", { name: "Minta link WhatsApp Group" }).first();
     await expect(joinGroup).toHaveAttribute("href", "https://wa.me/6282347278881");
     const secretCard = page.getByTestId("secret-catalog");
-    await expect(secretCard.locator(":scope > .discovery-card-heading")).toHaveCount(1);
-    await expect(secretCard.locator(":scope > .discovery-card-heading .discovery-lock svg")).toBeVisible();
+    await expect(secretCard.locator(":scope > .discovery-card-copy > .discovery-card-heading")).toHaveCount(1);
+    await expect(
+      secretCard.locator(":scope > .discovery-card-copy > .discovery-card-heading .discovery-card-icon svg"),
+    ).toBeVisible();
     await expect(secretCard.getByText("AKSES PRIVAT", { exact: true })).toBeVisible();
     await expect(secretCard.locator(".community-mascot, .home-onboarding-mascot")).toHaveCount(0);
     await expect(secretCard.getByRole("heading", { name: "Secret Catalog" })).toBeVisible();
     await expect(secretCard.getByRole("link", { name: "Buka Secret Catalog" })).toHaveAttribute("href", "/catalog");
     const readyCard = page.getByTestId("ready-stock");
     await expect(readyCard.getByRole("heading", { name: "Ready Stock", exact: true })).toBeVisible();
-    await expect(readyCard.locator(".eyebrow")).toHaveCount(0);
+    await expect(readyCard.locator(".eyebrow")).toHaveText("BUKU TERSEDIA");
     await expect(readyCard.getByRole("link", { name: "Lihat Ready Stock" })).toHaveAttribute("href", "/ready-stock");
     await expect(page.getByText("PILIHAN UTAMA", { exact: true })).toHaveCount(0);
     await expect(page.getByText("KOMUNITAS BFG", { exact: true })).toHaveCount(0);
@@ -135,7 +137,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
       ),
     ).toHaveCount(0);
     await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
-    await expect(page.locator(".home-hero h1")).toHaveText("SPECIALIST CHILDREN & COLLECTOR BOOKS 📚");
+    await expect(page.locator(".home-hero h1")).toHaveText("SPECIALIST CHILDREN & COLLECTOR BOOKS");
     await expect(page.locator(".home-hero .lede")).toHaveText(
       "kami mengkurasi buku-buku children books, novel books dan collector special edition",
     );
@@ -222,7 +224,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(widget).toBeVisible();
     await expect(page.locator(".home-onboarding-how-to")).toBeVisible();
     await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
-    await expect(page.getByRole("heading", { name: "SPECIALIST CHILDREN & COLLECTOR BOOKS 📚" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "SPECIALIST CHILDREN & COLLECTOR BOOKS" })).toBeVisible();
     await expect(
       page.getByText("kami mengkurasi buku-buku children books, novel books dan collector special edition"),
     ).toBeVisible();
@@ -273,7 +275,13 @@ test("renders the client redline homepage and guide at responsive widths @custom
           button: target
             ? { left: target.left, top: target.top, bottom: target.bottom, width: target.width, height: target.height }
             : null,
+          buttonFits: Boolean(
+            action && action.scrollWidth <= action.clientWidth && action.scrollHeight <= action.clientHeight,
+          ),
+          buttonWhiteSpace: action ? getComputedStyle(action).whiteSpace : null,
           copy: copy?.getBoundingClientRect().toJSON(),
+          copyParagraphWidth: copy?.querySelector("p")?.getBoundingClientRect().width ?? 0,
+          copyHeading: copy?.querySelector("h2, h3")?.getBoundingClientRect().toJSON(),
           art: art?.getBoundingClientRect().toJSON(),
           mascot: mascot?.getBoundingClientRect().toJSON(),
           close: close?.getBoundingClientRect().toJSON(),
@@ -286,9 +294,11 @@ test("renders the client redline homepage and guide at responsive widths @custom
     expect(cards[0].art && cards[0].art.width > 0 && cards[0].art.height > 0).toBe(true);
     expect(cards[3].art && cards[3].art.width > 0 && cards[3].art.height > 0).toBe(true);
     expect(cards.every((card) => card.art && card.art.width > 0 && card.art.height > 0)).toBe(true);
-    expect(cards.every((card) => card.button && card.button.height >= 44)).toBe(true);
+    expect(cards.every((card) => card.button && card.button.height >= 48)).toBe(true);
     expect(new Set(cards.map((card) => card.button?.height)).size).toBe(1);
     expect(cards.every((card) => card.copy && card.button && card.copy.bottom <= card.button.top)).toBe(true);
+    expect(cards.every((card) => card.copy && card.copy.width >= 200 && card.copyParagraphWidth >= 180)).toBe(true);
+    expect(cards.every((card) => card.buttonFits && card.buttonWhiteSpace === "normal")).toBe(true);
     const cardContentFits = cards.map((card) => ({
       id: card.id,
       fits: Boolean(
@@ -321,6 +331,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
           ) <= 1,
       ),
     ).toBe(true);
+    expect(cards[3].close && cards[3].copyHeading && cards[3].close.bottom <= cards[3].copyHeading.top).toBe(true);
     expect(
       cards.every(
         (card) =>
@@ -378,7 +389,10 @@ test("renders the client redline homepage and guide at responsive widths @custom
         return { x, y, width: w, height: h, top, right, bottom, left };
       };
       const hero = document.querySelector(".home-hero");
+      const heroEyebrow = document.querySelector(".home-hero .hero-copy > .eyebrow");
       const heroTitle = document.querySelector("#home-title");
+      const heroDescription = document.querySelector(".home-hero .lede");
+      const heroActions = document.querySelector(".home-hero-actions");
       const primary = document.querySelector(".home-hero-actions a[href='/ready-stock']");
       const guidance = document.querySelector(".home-onboarding-main");
       const summary = document.querySelector(".home-onboarding-how-to > summary");
@@ -398,7 +412,10 @@ test("renders the client redline homepage and guide at responsive widths @custom
       return {
         overflow: document.documentElement.scrollWidth > window.innerWidth,
         hero: box(hero),
+        heroEyebrow: box(heroEyebrow),
         heroTitle: box(heroTitle),
+        heroDescription: box(heroDescription),
+        heroActions: box(heroActions),
         primary: box(primary),
         guidance: box(guidance),
         summary: box(summary),
@@ -428,7 +445,8 @@ test("renders the client redline homepage and guide at responsive widths @custom
         range.selectNodeContents(heading);
         return range.getClientRects().length;
       });
-      expect(accountHeadingLines).toBe(2);
+      expect(accountHeadingLines).toBeGreaterThanOrEqual(2);
+      expect(accountHeadingLines).toBeLessThanOrEqual(3);
       expect(Math.abs(cards[0].button!.width - cards[1].button!.width)).toBeLessThanOrEqual(1);
       expect(Math.abs(cards[1].button!.width - cards[2].button!.width)).toBeLessThanOrEqual(1);
       expect(Math.abs(cards[2].button!.width - cards[3].button!.width)).toBeLessThanOrEqual(1);
@@ -436,6 +454,18 @@ test("renders the client redline homepage and guide at responsive widths @custom
     expect(metrics.overflow, `${width}px horizontal overflow`).toBe(false);
     expect(metrics.hero?.left, `${width}px hero left edge`).toBeGreaterThanOrEqual(0);
     expect(metrics.hero?.right, `${width}px hero right edge`).toBeLessThanOrEqual(width);
+    expect(
+      metrics.heroTitle!.top - metrics.heroEyebrow!.bottom,
+      `${width}px hero eyebrow/title gap`,
+    ).toBeGreaterThanOrEqual(10);
+    expect(
+      metrics.heroDescription!.top - metrics.heroTitle!.bottom,
+      `${width}px hero title/description gap`,
+    ).toBeGreaterThanOrEqual(10);
+    expect(
+      metrics.heroActions!.top - metrics.heroDescription!.bottom,
+      `${width}px hero description/actions gap`,
+    ).toBeGreaterThanOrEqual(10);
     expect(metrics.heroTitle?.right, `${width}px hero title right edge`).toBeLessThanOrEqual(width);
     expect(metrics.primary?.height, `${width}px primary CTA target`).toBeGreaterThanOrEqual(44);
     expect(metrics.primary?.top, `${width}px primary CTA in viewport`).toBeGreaterThanOrEqual(0);
@@ -457,6 +487,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
       page.locator("[data-testid='join-whatsapp'] .community-mascot"),
       page.locator("[data-testid='blessfriend-account'] .home-onboarding-mascot"),
     ]) {
+      await mascot.scrollIntoViewIfNeeded();
       await expect
         .poll(() => mascot.evaluate((image) => (image as HTMLImageElement).naturalWidth), {
           message: `${width}px card mascot image loads`,
@@ -478,6 +509,9 @@ test("renders the client redline homepage and guide at responsive widths @custom
       }
     }
     await page.screenshot({ path: `${evidenceDirectory}/home-${width}.png`, fullPage: true });
+    if ([390, 1024, 1440].includes(width)) {
+      await page.locator(".home-hero").screenshot({ path: `${evidenceDirectory}/hero-${width}.png` });
+    }
     await page.setViewportSize({ width, height: 1440 });
     await page.evaluate(() => document.querySelector(".discovery-section")?.scrollIntoView({ block: "start" }));
     await page.locator(".discovery-section").screenshot({ path: `${evidenceDirectory}/home-cards-${width}.png` });

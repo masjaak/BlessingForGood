@@ -39,7 +39,7 @@ describe("Homepage Blessfriend onboarding", () => {
     ).toBeNull();
     expect(document.querySelector(".home-onboarding-mascot")).toBeTruthy();
     const card = screen.getByTestId("blessfriend-account");
-    expect(card.querySelector(".home-onboarding-copy + .home-onboarding-actions + .home-onboarding-art")).toBeTruthy();
+    expect(card.querySelector(".home-onboarding-copy + .home-onboarding-art + .home-onboarding-actions")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
     expect(screen.getByRole("button", { name: "Tutup informasi selamat datang" })).toBeTruthy();
     const guide = screen.getByText("Cara Pesan & Cek Katalog PO", { exact: true }).closest("details");

@@ -43,11 +43,13 @@ export function BrandMascot({
   variant = "default",
   decorative = false,
   priority = false,
+  sizes = "(max-width: 640px) 112px, 160px",
   className = "",
 }: {
   variant?: BrandMascotVariant;
   decorative?: boolean;
   priority?: boolean;
+  sizes?: string;
   className?: string;
 }) {
   const asset = brandAssets.mascots[variant];
@@ -58,7 +60,7 @@ export function BrandMascot({
       width={asset.width}
       height={asset.height}
       className={`brand-mascot brand-mascot-${variant} ${className}`.trim()}
-      sizes="(max-width: 640px) 112px, 160px"
+      sizes={sizes}
       priority={priority}
     />
   );
