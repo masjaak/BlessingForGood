@@ -42,11 +42,9 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
     ? "Pastikan kamu sudah bergabung ke WhatsApp Group BFG. Admin akan memeriksa pendaftaranmu."
     : invitationPending
       ? "Cek email untuk menyelesaikan aktivasi akun."
-      : welcome
-        ? "Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."
-        : suspended
-          ? "Akun Blessfriend ini sedang ditangguhkan."
-          : null;
+      : suspended
+        ? "Akun Blessfriend ini sedang ditangguhkan."
+        : null;
 
   return (
     <div className="home-onboarding" id="blessfriend-account" data-testid="blessfriend-account">
