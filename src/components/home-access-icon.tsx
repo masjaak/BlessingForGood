@@ -1,5 +1,3 @@
-"use client";
-
 type HomeAccessIconKind = "community" | "private" | "ready" | "account";
 
 const commonSvgProps = {
