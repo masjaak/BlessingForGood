@@ -361,7 +361,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
 
   await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
   const close = page.getByRole("button", { name: "Tutup informasi selamat datang" });
-  await close.press("Enter");
+  await close.click();
   await expect(page.locator(".home-onboarding-main")).toHaveCount(0);
 });
 
