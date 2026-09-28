@@ -33,10 +33,13 @@ describe("Homepage Blessfriend onboarding", () => {
         "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
       ),
     ).toBeTruthy();
+    expect(screen.getByText("ACCOUNT BLESSFRIEND", { exact: true })).toBeTruthy();
     expect(
       screen.queryByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
     ).toBeNull();
     expect(document.querySelector(".home-onboarding-mascot")).toBeTruthy();
+    const card = screen.getByTestId("blessfriend-account");
+    expect(card.querySelector(".home-onboarding-copy + .home-onboarding-actions + .home-onboarding-art")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
     expect(screen.getByRole("button", { name: "Tutup informasi selamat datang" })).toBeTruthy();
     const guide = screen.getByText("Cara Pesan & Cek Katalog PO", { exact: true }).closest("details");

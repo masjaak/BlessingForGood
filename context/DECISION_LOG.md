@@ -4,6 +4,12 @@ Canonical decision register for the reconciled Phase 07.1 baseline and BFG
 Agent Development System V2. Historical reports remain unchanged; this file is
 the active decision index.
 
+## Homepage card fidelity Phase 3D.1 — 2026-09-28
+
+| ID | Old decision | New decision | Source / owner | Status |
+|---|---|---|---|---|
+| BFG-DEC-084 | Phase 3D used two desktop columns, normalized all CTAs to full width, placed mascots beside copy, and left the expanded order guide in seven narrow columns. Client rejected that composition. | Match the client screenshot: three equal card columns at 901px and wider, two columns from 641–900px, one column at 640px and below; Account starts at desktop row two/column one. Join CTA is wide, others compact, and Join/Account mascots sit below actions. Render the expanded seven-step guide as two desktop columns and a vertical timeline at 900px and below. Preserve copy, step order, and all existing domain flows. | Client screenshots; rendered component geometry and responsive screenshot evidence | FINAL_HOMEPAGE_UI_VERIFIED |
+
 ## My Books UI, preorder name autofill, and Catalog ordering — 2026-09-02
 
 | ID | Old decision | New decision | Source / owner | Status |

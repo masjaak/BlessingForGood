@@ -1,5 +1,32 @@
 # BFG SOURCE OF TRUTH
 
+## Final homepage UI — 2026-09-28
+
+The production homepage access-card sequence is Join WhatsApp Group → Secret
+Catalog → Ready Stock → Blessfriend account. Match the supplied client
+screenshot: three equal columns at 901px and wider, with the first three cards
+in row one and Account in row two/column one; use two columns from 641–900px and
+one ordered column at 640px and below. Keep Join’s wide CTA distinct from the
+compact Secret Catalog, Ready Stock, and Account CTAs. All controls share their
+height, typography, and radius. Center the Join and Account mascots in lower
+areas below their CTAs; Secret Catalog keeps its lock and `AKSES PRIVAT` eyebrow
+without a mascot; Ready Stock has no eyebrow or mascot. Keep Account’s close
+affordance in the approved welcome state. The How To Order disclosure follows
+the four cards as separate guidance. Remove the duplicate lower `Temukan
+bukunya` preview.
+
+When expanded, the seven-step guidance uses two readable columns at desktop
+widths and a vertical one-column timeline at 900px and below. Keep each step's
+number, icon, heading, and body together in numeric order, and let the disclosure
+grow with its content.
+
+Use the exact approved card copy in the implementation report. This is a
+presentation-only correction. WhatsApp remains the community, curation, and
+access-code channel; the website remains the account and shopping surface.
+Phase 2 admission, protected Catalog access, Ready Stock, and all existing
+Clerk, Convex, membership, Cart, Order, Invoice, Payment, Finance, and Batch
+behavior remain authoritative. Manual PO and Phase 4 are out of scope.
+
 ## Client content Phase 3C literal redlines — 2026-09-28
 
 The latest client annotations are literal edits over the existing interface:

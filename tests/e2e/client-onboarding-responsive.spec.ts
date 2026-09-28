@@ -49,6 +49,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
         "wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari",
       ),
     ).toBeVisible();
+    await expect(joinCard.locator(".community-mascot")).toBeVisible();
     await expect(joinCard.getByRole("heading", { name: "Gabung WhatsApp Group Blessing For Good" })).toHaveCount(0);
     await expect(joinCard.getByText("Komunitas BFG", { exact: true })).toHaveCount(0);
     await expect(
@@ -59,12 +60,24 @@ test("renders the client redline homepage and guide at responsive widths @custom
     ).toHaveCount(0);
     const joinGroup = page.getByRole("link", { name: "Minta link WhatsApp Group" }).first();
     await expect(joinGroup).toHaveAttribute("href", "https://wa.me/6282347278881");
-    await expect(page.getByRole("heading", { name: "Secret Catalog" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Ready Stock", exact: true })).toBeVisible();
+    const secretCard = page.getByTestId("secret-catalog");
+    await expect(secretCard.locator(":scope > .discovery-card-heading")).toHaveCount(1);
+    await expect(secretCard.locator(":scope > .discovery-card-heading .discovery-lock svg")).toBeVisible();
+    await expect(secretCard.getByText("AKSES PRIVAT", { exact: true })).toBeVisible();
+    await expect(secretCard.locator(".community-mascot, .home-onboarding-mascot")).toHaveCount(0);
+    await expect(secretCard.getByRole("heading", { name: "Secret Catalog" })).toBeVisible();
+    await expect(secretCard.getByRole("link", { name: "Buka Secret Catalog" })).toHaveAttribute("href", "/catalog");
+    const readyCard = page.getByTestId("ready-stock");
+    await expect(readyCard.getByRole("heading", { name: "Ready Stock", exact: true })).toBeVisible();
+    await expect(readyCard.locator(".eyebrow")).toHaveCount(0);
+    await expect(readyCard.getByRole("link", { name: "Lihat Ready Stock" })).toHaveAttribute("href", "/ready-stock");
     await expect(page.getByText("PILIHAN UTAMA", { exact: true })).toHaveCount(0);
     await expect(page.getByText("KOMUNITAS BFG", { exact: true })).toHaveCount(0);
     await expect(page.getByText("TEMUKAN BUKU", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Mulai dari buku yang ingin kamu temukan.", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".home-order-section, .order-steps-preview")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Temukan bukunya", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Pesan dengan alur yang jelas." })).toHaveCount(0);
     await expect(page.locator(".discovery-section > .section-heading")).toHaveCount(0);
     await expect(page.locator(".discovery-section > .home-access-grid")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Akses buku untuk Blessfriends" })).toHaveCount(0);
@@ -76,10 +89,11 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(
       page.getByText(
         "buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi Blessfriends",
+        { exact: true },
       ),
     ).toBeVisible();
     await expect(
-      page.getByText("katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group"),
+      page.getByText("katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group", { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText(
@@ -144,7 +158,9 @@ test("renders the client redline homepage and guide at responsive widths @custom
     );
 
     await expect(region).toBeVisible();
+    await expect(region.getByText("ACCOUNT BLESSFRIEND", { exact: true })).toBeVisible();
     await expect(region.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
+    await expect(region.getByRole("button", { name: "Tutup informasi selamat datang" })).toBeVisible();
     await expect(
       region.getByText(
         "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
@@ -198,7 +214,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
   await expect(page.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
 
-  const widths = [375, 390, 430, 768, 834, 1024, 1280, 1440];
+  const widths = [375, 390, 430, 768, 1024, 1280, 1440];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
@@ -220,17 +236,139 @@ test("renders the client redline homepage and guide at responsive widths @custom
               section.id || [...section.classList].find((name) => !["section", "section-block", "hero"].includes(name)),
           ),
         ),
-    ).resolves.toEqual(["home-hero", "akses-buku", "cara-order", "bfg-story"]);
+    ).resolves.toEqual(["home-hero", "akses-buku", "bfg-story"]);
     await expect(
       page
-        .locator(".home-access-grid > *")
+        .locator(".home-access-grid > [data-testid]")
         .evaluateAll((cards) => cards.map((card) => card.getAttribute("data-testid"))),
     ).resolves.toEqual(["join-whatsapp", "secret-catalog", "ready-stock", "blessfriend-account"]);
-    const accessButtonHeights = await page
-      .locator(".home-access-grid .button:visible")
-      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
-    expect(accessButtonHeights).toHaveLength(5);
-    expect(accessButtonHeights.every((height) => height >= 44)).toBe(true);
+    const cards = await page.locator(".home-access-grid > [data-testid]").evaluateAll((elements) =>
+      elements.map((card) => {
+        const main = card.querySelector<HTMLElement>(".home-onboarding-main");
+        const mascot = card.querySelector<HTMLElement>(".community-mascot, .home-onboarding-mascot");
+        const art = card.querySelector<HTMLElement>(".community-art, .home-onboarding-art");
+        const close = card.querySelector<HTMLElement>(".home-onboarding-dismiss");
+        const copy = card.querySelector<HTMLElement>(
+          card.matches("[data-testid='join-whatsapp']")
+            ? ".community-copy"
+            : card.matches("[data-testid='secret-catalog']")
+              ? ".discovery-card-heading + div"
+              : card.matches("[data-testid='ready-stock']")
+                ? ":scope > div"
+                : ".home-onboarding-copy",
+        );
+        const action = card.matches("#blessfriend-account")
+          ? card.querySelector<HTMLElement>(".home-onboarding-actions > .button")
+          : card.querySelector<HTMLElement>(":scope > .button");
+        const target = action?.getBoundingClientRect();
+        const cardBox = card.getBoundingClientRect();
+        const style = getComputedStyle(card);
+        return {
+          id: card.getAttribute("data-testid"),
+          left: cardBox.left,
+          top: cardBox.top,
+          bottom: cardBox.bottom,
+          width: cardBox.width,
+          height: cardBox.height,
+          paddingLeft: Number.parseFloat(style.paddingLeft),
+          paddingRight: Number.parseFloat(style.paddingRight),
+          paddingBottom: Number.parseFloat(style.paddingBottom),
+          borderLeft: Number.parseFloat(style.borderLeftWidth),
+          borderRight: Number.parseFloat(style.borderRightWidth),
+          borderBottom: Number.parseFloat(style.borderBottomWidth),
+          button: target
+            ? { left: target.left, top: target.top, bottom: target.bottom, width: target.width, height: target.height }
+            : null,
+          copy: copy?.getBoundingClientRect().toJSON(),
+          art: art?.getBoundingClientRect().toJSON(),
+          mascot: mascot?.getBoundingClientRect().toJSON(),
+          close: close?.getBoundingClientRect().toJSON(),
+          onboardingMain: main?.getBoundingClientRect().toJSON(),
+        };
+      }),
+    );
+    expect(cards).toHaveLength(4);
+    expect(cards.every((card) => card.copy && card.copy.width > 0 && card.copy.height > 0)).toBe(true);
+    expect(cards[0].art && cards[0].art.width > 0 && cards[0].art.height > 0).toBe(true);
+    expect(cards[3].art && cards[3].art.width > 0 && cards[3].art.height > 0).toBe(true);
+    expect(cards[1].art).toBeUndefined();
+    expect(cards[2].art).toBeUndefined();
+    expect(cards.every((card) => card.button && card.button.height >= 44)).toBe(true);
+    expect(new Set(cards.map((card) => card.button?.height)).size).toBe(1);
+    expect(cards.every((card) => card.copy && card.button && card.copy.bottom <= card.button.top)).toBe(true);
+    const cardContentFits = cards.map((card) => ({
+      id: card.id,
+      fits: Boolean(
+        card.copy &&
+        card.button &&
+        card.copy.left >= card.left + card.paddingLeft + card.borderLeft - 1 &&
+        card.copy.right <= card.left + card.width - card.paddingRight - card.borderRight + 1 &&
+        card.button.left + card.button.width <= card.left + card.width - card.paddingRight - card.borderRight + 1,
+      ),
+      copyRight: card.copy?.right,
+      buttonRight: card.button ? card.button.left + card.button.width : null,
+      contentRight: card.left + card.width - card.paddingRight - card.borderRight,
+    }));
+    expect(
+      cardContentFits.every((card) => card.fits),
+      `${width}px card content bounds: ${JSON.stringify(cardContentFits)}`,
+    ).toBe(true);
+    expect(
+      cards.every(
+        (card) => card.button && Math.abs(card.button.left - card.left - card.paddingLeft - card.borderLeft) <= 1,
+      ),
+    ).toBe(true);
+    expect(
+      Math.abs(
+        cards[0].button!.width -
+          (cards[0].width - cards[0].paddingLeft - cards[0].paddingRight - cards[0].borderLeft - cards[0].borderRight),
+      ),
+    ).toBeLessThanOrEqual(1);
+    expect(cards[1].button!.width).toBeLessThan(cards[1].width * 0.75);
+    expect(cards[2].button!.width).toBeLessThan(cards[2].width * 0.75);
+    expect(cards[3].button!.width).toBeLessThan(cards[3].width * 0.75);
+    expect(
+      [cards[1], cards[2]].every(
+        (card) =>
+          card.button && Math.abs(card.bottom - card.button.bottom - card.paddingBottom - card.borderBottom) <= 1,
+      ),
+    ).toBe(true);
+    const expectedColumns = width >= 901 ? 3 : width > 640 ? 2 : 1;
+    const actualColumns = await page
+      .locator(".home-access-grid")
+      .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length);
+    expect(actualColumns, `${width}px access-card column count`).toBe(expectedColumns);
+    if (width <= 640) {
+      expect(cards[0].top).toBeLessThan(cards[1].top);
+      expect(cards[1].top).toBeLessThan(cards[2].top);
+      expect(cards[2].top).toBeLessThan(cards[3].top);
+    } else if (width <= 900) {
+      expect(Math.abs(cards[0].top - cards[1].top)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[2].top - cards[3].top)).toBeLessThanOrEqual(1);
+      expect(cards[2].top).toBeGreaterThan(cards[0].top);
+    } else {
+      expect(Math.abs(cards[0].top - cards[1].top)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[1].top - cards[2].top)).toBeLessThanOrEqual(1);
+      expect(cards[3].top).toBeGreaterThan(cards[0].top);
+      expect(Math.abs(cards[0].left - cards[3].left)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[0].width - cards[1].width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[1].width - cards[2].width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[0].height - cards[1].height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[1].height - cards[2].height)).toBeLessThanOrEqual(1);
+    }
+    for (const card of [cards[0], cards[3]]) {
+      const mascot = card.mascot;
+      const copy = card.copy;
+      const button = card.button;
+      const art = card.art;
+      expect(mascot && copy && button).toBeTruthy();
+      expect(art!.top).toBeGreaterThanOrEqual(button!.bottom);
+      expect(mascot!.top).toBeGreaterThanOrEqual(button!.bottom);
+      expect(mascot!.bottom).toBeLessThanOrEqual(card.bottom - card.paddingBottom - card.borderBottom);
+      expect(Math.abs(mascot!.left + mascot!.width / 2 - (card.left + card.width / 2))).toBeLessThanOrEqual(3);
+      expect(copy!.bottom).toBeLessThanOrEqual(button!.top);
+      expect(card.id === "join-whatsapp" || (card.close && card.close.bottom < mascot!.top)).toBe(true);
+    }
     await expect(page.locator(".home-journey .hero-sequence small")).toHaveText([
       "agar kami lebih mudah reachout customer, kami mewajibkan customer kami bergabung di WA group",
       "untuk memantau pesanan buku, check buku PO berjalan & melakukan pemesanan",
@@ -239,12 +377,6 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(page.getByRole("link", { name: "Lihat Ready Stock" }).first()).toHaveAttribute("href", "/ready-stock");
     await expect(page.getByRole("link", { name: "Buka Secret Catalog" }).first()).toHaveAttribute("href", "/catalog");
     await expect(page.locator(".home-onboarding-how-to > summary")).toContainText("Cara Pesan & Cek Katalog PO");
-    const orderPreview = page.getByRole("list", { name: "Ringkasan cara memesan" });
-    await expect(orderPreview.locator("h3")).toHaveText([
-      "Temukan bukunya",
-      "Pesan & tunggu proses BFG",
-      "Pantau sampai buku datang",
-    ]);
     const metrics = await page.evaluate(() => {
       const box = (element: Element | null) => {
         if (!element) return null;
@@ -254,8 +386,8 @@ test("renders the client redline homepage and guide at responsive widths @custom
       const hero = document.querySelector(".home-hero");
       const heroTitle = document.querySelector("#home-title");
       const primary = document.querySelector(".home-hero-actions a[href='/ready-stock']");
-      const guidance = document.querySelector(".home-onboarding");
-      const summary = guidance?.querySelector(".home-onboarding-how-to > summary") ?? null;
+      const guidance = document.querySelector(".home-onboarding-main");
+      const summary = document.querySelector(".home-onboarding-how-to > summary");
       const ready = document.querySelector(".discovery-card-ready");
       const secret = document.querySelector(".discovery-card-secret");
       const join = document.querySelector("[data-testid='join-whatsapp']");
@@ -292,6 +424,21 @@ test("renders the client redline homepage and guide at responsive widths @custom
     });
 
     console.log(`HOME_GEOMETRY ${JSON.stringify({ width, ...metrics })}`);
+    if (width === 1440) {
+      console.log(
+        `HOME_CARD_BUTTON_WIDTHS_1440 ${JSON.stringify(Object.fromEntries(cards.map((card) => [card.id, card.button?.width])))}`,
+      );
+      await expect(page.locator("#join-title > span")).toHaveText(["BLESSING FOR", "GOOD"]);
+      const accountHeadingLines = await page.locator("#home-onboarding-title").evaluate((heading) => {
+        const range = document.createRange();
+        range.selectNodeContents(heading);
+        return range.getClientRects().length;
+      });
+      expect(accountHeadingLines).toBe(2);
+      expect(cards[0].button!.width).toBeGreaterThan(cards[1].button!.width);
+      expect(cards[0].button!.width).toBeGreaterThan(cards[2].button!.width);
+      expect(cards[0].button!.width).toBeGreaterThan(cards[3].button!.width);
+    }
     expect(metrics.overflow, `${width}px horizontal overflow`).toBe(false);
     expect(metrics.hero?.left, `${width}px hero left edge`).toBeGreaterThanOrEqual(0);
     expect(metrics.hero?.right, `${width}px hero right edge`).toBeLessThanOrEqual(width);
@@ -311,7 +458,122 @@ test("renders the client redline homepage and guide at responsive widths @custom
       expect(metrics.navVisible, `${width}px bottom navigation`).toBe(true);
       expect(metrics.navHit, `${width}px bottom navigation hit target`).toBe(true);
     }
+    await page.locator(".discovery-section").scrollIntoViewIfNeeded();
+    for (const mascot of [
+      page.locator("[data-testid='join-whatsapp'] .community-mascot"),
+      page.locator("[data-testid='blessfriend-account'] .home-onboarding-mascot"),
+    ]) {
+      await expect
+        .poll(() => mascot.evaluate((image) => (image as HTMLImageElement).naturalWidth), {
+          message: `${width}px card mascot image loads`,
+          timeout: 15_000,
+        })
+        .toBeGreaterThan(0);
+    }
+    if (width <= 640) {
+      for (const card of ["#join-whatsapp", "#blessfriend-account"]) {
+        await page.locator(card).scrollIntoViewIfNeeded();
+        const mascotOverlapsNavigation = await page.locator(`${card} img.brand-mascot`).evaluate((mascot) => {
+          const navigation = document.querySelector(".customer-bottom-nav");
+          if (!navigation) return false;
+          const image = mascot.getBoundingClientRect();
+          const nav = navigation.getBoundingClientRect();
+          return image.left < nav.right && image.right > nav.left && image.top < nav.bottom && image.bottom > nav.top;
+        });
+        expect(mascotOverlapsNavigation, `${width}px ${card} mascot clears bottom navigation`).toBe(false);
+      }
+    }
     await page.screenshot({ path: `${evidenceDirectory}/home-${width}.png`, fullPage: true });
+    await page.setViewportSize({ width, height: 1440 });
+    await page.evaluate(() => document.querySelector(".discovery-section")?.scrollIntoView({ block: "start" }));
+    await page.locator(".discovery-section").screenshot({ path: `${evidenceDirectory}/home-cards-${width}.png` });
+
+    await page.setViewportSize({ width, height: 900 });
+    const guide = page.locator(".home-onboarding-how-to");
+    await guide.locator("summary").click();
+    const guideSteps = guide.getByRole("list", { name: "Langkah cara memesan" });
+    await expect(guideSteps.locator("h3")).toHaveText([
+      "pilih bukunya",
+      "history order buku kamu",
+      "invoice",
+      "Pesanan diproses",
+      "pembayaran",
+      "cek perjalanan buku kamu",
+      "Buku sampai",
+    ]);
+    await expect(guideSteps.locator("p")).toHaveText([
+      "bisa fix lewat wa group (nantinya admin akan merekap ke account website masing2 blessfriends) atau bisa dilakukan pembelian via website langsung",
+      "setiap pembelian baik di wa / di website akan langsung muncul di account masing2 blessfriends buku apa yang sudah dibeli di kami",
+      "invoice akan muncul di website h+1/h+2 setelah close PO, karena kami membuka banyak cargo setiap batch, maka diperhatikan di bagian tagihan pada account website kamu, admin invoice kami akan pc masing2 customer menginfokan bahwa invoice sudah terbit di website",
+      "Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.",
+      "pembayaran di kami adalah DP 30% atau jika ada DP tertentu di tiap cargo akan kami infokan saat kami menurunkan matprom di group whatsapp",
+      "PO reguler membutuhkan waktu 4-5 bulan sejak di order pertama kali, pembelian bukumu bisa langsung di tracking di account website kamu",
+      "Setelah buku tiba dan selesai diproses oleh BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
+    ]);
+    const guidanceGeometry = await guide.evaluate((element) => {
+      const summary = element.querySelector("summary")!;
+      const label = summary.querySelector(":scope > span:first-child")!.getBoundingClientRect();
+      const toggle = summary.querySelector(".home-onboarding-summary-icon")!.getBoundingClientRect();
+      const list = element.querySelector<HTMLElement>(".order-steps")!;
+      const steps = [...list.children].map((step) => {
+        const rect = step.getBoundingClientRect();
+        const heading = step.querySelector("h3")!.getBoundingClientRect();
+        const body = step.querySelector("p")!.getBoundingClientRect();
+        const number = step.querySelector(".order-step-number")!.getBoundingClientRect();
+        const icon = step.querySelector(".order-step-icon-wrap")!.getBoundingClientRect();
+        return {
+          left: Math.round(rect.left),
+          top: Math.round(rect.top),
+          right: rect.right,
+          bottom: rect.bottom,
+          headingBottom: heading.bottom,
+          bodyTop: body.top,
+          bodyRight: body.right,
+          bodyBottom: body.bottom,
+          number: { left: number.left, right: number.right, top: number.top, bottom: number.bottom },
+          icon: { left: icon.left, right: icon.right, top: icon.top, bottom: icon.bottom },
+        };
+      });
+      return {
+        open: element.hasAttribute("open"),
+        summaryLabelRight: label.right,
+        toggleLeft: toggle.left,
+        columns: getComputedStyle(list).gridTemplateColumns.split(" ").length,
+        listLeft: list.getBoundingClientRect().left,
+        listRight: list.getBoundingClientRect().right,
+        steps,
+        scrollWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(guidanceGeometry.open).toBe(true);
+    expect(guidanceGeometry.summaryLabelRight).toBeLessThanOrEqual(guidanceGeometry.toggleLeft);
+    expect(guidanceGeometry.scrollWidth).toBeLessThanOrEqual(guidanceGeometry.viewportWidth + 1);
+    expect(guidanceGeometry.columns).toBe(width >= 901 ? 2 : 1);
+    expect(guidanceGeometry.steps).toHaveLength(7);
+    expect(
+      guidanceGeometry.steps.every(
+        (step) =>
+          step.left >= guidanceGeometry.listLeft - 1 &&
+          step.right <= guidanceGeometry.listRight + 1 &&
+          step.headingBottom <= step.bodyTop &&
+          step.bodyRight <= step.right + 1 &&
+          step.bodyBottom <= step.bottom + 1 &&
+          !(
+            step.number.left < step.icon.right &&
+            step.number.right > step.icon.left &&
+            step.number.top < step.icon.bottom &&
+            step.number.bottom > step.icon.top
+          ),
+      ),
+      `${width}px expanded guide content geometry: ${JSON.stringify(guidanceGeometry)}`,
+    ).toBe(true);
+    const stepColumns = new Set(guidanceGeometry.steps.map((step) => step.left));
+    expect(stepColumns.size).toBe(width >= 901 ? 2 : 1);
+    if ([1440, 1024, 768, 390].includes(width)) {
+      await page.setViewportSize({ width, height: 1800 });
+      await guide.screenshot({ path: `${evidenceDirectory}/cara-pesan-expanded-${width}.png` });
+    }
   }
 
   for (const width of widths) {
@@ -441,7 +703,7 @@ test("keeps in-flow Blessy clear of copy, actions, and mobile navigation @custom
         const bubble = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
         const targets = [
           ...document.querySelectorAll(
-            ".home-hero-actions, .community-copy .button, .discovery-card .button, .home-onboarding-actions .button, .how-to-order-page .actions, .order-step",
+            ".home-hero-actions, .community-copy .button, .discovery-card .button, .home-onboarding-actions .button, .how-to-order-page .actions, .how-to-order-page .order-step, .home-onboarding-how-to[open] .order-step",
           ),
         ];
         return {

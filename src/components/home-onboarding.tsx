@@ -45,19 +45,31 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
       : suspended
         ? "Akun Blessfriend ini sedang ditangguhkan."
         : null;
+  const primaryAction = welcome ? (
+    <LinkButton href="/join">Daftar Blessfriend</LinkButton>
+  ) : pending ? (
+    <LinkButton href={WHATSAPP_HANDOFF_URL} target="_blank" rel="noopener noreferrer">
+      Minta link WhatsApp Group
+    </LinkButton>
+  ) : activeCustomer ? (
+    <LinkButton href="/account" variant="secondary">
+      Buka account Blessfriend
+    </LinkButton>
+  ) : null;
 
   return (
-    <div className="home-onboarding" id="blessfriend-account" data-testid="blessfriend-account">
+    <>
       <section
+        id="blessfriend-account"
+        data-testid="blessfriend-account"
         className={`home-onboarding-main${welcome ? " home-onboarding-main-welcome" : ""}`}
         aria-labelledby="home-onboarding-title"
-        aria-label={welcome ? "Selamat datang di Blessing For Good" : "Account Blessfriend"}
         role="region"
       >
         <div className="home-onboarding-copy">
           <div className="home-onboarding-heading">
             <div>
-              <span className="eyebrow">{welcome ? "Account Blessfriend" : "Status Blessfriend"}</span>
+              <span className="eyebrow">ACCOUNT BLESSFRIEND</span>
               <h2 id="home-onboarding-title">{heading}</h2>
             </div>
             {welcome ? (
@@ -77,26 +89,12 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
             pembelian di website
           </p>
           {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
-          {welcome ? (
-            <ActionGroup variant="responsive" className="home-onboarding-actions">
-              <LinkButton href="/join">Daftar Blessfriend</LinkButton>
-            </ActionGroup>
-          ) : null}
-          {pending ? (
-            <ActionGroup variant="responsive" className="home-onboarding-actions">
-              <LinkButton href={WHATSAPP_HANDOFF_URL} target="_blank" rel="noopener noreferrer">
-                Minta link WhatsApp Group
-              </LinkButton>
-            </ActionGroup>
-          ) : null}
-          {activeCustomer ? (
-            <ActionGroup variant="responsive" className="home-onboarding-actions">
-              <LinkButton href="/account" variant="secondary">
-                Buka account Blessfriend
-              </LinkButton>
-            </ActionGroup>
-          ) : null}
         </div>
+        {primaryAction ? (
+          <ActionGroup variant="responsive" className="home-onboarding-actions">
+            {primaryAction}
+          </ActionGroup>
+        ) : null}
         <div className="home-onboarding-art">
           <BrandMascot variant="warm" className="home-onboarding-mascot" />
         </div>
@@ -126,6 +124,6 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
           </ActionGroup>
         </div>
       </details>
-    </div>
+    </>
   );
 }

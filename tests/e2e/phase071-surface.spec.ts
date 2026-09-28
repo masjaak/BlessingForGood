@@ -113,7 +113,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     }
   });
 
-  test("How To Order keeps one seven-step journey and switches to a readable vertical timeline", async ({ page }) => {
+  test("How To Order keeps seven readable steps in a two-column grid and vertical timeline", async ({ page }) => {
     await page.goto("/how-to-order", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".order-step")).toHaveCount(7);
 
@@ -122,34 +122,37 @@ test.describe("@customer Phase 07.1 shared surface", () => {
       columns: getComputedStyle(element).gridTemplateColumns,
       steps: [...element.children].map((step) => {
         const rect = step.getBoundingClientRect();
-        return { left: rect.left, top: rect.top };
+        const heading = step.querySelector("h3")?.getBoundingClientRect();
+        const description = step.querySelector("p")?.getBoundingClientRect();
+        return {
+          left: Math.round(rect.left),
+          top: Math.round(rect.top),
+          right: rect.right,
+          bottom: rect.bottom,
+          headingBottom: heading?.bottom ?? 0,
+          descriptionTop: description?.top ?? 0,
+          descriptionRight: description?.right ?? 0,
+          descriptionBottom: description?.bottom ?? 0,
+        };
       }),
     }));
 
     if (viewportWidth <= 900) {
       expect(new Set(layout.steps.map((step) => step.left)).size).toBe(1);
     } else {
-      expect(layout.columns.split(" ")).toHaveLength(7);
-      const geometry = await page.locator(".order-step").evaluateAll((steps) =>
-        steps.map((step) => {
-          const heading = step.querySelector("h3");
-          const description = step.querySelector("p");
-          if (!heading || !description) return null;
-          const range = document.createRange();
-          range.selectNodeContents(heading);
-          return {
-            headingTop: heading.getBoundingClientRect().top,
-            headingLines: range.getClientRects().length,
-            descriptionTop: description.getBoundingClientRect().top,
-          };
-        }),
-      );
-      expect(geometry.every(Boolean)).toBe(true);
-      const rows = geometry.filter((step): step is NonNullable<typeof step> => Boolean(step));
-      expect(new Set(rows.map((step) => Math.round(step.headingTop))).size).toBe(1);
-      expect(new Set(rows.map((step) => Math.round(step.descriptionTop))).size).toBe(1);
-      expect(rows.every((step) => step.headingLines >= 1 && step.headingLines <= 2)).toBe(true);
+      expect(layout.columns.split(" ")).toHaveLength(2);
+      expect(new Set(layout.steps.map((step) => step.left)).size).toBe(2);
+      expect(new Set(layout.steps.map((step) => step.top)).size).toBe(4);
     }
+    expect(
+      layout.steps.every(
+        (step) =>
+          step.headingBottom > 0 &&
+          step.headingBottom <= step.descriptionTop &&
+          step.descriptionRight <= step.right + 1 &&
+          step.descriptionBottom <= step.bottom + 1,
+      ),
+    ).toBe(true);
   });
 
   test("Homepage keeps one compact three-step orientation", async ({ page }) => {
@@ -277,7 +280,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
 
   test("Homepage keeps a deliberate responsive chapter rhythm", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const chapterSelector = ".discovery-section, .home-order-section, .story-section";
+    const chapterSelector = ".discovery-section, .story-section";
     await expect(page.locator(chapterSelector).first()).toBeVisible();
     const rhythm = await page.locator(chapterSelector).evaluateAll((sections) =>
       sections.map((section) => {
@@ -288,7 +291,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     );
     const viewportWidth = page.viewportSize()?.width || 0;
     const minimumPadding = viewportWidth <= 640 ? 30 : viewportWidth <= 900 ? 38 : 46;
-    expect(rhythm).toHaveLength(3);
+    expect(rhythm).toHaveLength(2);
     expect(rhythm.every((section) => section.paddingTop >= minimumPadding)).toBe(true);
     expect(rhythm.every((section, index) => index === 0 || section.top >= rhythm[index - 1].bottom)).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewportWidth + 1);
