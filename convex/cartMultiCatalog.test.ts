@@ -408,7 +408,7 @@ describe("Multi-Catalog Cart M2 projection", () => {
       retainedQuantity: 1,
       activeQuantity: 0,
       checkoutEligible: false,
-      lines: [expect.objectContaining({ title: null, isbn: null, availability: "removed" })],
+      lines: [expect.objectContaining({ title: null, isbn: null, availability: "access_revoked" })],
     });
     expect(groupFor(revoked, fixture.second.catalogId)).toMatchObject({
       accessState: "granted",
@@ -426,6 +426,81 @@ describe("Multi-Catalog Cart M2 projection", () => {
     );
     await customer.mutation(api.carts.removeItem, { cartItemId: firstLineId as Id<"cartItems"> });
     await expect(customer.query(api.carts.getMine, {})).resolves.toMatchObject({ retainedQuantity: 2 });
+  });
+
+  it("distinguishes revoked Cart access from a removed Catalog item while preserving token browsing", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createCatalogFixture(t, admin);
+    const firstAccess = await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-a-code" });
+    const secondAccess = await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-b-code" });
+    if (!("sessionToken" in firstAccess) || !firstAccess.sessionToken) throw new Error("Catalog A session missing");
+    if (!("sessionToken" in secondAccess) || !secondAccess.sessionToken) throw new Error("Catalog B session missing");
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId, quantity: 5 });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.secondItemId, quantity: 2 });
+
+    for (const catalogId of [fixture.first.catalogId, fixture.second.catalogId]) {
+      const grant = await admin.query(api.catalogAccess.listForAdmin, { catalogId });
+      await admin.mutation(api.catalogAccess.revokeGrant, { grantId: grant.grants[0].grantId });
+    }
+
+    const firstBrowse = await customer.query(api.catalogAccess.getUnlocked, {
+      catalogId: fixture.first.catalogId,
+      sessionToken: firstAccess.sessionToken,
+    });
+    const secondBrowse = await customer.query(api.catalogAccess.getUnlocked, {
+      catalogId: fixture.second.catalogId,
+      sessionToken: secondAccess.sessionToken,
+    });
+    expect(firstBrowse?.books).toEqual(expect.arrayContaining([expect.objectContaining({ id: fixture.first.bookId })]));
+    expect(secondBrowse?.books).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: fixture.second.bookId })]),
+    );
+
+    const cart = await customer.query(api.carts.getMine, {});
+    expect(cart).toMatchObject({ retainedQuantity: 7, activeQuantity: 0 });
+    expect(groupFor(cart, fixture.first.catalogId)).toMatchObject({
+      retainedQuantity: 5,
+      activeQuantity: 0,
+      blockedReason: "access_revoked",
+      lines: [
+        { title: null, publisherName: null, format: null, availability: "access_revoked", checkoutEligible: false },
+      ],
+    });
+    expect(groupFor(cart, fixture.second.catalogId)).toMatchObject({
+      retainedQuantity: 2,
+      activeQuantity: 0,
+      blockedReason: "access_revoked",
+      lines: [
+        { title: null, publisherName: null, format: null, availability: "access_revoked", checkoutEligible: false },
+      ],
+    });
+  });
+
+  it("distinguishes expired and missing Cart access grants", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const fixture = await createCatalogFixture(t, admin);
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "multi-cart-a-code" });
+    await customer.mutation(api.carts.addItem, { catalogItemId: fixture.firstItemId });
+    const access = await admin.query(api.catalogAccess.listForAdmin, { catalogId: fixture.first.catalogId });
+    const grantId = access.grants[0].grantId;
+
+    await t.run((ctx) => ctx.db.patch(grantId, { expiresAt: Date.now() - 1 }));
+    const expired = await customer.query(api.carts.getMine, {});
+    expect(groupFor(expired, fixture.first.catalogId)).toMatchObject({
+      accessState: "expired",
+      blockedReason: "access_expired",
+      lines: [expect.objectContaining({ title: null, availability: "access_expired" })],
+    });
+
+    await t.run((ctx) => ctx.db.delete(grantId));
+    const missing = await customer.query(api.carts.getMine, {});
+    expect(groupFor(missing, fixture.first.catalogId)).toMatchObject({
+      accessState: "missing",
+      blockedReason: "access_required",
+      lines: [expect.objectContaining({ title: null, availability: "access_required" })],
+    });
   });
 
   it("requires a Catalog selector and submits only the selected mixed-Cart group", async () => {

@@ -1,13 +1,11 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { eligibleReceivingBatches } from "../batches";
-import { hasActiveCatalogGrant } from "./catalogAccess";
 import { catalogIsOpen } from "./catalogView";
 
 type DataCtx = QueryCtx | MutationCtx;
-type CartGroupAccessState = "granted" | "revoked" | "unresolved";
-type CartGroupBlockedReason =
-  Exclude<CartAvailability, "active"> | "access_revoked" | "price_changed" | "acknowledgement_required";
+type CartGroupAccessState = "granted" | "missing" | "expired" | "revoked" | "unresolved";
+type CartGroupBlockedReason = Exclude<CartAvailability, "active"> | "price_changed" | "acknowledgement_required";
 
 export type CartAvailability =
   | "active"
@@ -17,6 +15,9 @@ export type CartAvailability =
   | "book_unavailable"
   | "publisher_unavailable"
   | "po_closed"
+  | "access_required"
+  | "access_expired"
+  | "access_revoked"
   | "removed";
 
 export type CartAvailabilityState = "active" | "unavailable" | "available_pending_acknowledgement";
@@ -30,6 +31,13 @@ export type CartCatalogResolution = {
   currentUnitPriceAmount: number | null;
   availability: CartAvailability;
 };
+
+function accessAvailability(state: CartGroupAccessState): Exclude<CartAvailability, "active"> {
+  if (state === "missing") return "access_required";
+  if (state === "expired") return "access_expired";
+  if (state === "revoked") return "access_revoked";
+  return "removed";
+}
 
 type CartCatalogResolutionOptions = {
   skipCatalogStateChecks?: boolean;
@@ -206,7 +214,7 @@ async function projectResolvedCartLine(
     observedUnitPriceAmount: item.observedUnitPriceAmount,
     currentUnitPriceAmount: canPresentCatalogLine ? resolved.currentUnitPriceAmount : null,
     priceChanged,
-    availability: canPresentCatalogLine ? resolved.availability : "removed",
+    availability: canPresentCatalogLine ? resolved.availability : accessAvailability(accessState),
     reconciliationState: canPresentCatalogLine ? item.availabilityState : "unavailable",
     requiresAcknowledgement: !checkoutEligible,
     checkoutEligible,
@@ -237,8 +245,7 @@ function groupBlockedReason(group: {
   lines: Array<{ availability: CartAvailability; priceChanged: boolean; reconciliationState: CartAvailabilityState }>;
 }): CartGroupBlockedReason | null {
   if (group.catalog?.status === "closed") return "catalog_closed";
-  if (group.accessState === "revoked") return "access_revoked";
-  if (group.accessState === "unresolved") return "removed";
+  if (group.accessState !== "granted") return accessAvailability(group.accessState);
   const unavailableLine = group.lines.find((line) => line.availability !== "active");
   if (unavailableLine && unavailableLine.availability !== "active") return unavailableLine.availability;
   if (group.lines.some((line) => line.priceChanged)) return "price_changed";
@@ -267,14 +274,20 @@ export async function projectCart(ctx: DataCtx, cart: Doc<"carts">) {
     const id = catalogGroupId(resolved);
     const key = id ? String(id) : "unresolved";
     if (!groupAccess.has(key)) {
-      groupAccess.set(
-        key,
-        id && resolved.catalog
-          ? (await hasActiveCatalogGrant(ctx, cart.customerUserId, id))
-            ? "granted"
-            : "revoked"
-          : "unresolved",
-      );
+      if (!id || !resolved.catalog) {
+        groupAccess.set(key, "unresolved");
+      } else {
+        const grant = await ctx.db
+          .query("catalogAccessGrants")
+          .withIndex("by_app_user_id_and_catalog_id", (query) =>
+            query.eq("appUserId", cart.customerUserId).eq("catalogId", id),
+          )
+          .first();
+        groupAccess.set(
+          key,
+          !grant ? "missing" : grant.revokedAt ? "revoked" : grant.expiresAt <= Date.now() ? "expired" : "granted",
+        );
+      }
     }
   }
   const projectedItems = await Promise.all(
