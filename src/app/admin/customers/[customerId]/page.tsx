@@ -16,6 +16,7 @@ import { orderStatusLabel } from "@/domain/prototype/logic";
 import { useProduct } from "@/domain/prototype/store";
 import { asOrderList, type OrderListView } from "@/domain/prototype/convex-store";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
+import { AdminManualPoPanel } from "@/features/manual-po/manual-po";
 
 function CustomerDetail() {
   const customerId = String(useParams<{ customerId: string }>().customerId);
@@ -127,6 +128,7 @@ function CustomerDetail() {
               <p>{addresses.find((address) => address.isDefault)?.label || "Belum ada alamat utama"}</p>
             </Card>
           </div>
+          <AdminManualPoPanel customerUserId={customerId as Id<"appUsers">} />
           <Card>
             <div className="split-heading">
               <h2>Pesanan</h2>

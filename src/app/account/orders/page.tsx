@@ -17,6 +17,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
+import { CustomerManualPoSection } from "@/features/manual-po/manual-po";
 import {
   calendarDateKey,
   calendarDateToEndTimestamp,
@@ -113,6 +114,7 @@ function CustomerBooks() {
               <span className="subtle my-books-summary-help">Top up credit</span>
             </Card>
           </div>
+          <CustomerManualPoSection />
           <div className="content-stack my-books-batch-list">
             <div className="split-heading my-books-batch-list-heading">
               <div>

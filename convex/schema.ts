@@ -508,6 +508,23 @@ export default defineSchema({
     .index("by_cart_and_catalog", ["cartId", "catalogId"])
     .index("by_created_at", ["createdAt"]),
 
+  manualPoEntries: defineTable({
+    customerUserId: v.id("appUsers"),
+    title: v.string(),
+    priceAmount: v.number(),
+    etaText: v.string(),
+    status: v.union(v.literal("active"), v.literal("arrived"), v.literal("cancelled")),
+    createdByUserId: v.id("appUsers"),
+    updatedByUserId: v.id("appUsers"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    cancelledAt: v.optional(v.number()),
+    archivedAt: v.optional(v.number()),
+  })
+    .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_customer_and_status", ["customerUserId", "status"])
+    .index("by_created_at", ["createdAt"]),
+
   orders: defineTable({
     customerUserId: v.id("appUsers"),
     catalogId: v.optional(v.id("secretCatalogs")),
