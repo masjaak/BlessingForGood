@@ -251,23 +251,31 @@ function ConvexAssistedOrderForm() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submissionKeyRef = useRef<string | null>(null);
-  const selectedCatalog = useQuery(
-    api.secretCatalogs.getForAdmin,
-    catalogId ? { catalogId: catalogId as Id<"secretCatalogs"> } : "skip",
+  const preorderVariantPage = useQuery(
+    api.catalogItems.listForCatalogPage,
+    source === "preorder" && catalogId
+      ? {
+          catalogId: catalogId as Id<"secretCatalogs">,
+          pageNumber: 1,
+          pageSize: 100,
+          search: variantSearch.trim() || undefined,
+        }
+      : "skip",
   );
   const customerPage = Array.isArray(customers) ? { page: customers, isDone: true, continueCursor: "" } : customers;
   const customerRows = customerPage?.page || [];
   const catalogs = state.catalogs.filter((candidate) => candidate.status === "open");
-  const catalog = selectedCatalog?.view;
+  const catalog = catalogs.find((candidate) => candidate.id === catalogId);
   const preorderVariants =
-    catalog?.books.flatMap((book) =>
-      book.variants.map((variant) => ({
-        ...variant,
-        bookTitle: book.title,
-        publisher: book.publisher,
-        author: book.author,
-      })),
-    ) || [];
+    preorderVariantPage?.page.map((variant) => ({
+      id: variant.bookVariantId,
+      bookTitle: variant.title,
+      publisher: variant.publisherName || "Unknown publisher",
+      author: variant.author,
+      format: variant.format || "",
+      isbn: variant.isbn || "",
+      price: variant.priceAmount,
+    })) || [];
   const readyStockVariants =
     readyStockRows
       ?.filter((row) => row.isAvailable && row.availableQuantity > 0)
@@ -457,7 +465,10 @@ function ConvexAssistedOrderForm() {
                   className="input"
                   type="search"
                   value={variantSearch}
-                  onChange={(event) => setVariantSearch(event.target.value)}
+                  onChange={(event) => {
+                    setVariantSearch(event.target.value);
+                    setVariantId("");
+                  }}
                   placeholder="Cari judul, ISBN, publisher, atau penulis..."
                   aria-label="Cari buku atau varian"
                   disabled={source === "preorder" && !catalogId}
@@ -477,7 +488,7 @@ function ConvexAssistedOrderForm() {
                     </option>
                   ))}
                 </BFGSelect>
-                {catalogId && !filteredVariants.length ? (
+                {catalogId && preorderVariantPage !== undefined && !filteredVariants.length ? (
                   <span className="subtle">Tidak ada varian yang cocok.</span>
                 ) : null}
               </label>
