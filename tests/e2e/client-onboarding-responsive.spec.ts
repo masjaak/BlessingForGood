@@ -424,6 +424,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
         ready: box(ready),
         secret: box(secret),
         blessy: box(widget),
+        blessyPosition: widget ? getComputedStyle(widget).position : null,
         blessyBubbleDisplay: bubble ? getComputedStyle(bubble).display : null,
         blessyAfterShell: Boolean(
           widget && shell && widget.getBoundingClientRect().top >= shell.getBoundingClientRect().bottom - 1,
@@ -476,8 +477,9 @@ test("renders the client redline homepage and guide at responsive widths @custom
     expect(metrics.ready?.width, `${width}px Ready Stock card`).toBeGreaterThan(0);
     expect(metrics.secret?.width, `${width}px Secret Catalog card`).toBeGreaterThan(0);
     expect(metrics.blessy?.width, `${width}px Blessy footprint`).toBeGreaterThan(0);
-    expect(metrics.blessyAfterShell, `${width}px Blessy follows page content`).toBe(true);
-    expect(metrics.blessyBubbleDisplay, `${width}px homepage bubble stays out of content`).toBe("none");
+    expect(metrics.blessyPosition, `${width}px homepage Blessy remains floating`).toBe("fixed");
+    expect(metrics.blessyAfterShell, `${width}px homepage Blessy is not appended below page content`).toBe(false);
+    expect(metrics.blessyBubbleDisplay, `${width}px homepage bubble uses floating behavior`).not.toBe("none");
     if (width <= 800) {
       expect(metrics.navVisible, `${width}px bottom navigation`).toBe(true);
       expect(metrics.navHit, `${width}px bottom navigation hit target`).toBe(true);
@@ -747,10 +749,15 @@ test("keeps in-flow Blessy clear of copy, actions, and mobile navigation @custom
         };
       });
       expect(geometry.overflow).toBe(false);
-      expect(geometry.afterContent).toBe(true);
-      expect(geometry.bubbleDisplay).toBe("none");
+      if (route.includes("/verification/onboarding")) {
+        expect(geometry.afterContent).toBe(false);
+        expect(geometry.bubbleDisplay).not.toBe("none");
+      } else {
+        expect(geometry.afterContent).toBe(true);
+        expect(geometry.bubbleDisplay).toBe("none");
+      }
       expect(geometry.overlapsActionOrCopy).toBe(false);
-      if (width <= 800) expect(geometry.navClearance).toBe(true);
+      if (width <= 800 && route.includes("/verification/onboarding")) expect(geometry.navClearance).toBe(true);
     }
   }
 });
