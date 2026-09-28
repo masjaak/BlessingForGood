@@ -172,7 +172,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
   await expect(page.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
 
-  const widths = [375, 390, 430, 768, 1024, 1440];
+  const widths = [375, 390, 430, 768, 834, 1024, 1280, 1440];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
