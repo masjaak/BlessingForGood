@@ -2,6 +2,7 @@
 
 import { useContext, useState } from "react";
 import { BrandMascot } from "@/components/brand";
+import { HomeAccessIcon } from "@/components/home-access-icon";
 import { HowToOrderSteps } from "@/components/how-to-order";
 import { ProductContext } from "@/domain/prototype/context";
 import { ActionGroup, IconButton, LinkButton } from "@/components/ui";
@@ -70,12 +71,7 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
           <div className="home-onboarding-heading">
             <div className="home-onboarding-title-block">
               <div className="discovery-card-heading">
-                <span className="discovery-card-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="8" r="3.5" />
-                    <path d="M5 20c.8-4 3.1-6 7-6s6.2 2 7 6" />
-                  </svg>
-                </span>
+                <HomeAccessIcon kind="account" />
                 <span className="eyebrow">ACCOUNT BLESSFRIEND</span>
               </div>
               <h2 id="home-onboarding-title">{heading}</h2>
