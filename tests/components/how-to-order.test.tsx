@@ -29,7 +29,7 @@ describe("How To Order journey", () => {
     expect([...journey.querySelectorAll("h3")].filter((heading) => heading.textContent === "pembayaran")).toHaveLength(
       1,
     );
-    expect(screen.queryByRole("heading", { name: "Pembayaran", exact: true })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Pembayaran" })).toBeNull();
     expect(
       screen.queryByText(
         "Ketentuan DP mengikuti masing-masing PO. Untuk PO reguler, nominal atau persentasenya diumumkan melalui WhatsApp Group BFG dan tercantum pada tagihan.",
