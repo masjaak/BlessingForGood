@@ -30,6 +30,7 @@ import type * as invoices from "../invoices.js";
 import type * as joinRequestInvitationState from "../joinRequestInvitationState.js";
 import type * as joinRequestInvitations from "../joinRequestInvitations.js";
 import type * as joinRequests from "../joinRequests.js";
+import type * as manualPoEntries from "../manualPoEntries.js";
 import type * as lib_accessCodes from "../lib/accessCodes.js";
 import type * as lib_adminCatalogList from "../lib/adminCatalogList.js";
 import type * as lib_audit from "../lib/audit.js";
@@ -111,6 +112,7 @@ declare const fullApi: ApiFromModules<{
   joinRequestInvitationState: typeof joinRequestInvitationState;
   joinRequestInvitations: typeof joinRequestInvitations;
   joinRequests: typeof joinRequests;
+  manualPoEntries: typeof manualPoEntries;
   "lib/accessCodes": typeof lib_accessCodes;
   "lib/adminCatalogList": typeof lib_adminCatalogList;
   "lib/audit": typeof lib_audit;
