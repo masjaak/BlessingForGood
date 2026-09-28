@@ -246,16 +246,10 @@ test("renders the client redline homepage and guide at responsive widths @custom
       elements.map((card) => {
         const main = card.querySelector<HTMLElement>(".home-onboarding-main");
         const mascot = card.querySelector<HTMLElement>(".community-mascot, .home-onboarding-mascot");
-        const art = card.querySelector<HTMLElement>(".community-art, .home-onboarding-art");
+        const art = card.querySelector<HTMLElement>(".discovery-card-art-slot, .home-onboarding-art");
         const close = card.querySelector<HTMLElement>(".home-onboarding-dismiss");
         const copy = card.querySelector<HTMLElement>(
-          card.matches("[data-testid='join-whatsapp']")
-            ? ".community-copy"
-            : card.matches("[data-testid='secret-catalog']")
-              ? ".discovery-card-heading + div"
-              : card.matches("[data-testid='ready-stock']")
-                ? ":scope > div"
-                : ".home-onboarding-copy",
+          card.matches("[data-testid='blessfriend-account']") ? ".home-onboarding-copy" : ".discovery-card-copy",
         );
         const action = card.matches("#blessfriend-account")
           ? card.querySelector<HTMLElement>(".home-onboarding-actions > .button")
@@ -291,8 +285,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
     expect(cards.every((card) => card.copy && card.copy.width > 0 && card.copy.height > 0)).toBe(true);
     expect(cards[0].art && cards[0].art.width > 0 && cards[0].art.height > 0).toBe(true);
     expect(cards[3].art && cards[3].art.width > 0 && cards[3].art.height > 0).toBe(true);
-    expect(cards[1].art).toBeUndefined();
-    expect(cards[2].art).toBeUndefined();
+    expect(cards.every((card) => card.art && card.art.width > 0 && card.art.height > 0)).toBe(true);
     expect(cards.every((card) => card.button && card.button.height >= 44)).toBe(true);
     expect(new Set(cards.map((card) => card.button?.height)).size).toBe(1);
     expect(cards.every((card) => card.copy && card.button && card.copy.bottom <= card.button.top)).toBe(true);
@@ -319,16 +312,17 @@ test("renders the client redline homepage and guide at responsive widths @custom
       ),
     ).toBe(true);
     expect(
-      Math.abs(
-        cards[0].button!.width -
-          (cards[0].width - cards[0].paddingLeft - cards[0].paddingRight - cards[0].borderLeft - cards[0].borderRight),
+      cards.every(
+        (card) =>
+          card.button &&
+          Math.abs(
+            card.button.width -
+              (card.width - card.paddingLeft - card.paddingRight - card.borderLeft - card.borderRight),
+          ) <= 1,
       ),
-    ).toBeLessThanOrEqual(1);
-    expect(cards[1].button!.width).toBeLessThan(cards[1].width * 0.75);
-    expect(cards[2].button!.width).toBeLessThan(cards[2].width * 0.75);
-    expect(cards[3].button!.width).toBeLessThan(cards[3].width * 0.75);
+    ).toBe(true);
     expect(
-      [cards[1], cards[2]].every(
+      cards.every(
         (card) =>
           card.button && Math.abs(card.bottom - card.button.bottom - card.paddingBottom - card.borderBottom) <= 1,
       ),
@@ -362,11 +356,11 @@ test("renders the client redline homepage and guide at responsive widths @custom
       const button = card.button;
       const art = card.art;
       expect(mascot && copy && button).toBeTruthy();
-      expect(art!.top).toBeGreaterThanOrEqual(button!.bottom);
-      expect(mascot!.top).toBeGreaterThanOrEqual(button!.bottom);
-      expect(mascot!.bottom).toBeLessThanOrEqual(card.bottom - card.paddingBottom - card.borderBottom);
+      expect(art!.bottom).toBeLessThanOrEqual(button!.top);
+      expect(mascot!.bottom).toBeLessThanOrEqual(button!.top);
+      expect(mascot!.top).toBeGreaterThanOrEqual(copy!.bottom);
       expect(Math.abs(mascot!.left + mascot!.width / 2 - (card.left + card.width / 2))).toBeLessThanOrEqual(3);
-      expect(copy!.bottom).toBeLessThanOrEqual(button!.top);
+      expect(copy!.bottom).toBeLessThanOrEqual(mascot!.top);
       expect(card.id === "join-whatsapp" || (card.close && card.close.bottom < mascot!.top)).toBe(true);
     }
     await expect(page.locator(".home-journey .hero-sequence small")).toHaveText([
@@ -435,9 +429,9 @@ test("renders the client redline homepage and guide at responsive widths @custom
         return range.getClientRects().length;
       });
       expect(accountHeadingLines).toBe(2);
-      expect(cards[0].button!.width).toBeGreaterThan(cards[1].button!.width);
-      expect(cards[0].button!.width).toBeGreaterThan(cards[2].button!.width);
-      expect(cards[0].button!.width).toBeGreaterThan(cards[3].button!.width);
+      expect(Math.abs(cards[0].button!.width - cards[1].button!.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[1].button!.width - cards[2].button!.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(cards[2].button!.width - cards[3].button!.width)).toBeLessThanOrEqual(1);
     }
     expect(metrics.overflow, `${width}px horizontal overflow`).toBe(false);
     expect(metrics.hero?.left, `${width}px hero left edge`).toBeGreaterThanOrEqual(0);
