@@ -9687,3 +9687,62 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
     text-align: left;
   }
 }
+
+
+/* Manual PO / Pesanan Khusus */
+.manual-po-admin-card,
+.manual-po-customer-card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.manual-po-form .form-grid {
+  grid-template-columns: minmax(0, 1.5fr) minmax(160px, 0.7fr) minmax(0, 1fr);
+}
+
+.manual-po-admin-row {
+  align-items: flex-start;
+}
+
+.manual-po-admin-row-actions {
+  display: grid;
+  min-width: min(100%, 360px);
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+.manual-po-admin-row-actions .form-actions {
+  justify-content: flex-end;
+}
+
+.manual-po-customer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+@media (max-width: 800px) {
+  .manual-po-form .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .manual-po-admin-row,
+  .manual-po-customer-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .manual-po-admin-row-actions {
+    min-width: 0;
+    justify-items: start;
+  }
+
+  .manual-po-admin-row-actions .form-actions,
+  .manual-po-customer-meta {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
