@@ -277,7 +277,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
 
   test("Homepage keeps a deliberate responsive chapter rhythm", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const chapterSelector = ".discovery-section, .home-quick-guidance, .story-section";
+    const chapterSelector = ".discovery-section, .home-order-section, .story-section";
     await expect(page.locator(chapterSelector).first()).toBeVisible();
     const rhythm = await page.locator(chapterSelector).evaluateAll((sections) =>
       sections.map((section) => {

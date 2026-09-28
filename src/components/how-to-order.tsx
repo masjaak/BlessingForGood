@@ -69,6 +69,24 @@ const compactOrderSteps: OrderStep[] = [
   },
 ];
 
+const previewOrderSteps: OrderStep[] = [
+  {
+    title: "Temukan bukunya",
+    description: "Pilih Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
+    icon: "discover",
+  },
+  {
+    title: "Pesan & tunggu proses BFG",
+    description: "Pilih varian, kirim pesanan, lalu cek invoice dan pembayaran.",
+    icon: "process",
+  },
+  {
+    title: "Pantau sampai buku datang",
+    description: "Ikuti batch, fulfillment, dan pengiriman dari Buku Saya.",
+    icon: "arrive",
+  },
+];
+
 /** Tabler Icons v3.46.0 outline paths, MIT-licensed: https://github.com/tabler/tabler-icons */
 function JourneyIcon({ name }: { name: OrderStepIconName }) {
   const common = {
@@ -148,12 +166,14 @@ function JourneyIcon({ name }: { name: OrderStepIconName }) {
   );
 }
 
-export function HowToOrderSteps({ compact = false }: { compact?: boolean }) {
-  const steps = compact ? compactOrderSteps : orderSteps;
+export function HowToOrderSteps({ compact = false, preview = false }: { compact?: boolean; preview?: boolean }) {
+  const steps = preview ? previewOrderSteps : compact ? compactOrderSteps : orderSteps;
   return (
     <ol
-      className={`order-steps${compact ? " order-steps-compact" : ""}`}
-      aria-label={compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"}
+      className={`order-steps${compact ? " order-steps-compact" : ""}${preview ? " order-steps-preview" : ""}`}
+      aria-label={
+        preview ? "Ringkasan cara memesan" : compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"
+      }
     >
       {steps.map((step, index) => (
         <li className="order-step" key={`${step.title}-${index}`}>
@@ -167,7 +187,7 @@ export function HowToOrderSteps({ compact = false }: { compact?: boolean }) {
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </div>
-          {index < steps.length - 1 && (compact ? index % 3 !== 2 : index % 4 !== 3) ? (
+          {index < steps.length - 1 && (preview || (compact ? index % 3 !== 2 : index % 4 !== 3)) ? (
             <span className="order-step-arrow" aria-hidden="true">
               →
             </span>

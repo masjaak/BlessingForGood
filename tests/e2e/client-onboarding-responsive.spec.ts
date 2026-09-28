@@ -24,12 +24,12 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(page.getByTestId("floating-blessy")).toBeVisible();
     const region = page.locator(".home-onboarding-main");
     const onboarding = region;
-    const quickGuidance = page.locator(".home-quick-guidance:visible").first();
-    await expect(page.locator(".home-quick-guidance:visible")).toHaveCount(1);
-    await expect(quickGuidance).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "WhatsApp jadi ruang utama komunitas Blessfriends." }),
-    ).toBeVisible();
+    await expect(page.getByText("Baru di BFG?", { exact: true })).toBeVisible();
+    await expect(page.locator(".home-hero .home-hero-entry-note")).toHaveCount(1);
+    await expect(page.locator(".home-channel-section")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "WhatsApp jadi ruang utama komunitas Blessfriends." })).toHaveCount(
+      0,
+    );
     await expect(
       page.getByText(
         "WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi pengalaman yang menyenangkan",
@@ -65,7 +65,14 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(page.getByText("KOMUNITAS BFG", { exact: true })).toHaveCount(0);
     await expect(page.getByText("TEMUKAN BUKU", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Mulai dari buku yang ingin kamu temukan.", { exact: true })).toHaveCount(0);
-    await expect(quickGuidance.locator(".home-guidance-disclosure")).toHaveCount(2);
+    await expect(page.locator(".discovery-section > .section-heading")).toHaveCount(0);
+    await expect(page.locator(".discovery-section > .home-access-grid")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Akses buku untuk Blessfriends" })).toHaveCount(0);
+    await expect(
+      page.getByText("Pilih katalog sesuai aksesmu, lalu gunakan account Blessfriend untuk mengelola pesanan.", {
+        exact: true,
+      }),
+    ).toHaveCount(0);
     await expect(
       page.getByText(
         "buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi Blessfriends",
@@ -102,7 +109,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(journey.getByText("Temukan", { exact: true })).toHaveCount(0);
     await expect(journey.getByText("Pesan", { exact: true })).toHaveCount(0);
     await expect(journey.getByText("Ikuti", { exact: true })).toHaveCount(0);
-    await expect(page.locator(".home-order-section, .community-section, .order-steps-preview")).toHaveCount(0);
+    await expect(page.locator(".community-section")).toHaveCount(0);
     expect((await page.locator(".home-hero h1").textContent())?.trim()).not.toBe(
       "Specialist Children & Collector Books",
     );
@@ -118,6 +125,19 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await expect(page.locator(".home-hero .lede")).toHaveText(
       "kami mengkurasi buku-buku children books, novel books dan collector special edition",
     );
+    await expect(page.getByText("Rumah buku pilihan untuk Blessfriends", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Specialist Children & Collector Books", exact: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByRole("heading", { name: "Semua bisa dimulai dari satu buku yang tepat.", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "Blessing For Good adalah community-led imported bookstore yang membantu Blessfriends menemukan buku impor berbahasa Inggris—dari Ready Stock sampai preorder—sedikit demi sedikit.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
     await expect(page.getByRole("link", { name: "pelajari ketentuan PO buku di kami" })).toHaveAttribute(
       "href",
       "/how-to-order",
@@ -132,9 +152,12 @@ test("renders the client redline homepage and guide at responsive widths @custom
     ).toBeVisible();
     await expect(region.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
 
-    const orderGuide = quickGuidance.locator("details").nth(0);
+    const orderGuide = page.locator(".home-onboarding-how-to");
     await orderGuide.locator("summary").click();
-    const orderLink = orderGuide.getByRole("link", { name: "Lihat cara pesan" });
+    const previewSteps = orderGuide.getByRole("list", { name: "Langkah cara memesan" });
+    await expect(previewSteps.locator(":scope > li")).toHaveCount(7);
+    await orderGuide.locator("summary").click();
+    const orderLink = page.getByRole("link", { name: "pelajari ketentuan PO buku di kami" });
     await expect(orderLink).toHaveAttribute("href", "/how-to-order");
     await orderLink.click();
     await expect(page).toHaveURL(/\/how-to-order$/);
@@ -178,8 +201,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
     await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
     const widget = page.getByTestId("floating-blessy");
     await expect(widget).toBeVisible();
-    const quickGuidance = page.locator(".home-quick-guidance:visible").first();
-    await expect(quickGuidance).toBeVisible();
+    await expect(page.locator(".home-onboarding-how-to")).toBeVisible();
     await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
     await expect(page.getByRole("heading", { name: "SPECIALIST CHILDREN & COLLECTOR BOOKS 📚" })).toBeVisible();
     await expect(
@@ -195,14 +217,14 @@ test("renders the client redline homepage and guide at responsive widths @custom
               section.id || [...section.classList].find((name) => !["section", "section-block", "hero"].includes(name)),
           ),
         ),
-    ).resolves.toEqual(["home-hero", "home-channel-section", "akses-buku", "home-quick-guidance", "bfg-story"]);
+    ).resolves.toEqual(["home-hero", "akses-buku", "cara-order", "bfg-story"]);
     await expect(
       page
         .locator(".home-access-grid > *")
         .evaluateAll((cards) => cards.map((card) => card.getAttribute("data-testid"))),
     ).resolves.toEqual(["join-whatsapp", "secret-catalog", "ready-stock", "blessfriend-account"]);
     const accessButtonHeights = await page
-      .locator(".home-access-grid .button")
+      .locator(".home-access-grid .button:visible")
       .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
     expect(accessButtonHeights).toHaveLength(5);
     expect(accessButtonHeights.every((height) => height >= 44)).toBe(true);
@@ -213,8 +235,13 @@ test("renders the client redline homepage and guide at responsive widths @custom
     ]);
     await expect(page.getByRole("link", { name: "Lihat Ready Stock" }).first()).toHaveAttribute("href", "/ready-stock");
     await expect(page.getByRole("link", { name: "Buka Secret Catalog" }).first()).toHaveAttribute("href", "/catalog");
-    await expect(page.getByText("Cara pesan di BFG", { exact: true })).toBeVisible();
-    await expect(page.getByText("Lihat PO yang sedang berjalan", { exact: true })).toBeVisible();
+    await expect(page.locator(".home-onboarding-how-to > summary")).toContainText("Cara Pesan & Cek Katalog PO");
+    const orderPreview = page.getByRole("list", { name: "Ringkasan cara memesan" });
+    await expect(orderPreview.locator("h3")).toHaveText([
+      "Temukan bukunya",
+      "Pesan & tunggu proses BFG",
+      "Pantau sampai buku datang",
+    ]);
     const metrics = await page.evaluate(() => {
       const box = (element: Element | null) => {
         if (!element) return null;
@@ -224,8 +251,8 @@ test("renders the client redline homepage and guide at responsive widths @custom
       const hero = document.querySelector(".home-hero");
       const heroTitle = document.querySelector("#home-title");
       const primary = document.querySelector(".home-hero-actions a[href='/ready-stock']");
-      const guidance = document.querySelector(".home-quick-guidance");
-      const summary = guidance?.querySelector("summary") ?? null;
+      const guidance = document.querySelector(".home-onboarding");
+      const summary = guidance?.querySelector(".home-onboarding-how-to > summary") ?? null;
       const ready = document.querySelector(".discovery-card-ready");
       const secret = document.querySelector(".discovery-card-secret");
       const join = document.querySelector("[data-testid='join-whatsapp']");
@@ -268,7 +295,7 @@ test("renders the client redline homepage and guide at responsive widths @custom
     expect(metrics.heroTitle?.right, `${width}px hero title right edge`).toBeLessThanOrEqual(width);
     expect(metrics.primary?.height, `${width}px primary CTA target`).toBeGreaterThanOrEqual(44);
     expect(metrics.primary?.top, `${width}px primary CTA in viewport`).toBeGreaterThanOrEqual(0);
-    expect(metrics.guidance?.width, `${width}px quick guide width`).toBeGreaterThan(0);
+    expect(metrics.guidance?.width, `${width}px account guide width`).toBeGreaterThan(0);
     expect(metrics.summary?.height, `${width}px disclosure target`).toBeGreaterThanOrEqual(44);
     expect(metrics.join?.width, `${width}px Join WhatsApp block`).toBeGreaterThan(0);
     expect(metrics.account?.width, `${width}px Blessfriend account block`).toBeGreaterThan(0);
