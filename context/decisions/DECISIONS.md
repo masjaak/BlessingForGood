@@ -1,5 +1,25 @@
 # Decisions
 
+## Final homepage UI — 2026-09-28
+
+Status: `FINAL_HOMEPAGE_UI_VERIFIED`
+
+- Follow the supplied screenshot: three equal desktop columns for Join,
+  Secret Catalog, and Ready Stock; Account starts row two in column one. Use
+  two columns from 641–900px, three at 901px and wider, and one at 640px and
+  below, preserving order at every width.
+- Keep the Join CTA wide and the other three compact. Place Join and Account
+  mascots centered below their actions. Retain Secret’s lock plus `AKSES
+  PRIVAT`, Account’s approved close affordance, and no mascot/eyebrow on Ready.
+  Keep the later How To Order disclosure and remove the duplicate lower preview.
+- Show expanded seven-step order guidance in two desktop columns and a vertical
+  timeline at 900px and below. Keep each number, icon, heading, and body grouped
+  in numeric order, and let the disclosure grow to its content.
+- Treat all copy/layout changes as presentation only. WhatsApp community and
+  access-code use, existing website account/shopping flows, Phase 2 admission,
+  and protected Catalog/Ready Stock access remain unchanged. Phase 4 and Manual
+  PO are explicitly out of scope.
+
 ## Client content Phase 3C literal redlines — 2026-09-28
 
 Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`

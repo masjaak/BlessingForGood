@@ -1,5 +1,35 @@
 # BFG Project Status
 
+## Final homepage UI correction — 2026-09-28
+
+Status: `FINAL_HOMEPAGE_UI_VERIFIED`
+
+The rendered homepage now matches the client’s three-card first row and lone
+account card at row two/column one on desktop. It uses three columns at 901px
+and wider, two at 641–900px, and one at 640px and below. The Join CTA is wide;
+the other three are compact. Join and Account mascots are centered below their
+actions. Secret Catalog retains its lock and `AKSES PRIVAT` eyebrow. The
+duplicate `Temukan bukunya` preview is removed; the existing How To Order
+disclosure follows the cards as separate guidance.
+
+Expanded seven-step guidance uses readable two-column cards at desktop widths
+and a vertical timeline at 900px and below. Number, icon, heading, and body stay
+together in order, with natural content height and no text collisions. Browser
+screenshots cover the cards at all requested widths and the expanded disclosure
+at 1440, 1024, 768, and 390px.
+
+Focused component checks pass (2 files / 15 tests). Two responsive
+production-component Playwright tests pass; the shared guide passes at 1440px.
+Full frontend, Convex, typecheck, lint, format, diff, build results and
+screenshots are in the
+[homepage UI report](implementation/BFG-FINAL-HOMEPAGE-UI.md).
+
+No auth, membership, Catalog authorization, Ready Stock, Cart, Order, Invoice,
+Payment, Finance, or Batch behavior changed. The local browser used the
+repository’s presentation-verification provider to render the production page
+and components; no production authenticated session or deployment was used.
+No Phase 4 work, merge, or deployment was performed.
+
 ## Client Content Phase 3C literal redlines — 2026-09-28
 
 Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`

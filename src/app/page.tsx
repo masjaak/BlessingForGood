@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { BrandLogo, BrandMascot } from "@/components/brand";
 import { HomeOnboarding } from "@/components/home-onboarding";
-import { HowToOrderSteps } from "@/components/how-to-order";
 import { JsonLd } from "@/components/json-ld";
 import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
@@ -90,20 +89,26 @@ export default function HomePage() {
             >
               <div className="community-copy">
                 <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
-                <h3 id="join-title">BLESSING FOR GOOD</h3>
+                <h3 id="join-title">
+                  <span>BLESSING FOR</span> <span>GOOD</span>
+                </h3>
                 <p>
                   wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
                 </p>
-                <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
-                  Minta link WhatsApp Group
-                </LinkButton>
               </div>
+              <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
+                Minta link WhatsApp Group
+              </LinkButton>
               <div className="community-art" aria-hidden="true">
                 <BrandMascot variant="warm" className="community-mascot" />
               </div>
             </article>
 
-            <article className="discovery-card discovery-card-secret" data-testid="secret-catalog">
+            <article
+              className="discovery-card discovery-card-secret"
+              data-testid="secret-catalog"
+              aria-labelledby="secret-catalog-title"
+            >
               <div className="discovery-card-heading">
                 <span className="discovery-lock" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -111,10 +116,10 @@ export default function HomePage() {
                     <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" />
                   </svg>
                 </span>
-                <span className="eyebrow">Akses privat</span>
+                <span className="eyebrow">AKSES PRIVAT</span>
               </div>
               <div>
-                <h3>Secret Catalog</h3>
+                <h3 id="secret-catalog-title">Secret Catalog</h3>
                 <p>katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group</p>
               </div>
               <LinkButton href="/catalog" variant="secondary">
@@ -122,9 +127,13 @@ export default function HomePage() {
               </LinkButton>
             </article>
 
-            <article className="discovery-card discovery-card-ready" data-testid="ready-stock">
+            <article
+              className="discovery-card discovery-card-ready"
+              data-testid="ready-stock"
+              aria-labelledby="ready-stock-title"
+            >
               <div>
-                <h3>Ready Stock</h3>
+                <h3 id="ready-stock-title">Ready Stock</h3>
                 <p>
                   buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi
                   Blessfriends
@@ -134,27 +143,6 @@ export default function HomePage() {
             </article>
 
             <HomeOnboarding tutorialVideoUrl={configuredVideoUrl()} />
-          </div>
-        </section>
-
-        <section
-          className="section-block order-section home-order-section"
-          id="cara-order"
-          aria-labelledby="order-title"
-        >
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Cara memesan</span>
-              <h2 id="order-title">Pesan dengan alur yang jelas.</h2>
-              <p>Kenali tiga momen utamanya sebelum masuk ke panduan lengkap.</p>
-            </div>
-          </div>
-          <HowToOrderSteps preview />
-          <div className="home-order-footer">
-            <span>Butuh detail dari akses sampai buku tiba?</span>
-            <LinkButton href="/how-to-order" variant="tertiary">
-              Lihat cara memesan <span aria-hidden="true">→</span>
-            </LinkButton>
           </div>
         </section>
 

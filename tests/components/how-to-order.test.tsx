@@ -133,9 +133,15 @@ describe("How To Order journey", () => {
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
   });
 
-  it("uses shared desktop rows instead of per-step headline spacing", () => {
-    expect(globalsCss).toContain("grid-template-rows: auto auto auto;");
-    expect(globalsCss).toContain("grid-template-rows: subgrid;");
-    expect(globalsCss).toContain("--journey-step-gap-mobile");
+  it("uses readable desktop cards and a vertical tablet timeline", () => {
+    const start = globalsCss.indexOf(".customer-shell .order-steps {");
+    const end = globalsCss.indexOf("/* Phase 07 Admin workspace", start);
+    const orderJourneyStyles = globalsCss.slice(start, end);
+
+    expect(orderJourneyStyles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr));");
+    expect(orderJourneyStyles).toContain("grid-template-columns: 58px minmax(0, 1fr);");
+    expect(orderJourneyStyles).toContain("--journey-step-gap-mobile");
+    expect(orderJourneyStyles).not.toContain("grid-template-columns: repeat(7, minmax(0, 1fr));");
+    expect(orderJourneyStyles).not.toContain("grid-template-rows: subgrid;");
   });
 });

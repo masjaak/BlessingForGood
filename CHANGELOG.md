@@ -8,6 +8,35 @@ source: conversation
 
 # Changelog
 
+## [homepage-ui-finalized] — 2026-09-28
+
+### Changed
+
+- Corrected the homepage card grid to three columns at 901px and wider, two
+  columns from 641–900px, and one column on phones. The account card starts the
+  second desktop row in column one.
+- Preserved the reference CTA geometry: Join is wide; Secret Catalog, Ready
+  Stock, and Account are compact. Join and Account mascots sit centered below
+  their actions. Secret Catalog keeps the lock icon and `AKSES PRIVAT` label.
+- Removed the duplicate lower `Temukan bukunya` preview and kept the existing
+  How To Order disclosure after the four cards as separate guidance.
+- Replaced the seven-column text strip in the shared order guide with a
+  two-column desktop card grid and a single-column timeline at 900px and below.
+  Steps retain their number, icon, heading, body, and order.
+- Kept existing WhatsApp contact, account, onboarding, Catalog, Ready Stock,
+  auth, membership, and commerce behavior unchanged. No Phase 4 or Manual PO
+  implementation.
+
+### QA and scope
+
+- Focused component tests: 2 files / 15 tests. Responsive Playwright: 2 tests
+  across 375, 390, 430, 768, 1024, 1280, and 1440px; the shared order guide
+  also passes at 1440px. Captured cards at all seven widths and the expanded
+  guide at 1440, 1024, 768, and 390px. Full-suite results are in the homepage
+  implementation report.
+- No merge or deployment. Real authenticated Production runtime UAT remains
+  outside this presentation-only release check; no auth behavior changed.
+
 ## [client-content-phase-3c-literal-redlines] — 2026-09-28
 
 ### Changed
