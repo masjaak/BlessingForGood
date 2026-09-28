@@ -9468,7 +9468,7 @@ p {
   }
 }
 
-body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy {
+body:has(.customer-shell .how-to-order-page) .floating-blessy {
   position: relative !important;
   inset: auto !important;
   right: auto;
@@ -9480,17 +9480,17 @@ body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floati
   z-index: auto;
 }
 
-body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy__bubble {
+body:has(.customer-shell .how-to-order-page) .floating-blessy__bubble {
   display: none;
 }
 
-body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy__close-layer {
+body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   top: 0;
   right: 0;
 }
 
 @media (max-width: 800px) {
-  body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy {
+  body:has(.customer-shell .how-to-order-page) .floating-blessy {
     width: 72px;
     margin: 24px auto calc(80px + env(safe-area-inset-bottom));
   }
