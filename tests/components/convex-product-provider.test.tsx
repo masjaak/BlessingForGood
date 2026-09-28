@@ -109,6 +109,72 @@ describe("authenticated customer bootstrap caller", () => {
     resolveFirst({ role: "customer", status: "active" });
   });
 
+  it("keeps a valid Customer session across browse routes, refresh, and logout into session B", async () => {
+    let pathname = "/account";
+    let clerkAuth = { isLoaded: true, isSignedIn: true, sessionId: "session-a", userId: "user-a" };
+    vi.mocked(usePathname).mockImplementation(() => pathname);
+    vi.mocked(useAuth).mockImplementation(() => clerkAuth as never);
+    queryValues.set("users:current", { role: "customer", status: "active" });
+
+    const renderProvider = () =>
+      render(
+        <ConvexProductProvider>
+          <Probe />
+        </ConvexProductProvider>,
+      );
+    const routeView = renderProvider();
+    expect(document.querySelector("output")?.dataset.authState).toBe("authenticated");
+
+    for (const route of ["/catalog", "/catalog/catalog-a/book-a", "/catalog", "/account"]) {
+      pathname = route;
+      routeView.rerender(
+        <ConvexProductProvider>
+          <Probe />
+        </ConvexProductProvider>,
+      );
+      expect(document.querySelector("output")?.dataset.authState).toBe("authenticated");
+    }
+
+    routeView.unmount();
+    const refreshed = renderProvider();
+    expect(document.querySelector("output")?.dataset.authState).toBe("authenticated");
+
+    clerkAuth = { isLoaded: true, isSignedIn: false, sessionId: "", userId: "" };
+    refreshed.rerender(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+    expect(document.querySelector("output")?.dataset.authState).toBe("signed-out");
+
+    clerkAuth = { isLoaded: true, isSignedIn: true, sessionId: "session-b", userId: "user-b" };
+    queryValues.set("users:current", null);
+    vi.mocked(useConvexAuth).mockReturnValue({ isLoading: true, isAuthenticated: false } as never);
+    refreshed.rerender(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+    expect(document.querySelector("output")?.dataset.authState).toBe("convex-loading");
+
+    vi.mocked(useConvexAuth).mockReturnValue({ isLoading: false, isAuthenticated: true } as never);
+    refreshed.rerender(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+    await waitFor(() => expect(ensureCurrentUser).toHaveBeenCalled());
+    expect(document.querySelector("output")?.dataset.authState).toBe("provisioning");
+
+    queryValues.set("users:current", { role: "customer", status: "active" });
+    refreshed.rerender(
+      <ConvexProductProvider>
+        <Probe />
+      </ConvexProductProvider>,
+    );
+    expect(document.querySelector("output")?.dataset.authState).toBe("authenticated");
+  });
+
   it("uses the explicit Catalog summary contract on the Admin Dashboard", () => {
     vi.mocked(usePathname).mockReturnValue("/admin");
     queryValues.set("users:current", { role: "owner", status: "active" });

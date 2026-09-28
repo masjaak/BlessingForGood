@@ -18,6 +18,9 @@ const availabilityLabels: Record<CartLine["availability"], string> = {
   book_unavailable: "Buku sedang tidak tersedia",
   publisher_unavailable: "Penerbit sedang tidak tersedia",
   po_closed: "PO sudah ditutup",
+  access_required: "Akses katalog diperlukan",
+  access_expired: "Masa akses katalog berakhir",
+  access_revoked: "Akses katalog dicabut",
   removed: "Buku ini sudah tidak tersedia di katalog",
 };
 
@@ -122,9 +125,11 @@ export function CartLineCard({
   onQuantityChange: (line: CartLine, quantity: number) => void;
   onRemove: (line: CartLine) => void;
 }) {
-  const title = line.title || "Buku ini sudah tidak tersedia";
-  const publisher = line.publisherName || "Detail penerbit tidak tersedia";
-  const format = line.format || "Format tidak tersedia";
+  const accessRestricted = ["access_required", "access_expired", "access_revoked"].includes(line.availability);
+  const title = line.title || (accessRestricted ? "Detail buku disembunyikan" : "Buku ini sudah tidak tersedia");
+  const publisher =
+    line.publisherName || (accessRestricted ? "Detail penerbit disembunyikan" : "Detail penerbit tidak tersedia");
+  const format = line.format || (accessRestricted ? "Detail format disembunyikan" : "Format tidak tersedia");
   const status = statusFor(line);
   const acknowledgeable =
     line.requiresAcknowledgement &&

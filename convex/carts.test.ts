@@ -46,6 +46,34 @@ async function patchCartCatalogItem(
 describe("Customer Cart server domain", () => {
   beforeEach(configureTestEnvironment);
 
+  it("keeps an orderable Cart line through Book display metadata edits", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const bundle = await createCartCatalog(admin, "Cart Metadata Catalog");
+    await customer.mutation(api.catalogAccess.unlock, { accessCode: "cart-metadata-catalog-code" });
+    const itemId = await catalogItemId(t, bundle.catalogId, bundle.variantIds[0]);
+    await customer.mutation(api.carts.addItem, { catalogItemId: itemId, quantity: 2 });
+
+    await admin.mutation(api.books.update, {
+      bookId: bundle.bookId,
+      title: "Updated display title",
+      description: "Updated non-commerce description",
+      coverImageUrl: "https://example.com/updated-cover.jpg",
+    });
+
+    const cart = await customer.query(api.carts.getMine, {});
+    expect(cart).toMatchObject({ retainedQuantity: 2, activeQuantity: 2 });
+    expect(cart.lines[0]).toMatchObject({
+      catalogItemId: itemId,
+      bookId: bundle.bookId,
+      variantId: bundle.variantIds[0],
+      title: "Updated display title",
+      format: "PB",
+      availability: "active",
+      checkoutEligible: true,
+    });
+  });
+
   it("starts empty, merges duplicate lines, separates Variants, and clears to an empty root", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
