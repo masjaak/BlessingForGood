@@ -1,5 +1,43 @@
 # BFG Project Status
 
+## Client Content Phase 3C literal redlines — 2026-09-28
+
+Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`
+
+Implemented the latest client redlines as exact replacements, removals, and
+reordering over the existing production HomePage and How To Order components.
+The final access-card order is Join WhatsApp Group → Secret Catalog → Ready
+Stock → Blessfriend account. The existing Hero and three-step component remain;
+the duplicate lower homepage journey is gone. How To Order Step 04 is restored
+from canonical source (`Pesanan diproses` / `Preorder masuk ke Batch PO; Ready
+Stock diproses tanpa supplier Batch PO.`); DP 30% copy appears only at Step 05,
+and Step 07 is preserved. No auth, membership, Catalog authorization, Ready
+Stock, Cart, Order, Invoice, Payment, Finance, or Batch behavior changed.
+
+The guarded local harness renders the exact production components. Responsive
+Playwright checks and screenshots pass at 375, 390, 430, 768, 1024, and 1440px;
+the signed-out presentation has no horizontal overflow, card order is correct,
+buttons are usable, and Blessy clears page content and mobile navigation.
+Frontend passes (75 files / 476 tests); Convex passes (47 files / 310 tests).
+Focused Phase 3C passes (38 tests), including the Step 04 restoration and
+single Step 05 payment assertion; its corrected responsive browser run passes
+at all six widths. Phase 2 onboarding/auth passes (23 tests),
+Catalog passes (4 files / 50 tests), Ready Stock passes (1 file / 9 tests),
+and Cart passes (4 files / 23 tests). TypeScript, ESLint, and formatting pass.
+The combined Vitest command hit the existing 2,000-item Batch
+backfill's 120-second timeout; both projects passed when run separately with
+the Convex timeout raised to 180 seconds. An additional Phase 07.1 E2E run had
+6 passes and 3 route-dependent failures (Ready Stock selectors and the
+authenticated Activity page) under the keyless local harness; its changed Home
+and How To Order checks passed. `git diff --check` passes.
+
+Clerk local keys are absent. Direct authenticated runtime for `/` and
+`/how-to-order` is recorded as `REAL_AUTH_RUNTIME_UNVERIFIED_LOCAL`; the local
+component render does not constitute Production UAT. H+1/H+2 invoice timing,
+DP 30%, and 4-5 months remain display copy only. No Security QA changes, Phase
+4 work, merge, or deployment. Screenshots and full redline/source audit are in
+[the Phase 3C report](implementation/BFG-CLIENT-CONTENT-PHASE-3.md).
+
 ## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
 
 Status: `PHASE_2_ENGINEERING_GREEN_PENDING_RECONCILIATION`

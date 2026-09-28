@@ -158,10 +158,11 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     await expect(journey).toBeVisible();
     await expect(journey.locator(".hero-sequence > li")).toHaveCount(3);
     expect(await journey.locator(".hero-sequence > li strong").allTextContents()).toEqual([
-      "Temukan",
-      "Pesan",
-      "Ikuti",
+      "gabung ke whatsapp group",
+      "buat account di website kami",
+      "pilih buku yang ingin dibeli",
     ]);
+    await expect(journey.getByRole("heading", { name: "cara pembelian di Blessing for good" })).toBeVisible();
 
     const layout = await journey.locator(".hero-sequence").evaluate((element) => ({
       columns: getComputedStyle(element).gridTemplateColumns,
@@ -276,7 +277,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
 
   test("Homepage keeps a deliberate responsive chapter rhythm", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const chapterSelector = ".discovery-section, .community-section, .home-order-section, .story-section";
+    const chapterSelector = ".discovery-section, .home-quick-guidance, .story-section";
     await expect(page.locator(chapterSelector).first()).toBeVisible();
     const rhythm = await page.locator(chapterSelector).evaluateAll((sections) =>
       sections.map((section) => {
@@ -287,7 +288,7 @@ test.describe("@customer Phase 07.1 shared surface", () => {
     );
     const viewportWidth = page.viewportSize()?.width || 0;
     const minimumPadding = viewportWidth <= 640 ? 30 : viewportWidth <= 900 ? 38 : 46;
-    expect(rhythm).toHaveLength(4);
+    expect(rhythm).toHaveLength(3);
     expect(rhythm.every((section) => section.paddingTop >= minimumPadding)).toBe(true);
     expect(rhythm.every((section, index) => index === 0 || section.top >= rhythm[index - 1].bottom)).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewportWidth + 1);

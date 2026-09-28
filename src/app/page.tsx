@@ -1,22 +1,11 @@
-import Link from "next/link";
 import { BrandLogo, BrandMascot } from "@/components/brand";
+import { HomeQuickGuidance } from "@/components/home-quick-guidance";
 import { HomeOnboarding } from "@/components/home-onboarding";
-import { HowToOrderSteps } from "@/components/how-to-order";
 import { JsonLd } from "@/components/json-ld";
 import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { WHATSAPP_CONTACT_URL } from "@/domain/whatsapp-handoff";
 import { createHomepageStructuredData } from "@/lib/seo";
-
-function configuredExternalUrl(name: "BFG_TUTORIAL_VIDEO_URL") {
-  const value = process.env[name]?.trim();
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
 
 export default function HomePage() {
   return (
@@ -25,14 +14,11 @@ export default function HomePage() {
       <div className="page home-page">
         <section className="hero home-hero" aria-labelledby="home-title">
           <div className="hero-copy">
-            <span className="eyebrow">Rumah buku pilihan untuk Blessfriends</span>
+            <span className="eyebrow">official website blessing for good</span>
             <h1 id="home-title" className="display">
-              Semua bisa dimulai dari satu buku yang tepat.
+              SPECIALIST CHILDREN &amp; COLLECTOR BOOKS 📚
             </h1>
-            <p className="lede">
-              Blessing For Good adalah community-led imported bookstore yang membantu Blessfriends menemukan buku impor
-              berbahasa Inggris—dari Ready Stock sampai preorder—sedikit demi sedikit.
-            </p>
+            <p className="lede">kami mengkurasi buku-buku children books, novel books dan collector special edition</p>
             <div className="home-hero-actions" aria-label="Akses buku">
               <LinkButton href="/ready-stock" size="large">
                 Lihat Ready Stock
@@ -41,65 +27,81 @@ export default function HomePage() {
                 Buka Secret Catalog <span aria-hidden="true">→</span>
               </LinkButton>
             </div>
-            <aside className="home-hero-entry-note" aria-label="Cara mulai bersama BFG">
-              <span className="eyebrow">Baru di BFG?</span>
-              <p>
-                WhatsApp adalah ruang komunitas dan info PO BFG; website adalah tempat Blessfriends melihat katalog,
-                memesan, dan memantau pesanan.
-              </p>
-              <Link href="/how-to-order">Pelajari alur BFG →</Link>
-            </aside>
           </div>
           <div className="home-journey" aria-labelledby="journey-title">
             <h2 id="journey-title" className="eyebrow">
-              Perjalanan bukumu
+              cara pembelian di Blessing for good
             </h2>
             <ol className="hero-sequence">
               <li>
                 <span className="hero-step-number">01</span>
                 <div>
-                  <strong>Temukan</strong>
-                  <small>Pilih Ready Stock atau katalog pilihan.</small>
+                  <strong>gabung ke whatsapp group</strong>
+                  <small>
+                    agar kami lebih mudah reachout customer, kami mewajibkan customer kami bergabung di WA group
+                  </small>
                 </div>
               </li>
               <li>
                 <span className="hero-step-number">02</span>
                 <div>
-                  <strong>Pesan</strong>
-                  <small>Pilih buku, format, dan jumlah.</small>
+                  <strong>buat account di website kami</strong>
+                  <small>untuk memantau pesanan buku, check buku PO berjalan &amp; melakukan pemesanan</small>
                 </div>
               </li>
               <li>
                 <span className="hero-step-number">03</span>
                 <div>
-                  <strong>Ikuti</strong>
-                  <small>Pantau tagihan sampai pengiriman.</small>
+                  <strong>pilih buku yang ingin dibeli</strong>
+                  <small>bisa melakukan pembelian via website / fix langsung di WA group kami</small>
                 </div>
               </li>
             </ol>
           </div>
         </section>
 
-        <HomeOnboarding tutorialVideoUrl={configuredExternalUrl("BFG_TUTORIAL_VIDEO_URL")} />
+        <section className="section-block home-channel-section" aria-labelledby="home-channel-title">
+          <aside className="home-hero-entry-note" aria-label="Informasi WhatsApp dan website BFG">
+            <h2 id="home-channel-title">WhatsApp jadi ruang utama komunitas Blessfriends.</h2>
+            <p>
+              WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi
+              pengalaman yang menyenangkan
+            </p>
+            <a href="/how-to-order">pelajari ketentuan PO buku di kami</a>
+          </aside>
+        </section>
 
-        <section className="section-block discovery-section" id="book-discovery" aria-labelledby="discovery-title">
+        <section className="section-block discovery-section" id="akses-buku" aria-labelledby="discovery-title">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Temukan buku</span>
-              <h2 id="discovery-title">Mulai dari buku yang ingin kamu temukan.</h2>
+              <span className="eyebrow">Akses &amp; belanja</span>
+              <h2 id="discovery-title">Akses buku untuk Blessfriends</h2>
             </div>
-            <p>Ruang pertama untuk menjelajah: pilihan yang sudah tersedia atau katalog privat sesuai aksesmu.</p>
+            <p>Pilih katalog sesuai aksesmu, lalu gunakan account Blessfriend untuk mengelola pesanan.</p>
           </div>
-          <div className="discovery-grid">
-            <article className="discovery-card discovery-card-ready">
-              <div>
-                <span className="eyebrow">Pilihan utama</span>
-                <h3>Ready Stock</h3>
-                <p>Buku yang sudah tersedia untuk langsung kamu lihat dan pesan dengan alur yang jelas.</p>
+          <div className="home-access-grid">
+            <article
+              className="discovery-card discovery-card-whatsapp"
+              id="join-whatsapp"
+              data-testid="join-whatsapp"
+              aria-labelledby="join-title"
+            >
+              <div className="community-copy">
+                <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+                <h3 id="join-title">BLESSING FOR GOOD</h3>
+                <p>
+                  wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
+                </p>
+                <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
+                  Minta link WhatsApp Group
+                </LinkButton>
               </div>
-              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
+              <div className="community-art" aria-hidden="true">
+                <BrandMascot variant="warm" className="community-mascot" />
+              </div>
             </article>
-            <article className="discovery-card discovery-card-secret">
+
+            <article className="discovery-card discovery-card-secret" data-testid="secret-catalog">
               <div className="discovery-card-heading">
                 <span className="discovery-lock" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -111,51 +113,29 @@ export default function HomePage() {
               </div>
               <div>
                 <h3>Secret Catalog</h3>
-                <p>Masukkan kode akses untuk membuka pilihan buku privat Blessfriends.</p>
+                <p>katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group</p>
               </div>
               <LinkButton href="/catalog" variant="secondary">
                 Buka Secret Catalog
               </LinkButton>
             </article>
+
+            <article className="discovery-card discovery-card-ready" data-testid="ready-stock">
+              <div>
+                <h3>Ready Stock</h3>
+                <p>
+                  buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi
+                  Blessfriends
+                </p>
+              </div>
+              <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
+            </article>
+
+            <HomeOnboarding />
           </div>
         </section>
 
-        <section className="section-block community-section" id="join-blessfriends" aria-labelledby="join-title">
-          <div className="community-banner">
-            <div className="community-copy">
-              <span className="eyebrow">Komunitas BFG</span>
-              <h2 id="join-title">Gabung Blessfriends</h2>
-              <p>
-                Cari rekomendasi buku bareng orang tua dan pembaca lain yang sama-sama penasaran menemukan bacaan bagus.
-              </p>
-              <LinkButton href="/join">Gabung sekarang</LinkButton>
-            </div>
-            <div className="community-art" aria-hidden="true">
-              <BrandMascot variant="warm" className="community-mascot" />
-            </div>
-          </div>
-        </section>
-
-        <section
-          className="section-block order-section home-order-section"
-          id="cara-order"
-          aria-labelledby="order-title"
-        >
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Cara memesan</span>
-              <h2 id="order-title">Pesan dengan alur yang jelas.</h2>
-              <p>Kenali tiga momen utamanya sebelum masuk ke panduan lengkap.</p>
-            </div>
-          </div>
-          <HowToOrderSteps preview />
-          <div className="home-order-footer">
-            <span>Butuh detail dari akses sampai buku tiba?</span>
-            <LinkButton href="/how-to-order" variant="tertiary">
-              Lihat cara memesan <span aria-hidden="true">→</span>
-            </LinkButton>
-          </div>
-        </section>
+        <HomeQuickGuidance />
 
         <section className="section-block story-section" id="bfg-story" aria-labelledby="story-title">
           <div className="section-heading">

@@ -1,5 +1,27 @@
 # BFG SOURCE OF TRUTH
 
+## Client content Phase 3C literal redlines — 2026-09-28
+
+The latest client annotations are literal edits over the existing interface:
+yellow/green overlays replace the text beneath them, red X marks remove the
+target, arrows move existing cards, and unmarked structure remains. This
+supersedes the previous Phase 3 layout interpretation.
+
+The homepage keeps its existing Hero, WhatsApp/website information card,
+three-step journey, Secret Catalog gateway, Ready Stock route, Blessfriend
+account component, and Blessy. Apply the client copy at the marked locations;
+remove the crossed Temukan Buku block if present. The homepage access-card order
+is Join WhatsApp Group → Secret Catalog → Ready Stock → Blessfriend account.
+The Home journey labels and seven-step How To Order copy follow the Phase 3C
+client redline report exactly.
+
+This is a presentation-only change. Clerk, Join Request, membership states,
+Catalog authorization, Ready Stock, Cart, Orders, Invoice, Payment, Batch,
+Finance, and ETA logic remain authoritative and unchanged. H+1/H+2, DP 30%,
+and 4-5 months are client-provided display copy, not automation or a new
+business guarantee. Phase 3C remains pending real authenticated runtime UAT
+while local Clerk keys are unavailable.
+
 ## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
 
 Visitors who are not active Blessfriends see a dismissible, in-flow Blessy

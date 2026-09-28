@@ -1,27 +1,31 @@
 import type { ReactNode } from "react";
+import { Card, LinkButton } from "@/components/ui";
 
 type OrderStepIconName = "discover" | "select" | "send" | "process" | "invoice" | "track" | "arrive";
 
 type OrderStep = {
   title: string;
-  description: string;
+  description: ReactNode;
   icon: OrderStepIconName;
 };
 
 export const orderSteps: OrderStep[] = [
   {
-    title: "Temukan bukunya",
-    description: "Jelajahi Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
+    title: "pilih bukunya",
+    description:
+      "bisa fix lewat wa group (nantinya admin akan merekap ke account website masing2 blessfriends) atau bisa dilakukan pembelian via website langsung",
     icon: "discover",
   },
   {
-    title: "Pilih buku & variannya",
-    description: "Pilih judul, format, ISBN, dan jumlah yang tersedia.",
+    title: "history order buku kamu",
+    description:
+      "setiap pembelian baik di wa / di website akan langsung muncul di account masing2 blessfriends buku apa yang sudah dibeli di kami",
     icon: "select",
   },
   {
-    title: "Kirim pesanan",
-    description: "BFG mencatat pesananmu dan menyimpan detail pilihan saat dibuat.",
+    title: "invoice",
+    description:
+      "invoice akan muncul di website h+1/h+2 setelah close PO, karena kami membuka banyak cargo setiap batch, maka diperhatikan di bagian tagihan pada account website kamu, admin invoice kami akan pc masing2 customer menginfokan bahwa invoice sudah terbit di website",
     icon: "send",
   },
   {
@@ -30,18 +34,20 @@ export const orderSteps: OrderStep[] = [
     icon: "process",
   },
   {
-    title: "Cek tagihan & konfirmasi pembayaran",
-    description: "Invoice muncul saat diterbitkan; kirim konfirmasi pembayaran dari halaman Tagihan.",
+    title: "pembayaran",
+    description:
+      "pembayaran di kami adalah DP 30% atau jika ada DP tertentu di tiap cargo akan kami infokan saat kami menurunkan matprom di group whatsapp",
     icon: "invoice",
   },
   {
-    title: "Pantau perjalanannya",
-    description: "Lihat batch, shipment, fulfillment, dan pembaruan pesanan dari Buku Saya.",
+    title: "cek perjalanan buku kamu",
+    description:
+      "PO reguler membutuhkan waktu 4-5 bulan sejak di order pertama kali, pembelian bukumu bisa langsung di tracking di account website kamu",
     icon: "track",
   },
   {
     title: "Buku sampai",
-    description: "Setelah diproses BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
+    description: "Setelah buku tiba dan selesai diproses oleh BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
     icon: "arrive",
   },
 ];
@@ -59,24 +65,6 @@ const compactOrderSteps: OrderStep[] = [
   {
     title: "Ikuti sampai tiba",
     description: "Pantau perjalanan fulfillment dan pengiriman dari Buku Saya.",
-    icon: "arrive",
-  },
-];
-
-const previewOrderSteps: OrderStep[] = [
-  {
-    title: "Temukan bukunya",
-    description: "Pilih Ready Stock atau Secret Catalog sesuai akses dan ketersediaan.",
-    icon: "discover",
-  },
-  {
-    title: "Pesan & tunggu proses BFG",
-    description: "Pilih varian, kirim pesanan, lalu cek invoice dan pembayaran.",
-    icon: "process",
-  },
-  {
-    title: "Pantau sampai buku datang",
-    description: "Ikuti batch, fulfillment, dan pengiriman dari Buku Saya.",
     icon: "arrive",
   },
 ];
@@ -160,14 +148,12 @@ function JourneyIcon({ name }: { name: OrderStepIconName }) {
   );
 }
 
-export function HowToOrderSteps({ compact = false, preview = false }: { compact?: boolean; preview?: boolean }) {
-  const steps = preview ? previewOrderSteps : compact ? compactOrderSteps : orderSteps;
+export function HowToOrderSteps({ compact = false }: { compact?: boolean }) {
+  const steps = compact ? compactOrderSteps : orderSteps;
   return (
     <ol
-      className={`order-steps${compact ? " order-steps-compact" : ""}${preview ? " order-steps-preview" : ""}`}
-      aria-label={
-        preview ? "Ringkasan cara memesan" : compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"
-      }
+      className={`order-steps${compact ? " order-steps-compact" : ""}`}
+      aria-label={compact ? "Langkah cara memesan ringkas" : "Langkah cara memesan"}
     >
       {steps.map((step, index) => (
         <li className="order-step" key={`${step.title}-${index}`}>
@@ -181,7 +167,7 @@ export function HowToOrderSteps({ compact = false, preview = false }: { compact?
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </div>
-          {index < steps.length - 1 && (preview || (compact ? index % 3 !== 2 : index % 4 !== 3)) ? (
+          {index < steps.length - 1 && (compact ? index % 3 !== 2 : index % 4 !== 3) ? (
             <span className="order-step-arrow" aria-hidden="true">
               →
             </span>
@@ -189,5 +175,25 @@ export function HowToOrderSteps({ compact = false, preview = false }: { compact?
         </li>
       ))}
     </ol>
+  );
+}
+
+export function HowToOrderVideoGuide({ url }: { url: string | null }) {
+  if (!url) return null;
+  try {
+    if (new URL(url).protocol !== "https:") return null;
+  } catch {
+    return null;
+  }
+
+  return (
+    <Card className="how-to-order-video-guide">
+      <span className="card-kicker">Panduan website</span>
+      <h2>Butuh panduan?</h2>
+      <p>Lihat video singkat cara menggunakan website Blessing For Good.</p>
+      <LinkButton href={url} target="_blank" rel="noopener noreferrer" variant="secondary">
+        Tonton panduan penggunaan (buka tab baru) <span aria-hidden="true">↗</span>
+      </LinkButton>
+    </Card>
   );
 }
