@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLogo, BrandMascot } from "@/components/brand";
+import { HomeAccessIcon } from "@/components/home-access-icon";
 import { HomeOnboarding } from "@/components/home-onboarding";
 import { JsonLd } from "@/components/json-ld";
 import { LinkButton } from "@/components/ui";
