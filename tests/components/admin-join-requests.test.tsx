@@ -26,6 +26,47 @@ vi.mock("@/components/admin-nav", () => ({
 }));
 
 describe("Admin Join Request admission projection", () => {
+  it("reminds the reviewer to verify WhatsApp membership before approval", () => {
+    vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+    vi.mocked(useQuery).mockReturnValue([
+      {
+        joinRequestId: "join-review",
+        name: "Review Reader",
+        email: "review@example.com",
+        contact: "+628123456789",
+        city: "Jakarta",
+        bookInterest: "Children Books",
+        note: null,
+        source: "website",
+        acknowledged: true,
+        status: "under_review",
+        invitationStatus: "not_ready",
+        submittedAt: "2026-08-27T00:00:00.000Z",
+        reviewedAt: "2026-08-27T00:01:00.000Z",
+        reviewedByUserId: "admin-1",
+        reviewNote: null,
+        rejectionReason: null,
+        removedAt: null,
+        removedByUserId: null,
+        removedByName: null,
+        removalReason: null,
+        admissionStatus: "pending_review",
+        admissionError: null,
+        invitationError: null,
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:01:00.000Z",
+      },
+    ] as never);
+
+    render(<AdminJoinRequestsPage />);
+
+    expect(
+      screen.getByText("Sebelum menyetujui, pastikan customer sudah bergabung ke WhatsApp Group BFG."),
+    ).toBeTruthy();
+    expect(screen.getByText("+628123456789")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Setujui" })).toBeTruthy();
+  });
+
   it("shows Active and hides stale invitation recovery once the Customer is active", () => {
     vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
     vi.mocked(useQuery).mockReturnValue([

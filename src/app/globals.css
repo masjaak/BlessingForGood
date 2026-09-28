@@ -3729,6 +3729,12 @@ p {
   line-height: 1.45;
 }
 
+.customer-shell .order-step p a {
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-underline-offset: 0.18em;
+}
+
 .customer-shell .order-step-arrow {
   display: none;
 }
@@ -4269,6 +4275,12 @@ p {
   padding: 16px 0 20px;
 }
 
+.customer-shell .home-hero .hero-copy > .eyebrow,
+.customer-shell .home-journey h2,
+.customer-shell .how-to-order-page .page-header .eyebrow {
+  text-transform: none;
+}
+
 .customer-shell .home-hero-actions {
   display: flex;
   flex-wrap: wrap;
@@ -4288,9 +4300,16 @@ p {
   background: var(--control-surface-hover);
 }
 
+.customer-shell .home-hero-entry-note h2,
 .customer-shell .home-hero-entry-note p,
 .customer-shell .home-hero-entry-note a {
   margin: 0;
+}
+
+.customer-shell .home-hero-entry-note h2 {
+  max-width: 620px;
+  font-size: 1.08rem;
+  line-height: 1.3;
 }
 
 .customer-shell .home-hero-entry-note p {
@@ -4388,16 +4407,21 @@ p {
 }
 
 .customer-shell .discovery-section,
-.customer-shell .community-section,
 .customer-shell .home-order-section,
 .customer-shell .story-section {
   padding-top: var(--homepage-section-gap-desktop);
 }
 
-.customer-shell .discovery-grid {
+.customer-shell .home-access-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
   gap: 16px;
+}
+
+.customer-shell .home-access-grid .discovery-card,
+.customer-shell .home-access-grid .home-onboarding-main {
+  min-height: 320px;
 }
 
 .customer-shell .discovery-card {
@@ -4454,6 +4478,10 @@ p {
   background: var(--surface);
 }
 
+.customer-shell .discovery-card-whatsapp {
+  background: var(--bfg-peach);
+}
+
 .customer-shell .discovery-card-heading {
   display: flex;
   align-items: center;
@@ -4483,31 +4511,13 @@ p {
   stroke-width: 1.8;
 }
 
-.customer-shell .community-banner {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
-  min-height: 268px;
-  gap: 24px;
-  overflow: hidden;
-  padding: 30px 32px;
-  border-radius: 18px;
-  background: var(--bfg-peach);
-}
-
 .customer-shell .community-copy {
   align-self: center;
   max-width: 650px;
 }
 
-.customer-shell .community-copy h2,
 .customer-shell .community-copy p {
   margin-bottom: 0;
-}
-
-.customer-shell .community-copy h2 {
-  margin-top: 12px;
-  font-size: clamp(2rem, 3.8vw, 3rem);
 }
 
 .customer-shell .community-copy p {
@@ -4527,10 +4537,8 @@ p {
 }
 
 .customer-shell .community-mascot {
-  width: 220px;
-  height: 220px;
-  transform: scale(1.3);
-  transform-origin: bottom center;
+  width: 104px;
+  height: 104px;
 }
 
 .customer-shell .home-order-section .section-heading {
@@ -4638,6 +4646,32 @@ p {
   flex: 0 0 auto;
 }
 
+.customer-shell .discovery-card-whatsapp .community-art {
+  min-height: 80px;
+}
+
+.customer-shell .home-access-grid .home-onboarding-main {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: var(--space-md);
+  min-width: 0;
+  padding: 22px;
+}
+
+.customer-shell .home-access-grid .home-onboarding-copy h2 {
+  font-size: clamp(1.35rem, 1.8vw, 1.75rem);
+}
+
+.customer-shell .home-access-grid .home-onboarding-art {
+  min-height: 76px;
+  place-items: center;
+}
+
+.customer-shell .home-access-grid .home-onboarding-mascot {
+  width: 84px;
+  transform: none;
+}
+
 @media (max-width: 900px) {
   .customer-shell .home-hero {
     padding-top: 16px;
@@ -4647,16 +4681,40 @@ p {
     max-width: 680px;
   }
 
-  .customer-shell .discovery-grid {
+  .customer-shell .home-access-grid {
     grid-template-columns: 1fr;
   }
 
-  .customer-shell .community-banner {
-    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.45fr);
+  .customer-shell .home-access-grid .home-onboarding-main {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+    grid-template-rows: auto;
+    min-height: 278px;
+    gap: var(--space-lg);
+    padding: var(--space-xl);
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-copy h2 {
+    font-size: clamp(1.8rem, 3vw, 2.55rem);
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-art {
+    min-height: 180px;
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-mascot {
+    width: min(100%, 160px);
+  }
+
+  .customer-shell .discovery-card-whatsapp .community-mascot {
+    width: 88px;
+    height: 88px;
+  }
+
+  .customer-shell .discovery-card-whatsapp .community-art {
+    min-height: 72px;
   }
 
   .customer-shell .discovery-section,
-  .customer-shell .community-section,
   .customer-shell .home-order-section,
   .customer-shell .story-section {
     padding-top: var(--homepage-section-gap-tablet);
@@ -4732,11 +4790,6 @@ p {
     margin-top: 14px;
   }
 
-  .customer-shell .home-hero-entry-note {
-    margin-top: var(--space-sm);
-    padding: var(--space-sm);
-  }
-
   .customer-shell .home-hero-actions > .button {
     width: 100%;
   }
@@ -4783,7 +4836,6 @@ p {
   }
 
   .customer-shell .discovery-section,
-  .customer-shell .community-section,
   .customer-shell .home-order-section,
   .customer-shell .story-section {
     padding-top: var(--homepage-section-gap-mobile);
@@ -4794,34 +4846,27 @@ p {
     padding: 22px;
   }
 
+  .customer-shell .home-access-grid .home-onboarding-main {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-art {
+    min-height: 112px;
+  }
+
+  .customer-shell .home-access-grid .home-onboarding-mascot {
+    width: 128px;
+  }
+
   .customer-shell .discovery-card .button,
   .customer-shell .community-copy .button {
     width: 100%;
   }
 
-  .customer-shell .community-banner {
-    grid-template-columns: minmax(0, 1fr) 104px;
-    gap: 8px;
-    min-height: 0;
-    padding: 22px 18px 20px;
-  }
-
-  .customer-shell .community-copy h2 {
-    font-size: clamp(1.85rem, 8vw, 2.25rem);
-  }
-
   .customer-shell .community-copy p {
     font-size: 0.9rem;
-  }
-
-  .customer-shell .community-art {
-    min-height: 118px;
-  }
-
-  .customer-shell .community-mascot {
-    width: 138px;
-    height: 138px;
-    transform: scale(1.2);
   }
 
   .customer-shell .home-page .order-steps-preview {
@@ -7096,6 +7141,19 @@ p {
   margin-top: var(--journey-section-gap);
 }
 
+.customer-shell .how-to-order-page > .how-to-order-policy-note,
+.customer-shell .how-to-order-page > .how-to-order-video-guide {
+  display: grid;
+  gap: var(--title-description-gap);
+  margin-top: var(--journey-section-gap);
+}
+
+.customer-shell .how-to-order-policy-note p,
+.customer-shell .how-to-order-video-guide p,
+.customer-shell .how-to-order-video-guide h2 {
+  margin-bottom: 0;
+}
+
 .customer-shell .how-to-order-page > .communication-card h2,
 .customer-shell .how-to-order-page > .communication-card p {
   margin-bottom: 0;
@@ -8789,13 +8847,7 @@ p {
   }
 }
 
-/* Social entry layer: native details keeps the How-to interaction accessible without another client state machine. */
-.customer-shell .home-onboarding {
-  display: grid;
-  gap: var(--space-md);
-  margin-top: var(--homepage-section-gap-mobile);
-}
-
+/* Blessfriend account card shares the discovery card family. */
 .customer-shell .home-onboarding-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
@@ -8814,9 +8866,25 @@ p {
   min-width: 0;
 }
 
+.customer-shell .home-onboarding-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.customer-shell .home-onboarding-heading > div {
+  min-width: 0;
+}
+
+.customer-shell .home-onboarding-dismiss {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .customer-shell .home-onboarding-copy h2,
-.customer-shell .home-onboarding-copy p,
-.customer-shell .home-onboarding-helper {
+.customer-shell .home-onboarding-copy p {
   margin: 0;
 }
 
@@ -8915,6 +8983,17 @@ p {
   transform-origin: bottom center;
 }
 
+/* The existing account guide moves with the account card into the access sequence. */
+.customer-shell .home-onboarding {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.customer-shell .home-access-grid > .home-onboarding {
+  margin: 0;
+}
+
 .customer-shell .home-onboarding-how-to {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -8999,10 +9078,6 @@ p {
 }
 
 @media (max-width: 640px) {
-  .customer-shell .home-onboarding {
-    margin-top: var(--space-lg);
-  }
-
   .customer-shell .home-onboarding-main {
     grid-template-columns: 1fr;
     gap: var(--space-md);
@@ -9539,6 +9614,34 @@ p {
 
   .floating-blessy {
     width: clamp(108px, 30vw, 136px);
+  }
+}
+
+body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy {
+  position: relative !important;
+  inset: auto !important;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  top: auto;
+  width: clamp(72px, 8vw, 104px);
+  margin: 24px auto;
+  z-index: auto;
+}
+
+body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy__bubble {
+  display: none;
+}
+
+body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy__close-layer {
+  top: 0;
+  right: 0;
+}
+
+@media (max-width: 800px) {
+  body:has(.customer-shell .home-page, .customer-shell .how-to-order-page) .floating-blessy {
+    width: 72px;
+    margin: 24px auto calc(80px + env(safe-area-inset-bottom));
   }
 }
 

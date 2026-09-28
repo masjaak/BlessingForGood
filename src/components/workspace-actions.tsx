@@ -63,6 +63,22 @@ export function calculateActivityPanelGeometry(
 
 export const WorkspaceActivityContext = createContext<WorkspaceActivityCounts>({});
 
+function WorkspaceActivitySubscription({
+  workspace,
+  children,
+}: {
+  workspace: "admin" | "customer";
+  children: ReactNode;
+}) {
+  const activityState = useQueryState({
+    query: api.notifications.unreadActivityCount,
+    args: { workspace },
+  });
+  const activity = activityState.status === "success" ? activityState.data : undefined;
+
+  return <WorkspaceActivityContext.Provider value={{ activity }}>{children}</WorkspaceActivityContext.Provider>;
+}
+
 export function WorkspaceActivityProvider({
   enabled,
   workspace,
@@ -72,13 +88,9 @@ export function WorkspaceActivityProvider({
   workspace: "admin" | "customer";
   children: ReactNode;
 }) {
-  const activityState = useQueryState({
-    query: api.notifications.unreadActivityCount,
-    args: enabled ? { workspace } : "skip",
-  });
-  const activity = activityState.status === "success" ? activityState.data : undefined;
+  if (!enabled) return <WorkspaceActivityContext.Provider value={{}}>{children}</WorkspaceActivityContext.Provider>;
 
-  return <WorkspaceActivityContext.Provider value={{ activity }}>{children}</WorkspaceActivityContext.Provider>;
+  return <WorkspaceActivitySubscription workspace={workspace}>{children}</WorkspaceActivitySubscription>;
 }
 
 export function useWorkspaceActivity() {

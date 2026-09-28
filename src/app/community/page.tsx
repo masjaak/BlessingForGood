@@ -5,22 +5,36 @@ import { api } from "../../../convex/_generated/api";
 import { BrandMascot } from "@/components/brand";
 import { Card, LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { useProduct } from "@/domain/prototype/store";
+
+type CommunityContent = { eyebrow?: string; title?: string; body?: string } | null | undefined;
+
+function CommunityPageHeader({ content }: { content: CommunityContent }) {
+  return (
+    <header className="page-header">
+      <div>
+        <span className="eyebrow">{content?.eyebrow || "Komunitas Blessfriends"}</span>
+        <h1>{content?.title || "Menemukan buku terasa lebih hangat saat dijalani bersama."}</h1>
+        <p className="lede">
+          {content?.body ||
+            "BFG mempertemukan pembaca dengan buku impor pilihan melalui komunitas, katalog privat, dan alur pemesanan yang jelas."}
+        </p>
+      </div>
+    </header>
+  );
+}
+
+function LiveCommunityPageHeader() {
+  const content = useQuery(api.contentBlocks.getPublished, { key: "community" });
+  return <CommunityPageHeader content={content} />;
+}
 
 export default function CommunityPage() {
-  const content = useQuery(api.contentBlocks.getPublished, { key: "community" });
+  const { dataSource } = useProduct();
   return (
     <SiteShell>
       <div className="page narrow-page">
-        <header className="page-header">
-          <div>
-            <span className="eyebrow">{content?.eyebrow || "Komunitas Blessfriends"}</span>
-            <h1>{content?.title || "Menemukan buku terasa lebih hangat saat dijalani bersama."}</h1>
-            <p className="lede">
-              {content?.body ||
-                "BFG mempertemukan pembaca dengan buku impor pilihan melalui komunitas, katalog privat, dan alur pemesanan yang jelas."}
-            </p>
-          </div>
-        </header>
+        {dataSource === "convex" ? <LiveCommunityPageHeader /> : <CommunityPageHeader content={null} />}
         <div className="content-stack">
           <Card className="accent-card communication-card">
             <BrandMascot variant="warm" className="guide-mascot" />

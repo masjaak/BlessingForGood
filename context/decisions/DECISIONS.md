@@ -1,5 +1,23 @@
 # Decisions
 
+## Client content Phase 3C literal redlines — 2026-09-28
+
+Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`
+
+- Treat the client's yellow/green overlays as exact replacements, red X marks
+  as removals, arrows as card moves, and unmarked UI as preserved. This
+  supersedes the previous Phase 3 layout interpretation.
+- Keep the existing homepage Hero and journey; remove the duplicate lower
+  journey and any crossed Temukan Buku block. The access-card sequence is Join
+  WhatsApp Group → Secret Catalog → Ready Stock → Blessfriend account.
+- Use the exact copy in the Phase 3C report. Keep the How To Order seven-step
+  timeline and preserve Steps 04 and 07 where the screenshot has no replacement.
+- H+1/H+2 invoice timing, DP 30%, and 4-5 months are display copy only. They do
+  not change Invoice, Payment, Batch ETA, or other business behavior.
+- Keep existing Clerk, membership, Catalog authorization, Ready Stock, Cart,
+  Order, Finance, and Batch paths. No Security QA changes, Phase 4 work, or
+  Production deployment are included.
+
 ## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -708,6 +726,19 @@ Phase 04.1 records the following approved implementation decisions:
 - Active Preview must use Clerk identity only. Legacy prototype sessions are
   isolated and disabled.
 
+## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
+
+- Show non-active visitors an accessible, dismissible, in-flow Blessy welcome
+  that explains the WhatsApp Group and website registration prerequisites.
+- Reuse the existing `/join` form and `joinRequests.submit`. After successful
+  submission, link to a fixed `wa.me/6282347278881` direct chat with a URL-safe
+  prefilled follow-up. Do not return or store a group invitation URL and do not
+  send WhatsApp messages automatically.
+- Admin manually checks WhatsApp Group membership before using the existing
+  approval action. Do not persist a separate verification field.
+- Preserve Clerk identity, Join Request admission, Admin approval, Clerk
+  invitation, and active `appUsers` membership as the canonical sequence.
+
 ## Homepage / Join / Secret Catalog V3 decisions
 
 - Homepage discovery is a short mobile-first story: three anchored quick
@@ -732,9 +763,8 @@ Phase 04.1 records the following approved implementation decisions:
   backward-compatible owned preorder authorization; token-only browse does not
   create customer identity.
 - Join captures name, email, normalized phone, area/city, one primary book
-  interest, and optional note. `BFG_JOIN_WHATSAPP_GROUP_URL` is returned only
-  after the request mutation commits; missing configuration produces a safe
-  continuation message rather than a dummy link.
+  interest, and optional note. The previous configured group-URL response is
+  superseded by the fixed direct-chat handoff described above.
 
 ## Secret Catalog discovery and global access code — 2026-08-30
 

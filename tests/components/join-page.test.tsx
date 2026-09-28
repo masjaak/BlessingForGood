@@ -127,7 +127,11 @@ describe("Join Blessfriends admission entry", () => {
       authState: "signed-out",
       retryAuth: vi.fn(),
     } as never);
-    const submit = vi.fn().mockResolvedValue({ whatsappGroupUrl: null });
+    const submit = vi.fn().mockResolvedValue({
+      joinRequestId: "join-1",
+      status: "submitted",
+      whatsappGroupUrl: "https://evil.example/untrusted",
+    });
     vi.mocked(useMutation).mockReturnValue(submit as never);
 
     render(<JoinPage />);
@@ -141,9 +145,25 @@ describe("Join Blessfriends admission entry", () => {
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: "Kirim permintaan" }));
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Permintaanmu sudah dikirim." })).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Langkah berikutnya: gabung WhatsApp Group BFG" })).toBeTruthy(),
+    );
     expect(document.querySelector(".join-success-card > .success-mascot")).toBeTruthy();
-    expect(document.querySelector(".join-success-content h2")?.textContent).toBe("Permintaanmu sudah dikirim.");
+    expect(
+      screen.getByText(
+        "Klik tombol di bawah untuk meminta link WhatsApp Group. Setelah kamu bergabung, Admin BFG akan memeriksa pendaftaranmu sebelum undangan akun dikirim.",
+      ),
+    ).toBeTruthy();
+    const whatsapp = screen.getByRole("link", { name: "Minta link WhatsApp Group" });
+    expect(whatsapp.getAttribute("href")).toBe(
+      "https://wa.me/6282347278881?text=Halo%20BFG%2C%20aku%20sudah%20mengisi%20pendaftaran%20Blessfriends%20di%20website.%20Aku%20ingin%20meminta%20link%20untuk%20bergabung%20ke%20WhatsApp%20Group%20BFG.",
+    );
+    expect(new URL(whatsapp.getAttribute("href")!).pathname).toBe("/6282347278881");
+    expect(new URL(whatsapp.getAttribute("href")!).searchParams.get("text")).toBe(
+      "Halo BFG, aku sudah mengisi pendaftaran Blessfriends di website. Aku ingin meminta link untuk bergabung ke WhatsApp Group BFG.",
+    );
+    expect(whatsapp.getAttribute("target")).toBe("_blank");
+    expect(whatsapp.getAttribute("rel")).toBe("noopener noreferrer");
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
         email: "signed-out@example.com",

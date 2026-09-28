@@ -1,5 +1,72 @@
 # BFG Project Status
 
+## Client Content Phase 3C literal redlines — 2026-09-28
+
+Status: `PHASE_3_CLIENT_REDLINE_GREEN_PENDING_REAL_RUNTIME`
+
+Implemented the latest client redlines as exact replacements, removals, and
+reordering over the existing production HomePage and How To Order components.
+The final access-card order is Join WhatsApp Group → Secret Catalog → Ready
+Stock → Blessfriend account. The existing Hero and three-step component remain;
+the duplicate lower homepage journey is gone. How To Order Step 04 is restored
+from canonical source (`Pesanan diproses` / `Preorder masuk ke Batch PO; Ready
+Stock diproses tanpa supplier Batch PO.`); DP 30% copy appears only at Step 05,
+and Step 07 is preserved. No auth, membership, Catalog authorization, Ready
+Stock, Cart, Order, Invoice, Payment, Finance, or Batch behavior changed.
+
+The guarded local harness renders the exact production components. Responsive
+Playwright checks and screenshots pass at 375, 390, 430, 768, 1024, and 1440px;
+the signed-out presentation has no horizontal overflow, card order is correct,
+buttons are usable, and Blessy clears page content and mobile navigation.
+Frontend passes (75 files / 476 tests); Convex passes (47 files / 310 tests).
+Focused Phase 3C passes (38 tests), including the Step 04 restoration and
+single Step 05 payment assertion; its corrected responsive browser run passes
+at all six widths. Phase 2 onboarding/auth passes (23 tests),
+Catalog passes (4 files / 50 tests), Ready Stock passes (1 file / 9 tests),
+and Cart passes (4 files / 23 tests). TypeScript, ESLint, and formatting pass.
+The combined Vitest command hit the existing 2,000-item Batch
+backfill's 120-second timeout; both projects passed when run separately with
+the Convex timeout raised to 180 seconds. An additional Phase 07.1 E2E run had
+6 passes and 3 route-dependent failures (Ready Stock selectors and the
+authenticated Activity page) under the keyless local harness; its changed Home
+and How To Order checks passed. `git diff --check` passes.
+
+Clerk local keys are absent. Direct authenticated runtime for `/` and
+`/how-to-order` is recorded as `REAL_AUTH_RUNTIME_UNVERIFIED_LOCAL`; the local
+component render does not constitute Production UAT. H+1/H+2 invoice timing,
+DP 30%, and 4-5 months remain display copy only. No Security QA changes, Phase
+4 work, merge, or deployment. Screenshots and full redline/source audit are in
+[the Phase 3C report](implementation/BFG-CLIENT-CONTENT-PHASE-3.md).
+
+## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
+
+Status: `PHASE_2_ENGINEERING_GREEN_PENDING_RECONCILIATION`
+
+Implemented the Blessy welcome and admission-state copy, fixed direct WhatsApp
+chat handoff after the existing Join Request succeeds, and the manual Admin
+verification reminder. Clerk, Join Request approval, Clerk invitation, and
+`appUsers.role/status` remain canonical. No WhatsApp membership field or group
+invitation URL is stored. Security QA and P0 Cart/Session worktrees remain
+separate and untouched.
+
+Focused onboarding and membership/auth tests pass; the frontend project passes
+(74 files / 471 tests), and Convex passes (47 files / 310 tests). A guarded
+local-only presentation fixture rendered all eight audience states at 375,
+390, 430, 768, 1280, and 1440px. No overflow was measured; the welcome card,
+floating Blessy, and fixed navigation remain separate and reachable. The
+fixture returns 404 in production and does not alter Clerk, Convex auth, or
+membership state.
+
+The clean base and Phase 2 both compile and type-check, then fail static
+prerender at the existing ConvexProvider boundary (`workspace-actions.tsx:75`;
+Phase 2 also reaches `community/page.tsx:10`). This is a pre-existing build
+failure, not a Phase 2 regression. The same three npm audit advisories are on
+the clean base and Phase 2 (2 moderate, 1 high); dependencies were not changed.
+The combined Batch stress run timed out, while the isolated stress test passes
+on base and Phase 2 and the full Convex suite passes. No deploy or merge; the
+Customer session incident and Security QA reconciliation remain open. See
+[the anchored Phase 0–2 pre-closure report](implementation/BFG-CLIENT-UAT-PHASE-0-2-PRE-CLOSURE.md).
+
 ## Mobile Catalog cover and Admin Pelanggan pagination — 2026-09-24
 
 Status: `ENGINEERING GREEN; AUTHENTICATED PRODUCTION UAT PENDING`
@@ -1601,9 +1668,9 @@ Live public mobile QA at 390px passed for homepage, token gateway, signed-out
 states, BFG sign-in, no-ticket sign-up, navigation, and detail Back controls.
 No secret values, dummy records, or alternate deployments were used.
 
-The join continuation is safe when `BFG_JOIN_WHATSAPP_GROUP_URL` is absent:
-the request persists and the customer sees the configured-link fallback. Its
-Production value was not exposed or independently read during this pass.
+The historical configured-link behavior above was superseded on 2026-09-27 by
+the fixed direct-chat handoff described in the current Blessfriend onboarding
+entry at the top of this file.
 
 ## Historical Production UI alignment hotfix (superseded by V3)
 

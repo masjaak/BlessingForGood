@@ -1,5 +1,7 @@
 import { createPageMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = createPageMetadata({
   title: "Gabung Blessfriends | Blessing For Good",
   description: "Kirim permintaan untuk bergabung dengan komunitas Blessfriends di Blessing For Good.",

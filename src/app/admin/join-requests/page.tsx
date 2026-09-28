@@ -150,6 +150,9 @@ function JoinRequestCard({
       ) : null}
       {request.status === "under_review" ? (
         <div className="content-stack">
+          <p className="subtle" role="note">
+            Sebelum menyetujui, pastikan customer sudah bergabung ke WhatsApp Group BFG.
+          </p>
           <Field label="Catatan tinjauan (opsional)">
             <textarea className="textarea" value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} />
           </Field>

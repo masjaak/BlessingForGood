@@ -16,6 +16,18 @@ vi.mock("convex/react", () => ({
 }));
 
 describe("authenticated workspace actions", () => {
+  it("does not require a Convex provider or subscribe while activity is disabled", () => {
+    vi.mocked(useQueryState).mockClear();
+    render(
+      <WorkspaceActivityProvider enabled={false} workspace="customer">
+        <p>Signed-out navigation</p>
+      </WorkspaceActivityProvider>,
+    );
+
+    expect(screen.getByText("Signed-out navigation")).toBeTruthy();
+    expect(useQueryState).not.toHaveBeenCalled();
+  });
+
   it("exposes one combined activity trigger for Admin", () => {
     render(
       <WorkspaceActivityProvider enabled workspace="admin">

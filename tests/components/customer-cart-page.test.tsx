@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { CustomerCart } from "@/features/customer-cart/customer-cart";
+import { CartLineCard, type CartLine } from "@/features/customer-cart/cart-line";
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(),
@@ -167,6 +168,24 @@ function mockMutations() {
 }
 
 describe("Customer Cart page", () => {
+  it("shows revoked Catalog access without claiming the Book or its details were removed", () => {
+    const line = { ...(cartWithLines().lines[2] as CartLine), availability: "access_revoked" as const };
+    render(
+      <CartLineCard
+        line={line}
+        pending={null}
+        onAcknowledge={() => undefined}
+        onQuantityChange={() => undefined}
+        onRemove={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText("Akses katalog dicabut")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Detail buku disembunyikan" })).toBeTruthy();
+    expect(screen.getByText(/Detail format disembunyikan · Detail penerbit disembunyikan/)).toBeTruthy();
+    expect(screen.queryByText("Buku ini sudah tidak tersedia di katalog")).toBeNull();
+  });
+
   it("renders three independent Catalog groups from the server projection", async () => {
     const cart = readyCart();
     const groups = ["CARGO 1", "CARGO 2", "CARGO 3"].map((name, index) => ({

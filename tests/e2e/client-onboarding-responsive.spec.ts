@@ -1,0 +1,466 @@
+import { mkdir } from "node:fs/promises";
+import { expect, test } from "@playwright/test";
+
+const states = ["signed-out"] as const;
+
+test("renders the client redline homepage and guide at responsive widths @customer", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "customer-390",
+    "This explicit responsive matrix runs once from the 390px customer project.",
+  );
+  test.setTimeout(240_000);
+  const evidenceDirectory = testInfo.outputPath();
+  await mkdir(evidenceDirectory, { recursive: true });
+  await page.addInitScript(() => {
+    const style = document.createElement("style");
+    style.textContent = "nextjs-portal { display: none !important; }";
+    document.addEventListener("DOMContentLoaded", () => document.head.append(style), { once: true });
+  });
+
+  for (const state of states) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/verification/onboarding?state=${state}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("onboarding-presentation-state")).toHaveAttribute("data-state", state);
+    await expect(page.getByTestId("floating-blessy")).toBeVisible();
+    const region = page.locator(".home-onboarding-main");
+    const onboarding = region;
+    await expect(page.getByText("Baru di BFG?", { exact: true })).toBeVisible();
+    await expect(page.locator(".home-hero .home-hero-entry-note")).toHaveCount(1);
+    await expect(page.locator(".home-channel-section")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "WhatsApp jadi ruang utama komunitas Blessfriends." })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByText(
+        "WhatsApp sebagai media utama kami, website sebagai tempat untuk belanja para Blessfriends menjadi pengalaman yang menyenangkan",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Dapatkan kurasi buku, informasi PO, dan update terbaru melalui WhatsApp Group BFG. Website digunakan untuk belanja, melihat pesanan, tagihan, dan tracking buku.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    const joinCard = page.getByTestId("join-whatsapp");
+    await expect(joinCard.getByText("GABUNG WHATSAPP GROUP", { exact: true })).toBeVisible();
+    await expect(joinCard.getByRole("heading", { name: "BLESSING FOR GOOD" })).toBeVisible();
+    await expect(
+      joinCard.getByText(
+        "wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari",
+      ),
+    ).toBeVisible();
+    await expect(joinCard.getByRole("heading", { name: "Gabung WhatsApp Group Blessing For Good" })).toHaveCount(0);
+    await expect(joinCard.getByText("Komunitas BFG", { exact: true })).toHaveCount(0);
+    await expect(
+      joinCard.getByText(
+        "Wajib bergabung sebelum menyelesaikan pendaftaran Blessfriend. Di WhatsApp Group BFG kami membagikan kurasi buku, informasi PO, dan update terbaru.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    const joinGroup = page.getByRole("link", { name: "Minta link WhatsApp Group" }).first();
+    await expect(joinGroup).toHaveAttribute("href", "https://wa.me/6282347278881");
+    await expect(page.getByRole("heading", { name: "Secret Catalog" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ready Stock", exact: true })).toBeVisible();
+    await expect(page.getByText("PILIHAN UTAMA", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("KOMUNITAS BFG", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("TEMUKAN BUKU", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Mulai dari buku yang ingin kamu temukan.", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".discovery-section > .section-heading")).toHaveCount(0);
+    await expect(page.locator(".discovery-section > .home-access-grid")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Akses buku untuk Blessfriends" })).toHaveCount(0);
+    await expect(
+      page.getByText("Pilih katalog sesuai aksesmu, lalu gunakan account Blessfriend untuk mengelola pesanan.", {
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "buku yang readystock di blessing for good, bisa langsung di checkout setelah bergabung menjadi Blessfriends",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText("katalog buku PO berjalan, akses code secret akan diberikan di whatsapp group"),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Katalog buku dari PO yang sedang berjalan. Access code Secret Catalog dibagikan melalui WhatsApp Group BFG.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("Buku Ready Stock tersedia untuk dipesan langsung oleh Blessfriends melalui website.", {
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "Account Blessfriend digunakan untuk melihat katalog PO, memesan buku, mengecek riwayat pesanan, tagihan, dan perjalanan buku.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    const journey = page.locator(".home-journey");
+    await expect(journey.getByRole("heading", { name: "cara pembelian di Blessing for good" })).toBeVisible();
+    await expect(journey.locator(".hero-sequence > li")).toHaveCount(3);
+    await expect(journey.locator(".hero-sequence strong")).toHaveText([
+      "gabung ke whatsapp group",
+      "buat account di website kami",
+      "pilih buku yang ingin dibeli",
+    ]);
+    await expect(journey.getByText("Temukan", { exact: true })).toHaveCount(0);
+    await expect(journey.getByText("Pesan", { exact: true })).toHaveCount(0);
+    await expect(journey.getByText("Ikuti", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".community-section")).toHaveCount(0);
+    expect((await page.locator(".home-hero h1").textContent())?.trim()).not.toBe(
+      "Specialist Children & Collector Books",
+    );
+    await expect(page.getByText("Official website Blessing For Good", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "Kami mengkurasi children books, novel books, dan collector special edition pilihan untuk Blessfriends.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
+    await expect(page.locator(".home-hero h1")).toHaveText("SPECIALIST CHILDREN & COLLECTOR BOOKS 📚");
+    await expect(page.locator(".home-hero .lede")).toHaveText(
+      "kami mengkurasi buku-buku children books, novel books dan collector special edition",
+    );
+    await expect(page.getByText("Rumah buku pilihan untuk Blessfriends", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Specialist Children & Collector Books", exact: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByRole("heading", { name: "Semua bisa dimulai dari satu buku yang tepat.", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "Blessing For Good adalah community-led imported bookstore yang membantu Blessfriends menemukan buku impor berbahasa Inggris—dari Ready Stock sampai preorder—sedikit demi sedikit.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "pelajari ketentuan PO buku di kami" })).toHaveAttribute(
+      "href",
+      "/how-to-order",
+    );
+
+    await expect(region).toBeVisible();
+    await expect(region.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
+    await expect(
+      region.getByText(
+        "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
+      ),
+    ).toBeVisible();
+    await expect(
+      region.getByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
+    ).toHaveCount(0);
+    await expect(region.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
+
+    const orderGuide = page.locator(".home-onboarding-how-to");
+    await orderGuide.locator("summary").click();
+    const previewSteps = orderGuide.getByRole("list", { name: "Langkah cara memesan" });
+    await expect(previewSteps.locator(":scope > li")).toHaveCount(7);
+    await orderGuide.locator("summary").click();
+    const orderLink = page.getByRole("link", { name: "pelajari ketentuan PO buku di kami" });
+    await expect(orderLink).toHaveAttribute("href", "/how-to-order");
+    await orderLink.click();
+    await expect(page).toHaveURL(/\/how-to-order$/);
+    await expect(
+      page.locator(".how-to-order-page:visible").first().getByRole("heading", {
+        name: "Dari memilih buku sampai tiba di tanganmu.",
+      }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(".how-to-order-page:visible")
+        .first()
+        .getByText(
+          "harap dibaca untuk ketentuan order di kami, agar setelahnya Blessfriends mengetahui sistem pembelian di kami",
+        ),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(".how-to-order-page:visible")
+        .first()
+        .getByText(/invoice akan muncul di website h\+1\/h\+2/),
+    ).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/verification\/onboarding\?state=signed-out$/);
+
+    const anchor = onboarding;
+    if (await anchor.count()) await anchor.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${evidenceDirectory}/state-${state}-390.png`, fullPage: true });
+  }
+
+  await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("onboarding-presentation-state")).toHaveAttribute("data-state", "signed-out");
+  await expect(page.locator(".home-onboarding-main")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Daftar Blessfriend" })).toHaveAttribute("href", "/join");
+
+  const widths = [375, 390, 430, 768, 834, 1024, 1280, 1440];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
+    const widget = page.getByTestId("floating-blessy");
+    await expect(widget).toBeVisible();
+    await expect(page.locator(".home-onboarding-how-to")).toBeVisible();
+    await expect(page.locator(".hero-copy > .eyebrow")).toHaveText("official website blessing for good");
+    await expect(page.getByRole("heading", { name: "SPECIALIST CHILDREN & COLLECTOR BOOKS 📚" })).toBeVisible();
+    await expect(
+      page.getByText("kami mengkurasi buku-buku children books, novel books dan collector special edition"),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "cara pembelian di Blessing for good" })).toBeVisible();
+    await expect(
+      page
+        .locator(".home-page > section")
+        .evaluateAll((sections) =>
+          sections.map(
+            (section) =>
+              section.id || [...section.classList].find((name) => !["section", "section-block", "hero"].includes(name)),
+          ),
+        ),
+    ).resolves.toEqual(["home-hero", "akses-buku", "cara-order", "bfg-story"]);
+    await expect(
+      page
+        .locator(".home-access-grid > *")
+        .evaluateAll((cards) => cards.map((card) => card.getAttribute("data-testid"))),
+    ).resolves.toEqual(["join-whatsapp", "secret-catalog", "ready-stock", "blessfriend-account"]);
+    const accessButtonHeights = await page
+      .locator(".home-access-grid .button:visible")
+      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+    expect(accessButtonHeights).toHaveLength(5);
+    expect(accessButtonHeights.every((height) => height >= 44)).toBe(true);
+    await expect(page.locator(".home-journey .hero-sequence small")).toHaveText([
+      "agar kami lebih mudah reachout customer, kami mewajibkan customer kami bergabung di WA group",
+      "untuk memantau pesanan buku, check buku PO berjalan & melakukan pemesanan",
+      "bisa melakukan pembelian via website / fix langsung di WA group kami",
+    ]);
+    await expect(page.getByRole("link", { name: "Lihat Ready Stock" }).first()).toHaveAttribute("href", "/ready-stock");
+    await expect(page.getByRole("link", { name: "Buka Secret Catalog" }).first()).toHaveAttribute("href", "/catalog");
+    await expect(page.locator(".home-onboarding-how-to > summary")).toContainText("Cara Pesan & Cek Katalog PO");
+    const orderPreview = page.getByRole("list", { name: "Ringkasan cara memesan" });
+    await expect(orderPreview.locator("h3")).toHaveText([
+      "Temukan bukunya",
+      "Pesan & tunggu proses BFG",
+      "Pantau sampai buku datang",
+    ]);
+    const metrics = await page.evaluate(() => {
+      const box = (element: Element | null) => {
+        if (!element) return null;
+        const { x, y, width: w, height: h, top, right, bottom, left } = element.getBoundingClientRect();
+        return { x, y, width: w, height: h, top, right, bottom, left };
+      };
+      const hero = document.querySelector(".home-hero");
+      const heroTitle = document.querySelector("#home-title");
+      const primary = document.querySelector(".home-hero-actions a[href='/ready-stock']");
+      const guidance = document.querySelector(".home-onboarding");
+      const summary = guidance?.querySelector(".home-onboarding-how-to > summary") ?? null;
+      const ready = document.querySelector(".discovery-card-ready");
+      const secret = document.querySelector(".discovery-card-secret");
+      const join = document.querySelector("[data-testid='join-whatsapp']");
+      const account = document.querySelector(".home-onboarding-main");
+      const widget = document.querySelector<HTMLElement>("[data-testid='floating-blessy']");
+      const bubble = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
+      const shell = document.querySelector<HTMLElement>(".site-shell");
+      const nav = document.querySelector(".customer-bottom-nav");
+      const lastNavLink = nav?.querySelector("a:last-child") ?? null;
+      const lastNavRect = lastNavLink?.getBoundingClientRect();
+      const navHit = lastNavRect
+        ? document.elementFromPoint(lastNavRect.x + lastNavRect.width / 2, lastNavRect.y + lastNavRect.height / 2)
+        : null;
+      return {
+        overflow: document.documentElement.scrollWidth > window.innerWidth,
+        hero: box(hero),
+        heroTitle: box(heroTitle),
+        primary: box(primary),
+        guidance: box(guidance),
+        summary: box(summary),
+        join: box(join),
+        account: box(account),
+        ready: box(ready),
+        secret: box(secret),
+        blessy: box(widget),
+        blessyBubbleDisplay: bubble ? getComputedStyle(bubble).display : null,
+        blessyAfterShell: Boolean(
+          widget && shell && widget.getBoundingClientRect().top >= shell.getBoundingClientRect().bottom - 1,
+        ),
+        nav: box(nav),
+        navVisible: Boolean(nav && nav.getBoundingClientRect().height > 0),
+        navHit: Boolean(lastNavLink && navHit && lastNavLink.contains(navHit)),
+      };
+    });
+
+    console.log(`HOME_GEOMETRY ${JSON.stringify({ width, ...metrics })}`);
+    expect(metrics.overflow, `${width}px horizontal overflow`).toBe(false);
+    expect(metrics.hero?.left, `${width}px hero left edge`).toBeGreaterThanOrEqual(0);
+    expect(metrics.hero?.right, `${width}px hero right edge`).toBeLessThanOrEqual(width);
+    expect(metrics.heroTitle?.right, `${width}px hero title right edge`).toBeLessThanOrEqual(width);
+    expect(metrics.primary?.height, `${width}px primary CTA target`).toBeGreaterThanOrEqual(44);
+    expect(metrics.primary?.top, `${width}px primary CTA in viewport`).toBeGreaterThanOrEqual(0);
+    expect(metrics.guidance?.width, `${width}px account guide width`).toBeGreaterThan(0);
+    expect(metrics.summary?.height, `${width}px disclosure target`).toBeGreaterThanOrEqual(44);
+    expect(metrics.join?.width, `${width}px Join WhatsApp block`).toBeGreaterThan(0);
+    expect(metrics.account?.width, `${width}px Blessfriend account block`).toBeGreaterThan(0);
+    expect(metrics.ready?.width, `${width}px Ready Stock card`).toBeGreaterThan(0);
+    expect(metrics.secret?.width, `${width}px Secret Catalog card`).toBeGreaterThan(0);
+    expect(metrics.blessy?.width, `${width}px Blessy footprint`).toBeGreaterThan(0);
+    expect(metrics.blessyAfterShell, `${width}px Blessy follows page content`).toBe(true);
+    expect(metrics.blessyBubbleDisplay, `${width}px homepage bubble stays out of content`).toBe("none");
+    if (width <= 800) {
+      expect(metrics.navVisible, `${width}px bottom navigation`).toBe(true);
+      expect(metrics.navHit, `${width}px bottom navigation hit target`).toBe(true);
+    }
+    await page.screenshot({ path: `${evidenceDirectory}/home-${width}.png`, fullPage: true });
+  }
+
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/verification/how-to-order?state=signed-out", { waitUntil: "domcontentloaded" });
+    const howToPage = page.locator(".how-to-order-page:visible").first();
+    await expect(page.locator(".how-to-order-page:visible")).toHaveCount(1);
+    await expect(howToPage.getByRole("heading", { name: "Dari memilih buku sampai tiba di tanganmu." })).toBeVisible();
+    const journey = howToPage.getByRole("list", { name: "Langkah cara memesan" });
+    await expect(journey.locator(":scope > li")).toHaveCount(7);
+    await expect(journey.locator("h3")).toHaveText([
+      "pilih bukunya",
+      "history order buku kamu",
+      "invoice",
+      "Pesanan diproses",
+      "pembayaran",
+      "cek perjalanan buku kamu",
+      "Buku sampai",
+    ]);
+    await expect(journey.getByRole("heading", { name: "pembayaran", exact: true })).toHaveCount(1);
+    await expect(journey.getByRole("heading", { name: "Pembayaran", exact: true })).toHaveCount(0);
+    await expect(howToPage.getByText("ketentuan order di BFG")).toBeVisible();
+    await expect(
+      howToPage.getByText(
+        "harap dibaca untuk ketentuan order di kami, agar setelahnya Blessfriends mengetahui sistem pembelian di kami",
+      ),
+    ).toBeVisible();
+    await expect(journey.locator("li").nth(0).locator("p")).toHaveText(
+      "bisa fix lewat wa group (nantinya admin akan merekap ke account website masing2 blessfriends) atau bisa dilakukan pembelian via website langsung",
+    );
+    await expect(journey.locator("li").nth(1).locator("p")).toHaveText(
+      "setiap pembelian baik di wa / di website akan langsung muncul di account masing2 blessfriends buku apa yang sudah dibeli di kami",
+    );
+    await expect(journey.locator("li").nth(2).locator("p")).toHaveText(
+      "invoice akan muncul di website h+1/h+2 setelah close PO, karena kami membuka banyak cargo setiap batch, maka diperhatikan di bagian tagihan pada account website kamu, admin invoice kami akan pc masing2 customer menginfokan bahwa invoice sudah terbit di website",
+    );
+    await expect(journey.locator("li").nth(3).locator("p")).toHaveText(
+      "Preorder masuk ke Batch PO; Ready Stock diproses tanpa supplier Batch PO.",
+    );
+    await expect(journey.locator("li").nth(4).locator("p")).toHaveText(
+      "pembayaran di kami adalah DP 30% atau jika ada DP tertentu di tiap cargo akan kami infokan saat kami menurunkan matprom di group whatsapp",
+    );
+    await expect(journey.locator("li").nth(5).locator("p")).toHaveText(
+      "PO reguler membutuhkan waktu 4-5 bulan sejak di order pertama kali, pembelian bukumu bisa langsung di tracking di account website kamu",
+    );
+    await expect(journey.locator("li").nth(6).locator("p")).toHaveText(
+      "Setelah buku tiba dan selesai diproses oleh BFG, pesanan dilanjutkan ke fulfillment dan pengiriman.",
+    );
+    await expect(howToPage.getByText(/Admin menerbitkan invoice sesuai proses BFG/)).toHaveCount(0);
+    await expect(howToPage.getByText(/sekitar 3–5 minggu/)).toHaveCount(0);
+    await expect(howToPage.getByText(/Jika ada buku OOS atau ditemukan defect/)).toBeVisible();
+    const widget = page.getByTestId("floating-blessy");
+    await expect(widget).toBeVisible();
+    await expect(howToPage.getByRole("link", { name: /Tonton panduan penggunaan/ })).toHaveCount(0);
+    const geometry = await page.evaluate(() => ({
+      width: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      page: document.querySelector<HTMLElement>(".how-to-order-page")?.getBoundingClientRect().width ?? 0,
+      lastStep: document.querySelector<HTMLElement>(".order-step:last-child")?.getBoundingClientRect().width ?? 0,
+      shell: document.querySelector<HTMLElement>(".site-shell")?.getBoundingClientRect().bottom ?? 0,
+      widget: document.querySelector<HTMLElement>("[data-testid='floating-blessy']")?.getBoundingClientRect().top ?? 0,
+      bubbleDisplay: getComputedStyle(document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']")!)
+        .display,
+      bottomNav: document.querySelector<HTMLElement>(".customer-bottom-nav")
+        ? getComputedStyle(document.querySelector<HTMLElement>(".customer-bottom-nav")!).display
+        : "none",
+    }));
+    console.log(`HOW_TO_ORDER_GEOMETRY ${JSON.stringify(geometry)}`);
+    expect(geometry.scrollWidth, `${width}px How To Order overflow`).toBeLessThanOrEqual(width + 1);
+    expect(geometry.page, `${width}px How To Order page width`).toBeGreaterThan(0);
+    expect(geometry.lastStep, `${width}px final step width`).toBeGreaterThan(0);
+    expect(geometry.widget, `${width}px Blessy follows page content`).toBeGreaterThanOrEqual(geometry.shell - 1);
+    expect(geometry.bubbleDisplay, `${width}px How To Order bubble stays out of copy`).toBe("none");
+    if (width <= 800) expect(geometry.bottomNav, `${width}px bottom navigation`).not.toBe("none");
+    await page.screenshot({ path: `${evidenceDirectory}/how-to-order-${width}.png`, fullPage: true });
+  }
+
+  await page.goto("/verification/onboarding?state=signed-out", { waitUntil: "domcontentloaded" });
+  const close = page.getByRole("button", { name: "Tutup informasi selamat datang" });
+  await close.click();
+  await expect(page.locator(".home-onboarding-main")).toHaveCount(0);
+});
+
+test("keeps in-flow Blessy clear of copy, actions, and mobile navigation @customer", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "customer-390",
+    "The Blessy geometry matrix runs once from the 390px customer project.",
+  );
+  test.setTimeout(120_000);
+  await page.addInitScript(() => {
+    const style = document.createElement("style");
+    style.textContent = "nextjs-portal { display: none !important; }";
+    document.addEventListener("DOMContentLoaded", () => document.head.append(style), { once: true });
+  });
+  for (const width of [375, 390, 430, 768, 834]) {
+    for (const route of ["/verification/onboarding?state=signed-out", "/verification/how-to-order?state=signed-out"]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      const widget = page.getByTestId("floating-blessy");
+      if (route.includes("/verification/onboarding")) {
+        await page.evaluate(() => {
+          const hero = document.querySelector<HTMLElement>(".home-hero");
+          if (hero) window.scrollTo(0, hero.getBoundingClientRect().bottom + window.scrollY);
+        });
+        await expect(widget).toHaveAttribute("data-obstructing-home-copy", "false");
+      }
+      await expect(widget).toBeVisible();
+      const geometry = await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+        const box = (element: Element | null) => {
+          if (!element) return null;
+          const { left, right, top, bottom } = element.getBoundingClientRect();
+          return { left, right, top, bottom };
+        };
+        const overlaps = (first: ReturnType<typeof box>, second: ReturnType<typeof box>) =>
+          Boolean(
+            first &&
+            second &&
+            first.left < second.right &&
+            first.right > second.left &&
+            first.top < second.bottom &&
+            first.bottom > second.top,
+          );
+        const blessing = document.querySelector<HTMLElement>("[data-testid='floating-blessy']");
+        const shell = document.querySelector<HTMLElement>(".site-shell");
+        const nav = document.querySelector<HTMLElement>(".customer-bottom-nav");
+        const bubble = document.querySelector<HTMLElement>("[data-testid='floating-blessy-bubble']");
+        const targets = [
+          ...document.querySelectorAll(
+            ".home-hero-actions, .community-copy .button, .discovery-card .button, .home-onboarding-actions .button, .how-to-order-page .actions, .order-step",
+          ),
+        ];
+        return {
+          overflow: document.documentElement.scrollWidth > window.innerWidth,
+          afterContent: Boolean(
+            blessing && shell && blessing.getBoundingClientRect().top >= shell.getBoundingClientRect().bottom - 1,
+          ),
+          navClearance: Boolean(
+            blessing && nav && blessing.getBoundingClientRect().bottom <= nav.getBoundingClientRect().top - 1,
+          ),
+          bubbleDisplay: bubble ? getComputedStyle(bubble).display : null,
+          overlapsActionOrCopy: targets.some((target) => overlaps(box(blessing), box(target))),
+        };
+      });
+      expect(geometry.overflow).toBe(false);
+      expect(geometry.afterContent).toBe(true);
+      expect(geometry.bubbleDisplay).toBe("none");
+      expect(geometry.overlapsActionOrCopy).toBe(false);
+      if (width <= 800) expect(geometry.navClearance).toBe(true);
+    }
+  }
+});
