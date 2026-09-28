@@ -8808,10 +8808,31 @@ p {
   box-shadow: var(--shadow);
 }
 
+.customer-shell:has(.home-onboarding-main) .floating-blessy {
+  visibility: hidden;
+}
+
 .customer-shell .home-onboarding-copy {
   display: grid;
   gap: var(--space-md);
   min-width: 0;
+}
+
+.customer-shell .home-onboarding-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.customer-shell .home-onboarding-heading > div {
+  min-width: 0;
+}
+
+.customer-shell .home-onboarding-dismiss {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .customer-shell .home-onboarding-copy h2,

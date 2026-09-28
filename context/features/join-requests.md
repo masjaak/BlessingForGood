@@ -73,6 +73,11 @@ read requests. The primary `bookInterest` value accepts the current practical
 taxonomy plus legacy `Children Books`, `Collector Books`, and `Novel` values
 without invalidating existing requests.
 
+After a successful request, the existing Join page offers a direct WhatsApp
+chat handoff to the fixed BFG number `6282347278881` with a prefilled request
+follow-up message. It does not expose or persist a group invite URL and does
+not send the message automatically.
+
 Authenticated users see an already-a-member state instead of the form.
 
 ## Admin workflow
@@ -84,6 +89,11 @@ requests marked with `removedAt`; the Join Request and removal history remain
 stored. All actions derive the reviewer from verified `appUsers`, write the
 BFG state and audit event in one mutation, and reject stale transitions.
 Approval and membership removal do not require Clerk Dashboard access.
+
+Before approval, Admin manually confirms WhatsApp Group membership from the
+applicant's submitted contact. WhatsApp membership is an operational check
+only: it is not authentication, is not client-asserted, and adds no persisted
+verification field.
 
 Approved applicants remain pending until the server-side action records one
 delivered/reused onboarding handoff. Invitation URLs, tokens, or auth storage

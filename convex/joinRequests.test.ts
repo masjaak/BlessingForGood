@@ -58,6 +58,7 @@ describe("BFG join request workflow", () => {
     );
     const submitted = await t.mutation(api.joinRequests.submit, requestInput());
     expect(submitted.status).toBe("submitted");
+    expect(submitted).toEqual({ joinRequestId: expect.any(String), status: "submitted" });
     const stored = await t.run(async (ctx) => ctx.db.get(submitted.joinRequestId));
     expect(stored).toMatchObject({
       status: "submitted",

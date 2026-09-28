@@ -7,7 +7,7 @@ import { LinkButton } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
 import { createHomepageStructuredData } from "@/lib/seo";
 
-function configuredExternalUrl(name: "BFG_JOIN_WHATSAPP_GROUP_URL" | "BFG_TUTORIAL_VIDEO_URL") {
+function configuredExternalUrl(name: "BFG_TUTORIAL_VIDEO_URL") {
   const value = process.env[name]?.trim();
   if (!value) return null;
   try {
@@ -80,10 +80,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <HomeOnboarding
-          whatsappGroupUrl={configuredExternalUrl("BFG_JOIN_WHATSAPP_GROUP_URL")}
-          tutorialVideoUrl={configuredExternalUrl("BFG_TUTORIAL_VIDEO_URL")}
-        />
+        <HomeOnboarding tutorialVideoUrl={configuredExternalUrl("BFG_TUTORIAL_VIDEO_URL")} />
 
         <section className="section-block discovery-section" id="book-discovery" aria-labelledby="discovery-title">
           <div className="section-heading">

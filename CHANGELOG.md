@@ -8,6 +8,40 @@ source: conversation
 
 # Changelog
 
+## [blessfriend-onboarding-whatsapp-phase-2] — 2026-09-27
+
+### Changed
+
+- Added a dismissible Blessy welcome for signed-out and unadmitted visitors,
+  with separate pending and invitation-pending guidance. Active Customers,
+  suspended accounts, Admin, and Owner do not receive a Join CTA. The existing
+  How To disclosure remains available without showing the welcome to active
+  Customers.
+- Reused `joinRequests.submit`; successful requests now offer a direct chat to
+  `wa.me/6282347278881` with the requested prefilled message. Removed the
+  expiring group-URL configuration and response. Admin gets a manual WhatsApp
+  membership reminder before approval.
+- Kept Clerk identity, Admin approval, Clerk invitation, and `appUsers` as the
+  only membership path; no WhatsApp verification field or message automation
+  was added.
+
+### QA and scope
+
+- Focused onboarding tests: 31 passed. Frontend: 74 files / 471 tests passed.
+  Convex: 47 files / 310 tests passed. Membership/auth regressions: 50 passed.
+  One combined all-project invocation timed out in the unrelated 2,000-item
+  Batch assignment stress test; the separate project suites pass. TypeScript,
+  ESLint, formatting, and `git diff --check` pass.
+- `next build` compiles and type-checks but fails static prerender on
+  the existing Convex provider boundary; a clean base fails at the same
+  boundary, so Phase 2 introduced no build regression. A guarded local-only
+  presentation fixture rendered all eight membership/audience states at six
+  widths; screenshots and measurements are recorded in the pre-closure report.
+  `npm audit` matches clean base (3 advisories: 2 moderate, 1 high). The
+  combined Batch stress run timed out, but isolated base/Phase 2 runs and the
+  full Convex suite pass. No deployment; reconciliation and Production UAT
+  remain pending.
+
 ## [mobile-catalog-admin-customer-pagination-correction] — 2026-09-24
 
 ### Changed

@@ -708,6 +708,19 @@ Phase 04.1 records the following approved implementation decisions:
 - Active Preview must use Clerk identity only. Legacy prototype sessions are
   isolated and disabled.
 
+## Blessfriend onboarding and WhatsApp handoff — 2026-09-27
+
+- Show non-active visitors an accessible, dismissible, in-flow Blessy welcome
+  that explains the WhatsApp Group and website registration prerequisites.
+- Reuse the existing `/join` form and `joinRequests.submit`. After successful
+  submission, link to a fixed `wa.me/6282347278881` direct chat with a URL-safe
+  prefilled follow-up. Do not return or store a group invitation URL and do not
+  send WhatsApp messages automatically.
+- Admin manually checks WhatsApp Group membership before using the existing
+  approval action. Do not persist a separate verification field.
+- Preserve Clerk identity, Join Request admission, Admin approval, Clerk
+  invitation, and active `appUsers` membership as the canonical sequence.
+
 ## Homepage / Join / Secret Catalog V3 decisions
 
 - Homepage discovery is a short mobile-first story: three anchored quick
@@ -732,9 +745,8 @@ Phase 04.1 records the following approved implementation decisions:
   backward-compatible owned preorder authorization; token-only browse does not
   create customer identity.
 - Join captures name, email, normalized phone, area/city, one primary book
-  interest, and optional note. `BFG_JOIN_WHATSAPP_GROUP_URL` is returned only
-  after the request mutation commits; missing configuration produces a safe
-  continuation message rather than a dummy link.
+  interest, and optional note. The previous configured group-URL response is
+  superseded by the fixed direct-chat handoff described above.
 
 ## Secret Catalog discovery and global access code — 2026-08-30
 
