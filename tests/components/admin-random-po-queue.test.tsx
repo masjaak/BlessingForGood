@@ -106,7 +106,7 @@ describe("Admin Random PO operational queue", () => {
     expect(screen.getByText("BFG-0001")).toBeTruthy();
     expect(screen.getByText("TEST BOOK 3")).toBeTruthy();
     expect(screen.getByText("TEST BOOK 2")).toBeTruthy();
-    expect(screen.getByText("Belum ditagih")).toBeTruthy();
+    expect(screen.getAllByText("Belum ditagih")).toHaveLength(2);
     expect(screen.getByText("Menunggu pembayaran")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Buat tagihan" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Buka tagihan" }).getAttribute("href")).toBe("/admin/invoices/invoice-1");
