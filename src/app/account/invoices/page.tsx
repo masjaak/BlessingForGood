@@ -1,7 +1,5 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import {
   Card,
   EmptyState,
@@ -21,9 +19,8 @@ import { SiteShell } from "@/components/site-shell";
 
 function PersistentCustomerInvoices() {
   const { customerInvoiceList } = useOperations();
-  const manualPoBills = useQuery(api.manualPoEntries.listBilledMine, {});
   const invoices = customerInvoiceList?.page || [];
-  if (!customerInvoiceList || manualPoBills === undefined) {
+  if (!customerInvoiceList) {
     return (
       <LoadingRegion label="Memuat invoice">
         <SkeletonCard variant="invoice" />
@@ -43,39 +40,14 @@ function PersistentCustomerInvoices() {
           </LinkButton>
         }
       />
-      {invoices.length === 0 && manualPoBills.length === 0 ? (
+      {invoices.length === 0 ? (
         <EmptyState
           title="Belum ada tagihan"
-          description="Tagihan akan tampil setelah admin menerbitkan invoice reguler atau menandai Pesanan Khusus untuk ditagih."
+          description="Tagihan akan tampil setelah admin menerbitkan invoice reguler atau tagihan Pesanan Khusus."
           action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
         />
       ) : (
         <div className="content-stack">
-          {manualPoBills.length ? (
-            <Card>
-              <div className="split-heading">
-                <div>
-                  <span className="card-kicker">Pesanan Khusus</span>
-                  <h2>Tagihan Random PO</h2>
-                </div>
-                <StatusBadge tone="warning">{manualPoBills.length}</StatusBadge>
-              </div>
-              <p className="subtle">
-                Tagihan manual dari Random PO. Bagian ini terpisah dari invoice reguler, Batch, dan Order katalog.
-              </p>
-              {manualPoBills.map((entry) => (
-                <div className="summary-line" key={entry.entryId}>
-                  <span>
-                    <strong>{entry.title}</strong>
-                    <br />
-                    <small className="subtle">ETA: {entry.etaText}</small>
-                  </span>
-                  <Money amount={entry.priceAmount} />
-                </div>
-              ))}
-            </Card>
-          ) : null}
-
           {invoices.map((invoice) => (
             <Card key={invoice.invoiceId}>
               <div className="split-heading">
@@ -90,7 +62,11 @@ function PersistentCustomerInvoices() {
               </div>
               <div className="summary-line">
                 <span>Referensi pesanan</span>
-                <span>{invoice.orderCode || `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}`}</span>
+                <span>
+                  {invoice.source === "manual_po"
+                    ? "Pesanan Khusus / Random PO"
+                    : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
+                </span>
               </div>
               {invoice.items.map((item) => (
                 <div className="summary-line" key={item.invoiceItemId}>
