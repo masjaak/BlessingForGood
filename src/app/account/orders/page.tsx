@@ -84,6 +84,9 @@ function CustomerBooks() {
           </p>
         ) : null}
       </Card>
+
+      <CustomerManualPoSection />
+
       {overview === undefined ? (
         <LoadingRegion label="Memuat Buku Saya">
           <SkeletonCard />
@@ -114,7 +117,6 @@ function CustomerBooks() {
               <span className="subtle my-books-summary-help">Top up credit</span>
             </Card>
           </div>
-          <CustomerManualPoSection />
           <div className="content-stack my-books-batch-list">
             <div className="split-heading my-books-batch-list-heading">
               <div>
