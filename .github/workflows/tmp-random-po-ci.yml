@@ -1,0 +1,20 @@
+name: tmp-random-po-ci
+
+on:
+  push:
+    branches:
+      - fix/random-po-real-invoice-flow
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx vitest run convex/manualPoEntries.test.ts tests/components/manual-po-admin-flow.test.tsx tests/components/manual-po-customer-flow.test.tsx tests/components/customer-invoices.test.tsx
