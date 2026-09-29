@@ -59,7 +59,8 @@ export async function hasPendingPaymentConfirmation(ctx: DataCtx, invoiceId: Id<
 
 async function confirmationView(ctx: DataCtx, confirmation: Doc<"paymentConfirmations">, includeReviewer: boolean) {
   const invoice = await ctx.db.get(confirmation.invoiceId);
-  const order = invoice ? await ctx.db.get(invoice.orderId) : null;
+  const order = invoice?.orderId ? await ctx.db.get(invoice.orderId) : null;
+  const customer = invoice ? await ctx.db.get(invoice.customerUserId) : null;
   return {
     confirmationId: confirmation._id,
     invoiceId: confirmation.invoiceId,
@@ -82,9 +83,9 @@ async function confirmationView(ctx: DataCtx, confirmation: Doc<"paymentConfirma
       ? {
           invoiceId: invoice._id,
           invoiceNumber: invoice.invoiceNumber,
-          orderId: invoice.orderId,
-          customerName: order?.customerName ?? "Unknown customer",
-          customerEmail: order?.customerEmail ?? null,
+          orderId: invoice.orderId ?? null,
+          customerName: order?.customerName ?? customer?.displayNameSnapshot ?? "Unknown customer",
+          customerEmail: order?.customerEmail ?? customer?.emailSnapshot ?? null,
           status: invoice.status,
           paymentStatus: invoice.paymentStatus,
           totalAmount: invoice.totalAmount,
