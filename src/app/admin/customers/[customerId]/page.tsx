@@ -111,7 +111,7 @@ function CustomerDetail() {
       <div className="admin-workspace">
         <AdminNav />
         <div className="admin-content">
-          <div className="two-column">
+          <div className="two-column customer-detail-summary-grid">
             <Card>
               <span className="card-kicker">Kontak</span>
               <h2>{name}</h2>

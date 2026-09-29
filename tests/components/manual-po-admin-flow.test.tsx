@@ -9,18 +9,12 @@ vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
 }));
 
-describe("Admin Manual PO flow", () => {
+describe("Admin Manual PO final simple flow", () => {
   const createEntry = vi.fn();
-  const updateEntry = vi.fn();
-  const setStatus = vi.fn();
-  const archive = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     createEntry.mockResolvedValue({});
-    updateEntry.mockResolvedValue({});
-    setStatus.mockResolvedValue({});
-    archive.mockResolvedValue({});
 
     vi.mocked(useQuery).mockReturnValue([
       {
@@ -40,58 +34,27 @@ describe("Admin Manual PO flow", () => {
     vi.mocked(useMutation).mockImplementation((mutation) => {
       const name = getFunctionName(mutation as never);
       if (name.endsWith(":create")) return createEntry as never;
-      if (name.endsWith(":update")) return updateEntry as never;
-      if (name.endsWith(":setStatus")) return setStatus as never;
-      if (name.endsWith(":archive")) return archive as never;
-      throw new Error(`Unexpected mutation: ${name}`);
+      throw new Error(`Unexpected mutation in final simple Manual PO UI: ${name}`);
     });
   });
 
-  it("wires edit, lifecycle status, and archive actions to the Manual PO backend", async () => {
+  it("only exposes title, price, ETA, and add Pesanan Khusus", async () => {
     render(<AdminManualPoPanel customerUserId={"customer-1" as never} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    expect(screen.getByDisplayValue("Test Book")).toBeTruthy();
+    expect(screen.getByLabelText("Judul buku")).toBeTruthy();
+    expect(screen.getByLabelText("Harga")).toBeTruthy();
+    expect(screen.getByLabelText("ETA")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tambahkan Pesanan Khusus" })).toBeTruthy();
 
-    fireEvent.change(screen.getByDisplayValue("Test Book"), { target: { value: "Updated Test Book" } });
-    fireEvent.change(screen.getByDisplayValue("10000"), { target: { value: "12500" } });
-    fireEvent.change(screen.getByDisplayValue("Januari 2027"), { target: { value: "Februari 2027" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Tandai tiba" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Batalkan" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Arsipkan" })).toBeNull();
 
-    await waitFor(() =>
-      expect(updateEntry).toHaveBeenCalledWith({
-        entryId: "manual-1",
-        title: "Updated Test Book",
-        priceAmount: 12500,
-        etaText: "Februari 2027",
-      }),
-    );
-    expect(
-      screen.getByText("Perubahan Pesanan Khusus tersimpan dan langsung diperbarui di Buku Saya customer."),
-    ).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Tandai tiba" }));
-    await waitFor(() => expect(setStatus).toHaveBeenCalledWith({ entryId: "manual-1", status: "arrived" }));
-
-    fireEvent.click(screen.getByRole("button", { name: "Batalkan" }));
-    await waitFor(() => expect(setStatus).toHaveBeenCalledWith({ entryId: "manual-1", status: "cancelled" }));
-
-    fireEvent.click(screen.getByRole("button", { name: "Arsipkan" }));
-    await waitFor(() => expect(archive).toHaveBeenCalledWith({ entryId: "manual-1" }));
-  });
-
-  it("creates a no-upload Manual PO for the selected customer", async () => {
-    vi.mocked(useQuery).mockReturnValue([] as never);
-    render(<AdminManualPoPanel customerUserId={"customer-1" as never} />);
-
-    fireEvent.change(screen.getByPlaceholderText("Contoh: The Complete Brambly Hedge"), {
-      target: { value: "Random PO Book" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("175000"), { target: { value: "99000" } });
-    fireEvent.change(screen.getByPlaceholderText("Contoh: Estimasi tiba Januari 2027"), {
-      target: { value: "Maret 2027" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Tambah Pesanan Khusus" }));
+    fireEvent.change(screen.getByLabelText("Judul buku"), { target: { value: "Random PO Book" } });
+    fireEvent.change(screen.getByLabelText("Harga"), { target: { value: "99000" } });
+    fireEvent.change(screen.getByLabelText("ETA"), { target: { value: "Maret 2027" } });
+    fireEvent.click(screen.getByRole("button", { name: "Tambahkan Pesanan Khusus" }));
 
     await waitFor(() =>
       expect(createEntry).toHaveBeenCalledWith({
@@ -101,6 +64,7 @@ describe("Admin Manual PO flow", () => {
         etaText: "Maret 2027",
       }),
     );
-    expect(screen.getByText("Pesanan Khusus tersimpan dan langsung tampil di Buku Saya customer.")).toBeTruthy();
+
+    expect(screen.getByText("Pesanan Khusus ditambahkan dan langsung tampil di Buku Saya customer.")).toBeTruthy();
   });
 });
