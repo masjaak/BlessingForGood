@@ -97,7 +97,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   }
 
   return (
-    <Card className="manual-po-admin-card">
+    <Card className="manual-po-admin-card" id="manual-po">
       <div className="split-heading">
         <div>
           <span className="card-kicker">Pesanan di luar PO reguler</span>
