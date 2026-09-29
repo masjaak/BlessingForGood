@@ -1,0 +1,20 @@
+name: tmp-random-po-queue-ci
+
+on:
+  push:
+    branches:
+      - feat/admin-random-po-queue
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --package-lock=false --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx vitest run convex/manualPoEntries.test.ts tests/components/admin-random-po-queue.test.tsx tests/components/manual-po-admin-flow.test.tsx tests/components/manual-po-customer-flow.test.tsx tests/components/customer-invoices.test.tsx
