@@ -515,6 +515,7 @@ export default defineSchema({
     etaText: v.string(),
     status: v.union(v.literal("active"), v.literal("arrived"), v.literal("cancelled")),
     billingStatus: v.optional(v.union(v.literal("unbilled"), v.literal("billed"))),
+    invoiceId: v.optional(v.id("invoices")),
     billedAt: v.optional(v.number()),
     billedByUserId: v.optional(v.id("appUsers")),
     createdByUserId: v.id("appUsers"),
@@ -751,7 +752,8 @@ export default defineSchema({
     .index("by_stage", ["toStage"]),
 
   invoices: defineTable({
-    orderId: v.id("orders"),
+    orderId: v.optional(v.id("orders")),
+    manualPoEntryId: v.optional(v.id("manualPoEntries")),
     customerUserId: v.id("appUsers"),
     batchId: v.optional(v.id("batches")),
     invoiceNumber: v.string(),
@@ -778,6 +780,7 @@ export default defineSchema({
     createdByUserId: v.id("appUsers"),
   })
     .index("by_order", ["orderId"])
+    .index("by_manual_po_entry", ["manualPoEntryId"])
     .index("by_batch", ["batchId"])
     .index("by_customer_user_id", ["customerUserId"])
     .index("by_status", ["status"])
@@ -835,19 +838,21 @@ export default defineSchema({
 
   invoiceItems: defineTable({
     invoiceId: v.id("invoices"),
-    orderItemId: v.id("orderItems"),
+    orderItemId: v.optional(v.id("orderItems")),
+    manualPoEntryId: v.optional(v.id("manualPoEntries")),
     descriptionSnapshot: v.string(),
     bookTitleSnapshot: v.string(),
-    publisherNameSnapshot: v.string(),
-    formatSnapshot: bookFormat,
-    isbnSnapshot: v.string(),
+    publisherNameSnapshot: v.optional(v.string()),
+    formatSnapshot: v.optional(bookFormat),
+    isbnSnapshot: v.optional(v.string()),
     quantity: v.number(),
     unitPriceAmountSnapshot: v.number(),
     subtotalAmount: v.number(),
     createdAt: v.number(),
   })
     .index("by_invoice", ["invoiceId"])
-    .index("by_order_item", ["orderItemId"]),
+    .index("by_order_item", ["orderItemId"])
+    .index("by_manual_po_entry", ["manualPoEntryId"]),
 
   refundObligations: defineTable({
     customerUserId: v.id("appUsers"),
