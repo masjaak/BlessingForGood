@@ -74,7 +74,7 @@ function CustomerDetail() {
           <AdminNav />
           <div className="admin-content">
             <LoadingRegion label="Memuat detail pelanggan">
-              <div className="two-column">
+              <div className="two-column customer-detail-summary-grid">
                 <SkeletonPanel lines={4} />
                 <SkeletonPanel lines={3} />
               </div>
