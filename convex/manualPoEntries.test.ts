@@ -26,6 +26,8 @@ describe("Manual PO domain", () => {
       priceAmount: 175000,
       etaText: "Estimasi tiba Januari 2027",
       status: "active",
+      billingStatus: "unbilled",
+      billedAt: null,
       archivedAt: null,
     });
 
@@ -73,6 +75,53 @@ describe("Manual PO domain", () => {
     await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([
       expect.objectContaining({ entryId: created.entryId, title: "Private Manual PO" }),
     ]);
+  });
+
+  it("lets Admin toggle Random PO billing without creating a regular invoice", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+
+    const created = await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: customerUser.appUserId,
+      title: "Random billed book",
+      priceAmount: 88000,
+      etaText: "April 2027",
+    });
+
+    await expect(
+      admin.mutation(api.manualPoEntries.setBillingStatus, {
+        entryId: created.entryId,
+        billingStatus: "billed",
+      }),
+    ).resolves.toMatchObject({ billingStatus: "billed", billedAt: expect.any(Number) });
+
+    await expect(customer.query(api.manualPoEntries.listBilledMine, {})).resolves.toEqual([
+      expect.objectContaining({
+        entryId: created.entryId,
+        title: "Random billed book",
+        priceAmount: 88000,
+        billingStatus: "billed",
+      }),
+    ]);
+
+    await expect(
+      t.run(async (ctx) => ({
+        orders: (await ctx.db.query("orders").collect()).length,
+        invoices: (await ctx.db.query("invoices").collect()).length,
+        batches: (await ctx.db.query("batches").collect()).length,
+      })),
+    ).resolves.toEqual({ orders: 0, invoices: 0, batches: 0 });
+
+    await expect(
+      admin.mutation(api.manualPoEntries.setBillingStatus, {
+        entryId: created.entryId,
+        billingStatus: "unbilled",
+      }),
+    ).resolves.toMatchObject({ billingStatus: "unbilled", billedAt: null });
+
+    await expect(customer.query(api.manualPoEntries.listBilledMine, {})).resolves.toEqual([]);
   });
 
   it("supports Admin edit, status lifecycle, archive, and audit events", async () => {
