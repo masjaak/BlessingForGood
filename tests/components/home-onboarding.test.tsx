@@ -26,14 +26,15 @@ describe("Homepage Blessfriend onboarding", () => {
   it("shows the Blessfriend account guidance and the existing Join Request entry", () => {
     renderOnboarding();
 
-    expect(screen.getByRole("region", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Buat account website" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Buat account website" })).toBeTruthy();
+    expect(screen.getByText("& join WA group disini", { exact: true })).toBeTruthy();
     expect(
       screen.getByText(
-        "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website",
+        "Isi data untuk langsung buat account website & jangan lupa chat admin kami untuk meminta link group WA saat selesai isi form, pembelian buku bisa dilakukan di group WA / di website (wajib join WA group kami)",
       ),
     ).toBeTruthy();
-    expect(screen.getByText("ACCOUNT BLESSFRIEND", { exact: true })).toBeTruthy();
+    expect(screen.getByText("JOIN JADI BLESSFRIENDS", { exact: true })).toBeTruthy();
     expect(
       screen.queryByText("Untuk menjadi Blessfriend, bergabung ke WhatsApp Group BFG dan daftar melalui website."),
     ).toBeNull();
@@ -56,7 +57,7 @@ describe("Homepage Blessfriend onboarding", () => {
       sessionRole: null,
     });
 
-    expect(screen.getByRole("region", { name: "Buat account website untuk Blessfriends" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Buat account website" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Daftar Blessfriend" }).getAttribute("href")).toBe("/join");
   });
 
@@ -135,7 +136,7 @@ describe("Homepage Blessfriend onboarding", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tutup informasi selamat datang" }));
 
-    expect(screen.queryByRole("region", { name: "Buat account website untuk Blessfriends" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Buat account website" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Daftar Blessfriend" })).toBeNull();
   });
 });
