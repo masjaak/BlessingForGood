@@ -65,6 +65,7 @@ describe("Admin Join Request admission projection", () => {
     ).toBeTruthy();
     expect(screen.getByText("+628123456789")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Setujui" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Ekspor CSV" })).toBeTruthy();
   });
 
   it("shows Active and hides stale invitation recovery once the Customer is active", () => {
