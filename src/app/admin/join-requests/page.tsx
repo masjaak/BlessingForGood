@@ -37,6 +37,13 @@ const admissionStatusLabels: Record<JoinRequest["admissionStatus"], string> = {
   rejected: "Ditolak",
 };
 
+const statusLabels: Record<JoinRequestStatus, string> = {
+  submitted: "Dikirim",
+  under_review: "Sedang ditinjau",
+  approved: "Disetujui",
+  rejected: "Ditolak",
+};
+
 function csvCell(value: unknown) {
   const text = value == null ? "" : String(value);
   return `"${text.replaceAll('"', '""')}"`;
@@ -86,13 +93,6 @@ function downloadJoinRequestsCsv(requests: JoinRequest[]) {
 function useJoinRequests(status: JoinRequestStatus | undefined) {
   return useQuery(api.joinRequests.listForAdmin, { status });
 }
-
-const statusLabels: Record<JoinRequestStatus, string> = {
-  submitted: "Dikirim",
-  under_review: "Sedang ditinjau",
-  approved: "Disetujui",
-  rejected: "Ditolak",
-};
 
 function statusTone(status: JoinRequestStatus): "neutral" | "positive" | "warning" {
   if (status === "approved") return "positive";
