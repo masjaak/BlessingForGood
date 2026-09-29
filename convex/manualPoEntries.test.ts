@@ -27,6 +27,7 @@ describe("Manual PO domain", () => {
       etaText: "Estimasi tiba Januari 2027",
       status: "active",
       billingStatus: "unbilled",
+      invoiceId: null,
       billedAt: null,
       archivedAt: null,
     });
@@ -77,7 +78,7 @@ describe("Manual PO domain", () => {
     ]);
   });
 
-  it("lets Admin toggle Random PO billing without creating a regular invoice", async () => {
+  it("lets Admin issue an actionable invoice from Random PO without creating Order, Book, Catalog, or Batch", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const customerUser = await customer.query(api.users.current, {});
@@ -90,38 +91,46 @@ describe("Manual PO domain", () => {
       etaText: "April 2027",
     });
 
-    await expect(
-      admin.mutation(api.manualPoEntries.setBillingStatus, {
-        entryId: created.entryId,
-        billingStatus: "billed",
-      }),
-    ).resolves.toMatchObject({ billingStatus: "billed", billedAt: expect.any(Number) });
+    const invoice = await admin.mutation(api.invoices.issueManualPo, { entryId: created.entryId });
+    expect(invoice).toMatchObject({
+      source: "manual_po",
+      manualPoEntryId: created.entryId,
+      orderId: null,
+      status: "issued",
+      totalAmount: 88000,
+      outstandingAmount: 88000,
+      paymentStatus: "unpaid",
+    });
 
-    await expect(customer.query(api.manualPoEntries.listBilledMine, {})).resolves.toEqual([
+    await expect(customer.query(api.invoices.getMine, { invoiceId: invoice.invoiceId })).resolves.toMatchObject({
+      invoiceId: invoice.invoiceId,
+      source: "manual_po",
+      orderId: null,
+      items: [
+        expect.objectContaining({
+          description: "Random billed book · ETA April 2027",
+          subtotalAmount: 88000,
+        }),
+      ],
+    });
+
+    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([
       expect.objectContaining({
         entryId: created.entryId,
-        title: "Random billed book",
-        priceAmount: 88000,
+        invoiceId: invoice.invoiceId,
         billingStatus: "billed",
       }),
     ]);
 
     await expect(
       t.run(async (ctx) => ({
+        books: (await ctx.db.query("books").collect()).length,
+        catalogs: (await ctx.db.query("secretCatalogs").collect()).length,
         orders: (await ctx.db.query("orders").collect()).length,
         invoices: (await ctx.db.query("invoices").collect()).length,
         batches: (await ctx.db.query("batches").collect()).length,
       })),
-    ).resolves.toEqual({ orders: 0, invoices: 0, batches: 0 });
-
-    await expect(
-      admin.mutation(api.manualPoEntries.setBillingStatus, {
-        entryId: created.entryId,
-        billingStatus: "unbilled",
-      }),
-    ).resolves.toMatchObject({ billingStatus: "unbilled", billedAt: null });
-
-    await expect(customer.query(api.manualPoEntries.listBilledMine, {})).resolves.toEqual([]);
+    ).resolves.toEqual({ books: 0, catalogs: 0, orders: 0, invoices: 1, batches: 0 });
   });
 
   it("supports Admin edit, status lifecycle, archive, and audit events", async () => {
