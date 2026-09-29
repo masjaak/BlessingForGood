@@ -98,9 +98,12 @@ describe("Manual PO domain", () => {
     await expect(
       admin.mutation(api.manualPoEntries.setStatus, { entryId: created.entryId, status: "arrived" }),
     ).resolves.toMatchObject({ status: "arrived", cancelledAt: null });
+    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([]);
+
     await expect(
       admin.mutation(api.manualPoEntries.setStatus, { entryId: created.entryId, status: "cancelled" }),
     ).resolves.toMatchObject({ status: "cancelled", cancelledAt: expect.any(Number) });
+    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([]);
 
     await admin.mutation(api.manualPoEntries.archive, { entryId: created.entryId });
     await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([]);
