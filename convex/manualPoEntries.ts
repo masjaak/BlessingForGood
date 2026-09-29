@@ -35,6 +35,7 @@ function view(entry: Doc<"manualPoEntries">) {
     etaText: entry.etaText,
     status: entry.status,
     billingStatus: entry.billingStatus ?? "unbilled",
+    invoiceId: entry.invoiceId ?? null,
     billedAt: entry.billedAt ?? null,
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
