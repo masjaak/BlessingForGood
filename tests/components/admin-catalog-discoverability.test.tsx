@@ -724,6 +724,54 @@ describe("Secret Catalog operational discoverability", () => {
     await waitFor(() => expect(move).toHaveBeenCalledWith({ catalogItemId: "item-four", targetPosition: 1 }));
   });
 
+  it("keeps drag reorder active on paginated Catalog pages and sends a global destination position", async () => {
+    const move = vi.fn().mockResolvedValue({ moved: true, position: 27 });
+    vi.mocked(useMutation).mockImplementation(
+      (reference) => (getFunctionName(reference) === "catalogItems:move" ? move : vi.fn()) as never,
+    );
+    mockCatalogDetailQueries(
+      {
+        id: "catalog-paged",
+        name: "Large Series Catalog",
+        status: "open",
+        description: null,
+        closesAt: null,
+      },
+      catalogPage(
+        [
+          { _id: "item-26", title: "Series 26", format: "PB", isbn: "9780000000026" },
+          { _id: "item-27", title: "Series 27", format: "PB", isbn: "9780000000027" },
+          { _id: "item-28", title: "Series 28", format: "PB", isbn: "9780000000028" },
+        ],
+        { pageNumber: 2, pageSize: 25, totalCount: 61, catalogItemCount: 61 },
+      ),
+    );
+
+    render(<AdminCatalogDetail catalogId="catalog-paged" />);
+
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".catalog-item-row"));
+    rows.forEach((row, index) => {
+      Object.defineProperty(row, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({ top: index * 80, bottom: index * 80 + 80, height: 80 }),
+      });
+    });
+
+    const handle = screen.getByRole("button", { name: "Atur urutan Series 28" }) as HTMLButtonElement;
+    expect(handle.disabled).toBe(false);
+
+    fireEvent.pointerDown(handle, { pointerId: 11, pointerType: "mouse", clientY: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 11, pointerType: "mouse", clientY: 90 });
+    fireEvent.pointerUp(handle, { pointerId: 11, pointerType: "mouse", clientY: 90 });
+
+    await waitFor(() =>
+      expect(move).toHaveBeenCalledWith({
+        catalogItemId: "item-28",
+        targetPosition: 26,
+      }),
+    );
+  });
+
   it("shows the drop target after the final remaining item", async () => {
     const move = vi.fn().mockResolvedValue({ moved: true, position: 2 });
     vi.mocked(useMutation).mockReturnValue(move as never);
