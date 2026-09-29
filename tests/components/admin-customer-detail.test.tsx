@@ -66,14 +66,12 @@ describe("Admin customer detail actions", () => {
     expect(summaryGrid).toBeTruthy();
     expect(summaryGrid?.querySelectorAll(":scope > .card")).toHaveLength(2);
 
-    expect(screen.getAllByRole("link", { name: /^Buat invoice$/ }).map((link) => link.getAttribute("href"))).toContain(
+    expect(screen.getByRole("link", { name: "Buat invoice reguler" }).getAttribute("href")).toBe(
       "/admin/invoices?customerId=customer-1",
     );
     expect(screen.getByRole("link", { name: "Kelola deposit" }).getAttribute("href")).toBe(
       "/admin/deposits?customerId=customer-1",
     );
-    expect(screen.getAllByRole("link", { name: /^Buat invoice$/ }).map((link) => link.getAttribute("href"))).toContain(
-      "/admin/invoices?customerId=customer-1",
-    );
+    expect(screen.queryByRole("link", { name: /^Buat invoice$/ })).toBeNull();
   });
 });
