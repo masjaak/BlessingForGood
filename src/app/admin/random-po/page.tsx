@@ -107,29 +107,29 @@ function AdminRandomPoQueue() {
           ) : (
             <>
               <div className="random-po-summary-grid">
-                <Card frame="summary">
+                <Card frame="summary" className="random-po-summary-card">
                   <span className="card-kicker">Pelanggan aktif</span>
                   <strong className="metric-money">{queue.summary.customerCount}</strong>
                   <span className="subtle">Pelanggan dengan Random PO berjalan</span>
                 </Card>
-                <Card frame="summary">
+                <Card frame="summary" className="random-po-summary-card">
                   <span className="card-kicker">PO berjalan</span>
                   <strong className="metric-money">{queue.summary.itemCount}</strong>
                   <span className="subtle">{formatIdr(queue.summary.totalAmount)} nilai pesanan</span>
                 </Card>
-                <Card frame="summary">
+                <Card frame="summary" className="random-po-summary-card">
                   <span className="card-kicker">Belum ditagih</span>
                   <strong className="metric-money">{queue.summary.unbilledCount}</strong>
                   <span className="subtle">Perlu keputusan Admin</span>
                 </Card>
-                <Card frame="summary">
+                <Card frame="summary" className="random-po-summary-card">
                   <span className="card-kicker">Menunggu bayar</span>
                   <strong className="metric-money">
                     {queue.summary.awaitingPaymentCount + queue.summary.paymentSubmittedCount}
                   </strong>
                   <span className="subtle">{formatIdr(queue.summary.outstandingAmount)} outstanding</span>
                 </Card>
-                <Card frame="summary">
+                <Card frame="summary" className="random-po-summary-card">
                   <span className="card-kicker">Lunas</span>
                   <strong className="metric-money">{queue.summary.paidCount}</strong>
                   <span className="subtle">Tagihan Random PO selesai</span>

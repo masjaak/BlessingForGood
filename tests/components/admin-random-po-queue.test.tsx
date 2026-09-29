@@ -102,6 +102,15 @@ describe("Admin Random PO operational queue", () => {
     render(<AdminRandomPoPage />);
 
     expect(screen.getByRole("heading", { name: "Antrian Pesanan Khusus" })).toBeTruthy();
+    const summaryCards = Array.from(document.querySelectorAll<HTMLElement>(".random-po-summary-card"));
+    expect(summaryCards).toHaveLength(5);
+    expect(summaryCards.map((card) => Array.from(card.children).map((child) => child.className))).toEqual([
+      ["card-kicker", "metric-money", "subtle"],
+      ["card-kicker", "metric-money", "subtle"],
+      ["card-kicker", "metric-money", "subtle"],
+      ["card-kicker", "metric-money", "subtle"],
+      ["card-kicker", "metric-money", "subtle"],
+    ]);
     expect(screen.getByRole("heading", { name: "Mulia Kah" })).toBeTruthy();
     expect(screen.getByText("BFG-0001")).toBeTruthy();
     expect(screen.getByText("TEST BOOK 3")).toBeTruthy();
