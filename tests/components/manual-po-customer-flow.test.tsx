@@ -18,6 +18,9 @@ describe("Customer Manual PO final view", () => {
         priceAmount: 99000,
         etaText: "Maret 2027",
         status: "active",
+        billingStatus: "billed",
+        invoiceId: "invoice-manual-1",
+        billedAt: 1,
         createdAt: 1,
         updatedAt: 1,
         cancelledAt: null,
@@ -32,8 +35,10 @@ describe("Customer Manual PO final view", () => {
     expect(screen.getByText("Random PO Book")).toBeTruthy();
     expect(screen.getByText("ETA: Maret 2027")).toBeTruthy();
     expect(screen.getByText("Rp 99.000")).toBeTruthy();
-    expect(screen.queryByText("Berjalan", { exact: true })).toBeNull();
-    expect(screen.queryByRole("link", { name: /invoice/i })).toBeNull();
+    expect(screen.getByText("Tagihan tersedia")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Lihat tagihan" }).getAttribute("href")).toBe(
+      "/account/invoices/invoice-manual-1",
+    );
     expect(screen.queryByRole("button")).toBeNull();
   });
 });
