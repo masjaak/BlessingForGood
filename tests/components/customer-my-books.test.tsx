@@ -86,6 +86,6 @@ describe("Customer Buku Saya layout contract", () => {
     expect(screen.getByText("Random PO Book")).toBeTruthy();
     expect(screen.getByText("ETA: Maret 2027")).toBeTruthy();
     expect(screen.getByText("Rp 99.000")).toBeTruthy();
-    expect(screen.getByText("Memuat Buku Saya")).toBeTruthy();
+    expect(screen.getByLabelText("Memuat Buku Saya")).toBeTruthy();
   });
 });
