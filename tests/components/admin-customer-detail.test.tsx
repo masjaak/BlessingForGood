@@ -11,6 +11,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
+  useMutation: vi.fn(() => vi.fn()),
 }));
 
 vi.mock("@/domain/prototype/store", () => ({
@@ -56,9 +57,14 @@ describe("Admin customer detail actions", () => {
       .mockReturnValueOnce({ displayName: "A Customer" } as never)
       .mockReturnValueOnce([] as never)
       .mockReturnValueOnce({ page: [], isDone: true, continueCursor: "" } as never)
-      .mockReturnValueOnce({ page: [], isDone: true, continueCursor: "" } as never);
+      .mockReturnValueOnce({ page: [], isDone: true, continueCursor: "" } as never)
+      .mockReturnValueOnce([] as never);
 
     render(<AdminCustomerDetailPage />);
+
+    const summaryGrid = document.querySelector(".customer-detail-summary-grid");
+    expect(summaryGrid).toBeTruthy();
+    expect(summaryGrid?.querySelectorAll(":scope > .card")).toHaveLength(2);
 
     expect(screen.getAllByRole("link", { name: /^Buat invoice$/ }).map((link) => link.getAttribute("href"))).toContain(
       "/admin/invoices?customerId=customer-1",
