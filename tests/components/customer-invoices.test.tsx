@@ -98,7 +98,7 @@ describe("Customer invoice payment visibility", () => {
   it("shows unpaid, partial, and paid status labels on the customer invoice list", () => {
     render(<CustomerInvoicesPage />);
 
-    expect(screen.getByText(/Perlu dibayar/)).toBeTruthy();
+    expect(screen.getAllByText(/Perlu dibayar/)).toHaveLength(2);
     expect(screen.getByText(/Dibayar sebagian/)).toBeTruthy();
     expect(screen.getByText(/Lunas terverifikasi/)).toBeTruthy();
     expect(screen.getAllByText("Deposit teralokasi")).toHaveLength(4);
