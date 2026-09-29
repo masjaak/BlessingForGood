@@ -88,34 +88,35 @@ export default function HomePage() {
 
         <section className="section-block discovery-section" id="akses-buku">
           <div className="home-access-grid">
+            <HomeOnboarding tutorialVideoUrl={configuredVideoUrl()} />
 
             {SHOW_HOME_WHATSAPP_CARD ? (
               <article
                 className="discovery-card discovery-card-whatsapp"
-              id="join-whatsapp"
-              data-testid="join-whatsapp"
-              aria-labelledby="join-title"
-            >
-              <div className="discovery-card-copy community-copy">
-                <div className="discovery-card-heading">
-                  <HomeAccessIcon kind="community" />
-                  <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+                id="join-whatsapp"
+                data-testid="join-whatsapp"
+                aria-labelledby="join-title"
+              >
+                <div className="discovery-card-copy community-copy">
+                  <div className="discovery-card-heading">
+                    <HomeAccessIcon kind="community" />
+                    <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+                  </div>
+                  <h3 id="join-title">
+                    <span>BLESSING FOR</span> <span>GOOD</span>
+                  </h3>
+                  <p>
+                    wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
+                  </p>
                 </div>
-                <h3 id="join-title">
-                  <span>BLESSING FOR</span> <span>GOOD</span>
-                </h3>
-                <p>
-                  wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
-                </p>
-              </div>
-              <div className="discovery-card-art-slot community-art" aria-hidden="true">
-                <BrandMascot
-                  variant="warm"
-                  className="community-mascot"
-                  sizes="(max-width: 640px) 82px, 92px"
-                  priority
-                />
-              </div>
+                <div className="discovery-card-art-slot community-art" aria-hidden="true">
+                  <BrandMascot
+                    variant="warm"
+                    className="community-mascot"
+                    sizes="(max-width: 640px) 82px, 92px"
+                    priority
+                  />
+                </div>
                 <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
                   Minta link WhatsApp Group
                 </LinkButton>
@@ -160,8 +161,6 @@ export default function HomePage() {
               <div className="discovery-card-art-slot" aria-hidden="true" />
               <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
             </article>
-
-            <HomeOnboarding tutorialVideoUrl={configuredVideoUrl()} />
           </div>
         </section>
 
