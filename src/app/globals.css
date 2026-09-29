@@ -9792,6 +9792,33 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   min-width: 0;
 }
 
+.admin-shell .random-po-summary-card {
+  display: grid;
+  min-height: 168px;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  gap: var(--space-sm);
+}
+
+.admin-shell .random-po-summary-card .card-kicker {
+  display: block;
+  margin: 0;
+}
+
+.admin-shell .random-po-summary-card .metric-money {
+  display: block;
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  line-height: 1;
+}
+
+.admin-shell .random-po-summary-card > .subtle {
+  display: block;
+  align-self: end;
+  margin: 0;
+  line-height: 1.45;
+}
+
 .admin-shell .random-po-queue-controls {
   display: grid;
   gap: var(--space-sm);
