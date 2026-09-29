@@ -6,37 +6,19 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Button, Card, EmptyState, Field, Money, StatusBadge } from "@/components/ui";
 
-type ManualPoStatus = "active" | "arrived" | "cancelled";
-
-const statusLabel: Record<ManualPoStatus, string> = {
-  active: "Berjalan",
-  arrived: "Sudah tiba",
-  cancelled: "Dibatalkan",
-};
-
-function statusTone(status: ManualPoStatus) {
-  if (status === "arrived") return "positive" as const;
-  if (status === "cancelled") return "warning" as const;
-  return "neutral" as const;
-}
-
 export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"appUsers"> }) {
   const entries = useQuery(api.manualPoEntries.listForAdmin, { customerUserId });
   const createEntry = useMutation(api.manualPoEntries.create);
-  const updateEntry = useMutation(api.manualPoEntries.update);
-  const setStatus = useMutation(api.manualPoEntries.setStatus);
-  const archive = useMutation(api.manualPoEntries.archive);
-  const [editingId, setEditingId] = useState<Id<"manualPoEntries"> | null>(null);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [etaText, setEtaText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const activeEntries = entries?.filter((entry) => entry.status === "active") ?? [];
+
   function resetForm() {
-    setEditingId(null);
     setTitle("");
     setPrice("");
     setEtaText("");
@@ -47,73 +29,22 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     event.preventDefault();
     setError("");
     setSuccess("");
+
     const priceAmount = Number(price);
     if (!title.trim() || !etaText.trim() || !Number.isSafeInteger(priceAmount) || priceAmount <= 0) {
-      setError("Isi judul, harga, dan ETA dengan benar.");
+      setError("Isi judul buku, harga, dan ETA dengan benar.");
       return;
     }
+
     setSubmitting(true);
     try {
-      const wasEditing = Boolean(editingId);
-      if (editingId) {
-        await updateEntry({ entryId: editingId, title, priceAmount, etaText });
-      } else {
-        await createEntry({ customerUserId, title, priceAmount, etaText });
-      }
+      await createEntry({ customerUserId, title, priceAmount, etaText });
       resetForm();
-      setSuccess(
-        wasEditing
-          ? "Perubahan Pesanan Khusus tersimpan dan langsung diperbarui di Buku Saya customer."
-          : "Pesanan Khusus tersimpan dan langsung tampil di Buku Saya customer.",
-      );
+      setSuccess("Pesanan Khusus ditambahkan dan langsung tampil di Buku Saya customer.");
     } catch {
-      setError("Pesanan khusus belum berhasil disimpan. Coba lagi.");
+      setError("Pesanan Khusus belum berhasil ditambahkan. Coba lagi.");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  function startEdit(entry: NonNullable<typeof entries>[number]) {
-    setEditingId(entry.entryId);
-    setTitle(entry.title);
-    setPrice(String(entry.priceAmount));
-    setEtaText(entry.etaText);
-    setError("");
-    setSuccess("");
-  }
-
-  async function changeStatus(entryId: Id<"manualPoEntries">, status: ManualPoStatus) {
-    const actionKey = `${String(entryId)}:${status}`;
-    setError("");
-    setSuccess("");
-    setPendingAction(actionKey);
-    try {
-      await setStatus({ entryId, status });
-      setSuccess(
-        status === "arrived"
-          ? "Pesanan ditandai sudah tiba. Status customer ikut diperbarui."
-          : "Pesanan dibatalkan. Status customer ikut diperbarui.",
-      );
-    } catch {
-      setError("Status belum berhasil diperbarui. Coba lagi.");
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  async function archiveEntry(entryId: Id<"manualPoEntries">) {
-    const actionKey = `${String(entryId)}:archive`;
-    setError("");
-    setSuccess("");
-    setPendingAction(actionKey);
-    try {
-      await archive({ entryId });
-      if (editingId === entryId) resetForm();
-      setSuccess("Pesanan diarsipkan dan tidak lagi tampil di Buku Saya customer.");
-    } catch {
-      setError("Pesanan khusus belum berhasil diarsipkan. Coba lagi.");
-    } finally {
-      setPendingAction(null);
     }
   }
 
@@ -124,11 +55,12 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
           <span className="card-kicker">Tanpa upload Book Master / Catalog</span>
           <h2>PO Random / Pesanan Khusus</h2>
         </div>
-        <StatusBadge>{entries?.length ?? 0}</StatusBadge>
+        <StatusBadge>{activeEntries.length}</StatusBadge>
       </div>
+
       <p className="subtle">
-        Catat judul, harga, dan ETA tanpa membuat Book Master, Catalog, Batch, atau invoice. Setelah disimpan, data
-        langsung tampil read-only di Buku Saya customer.
+        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Flow berhenti di sini—tidak membuat invoice,
+        tagihan, Batch, atau Order reguler.
       </p>
 
       <form className="content-stack manual-po-form" onSubmit={submit}>
@@ -142,6 +74,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
               placeholder="Contoh: The Complete Brambly Hedge"
             />
           </Field>
+
           <Field label="Harga">
             <input
               className="input"
@@ -154,6 +87,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
               placeholder="175000"
             />
           </Field>
+
           <Field label="ETA">
             <input
               className="input"
@@ -164,88 +98,44 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
             />
           </Field>
         </div>
+
         {error ? (
           <p className="error-text" role="alert">
             {error}
           </p>
         ) : null}
+
         {success ? (
           <p className="success-banner" role="status" aria-live="polite">
             {success}
           </p>
         ) : null}
+
         <div className="form-actions">
-          <Button type="submit" loading={submitting} loadingLabel="Menyimpan…">
-            {editingId ? "Simpan perubahan" : "Tambah Pesanan Khusus"}
+          <Button type="submit" loading={submitting} loadingLabel="Menambahkan…">
+            Tambahkan Pesanan Khusus
           </Button>
-          {editingId ? (
-            <Button type="button" variant="tertiary" onClick={resetForm}>
-              Batal edit
-            </Button>
-          ) : null}
         </div>
       </form>
 
       <div className="content-stack manual-po-admin-list">
         {entries === undefined ? (
           <p className="subtle">Memuat Pesanan Khusus…</p>
-        ) : entries.length ? (
-          entries.map((entry) => (
+        ) : activeEntries.length ? (
+          activeEntries.map((entry) => (
             <div className="summary-line manual-po-admin-row" key={entry.entryId}>
               <span>
                 <strong>{entry.title}</strong>
                 <br />
                 <small className="subtle">ETA: {entry.etaText}</small>
               </span>
-              <span className="manual-po-admin-row-actions">
-                <Money amount={entry.priceAmount} />
-                <StatusBadge tone={statusTone(entry.status)}>{statusLabel[entry.status]}</StatusBadge>
-                <span className="form-actions">
-                  <Button type="button" variant="tertiary" disabled={pendingAction !== null} onClick={() => startEdit(entry)}>
-                    Edit
-                  </Button>
-                  {entry.status !== "arrived" ? (
-                    <Button
-                      type="button"
-                      variant="tertiary"
-                      loading={pendingAction === `${String(entry.entryId)}:arrived`}
-                      loadingLabel="Menyimpan…"
-                      disabled={pendingAction !== null}
-                      onClick={() => void changeStatus(entry.entryId, "arrived")}
-                    >
-                      Tandai tiba
-                    </Button>
-                  ) : null}
-                  {entry.status !== "cancelled" ? (
-                    <Button
-                      type="button"
-                      variant="tertiary"
-                      loading={pendingAction === `${String(entry.entryId)}:cancelled`}
-                      loadingLabel="Menyimpan…"
-                      disabled={pendingAction !== null}
-                      onClick={() => void changeStatus(entry.entryId, "cancelled")}
-                    >
-                      Batalkan
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="tertiary"
-                    loading={pendingAction === `${String(entry.entryId)}:archive`}
-                    loadingLabel="Mengarsipkan…"
-                    disabled={pendingAction !== null}
-                    onClick={() => void archiveEntry(entry.entryId)}
-                  >
-                    Arsipkan
-                  </Button>
-                </span>
-              </span>
+              <Money amount={entry.priceAmount} />
             </div>
           ))
         ) : (
           <EmptyState
-            title="Belum ada Pesanan Khusus"
-            description="Pesanan buku di luar PO reguler dapat dicatat dari form di atas."
+            title="Belum ada Random PO berjalan"
+            description="Pesanan Khusus yang ditambahkan akan tampil di sini dan di Buku Saya customer."
           />
         )}
       </div>
@@ -255,40 +145,40 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
 
 export function CustomerManualPoSection() {
   const entries = useQuery(api.manualPoEntries.listMine, {});
+  const activeEntries = entries?.filter((entry) => entry.status === "active") ?? [];
 
   if (entries === undefined) {
     return (
       <Card className="manual-po-customer-card">
-        <span className="card-kicker">Pesanan Khusus</span>
-        <p className="subtle">Memuat pesanan khususmu…</p>
+        <span className="card-kicker">Random PO berjalan</span>
+        <p className="subtle">Memuat Pesanan Khususmu…</p>
       </Card>
     );
   }
 
-  if (!entries.length) return null;
+  if (!activeEntries.length) return null;
 
   return (
     <Card className="manual-po-customer-card">
       <div className="split-heading">
         <div>
-          <span className="card-kicker">Di luar PO reguler</span>
+          <span className="card-kicker">Random PO berjalan</span>
           <h2>Pesanan Khusus</h2>
         </div>
-        <StatusBadge>{entries.length}</StatusBadge>
+        <StatusBadge>{activeEntries.length}</StatusBadge>
       </div>
-      <p className="subtle">Judul yang dicatat langsung oleh Admin BFG. Bagian ini hanya dapat kamu lihat.</p>
+
+      <p className="subtle">Buku random PO yang sedang berjalan. Cek judul, ETA, dan harga dari Admin BFG.</p>
+
       <div className="content-stack">
-        {entries.map((entry) => (
+        {activeEntries.map((entry) => (
           <div className="summary-line manual-po-customer-row" key={entry.entryId}>
             <span>
               <strong>{entry.title}</strong>
               <br />
               <small className="subtle">ETA: {entry.etaText}</small>
             </span>
-            <span className="manual-po-customer-meta">
-              <Money amount={entry.priceAmount} />
-              <StatusBadge tone={statusTone(entry.status)}>{statusLabel[entry.status]}</StatusBadge>
-            </span>
+            <Money amount={entry.priceAmount} />
           </div>
         ))}
       </div>
