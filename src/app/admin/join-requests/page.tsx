@@ -28,9 +28,14 @@ import { useProduct } from "@/domain/prototype/store";
 type JoinRequestStatus = "submitted" | "under_review" | "approved" | "rejected";
 type JoinRequest = FunctionReturnType<typeof api.joinRequests.listForAdmin>[number];
 
-function useJoinRequests(status: JoinRequestStatus | undefined) {
-  return useQuery(api.joinRequests.listForAdmin, { status });
-}
+const admissionStatusLabels: Record<JoinRequest["admissionStatus"], string> = {
+  pending: "Menunggu",
+  invitation_pending: "Menunggu aktivasi",
+  invitation_failed: "Undangan gagal",
+  active: "Aktif",
+  removed: "Dihapus",
+  rejected: "Ditolak",
+};
 
 const statusLabels: Record<JoinRequestStatus, string> = {
   submitted: "Dikirim",
@@ -38,6 +43,56 @@ const statusLabels: Record<JoinRequestStatus, string> = {
   approved: "Disetujui",
   rejected: "Ditolak",
 };
+
+function csvCell(value: unknown) {
+  const text = value == null ? "" : String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function downloadJoinRequestsCsv(requests: JoinRequest[]) {
+  const headers = [
+    "Nama",
+    "Email",
+    "WhatsApp / telepon",
+    "Kota",
+    "Minat buku",
+    "Status permintaan",
+    "Status membership",
+    "Dikirim",
+    "Ditinjau",
+    "Catatan pendaftar",
+    "Catatan tinjauan",
+    "Alasan penolakan",
+  ];
+  const rows = requests.map((request) => [
+    request.name,
+    request.email,
+    request.contact,
+    request.city || "",
+    request.bookInterest || "",
+    statusLabels[request.status],
+    admissionStatusLabels[request.admissionStatus],
+    new Date(request.submittedAt).toLocaleString("id-ID"),
+    request.reviewedAt ? new Date(request.reviewedAt).toLocaleString("id-ID") : "",
+    request.note || "",
+    request.reviewNote || "",
+    request.rejectionReason || "",
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `bfg-permintaan-bergabung-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function useJoinRequests(status: JoinRequestStatus | undefined) {
+  return useQuery(api.joinRequests.listForAdmin, { status });
+}
 
 function statusTone(status: JoinRequestStatus): "neutral" | "positive" | "warning" {
   if (status === "approved") return "positive";
@@ -300,6 +355,7 @@ function ConnectedJoinRequests() {
   const [status, setStatus] = useState<JoinRequestStatus | "">("");
   const [search, setSearch] = useState("");
   const requests = useJoinRequests(status || undefined);
+  const exportRequests = useQuery(api.joinRequests.exportForAdmin, { status: status || undefined });
   const startReviewMutation = useMutation(api.joinRequests.startReview);
   const approveMutation = useMutation(api.joinRequests.approve);
   const rejectMutation = useMutation(api.joinRequests.reject);
@@ -315,6 +371,15 @@ function ConnectedJoinRequests() {
       ),
     );
   }, [requests, search]);
+  const filteredExportRequests = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!exportRequests || !query) return exportRequests;
+    return exportRequests.filter((request) =>
+      [request.name, request.email, request.contact, request.city || ""].some((value) =>
+        value.toLowerCase().includes(query),
+      ),
+    );
+  }, [exportRequests, search]);
 
   return (
     <div className="page admin-page">
@@ -322,6 +387,16 @@ function ConnectedJoinRequests() {
         eyebrow="Operasi admission"
         title="Tinjau permintaan Blessfriends."
         description="Setujui permintaan Customer untuk mengirim panduan aktivasi dan menunggu Customer menyelesaikan akses BFG."
+        actions={
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={!filteredExportRequests?.length}
+            onClick={() => filteredExportRequests && downloadJoinRequestsCsv(filteredExportRequests)}
+          >
+            Ekspor CSV
+          </Button>
+        }
         loading={filteredRequests === undefined}
         skeleton={{ titleWidth: "68%", descriptionWidths: ["92%", "64%"] }}
       />

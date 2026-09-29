@@ -152,6 +152,9 @@ describe("Admin assisted-order discovery", () => {
   it("searches Catalog by name and searches scoped variants by title, ISBN, publisher, and author", () => {
     render(<AdminOrdersPage />);
 
+    expect(screen.getByRole("link", { name: "PO Random / Pesanan Khusus" }).getAttribute("href")).toBe(
+      "/admin/customers",
+    );
     const catalogSearch = screen.getByPlaceholderText("Cari Catalog...");
     fireEvent.change(catalogSearch, { target: { value: "spring" } });
     fireEvent.click(screen.getByRole("combobox", { name: "Katalog" }));

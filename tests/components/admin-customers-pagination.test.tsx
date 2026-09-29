@@ -63,6 +63,9 @@ describe("Admin Pelanggan pagination", () => {
     expect(screen.getByText("Menampilkan 1–25 dari 61 pelanggan")).toBeTruthy();
     expect(screen.getByText("Halaman 1 dari 3")).toBeTruthy();
     expect(screen.getAllByRole("row")).toHaveLength(26);
+    const manualPoLinks = screen.getAllByRole("link", { name: "Pesanan Khusus" });
+    expect(manualPoLinks).toHaveLength(25);
+    expect(manualPoLinks[0]?.getAttribute("href")).toBe("/admin/customers/customer-1#manual-po");
     const pageSize = screen.getByRole("combobox", { name: "pelanggan per halaman" });
     fireEvent.click(pageSize);
     expect(screen.getByRole("option", { name: "25" })).toBeTruthy();

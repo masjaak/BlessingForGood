@@ -91,9 +91,17 @@ function CustomerList() {
                       </td>
                       <td>{customer.email || "—"}</td>
                       <td>
-                        <LinkButton href={`/admin/customers/${customer.customerUserId}`} variant="tertiary">
-                          Lihat detail →
-                        </LinkButton>
+                        <span className="form-actions">
+                          <LinkButton
+                            href={`/admin/customers/${customer.customerUserId}#manual-po`}
+                            variant="secondary"
+                          >
+                            Pesanan Khusus
+                          </LinkButton>
+                          <LinkButton href={`/admin/customers/${customer.customerUserId}`} variant="tertiary">
+                            Lihat detail →
+                          </LinkButton>
+                        </span>
                       </td>
                     </tr>
                   ))}

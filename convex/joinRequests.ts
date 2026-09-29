@@ -281,6 +281,27 @@ export const listForAdmin = query({
   },
 });
 
+export const exportForAdmin = query({
+  args: { status: v.optional(joinRequestStatusValidator) },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "customers.read");
+    const requests = args.status
+      ? await ctx.db
+          .query("joinRequests")
+          .withIndex("by_status_and_submitted_at", (index) => index.eq("status", args.status!))
+          .filter((query) => query.eq(query.field("removedAt"), undefined))
+          .order("desc")
+          .take(2000)
+      : await ctx.db
+          .query("joinRequests")
+          .withIndex("by_submitted_at")
+          .filter((query) => query.eq(query.field("removedAt"), undefined))
+          .order("desc")
+          .take(2000);
+    return Promise.all(requests.map((request) => requestView(ctx, request)));
+  },
+});
+
 export const startReview = mutation({
   args: { joinRequestId: v.id("joinRequests") },
   handler: async (ctx, args) => {

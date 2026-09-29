@@ -97,11 +97,11 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   }
 
   return (
-    <Card className="manual-po-admin-card">
+    <Card className="manual-po-admin-card" id="manual-po">
       <div className="split-heading">
         <div>
-          <span className="card-kicker">Pesanan di luar PO reguler</span>
-          <h2>Pesanan Khusus</h2>
+          <span className="card-kicker">Tanpa upload Book Master / Catalog</span>
+          <h2>PO Random / Pesanan Khusus</h2>
         </div>
         <StatusBadge>{entries?.length ?? 0}</StatusBadge>
       </div>
