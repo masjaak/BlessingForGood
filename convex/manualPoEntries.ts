@@ -63,7 +63,7 @@ export const listMine = query({
       .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", customer._id))
       .order("desc")
       .take(200);
-    return entries.filter((entry) => !entry.archivedAt).map(view);
+    return entries.filter((entry) => !entry.archivedAt && entry.status === "active").map(view);
   },
 });
 
@@ -80,7 +80,9 @@ export const listForAdmin = query({
       .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", args.customerUserId))
       .order("desc")
       .take(500);
-    return entries.filter((entry) => args.includeArchived || !entry.archivedAt).map(view);
+    return entries
+      .filter((entry) => (args.includeArchived ? true : !entry.archivedAt && entry.status === "active"))
+      .map(view);
   },
 });
 
