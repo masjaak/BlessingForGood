@@ -179,8 +179,8 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
   const hasCatalogFilters = Boolean(catalogSearch.trim() || catalogPublisher);
   const catalogItemPositions = new Map(catalogItems.map((item) => [item._id, item.position]));
   const canMoveCatalog = !hasCatalogFilters && !pending;
-  const canReorderCatalog =
-    canMoveCatalog && catalogItemsData.catalogItemCount <= catalogItemsData.pageSize && catalogItems.length > 1;
+  const canReorderCatalog = canMoveCatalog && catalogItems.length > 1;
+  const catalogPageStartPosition = (effectiveCatalogPageNumber - 1) * catalogItemsData.pageSize;
   const catalogIsDraft = catalog.status === "draft";
   const catalogIsArchived = catalog.status === "archived";
   const catalogMayBeDeleted = catalogIsDraft && catalogItemsData.catalogItemCount === 0 && !catalog.accessPeriodId;
@@ -302,9 +302,10 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
     event.preventDefault();
     const currentIndex = catalogItems.findIndex((item) => item._id === pointer.itemId);
     if (currentIndex < 0 || currentIndex === targetIndex) return;
+    const targetPosition = catalogPageStartPosition + targetIndex;
     void run(
       `move-drag-${pointer.itemId}`,
-      () => move({ catalogItemId: pointer.itemId, targetPosition: targetIndex }),
+      () => move({ catalogItemId: pointer.itemId, targetPosition }),
       "Urutan buku diperbarui.",
     );
   }
@@ -653,7 +654,8 @@ export function AdminCatalogDetail({ catalogId }: { catalogId: string }) {
           <div className="content-stack catalog-item-list">
             {catalogDragState ? (
               <p className="sr-only" role="status" aria-live="polite">
-                {draggedCatalogItem?.title} akan ditempatkan pada urutan {catalogDragState.targetIndex + 1}.
+                {draggedCatalogItem?.title} akan ditempatkan pada urutan{" "}
+                {catalogPageStartPosition + catalogDragState.targetIndex + 1}.
               </p>
             ) : null}
             {filteredCatalogItems.map((item) => (
