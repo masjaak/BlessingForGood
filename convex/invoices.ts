@@ -43,10 +43,11 @@ function backfillLimit(value: number | undefined): number {
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
-  const [order, customer, batch, items] = await Promise.all([
-    ctx.db.get(invoice.orderId),
+  const [order, customer, batch, manualPoEntry, items] = await Promise.all([
+    invoice.orderId ? ctx.db.get(invoice.orderId) : Promise.resolve(null),
     ctx.db.get(invoice.customerUserId),
     invoice.batchId ? ctx.db.get(invoice.batchId) : Promise.resolve(null),
+    invoice.manualPoEntryId ? ctx.db.get(invoice.manualPoEntryId) : Promise.resolve(null),
     ctx.db
       .query("invoiceItems")
       .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
@@ -56,12 +57,16 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   return {
     invoiceId: invoice._id,
     id: invoice._id,
+    source: invoice.manualPoEntryId ? ("manual_po" as const) : ("order" as const),
+    manualPoEntryId: invoice.manualPoEntryId ?? null,
     customerUserId: invoice.customerUserId,
     customerName: order?.customerName || customer?.displayNameSnapshot || "Pelanggan BFG",
     customerEmail: order?.customerEmail || customer?.emailSnapshot || null,
     customerMemberCode: customer?.memberCode ?? null,
-    orderId: invoice.orderId,
+    orderId: invoice.orderId ?? null,
     orderCode: order?.orderCode || null,
+    manualPoTitle: manualPoEntry?.title ?? null,
+    manualPoEtaText: manualPoEntry?.etaText ?? null,
     batchId: invoice.batchId ?? null,
     batchName: batch?.name ?? null,
     invoiceNumber: invoice.invoiceNumber,
@@ -89,9 +94,9 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
       invoiceItemId: item._id,
       description: item.descriptionSnapshot,
       bookTitleSnapshot: item.bookTitleSnapshot,
-      publisherNameSnapshot: item.publisherNameSnapshot,
-      formatSnapshot: item.formatSnapshot,
-      isbnSnapshot: item.isbnSnapshot,
+      publisherNameSnapshot: item.publisherNameSnapshot ?? null,
+      formatSnapshot: item.formatSnapshot ?? null,
+      isbnSnapshot: item.isbnSnapshot ?? null,
       quantity: item.quantity,
       unitPriceAmountSnapshot: item.unitPriceAmountSnapshot,
       subtotalAmount: item.subtotalAmount,
@@ -217,11 +222,12 @@ async function invoiceItemsForOrder(ctx: MutationCtx, orderId: Id<"orders">) {
 async function applyExistingExceptionAdjustments(
   ctx: MutationCtx,
   invoice: Doc<"invoices">,
-  orderIds: Id<"orders">[] = [invoice.orderId],
+  orderIds?: Id<"orders">[],
 ) {
+  const relatedOrderIds = orderIds ?? (invoice.orderId ? [invoice.orderId] : []);
   const adjustments = (
     await Promise.all(
-      orderIds.map((orderId) =>
+      relatedOrderIds.map((orderId) =>
         ctx.db
           .query("orderExceptionFinancialAdjustments")
           .withIndex("by_order", (index) => index.eq("orderId", orderId))
@@ -440,6 +446,93 @@ async function issueInvoiceRecord(ctx: MutationCtx, user: Doc<"appUsers">, invoi
   return invoiceView(ctx, invoice._id);
 }
 
+export const issueManualPo = mutation({
+  args: { entryId: v.id("manualPoEntries") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "invoices.manage");
+    const entry = await ctx.db.get(args.entryId);
+    if (!entry || entry.archivedAt || entry.status !== "active") {
+      fail("VALIDATION_FAILED", "Random PO tidak tersedia untuk ditagih");
+    }
+    const customer = await ctx.db.get(entry.customerUserId);
+    if (!customer || customer.role !== "customer" || customer.status !== "active") fail("CUSTOMER_REQUIRED");
+
+    if (entry.invoiceId) {
+      const linked = await ctx.db.get(entry.invoiceId);
+      if (linked && linked.status !== "void") return invoiceView(ctx, linked._id);
+    }
+
+    const existing = (
+      await ctx.db
+        .query("invoices")
+        .withIndex("by_manual_po_entry", (index) => index.eq("manualPoEntryId", entry._id))
+        .take(20)
+    ).find((invoice) => invoice.status !== "void");
+    if (existing) {
+      await ctx.db.patch(entry._id, {
+        invoiceId: existing._id,
+        billingStatus: "billed",
+        billedAt: existing.issuedAt ?? existing.createdAt,
+        billedByUserId: user._id,
+        updatedByUserId: user._id,
+        updatedAt: Date.now(),
+      });
+      return existing.status === "draft" ? issueInvoiceRecord(ctx, user, existing) : invoiceView(ctx, existing._id);
+    }
+
+    const now = Date.now();
+    const invoiceNumber = await nextInvoiceNumber(ctx, now);
+    const invoiceId = await ctx.db.insert("invoices", {
+      manualPoEntryId: entry._id,
+      customerUserId: entry.customerUserId,
+      invoiceNumber,
+      status: "draft",
+      currency: "IDR",
+      subtotalAmount: entry.priceAmount,
+      totalAmount: entry.priceAmount,
+      adjustedTotalAmount: entry.priceAmount,
+      financialAdjustmentAmount: 0,
+      depositRequirementMode: "none",
+      depositRequiredAmount: 0,
+      allocatedDepositAmount: 0,
+      verifiedPaymentAmount: 0,
+      outstandingAmount: entry.priceAmount,
+      overpaymentAmount: 0,
+      refundObligationAmount: 0,
+      refundObligationStatus: "none",
+      paymentStatus: "unpaid",
+      createdAt: now,
+      updatedAt: now,
+      createdByUserId: user._id,
+    });
+    await ctx.db.insert("invoiceItems", {
+      invoiceId,
+      manualPoEntryId: entry._id,
+      descriptionSnapshot: `${entry.title} · ETA ${entry.etaText}`,
+      bookTitleSnapshot: entry.title,
+      quantity: 1,
+      unitPriceAmountSnapshot: entry.priceAmount,
+      subtotalAmount: entry.priceAmount,
+      createdAt: now,
+    });
+    await ctx.db.patch(entry._id, {
+      invoiceId,
+      billingStatus: "billed",
+      billedAt: now,
+      billedByUserId: user._id,
+      updatedByUserId: user._id,
+      updatedAt: now,
+    });
+    await recordAudit(ctx, user._id, "manual_po.invoice_created", "manualPoEntry", entry._id, {
+      invoiceId: String(invoiceId),
+      customerUserId: String(entry.customerUserId),
+    });
+    const invoice = await ctx.db.get(invoiceId);
+    if (!invoice) fail("INVOICE_NOT_FOUND");
+    return issueInvoiceRecord(ctx, user, invoice);
+  },
+});
+
 export const issue = mutation({
   args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
@@ -497,6 +590,19 @@ export const voidInvoice = mutation({
     }
     const now = Date.now();
     await ctx.db.patch(args.invoiceId, { status: "void", voidedAt: now, updatedAt: now });
+    if (invoice.manualPoEntryId) {
+      const entry = await ctx.db.get(invoice.manualPoEntryId);
+      if (entry && entry.invoiceId === invoice._id) {
+        await ctx.db.patch(entry._id, {
+          invoiceId: undefined,
+          billingStatus: "unbilled",
+          billedAt: undefined,
+          billedByUserId: undefined,
+          updatedByUserId: user._id,
+          updatedAt: now,
+        });
+      }
+    }
     await recordAudit(ctx, user._id, "invoice.voided", "invoice", args.invoiceId);
     return invoiceView(ctx, args.invoiceId);
   },
