@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -31,12 +31,9 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   const [price, setPrice] = useState("");
   const [etaText, setEtaText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState("");
-
-  const editing = useMemo(
-    () => entries?.find((entry) => entry.entryId === editingId) ?? null,
-    [editingId, entries],
-  );
+  const [success, setSuccess] = useState("");
 
   function resetForm() {
     setEditingId(null);
@@ -49,6 +46,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    setSuccess("");
     const priceAmount = Number(price);
     if (!title.trim() || !etaText.trim() || !Number.isSafeInteger(priceAmount) || priceAmount <= 0) {
       setError("Isi judul, harga, dan ETA dengan benar.");
@@ -56,12 +54,18 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     }
     setSubmitting(true);
     try {
+      const wasEditing = Boolean(editingId);
       if (editingId) {
         await updateEntry({ entryId: editingId, title, priceAmount, etaText });
       } else {
         await createEntry({ customerUserId, title, priceAmount, etaText });
       }
       resetForm();
+      setSuccess(
+        wasEditing
+          ? "Perubahan Pesanan Khusus tersimpan dan langsung diperbarui di Buku Saya customer."
+          : "Pesanan Khusus tersimpan dan langsung tampil di Buku Saya customer.",
+      );
     } catch {
       setError("Pesanan khusus belum berhasil disimpan. Coba lagi.");
     } finally {
@@ -75,24 +79,41 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     setPrice(String(entry.priceAmount));
     setEtaText(entry.etaText);
     setError("");
+    setSuccess("");
   }
 
   async function changeStatus(entryId: Id<"manualPoEntries">, status: ManualPoStatus) {
+    const actionKey = `${String(entryId)}:${status}`;
     setError("");
+    setSuccess("");
+    setPendingAction(actionKey);
     try {
       await setStatus({ entryId, status });
+      setSuccess(
+        status === "arrived"
+          ? "Pesanan ditandai sudah tiba. Status customer ikut diperbarui."
+          : "Pesanan dibatalkan. Status customer ikut diperbarui.",
+      );
     } catch {
-      setError("Status belum berhasil diperbarui.");
+      setError("Status belum berhasil diperbarui. Coba lagi.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function archiveEntry(entryId: Id<"manualPoEntries">) {
+    const actionKey = `${String(entryId)}:archive`;
     setError("");
+    setSuccess("");
+    setPendingAction(actionKey);
     try {
       await archive({ entryId });
       if (editingId === entryId) resetForm();
+      setSuccess("Pesanan diarsipkan dan tidak lagi tampil di Buku Saya customer.");
     } catch {
-      setError("Pesanan khusus belum berhasil diarsipkan.");
+      setError("Pesanan khusus belum berhasil diarsipkan. Coba lagi.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -106,7 +127,8 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
         <StatusBadge>{entries?.length ?? 0}</StatusBadge>
       </div>
       <p className="subtle">
-        Catat judul, harga, dan ETA tanpa membuat Book Master, Catalog, Batch, atau invoice.
+        Catat judul, harga, dan ETA tanpa membuat Book Master, Catalog, Batch, atau invoice. Setelah disimpan, data
+        langsung tampil read-only di Buku Saya customer.
       </p>
 
       <form className="content-stack manual-po-form" onSubmit={submit}>
@@ -147,6 +169,11 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
             {error}
           </p>
         ) : null}
+        {success ? (
+          <p className="success-banner" role="status" aria-live="polite">
+            {success}
+          </p>
+        ) : null}
         <div className="form-actions">
           <Button type="submit" loading={submitting} loadingLabel="Menyimpan…">
             {editingId ? "Simpan perubahan" : "Tambah Pesanan Khusus"}
@@ -174,20 +201,41 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                 <Money amount={entry.priceAmount} />
                 <StatusBadge tone={statusTone(entry.status)}>{statusLabel[entry.status]}</StatusBadge>
                 <span className="form-actions">
-                  <Button type="button" variant="tertiary" onClick={() => startEdit(entry)}>
+                  <Button type="button" variant="tertiary" disabled={pendingAction !== null} onClick={() => startEdit(entry)}>
                     Edit
                   </Button>
                   {entry.status !== "arrived" ? (
-                    <Button type="button" variant="tertiary" onClick={() => void changeStatus(entry.entryId, "arrived")}>
+                    <Button
+                      type="button"
+                      variant="tertiary"
+                      loading={pendingAction === `${String(entry.entryId)}:arrived`}
+                      loadingLabel="Menyimpan…"
+                      disabled={pendingAction !== null}
+                      onClick={() => void changeStatus(entry.entryId, "arrived")}
+                    >
                       Tandai tiba
                     </Button>
                   ) : null}
                   {entry.status !== "cancelled" ? (
-                    <Button type="button" variant="tertiary" onClick={() => void changeStatus(entry.entryId, "cancelled")}>
+                    <Button
+                      type="button"
+                      variant="tertiary"
+                      loading={pendingAction === `${String(entry.entryId)}:cancelled`}
+                      loadingLabel="Menyimpan…"
+                      disabled={pendingAction !== null}
+                      onClick={() => void changeStatus(entry.entryId, "cancelled")}
+                    >
                       Batalkan
                     </Button>
                   ) : null}
-                  <Button type="button" variant="tertiary" onClick={() => void archiveEntry(entry.entryId)}>
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    loading={pendingAction === `${String(entry.entryId)}:archive`}
+                    loadingLabel="Mengarsipkan…"
+                    disabled={pendingAction !== null}
+                    onClick={() => void archiveEntry(entry.entryId)}
+                  >
                     Arsipkan
                   </Button>
                 </span>
