@@ -600,7 +600,16 @@ function AdminOrders() {
         eyebrow="Operasi pesanan"
         title="Tinjau pesanan, lalu lanjutkan tahapnya."
         description="Perubahan status, pesanan berbantuan, dan tautan batch mengikuti alur pesanan Convex kanonik."
-        actions={<div className="form-actions">{dataSource === "convex" ? <BackfillOrderReferences /> : null}</div>}
+        actions={
+          <div className="form-actions">
+            {dataSource === "convex" ? (
+              <LinkButton href="/admin/customers" variant="secondary">
+                PO Random / Pesanan Khusus
+              </LinkButton>
+            ) : null}
+            {dataSource === "convex" ? <BackfillOrderReferences /> : null}
+          </div>
+        }
         loading={routeLoading}
         skeleton={{ titleWidth: "76%", descriptionWidths: ["92%", "62%"] }}
       />
