@@ -11,12 +11,12 @@ vi.mock("convex/react", () => ({
 
 describe("Admin Manual PO flow", () => {
   const createEntry = vi.fn();
-  const setBillingStatus = vi.fn();
+  const issueManualPo = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     createEntry.mockResolvedValue({});
-    setBillingStatus.mockResolvedValue({});
+    issueManualPo.mockResolvedValue({ invoiceId: "invoice-manual-1" });
 
     vi.mocked(useQuery).mockReturnValue([
       {
@@ -27,6 +27,7 @@ describe("Admin Manual PO flow", () => {
         etaText: "Januari 2027",
         status: "active",
         billingStatus: "unbilled",
+        invoiceId: null,
         billedAt: null,
         createdAt: 1,
         updatedAt: 1,
@@ -38,12 +39,12 @@ describe("Admin Manual PO flow", () => {
     vi.mocked(useMutation).mockImplementation((mutation) => {
       const name = getFunctionName(mutation as never);
       if (name.endsWith(":create")) return createEntry as never;
-      if (name.endsWith(":setBillingStatus")) return setBillingStatus as never;
+      if (name.endsWith(":issueManualPo")) return issueManualPo as never;
       throw new Error(`Unexpected Manual PO mutation: ${name}`);
     });
   });
 
-  it("creates Random PO and exposes an explicit Tagih action per item", async () => {
+  it("creates Random PO and exposes a real invoice action per item", async () => {
     render(<AdminManualPoPanel customerUserId={"customer-1" as never} />);
 
     expect(screen.getByLabelText("Judul buku")).toBeTruthy();
@@ -51,18 +52,17 @@ describe("Admin Manual PO flow", () => {
     expect(screen.getByLabelText("ETA")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tambahkan Pesanan Khusus" })).toBeTruthy();
     expect(screen.getByText("Belum ditagih")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Tagih" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Buat tagihan" })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Tagih" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buat tagihan" }));
 
     await waitFor(() =>
-      expect(setBillingStatus).toHaveBeenCalledWith({
+      expect(issueManualPo).toHaveBeenCalledWith({
         entryId: "manual-1",
-        billingStatus: "billed",
       }),
     );
     expect(
-      screen.getByText("Pesanan Khusus ditandai untuk ditagih dan sekarang muncul di Tagihan customer."),
+      screen.getByText("Tagihan Pesanan Khusus diterbitkan. Customer sekarang bisa membuka dan membayar dari menu Tagihan."),
     ).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Judul buku"), { target: { value: "Random PO Book" } });

@@ -347,7 +347,7 @@ async function batchPlan(ctx: DataCtx, batchId: Id<"batches">): Promise<BatchPla
     if (!item || !order) blockers.push("ditemukan assignment Batch tanpa Order atau Order Item");
   }
   for (const invoice of invoices) {
-    if (!(await ctx.db.get(invoice.orderId))) blockers.push("ditemukan Invoice Batch tanpa Order");
+    if (!invoice.orderId || !(await ctx.db.get(invoice.orderId))) blockers.push("ditemukan Invoice Batch tanpa Order");
     if (!(await ctx.db.get(invoice.customerUserId))) blockers.push("ditemukan Invoice Batch tanpa Customer");
   }
   const assignmentAuditEvents = (
@@ -698,7 +698,7 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
   const blockers: string[] = [];
   const [order, customerRecord, items, payments, allocations, obligations, adjustmentRows, notifications, rootAuditEvents] = await Promise.all(
     [
-      ctx.db.get(invoice.orderId),
+      invoice.orderId ? ctx.db.get(invoice.orderId) : Promise.resolve(null),
       ctx.db.get(invoice.customerUserId),
       capped(
         ctx.db
@@ -745,7 +745,7 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
     ],
   );
   const customer = customerRecord?.role === "customer" ? customerRecord : null;
-  if (!order) blockers.push("Invoice Order root tidak ditemukan");
+  if (!order && !invoice.manualPoEntryId) blockers.push("Invoice Order root tidak ditemukan");
   if (
     invoice.financialAdjustmentAmount !== 0 ||
     invoice.adjustedTotalAmount !== invoice.totalAmount ||
@@ -754,9 +754,16 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
     blockers.push("Invoice memiliki financial adjustment yang belum memiliki jalur purge UAT deterministik");
   }
   for (const item of items) {
-    const orderItem = await ctx.db.get(item.orderItemId);
-    if (!orderItem || orderItem.orderId !== invoice.orderId)
+    if (invoice.manualPoEntryId) {
+      if (item.manualPoEntryId !== invoice.manualPoEntryId) {
+        blockers.push("InvoiceItem Random PO tidak terhubung ke Pesanan Khusus");
+      }
+      continue;
+    }
+    const orderItem = item.orderItemId ? await ctx.db.get(item.orderItemId) : null;
+    if (!orderItem || !invoice.orderId || orderItem.orderId !== invoice.orderId) {
       blockers.push("InvoiceItem tidak terhubung ke Order Invoice");
+    }
   }
   for (const payment of payments) {
     if (payment.customerUserId !== invoice.customerUserId)
@@ -770,7 +777,7 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
       obligation.customerUserId !== invoice.customerUserId ||
       obligation.exceptionId ||
       obligation.sourceAdjustmentId ||
-      (obligation.orderId && obligation.orderId !== invoice.orderId)
+      (obligation.orderId && (!invoice.orderId || obligation.orderId !== invoice.orderId))
     ) {
       blockers.push("Refund consequence memiliki relasi shared/exception yang tidak aman untuk purge otomatis");
     }

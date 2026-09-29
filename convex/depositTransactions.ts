@@ -100,7 +100,7 @@ async function historyView(ctx: DataCtx, transaction: Doc<"depositTransactions">
   ]);
   const invoiceId = transaction.invoiceId ?? obligation?.invoiceId;
   const invoice = invoiceId ? await ctx.db.get(invoiceId) : null;
-  const order = invoice
+  const order = invoice?.orderId
     ? await ctx.db.get(invoice.orderId)
     : obligation?.orderId
       ? await ctx.db.get(obligation.orderId)

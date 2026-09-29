@@ -92,7 +92,14 @@ function CustomerInvoiceDetail() {
       <PageHeader
         eyebrow="Detail invoice"
         title={invoiceReference(currentCustomerInvoice.invoiceNumber)}
-        description={`${currentCustomerInvoice.customerName} · ${currentCustomerInvoice.orderCode || `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`}`}
+        description={`${currentCustomerInvoice.customerName} · ${
+          currentCustomerInvoice.source === "manual_po"
+            ? "Pesanan Khusus / Random PO"
+            : currentCustomerInvoice.orderCode ||
+              (currentCustomerInvoice.orderId
+                ? `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`
+                : "Pesanan")
+        }`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">
             Kembali ke invoice

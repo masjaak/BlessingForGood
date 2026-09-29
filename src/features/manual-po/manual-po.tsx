@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Button, Card, EmptyState, Field, Money, StatusBadge } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
 
 export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"appUsers"> }) {
   const entries = useQuery(api.manualPoEntries.listForAdmin, { customerUserId });
   const createEntry = useMutation(api.manualPoEntries.create);
-  const setBillingStatus = useMutation(api.manualPoEntries.setBillingStatus);
+  const issueManualPo = useMutation(api.invoices.issueManualPo);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [etaText, setEtaText] = useState("");
@@ -50,22 +50,15 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     }
   }
 
-  async function toggleBilling(entryId: Id<"manualPoEntries">, currentlyBilled: boolean) {
+  async function createInvoice(entryId: Id<"manualPoEntries">) {
     setError("");
     setSuccess("");
     setBillingPendingId(String(entryId));
     try {
-      await setBillingStatus({
-        entryId,
-        billingStatus: currentlyBilled ? "unbilled" : "billed",
-      });
-      setSuccess(
-        currentlyBilled
-          ? "Penagihan Pesanan Khusus dibatalkan."
-          : "Pesanan Khusus ditandai untuk ditagih dan sekarang muncul di Tagihan customer.",
-      );
+      await issueManualPo({ entryId });
+      setSuccess("Tagihan Pesanan Khusus diterbitkan. Customer sekarang bisa membuka dan membayar dari menu Tagihan.");
     } catch {
-      setError("Status penagihan belum berhasil diperbarui. Coba lagi.");
+      setError("Tagihan belum berhasil diterbitkan. Coba lagi.");
     } finally {
       setBillingPendingId(null);
     }
@@ -82,8 +75,8 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
       </div>
 
       <p className="subtle">
-        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Customer melihatnya di Buku Saya. Jika perlu
-        ditagih, Admin bisa klik Tagih per item; penagihan ini tetap terpisah dari Order, Catalog, dan Batch reguler.
+        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Customer langsung melihatnya di Buku Saya.
+        Kalau sudah perlu ditagih, klik Buat tagihan pada item tersebut.
       </p>
 
       <form className="content-stack manual-po-form" onSubmit={submit}>
@@ -146,7 +139,8 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
           <p className="subtle">Memuat Pesanan Khusus…</p>
         ) : activeEntries.length ? (
           activeEntries.map((entry) => {
-            const billed = entry.billingStatus === "billed";
+            const invoiceReady = Boolean(entry.invoiceId);
+            const legacyBillingOnly = entry.billingStatus === "billed" && !entry.invoiceId;
             return (
               <div className="summary-line manual-po-admin-row" key={entry.entryId}>
                 <span>
@@ -156,17 +150,25 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                 </span>
                 <span className="manual-po-admin-row-actions">
                   <Money amount={entry.priceAmount} />
-                  <StatusBadge tone={billed ? "warning" : "neutral"}>{billed ? "Ditagih" : "Belum ditagih"}</StatusBadge>
-                  <Button
-                    type="button"
-                    variant={billed ? "tertiary" : "secondary"}
-                    loading={billingPendingId === String(entry.entryId)}
-                    loadingLabel="Menyimpan…"
-                    disabled={billingPendingId !== null}
-                    onClick={() => void toggleBilling(entry.entryId, billed)}
-                  >
-                    {billed ? "Batalkan tagih" : "Tagih"}
-                  </Button>
+                  <StatusBadge tone={invoiceReady ? "positive" : legacyBillingOnly ? "warning" : "neutral"}>
+                    {invoiceReady ? "Tagihan terbit" : legacyBillingOnly ? "Perlu terbitkan" : "Belum ditagih"}
+                  </StatusBadge>
+                  {entry.invoiceId ? (
+                    <LinkButton href={`/admin/invoices/${entry.invoiceId}`} variant="secondary">
+                      Buka tagihan
+                    </LinkButton>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      loading={billingPendingId === String(entry.entryId)}
+                      loadingLabel="Menerbitkan…"
+                      disabled={billingPendingId !== null}
+                      onClick={() => void createInvoice(entry.entryId)}
+                    >
+                      Buat tagihan
+                    </Button>
+                  )}
                 </span>
               </div>
             );
@@ -217,7 +219,19 @@ export function CustomerManualPoSection() {
               <br />
               <small className="subtle">ETA: {entry.etaText}</small>
             </span>
-            <Money amount={entry.priceAmount} />
+            <span className="manual-po-customer-meta">
+              <Money amount={entry.priceAmount} />
+              {entry.invoiceId ? (
+                <>
+                  <StatusBadge tone="warning">Tagihan tersedia</StatusBadge>
+                  <LinkButton href={`/account/invoices/${entry.invoiceId}`} variant="secondary">
+                    Lihat tagihan
+                  </LinkButton>
+                </>
+              ) : (
+                <StatusBadge>Menunggu tagihan</StatusBadge>
+              )}
+            </span>
           </div>
         ))}
       </div>

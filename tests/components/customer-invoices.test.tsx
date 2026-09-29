@@ -2,12 +2,7 @@ import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CustomerInvoicesPage from "@/app/account/invoices/page";
-import { useQuery } from "convex/react";
 import { useOperations } from "@/domain/prototype/operations-context";
-
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
-}));
 
 vi.mock("@/domain/prototype/operations-context", () => ({
   useOperations: vi.fn(),
@@ -23,25 +18,33 @@ vi.mock("@/components/site-shell", () => ({
 
 describe("Customer invoice payment visibility", () => {
   beforeEach(() => {
-    vi.mocked(useQuery).mockReturnValue([
-      {
-        entryId: "manual-1",
-        customerUserId: "customer-1",
-        title: "Random PO Book",
-        priceAmount: 99000,
-        etaText: "Maret 2027",
-        status: "active",
-        billingStatus: "billed",
-        billedAt: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        cancelledAt: null,
-        archivedAt: null,
-      },
-    ] as never);
     vi.mocked(useOperations).mockReturnValue({
       customerInvoiceList: {
         page: [
+          {
+            invoiceId: "invoice-manual",
+            invoiceNumber: "BFG-INV-MANUAL",
+            source: "manual_po",
+            manualPoEntryId: "manual-1",
+            status: "issued",
+            paymentStatus: "unpaid",
+            totalAmount: 99000,
+            customerName: "Invoice Customer",
+            orderId: null,
+            orderCode: null,
+            items: [
+              {
+                invoiceItemId: "invoice-item-manual",
+                quantity: 1,
+                description: "Random PO Book · ETA Maret 2027",
+                subtotalAmount: 99000,
+              },
+            ],
+            depositRequiredAmount: 0,
+            allocatedDepositAmount: 0,
+            outstandingAmount: 99000,
+            verifiedPaymentAmount: 0,
+          },
           {
             invoiceId: "invoice-unpaid",
             invoiceNumber: "BFG-INV-UNPAID",
@@ -95,18 +98,18 @@ describe("Customer invoice payment visibility", () => {
   it("shows unpaid, partial, and paid status labels on the customer invoice list", () => {
     render(<CustomerInvoicesPage />);
 
-    expect(screen.getByText(/Perlu dibayar/)).toBeTruthy();
+    expect(screen.getAllByText(/Perlu dibayar/)).toHaveLength(2);
     expect(screen.getByText(/Dibayar sebagian/)).toBeTruthy();
     expect(screen.getByText(/Lunas terverifikasi/)).toBeTruthy();
-    expect(screen.getAllByText("Deposit teralokasi")).toHaveLength(3);
-    expect(screen.getAllByText("Sisa tagihan")).toHaveLength(3);
-    expect(screen.getAllByText("Status pembayaran")).toHaveLength(3);
-    expect(screen.getAllByText("Terverifikasi")).toHaveLength(3);
+    expect(screen.getAllByText("Deposit teralokasi")).toHaveLength(4);
+    expect(screen.getAllByText("Sisa tagihan")).toHaveLength(4);
+    expect(screen.getAllByText("Status pembayaran")).toHaveLength(4);
+    expect(screen.getAllByText("Terverifikasi")).toHaveLength(4);
     expect(screen.queryByText("Deposit teralokasi · sisa tagihan")).toBeNull();
     expect(screen.queryByText("Status pembayaran · terverifikasi")).toBeNull();
-    expect(screen.getByRole("heading", { name: "Tagihan Random PO" })).toBeTruthy();
-    expect(screen.getByText("Random PO Book")).toBeTruthy();
-    expect(screen.getByText("ETA: Maret 2027")).toBeTruthy();
-    expect(screen.getByText("Rp 99.000")).toBeTruthy();
+    expect(screen.getByText("Pesanan Khusus / Random PO")).toBeTruthy();
+    expect(screen.getByText("1 × Random PO Book · ETA Maret 2027")).toBeTruthy();
+    expect(screen.getAllByText("Rp 99.000").length).toBeGreaterThanOrEqual(3);
+    expect(screen.getAllByRole("link", { name: "Buka invoice dan riwayat" })).toHaveLength(4);
   });
 });

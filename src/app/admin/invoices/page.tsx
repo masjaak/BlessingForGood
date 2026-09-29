@@ -637,7 +637,11 @@ function PersistentAdminInvoices() {
                   </div>
                   <div className="summary-line">
                     <span>Referensi pesanan</span>
-                    <span>{invoice.orderCode || `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}`}</span>
+                    <span>
+                    {invoice.source === "manual_po"
+                      ? "Pesanan Khusus / Random PO"
+                      : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
+                  </span>
                   </div>
                   <div className="summary-line">
                     <span>Sisa tagihan</span>
