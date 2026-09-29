@@ -34,6 +34,8 @@ function view(entry: Doc<"manualPoEntries">) {
     priceAmount: entry.priceAmount,
     etaText: entry.etaText,
     status: entry.status,
+    billingStatus: entry.billingStatus ?? "unbilled",
+    billedAt: entry.billedAt ?? null,
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
     cancelledAt: entry.cancelledAt ?? null,
@@ -64,6 +66,26 @@ export const listMine = query({
       .order("desc")
       .take(200);
     return entries.filter((entry) => !entry.archivedAt && entry.status === "active").map(view);
+  },
+});
+
+export const listBilledMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const customer = await requireActiveCustomer(ctx);
+    const entries = await ctx.db
+      .query("manualPoEntries")
+      .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", customer._id))
+      .order("desc")
+      .take(200);
+    return entries
+      .filter(
+        (entry) =>
+          !entry.archivedAt &&
+          entry.status !== "cancelled" &&
+          (entry.billingStatus ?? "unbilled") === "billed",
+      )
+      .map(view);
   },
 });
 
@@ -103,6 +125,7 @@ export const create = mutation({
       priceAmount: normalizedPrice(args.priceAmount),
       etaText: normalizedEta(args.etaText),
       status: "active",
+      billingStatus: "unbilled",
       createdByUserId: actor._id,
       updatedByUserId: actor._id,
       createdAt: now,
@@ -169,6 +192,43 @@ export const setStatus = mutation({
     });
     const updated = await ctx.db.get(entry._id);
     if (!updated) fail("VALIDATION_FAILED", "manual PO entry missing after status change");
+    return view(updated);
+  },
+});
+
+export const setBillingStatus = mutation({
+  args: {
+    entryId: v.id("manualPoEntries"),
+    billingStatus: v.union(v.literal("unbilled"), v.literal("billed")),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requirePermission(ctx, "invoices.manage");
+    const entry = await targetEntry(ctx, args.entryId);
+    if (entry.archivedAt) fail("VALIDATION_FAILED", "archived manual PO cannot change billing status");
+    if (entry.status === "cancelled") fail("VALIDATION_FAILED", "cancelled manual PO cannot be billed");
+    const current = entry.billingStatus ?? "unbilled";
+    if (current === args.billingStatus) return view(entry);
+    const now = Date.now();
+    await ctx.db.patch(entry._id, {
+      billingStatus: args.billingStatus,
+      billedAt: args.billingStatus === "billed" ? now : undefined,
+      billedByUserId: args.billingStatus === "billed" ? actor._id : undefined,
+      updatedByUserId: actor._id,
+      updatedAt: now,
+    });
+    await recordAudit(
+      ctx,
+      actor._id,
+      args.billingStatus === "billed" ? "manual_po.billed" : "manual_po.billing_reverted",
+      "manualPoEntry",
+      entry._id,
+      {
+        customerUserId: String(entry.customerUserId),
+        billingStatus: args.billingStatus,
+      },
+    );
+    const updated = await ctx.db.get(entry._id);
+    if (!updated) fail("VALIDATION_FAILED", "manual PO entry missing after billing update");
     return view(updated);
   },
 });
