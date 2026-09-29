@@ -40,7 +40,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     try {
       await createEntry({ customerUserId, title, priceAmount, etaText });
       resetForm();
-      setSuccess("Pesanan Khusus ditambahkan dan langsung tampil di Buku Saya customer.");
+      setSuccess("Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.");
     } catch {
       setError("Pesanan Khusus belum berhasil ditambahkan. Coba lagi.");
     } finally {
@@ -59,8 +59,8 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
       </div>
 
       <p className="subtle">
-        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Flow berhenti di sini—tidak membuat invoice,
-        tagihan, Batch, atau Order reguler.
+        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Customer mengeceknya di Buku Saya → Random
+        PO berjalan. Flow ini tidak masuk Tagihan / Invoice dan tidak membuat Batch atau Order reguler.
       </p>
 
       <form className="content-stack manual-po-form" onSubmit={submit}>
@@ -149,7 +149,7 @@ export function CustomerManualPoSection() {
 
   if (entries === undefined) {
     return (
-      <Card className="manual-po-customer-card">
+      <Card className="manual-po-customer-card" id="random-po">
         <span className="card-kicker">Random PO berjalan</span>
         <p className="subtle">Memuat Pesanan Khususmu…</p>
       </Card>
@@ -168,7 +168,10 @@ export function CustomerManualPoSection() {
         <StatusBadge>{activeEntries.length}</StatusBadge>
       </div>
 
-      <p className="subtle">Buku random PO yang sedang berjalan. Cek judul, ETA, dan harga dari Admin BFG.</p>
+      <p className="subtle">
+        Buku random PO yang sedang berjalan. Cek judul, ETA, dan harga dari Admin BFG. Pesanan ini tidak masuk ke
+        Tagihan / Invoice.
+      </p>
 
       <div className="content-stack">
         {activeEntries.map((entry) => (
