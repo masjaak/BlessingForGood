@@ -65,6 +65,10 @@ describe("Admin Manual PO final simple flow", () => {
       }),
     );
 
-    expect(screen.getByText("Pesanan Khusus ditambahkan dan langsung tampil di Buku Saya customer.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.",
+      ),
+    ).toBeTruthy();
   });
 });
