@@ -133,6 +133,82 @@ describe("Manual PO domain", () => {
     ).resolves.toEqual({ books: 0, catalogs: 0, orders: 0, invoices: 1, batches: 0 });
   });
 
+  it("groups active Random PO by customer for the Admin operational queue", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer } = await setupUsers(t);
+    const firstCustomer = await customer.query(api.users.current, {});
+    const secondCustomerUser = await secondCustomer.query(api.users.current, {});
+    if (!firstCustomer || !secondCustomerUser) throw new Error("customer fixture missing");
+
+    const firstEntry = await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: firstCustomer.appUserId,
+      title: "Queue Book One",
+      priceAmount: 100000,
+      etaText: "Januari 2027",
+    });
+    await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: firstCustomer.appUserId,
+      title: "Queue Book Two",
+      priceAmount: 125000,
+      etaText: "Februari 2027",
+    });
+    const secondEntry = await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: secondCustomerUser.appUserId,
+      title: "Second Customer Book",
+      priceAmount: 90000,
+      etaText: "Maret 2027",
+    });
+    await admin.mutation(api.invoices.issueManualPo, { entryId: secondEntry.entryId });
+
+    const queue = await admin.query(api.manualPoEntries.listQueueForAdmin, { status: "all" });
+    expect(queue.summary).toMatchObject({
+      customerCount: 2,
+      itemCount: 3,
+      totalAmount: 315000,
+      unbilledCount: 2,
+      awaitingPaymentCount: 1,
+      paymentSubmittedCount: 0,
+      paidCount: 0,
+      outstandingAmount: 90000,
+    });
+    expect(queue.customers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          customerUserId: firstCustomer.appUserId,
+          itemCount: 2,
+          totalAmount: 225000,
+          unbilledCount: 2,
+          entries: expect.arrayContaining([
+            expect.objectContaining({ entryId: firstEntry.entryId, queueStatus: "unbilled" }),
+          ]),
+        }),
+        expect.objectContaining({
+          customerUserId: secondCustomerUser.appUserId,
+          itemCount: 1,
+          awaitingPaymentCount: 1,
+          entries: [
+            expect.objectContaining({
+              entryId: secondEntry.entryId,
+              queueStatus: "awaiting_payment",
+              invoiceId: expect.any(String),
+            }),
+          ],
+        }),
+      ]),
+    );
+
+    await expect(
+      admin.query(api.manualPoEntries.listQueueForAdmin, { search: "Queue Book One", status: "unbilled" }),
+    ).resolves.toMatchObject({
+      customers: [
+        expect.objectContaining({
+          customerUserId: firstCustomer.appUserId,
+          entries: [expect.objectContaining({ entryId: firstEntry.entryId })],
+        }),
+      ],
+    });
+  });
+
   it("supports Admin edit, status lifecycle, archive, and audit events", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
