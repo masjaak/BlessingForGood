@@ -109,7 +109,7 @@ describe("Customer invoice payment visibility", () => {
     expect(screen.queryByText("Status pembayaran · terverifikasi")).toBeNull();
     expect(screen.getByText("Pesanan Khusus / Random PO")).toBeTruthy();
     expect(screen.getByText("1 × Random PO Book · ETA Maret 2027")).toBeTruthy();
-    expect(screen.getByText("Rp 99.000")).toBeTruthy();
+    expect(screen.getAllByText("Rp 99.000").length).toBeGreaterThanOrEqual(3);
     expect(screen.getAllByRole("link", { name: "Buka invoice dan riwayat" })).toHaveLength(4);
   });
 });
