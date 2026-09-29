@@ -9,10 +9,12 @@ import { Button, Card, EmptyState, Field, Money, StatusBadge } from "@/component
 export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"appUsers"> }) {
   const entries = useQuery(api.manualPoEntries.listForAdmin, { customerUserId });
   const createEntry = useMutation(api.manualPoEntries.create);
+  const setBillingStatus = useMutation(api.manualPoEntries.setBillingStatus);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [etaText, setEtaText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [billingPendingId, setBillingPendingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -48,6 +50,27 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     }
   }
 
+  async function toggleBilling(entryId: Id<"manualPoEntries">, currentlyBilled: boolean) {
+    setError("");
+    setSuccess("");
+    setBillingPendingId(String(entryId));
+    try {
+      await setBillingStatus({
+        entryId,
+        billingStatus: currentlyBilled ? "unbilled" : "billed",
+      });
+      setSuccess(
+        currentlyBilled
+          ? "Penagihan Pesanan Khusus dibatalkan."
+          : "Pesanan Khusus ditandai untuk ditagih dan sekarang muncul di Tagihan customer.",
+      );
+    } catch {
+      setError("Status penagihan belum berhasil diperbarui. Coba lagi.");
+    } finally {
+      setBillingPendingId(null);
+    }
+  }
+
   return (
     <Card className="manual-po-admin-card" id="manual-po">
       <div className="split-heading">
@@ -59,8 +82,8 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
       </div>
 
       <p className="subtle">
-        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Customer mengeceknya di Buku Saya → Random
-        PO berjalan. Flow ini tidak masuk Tagihan / Invoice dan tidak membuat Batch atau Order reguler.
+        Masukkan judul buku, harga, dan ETA lalu tambahkan Pesanan Khusus. Customer melihatnya di Buku Saya. Jika perlu
+        ditagih, Admin bisa klik Tagih per item; penagihan ini tetap terpisah dari Order, Catalog, dan Batch reguler.
       </p>
 
       <form className="content-stack manual-po-form" onSubmit={submit}>
@@ -122,16 +145,32 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
         {entries === undefined ? (
           <p className="subtle">Memuat Pesanan Khusus…</p>
         ) : activeEntries.length ? (
-          activeEntries.map((entry) => (
-            <div className="summary-line manual-po-admin-row" key={entry.entryId}>
-              <span>
-                <strong>{entry.title}</strong>
-                <br />
-                <small className="subtle">ETA: {entry.etaText}</small>
-              </span>
-              <Money amount={entry.priceAmount} />
-            </div>
-          ))
+          activeEntries.map((entry) => {
+            const billed = entry.billingStatus === "billed";
+            return (
+              <div className="summary-line manual-po-admin-row" key={entry.entryId}>
+                <span>
+                  <strong>{entry.title}</strong>
+                  <br />
+                  <small className="subtle">ETA: {entry.etaText}</small>
+                </span>
+                <span className="manual-po-admin-row-actions">
+                  <Money amount={entry.priceAmount} />
+                  <StatusBadge tone={billed ? "warning" : "neutral"}>{billed ? "Ditagih" : "Belum ditagih"}</StatusBadge>
+                  <Button
+                    type="button"
+                    variant={billed ? "tertiary" : "secondary"}
+                    loading={billingPendingId === String(entry.entryId)}
+                    loadingLabel="Menyimpan…"
+                    disabled={billingPendingId !== null}
+                    onClick={() => void toggleBilling(entry.entryId, billed)}
+                  >
+                    {billed ? "Batalkan tagih" : "Tagih"}
+                  </Button>
+                </span>
+              </div>
+            );
+          })
         ) : (
           <EmptyState
             title="Belum ada Random PO berjalan"
@@ -168,10 +207,7 @@ export function CustomerManualPoSection() {
         <StatusBadge>{activeEntries.length}</StatusBadge>
       </div>
 
-      <p className="subtle">
-        Buku random PO yang sedang berjalan. Cek judul, ETA, dan harga dari Admin BFG. Pesanan ini tidak masuk ke
-        Tagihan / Invoice.
-      </p>
+      <p className="subtle">Buku random PO yang sedang berjalan. Cek judul, ETA, dan harga dari Admin BFG.</p>
 
       <div className="content-stack">
         {activeEntries.map((entry) => (

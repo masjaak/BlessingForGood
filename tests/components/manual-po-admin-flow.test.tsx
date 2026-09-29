@@ -9,12 +9,14 @@ vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
 }));
 
-describe("Admin Manual PO final simple flow", () => {
+describe("Admin Manual PO flow", () => {
   const createEntry = vi.fn();
+  const setBillingStatus = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     createEntry.mockResolvedValue({});
+    setBillingStatus.mockResolvedValue({});
 
     vi.mocked(useQuery).mockReturnValue([
       {
@@ -24,6 +26,8 @@ describe("Admin Manual PO final simple flow", () => {
         priceAmount: 10000,
         etaText: "Januari 2027",
         status: "active",
+        billingStatus: "unbilled",
+        billedAt: null,
         createdAt: 1,
         updatedAt: 1,
         cancelledAt: null,
@@ -34,22 +38,32 @@ describe("Admin Manual PO final simple flow", () => {
     vi.mocked(useMutation).mockImplementation((mutation) => {
       const name = getFunctionName(mutation as never);
       if (name.endsWith(":create")) return createEntry as never;
-      throw new Error(`Unexpected mutation in final simple Manual PO UI: ${name}`);
+      if (name.endsWith(":setBillingStatus")) return setBillingStatus as never;
+      throw new Error(`Unexpected Manual PO mutation: ${name}`);
     });
   });
 
-  it("only exposes title, price, ETA, and add Pesanan Khusus", async () => {
+  it("creates Random PO and exposes an explicit Tagih action per item", async () => {
     render(<AdminManualPoPanel customerUserId={"customer-1" as never} />);
 
     expect(screen.getByLabelText("Judul buku")).toBeTruthy();
     expect(screen.getByLabelText("Harga")).toBeTruthy();
     expect(screen.getByLabelText("ETA")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tambahkan Pesanan Khusus" })).toBeTruthy();
+    expect(screen.getByText("Belum ditagih")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tagih" })).toBeTruthy();
 
-    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Tandai tiba" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Batalkan" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Arsipkan" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Tagih" }));
+
+    await waitFor(() =>
+      expect(setBillingStatus).toHaveBeenCalledWith({
+        entryId: "manual-1",
+        billingStatus: "billed",
+      }),
+    );
+    expect(
+      screen.getByText("Pesanan Khusus ditandai untuk ditagih dan sekarang muncul di Tagihan customer."),
+    ).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Judul buku"), { target: { value: "Random PO Book" } });
     fireEvent.change(screen.getByLabelText("Harga"), { target: { value: "99000" } });
@@ -64,11 +78,5 @@ describe("Admin Manual PO final simple flow", () => {
         etaText: "Maret 2027",
       }),
     );
-
-    expect(
-      screen.getByText(
-        "Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.",
-      ),
-    ).toBeTruthy();
   });
 });
