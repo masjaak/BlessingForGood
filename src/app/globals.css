@@ -4582,6 +4582,31 @@ p {
   gap: 14px;
 }
 
+.customer-shell .home-access-grid .home-onboarding-helper {
+  max-width: 30ch;
+  margin: -4px 0 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.customer-shell .home-access-grid .home-onboarding-main {
+  order: 1;
+}
+
+.customer-shell .home-access-grid .discovery-card-secret {
+  order: 2;
+}
+
+.customer-shell .home-access-grid .discovery-card-ready {
+  order: 3;
+}
+
+.customer-shell .home-access-grid .home-onboarding-how-to {
+  order: 4;
+}
+
 .customer-shell .home-access-grid .home-onboarding-title-block > .discovery-card-heading {
   padding-right: 48px;
 }

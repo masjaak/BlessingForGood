@@ -38,7 +38,12 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
       ? "Pendaftaranmu sudah disetujui."
       : suspended || activeCustomer
         ? "Account Blessfriend"
-        : "Buat account website untuk Blessfriends";
+        : "Buat account website";
+  const kicker = welcome ? "JOIN JADI BLESSFRIENDS" : "ACCOUNT BLESSFRIEND";
+  const welcomeHelper = welcome ? "& join WA group disini" : null;
+  const bodyCopy = welcome
+    ? "Isi data untuk langsung buat account website & jangan lupa chat admin kami untuk meminta link group WA saat selesai isi form, pembelian buku bisa dilakukan di group WA / di website (wajib join WA group kami)"
+    : "wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group / pembelian di website";
   const statusDescription = pending
     ? "Pastikan kamu sudah bergabung ke WhatsApp Group BFG. Admin akan memeriksa pendaftaranmu."
     : invitationPending
@@ -72,9 +77,10 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
             <div className="home-onboarding-title-block">
               <div className="discovery-card-heading">
                 <HomeAccessIcon kind="account" />
-                <span className="eyebrow">ACCOUNT BLESSFRIEND</span>
+                <span className="eyebrow">{kicker}</span>
               </div>
               <h2 id="home-onboarding-title">{heading}</h2>
+              {welcomeHelper ? <p className="home-onboarding-helper">{welcomeHelper}</p> : null}
             </div>
             {welcome ? (
               <IconButton
@@ -88,10 +94,7 @@ export function HomeOnboarding({ tutorialVideoUrl = null }: { tutorialVideoUrl?:
               </IconButton>
             ) : null}
           </div>
-          <p>
-            wajib jika ingin melihat katalog PO berjalan, memesan buku, dan check perjalanan buku baik fix di group /
-            pembelian di website
-          </p>
+          <p>{bodyCopy}</p>
           {statusDescription ? <p className="home-onboarding-status">{statusDescription}</p> : null}
         </div>
         <div className="home-onboarding-art">

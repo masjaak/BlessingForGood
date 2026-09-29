@@ -19,6 +19,10 @@ function configuredVideoUrl() {
   }
 }
 
+// Temporarily hidden by product decision. Preserve for future homepage reuse.
+const SHOW_HOME_PURCHASE_STEPS = false;
+const SHOW_HOME_WHATSAPP_CARD = false;
+
 export default function HomePage() {
   return (
     <SiteShell>
@@ -48,70 +52,76 @@ export default function HomePage() {
               <Link href="/how-to-order">pelajari ketentuan PO buku di kami</Link>
             </aside>
           </div>
-          <div className="home-journey" aria-labelledby="journey-title">
-            <h2 id="journey-title" className="eyebrow">
-              cara pembelian di Blessing for good
-            </h2>
-            <ol className="hero-sequence">
-              <li>
-                <span className="hero-step-number">01</span>
-                <div>
-                  <strong>gabung ke whatsapp group</strong>
-                  <small>
-                    agar kami lebih mudah reachout customer, kami mewajibkan customer kami bergabung di WA group
-                  </small>
-                </div>
-              </li>
-              <li>
-                <span className="hero-step-number">02</span>
-                <div>
-                  <strong>buat account di website kami</strong>
-                  <small>untuk memantau pesanan buku, check buku PO berjalan &amp; melakukan pemesanan</small>
-                </div>
-              </li>
-              <li>
-                <span className="hero-step-number">03</span>
-                <div>
-                  <strong>pilih buku yang ingin dibeli</strong>
-                  <small>bisa melakukan pembelian via website / fix langsung di WA group kami</small>
-                </div>
-              </li>
-            </ol>
-          </div>
+          {SHOW_HOME_PURCHASE_STEPS ? (
+            <div className="home-journey" aria-labelledby="journey-title">
+              <h2 id="journey-title" className="eyebrow">
+                cara pembelian di Blessing for good
+              </h2>
+              <ol className="hero-sequence">
+                <li>
+                  <span className="hero-step-number">01</span>
+                  <div>
+                    <strong>gabung ke whatsapp group</strong>
+                    <small>
+                      agar kami lebih mudah reachout customer, kami mewajibkan customer kami bergabung di WA group
+                    </small>
+                  </div>
+                </li>
+                <li>
+                  <span className="hero-step-number">02</span>
+                  <div>
+                    <strong>buat account di website kami</strong>
+                    <small>untuk memantau pesanan buku, check buku PO berjalan &amp; melakukan pemesanan</small>
+                  </div>
+                </li>
+                <li>
+                  <span className="hero-step-number">03</span>
+                  <div>
+                    <strong>pilih buku yang ingin dibeli</strong>
+                    <small>bisa melakukan pembelian via website / fix langsung di WA group kami</small>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          ) : null}
         </section>
 
         <section className="section-block discovery-section" id="akses-buku">
           <div className="home-access-grid">
-            <article
-              className="discovery-card discovery-card-whatsapp"
-              id="join-whatsapp"
-              data-testid="join-whatsapp"
-              aria-labelledby="join-title"
-            >
-              <div className="discovery-card-copy community-copy">
-                <div className="discovery-card-heading">
-                  <HomeAccessIcon kind="community" />
-                  <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+            <HomeOnboarding tutorialVideoUrl={configuredVideoUrl()} />
+
+            {SHOW_HOME_WHATSAPP_CARD ? (
+              <article
+                className="discovery-card discovery-card-whatsapp"
+                id="join-whatsapp"
+                data-testid="join-whatsapp"
+                aria-labelledby="join-title"
+              >
+                <div className="discovery-card-copy community-copy">
+                  <div className="discovery-card-heading">
+                    <HomeAccessIcon kind="community" />
+                    <span className="eyebrow">GABUNG WHATSAPP GROUP</span>
+                  </div>
+                  <h3 id="join-title">
+                    <span>BLESSING FOR</span> <span>GOOD</span>
+                  </h3>
+                  <p>
+                    wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
+                  </p>
                 </div>
-                <h3 id="join-title">
-                  <span>BLESSING FOR</span> <span>GOOD</span>
-                </h3>
-                <p>
-                  wajib join sebelum daftar account website, kami akan menurunkan kurasi buku2 kami disana setiap hari
-                </p>
-              </div>
-              <div className="discovery-card-art-slot community-art" aria-hidden="true">
-                <BrandMascot
-                  variant="warm"
-                  className="community-mascot"
-                  sizes="(max-width: 640px) 82px, 92px"
-                  priority
-                />
-              </div>
-              <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
-                Minta link WhatsApp Group
-              </LinkButton>
-            </article>
+                <div className="discovery-card-art-slot community-art" aria-hidden="true">
+                  <BrandMascot
+                    variant="warm"
+                    className="community-mascot"
+                    sizes="(max-width: 640px) 82px, 92px"
+                    priority
+                  />
+                </div>
+                <LinkButton href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener noreferrer">
+                  Minta link WhatsApp Group
+                </LinkButton>
+              </article>
+            ) : null}
 
             <article
               className="discovery-card discovery-card-secret"
@@ -151,8 +161,6 @@ export default function HomePage() {
               <div className="discovery-card-art-slot" aria-hidden="true" />
               <LinkButton href="/ready-stock">Lihat Ready Stock</LinkButton>
             </article>
-
-            <HomeOnboarding tutorialVideoUrl={configuredVideoUrl()} />
           </div>
         </section>
 
