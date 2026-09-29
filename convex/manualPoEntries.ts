@@ -7,6 +7,13 @@ import { requireActiveCustomer, requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 
 const statusValidator = v.union(v.literal("active"), v.literal("arrived"), v.literal("cancelled"));
+const queueStatusValidator = v.union(
+  v.literal("all"),
+  v.literal("unbilled"),
+  v.literal("awaiting_payment"),
+  v.literal("payment_submitted"),
+  v.literal("paid"),
+);
 
 function normalizedTitle(value: string) {
   const title = value.trim();
@@ -106,6 +113,178 @@ export const listForAdmin = query({
     return entries
       .filter((entry) => (args.includeArchived ? true : !entry.archivedAt && entry.status === "active"))
       .map(view);
+  },
+});
+
+export const listQueueForAdmin = query({
+  args: {
+    search: v.optional(v.string()),
+    status: v.optional(queueStatusValidator),
+  },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "customers.read");
+    const rawEntries = await ctx.db
+      .query("manualPoEntries")
+      .withIndex("by_created_at")
+      .order("desc")
+      .take(501);
+    const truncated = rawEntries.length > 500;
+    const entries = rawEntries
+      .slice(0, 500)
+      .filter((entry) => !entry.archivedAt && entry.status === "active");
+
+    const customerIds = [...new Set(entries.map((entry) => String(entry.customerUserId)))];
+    const invoiceIds = [
+      ...new Set(entries.map((entry) => entry.invoiceId).filter((invoiceId): invoiceId is Id<"invoices"> => Boolean(invoiceId))),
+    ];
+
+    const customerPairs = await Promise.all(
+      customerIds.map(async (customerId) => {
+        const customer = await ctx.db.get(customerId as Id<"appUsers">);
+        const profile = customer
+          ? await ctx.db
+              .query("customerProfiles")
+              .withIndex("by_user_id", (index) => index.eq("userId", customer._id))
+              .unique()
+          : null;
+        return [customerId, { customer, profile }] as const;
+      }),
+    );
+    const invoicePairs = await Promise.all(
+      invoiceIds.map(async (invoiceId) => [String(invoiceId), await ctx.db.get(invoiceId)] as const),
+    );
+    const customerMap = new Map(customerPairs);
+    const invoiceMap = new Map(invoicePairs);
+    const search = args.search?.trim().toLowerCase() ?? "";
+    const statusFilter = args.status ?? "all";
+
+    const rows = entries
+      .map((entry) => {
+        const customerRecord = customerMap.get(String(entry.customerUserId));
+        const customer = customerRecord?.customer;
+        if (!customer || customer.role !== "customer" || customer.status === "removed") return null;
+        const profile = customerRecord?.profile;
+        const invoice = entry.invoiceId ? invoiceMap.get(String(entry.invoiceId)) ?? null : null;
+        const displayName =
+          profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
+        const email = customer.emailSnapshot ?? null;
+        const memberCode = customer.memberCode ?? null;
+        const queueStatus =
+          !invoice || invoice.status === "void"
+            ? ("unbilled" as const)
+            : invoice.paymentStatus === "paid"
+              ? ("paid" as const)
+              : invoice.paymentStatus === "payment_submitted"
+                ? ("payment_submitted" as const)
+                : ("awaiting_payment" as const);
+        const searchable = [displayName, email, memberCode, entry.title, entry.etaText]
+          .filter((value): value is string => Boolean(value))
+          .join(" ")
+          .toLowerCase();
+        if (search && !searchable.includes(search)) return null;
+        if (statusFilter !== "all" && queueStatus !== statusFilter) return null;
+        return {
+          entryId: entry._id,
+          customerUserId: entry.customerUserId,
+          customerName: displayName,
+          customerEmail: email,
+          memberCode,
+          title: entry.title,
+          priceAmount: entry.priceAmount,
+          etaText: entry.etaText,
+          queueStatus,
+          invoiceId: invoice?.status === "void" ? null : (entry.invoiceId ?? null),
+          invoiceNumber: invoice?.status === "void" ? null : (invoice?.invoiceNumber ?? null),
+          invoiceStatus: invoice?.status === "void" ? null : (invoice?.status ?? null),
+          paymentStatus: invoice?.status === "void" ? null : (invoice?.paymentStatus ?? null),
+          outstandingAmount: invoice?.status === "void" ? 0 : (invoice?.outstandingAmount ?? 0),
+          createdAt: entry.createdAt,
+          updatedAt: entry.updatedAt,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+    const summarySource = entries
+      .map((entry) => {
+        const customerRecord = customerMap.get(String(entry.customerUserId));
+        const customer = customerRecord?.customer;
+        if (!customer || customer.role !== "customer" || customer.status === "removed") return null;
+        const invoice = entry.invoiceId ? invoiceMap.get(String(entry.invoiceId)) ?? null : null;
+        const queueStatus =
+          !invoice || invoice.status === "void"
+            ? ("unbilled" as const)
+            : invoice.paymentStatus === "paid"
+              ? ("paid" as const)
+              : invoice.paymentStatus === "payment_submitted"
+                ? ("payment_submitted" as const)
+                : ("awaiting_payment" as const);
+        return {
+          customerUserId: entry.customerUserId,
+          priceAmount: entry.priceAmount,
+          queueStatus,
+          outstandingAmount: invoice?.status === "void" ? 0 : (invoice?.outstandingAmount ?? 0),
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+    const grouped = new Map<
+      string,
+      {
+        customerUserId: Id<"appUsers">;
+        customerName: string;
+        customerEmail: string | null;
+        memberCode: string | null;
+        latestCreatedAt: number;
+        itemCount: number;
+        totalAmount: number;
+        unbilledCount: number;
+        awaitingPaymentCount: number;
+        paymentSubmittedCount: number;
+        paidCount: number;
+        entries: typeof rows;
+      }
+    >();
+    for (const row of rows) {
+      const key = String(row.customerUserId);
+      const current = grouped.get(key) ?? {
+        customerUserId: row.customerUserId,
+        customerName: row.customerName,
+        customerEmail: row.customerEmail,
+        memberCode: row.memberCode,
+        latestCreatedAt: row.createdAt,
+        itemCount: 0,
+        totalAmount: 0,
+        unbilledCount: 0,
+        awaitingPaymentCount: 0,
+        paymentSubmittedCount: 0,
+        paidCount: 0,
+        entries: [],
+      };
+      current.latestCreatedAt = Math.max(current.latestCreatedAt, row.createdAt);
+      current.itemCount += 1;
+      current.totalAmount += row.priceAmount;
+      if (row.queueStatus === "unbilled") current.unbilledCount += 1;
+      if (row.queueStatus === "awaiting_payment") current.awaitingPaymentCount += 1;
+      if (row.queueStatus === "payment_submitted") current.paymentSubmittedCount += 1;
+      if (row.queueStatus === "paid") current.paidCount += 1;
+      current.entries.push(row);
+      grouped.set(key, current);
+    }
+
+    return {
+      customers: [...grouped.values()].sort((left, right) => right.latestCreatedAt - left.latestCreatedAt),
+      summary: {
+        customerCount: new Set(summarySource.map((row) => String(row.customerUserId))).size,
+        itemCount: summarySource.length,
+        totalAmount: summarySource.reduce((sum, row) => sum + row.priceAmount, 0),
+        unbilledCount: summarySource.filter((row) => row.queueStatus === "unbilled").length,
+        awaitingPaymentCount: summarySource.filter((row) => row.queueStatus === "awaiting_payment").length,
+        paymentSubmittedCount: summarySource.filter((row) => row.queueStatus === "payment_submitted").length,
+        paidCount: summarySource.filter((row) => row.queueStatus === "paid").length,
+        outstandingAmount: summarySource.reduce((sum, row) => sum + row.outstandingAmount, 0),
+      },
+      truncated,
+    };
   },
 });
 

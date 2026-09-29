@@ -9779,3 +9779,111 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
     flex-wrap: wrap;
   }
 }
+
+
+/* Admin Random PO queue */
+.admin-shell .random-po-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.admin-shell .random-po-summary-grid > .card {
+  min-width: 0;
+}
+
+.admin-shell .random-po-queue-controls {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.admin-shell .random-po-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr) auto;
+  align-items: end;
+  gap: var(--space-md);
+}
+
+.admin-shell .random-po-customer-list {
+  gap: var(--space-lg);
+}
+
+.admin-shell .random-po-customer-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.admin-shell .random-po-customer-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+}
+
+.admin-shell .random-po-customer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+  color: var(--ink-muted);
+  font-size: var(--type-label-size);
+}
+
+.admin-shell .random-po-entry-list {
+  gap: 0;
+}
+
+.admin-shell .random-po-queue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(120px, auto) minmax(170px, auto) auto;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-shell .random-po-queue-main,
+.admin-shell .random-po-queue-status,
+.admin-shell .random-po-queue-actions {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-xxs);
+}
+
+.admin-shell .random-po-queue-actions {
+  grid-auto-flow: column;
+  justify-content: end;
+  gap: var(--space-xs);
+}
+
+@media (max-width: 1100px) {
+  .admin-shell .random-po-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-shell .random-po-queue-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-shell .random-po-queue-status,
+  .admin-shell .random-po-queue-actions {
+    justify-items: start;
+  }
+
+  .admin-shell .random-po-queue-actions {
+    grid-auto-flow: row;
+    justify-content: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-shell .random-po-summary-grid,
+  .admin-shell .random-po-filter-grid,
+  .admin-shell .random-po-queue-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .random-po-customer-heading-actions {
+    justify-content: flex-start;
+  }
+}

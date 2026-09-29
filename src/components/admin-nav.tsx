@@ -60,6 +60,7 @@ const groups: AdminNavGroup[] = [
     label: "Operasional",
     links: [
       { href: "/admin/orders", label: "Pesanan", icon: "orders" },
+      { href: "/admin/random-po", label: "PO Random", icon: "orders" },
       { href: "/admin/batches", label: "Batch PO", icon: "batch" },
       { href: "/admin/exceptions", label: "Masalah pesanan", icon: "exception" },
     ],
