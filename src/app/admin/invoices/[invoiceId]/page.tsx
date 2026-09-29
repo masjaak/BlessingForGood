@@ -194,7 +194,14 @@ function AdminInvoiceDetail() {
       <PageHeader
         eyebrow="Operasi invoice"
         title={invoiceReference(currentAdminInvoice.invoiceNumber)}
-        description={`${currentAdminInvoice.customerName} · ID Blessfriend: ${currentAdminInvoice.customerMemberCode || "belum tersedia"} · ${currentAdminInvoice.orderCode || `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}`}
+        description={`${currentAdminInvoice.customerName} · ID Blessfriend: ${currentAdminInvoice.customerMemberCode || "belum tersedia"} · ${
+          currentAdminInvoice.source === "manual_po"
+            ? "Pesanan Khusus / Random PO"
+            : currentAdminInvoice.orderCode ||
+              (currentAdminInvoice.orderId
+                ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
+                : "Pesanan")
+        }`}
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
             Kembali ke invoice
@@ -228,8 +235,12 @@ function AdminInvoiceDetail() {
             <div className="summary-line">
               <span>Referensi pesanan</span>
               <span>
-                {currentAdminInvoice.orderCode ||
-                  `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`}
+                {currentAdminInvoice.source === "manual_po"
+                  ? "Pesanan Khusus / Random PO"
+                  : currentAdminInvoice.orderCode ||
+                    (currentAdminInvoice.orderId
+                      ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
+                      : "Pesanan")}
               </span>
             </div>
             {currentAdminInvoice.items.map((item) => (
