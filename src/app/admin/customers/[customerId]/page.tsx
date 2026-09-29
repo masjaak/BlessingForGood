@@ -97,7 +97,7 @@ function CustomerDetail() {
         actions={
           <span className="form-actions">
             <LinkButton href={`/admin/invoices?customerId=${customerId}`} variant="secondary">
-              Buat invoice
+              Buat invoice reguler
             </LinkButton>
             <LinkButton href={`/admin/deposits?customerId=${customerId}`} variant="secondary">
               Kelola deposit
