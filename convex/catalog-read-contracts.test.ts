@@ -143,7 +143,8 @@ describe("Catalog read contract characterization", () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
     const customerUser = await customer.query(api.users.current, {});
-    if (!customerUser) throw new Error("customer fixture missing");
+    const adminUser = await admin.query(api.users.current, {});
+    if (!customerUser || !adminUser) throw new Error("catalog detail fixture missing");
 
     const publisherId = await admin.mutation(api.publishers.create, { name: "Large Detail Publisher" });
     const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Large Customer Detail Catalog" });
@@ -165,6 +166,7 @@ describe("Catalog read contract characterization", () => {
           isActive: true,
           createdAt: now + index,
           updatedAt: now + index,
+          createdByUserId: adminUser.appUserId,
         });
         const variantId = await ctx.db.insert("bookVariants", {
           bookId,
