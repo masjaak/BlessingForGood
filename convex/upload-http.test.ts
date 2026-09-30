@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { MAX_STORED_FILE_BYTES } from "./lib/storage";
@@ -36,6 +36,25 @@ const validWebp = new Uint8Array([
 
 describe("BFG owned upload HTTP boundary", () => {
   beforeEach(configureTestEnvironment);
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("allows only explicitly configured BFG Preview origins for standalone uploads", async () => {
+    const preview = "https://blessing-for-good-48pi3t9rq-masjaaks-projects.vercel.app";
+    vi.stubEnv(
+      "BFG_UPLOAD_PREVIEW_ORIGINS",
+      `${preview},https://attacker.example,http://blessing-for-good-other-masjaaks-projects.vercel.app`,
+    );
+    const t = testConvex();
+    for (const [origin, expected] of [
+      [preview, preview],
+      ["https://attacker.example", "null"],
+      ["http://blessing-for-good-other-masjaaks-projects.vercel.app", "null"],
+      ["https://blessing-for-good-unconfigured-masjaaks-projects.vercel.app", "null"],
+    ]) {
+      const response = await t.fetch("/bfg/upload", { method: "OPTIONS", headers: { Origin: origin } });
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe(expected);
+    }
+  });
 
   it("allows the local browser origin used by the Development Playwright server", async () => {
     const t = testConvex();

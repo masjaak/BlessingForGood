@@ -21,6 +21,16 @@ prerender, not a credential gate or compile failure. Canonical Development was
 deployed explicitly; Preview credentials and automatic deployment gates remain
 unchanged. No package, auth, Cart or Random PO architecture changes.
 
+Vercel Git Preview hit its remote build quota before compilation. Official
+`vercel build`/`deploy --prebuilt` produced READY Preview
+`https://blessing-for-good-48pi3t9rq-masjaaks-projects.vercel.app`, with the original
+credential gate passing. Native browser upload then exposed the hard-coded upload
+CORS origins. `BFG_UPLOAD_PREVIEW_ORIGINS` now permits only explicitly configured
+HTTPS BFG/team Preview origins; default Production origins and upload ownership,
+MIME, size, authentication and permission checks remain intact. Development alone
+configures this Preview origin. Red → green HTTP tests include unconfigured and
+foreign/insecure origins; all 30 focused upload/standalone contracts pass.
+
 All 340 backend tests pass, including real payment APIs, oversell, idempotency,
 shipping/price history, invalid uploads and gallery limits. Local production build
 passes. Five known frontend baseline failures remain out of scope: assisted

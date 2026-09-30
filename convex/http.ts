@@ -23,6 +23,12 @@ function corsHeaders(origin: string | null): HeadersInit {
     "http://localhost:3000",
     "http://localhost:3100",
   ]);
+  for (const configured of (process.env.BFG_UPLOAD_PREVIEW_ORIGINS || "").split(",")) {
+    const preview = configured.trim();
+    if (/^https:\/\/blessing-for-good-[a-z0-9-]+-masjaaks-projects\.vercel\.app$/.test(preview)) {
+      allowed.add(preview);
+    }
+  }
   return {
     "Access-Control-Allow-Headers": "Authorization, Content-Type, X-BFG-File-Size",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
