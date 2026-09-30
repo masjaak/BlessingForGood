@@ -59,6 +59,8 @@ function rateLimitDetails(error: unknown): { retryAfterSeconds: number } | null 
 const purposeContracts: Record<UploadPurpose, ReadonlySet<string>> = {
   "book-cover": IMAGE_CONTENT_TYPES,
   "book-gallery": IMAGE_CONTENT_TYPES,
+  "ready-stock-cover": IMAGE_CONTENT_TYPES,
+  "ready-stock-gallery": IMAGE_CONTENT_TYPES,
   "payment-proof": PROOF_CONTENT_TYPES,
   "deposit-proof": PROOF_CONTENT_TYPES,
 };
