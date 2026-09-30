@@ -4,20 +4,9 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
 import { BookCover } from "@/components/book-cover";
 import { BFGSelect } from "@/components/bfg-select";
-import {
-  Card,
-  EmptyState,
-  Field,
-  LoadingRegion,
-  Money,
-  PageHeader,
-  Skeleton,
-  SkeletonCard,
-  StatusBadge,
-} from "@/components/ui";
+import { Card, EmptyState, Field, LoadingRegion, Money, PageHeader, Skeleton, SkeletonCard, StatusBadge } from "@/components/ui";
 import { useProduct } from "@/domain/prototype/store";
 import type { BookFormat } from "@/domain/prototype/types";
 import type { PublicReadyStockList } from "@/lib/seo";
@@ -26,18 +15,14 @@ type Sort = "newest" | "title" | "price";
 
 function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStockList }) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [publisherId, setPublisherId] = useState("");
   const [format, setFormat] = useState<BookFormat | "">("");
   const [sort, setSort] = useState<Sort>("newest");
-  const liveResult = useQuery(api.readyStock.list, {
+  const liveResult = useQuery(api.readyStockManual.list, {
     search: search || undefined,
-    category: category || undefined,
-    publisherId: publisherId ? (publisherId as Id<"publishers">) : undefined,
     format: format || undefined,
     sort,
   });
-  const useInitialResult = !search && !category && !publisherId && !format && sort === "newest";
+  const useInitialResult = !search && !format && sort === "newest";
   const result = liveResult === undefined && useInitialResult ? initialResult : liveResult;
 
   if (result === undefined) {
@@ -63,35 +48,12 @@ function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStock
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Judul, penerbit, atau ISBN"
+            placeholder="Cari judul Ready Stock"
           />
         </Field>
-        {result.filters.categories.length ? (
-          <Field label="Kategori">
-            <BFGSelect value={category} onChange={(event) => setCategory(event.target.value)}>
-              <option value="">Semua kategori</option>
-              {result.filters.categories.map((value) => (
-                <option key={value}>{value}</option>
-              ))}
-            </BFGSelect>
-          </Field>
-        ) : null}
-        {result.filters.publishers.length ? (
-          <Field label="Penerbit">
-            <BFGSelect value={publisherId} onChange={(event) => setPublisherId(event.target.value)}>
-              <option value="">Semua penerbit</option>
-              {result.filters.publishers.map((publisher) => (
-                <option value={publisher.id} key={publisher.id}>
-                  {publisher.name}
-                </option>
-              ))}
-            </BFGSelect>
-          </Field>
-        ) : null}
         {result.filters.formats.length ? (
           <Field label="Format">
             <BFGSelect
-              className="select"
               value={format}
               onChange={(event) => setFormat(event.target.value as BookFormat | "")}
             >
@@ -110,27 +72,25 @@ function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStock
           </BFGSelect>
         </Field>
       </Card>
+
       {result.items.length ? (
         <div className="ready-stock-grid" aria-live="polite">
-          {result.items.map((book) => (
-            <Link className="ready-stock-card" href={`/ready-stock/${book.slug}`} key={book.bookId}>
+          {result.items.map((item) => (
+            <Link className="ready-stock-card" href={`/ready-stock/${item.slug}`} key={item.listingId}>
               <BookCover
-                title={book.title}
-                publisher={book.publisher.name}
-                format={book.variants[0]?.format}
-                src={book.coverImageUrl || undefined}
-                alt={`Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`}
+                title={item.title}
+                publisher="Ready Stock BFG"
+                format={item.format}
+                src={item.coverUrl || undefined}
+                alt={`Foto Ready Stock ${item.title}`}
               />
               <div className="ready-stock-copy">
-                <StatusBadge tone="positive">Ready Stock · {book.totalStock} tersedia</StatusBadge>
-                <h2>{book.title}</h2>
-                <p>{book.author || book.publisher.name}</p>
+                <StatusBadge tone="positive">Ready Stock · {item.availableQuantity} tersedia</StatusBadge>
+                <h2>{item.title}</h2>
                 <strong className="money">
-                  <Money amount={book.minPrice} />
-                  {book.maxPrice !== book.minPrice ? " – " : ""}
-                  {book.maxPrice !== book.minPrice ? <Money amount={book.maxPrice} /> : null}
+                  <Money amount={item.priceAmount} />
                 </strong>
-                <span className="subtle">{book.variants.map((variant) => variant.format).join(" · ")}</span>
+                <span className="subtle">{item.format}</span>
               </div>
             </Link>
           ))}
@@ -139,9 +99,9 @@ function ReadyStockResults({ initialResult }: { initialResult?: PublicReadyStock
         <EmptyState
           title="Ready Stock belum tersedia."
           description={
-            search || category || publisherId || format
+            search || format
               ? "Tidak ada buku yang cocok dengan pencarian atau filter ini."
-              : "Katalog publik akan tampil di sini saat stok tersedia."
+              : "Etalase Ready Stock akan tampil di sini setelah Admin menerbitkan stok."
           }
         />
       )}
@@ -156,14 +116,14 @@ export function ReadyStockCatalog({ initialResult }: { initialResult?: PublicRea
       <PageHeader
         eyebrow="Ready Stock"
         title="Buku yang tersedia sekarang."
-        description="Temukan judul, format, harga, dan stok yang dapat dipesan langsung melalui BFG."
+        description="Lihat foto asli, harga, format, dan stok yang bisa langsung kamu checkout."
       />
       {dataSource === "convex" ? (
         <ReadyStockResults initialResult={initialResult} />
       ) : (
         <EmptyState
           title="Ready Stock belum tersedia."
-          description="Belum ada buku Ready Stock yang dapat ditampilkan."
+          description="Belum ada Ready Stock yang dapat ditampilkan."
         />
       )}
     </div>
