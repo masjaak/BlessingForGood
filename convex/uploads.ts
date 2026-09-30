@@ -9,15 +9,25 @@ import { enforceRateLimit } from "./lib/rateLimit";
 export const uploadPurposeValidator = v.union(
   v.literal("book-cover"),
   v.literal("book-gallery"),
+  v.literal("ready-stock-cover"),
+  v.literal("ready-stock-gallery"),
   v.literal("payment-proof"),
   v.literal("deposit-proof"),
 );
 
-export type UploadPurpose = "book-cover" | "book-gallery" | "payment-proof" | "deposit-proof";
+export type UploadPurpose =
+  | "book-cover"
+  | "book-gallery"
+  | "ready-stock-cover"
+  | "ready-stock-gallery"
+  | "payment-proof"
+  | "deposit-proof";
 
 const permissions: Record<UploadPurpose, Permission> = {
   "book-cover": "books.manage",
   "book-gallery": "books.manage",
+  "ready-stock-cover": "books.manage",
+  "ready-stock-gallery": "books.manage",
   "payment-proof": "invoices.read.own",
   "deposit-proof": "deposits.read.own",
 };
@@ -25,6 +35,8 @@ const permissions: Record<UploadPurpose, Permission> = {
 const rateLimits = {
   "book-cover": "bookUploadUser",
   "book-gallery": "bookUploadUser",
+  "ready-stock-cover": "bookUploadUser",
+  "ready-stock-gallery": "bookUploadUser",
   "payment-proof": "proofUploadUser",
   "deposit-proof": "depositUploadUser",
 } as const;
@@ -84,13 +96,21 @@ export const disposeClaimedUpload = internalMutation({
       .unique();
     if (!claim || claim.ownerUserId !== user._id || claim.purpose !== args.purpose) return { disposed: false };
 
-    const [media, covers, payments, deposits] = await Promise.all([
+    const [media, covers, readyMedia, readyCovers, payments, deposits] = await Promise.all([
       ctx.db
         .query("bookMedia")
         .withIndex("by_storage_id", (index) => index.eq("storageId", args.storageId))
         .take(1),
       ctx.db
         .query("books")
+        .withIndex("by_cover_storage_id", (index) => index.eq("coverStorageId", args.storageId))
+        .take(1),
+      ctx.db
+        .query("readyStockListingMedia")
+        .withIndex("by_storage_id", (index) => index.eq("storageId", args.storageId))
+        .take(1),
+      ctx.db
+        .query("readyStockListings")
         .withIndex("by_cover_storage_id", (index) => index.eq("coverStorageId", args.storageId))
         .take(1),
       ctx.db
@@ -102,7 +122,13 @@ export const disposeClaimedUpload = internalMutation({
         .withIndex("by_proof_storage_id", (index) => index.eq("proofStorageId", args.storageId))
         .take(1),
     ]);
-    const referenced = media.length > 0 || covers.length > 0 || payments.length > 0 || deposits.length > 0;
+    const referenced =
+      media.length > 0 ||
+      covers.length > 0 ||
+      readyMedia.length > 0 ||
+      readyCovers.length > 0 ||
+      payments.length > 0 ||
+      deposits.length > 0;
     await ctx.db.delete(claim._id);
     if (!referenced) await ctx.storage.delete(args.storageId);
     return { disposed: true };
