@@ -22,27 +22,36 @@ import {
 import { SiteShell } from "@/components/site-shell";
 import { formatIdr } from "@/domain/prototype/logic";
 
-type QueueFilter = "all" | "unbilled" | "awaiting_payment" | "payment_submitted" | "paid";
+type QueueFilter =
+  | "all"
+  | "unbilled"
+  | "awaiting_payment"
+  | "payment_submitted"
+  | "paid_waiting_arrival"
+  | "received";
 
 const filterOptions: Array<{ value: QueueFilter; label: string }> = [
   { value: "all", label: "Semua status" },
   { value: "unbilled", label: "Belum ditagih" },
   { value: "awaiting_payment", label: "Menunggu pembayaran" },
   { value: "payment_submitted", label: "Pembayaran dikirim" },
-  { value: "paid", label: "Lunas" },
+  { value: "paid_waiting_arrival", label: "Sudah lunas · menunggu datang" },
+  { value: "received", label: "Diterima" },
 ];
 
 function queueStatusLabel(status: QueueFilter) {
   if (status === "unbilled") return "Belum ditagih";
   if (status === "awaiting_payment") return "Menunggu pembayaran";
   if (status === "payment_submitted") return "Pembayaran dikirim";
-  if (status === "paid") return "Lunas";
+  if (status === "paid_waiting_arrival") return "Sudah lunas · Menunggu datang";
+  if (status === "received") return "Diterima";
   return "Semua";
 }
 
 function queueStatusTone(status: QueueFilter): "neutral" | "positive" | "warning" {
-  if (status === "paid") return "positive";
-  if (status === "payment_submitted" || status === "awaiting_payment") return "warning";
+  if (status === "received") return "positive";
+  if (status === "paid_waiting_arrival" || status === "payment_submitted" || status === "awaiting_payment")
+    return "warning";
   return "neutral";
 }
 
@@ -57,6 +66,7 @@ function AdminRandomPoQueue() {
     status,
   });
   const issueManualPo = useMutation(api.invoices.issueManualPo);
+  const setManualPoStatus = useMutation(api.manualPoEntries.setStatus);
 
   const customers = queue?.customers ?? [];
   const visibleEntryCount = useMemo(
@@ -73,6 +83,20 @@ function AdminRandomPoQueue() {
       setMessage("Tagihan Random PO berhasil diterbitkan.");
     } catch {
       setError("Tagihan Random PO belum berhasil diterbitkan. Coba lagi.");
+    } finally {
+      setPendingEntryId(null);
+    }
+  }
+
+  async function markReceived(entryId: Id<"manualPoEntries">) {
+    setMessage("");
+    setError("");
+    setPendingEntryId(String(entryId));
+    try {
+      await setManualPoStatus({ entryId, status: "arrived" });
+      setMessage("Random PO ditandai diterima.");
+    } catch {
+      setError("Status Random PO belum berhasil diperbarui. Coba lagi.");
     } finally {
       setPendingEntryId(null);
     }
@@ -130,9 +154,11 @@ function AdminRandomPoQueue() {
                   <span className="subtle">{formatIdr(queue.summary.outstandingAmount)} outstanding</span>
                 </Card>
                 <Card frame="summary" className="random-po-summary-card">
-                  <span className="card-kicker">Lunas</span>
-                  <strong className="metric-money">{queue.summary.paidCount}</strong>
-                  <span className="subtle">Tagihan Random PO selesai</span>
+                  <span className="card-kicker">Pasca pembayaran</span>
+                  <strong className="metric-money">{queue.summary.paidCount + queue.summary.receivedCount}</strong>
+                  <span className="subtle">
+                    {queue.summary.paidCount} menunggu datang · {queue.summary.receivedCount} diterima
+                  </span>
                 </Card>
               </div>
 
@@ -217,7 +243,8 @@ function AdminRandomPoQueue() {
                         <span>
                           {customer.awaitingPaymentCount + customer.paymentSubmittedCount} proses pembayaran
                         </span>
-                        <span>{customer.paidCount} lunas</span>
+                        <span>{customer.paidCount} menunggu datang</span>
+                        <span>{customer.receivedCount} diterima</span>
                       </div>
 
                       <div className="content-stack random-po-entry-list">
@@ -259,6 +286,19 @@ function AdminRandomPoQueue() {
                                   Buat tagihan
                                 </Button>
                               )}
+                              {entry.queueStatus === "paid_waiting_arrival" ? (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="compact"
+                                  loading={pendingEntryId === String(entry.entryId)}
+                                  loadingLabel="Menyimpan…"
+                                  disabled={pendingEntryId !== null}
+                                  onClick={() => void markReceived(entry.entryId)}
+                                >
+                                  Tandai diterima
+                                </Button>
+                              ) : null}
                               <LinkButton
                                 href={`/admin/customers/${customer.customerUserId}#manual-po`}
                                 variant="tertiary"

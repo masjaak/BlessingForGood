@@ -6,10 +6,26 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
 
+function manualPoStatusLabel(status: string) {
+  if (status === "unbilled") return "Menunggu tagihan";
+  if (status === "awaiting_payment") return "Menunggu pembayaran";
+  if (status === "payment_submitted") return "Pembayaran dikirim";
+  if (status === "paid_waiting_arrival") return "Sudah lunas · Menunggu datang";
+  if (status === "received") return "Diterima";
+  return "Berjalan";
+}
+
+function manualPoStatusTone(status: string): "neutral" | "positive" | "warning" {
+  if (status === "received" || status === "paid_waiting_arrival") return "positive";
+  if (status === "awaiting_payment" || status === "payment_submitted") return "warning";
+  return "neutral";
+}
+
 export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"appUsers"> }) {
   const entries = useQuery(api.manualPoEntries.listForAdmin, { customerUserId });
   const createEntry = useMutation(api.manualPoEntries.create);
   const issueManualPo = useMutation(api.invoices.issueManualPo);
+  const setManualPoStatus = useMutation(api.manualPoEntries.setStatus);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [etaText, setEtaText] = useState("");
@@ -18,7 +34,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const activeEntries = entries?.filter((entry) => entry.status === "active") ?? [];
+  const visibleEntries = entries ?? [];
 
   function resetForm() {
     setTitle("");
@@ -64,6 +80,20 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     }
   }
 
+  async function markReceived(entryId: Id<"manualPoEntries">) {
+    setError("");
+    setSuccess("");
+    setBillingPendingId(String(entryId));
+    try {
+      await setManualPoStatus({ entryId, status: "arrived" });
+      setSuccess("Random PO ditandai diterima. Status customer ikut diperbarui.");
+    } catch {
+      setError("Status Random PO belum berhasil diperbarui. Coba lagi.");
+    } finally {
+      setBillingPendingId(null);
+    }
+  }
+
   return (
     <Card className="manual-po-admin-card" id="manual-po">
       <div className="split-heading">
@@ -71,7 +101,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
           <span className="card-kicker">Tanpa upload Book Master / Catalog</span>
           <h2>PO Random / Pesanan Khusus</h2>
         </div>
-        <StatusBadge>{activeEntries.length}</StatusBadge>
+        <StatusBadge>{visibleEntries.length}</StatusBadge>
       </div>
 
       <p className="subtle">
@@ -137,8 +167,8 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
       <div className="content-stack manual-po-admin-list">
         {entries === undefined ? (
           <p className="subtle">Memuat Pesanan Khusus…</p>
-        ) : activeEntries.length ? (
-          activeEntries.map((entry) => {
+        ) : visibleEntries.length ? (
+          visibleEntries.map((entry) => {
             const invoiceReady = Boolean(entry.invoiceId);
             const legacyBillingOnly = entry.billingStatus === "billed" && !entry.invoiceId;
             return (
@@ -150,8 +180,24 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                 </span>
                 <span className="manual-po-admin-row-actions">
                   <Money amount={entry.priceAmount} />
-                  <StatusBadge tone={invoiceReady ? "positive" : legacyBillingOnly ? "warning" : "neutral"}>
-                    {invoiceReady ? "Tagihan terbit" : legacyBillingOnly ? "Perlu terbitkan" : "Belum ditagih"}
+                  <StatusBadge
+                    tone={
+                      entry.operationalStatus
+                        ? manualPoStatusTone(entry.operationalStatus)
+                        : invoiceReady
+                          ? "positive"
+                          : legacyBillingOnly
+                            ? "warning"
+                            : "neutral"
+                    }
+                  >
+                    {entry.operationalStatus
+                      ? manualPoStatusLabel(entry.operationalStatus)
+                      : invoiceReady
+                        ? "Tagihan terbit"
+                        : legacyBillingOnly
+                          ? "Perlu terbitkan"
+                          : "Belum ditagih"}
                   </StatusBadge>
                   {entry.invoiceId ? (
                     <LinkButton href={`/admin/invoices/${entry.invoiceId}`} variant="secondary">
@@ -169,6 +215,18 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                       Buat tagihan
                     </Button>
                   )}
+                  {entry.operationalStatus === "paid_waiting_arrival" ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      loading={billingPendingId === String(entry.entryId)}
+                      loadingLabel="Menyimpan…"
+                      disabled={billingPendingId !== null}
+                      onClick={() => void markReceived(entry.entryId)}
+                    >
+                      Tandai diterima
+                    </Button>
+                  ) : null}
                 </span>
               </div>
             );
@@ -186,7 +244,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
 
 export function CustomerManualPoSection() {
   const entries = useQuery(api.manualPoEntries.listMine, {});
-  const activeEntries = entries?.filter((entry) => entry.status === "active") ?? [];
+  const visibleEntries = entries ?? [];
 
   if (entries === undefined) {
     return (
@@ -197,22 +255,24 @@ export function CustomerManualPoSection() {
     );
   }
 
-  if (!activeEntries.length) return null;
+  if (!visibleEntries.length) return null;
 
   return (
     <Card className="manual-po-customer-card">
       <div className="split-heading">
         <div>
-          <span className="card-kicker">Random PO berjalan</span>
+          <span className="card-kicker">Random PO</span>
           <h2>Pesanan Khusus</h2>
         </div>
-        <StatusBadge>{activeEntries.length}</StatusBadge>
+        <StatusBadge>{visibleEntries.length}</StatusBadge>
       </div>
 
-      <p className="subtle">Buku random PO yang sedang berjalan. Cek judul, ETA, dan harga dari Admin BFG.</p>
+      <p className="subtle">
+        Pantau Random PO dari penagihan, pembayaran, menunggu barang datang, sampai diterima.
+      </p>
 
       <div className="content-stack">
-        {activeEntries.map((entry) => (
+        {visibleEntries.map((entry) => (
           <div className="summary-line manual-po-customer-row" key={entry.entryId}>
             <span>
               <strong>{entry.title}</strong>
@@ -221,16 +281,14 @@ export function CustomerManualPoSection() {
             </span>
             <span className="manual-po-customer-meta">
               <Money amount={entry.priceAmount} />
+              <StatusBadge tone={manualPoStatusTone(entry.operationalStatus)}>
+                {manualPoStatusLabel(entry.operationalStatus)}
+              </StatusBadge>
               {entry.invoiceId ? (
-                <>
-                  <StatusBadge tone="warning">Tagihan tersedia</StatusBadge>
-                  <LinkButton href={`/account/invoices/${entry.invoiceId}`} variant="secondary">
-                    Lihat tagihan
-                  </LinkButton>
-                </>
-              ) : (
-                <StatusBadge>Menunggu tagihan</StatusBadge>
-              )}
+                <LinkButton href={`/account/invoices/${entry.invoiceId}`} variant="secondary">
+                  Lihat tagihan
+                </LinkButton>
+              ) : null}
             </span>
           </div>
         ))}

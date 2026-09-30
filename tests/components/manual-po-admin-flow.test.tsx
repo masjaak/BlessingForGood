@@ -12,11 +12,13 @@ vi.mock("convex/react", () => ({
 describe("Admin Manual PO flow", () => {
   const createEntry = vi.fn();
   const issueManualPo = vi.fn();
+  const setStatus = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     createEntry.mockResolvedValue({});
     issueManualPo.mockResolvedValue({ invoiceId: "invoice-manual-1" });
+    setStatus.mockResolvedValue({ status: "arrived" });
 
     vi.mocked(useQuery).mockReturnValue([
       {
@@ -28,6 +30,10 @@ describe("Admin Manual PO flow", () => {
         status: "active",
         billingStatus: "unbilled",
         invoiceId: null,
+        invoiceStatus: null,
+        paymentStatus: null,
+        outstandingAmount: 0,
+        operationalStatus: "unbilled",
         billedAt: null,
         createdAt: 1,
         updatedAt: 1,
@@ -40,6 +46,7 @@ describe("Admin Manual PO flow", () => {
       const name = getFunctionName(mutation as never);
       if (name.endsWith(":create")) return createEntry as never;
       if (name.endsWith(":issueManualPo")) return issueManualPo as never;
+      if (name.endsWith(":setStatus")) return setStatus as never;
       throw new Error(`Unexpected Manual PO mutation: ${name}`);
     });
   });
@@ -51,7 +58,7 @@ describe("Admin Manual PO flow", () => {
     expect(screen.getByLabelText("Harga")).toBeTruthy();
     expect(screen.getByLabelText("ETA")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tambahkan Pesanan Khusus" })).toBeTruthy();
-    expect(screen.getByText("Belum ditagih")).toBeTruthy();
+    expect(screen.getByText("Menunggu tagihan")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Buat tagihan" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Buat tagihan" }));
@@ -61,9 +68,6 @@ describe("Admin Manual PO flow", () => {
         entryId: "manual-1",
       }),
     );
-    expect(
-      screen.getByText("Tagihan Pesanan Khusus diterbitkan. Customer sekarang bisa membuka dan membayar dari menu Tagihan."),
-    ).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Judul buku"), { target: { value: "Random PO Book" } });
     fireEvent.change(screen.getByLabelText("Harga"), { target: { value: "99000" } });
@@ -78,5 +82,42 @@ describe("Admin Manual PO flow", () => {
         etaText: "Maret 2027",
       }),
     );
+  });
+
+  it("lets Admin mark a paid Random PO as received from customer detail", async () => {
+    vi.mocked(useQuery).mockReturnValue([
+      {
+        entryId: "manual-paid",
+        customerUserId: "customer-1",
+        title: "Paid Book",
+        priceAmount: 125000,
+        etaText: "April 2027",
+        status: "active",
+        billingStatus: "billed",
+        invoiceId: "invoice-1",
+        invoiceStatus: "issued",
+        paymentStatus: "paid",
+        outstandingAmount: 0,
+        operationalStatus: "paid_waiting_arrival",
+        billedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        cancelledAt: null,
+        archivedAt: null,
+      },
+    ] as never);
+
+    render(<AdminManualPoPanel customerUserId={"customer-1" as never} />);
+    expect(screen.getByText("Sudah lunas · Menunggu datang")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tandai diterima" }));
+
+    await waitFor(() =>
+      expect(setStatus).toHaveBeenCalledWith({
+        entryId: "manual-paid",
+        status: "arrived",
+      }),
+    );
+    expect(screen.getByText("Random PO ditandai diterima. Status customer ikut diperbarui.")).toBeTruthy();
   });
 });

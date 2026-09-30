@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AdminCustomerDetailPage from "@/app/admin/customers/[customerId]/page";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useProduct } from "@/domain/prototype/store";
 import { useOperations } from "@/domain/prototype/operations-context";
 
@@ -73,5 +73,38 @@ describe("Admin customer detail actions", () => {
       "/admin/deposits?customerId=customer-1",
     );
     expect(screen.queryByRole("link", { name: /^Buat invoice$/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Edit nama customer" })).toBeTruthy();
+  });
+
+  it("lets Admin correct the Customer display name from the detail page", async () => {
+    const updateName = vi.fn().mockResolvedValue({ displayName: "Nama Baru" });
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      state: { orders: [] },
+    } as never);
+    vi.mocked(useOperations).mockReturnValue({ adminInvoiceList: { page: [] } } as never);
+    vi.mocked(useMutation).mockReturnValue(updateName as never);
+    vi.mocked(useQuery)
+      .mockReturnValueOnce({ displayNameSnapshot: "Nama Lama", memberCode: "BFG-0001" } as never)
+      .mockReturnValueOnce({ displayName: "Nama Lama" } as never)
+      .mockReturnValueOnce([] as never)
+      .mockReturnValueOnce({ page: [], isDone: true, continueCursor: "" } as never)
+      .mockReturnValueOnce({ page: [], isDone: true, continueCursor: "" } as never)
+      .mockReturnValueOnce([] as never);
+
+    render(<AdminCustomerDetailPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit nama customer" }));
+    const input = screen.getByLabelText("Nama customer");
+    fireEvent.change(input, { target: { value: "Nama Baru" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan nama" }));
+
+    await waitFor(() =>
+      expect(updateName).toHaveBeenCalledWith({
+        userId: "customer-1",
+        displayName: "Nama Baru",
+      }),
+    );
+    expect(screen.getByText("Nama customer berhasil diperbarui.")).toBeTruthy();
   });
 });
