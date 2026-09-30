@@ -43,11 +43,12 @@ function backfillLimit(value: number | undefined): number {
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
-  const [order, customer, batch, manualPoEntry, items] = await Promise.all([
+  const [order, customer, batch, manualPoEntry, readyStockOrder, items] = await Promise.all([
     invoice.orderId ? ctx.db.get(invoice.orderId) : Promise.resolve(null),
     ctx.db.get(invoice.customerUserId),
     invoice.batchId ? ctx.db.get(invoice.batchId) : Promise.resolve(null),
     invoice.manualPoEntryId ? ctx.db.get(invoice.manualPoEntryId) : Promise.resolve(null),
+    invoice.readyStockOrderId ? ctx.db.get(invoice.readyStockOrderId) : Promise.resolve(null),
     ctx.db
       .query("invoiceItems")
       .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
@@ -57,8 +58,13 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   return {
     invoiceId: invoice._id,
     id: invoice._id,
-    source: invoice.manualPoEntryId ? ("manual_po" as const) : ("order" as const),
+    source: invoice.readyStockOrderId
+      ? ("ready_stock" as const)
+      : invoice.manualPoEntryId
+        ? ("manual_po" as const)
+        : ("order" as const),
     manualPoEntryId: invoice.manualPoEntryId ?? null,
+    readyStockOrderId: invoice.readyStockOrderId ?? null,
     customerUserId: invoice.customerUserId,
     customerName: order?.customerName || customer?.displayNameSnapshot || "Pelanggan BFG",
     customerEmail: order?.customerEmail || customer?.emailSnapshot || null,
@@ -67,6 +73,7 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     orderCode: order?.orderCode || null,
     manualPoTitle: manualPoEntry?.title ?? null,
     manualPoEtaText: manualPoEntry?.etaText ?? null,
+    readyStockTitle: readyStockOrder?.titleSnapshot ?? null,
     batchId: invoice.batchId ?? null,
     batchName: batch?.name ?? null,
     invoiceNumber: invoice.invoiceNumber,
@@ -600,6 +607,27 @@ export const voidInvoice = mutation({
           billedByUserId: undefined,
           updatedByUserId: user._id,
           updatedAt: now,
+        });
+      }
+    }
+    if (invoice.readyStockOrderId) {
+      const readyOrder = await ctx.db.get(invoice.readyStockOrderId);
+      if (readyOrder && readyOrder.stage !== "cancelled" && readyOrder.stage !== "delivered") {
+        const listing = await ctx.db.get(readyOrder.listingId);
+        if (listing && listing.reservedQuantity >= readyOrder.quantity) {
+          await ctx.db.patch(listing._id, {
+            reservedQuantity: listing.reservedQuantity - readyOrder.quantity,
+            updatedAt: now,
+            updatedByUserId: user._id,
+          });
+        }
+        await ctx.db.patch(readyOrder._id, { stage: "cancelled", updatedAt: now });
+        await ctx.db.insert("readyStockOrderEvents", {
+          orderId: readyOrder._id,
+          stage: "cancelled",
+          actorUserId: user._id,
+          note: "Invoice Ready Stock dibatalkan",
+          createdAt: now,
         });
       }
     }
