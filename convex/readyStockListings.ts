@@ -2,8 +2,11 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import { recordAudit } from "./lib/audit";
 import { requirePermission } from "./lib/auth";
+import { fail } from "./lib/errors";
+import { nonNegativeQuantity, positiveMoney, requiredText, slugify } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 
 const READY_STOCK_GALLERY_LIMIT = 8;
@@ -134,5 +137,87 @@ export const getForAdmin = query({
     const listing = await ctx.db.get(args.listingId);
     if (!listing) return null;
     return listingView(ctx, listing, true);
+  },
+});
+
+
+export const create = mutation({
+  args: {
+    title: v.string(),
+    priceAmount: v.number(),
+    format: bookFormatValidator,
+    quantity: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const title = requiredText(args.title, "title");
+    const priceAmount = positiveMoney(args.priceAmount);
+    const quantity = nonNegativeQuantity(args.quantity);
+    const baseSlug = slugify(title, "ready stock slug");
+    let slug = baseSlug;
+    let suffix = 2;
+    while (await ctx.db.query("readyStockListings").withIndex("by_slug", (q) => q.eq("slug", slug)).first()) {
+      slug = `${baseSlug}-${suffix++}`;
+    }
+    const now = Date.now();
+    const listingId = await ctx.db.insert("readyStockListings", {
+      slug,
+      title,
+      priceAmount,
+      format: args.format,
+      quantity,
+      reservedQuantity: 0,
+      status: "draft",
+      createdAt: now,
+      updatedAt: now,
+      createdByUserId: user._id,
+      updatedByUserId: user._id,
+    });
+    await recordAudit(ctx, user._id, "ready_stock_listing.created", "readyStockListing", listingId);
+    return { listingId, slug };
+  },
+});
+
+export const update = mutation({
+  args: {
+    listingId: v.id("readyStockListings"),
+    title: v.optional(v.string()),
+    priceAmount: v.optional(v.number()),
+    format: v.optional(bookFormatValidator),
+    quantity: v.optional(v.number()),
+    status: v.optional(listingStatusValidator),
+  },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const listing = await ctx.db.get(args.listingId);
+    if (!listing) fail("VALIDATION_FAILED", "Ready Stock item tidak ditemukan");
+    const title = args.title === undefined ? listing.title : requiredText(args.title, "title");
+    const priceAmount = args.priceAmount === undefined ? listing.priceAmount : positiveMoney(args.priceAmount);
+    const quantity = args.quantity === undefined ? listing.quantity : nonNegativeQuantity(args.quantity);
+    if (quantity < listing.reservedQuantity) fail("READY_STOCK_ON_HAND_BELOW_RESERVED");
+    const status = args.status ?? listing.status;
+    if (status === "published") {
+      if (!listing.coverStorageId) fail("VALIDATION_FAILED", "Cover wajib diunggah sebelum Ready Stock diterbitkan");
+      if (quantity < 1) fail("VALIDATION_FAILED", "Qty Ready Stock harus lebih dari 0 sebelum diterbitkan");
+    }
+    if (status === "archived" && listing.reservedQuantity > 0) {
+      fail("ENTITY_IN_USE", "Ready Stock masih memiliki pesanan aktif");
+    }
+    const now = Date.now();
+    await ctx.db.patch(listing._id, {
+      title,
+      priceAmount,
+      format: args.format ?? listing.format,
+      quantity,
+      status,
+      updatedAt: now,
+      updatedByUserId: user._id,
+    });
+    await recordAudit(ctx, user._id, "ready_stock_listing.updated", "readyStockListing", listing._id, {
+      status,
+      quantity: String(quantity),
+      priceAmount: String(priceAmount),
+    });
+    return listingView(ctx, (await ctx.db.get(listing._id))!, true);
   },
 });
