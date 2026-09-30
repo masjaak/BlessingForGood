@@ -44,7 +44,7 @@ describe("Standalone Ready Stock checkout", () => {
     render(<ReadyStockDetail slug="ready-book" />);
 
     expect(screen.getByText(/195\.000/)).toBeTruthy();
-    expect(screen.getByText("Foto asli stok BFG")).toBeTruthy();
+    expect(screen.getByText(/Foto asli stok BFG/)).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Checkout langsung" })).toBeTruthy();
 
     fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "2" } });
