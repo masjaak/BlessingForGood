@@ -1,226 +1,576 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { useRef, useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { useState } from "react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { AdminOperationalPage } from "@/components/admin-operational-page";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, Money, StatusBadge } from "@/components/ui";
+import { BFGFilePicker } from "@/components/bfg-file-picker";
+import { BFGSelect } from "@/components/bfg-select";
+import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
+import { ProductGallery } from "@/components/product-gallery";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  LinkButton,
+  LoadingRegion,
+  Money,
+  StatusBadge,
+} from "@/components/ui";
 import { SkeletonSummaryGrid, SkeletonTableBlock } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
+import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
+import { uploadBfgFile } from "@/lib/upload-file";
+
+type ListingRows = Awaited<FunctionReturnType<typeof api.readyStockManual.listForAdmin>>;
+type Listing = ListingRows[number];
+type Purchases = Awaited<FunctionReturnType<typeof api.readyStockManual.listPurchasesForAdmin>>;
 
 function number(value: number) {
   return value.toLocaleString("id-ID");
 }
 
-type ReadyStockRows = Awaited<FunctionReturnType<typeof api.readyStock.listForAdmin>>;
+function purchaseLabel(status: string) {
+  if (status === "waiting_payment") return "Blessy menunggu pembayaran";
+  if (status === "verifying_payment") return "Blessy memverifikasi pembayaran";
+  if (status === "payment_success") return "Pembayaran berhasil";
+  if (status === "packing") return "Paket sedang dikemas Blessy";
+  if (status === "shipping") return "Paket sedang diantar Blessy";
+  if (status === "delivered") return "Paket sampai";
+  if (status === "cancelled") return "Dibatalkan";
+  return status;
+}
 
-function PriceEditor({
-  row,
+function listingStatusLabel(status: string) {
+  if (status === "draft") return "Draf";
+  if (status === "published") return "Tayang";
+  if (status === "archived") return "Diarsipkan";
+  return status;
+}
+
+function ListingForm({
+  listing,
   onClose,
   onSaved,
 }: {
-  row: ReadyStockRows[number];
-  onClose: () => void;
-  onSaved: (message: string) => void;
+  listing?: Listing;
+  onClose?: () => void;
+  onSaved: (listingId: string, message: string) => void;
 }) {
-  const setPrice = useMutation(api.readyStock.setPriceOverride);
-  const [price, setPriceInput] = useState(String(row.effectivePriceAmount));
+  const createListing = useMutation(api.readyStockManual.create);
+  const updateListing = useMutation(api.readyStockManual.update);
+  const [title, setTitle] = useState(listing?.title ?? "");
+  const [price, setPrice] = useState(listing ? String(listing.priceAmount) : "");
+  const [format, setFormat] = useState<BookFormat>(listing?.format ?? "PB");
+  const [quantity, setQuantity] = useState(listing ? String(listing.quantity) : "1");
   const [pending, setPending] = useState(false);
-  const submitting = useRef(false);
   const [error, setError] = useState("");
 
-  async function save(amount: number | null) {
-    if (submitting.current) return;
-    setError("");
-    if (amount !== null && (!Number.isSafeInteger(amount) || amount <= 0)) {
-      setError("Masukkan harga Rupiah bulat lebih dari 0.");
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (pending) return;
+    const priceAmount = Number(price);
+    const qty = Number(quantity);
+    if (!title.trim()) {
+      setError("Judul wajib diisi.");
       return;
     }
-    submitting.current = true;
+    if (!Number.isSafeInteger(priceAmount) || priceAmount <= 0) {
+      setError("Harga harus Rupiah bulat lebih dari 0.");
+      return;
+    }
+    if (!Number.isSafeInteger(qty) || qty < 0) {
+      setError("QTY tersedia tidak valid.");
+      return;
+    }
     setPending(true);
+    setError("");
     try {
-      await setPrice({ bookVariantId: row.variantId, priceOverrideAmount: amount });
-      onSaved(
-        amount === null
-          ? "Harga Ready Stock kembali mengikuti harga Master."
-          : "Harga Ready Stock berhasil diperbarui.",
-      );
+      if (listing) {
+        const updated = await updateListing({
+          listingId: listing.listingId,
+          title: title.trim(),
+          priceAmount,
+          format,
+          quantity: qty,
+        });
+        onSaved(updated.listingId, "Data Ready Stock berhasil diperbarui.");
+      } else {
+        const created = await createListing({
+          title: title.trim(),
+          priceAmount,
+          format,
+          quantity: qty,
+          status: "draft",
+        });
+        onSaved(created.listingId, "Draft Ready Stock dibuat. Tambahkan cover dan foto isi sebelum diterbitkan.");
+        setTitle("");
+        setPrice("");
+        setQuantity("1");
+      }
     } catch {
-      setError("Harga Ready Stock belum berhasil diperbarui. Coba lagi.");
+      setError("Ready Stock belum berhasil disimpan. Coba lagi.");
     } finally {
-      submitting.current = false;
       setPending(false);
     }
   }
 
   return (
-    <form
-      className="admin-ready-stock-price-editor"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void save(Number(price));
-      }}
-    >
-      <Field label="Harga Ready Stock" hint={`${row.title} · ${row.format}`}>
-        <input
-          className="input"
-          aria-label="Harga Ready Stock"
-          type="number"
-          min="1"
-          step="1"
-          required
-          autoFocus
-          value={price}
-          disabled={pending}
-          onChange={(event) => setPriceInput(event.target.value)}
-        />
-      </Field>
+    <form className="content-stack ready-stock-manual-form" onSubmit={submit}>
+      <div className="form-grid ready-stock-manual-form-grid">
+        <Field label="Judul">
+          <input className="input" value={title} maxLength={200} onChange={(event) => setTitle(event.target.value)} />
+        </Field>
+        <Field label="Harga">
+          <input
+            className="input"
+            type="number"
+            min="1"
+            step="1"
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+          />
+        </Field>
+        <Field label="Format">
+          <BFGSelect value={format} onChange={(event) => setFormat(event.target.value as BookFormat)}>
+            {BOOK_FORMATS.map((value) => (
+              <option value={value} key={value}>
+                {value}
+              </option>
+            ))}
+          </BFGSelect>
+        </Field>
+        <Field label="QTY tersedia">
+          <input
+            className="input"
+            type="number"
+            min="0"
+            step="1"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+          />
+        </Field>
+      </div>
+      {error ? <p className="error-text" role="alert">{error}</p> : null}
       <div className="form-actions">
         <Button type="submit" loading={pending} loadingLabel="Menyimpan…">
-          Simpan harga
+          {listing ? "Simpan perubahan" : "Buat Ready Stock"}
         </Button>
-        <Button type="button" variant="secondary" disabled={pending} onClick={onClose}>
-          Batal
-        </Button>
-        {row.priceOverrideAmount !== null ? (
-          <Button type="button" variant="tertiary" disabled={pending} onClick={() => void save(null)}>
-            Gunakan harga Master
+        {onClose ? (
+          <Button type="button" variant="tertiary" disabled={pending} onClick={onClose}>
+            Batal
           </Button>
         ) : null}
       </div>
-      {error ? (
-        <span className="subtle" role="alert">
-          {error}
-        </span>
-      ) : null}
     </form>
   );
 }
 
-const publicationLabels: Record<string, string> = {
-  draft: "Draf",
-  published: "Terbit",
-  special: "Khusus / privat",
-  archived: "Diarsipkan",
-};
+function MediaEditor({
+  listing,
+  onClose,
+  onMessage,
+}: {
+  listing: Listing;
+  onClose: () => void;
+  onMessage: (message: string) => void;
+}) {
+  const attachCover = useAction(api.readyStockManual.attachCover);
+  const attachGalleryImage = useAction(api.readyStockManual.attachGalleryImage);
+  const removeGalleryImage = useMutation(api.readyStockManual.removeGalleryImage);
+  const { getToken, sessionClaims } = useAuth();
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [galleryFile, setGalleryFile] = useState<File | null>(null);
+  const [pending, setPending] = useState<"cover" | "gallery" | string | null>(null);
+  const [error, setError] = useState("");
 
-function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
-  const [editing, setEditing] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
-  const editingRow = rows.find((row) => row.variantId === editing);
-  const totals = rows.reduce(
-    (summary, row) => ({
-      onHand: summary.onHand + row.onHandQuantity,
-      reserved: summary.reserved + row.reservedQuantity,
-      available: summary.available + row.availableQuantity,
-    }),
-    { onHand: 0, reserved: 0, available: 0 },
+  async function saveCover() {
+    if (!coverFile) return;
+    setPending("cover");
+    setError("");
+    try {
+      const storageId = await uploadBfgFile(coverFile, "ready-stock-cover", getToken, sessionClaims);
+      await attachCover({
+        listingId: listing.listingId,
+        storageId,
+        fileName: coverFile.name,
+        mimeType: coverFile.type,
+      });
+      setCoverFile(null);
+      onMessage("Cover Ready Stock tersimpan.");
+    } catch {
+      setError("Cover belum berhasil diunggah.");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function saveGallery() {
+    if (!galleryFile || listing.gallery.length >= 8) return;
+    setPending("gallery");
+    setError("");
+    try {
+      const storageId = await uploadBfgFile(galleryFile, "ready-stock-gallery", getToken, sessionClaims);
+      await attachGalleryImage({
+        listingId: listing.listingId,
+        storageId,
+        fileName: galleryFile.name,
+        mimeType: galleryFile.type,
+        altText: listing.title,
+      });
+      setGalleryFile(null);
+      onMessage("Foto isi Ready Stock tersimpan.");
+    } catch {
+      setError("Foto isi belum berhasil diunggah.");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function removeImage(mediaId: Id<"readyStockListingMedia">) {
+    setPending(String(mediaId));
+    setError("");
+    try {
+      await removeGalleryImage({ mediaId });
+      onMessage("Foto isi dihapus.");
+    } catch {
+      setError("Foto belum berhasil dihapus.");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  return (
+    <Card className="content-stack ready-stock-media-editor">
+      <div className="split-heading">
+        <div>
+          <span className="card-kicker">Foto etalase</span>
+          <h2>{listing.title}</h2>
+        </div>
+        <Button type="button" variant="tertiary" onClick={onClose}>Tutup</Button>
+      </div>
+
+      <CoverUploadField
+        currentSrc={listing.coverUrl || undefined}
+        error={error}
+        file={coverFile}
+        format={listing.format}
+        message=""
+        onFileChange={setCoverFile}
+        onUpload={() => void saveCover()}
+        loading={pending === "cover"}
+        publisher="Ready Stock BFG"
+        title={listing.title}
+      />
+
+      <section className="content-stack ready-stock-gallery-editor">
+        <div className="split-heading">
+          <div>
+            <span className="card-kicker">Foto isi</span>
+            <h3>Maksimal 8 gambar</h3>
+          </div>
+          <span className="subtle">{listing.gallery.length}/8</span>
+        </div>
+
+        {listing.gallery.length ? (
+          <ProductGallery
+            images={listing.gallery
+              .filter((image) => Boolean(image.url))
+              .map((image) => ({
+                mediaId: image.mediaId,
+                url: image.url!,
+                altText: image.altText,
+                displayOrder: image.displayOrder,
+              }))}
+            title={listing.title}
+          />
+        ) : null}
+
+        <BFGFilePicker
+          accept="image/jpeg,image/png,image/webp"
+          ariaLabel="Pilih foto isi Ready Stock"
+          buttonLabel="Pilih gambar"
+          changeLabel="Ganti gambar"
+          file={galleryFile}
+          helper="JPG, PNG, atau WebP. Maksimal 5 MB per gambar."
+          label="Foto isi"
+          onFileChange={setGalleryFile}
+          onValidationError={setError}
+          validateFile={validateCoverFile}
+          disabled={listing.gallery.length >= 8 || pending !== null}
+        />
+        <div className="form-actions">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={!galleryFile || listing.gallery.length >= 8 || pending !== null}
+            loading={pending === "gallery"}
+            loadingLabel="Mengunggah…"
+            onClick={() => void saveGallery()}
+          >
+            Simpan foto isi
+          </Button>
+        </div>
+
+        {listing.gallery.map((media, index) => (
+          <div className="summary-line" key={media.mediaId}>
+            <span>Gambar {index + 1}</span>
+            <Button
+              type="button"
+              variant="danger"
+              size="compact"
+              disabled={pending !== null}
+              onClick={() => void removeImage(media.mediaId)}
+            >
+              Hapus
+            </Button>
+          </div>
+        ))}
+      </section>
+      {error ? <p className="error-text" role="alert">{error}</p> : null}
+    </Card>
   );
+}
+
+function PurchaseQueue({ purchases }: { purchases: Purchases }) {
+  const setStage = useMutation(api.readyStockManual.setFulfillmentStage);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+
+  async function advance(purchaseId: Id<"readyStockPurchases">, stage: "packing" | "shipping" | "delivered") {
+    setPendingId(String(purchaseId));
+    setMessage("");
+    try {
+      await setStage({ purchaseId, stage });
+      setMessage("Status Ready Stock customer berhasil diperbarui.");
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  return (
+    <Card className="content-stack ready-stock-purchase-queue">
+      <div className="split-heading">
+        <div>
+          <span className="card-kicker">Pesanan Ready Stock</span>
+          <h2>Proses checkout dan pengiriman</h2>
+        </div>
+        <StatusBadge>{purchases.length}</StatusBadge>
+      </div>
+      {message ? <p className="success-banner" role="status">{message}</p> : null}
+      {purchases.length ? (
+        <div className="table-wrap">
+          <table className="data-table admin-ready-stock-purchase-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Item</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchases.map((purchase) => {
+                const nextStage =
+                  purchase.operationalStatus === "payment_success"
+                    ? "packing"
+                    : purchase.operationalStatus === "packing"
+                      ? "shipping"
+                      : purchase.operationalStatus === "shipping"
+                        ? "delivered"
+                        : null;
+                return (
+                  <tr key={purchase.purchaseId}>
+                    <td>
+                      <strong>{purchase.customerName}</strong>
+                      <span className="subtle table-secondary">{purchase.memberCode || purchase.customerEmail || "Blessfriend"}</span>
+                    </td>
+                    <td>
+                      <strong>{purchase.title}</strong>
+                      <span className="subtle table-secondary">{purchase.format} · {purchase.quantity} buku</span>
+                    </td>
+                    <td><Money amount={purchase.subtotalAmount} /></td>
+                    <td><StatusBadge tone={purchase.operationalStatus === "delivered" ? "positive" : "warning"}>{purchaseLabel(purchase.operationalStatus)}</StatusBadge></td>
+                    <td>
+                      <div className="form-actions">
+                        {purchase.invoiceId ? (
+                          <LinkButton href={`/admin/invoices/${purchase.invoiceId}`} variant="secondary" size="compact">
+                            Tagihan
+                          </LinkButton>
+                        ) : null}
+                        {nextStage ? (
+                          <Button
+                            type="button"
+                            size="compact"
+                            disabled={pendingId !== null}
+                            loading={pendingId === String(purchase.purchaseId)}
+                            loadingLabel="Menyimpan…"
+                            onClick={() => void advance(purchase.purchaseId, nextStage)}
+                          >
+                            {nextStage === "packing" ? "Mulai kemas" : nextStage === "shipping" ? "Mulai antar" : "Tandai sampai"}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState title="Belum ada checkout Ready Stock" description="Pesanan customer akan tampil di sini setelah checkout langsung." />
+      )}
+    </Card>
+  );
+}
+
+function ReadyStockContent({ rows, purchases }: { rows: ListingRows; purchases: Purchases }) {
+  const setPublicationStatus = useMutation(api.readyStockManual.setPublicationStatus);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [mediaId, setMediaId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const editing = rows.find((row) => row.listingId === editingId);
+  const mediaListing = rows.find((row) => row.listingId === mediaId);
+  const totals = rows
+    .filter((row) => row.status !== "archived")
+    .reduce(
+      (summary, row) => ({
+        listings: summary.listings + 1,
+        onHand: summary.onHand + row.quantity,
+        reserved: summary.reserved + row.reservedQuantity,
+        available: summary.available + row.availableQuantity,
+      }),
+      { listings: 0, onHand: 0, reserved: 0, available: 0 },
+    );
+
+  async function changeStatus(listing: Listing, status: "draft" | "published" | "archived") {
+    setMessage("");
+    try {
+      await setPublicationStatus({ listingId: listing.listingId, status });
+      setMessage(status === "published" ? "Ready Stock sudah tampil di etalase." : status === "archived" ? "Ready Stock diarsipkan." : "Ready Stock dikembalikan ke draft.");
+    } catch {
+      setMessage("Status belum berhasil diperbarui. Pastikan cover sudah ada dan stok tersedia.");
+    }
+  }
 
   return (
     <>
-      <Card className="admin-inventory-summary">
-        <div>
+      <div className="admin-inventory-summary ready-stock-manual-summary">
+        <Card>
+          <span className="card-kicker">Item etalase</span>
+          <strong>{number(totals.listings)}</strong>
+          <span className="subtle">Ready Stock manual aktif</span>
+        </Card>
+        <Card>
           <span className="card-kicker">Stok fisik</span>
           <strong>{number(totals.onHand)}</strong>
-          <span className="subtle">Jumlah fisik yang tercatat</span>
-        </div>
-        <div>
+          <span className="subtle">Jumlah yang dicatat Admin</span>
+        </Card>
+        <Card>
           <span className="card-kicker">Dipesan</span>
           <strong>{number(totals.reserved)}</strong>
-          <span className="subtle">Sudah diklaim pesanan aktif</span>
-        </div>
-        <div>
+          <span className="subtle">Diamankan checkout aktif</span>
+        </Card>
+        <Card>
           <span className="card-kicker">Tersedia</span>
           <strong>{number(totals.available)}</strong>
-          <span className="subtle">Dapat dipesan sekarang</span>
+          <span className="subtle">Bisa langsung di-checkout</span>
+        </Card>
+      </div>
+
+      <Card className="content-stack">
+        <div className="split-heading">
+          <div>
+            <span className="card-kicker">Tambah Ready Stock</span>
+            <h2>Input etalase manual</h2>
+          </div>
+          <span className="subtle">Master Buku tidak digunakan</span>
         </div>
+        <ListingForm
+          onSaved={(listingId, text) => {
+            setMessage(text);
+            setMediaId(listingId);
+          }}
+        />
       </Card>
-      {editingRow ? (
-        <Card>
-          <PriceEditor
-            key={editing}
-            row={editingRow}
-            onClose={() => setEditing(null)}
-            onSaved={(text) => {
+
+      {editing ? (
+        <Card className="content-stack">
+          <div className="split-heading">
+            <div>
+              <span className="card-kicker">Edit Ready Stock</span>
+              <h2>{editing.title}</h2>
+            </div>
+          </div>
+          <ListingForm
+            listing={editing}
+            onClose={() => setEditingId(null)}
+            onSaved={(_listingId, text) => {
               setMessage(text);
-              setEditing(null);
+              setEditingId(null);
             }}
           />
         </Card>
       ) : null}
-      {message ? (
-        <span className="subtle" role="status">
-          {message}
-        </span>
+
+      {mediaListing ? (
+        <MediaEditor
+          listing={mediaListing}
+          onClose={() => setMediaId(null)}
+          onMessage={setMessage}
+        />
       ) : null}
+
+      {message ? <p className="success-banner" role="status">{message}</p> : null}
+
       {rows.length ? (
         <div className="table-wrap">
-          <table className="data-table admin-stock-table">
-            <caption className="sr-only">Daftar Ready Stock per format</caption>
+          <table className="data-table admin-stock-table ready-stock-manual-table">
+            <caption className="sr-only">Etalase Ready Stock manual</caption>
             <thead>
               <tr>
-                <th>Buku / ISBN</th>
+                <th>Cover / Judul</th>
                 <th>Format</th>
-                <th>Harga Master</th>
-                <th>Harga Ready Stock</th>
-                <th>Status</th>
-                <th>Stok fisik</th>
-                <th>Dipesan</th>
+                <th>Harga</th>
+                <th>QTY</th>
                 <th>Tersedia</th>
+                <th>Status</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.variantId}>
+                <tr key={row.listingId}>
                   <td>
-                    <strong>{row.title}</strong>
-                    <span className="subtle table-secondary">
-                      {row.publisherName} · {row.isbn}
-                    </span>
+                    <div className="ready-stock-admin-title-cell">
+                      {row.coverUrl ? <img className="ready-stock-admin-thumb" src={row.coverUrl} alt="" /> : <span className="ready-stock-admin-thumb is-empty" aria-hidden="true" />}
+                      <strong>{row.title}</strong>
+                    </div>
                   </td>
                   <td>{row.format}</td>
-                  <td className="admin-ready-stock-price">
-                    <Money amount={row.masterPriceAmount} />
-                  </td>
-                  <td className="admin-ready-stock-price">
-                    <Money amount={row.effectivePriceAmount} />
-                    <span className="subtle table-secondary">
-                      {row.priceOverrideAmount === null ? "Mengikuti harga Master" : "Harga khusus Ready Stock"}
-                    </span>
-                  </td>
+                  <td><Money amount={row.priceAmount} /></td>
+                  <td className="numeric-cell">{number(row.quantity)}</td>
+                  <td className="numeric-cell"><strong>{number(row.availableQuantity)}</strong></td>
+                  <td><StatusBadge tone={row.status === "published" ? "positive" : "neutral"}>{listingStatusLabel(row.status)}</StatusBadge></td>
                   <td>
-                    <StatusBadge
-                      tone={row.publicationStatus === "published" && row.isAvailable ? "positive" : "neutral"}
-                    >
-                      {row.publicationStatus === "published" && row.isAvailable
-                        ? "Tercantum"
-                        : publicationLabels[row.publicationStatus] || row.publicationStatus}
-                    </StatusBadge>
-                  </td>
-                  <td className="numeric-cell">{number(row.onHandQuantity)}</td>
-                  <td className="numeric-cell">{number(row.reservedQuantity)}</td>
-                  <td className="numeric-cell">
-                    <strong>{number(row.availableQuantity)}</strong>
-                  </td>
-                  <td>
-                    <div className="form-actions">
-                      <Button
-                        variant="secondary"
-                        disabled={!row.hasInventory || editing !== null}
-                        onClick={() => {
-                          setMessage("");
-                          setEditing(row.variantId);
-                        }}
-                      >
-                        Atur harga
-                      </Button>
-                      <LinkButton href={`/admin/books/${row.bookId}`} variant="secondary">
-                        Edit stok
-                      </LinkButton>
+                    <div className="form-actions ready-stock-admin-actions">
+                      <Button type="button" size="compact" variant="secondary" onClick={() => setEditingId(row.listingId)}>Edit data</Button>
+                      <Button type="button" size="compact" variant="secondary" onClick={() => setMediaId(row.listingId)}>Kelola foto</Button>
+                      {row.status === "draft" ? (
+                        <Button type="button" size="compact" onClick={() => void changeStatus(row, "published")}>Terbitkan</Button>
+                      ) : row.status === "published" ? (
+                        <Button type="button" size="compact" variant="tertiary" onClick={() => void changeStatus(row, "draft")}>Jadikan draft</Button>
+                      ) : null}
+                      {row.status !== "archived" ? (
+                        <Button type="button" size="compact" variant="danger" onClick={() => void changeStatus(row, "archived")}>Arsipkan</Button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -230,41 +580,36 @@ function ReadyStockContent({ rows }: { rows: ReadyStockRows }) {
         </div>
       ) : (
         <EmptyState
-          title="Belum ada format Ready Stock."
-          description="Tambahkan format buku dari Master Buku untuk mulai mencatat stok fisik."
-          action={<LinkButton href="/admin/books">Buka Master Buku</LinkButton>}
+          title="Belum ada etalase Ready Stock."
+          description="Tambahkan buku secara manual beserta foto asli, harga, format, dan QTY."
         />
       )}
+
+      <PurchaseQueue purchases={purchases} />
     </>
   );
 }
 
 function ConnectedAdminReadyStock() {
-  const rows = useQuery(api.readyStock.listForAdmin, {});
+  const rows = useQuery(api.readyStockManual.listForAdmin, {});
+  const purchases = useQuery(api.readyStockManual.listPurchasesForAdmin, {});
+  const loading = rows === undefined || purchases === undefined;
 
   return (
     <AdminOperationalPage
       eyebrow="Ready Stock"
-      title="Stok yang siap diproses."
-      description="Stok fisik adalah jumlah yang tercatat. Dipesan berasal dari pesanan aktif. Tersedia selalu dihitung server."
-      loading={rows === undefined}
-      skeleton={{ titleWidth: "54%", descriptionWidths: ["92%", "56%"], actionWidths: ["142px"] }}
-      actions={
-        <LinkButton href="/admin/books" variant="secondary">
-          Kelola Master Buku
-        </LinkButton>
-      }
+      title="Etalase stok nyata."
+      description="Ready Stock berdiri sendiri dari Master Buku. Kelola foto asli, harga, format, QTY, checkout, pembayaran, dan pengiriman dari satu tempat."
+      loading={loading}
+      skeleton={{ titleWidth: "54%", descriptionWidths: ["92%", "56%"], actionWidths: [] }}
     >
-      {rows === undefined ? (
+      {loading ? (
         <LoadingRegion label="Memuat Ready Stock">
           <SkeletonSummaryGrid />
-          <SkeletonTableBlock
-            rows={8}
-            columnWidths={["1.8fr", "0.8fr", "1fr", "1.3fr", "0.85fr", "0.7fr", "0.7fr", "0.7fr", "1fr"]}
-          />
+          <SkeletonTableBlock rows={8} columnWidths={["1.8fr", "0.8fr", "1fr", "0.7fr", "0.7fr", "0.8fr", "1.4fr"]} />
         </LoadingRegion>
       ) : (
-        <ReadyStockContent rows={rows} />
+        <ReadyStockContent rows={rows} purchases={purchases} />
       )}
     </AdminOperationalPage>
   );
