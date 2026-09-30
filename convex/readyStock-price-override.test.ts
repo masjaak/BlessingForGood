@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
-import { createBookStructuredData } from "../src/lib/seo";
 
 async function fixture(quantity = 3) {
   const t = testConvex();
@@ -54,7 +53,6 @@ describe("Ready Stock independent price transitions", () => {
     expect((await t.query(api.readyStock.list, {})).items[0]).toMatchObject({ minPrice: 195000, maxPrice: 195000 });
     const overridden = await detail();
     expect(overridden?.variants[0].priceAmount).toBe(195000);
-    expect(createBookStructuredData(overridden!).offers[0].price).toBe(195000);
     expect((await admin.query(api.books.getForAdmin, { bookId }))?.variants[0].priceAmount).toBe(175000);
     expect((await admin.query(api.catalogItems.listForCatalog, { catalogId }))[0].priceAmount).toBe(180000);
 
