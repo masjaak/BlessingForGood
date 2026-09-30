@@ -745,7 +745,12 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
     ],
   );
   const customer = customerRecord?.role === "customer" ? customerRecord : null;
-  if (!order && !invoice.manualPoEntryId) blockers.push("Invoice Order root tidak ditemukan");
+  if (!order && !invoice.manualPoEntryId && !invoice.readyStockOrderId) {
+    blockers.push("Invoice Order root tidak ditemukan");
+  }
+  if (invoice.readyStockOrderId) {
+    blockers.push("Invoice Ready Stock standalone belum memiliki jalur purge UAT deterministik");
+  }
   if (
     invoice.financialAdjustmentAmount !== 0 ||
     invoice.adjustedTotalAmount !== invoice.totalAmount ||
@@ -757,6 +762,12 @@ async function invoicePlan(ctx: DataCtx, invoiceId: Id<"invoices">): Promise<Inv
     if (invoice.manualPoEntryId) {
       if (item.manualPoEntryId !== invoice.manualPoEntryId) {
         blockers.push("InvoiceItem Random PO tidak terhubung ke Pesanan Khusus");
+      }
+      continue;
+    }
+    if (invoice.readyStockOrderId) {
+      if (item.readyStockOrderId !== invoice.readyStockOrderId) {
+        blockers.push("InvoiceItem Ready Stock tidak terhubung ke Ready Stock Order");
       }
       continue;
     }
