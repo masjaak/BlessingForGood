@@ -2,7 +2,10 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { BookCover } from "@/components/book-cover";
 import { ProductGallery, type ProductGalleryImage } from "@/components/product-gallery";
 import { BFGSelect } from "@/components/bfg-select";
@@ -13,6 +16,7 @@ import { useProduct } from "@/domain/prototype/store";
 import type { Book } from "@/domain/prototype/types";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 import { AddToCartAction } from "@/features/customer-cart/add-to-cart-action";
+import { getStoredCatalogSession } from "@/domain/prototype/session";
 
 function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book }) {
   const { authState, sessionRole, submitOrder, dataSource, customerProfileDisplayName } = useProduct();
@@ -179,12 +183,36 @@ export function SecretCatalogBookDetail() {
   const params = useParams<{ catalogId: string; bookId: string }>();
   const catalogId = String(params.catalogId);
   const bookId = String(params.bookId);
-  const { dataSource, catalogLoading, unlockedCatalog: catalog } = useProduct();
+  const { dataSource, catalogLoading, authState } = useProduct();
+  const [sessionHydrated, setSessionHydrated] = useState(false);
+  const [sessionToken, setSessionToken] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const stored = getStoredCatalogSession();
+    setSessionToken(stored?.sessionToken);
+    setSessionHydrated(true);
+  }, []);
+
+  const canQuery =
+    dataSource === "convex" &&
+    sessionHydrated &&
+    (Boolean(sessionToken) || authState !== "signed-out");
+  const directBook = useQuery(
+    api.catalogAccess.getBookUnlocked,
+    canQuery
+      ? {
+          catalogId: catalogId as Id<"secretCatalogs">,
+          bookId: bookId as Id<"books">,
+          sessionToken,
+        }
+      : "skip",
+  );
+  const book = directBook as Book | null | undefined;
 
   if (dataSource !== "convex") {
     return <EmptyState title="Detail buku belum tersedia" description="Katalog belum dapat dimuat saat ini." />;
   }
-  if (catalogLoading) {
+  if (catalogLoading || !sessionHydrated || (canQuery && directBook === undefined)) {
     return (
       <LoadingRegion label="Memuat detail buku">
         <SkeletonCard variant="book" />
@@ -192,7 +220,7 @@ export function SecretCatalogBookDetail() {
       </LoadingRegion>
     );
   }
-  if (!catalog || catalog.id !== catalogId) {
+  if (!canQuery) {
     return (
       <EmptyState
         title="Akses katalog diperlukan"
@@ -201,7 +229,6 @@ export function SecretCatalogBookDetail() {
       />
     );
   }
-  const book = catalog.books.find((candidate) => candidate.id === bookId);
   if (!book) {
     return (
       <EmptyState
