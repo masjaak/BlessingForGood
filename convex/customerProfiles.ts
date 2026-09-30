@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireActiveUser, requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 
 const profileFields = {
@@ -65,5 +66,42 @@ export const getForAdmin = query({
       .query("customerProfiles")
       .withIndex("by_user_id", (index) => index.eq("userId", args.userId))
       .unique();
+  },
+});
+
+export const updateDisplayNameForAdmin = mutation({
+  args: {
+    userId: v.id("appUsers"),
+    displayName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requirePermission(ctx, "customers.manage");
+    const customer = await ctx.db.get(args.userId);
+    if (!customer || customer.role !== "customer" || customer.status === "removed") fail("USER_NOT_FOUND");
+    const displayName = text(args.displayName, "display name");
+    const existing = await ctx.db
+      .query("customerProfiles")
+      .withIndex("by_user_id", (index) => index.eq("userId", args.userId))
+      .unique();
+    const now = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, { displayName, updatedAt: now });
+      await recordAudit(ctx, actor._id, "customer.display_name_updated", "customerProfile", existing._id, {
+        customerUserId: String(args.userId),
+        displayName,
+      });
+      return ctx.db.get(existing._id);
+    }
+    const profileId = await ctx.db.insert("customerProfiles", {
+      userId: args.userId,
+      displayName,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await recordAudit(ctx, actor._id, "customer.display_name_updated", "customerProfile", profileId, {
+      customerUserId: String(args.userId),
+      displayName,
+    });
+    return ctx.db.get(profileId);
   },
 });
