@@ -7,37 +7,52 @@ import { useProduct } from "@/domain/prototype/store";
 vi.mock("convex/react", () => ({ useQuery: vi.fn() }));
 vi.mock("@/domain/prototype/store", () => ({ useProduct: vi.fn() }));
 
-describe("Ready Stock public selling prices", () => {
-  it("renders effective range prices and requests server price sorting", () => {
+describe("Standalone Ready Stock public catalog", () => {
+  it("renders manual listing price, format, stock, and requests server price sorting", () => {
     vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
     vi.mocked(useQuery).mockReturnValue({
       items: [
         {
-          bookId: "book-1",
-          slug: "carry-me",
-          title: "Carry Me!",
-          author: null,
-          publisher: { id: "publisher-1", name: "BFG House" },
-          coverImageUrl: null,
-          minPrice: 195000,
-          maxPrice: 210000,
-          totalStock: 3,
-          variants: [
-            { id: "variant-1", format: "PB", priceAmount: 195000, stockQuantity: 2 },
-            { id: "variant-2", format: "HB", priceAmount: 210000, stockQuantity: 1 },
-          ],
+          listingId: "listing-1",
+          id: "listing-1",
+          slug: "are-we-ready-for-a-pet",
+          title: "Are We Ready For A Pet?",
+          priceAmount: 225000,
+          format: "PB",
+          quantity: 4,
+          reservedQuantity: 1,
+          availableQuantity: 3,
+          status: "published",
+          coverUrl: null,
+          gallery: [],
+          createdAt: 1,
+          updatedAt: 1,
         },
       ],
-      filters: { categories: [], publishers: [], formats: [] },
+      filters: { formats: ["PB"] },
     } as never);
+
     const { container } = render(<ReadyStockCatalog />);
-    const card = screen.getByRole("link", { name: /Carry Me!/ });
-    expect(card.textContent).toContain("195.000");
-    expect(card.textContent).toContain("210.000");
-    expect(card.textContent).not.toContain("175.000");
+    const card = screen.getByRole("link", { name: /Are We Ready For A Pet/ });
+    expect(card.textContent).toContain("225.000");
+    expect(card.textContent).toContain("PB");
+    expect(card.textContent).toContain("3 tersedia");
     expect(container.querySelectorAll(".ready-stock-card")).toHaveLength(1);
+
     fireEvent.click(screen.getByRole("combobox", { name: "Urutkan" }));
     fireEvent.click(screen.getByRole("option", { name: "Harga" }));
     expect(vi.mocked(useQuery).mock.lastCall?.[1]).toMatchObject({ sort: "price" });
+  });
+
+  it("searches the standalone Ready Stock title without Master Buku filters", () => {
+    vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
+    vi.mocked(useQuery).mockReturnValue({ items: [], filters: { formats: [] } } as never);
+
+    render(<ReadyStockCatalog />);
+    fireEvent.change(screen.getByPlaceholderText("Cari judul Ready Stock"), { target: { value: "Pet" } });
+
+    expect(vi.mocked(useQuery).mock.lastCall?.[1]).toMatchObject({ search: "Pet" });
+    expect(screen.queryByRole("combobox", { name: "Penerbit" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Kategori" })).toBeNull();
   });
 });
