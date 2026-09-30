@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -17,6 +17,10 @@ import type { Book } from "@/domain/prototype/types";
 import { usePreorderCustomerName } from "@/lib/preorder-customer-name";
 import { AddToCartAction } from "@/features/customer-cart/add-to-cart-action";
 import { getStoredCatalogSession } from "@/domain/prototype/session";
+
+const noSubscribe = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 function DetailOrderForm({ catalogId, book }: { catalogId: string; book: Book }) {
   const { authState, sessionRole, submitOrder, dataSource, customerProfileDisplayName } = useProduct();
@@ -184,19 +188,10 @@ export function SecretCatalogBookDetail() {
   const catalogId = String(params.catalogId);
   const bookId = String(params.bookId);
   const { dataSource, catalogLoading, authState } = useProduct();
-  const [sessionHydrated, setSessionHydrated] = useState(false);
-  const [sessionToken, setSessionToken] = useState<string | undefined>(undefined);
+  const sessionHydrated = useSyncExternalStore(noSubscribe, clientSnapshot, serverSnapshot);
+  const sessionToken = sessionHydrated ? getStoredCatalogSession()?.sessionToken : undefined;
 
-  useEffect(() => {
-    const stored = getStoredCatalogSession();
-    setSessionToken(stored?.sessionToken);
-    setSessionHydrated(true);
-  }, []);
-
-  const canQuery =
-    dataSource === "convex" &&
-    sessionHydrated &&
-    (Boolean(sessionToken) || authState !== "signed-out");
+  const canQuery = dataSource === "convex" && sessionHydrated && (Boolean(sessionToken) || authState !== "signed-out");
   const directBook = useQuery(
     api.catalogAccess.getBookUnlocked,
     canQuery
