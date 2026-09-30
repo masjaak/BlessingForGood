@@ -35,6 +35,8 @@ const orderStatus = v.union(v.literal("submitted"), v.literal("cancelled"), v.li
 const uploadPurpose = v.union(
   v.literal("book-cover"),
   v.literal("book-gallery"),
+  v.literal("ready-stock-cover"),
+  v.literal("ready-stock-gallery"),
   v.literal("payment-proof"),
   v.literal("deposit-proof"),
 );
@@ -325,6 +327,61 @@ export default defineSchema({
     .index("by_order_item", ["orderItemId"])
     .index("by_variant", ["bookVariantId"])
     .index("by_status", ["status"]),
+
+  readyStockListings: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    priceAmount: v.number(),
+    format: bookFormat,
+    quantity: v.number(),
+    reservedQuantity: v.number(),
+    status: v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),
+    coverStorageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+    updatedByUserId: v.id("appUsers"),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_cover_storage_id", ["coverStorageId"]),
+
+  readyStockListingMedia: defineTable({
+    listingId: v.id("readyStockListings"),
+    storageId: v.id("_storage"),
+    displayOrder: v.number(),
+    altText: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_listing_and_order", ["listingId", "displayOrder"])
+    .index("by_storage_id", ["storageId"]),
+
+  readyStockPurchases: defineTable({
+    listingId: v.id("readyStockListings"),
+    customerUserId: v.id("appUsers"),
+    invoiceId: v.optional(v.id("invoices")),
+    titleSnapshot: v.string(),
+    formatSnapshot: bookFormat,
+    unitPriceAmountSnapshot: v.number(),
+    quantity: v.number(),
+    subtotalAmount: v.number(),
+    status: v.union(v.literal("active"), v.literal("cancelled"), v.literal("completed")),
+    fulfillmentStage: v.optional(v.union(v.literal("packing"), v.literal("shipping"), v.literal("delivered"))),
+    packedAt: v.optional(v.number()),
+    shippedAt: v.optional(v.number()),
+    deliveredAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    cancelledAt: v.optional(v.number()),
+  })
+    .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_listing", ["listingId"])
+    .index("by_invoice", ["invoiceId"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_status_and_created_at", ["status", "createdAt"]),
 
   secretCatalogs: defineTable({
     name: v.string(),
@@ -755,6 +812,7 @@ export default defineSchema({
   invoices: defineTable({
     orderId: v.optional(v.id("orders")),
     manualPoEntryId: v.optional(v.id("manualPoEntries")),
+    readyStockPurchaseId: v.optional(v.id("readyStockPurchases")),
     customerUserId: v.id("appUsers"),
     batchId: v.optional(v.id("batches")),
     invoiceNumber: v.string(),
@@ -782,6 +840,7 @@ export default defineSchema({
   })
     .index("by_order", ["orderId"])
     .index("by_manual_po_entry", ["manualPoEntryId"])
+    .index("by_ready_stock_purchase", ["readyStockPurchaseId"])
     .index("by_batch", ["batchId"])
     .index("by_customer_user_id", ["customerUserId"])
     .index("by_status", ["status"])
@@ -841,6 +900,7 @@ export default defineSchema({
     invoiceId: v.id("invoices"),
     orderItemId: v.optional(v.id("orderItems")),
     manualPoEntryId: v.optional(v.id("manualPoEntries")),
+    readyStockPurchaseId: v.optional(v.id("readyStockPurchases")),
     descriptionSnapshot: v.string(),
     bookTitleSnapshot: v.string(),
     publisherNameSnapshot: v.optional(v.string()),
@@ -853,7 +913,8 @@ export default defineSchema({
   })
     .index("by_invoice", ["invoiceId"])
     .index("by_order_item", ["orderItemId"])
-    .index("by_manual_po_entry", ["manualPoEntryId"]),
+    .index("by_manual_po_entry", ["manualPoEntryId"])
+    .index("by_ready_stock_purchase", ["readyStockPurchaseId"]),
 
   refundObligations: defineTable({
     customerUserId: v.id("appUsers"),
