@@ -1,6 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -20,7 +20,7 @@ function availableQuantity(listing: { quantity: number; reservedQuantity: number
   return Math.max(0, listing.quantity - listing.reservedQuantity);
 }
 
-async function listingView(ctx: QueryCtx, listing: any, includeMedia = false) {
+async function listingView(ctx: QueryCtx, listing: Doc<"readyStockListings">, includeMedia = false) {
   const gallery = includeMedia
     ? await ctx.db
         .query("readyStockListingMedia")
@@ -30,7 +30,7 @@ async function listingView(ctx: QueryCtx, listing: any, includeMedia = false) {
     : [];
   const coverUrl = listing.coverStorageId ? await ctx.storage.getUrl(listing.coverStorageId) : null;
   const galleryView = await Promise.all(
-    gallery.map(async (media: any) => ({
+    gallery.map(async (media) => ({
       mediaId: media._id,
       displayOrder: media.displayOrder,
       altText: media.altText,
