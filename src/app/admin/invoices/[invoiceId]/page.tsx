@@ -195,9 +195,11 @@ function AdminInvoiceDetail() {
         eyebrow="Operasi invoice"
         title={invoiceReference(currentAdminInvoice.invoiceNumber)}
         description={`${currentAdminInvoice.customerName} · ID Blessfriend: ${currentAdminInvoice.customerMemberCode || "belum tersedia"} · ${
-          currentAdminInvoice.source === "manual_po"
-            ? "Pesanan Khusus / Random PO"
-            : currentAdminInvoice.orderCode ||
+          currentAdminInvoice.source === "ready_stock"
+            ? "Ready Stock"
+            : currentAdminInvoice.source === "manual_po"
+              ? "Pesanan Khusus / Random PO"
+              : currentAdminInvoice.orderCode ||
               (currentAdminInvoice.orderId
                 ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
                 : "Pesanan")
@@ -235,9 +237,11 @@ function AdminInvoiceDetail() {
             <div className="summary-line">
               <span>Referensi pesanan</span>
               <span>
-                {currentAdminInvoice.source === "manual_po"
-                  ? "Pesanan Khusus / Random PO"
-                  : currentAdminInvoice.orderCode ||
+                {currentAdminInvoice.source === "ready_stock"
+                  ? "Ready Stock"
+                  : currentAdminInvoice.source === "manual_po"
+                    ? "Pesanan Khusus / Random PO"
+                    : currentAdminInvoice.orderCode ||
                     (currentAdminInvoice.orderId
                       ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
                       : "Pesanan")}
