@@ -10032,12 +10032,12 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-lg);
-  align-items: stretch;
+  align-items: start;
 }
 
 .admin-ready-stock-media-frame {
   min-width: 0;
-  height: 100%;
+  height: auto;
   padding: var(--space-md);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -10045,7 +10045,7 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
 }
 
 .admin-ready-stock-media-frame .cover-upload-field {
-  height: 100%;
+  height: auto;
 }
 
 .admin-ready-stock-gallery-editor {
