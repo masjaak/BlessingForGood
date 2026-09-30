@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CustomerOrdersPage from "@/app/account/orders/page";
 import { useQuery } from "convex/react";
+import { getFunctionName } from "convex/server";
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
@@ -53,8 +54,18 @@ const randomPo = [
 
 beforeEach(() => {
   vi.mocked(useQuery).mockReset();
-  vi.mocked(useQuery).mockReturnValueOnce(overview as never).mockReturnValueOnce(randomPo as never);
+  mockQueries(overview);
 });
+
+function mockQueries(bookOverview: typeof overview | undefined) {
+  vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
+    const name = getFunctionName(args[0]);
+    if (name === "batchTracking:getBookOverview") return bookOverview;
+    if (name === "manualPoEntries:listMine") return randomPo;
+    if (name === "readyStockOrders:listMine") return { page: [], isDone: true, continueCursor: "" };
+    throw new Error(`Unexpected query: ${name}`);
+  });
+}
 
 describe("Customer Buku Saya layout contract", () => {
   it("keeps summary copy vertical and separates the readable batch range", () => {
@@ -78,7 +89,7 @@ describe("Customer Buku Saya layout contract", () => {
 
   it("keeps Random PO visible even while the regular order overview is still loading", () => {
     vi.mocked(useQuery).mockReset();
-    vi.mocked(useQuery).mockReturnValueOnce(undefined as never).mockReturnValueOnce(randomPo as never);
+    mockQueries(undefined);
 
     render(<CustomerOrdersPage />);
 

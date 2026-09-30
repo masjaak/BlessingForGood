@@ -9949,7 +9949,6 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   }
 }
 
-
 /* Standalone Ready Stock storefront + fulfillment */
 .ready-stock-controls-standalone {
   grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(150px, 1fr));
@@ -9963,6 +9962,20 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
 .ready-stock-direct-checkout {
   display: grid;
   gap: var(--space-md);
+}
+
+.admin-ready-stock-listing-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.admin-ready-stock-listing-title img {
+  width: 3rem;
+  height: 4rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
 }
 
 .admin-ready-stock-summary-grid {

@@ -34,9 +34,7 @@ describe("Standalone Ready Stock", () => {
       status: "published",
     });
 
-    await expect(
-      t.query(api.readyStockListings.getBySlug, { slug: created.slug }),
-    ).resolves.toMatchObject({
+    await expect(t.query(api.readyStockListings.getBySlug, { slug: created.slug })).resolves.toMatchObject({
       listingId: created.listingId,
       title: "Are We Ready For A Pet?",
       priceAmount: 195000,
@@ -49,6 +47,7 @@ describe("Standalone Ready Stock", () => {
 
     await expect(
       customer.mutation(api.readyStockOrders.checkout, {
+        requestKey: "existing-checkout-1",
         listingId: created.listingId,
         quantity: 2,
       }),
@@ -66,6 +65,7 @@ describe("Standalone Ready Stock", () => {
     });
 
     const checkout = await customer.mutation(api.readyStockOrders.checkout, {
+      requestKey: "existing-checkout-2",
       listingId: created.listingId,
       quantity: 2,
     });
@@ -111,9 +111,7 @@ describe("Standalone Ready Stock", () => {
       }),
     ]);
 
-    await expect(
-      customer.query(api.invoices.getMine, { invoiceId: checkout.invoiceId! }),
-    ).resolves.toMatchObject({
+    await expect(customer.query(api.invoices.getMine, { invoiceId: checkout.invoiceId! })).resolves.toMatchObject({
       source: "ready_stock",
       readyStockOrderId: checkout.orderId,
       orderId: null,
@@ -129,9 +127,11 @@ describe("Standalone Ready Stock", () => {
       });
     });
     expect(
-      (await customer.query(api.readyStockOrders.listMine, {
-        paginationOpts: { numItems: 10, cursor: null },
-      })).page[0],
+      (
+        await customer.query(api.readyStockOrders.listMine, {
+          paginationOpts: { numItems: 10, cursor: null },
+        })
+      ).page[0],
     ).toMatchObject({ operationalStatus: "verifying_payment" });
 
     await t.run(async (ctx) => {
@@ -143,9 +143,11 @@ describe("Standalone Ready Stock", () => {
       });
     });
     expect(
-      (await customer.query(api.readyStockOrders.listMine, {
-        paginationOpts: { numItems: 10, cursor: null },
-      })).page[0],
+      (
+        await customer.query(api.readyStockOrders.listMine, {
+          paginationOpts: { numItems: 10, cursor: null },
+        })
+      ).page[0],
     ).toMatchObject({ operationalStatus: "paid" });
 
     await admin.mutation(api.readyStockOrders.updateStage, {
@@ -191,9 +193,7 @@ describe("Standalone Ready Stock", () => {
       format: "PB",
       quantity: 2,
     });
-    const coverStorageId = await t.run(async (ctx) =>
-      ctx.storage.store(new Blob(["cover"], { type: "image/webp" })),
-    );
+    const coverStorageId = await t.run(async (ctx) => ctx.storage.store(new Blob(["cover"], { type: "image/webp" })));
     await t.run((ctx) => ctx.db.patch(created.listingId, { coverStorageId }));
     await admin.mutation(api.readyStockListings.update, {
       listingId: created.listingId,
@@ -211,6 +211,7 @@ describe("Standalone Ready Stock", () => {
     });
 
     const checkout = await customer.mutation(api.readyStockOrders.checkout, {
+      requestKey: "existing-checkout-3",
       listingId: created.listingId,
       quantity: 1,
     });
@@ -227,9 +228,11 @@ describe("Standalone Ready Stock", () => {
       reservedQuantity: 0,
     });
     expect(
-      (await customer.query(api.readyStockOrders.listMine, {
-        paginationOpts: { numItems: 10, cursor: null },
-      })).page[0],
+      (
+        await customer.query(api.readyStockOrders.listMine, {
+          paginationOpts: { numItems: 10, cursor: null },
+        })
+      ).page[0],
     ).toMatchObject({ operationalStatus: "cancelled" });
   });
 

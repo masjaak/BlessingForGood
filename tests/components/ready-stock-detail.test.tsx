@@ -47,10 +47,12 @@ describe("Standalone Ready Stock checkout", () => {
     fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "2" } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Checkout sekarang" })));
 
-    expect(checkout).toHaveBeenCalledExactlyOnceWith({ listingId: "listing-1", quantity: 2 });
-    expect(screen.getByRole("link", { name: "Buka tagihan" }).getAttribute("href")).toBe(
-      "/account/invoices/invoice-1",
-    );
+    expect(checkout).toHaveBeenCalledExactlyOnceWith({
+      listingId: "listing-1",
+      quantity: 2,
+      requestKey: expect.any(String),
+    });
+    expect(screen.getByRole("link", { name: "Buka tagihan" }).getAttribute("href")).toBe("/account/invoices/invoice-1");
     expect(screen.getByRole("link", { name: "Pantau pesanan" }).getAttribute("href")).toBe("/account/orders");
   });
 
@@ -60,6 +62,31 @@ describe("Standalone Ready Stock checkout", () => {
     render(<ReadyStockCheckoutAction book={book} />);
     expect(screen.getByRole("link", { name: "Masuk untuk checkout" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Checkout sekarang" })).toBeNull();
+  });
+
+  it("keeps the invoice destination when checkout reserves the final stock", async () => {
+    let resolve!: (value: { invoiceId: string }) => void;
+    const checkout = vi.fn(
+      () =>
+        new Promise<{ invoiceId: string }>((done) => {
+          resolve = done;
+        }),
+    );
+    vi.mocked(useMutation).mockReturnValue(checkout as never);
+    vi.mocked(useQuery).mockReturnValue(book);
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "authenticated",
+      sessionRole: "customer",
+    } as never);
+    const view = render(<ReadyStockDetail slug="ready-book" />);
+    fireEvent.click(screen.getByRole("button", { name: "Checkout sekarang" }));
+    vi.mocked(useQuery).mockReturnValue(null);
+    view.rerender(<ReadyStockDetail slug="ready-book" />);
+    await act(async () => resolve({ invoiceId: "last-unit-invoice" }));
+    expect(screen.getByRole("link", { name: "Buka tagihan" }).getAttribute("href")).toBe(
+      "/account/invoices/last-unit-invoice",
+    );
   });
 
   it.each(["admin", "owner"] as const)("does not offer Customer checkout to %s", (role) => {

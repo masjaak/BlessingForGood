@@ -67,7 +67,8 @@ function PersistentCustomerInvoices() {
                     ? "Ready Stock"
                     : invoice.source === "manual_po"
                       ? "Pesanan Khusus / Random PO"
-                      : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
+                      : invoice.orderCode ||
+                        (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
                 </span>
               </div>
               {invoice.items.map((item) => (

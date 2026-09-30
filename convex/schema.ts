@@ -368,6 +368,7 @@ export default defineSchema({
 
   readyStockOrders: defineTable({
     customerUserId: v.id("appUsers"),
+    requestKey: v.optional(v.string()),
     listingId: v.id("readyStockListings"),
     invoiceId: v.optional(v.id("invoices")),
     titleSnapshot: v.string(),
@@ -388,6 +389,7 @@ export default defineSchema({
     createdByUserId: v.id("appUsers"),
   })
     .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_customer_and_request_key", ["customerUserId", "requestKey"])
     .index("by_listing_and_created_at", ["listingId", "createdAt"])
     .index("by_stage_and_created_at", ["stage", "createdAt"])
     .index("by_invoice", ["invoiceId"])
@@ -399,8 +401,7 @@ export default defineSchema({
     actorUserId: v.id("appUsers"),
     note: v.optional(v.string()),
     createdAt: v.number(),
-  })
-    .index("by_order_and_created_at", ["orderId", "createdAt"]),
+  }).index("by_order_and_created_at", ["orderId", "createdAt"]),
 
   secretCatalogs: defineTable({
     name: v.string(),

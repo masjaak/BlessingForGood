@@ -1,6 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireActiveCustomer, requirePermission } from "./lib/auth";
@@ -9,7 +9,7 @@ import { fail } from "./lib/errors";
 import { nextInvoiceNumber } from "./lib/invoiceNumbers";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { enforceRateLimit } from "./lib/rateLimit";
-import { positiveQuantity } from "./lib/validation";
+import { positiveQuantity, requiredText } from "./lib/validation";
 
 type DataCtx = QueryCtx | MutationCtx;
 const adminStageValidator = v.union(v.literal("packing"), v.literal("shipping"), v.literal("delivered"));
@@ -49,7 +49,12 @@ function timelineFor(status: TimelineKey | "cancelled") {
   const currentIndex = TIMELINE.findIndex((step) => step.key === status);
   return TIMELINE.map((step, index) => ({
     ...step,
-    state: index < currentIndex ? ("complete" as const) : index === currentIndex ? ("current" as const) : ("upcoming" as const),
+    state:
+      index < currentIndex
+        ? ("complete" as const)
+        : index === currentIndex
+          ? ("current" as const)
+          : ("upcoming" as const),
   }));
 }
 
@@ -93,15 +98,30 @@ async function orderView(ctx: DataCtx, order: Doc<"readyStockOrders">) {
 }
 
 export const checkout = mutation({
-  args: { listingId: v.id("readyStockListings"), quantity: v.number() },
+  args: { listingId: v.id("readyStockListings"), quantity: v.number(), requestKey: v.string() },
   handler: async (ctx, args) => {
     const customer = await requireActiveCustomer(ctx);
+    const requestKey = requiredText(args.requestKey, "checkout request key");
+    if (requestKey.length > 128) fail("VALIDATION_FAILED", "checkout request key is invalid");
+    const quantity = positiveQuantity(args.quantity);
+    const previous = await ctx.db
+      .query("readyStockOrders")
+      .withIndex("by_customer_and_request_key", (q) =>
+        q.eq("customerUserId", customer._id).eq("requestKey", requestKey),
+      )
+      .unique();
+    if (previous) {
+      if (previous.listingId !== args.listingId || previous.quantity !== quantity) {
+        fail("VALIDATION_FAILED", "checkout request key is already used");
+      }
+      return orderView(ctx, previous);
+    }
     await enforceRateLimit(ctx, "readyStockOrderUser", String(customer._id));
     const listing = await ctx.db.get(args.listingId);
     if (!listing || listing.status !== "published") fail("READY_STOCK_UNAVAILABLE");
-    const quantity = positiveQuantity(args.quantity);
     const available = listing.quantity - listing.reservedQuantity;
-    if (available < quantity) fail("READY_STOCK_UNAVAILABLE", available > 0 ? "Jumlah melebihi stok." : "Stok baru saja habis.");
+    if (available < quantity)
+      fail("READY_STOCK_UNAVAILABLE", available > 0 ? "Jumlah melebihi stok." : "Stok baru saja habis.");
 
     const address =
       (await ctx.db
@@ -120,6 +140,7 @@ export const checkout = mutation({
 
     const orderId = await ctx.db.insert("readyStockOrders", {
       customerUserId: customer._id,
+      requestKey,
       listingId: listing._id,
       titleSnapshot: listing.title,
       formatSnapshot: listing.format,

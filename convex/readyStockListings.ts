@@ -24,7 +24,7 @@ async function listingView(ctx: QueryCtx, listing: Doc<"readyStockListings">, in
   const gallery = includeMedia
     ? await ctx.db
         .query("readyStockListingMedia")
-        .withIndex("by_listing_and_order", (q: any) => q.eq("listingId", listing._id))
+        .withIndex("by_listing_and_order", (q) => q.eq("listingId", listing._id))
         .order("asc")
         .take(READY_STOCK_GALLERY_LIMIT)
     : [];
@@ -70,7 +70,8 @@ export const list = query({
     const visible = rows.filter((listing) => {
       if (availableQuantity(listing) < 1) return false;
       if (args.format && listing.format !== args.format) return false;
-      if (search && ![listing.title, listing.format].some((value) => value.toLowerCase().includes(search))) return false;
+      if (search && ![listing.title, listing.format].some((value) => value.toLowerCase().includes(search)))
+        return false;
       return true;
     });
     visible.sort((a, b) => {
@@ -126,7 +127,8 @@ export const listForAdmin = query({
     const search = args.search?.trim().toLowerCase() || "";
     const filtered = rows.filter((listing) => {
       if (args.status && listing.status !== args.status) return false;
-      if (search && ![listing.title, listing.format].some((value) => value.toLowerCase().includes(search))) return false;
+      if (search && ![listing.title, listing.format].some((value) => value.toLowerCase().includes(search)))
+        return false;
       return true;
     });
     return Promise.all(filtered.map((listing) => listingView(ctx, listing, false)));
@@ -159,7 +161,10 @@ export const create = mutation({
     let slug = baseSlug;
     let suffix = 2;
     while (
-      await ctx.db.query("readyStockListings").withIndex("by_slug", (q) => q.eq("slug", slug)).first()
+      await ctx.db
+        .query("readyStockListings")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .first()
     ) {
       slug = `${baseSlug}-${suffix++}`;
     }
@@ -244,20 +249,30 @@ export const attachCover = action({
     mimeType: v.string(),
   },
   handler: async (ctx, args): Promise<{ storageId: Id<"_storage"> }> => {
-    await ctx.runQuery(internal.readyStockListings.assertUploadAccess, { listingId: args.listingId });
-    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
-    await validateUploadedFile(
-      ctx,
-      args.storageId,
-      args.fileName,
-      args.mimeType,
-      IMAGE_CONTENT_TYPES,
-      "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
-    );
-    return ctx.runMutation(internal.readyStockListings.attachCoverValidated, {
-      listingId: args.listingId,
-      storageId: args.storageId,
-    });
+    try {
+      await ctx.runQuery(internal.readyStockListings.assertUploadAccess, { listingId: args.listingId });
+      await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
+      await validateUploadedFile(
+        ctx,
+        args.storageId,
+        args.fileName,
+        args.mimeType,
+        IMAGE_CONTENT_TYPES,
+        "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
+      );
+      return await ctx.runMutation(internal.readyStockListings.attachCoverValidated, {
+        listingId: args.listingId,
+        storageId: args.storageId,
+      });
+    } catch (error) {
+      await ctx
+        .runMutation(internal.uploads.disposeClaimedUpload, {
+          storageId: args.storageId,
+          purpose: "book-cover",
+        })
+        .catch(() => undefined);
+      throw error;
+    }
   },
 });
 
@@ -312,10 +327,12 @@ export const attachGalleryImage = action({
         altText: args.altText,
       });
     } catch (error) {
-      await ctx.runMutation(internal.uploads.disposeClaimedUpload, {
-        storageId: args.storageId,
-        purpose: "book-gallery",
-      }).catch(() => undefined);
+      await ctx
+        .runMutation(internal.uploads.disposeClaimedUpload, {
+          storageId: args.storageId,
+          purpose: "book-gallery",
+        })
+        .catch(() => undefined);
       throw error;
     }
   },
@@ -356,7 +373,7 @@ export const attachGalleryImageValidated = internalMutation({
     const mediaId = await ctx.db.insert("readyStockListingMedia", {
       listingId: listing._id,
       storageId: args.storageId,
-      displayOrder: gallery.length,
+      displayOrder: (gallery.at(-1)?.displayOrder ?? -1) + 1,
       altText: (args.altText?.trim() || listing.title).slice(0, 160),
       createdAt: now,
       updatedAt: now,

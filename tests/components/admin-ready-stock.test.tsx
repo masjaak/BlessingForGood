@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getFunctionName } from "convex/server";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AdminReadyStock } from "@/components/admin-ready-stock";
+import { uploadBfgFile } from "@/lib/upload-file";
+
+vi.mock("@/lib/upload-file", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/upload-file")>()),
+  uploadBfgFile: vi.fn().mockResolvedValue("storage-upload"),
+}));
 
 vi.mock("convex/react", () => ({ useQuery: vi.fn(), useMutation: vi.fn(), useAction: vi.fn() }));
 vi.mock("@clerk/nextjs", () => ({
@@ -67,14 +73,20 @@ describe("Admin standalone Ready Stock", () => {
   const create = vi.fn();
   const update = vi.fn();
   const updateStage = vi.fn();
+  const attachCover = vi.fn();
+  const attachGallery = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     create.mockResolvedValue({ listingId: "listing-new", slug: "new-item" });
     update.mockResolvedValue({});
     updateStage.mockResolvedValue({});
-    vi.mocked(useAction).mockReturnValue(vi.fn() as never);
-    vi.mocked(useQuery).mockImplementation((reference, ..._args) => {
+    vi.mocked(useAction).mockImplementation(
+      (reference) =>
+        (getFunctionName(reference as never).endsWith("attachCover") ? attachCover : attachGallery) as never,
+    );
+    vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
+      const [reference] = args;
       const name = getFunctionName(reference as never);
       if (name.endsWith("readyStockListings:listForAdmin")) return [listing] as never;
       if (name.endsWith("readyStockOrders:listForAdmin")) return [paidOrder] as never;
@@ -138,6 +150,65 @@ describe("Admin standalone Ready Stock", () => {
         stage: "packing",
       }),
     );
-    expect(screen.getByText("Status diperbarui: Paket sedang dikemas Blessy.")).toBeTruthy();
+    expect(await screen.findByText("Status diperbarui: Paket sedang dikemas Blessy.")).toBeTruthy();
+  });
+
+  it("edits standalone price quantity and publication status", async () => {
+    render(<AdminReadyStock />);
+    fireEvent.click(screen.getByRole("button", { name: "Kelola" }));
+    const editor = screen.getByText("Data ini berdiri sendiri dan tidak mengubah Master Buku.").closest(".card")!;
+    fireEvent.change(within(editor as HTMLElement).getByLabelText("Harga"), { target: { value: "210000" } });
+    fireEvent.change(within(editor as HTMLElement).getByLabelText(/Qty tersedia/), { target: { value: "5" } });
+    await act(async () => fireEvent.click(within(editor as HTMLElement).getByRole("button", { name: "Simpan data" })));
+    expect(update).toHaveBeenCalledWith({
+      listingId: "listing-1",
+      title: "Real Ready Book",
+      priceAmount: 210000,
+      format: "PB",
+      quantity: 5,
+      status: "published",
+    });
+    expect(screen.getByRole("status").textContent).toContain("berhasil diperbarui");
+  });
+
+  it("uploads cover and gallery through the existing guarded upload boundary", async () => {
+    render(<AdminReadyStock />);
+    fireEvent.click(screen.getByRole("button", { name: "Kelola" }));
+    const file = new File(["component fixture"], "photo.webp", { type: "image/webp" });
+    fireEvent.change(screen.getByLabelText("Pilih file cover"), { target: { files: [file] } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Simpan cover" })));
+    expect(uploadBfgFile).toHaveBeenCalledWith(file, "book-cover", expect.any(Function), null);
+    expect(attachCover).toHaveBeenCalledWith({
+      listingId: "listing-1",
+      storageId: "storage-upload",
+      fileName: "photo.webp",
+      mimeType: "image/webp",
+    });
+    fireEvent.change(screen.getByLabelText("Pilih gambar isi Ready Stock"), { target: { files: [file] } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Upload gambar isi" })));
+    expect(attachGallery).toHaveBeenCalledWith({
+      listingId: "listing-1",
+      storageId: "storage-upload",
+      fileName: "photo.webp",
+      mimeType: "image/webp",
+      altText: "Real Ready Book",
+    });
+  });
+
+  it("sends storefront and order search filters to their separate queries", () => {
+    render(<AdminReadyStock />);
+    fireEvent.change(screen.getByLabelText("Cari Ready Stock"), { target: { value: "photo" } });
+    fireEvent.change(screen.getByLabelText("Cari pesanan"), { target: { value: "BFG-0001" } });
+    const calls = vi.mocked(useQuery).mock.calls.map(([ref, args]) => ({ name: getFunctionName(ref as never), args }));
+    expect(calls).toContainEqual({
+      name: "readyStockListings:listForAdmin",
+      args: { search: "photo", status: undefined },
+    });
+    expect(calls).toContainEqual({
+      name: "readyStockOrders:listForAdmin",
+      args: { search: "BFG-0001", status: undefined },
+    });
+    expect(screen.queryByRole("button", { name: "Tandai sampai" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Tandai dikirim" })).toBeNull();
   });
 });

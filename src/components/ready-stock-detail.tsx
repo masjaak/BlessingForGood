@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { BookCover } from "@/components/book-cover";
 import { ProductGallery, type ProductGalleryImage } from "@/components/product-gallery";
@@ -27,7 +27,21 @@ type ReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStockListin
 
 function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: PublicReadyStockBook }) {
   const liveBook = useQuery(api.readyStockListings.getBySlug, { slug });
+  const [checkoutInvoiceId, setCheckoutInvoiceId] = useState<string | null>(null);
   const book = liveBook === undefined ? initialBook : liveBook;
+  if (checkoutInvoiceId) {
+    return (
+      <Card className="notice-card">
+        <p role="status">Checkout berhasil. Tagihan sudah dibuat dan stokmu sudah diamankan.</p>
+        <div className="form-actions">
+          <LinkButton href={`/account/invoices/${checkoutInvoiceId}`}>Buka tagihan</LinkButton>
+          <LinkButton href="/account/orders" variant="secondary">
+            Pantau pesanan
+          </LinkButton>
+        </div>
+      </Card>
+    );
+  }
   if (book === undefined) {
     return (
       <LoadingRegion label="Memuat detail buku">
@@ -81,11 +95,8 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
           <Card className="notice-card">
             <span className="card-kicker">Checkout langsung</span>
             <h2>Pesan Ready Stock</h2>
-            <p>
-              Pesanan langsung dibuat menjadi tagihan. Ready Stock ini tidak masuk keranjang dan tidak mengubah stok
-              Master Buku.
-            </p>
-            <ReadyStockCheckoutAction book={book} />
+            <p>Pesanan langsung dibuat menjadi tagihan. Pilih jumlah lalu lanjutkan pembayaran.</p>
+            <ReadyStockCheckoutAction book={book} onCheckout={setCheckoutInvoiceId} />
           </Card>
         </div>
       </div>
@@ -93,13 +104,21 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
   );
 }
 
-export function ReadyStockCheckoutAction({ book }: { book: ReadyStockBook }) {
+export function ReadyStockCheckoutAction({
+  book,
+  onCheckout,
+}: {
+  book: ReadyStockBook;
+  onCheckout?: (invoiceId: string) => void;
+}) {
   const { authState, retryAuth, sessionRole } = useProduct();
   const checkout = useMutation(api.readyStockOrders.checkout);
   const [quantity, setQuantity] = useState("1");
   const [message, setMessage] = useState("");
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
+  const requestKey = useRef<string | null>(null);
 
   if (authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
     return <p className="subtle">Menyiapkan akun BFG…</p>;
@@ -161,12 +180,19 @@ export function ReadyStockCheckoutAction({ book }: { book: ReadyStockBook }) {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    requestKey.current ??= crypto.randomUUID();
     setMessage("");
     setPending(true);
     try {
-      const result = await checkout({ listingId: book.listingId, quantity: Number(quantity) });
+      const result = await checkout({
+        listingId: book.listingId,
+        quantity: Number(quantity),
+        requestKey: requestKey.current,
+      });
       setInvoiceId(String(result.invoiceId));
+      onCheckout?.(String(result.invoiceId));
       setMessage("Checkout berhasil. Tagihan sudah dibuat dan stokmu sudah diamankan.");
     } catch (error) {
       const raw = String(error);
@@ -176,6 +202,7 @@ export function ReadyStockCheckoutAction({ book }: { book: ReadyStockBook }) {
           : productErrorMessage(error, "Checkout belum berhasil. Silakan coba lagi."),
       );
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }

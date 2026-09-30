@@ -2,13 +2,15 @@
 
 ## Standalone manual Ready Stock storefront — 2026-09-30
 
-Status: `ENGINEERING_GREEN_PREVIEW_BLOCKED`
+Status: `ENGINEERING_GREEN_RUNTIME_VERIFICATION`
 
 Client direction supersedes the previous Master-book-coupled Ready Stock price-override model. Ready Stock is now a standalone manual storefront with its own title, price, format, physical quantity, one real cover image, and up to eight gallery images. Customer checkout is direct from the Ready Stock detail page and does not enter the normal Cart. Checkout creates a standalone Ready Stock order plus an issued Invoice, snapshots price and shipping data, reserves stock, and exposes the Blessy timeline from waiting payment through delivered on both Admin and Customer surfaces.
 
 Master Buku, Secret Catalog, regular Cart/Order, Random PO, Batch, and historical Ready Stock records remain separate. The separate Secret Catalog high-index detail bug is already merged to main at `fdfb51a2efd1c3f9f4d57791d99b21b1c237c8dc`.
 
-Focused Ready Stock backend/component regression, TypeScript, production Next.js build, and diff validation pass in GitHub Actions. PR #24 remains draft because Vercel Preview is still failing in the Vercel/Convex deployment path; production merge is intentionally blocked until Preview is green and runtime smoke is complete.
+Existing canonical branch and PR #24 are reused. Preview failed because canonical Development lacked `readyStockListings:list` during prerender; credential gates and compilation passed. The tested backend has now been deployed to Development without changing security gates. All 340 backend tests and the local production build pass. Additional contracts cover idempotent checkout, real Finance payment states, media ownership/cleanup, gallery ordering, immutable snapshots and last-unit success. Authenticated Preview and responsive visual verification remain required before merge.
+
+Ticket B follow-up PR #25 is merged at `b47065e32cc86cd7c867cabc5b83ffd7f7bcebb8`: 660-item fixture, existing hydration pattern, Preview direct URL/refresh/auth proof and successful Production deployment. Original lookup fix remains PR #23.
 
 The previous Ready Stock independent price-override direction below is superseded for the customer-facing Ready Stock storefront. Its historical implementation remains documented for audit context only.
 

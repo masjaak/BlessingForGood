@@ -1,5 +1,24 @@
 # BFG SOURCE OF TRUTH
 
+## Standalone manual Ready Stock — current client decision, 2026-09-30
+
+This supersedes Master-linked Ready Stock and its price override for the new
+storefront. `readyStockListings` owns title, integer IDR price, canonical format,
+physical quantity, reservation quantity, one uploaded cover and up to eight
+gallery images. Draft → published requires a cover and positive quantity;
+archive requires no active reservation. Master-linked tables remain legacy.
+
+Direct Customer checkout uses no Cart or Master Book. The server resolves price,
+snapshots product and shipping details, reserves atomically, and creates its own
+Ready Stock Order with an issued Invoice through existing Finance. A bounded
+Customer request key makes retries idempotent. Voiding an unpaid Invoice releases
+the reservation once; payment confirmation and approval derive waiting/verifying/
+paid status. Admin advances only paid → packing → shipping → delivered; delivery
+consumes quantity and reservation once. Historical snapshots remain immutable.
+
+Secret Catalog high-index retrieval is an independent ticket already merged in
+PR #23. Its authorization and direct identity lookup remain protected.
+
 ## Ready Stock independent selling price — 2026-09-30
 
 Ready Stock owns optional `readyStockInventory.priceOverrideAmount` per variant.

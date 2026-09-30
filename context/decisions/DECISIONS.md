@@ -1,5 +1,15 @@
 # Decisions
 
+## Standalone manual Ready Stock — 2026-09-30
+
+Use the existing standalone implementation on `feat/manual-ready-stock-standalone`
+and PR #24. No duplicate branch or fabricated Master Book is allowed. Keep legacy
+Ready Stock transactions and tables dormant and compatible. Reuse guarded storage,
+canonical formats, existing Invoice/Payment, and their cancellation/payment rules.
+Checkout retries share one Customer request key; only valid next fulfillment
+actions are exposed and enforced server-side. The previous price-override decision
+below is LEGACY / SUPERSEDED for the new storefront.
+
 ## Ready Stock price ownership — 2026-09-30
 
 Use the existing per-variant inventory row for an optional positive integer IDR

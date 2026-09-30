@@ -98,9 +98,9 @@ function CustomerInvoiceDetail() {
             : currentCustomerInvoice.source === "manual_po"
               ? "Pesanan Khusus / Random PO"
               : currentCustomerInvoice.orderCode ||
-              (currentCustomerInvoice.orderId
-                ? `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`
-                : "Pesanan")
+                (currentCustomerInvoice.orderId
+                  ? `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`
+                  : "Pesanan")
         }`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">

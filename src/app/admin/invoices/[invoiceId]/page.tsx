@@ -200,9 +200,9 @@ function AdminInvoiceDetail() {
             : currentAdminInvoice.source === "manual_po"
               ? "Pesanan Khusus / Random PO"
               : currentAdminInvoice.orderCode ||
-              (currentAdminInvoice.orderId
-                ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
-                : "Pesanan")
+                (currentAdminInvoice.orderId
+                  ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
+                  : "Pesanan")
         }`}
         actions={
           <LinkButton href="/admin/invoices" variant="secondary">
@@ -242,9 +242,9 @@ function AdminInvoiceDetail() {
                   : currentAdminInvoice.source === "manual_po"
                     ? "Pesanan Khusus / Random PO"
                     : currentAdminInvoice.orderCode ||
-                    (currentAdminInvoice.orderId
-                      ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
-                      : "Pesanan")}
+                      (currentAdminInvoice.orderId
+                        ? `BFG-ORD-LEGACY-${currentAdminInvoice.orderId.slice(-8).toUpperCase()}`
+                        : "Pesanan")}
               </span>
             </div>
             {currentAdminInvoice.items.map((item) => (

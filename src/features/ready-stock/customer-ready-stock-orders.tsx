@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, LinkButton, LoadingRegion, Money, SkeletonCard, StatusBadge } from "@/components/ui";
 
-type StepState = "complete" | "current" | "upcoming";
+import { ReadyStockTimeline } from "./ready-stock-timeline";
 
 export function CustomerReadyStockOrdersSection() {
   const result = useQuery(api.readyStockOrders.listMine, {
@@ -54,23 +54,7 @@ export function CustomerReadyStockOrdersSection() {
           {order.operationalStatus === "cancelled" ? (
             <StatusBadge>Dibatalkan</StatusBadge>
           ) : (
-            <ol className="ready-stock-timeline" aria-label={`Timeline ${order.title}`}>
-              {order.timeline.map((step) => (
-                <li
-                  className={`ready-stock-timeline-step is-${step.state as StepState}`}
-                  key={step.key}
-                  aria-current={step.state === "current" ? "step" : undefined}
-                >
-                  <span className="ready-stock-timeline-marker" aria-hidden="true" />
-                  <div>
-                    <strong>{step.label}</strong>
-                    <span className="subtle">
-                      {step.state === "complete" ? "Selesai" : step.state === "current" ? "Sekarang" : "Berikutnya"}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <ReadyStockTimeline title={order.title} steps={order.timeline} />
           )}
 
           <div className="customer-ready-stock-shipping">
