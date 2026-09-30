@@ -1,5 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -43,11 +44,12 @@ function backfillLimit(value: number | undefined): number {
 async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   const invoice = await ctx.db.get(invoiceId);
   if (!invoice) fail("INVOICE_NOT_FOUND");
-  const [order, customer, batch, manualPoEntry, items] = await Promise.all([
+  const [order, customer, batch, manualPoEntry, readyStockPurchase, items] = await Promise.all([
     invoice.orderId ? ctx.db.get(invoice.orderId) : Promise.resolve(null),
     ctx.db.get(invoice.customerUserId),
     invoice.batchId ? ctx.db.get(invoice.batchId) : Promise.resolve(null),
     invoice.manualPoEntryId ? ctx.db.get(invoice.manualPoEntryId) : Promise.resolve(null),
+    invoice.readyStockPurchaseId ? ctx.db.get(invoice.readyStockPurchaseId) : Promise.resolve(null),
     ctx.db
       .query("invoiceItems")
       .withIndex("by_invoice", (index) => index.eq("invoiceId", invoiceId))
@@ -57,8 +59,13 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   return {
     invoiceId: invoice._id,
     id: invoice._id,
-    source: invoice.manualPoEntryId ? ("manual_po" as const) : ("order" as const),
+    source: invoice.readyStockPurchaseId
+      ? ("ready_stock" as const)
+      : invoice.manualPoEntryId
+        ? ("manual_po" as const)
+        : ("order" as const),
     manualPoEntryId: invoice.manualPoEntryId ?? null,
+    readyStockPurchaseId: invoice.readyStockPurchaseId ?? null,
     customerUserId: invoice.customerUserId,
     customerName: order?.customerName || customer?.displayNameSnapshot || "Pelanggan BFG",
     customerEmail: order?.customerEmail || customer?.emailSnapshot || null,
@@ -67,6 +74,8 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     orderCode: order?.orderCode || null,
     manualPoTitle: manualPoEntry?.title ?? null,
     manualPoEtaText: manualPoEntry?.etaText ?? null,
+    readyStockTitle: readyStockPurchase?.titleSnapshot ?? null,
+    readyStockFormat: readyStockPurchase?.formatSnapshot ?? null,
     batchId: invoice.batchId ?? null,
     batchName: batch?.name ?? null,
     invoiceNumber: invoice.invoiceNumber,
@@ -602,6 +611,12 @@ export const voidInvoice = mutation({
           updatedAt: now,
         });
       }
+    }
+    if (invoice.readyStockPurchaseId) {
+      await ctx.runMutation(internal.readyStockManual.releasePurchaseForVoidedInvoice, {
+        purchaseId: invoice.readyStockPurchaseId,
+        actorUserId: user._id,
+      });
     }
     await recordAudit(ctx, user._id, "invoice.voided", "invoice", args.invoiceId);
     return invoiceView(ctx, args.invoiceId);
