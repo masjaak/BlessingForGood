@@ -236,3 +236,29 @@ export const assertUploadAccess = internalQuery({
   },
 });
 
+
+
+export const attachCoverValidated = internalMutation({
+  args: { listingId: v.id("readyStockListings"), storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const listing = await ctx.db.get(args.listingId);
+    if (!listing || listing.status === "archived") fail("VALIDATION_FAILED", "Ready Stock item tidak tersedia");
+    await consumeClaim(ctx, args.storageId, "book-cover", user._id);
+    await validateStoredFile(
+      ctx,
+      args.storageId,
+      IMAGE_CONTENT_TYPES,
+      "cover must be a JPG, PNG, or WebP image up to 5 MB",
+    );
+    const previous = listing.coverStorageId;
+    await ctx.db.patch(listing._id, {
+      coverStorageId: args.storageId,
+      updatedAt: Date.now(),
+      updatedByUserId: user._id,
+    });
+    if (previous && previous !== args.storageId) await ctx.storage.delete(previous);
+    await recordAudit(ctx, user._id, "ready_stock_listing.cover_attached", "readyStockListing", listing._id);
+    return { storageId: args.storageId };
+  },
+});
