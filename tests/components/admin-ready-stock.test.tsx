@@ -1,115 +1,153 @@
 import type { ReactNode } from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useMutation, useQuery } from "convex/react";
+import { getFunctionName } from "convex/server";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { AdminReadyStock } from "@/components/admin-ready-stock";
 
-vi.mock("convex/react", () => ({ useQuery: vi.fn(), useMutation: vi.fn() }));
+vi.mock("convex/react", () => ({ useQuery: vi.fn(), useMutation: vi.fn(), useAction: vi.fn() }));
+vi.mock("@clerk/nextjs", () => ({ useAuth: vi.fn() }));
 vi.mock("@/components/product-access-guard", () => ({
   ProductAccessGuard: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/components/site-shell", () => ({ SiteShell: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/components/admin-nav", () => ({ AdminNav: () => <nav aria-label="Admin navigation" /> }));
 
-const row = {
-  bookId: "book-1",
-  variantId: "variant-1",
+const listing = {
+  listingId: "listing-1",
+  id: "listing-1",
+  slug: "carry-me",
   title: "Carry Me!",
-  publisherName: "BFG House",
-  isbn: "978000000001",
-  author: null,
+  priceAmount: 195000,
   format: "PB",
-  publicationStatus: "published",
-  isAvailable: true,
-  masterPriceAmount: 175000,
-  priceOverrideAmount: 195000,
-  effectivePriceAmount: 195000,
-  hasInventory: true,
-  onHandQuantity: 3,
+  quantity: 3,
   reservedQuantity: 1,
   availableQuantity: 2,
+  status: "draft",
+  coverUrl: null,
+  gallery: [],
+  createdAt: 1,
+  updatedAt: 1,
 };
-const mutate = vi.fn();
 
-describe("Admin Ready Stock price editor", () => {
+const purchase = {
+  purchaseId: "purchase-1",
+  listingId: "listing-1",
+  customerUserId: "customer-1",
+  customerName: "Mulia Kah",
+  customerEmail: "mulia@example.com",
+  memberCode: "BFG-0001",
+  invoiceId: "invoice-1",
+  invoiceNumber: "BFG-INV-1",
+  invoiceStatus: "issued",
+  paymentStatus: "paid",
+  title: "Carry Me!",
+  format: "PB",
+  unitPriceAmount: 195000,
+  quantity: 1,
+  subtotalAmount: 195000,
+  status: "active",
+  fulfillmentStage: null,
+  operationalStatus: "payment_success",
+  packedAt: null,
+  shippedAt: null,
+  deliveredAt: null,
+  createdAt: 1,
+  updatedAt: 1,
+};
+
+describe("Admin standalone Ready Stock", () => {
+  const create = vi.fn();
+  const update = vi.fn();
+  const setPublicationStatus = vi.fn();
+  const setFulfillmentStage = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useQuery).mockReturnValue([row] as never);
-    vi.mocked(useMutation).mockReturnValue(mutate as never);
-    mutate.mockResolvedValue(null);
+    vi.mocked(useAuth).mockReturnValue({ getToken: vi.fn(), sessionClaims: {} } as never);
+    vi.mocked(useQuery).mockImplementation((reference) => {
+      const name = getFunctionName(reference as never);
+      if (name.endsWith(":listForAdmin")) return [listing] as never;
+      if (name.endsWith(":listPurchasesForAdmin")) return [purchase] as never;
+      throw new Error(`Unexpected query ${name}`);
+    });
+    vi.mocked(useMutation).mockImplementation((reference) => {
+      const name = getFunctionName(reference as never);
+      if (name.endsWith(":create")) return create as never;
+      if (name.endsWith(":update")) return update as never;
+      if (name.endsWith(":setPublicationStatus")) return setPublicationStatus as never;
+      if (name.endsWith(":setFulfillmentStage")) return setFulfillmentStage as never;
+      return vi.fn() as never;
+    });
+    vi.mocked(useAction).mockReturnValue(vi.fn() as never);
+    create.mockResolvedValue({ ...listing, listingId: "listing-new" });
+    update.mockResolvedValue(listing);
+    setPublicationStatus.mockResolvedValue({ status: "published" });
+    setFulfillmentStage.mockResolvedValue({});
   });
 
-  it("distinguishes Master and Ready price while preserving semantic table rows", () => {
-    const { container } = render(<AdminReadyStock />);
-    const table = screen.getByRole("table", { name: "Daftar Ready Stock per format" });
-    expect(within(table).getByRole("columnheader", { name: "Harga Master" })).toBeTruthy();
-    expect(within(table).getByRole("columnheader", { name: "Harga Ready Stock" })).toBeTruthy();
-    expect(table.textContent).toContain("175.000");
-    expect(table.textContent).toContain("195.000");
-    expect(within(table).getByText("Harga khusus Ready Stock")).toBeTruthy();
-    expect(container.querySelectorAll("tbody > tr > td")).toHaveLength(9);
-    expect(container.querySelector("tbody > :not(tr), tr > :not(td):not(th)")).toBeNull();
-  });
-
-  it("labels fallback and disables price editing until inventory exists", () => {
-    vi.mocked(useQuery).mockReturnValue([
-      { ...row, hasInventory: false, priceOverrideAmount: null, effectivePriceAmount: 175000 },
-    ] as never);
+  it("uses a manual etalase instead of Master Buku columns", () => {
     render(<AdminReadyStock />);
-    expect(screen.getByText("Mengikuti harga Master")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Atur harga" })).toHaveProperty("disabled", true);
+
+    expect(screen.getByRole("heading", { name: "Etalase stok nyata." })).toBeTruthy();
+    expect(screen.getByText("Master Buku tidak digunakan")).toBeTruthy();
+
+    const table = screen.getByRole("table", { name: "Etalase Ready Stock manual" });
+    expect(within(table).getByRole("columnheader", { name: "Cover / Judul" })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "Harga" })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "QTY" })).toBeTruthy();
+    expect(within(table).queryByRole("columnheader", { name: "Harga Master" })).toBeNull();
+    expect(table.textContent).toContain("195.000");
+    expect(table.textContent).toContain("Carry Me!");
   });
 
-  it("opens, saves the integer price, blocks duplicate submit, then reports success", async () => {
-    let resolve!: () => void;
-    mutate.mockReturnValue(
-      new Promise<void>((done) => {
-        resolve = done;
+  it("creates a standalone Ready Stock draft from title, price, format, and quantity", async () => {
+    render(<AdminReadyStock />);
+
+    fireEvent.change(screen.getByLabelText("Judul"), { target: { value: "Are We Ready For A Pet?" } });
+    fireEvent.change(screen.getByLabelText("Harga"), { target: { value: "225000" } });
+    fireEvent.change(screen.getByLabelText("QTY tersedia"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buat Ready Stock" }));
+
+    await waitFor(() =>
+      expect(create).toHaveBeenCalledWith({
+        title: "Are We Ready For A Pet?",
+        priceAmount: 225000,
+        format: "PB",
+        quantity: 4,
+        status: "draft",
       }),
     );
-    render(<AdminReadyStock />);
-    fireEvent.click(screen.getByRole("button", { name: "Atur harga" }));
-    const input = screen.getByRole("spinbutton", { name: "Harga Ready Stock" });
-    expect(input).toHaveProperty("value", "195000");
-    fireEvent.change(input, { target: { value: "210000" } });
-    const save = screen.getByRole("button", { name: "Simpan harga" });
-    fireEvent.click(save);
-    fireEvent.click(save);
-    fireEvent.submit(input.closest("form")!);
-    expect(mutate).toHaveBeenCalledExactlyOnceWith({ bookVariantId: "variant-1", priceOverrideAmount: 210000 });
-    expect(save).toHaveProperty("disabled", true);
-    expect(input).toHaveProperty("disabled", true);
-    expect(screen.getByRole("button", { name: "Batal" })).toHaveProperty("disabled", true);
-    expect(screen.getByRole("button", { name: "Gunakan harga Master" })).toHaveProperty("disabled", true);
-    await act(async () => resolve());
-    expect(screen.getByRole("status").textContent).toBe("Harga Ready Stock berhasil diperbarui.");
-    expect(screen.queryByRole("spinbutton")).toBeNull();
   });
 
-  it("clears with null and cancels without mutation", async () => {
+  it("exposes photo management and publishes only through the standalone listing action", async () => {
     render(<AdminReadyStock />);
-    fireEvent.click(screen.getByRole("button", { name: "Atur harga" }));
-    fireEvent.click(screen.getByRole("button", { name: "Batal" }));
-    expect(mutate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Atur harga" }));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Gunakan harga Master" })));
-    expect(mutate).toHaveBeenCalledExactlyOnceWith({ bookVariantId: "variant-1", priceOverrideAmount: null });
-    expect(screen.getByRole("status").textContent).toBe("Harga Ready Stock kembali mengikuti harga Master.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Kelola foto" }));
+    expect(screen.getByText("Foto etalase")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Maksimal 8 gambar" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Terbitkan" }));
+    await waitFor(() =>
+      expect(setPublicationStatus).toHaveBeenCalledWith({
+        listingId: "listing-1",
+        status: "published",
+      }),
+    );
   });
 
-  it("rejects invalid money locally and retains the editor on server failure", async () => {
+  it("lets Admin move a paid checkout into packing from the same Ready Stock section", async () => {
     render(<AdminReadyStock />);
-    fireEvent.click(screen.getByRole("button", { name: "Atur harga" }));
-    const input = screen.getByRole("spinbutton", { name: "Harga Ready Stock" });
-    for (const value of ["", "0", "-1", "1.5", "9007199254740992"]) {
-      fireEvent.change(input, { target: { value } });
-      await act(async () => fireEvent.submit(input.closest("form")!));
-    }
-    expect(mutate).not.toHaveBeenCalled();
-    mutate.mockRejectedValue(new Error("unavailable"));
-    fireEvent.change(input, { target: { value: "195000" } });
-    await act(async () => fireEvent.submit(input.closest("form")!));
-    expect(screen.getByRole("alert").textContent).toBe("Harga Ready Stock belum berhasil diperbarui. Coba lagi.");
-    expect(input).toHaveProperty("disabled", false);
+
+    expect(screen.getByText("Pembayaran berhasil")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Mulai kemas" }));
+
+    await waitFor(() =>
+      expect(setFulfillmentStage).toHaveBeenCalledWith({
+        purchaseId: "purchase-1",
+        stage: "packing",
+      }),
+    );
   });
 });
