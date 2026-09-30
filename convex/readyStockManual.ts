@@ -572,14 +572,14 @@ export const setFulfillmentStage = mutation({
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "orders.manage");
     const purchase = await ctx.db.get(args.purchaseId);
-    if (!purchase || purchase.status !== "active") fail("ORDER_INVALID_STATE");
+    if (!purchase || purchase.status !== "active") fail("VALIDATION_FAILED");
     const invoice = purchase.invoiceId ? await ctx.db.get(purchase.invoiceId) : null;
     if (!invoice || invoice.status === "void" || invoice.paymentStatus !== "paid") {
-      fail("ORDER_INVALID_STATE", "Pembayaran harus lunas sebelum fulfillment Ready Stock");
+      fail("VALIDATION_FAILED", "Pembayaran harus lunas sebelum fulfillment Ready Stock");
     }
     const expected =
       !purchase.fulfillmentStage ? "packing" : purchase.fulfillmentStage === "packing" ? "shipping" : purchase.fulfillmentStage === "shipping" ? "delivered" : null;
-    if (args.stage !== expected) fail("ORDER_INVALID_STATE", "Tahap Ready Stock harus diperbarui secara berurutan");
+    if (args.stage !== expected) fail("VALIDATION_FAILED", "Tahap Ready Stock harus diperbarui secara berurutan");
     const now = Date.now();
     const patch: Partial<Doc<"readyStockPurchases">> = {
       fulfillmentStage: args.stage,
