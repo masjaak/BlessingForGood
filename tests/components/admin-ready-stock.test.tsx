@@ -66,12 +66,12 @@ describe("Admin standalone Ready Stock", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuth).mockReturnValue({ getToken: vi.fn(), sessionClaims: {} } as never);
-    vi.mocked(useQuery).mockImplementation((reference) => {
+    vi.mocked(useQuery).mockImplementation(((reference: unknown) => {
       const name = getFunctionName(reference as never);
       if (name.endsWith(":listForAdmin")) return [listing] as never;
       if (name.endsWith(":listPurchasesForAdmin")) return [purchase] as never;
       throw new Error(`Unexpected query ${name}`);
-    });
+    }) as never);
     vi.mocked(useMutation).mockImplementation((reference) => {
       const name = getFunctionName(reference as never);
       if (name.endsWith(":create")) return create as never;
