@@ -238,6 +238,31 @@ export const assertUploadAccess = internalQuery({
 
 
 
+export const attachCover = action({
+  args: {
+    listingId: v.id("readyStockListings"),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    mimeType: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ storageId: Id<"_storage"> }> => {
+    await ctx.runQuery(internal.readyStockListings.assertUploadAccess, { listingId: args.listingId });
+    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
+    await validateUploadedFile(
+      ctx,
+      args.storageId,
+      args.fileName,
+      args.mimeType,
+      IMAGE_CONTENT_TYPES,
+      "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
+    );
+    return ctx.runMutation(internal.readyStockListings.attachCoverValidated, {
+      listingId: args.listingId,
+      storageId: args.storageId,
+    });
+  },
+});
+
 export const attachCoverValidated = internalMutation({
   args: { listingId: v.id("readyStockListings"), storageId: v.id("_storage") },
   handler: async (ctx, args) => {
