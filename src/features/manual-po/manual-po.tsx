@@ -25,6 +25,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   const entries = useQuery(api.manualPoEntries.listForAdmin, { customerUserId });
   const createEntry = useMutation(api.manualPoEntries.create);
   const issueManualPo = useMutation(api.invoices.issueManualPo);
+  const setManualPoStatus = useMutation(api.manualPoEntries.setStatus);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [etaText, setEtaText] = useState("");
@@ -74,6 +75,20 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
       setSuccess("Tagihan Pesanan Khusus diterbitkan. Customer sekarang bisa membuka dan membayar dari menu Tagihan.");
     } catch {
       setError("Tagihan belum berhasil diterbitkan. Coba lagi.");
+    } finally {
+      setBillingPendingId(null);
+    }
+  }
+
+  async function markReceived(entryId: Id<"manualPoEntries">) {
+    setError("");
+    setSuccess("");
+    setBillingPendingId(String(entryId));
+    try {
+      await setManualPoStatus({ entryId, status: "arrived" });
+      setSuccess("Random PO ditandai diterima. Status customer ikut diperbarui.");
+    } catch {
+      setError("Status Random PO belum berhasil diperbarui. Coba lagi.");
     } finally {
       setBillingPendingId(null);
     }
@@ -200,6 +215,18 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                       Buat tagihan
                     </Button>
                   )}
+                  {entry.operationalStatus === "paid_waiting_arrival" ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      loading={billingPendingId === String(entry.entryId)}
+                      loadingLabel="Menyimpan…"
+                      disabled={billingPendingId !== null}
+                      onClick={() => void markReceived(entry.entryId)}
+                    >
+                      Tandai diterima
+                    </Button>
+                  ) : null}
                 </span>
               </div>
             );
