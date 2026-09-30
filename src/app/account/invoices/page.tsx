@@ -63,9 +63,11 @@ function PersistentCustomerInvoices() {
               <div className="summary-line">
                 <span>Referensi pesanan</span>
                 <span>
-                  {invoice.source === "manual_po"
-                    ? "Pesanan Khusus / Random PO"
-                    : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
+                  {invoice.source === "ready_stock"
+                    ? "Ready Stock"
+                    : invoice.source === "manual_po"
+                      ? "Pesanan Khusus / Random PO"
+                      : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
                 </span>
               </div>
               {invoice.items.map((item) => (
