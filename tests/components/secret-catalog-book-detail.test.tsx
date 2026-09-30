@@ -2,8 +2,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
+import { useQuery } from "convex/react";
 import { SecretCatalogBookDetail } from "@/components/secret-catalog-book-detail";
 import { useProduct } from "@/domain/prototype/store";
+
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(),
+}));
 
 vi.mock("@clerk/nextjs", () => ({
   useUser: vi.fn(),
@@ -58,6 +63,25 @@ function setup(
     isLoaded: true,
     user: { fullName: "Mulia Raya", username: "muliaraya" },
   } as never);
+  const detailBook = {
+    id: "book-1",
+    title: "A Book",
+    publisher: "BFG Press",
+    description,
+    gallery: [],
+    variants: [
+      {
+        id: "variant-1",
+        catalogItemId: "catalog-item-1",
+        format,
+        isbn: "9780000000001",
+        price: 125000,
+        currency: "IDR",
+        availability: "available",
+      },
+    ],
+  };
+  vi.mocked(useQuery).mockReturnValue(detailBook as never);
   const product = {
     dataSource: "convex",
     catalogLoading: false,
@@ -65,23 +89,7 @@ function setup(
       id: "catalog-1",
       name: "Mulia Catalog",
       status: "open",
-      books: [
-        {
-          id: "book-1",
-          title: "A Book",
-          publisher: "BFG Press",
-          description,
-          variants: [
-            {
-              id: "variant-1",
-              catalogItemId: "catalog-item-1",
-              format,
-              isbn: "9780000000001",
-              price: 125000,
-            },
-          ],
-        },
-      ],
+      books: [],
     },
     authState: "authenticated",
     sessionRole: "customer",
@@ -95,6 +103,7 @@ function setup(
 describe("Secret Catalog book detail preorder", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
   });
 
   it("renders the canonical FLEXIBOUND label", () => {
