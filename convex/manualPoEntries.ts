@@ -135,9 +135,21 @@ export const listForAdmin = query({
       .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", args.customerUserId))
       .order("desc")
       .take(500);
-    return entries
-      .filter((entry) => (args.includeArchived ? true : !entry.archivedAt && entry.status !== "cancelled"))
-      .map(view);
+    const visible = entries.filter((entry) =>
+      args.includeArchived ? true : !entry.archivedAt && entry.status !== "cancelled",
+    );
+    return Promise.all(
+      visible.map(async (entry) => {
+        const invoice = entry.invoiceId ? await ctx.db.get(entry.invoiceId) : null;
+        return {
+          ...view(entry),
+          invoiceStatus: invoice?.status ?? null,
+          paymentStatus: invoice?.paymentStatus ?? null,
+          outstandingAmount: invoice?.status === "void" ? 0 : (invoice?.outstandingAmount ?? 0),
+          operationalStatus: operationalStatus(entry, invoice),
+        };
+      }),
+    );
   },
 });
 
