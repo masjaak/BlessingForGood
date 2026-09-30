@@ -9995,6 +9995,13 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   gap: var(--space-md);
 }
 
+.admin-ready-stock-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.7fr);
+  gap: var(--space-md);
+  align-items: end;
+}
+
 .admin-ready-stock-create-grid,
 .admin-ready-stock-editor-fields {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -10176,7 +10183,8 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
 }
 
 @media (max-width: 900px) {
-  .admin-ready-stock-media-grid {
+  .admin-ready-stock-media-grid,
+  .admin-ready-stock-filter-grid {
     grid-template-columns: 1fr;
   }
 
