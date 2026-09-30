@@ -8,6 +8,7 @@ import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { nextInvoiceNumber } from "./lib/invoiceNumbers";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
+import { enforceRateLimit } from "./lib/rateLimit";
 import { positiveQuantity } from "./lib/validation";
 
 type DataCtx = QueryCtx | MutationCtx;
@@ -86,6 +87,7 @@ export const checkout = mutation({
   args: { listingId: v.id("readyStockListings"), quantity: v.number() },
   handler: async (ctx, args) => {
     const customer = await requireActiveCustomer(ctx);
+    await enforceRateLimit(ctx, "readyStockOrderUser", String(customer._id));
     const listing = await ctx.db.get(args.listingId);
     if (!listing || listing.status !== "published") fail("READY_STOCK_UNAVAILABLE");
     const quantity = positiveQuantity(args.quantity);
