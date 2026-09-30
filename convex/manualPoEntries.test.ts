@@ -209,6 +209,81 @@ describe("Manual PO domain", () => {
     });
   });
 
+  it("tracks paid Random PO through waiting arrival to received for Admin and Customer", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
+    if (!customerUser) throw new Error("customer fixture missing");
+
+    const created = await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: customerUser.appUserId,
+      title: "Arrival Tracking Book",
+      priceAmount: 150000,
+      etaText: "Desember 2026",
+    });
+    const invoice = await admin.mutation(api.invoices.issueManualPo, { entryId: created.entryId });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(invoice.invoiceId, {
+        paymentStatus: "paid",
+        verifiedPaymentAmount: 150000,
+        outstandingAmount: 0,
+        updatedAt: Date.now(),
+      });
+    });
+
+    await expect(admin.query(api.manualPoEntries.listQueueForAdmin, { status: "paid_waiting_arrival" })).resolves.toMatchObject({
+      customers: [
+        expect.objectContaining({
+          customerUserId: customerUser.appUserId,
+          paidCount: 1,
+          entries: [
+            expect.objectContaining({
+              entryId: created.entryId,
+              queueStatus: "paid_waiting_arrival",
+            }),
+          ],
+        }),
+      ],
+      summary: expect.objectContaining({ paidCount: 1, receivedCount: 0 }),
+    });
+
+    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([
+      expect.objectContaining({
+        entryId: created.entryId,
+        operationalStatus: "paid_waiting_arrival",
+        paymentStatus: "paid",
+        outstandingAmount: 0,
+      }),
+    ]);
+
+    await admin.mutation(api.manualPoEntries.setStatus, { entryId: created.entryId, status: "arrived" });
+
+    await expect(admin.query(api.manualPoEntries.listQueueForAdmin, { status: "received" })).resolves.toMatchObject({
+      customers: [
+        expect.objectContaining({
+          customerUserId: customerUser.appUserId,
+          receivedCount: 1,
+          entries: [
+            expect.objectContaining({
+              entryId: created.entryId,
+              queueStatus: "received",
+            }),
+          ],
+        }),
+      ],
+      summary: expect.objectContaining({ paidCount: 0, receivedCount: 1 }),
+    });
+
+    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([
+      expect.objectContaining({
+        entryId: created.entryId,
+        status: "arrived",
+        operationalStatus: "received",
+      }),
+    ]);
+  });
+
   it("supports Admin edit, status lifecycle, archive, and audit events", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);
@@ -232,7 +307,13 @@ describe("Manual PO domain", () => {
     await expect(
       admin.mutation(api.manualPoEntries.setStatus, { entryId: created.entryId, status: "arrived" }),
     ).resolves.toMatchObject({ status: "arrived", cancelledAt: null });
-    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([]);
+    await expect(customer.query(api.manualPoEntries.listMine, {})).resolves.toEqual([
+      expect.objectContaining({
+        entryId: created.entryId,
+        status: "arrived",
+        operationalStatus: "received",
+      }),
+    ]);
 
     await expect(
       admin.mutation(api.manualPoEntries.setStatus, { entryId: created.entryId, status: "cancelled" }),
