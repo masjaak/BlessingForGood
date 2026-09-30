@@ -339,7 +339,6 @@ export const attachGalleryImageValidated = internalMutation({
     if (gallery.length >= READY_STOCK_GALLERY_LIMIT) {
       fail("VALIDATION_FAILED", `Ready Stock maksimal memiliki ${READY_STOCK_GALLERY_LIMIT} gambar isi`);
     }
-    await consumeClaim(ctx, args.storageId, "book-gallery", user._id);
     await validateStoredFile(
       ctx,
       args.storageId,
@@ -352,6 +351,7 @@ export const attachGalleryImageValidated = internalMutation({
       .withIndex("by_storage_id", (q) => q.eq("storageId", args.storageId))
       .first();
     if (duplicate) fail("VALIDATION_FAILED", "storage reference is already attached");
+    await consumeClaim(ctx, args.storageId, "book-gallery", user._id);
     const now = Date.now();
     const mediaId = await ctx.db.insert("readyStockListingMedia", {
       listingId: listing._id,
