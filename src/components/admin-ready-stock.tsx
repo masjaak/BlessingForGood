@@ -388,7 +388,9 @@ function ReadyStockListingEditor({
 
 function ReadyStockContent() {
   const [search, setSearch] = useState("");
+  const [listingStatus, setListingStatus] = useState<ListingStatus | "">("");
   const [orderSearch, setOrderSearch] = useState("");
+  const [orderStatus, setOrderStatus] = useState<ReadyStage | "">("");
   const [selectedListingId, setSelectedListingId] = useState<Id<"readyStockListings"> | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -399,8 +401,14 @@ function ReadyStockContent() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const rows = useQuery(api.readyStockListings.listForAdmin, { search: search.trim() || undefined });
-  const orders = useQuery(api.readyStockOrders.listForAdmin, { search: orderSearch.trim() || undefined });
+  const rows = useQuery(api.readyStockListings.listForAdmin, {
+    search: search.trim() || undefined,
+    status: listingStatus || undefined,
+  });
+  const orders = useQuery(api.readyStockOrders.listForAdmin, {
+    search: orderSearch.trim() || undefined,
+    status: orderStatus || undefined,
+  });
   const createListing = useMutation(api.readyStockListings.create);
   const updateStage = useMutation(api.readyStockOrders.updateStage);
 
@@ -508,15 +516,25 @@ function ReadyStockContent() {
             {createOpen ? "Tutup form" : "Tambah Ready Stock"}
           </Button>
         </div>
-        <Field label="Cari Ready Stock">
-          <input
-            className="input"
-            type="search"
-            placeholder="Cari judul"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </Field>
+        <div className="admin-ready-stock-filter-grid">
+          <Field label="Cari Ready Stock">
+            <input
+              className="input"
+              type="search"
+              placeholder="Cari judul"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </Field>
+          <Field label="Status etalase">
+            <BFGSelect value={listingStatus} onChange={(event) => setListingStatus(event.target.value as ListingStatus | "")}>
+              <option value="">Semua status</option>
+              <option value="draft">Draf</option>
+              <option value="published">Terbit</option>
+              <option value="archived">Diarsipkan</option>
+            </BFGSelect>
+          </Field>
+        </div>
       </Card>
 
       {createOpen ? (
@@ -642,15 +660,29 @@ function ReadyStockContent() {
             <p className="subtle">Pantau pembayaran sampai paket diterima customer.</p>
           </div>
         </div>
-        <Field label="Cari pesanan">
-          <input
-            className="input"
-            type="search"
-            placeholder="Nama customer, judul, member code, atau invoice"
-            value={orderSearch}
-            onChange={(event) => setOrderSearch(event.target.value)}
-          />
-        </Field>
+        <div className="admin-ready-stock-filter-grid">
+          <Field label="Cari pesanan">
+            <input
+              className="input"
+              type="search"
+              placeholder="Nama customer, judul, member code, atau invoice"
+              value={orderSearch}
+              onChange={(event) => setOrderSearch(event.target.value)}
+            />
+          </Field>
+          <Field label="Status pesanan">
+            <BFGSelect value={orderStatus} onChange={(event) => setOrderStatus(event.target.value as ReadyStage | "")}>
+              <option value="">Semua status</option>
+              <option value="waiting_payment">Blessy menunggu pembayaran</option>
+              <option value="verifying_payment">Blessy memverifikasi pembayaran</option>
+              <option value="paid">Pembayaran berhasil</option>
+              <option value="packing">Paket sedang dikemas Blessy</option>
+              <option value="shipping">Paket sedang diantar Blessy</option>
+              <option value="delivered">Paket sampai</option>
+              <option value="cancelled">Dibatalkan</option>
+            </BFGSelect>
+          </Field>
+        </div>
 
         {orders === undefined ? (
           <LoadingRegion label="Memuat pesanan Ready Stock">
@@ -692,6 +724,25 @@ function ReadyStockContent() {
                       <strong>{order.shippingAddress.city}, {order.shippingAddress.province}</strong>
                     </div>
                   </div>
+                  {stage !== "cancelled" ? (
+                    <ol className="ready-stock-timeline admin-ready-stock-timeline" aria-label={`Timeline ${order.title}`}>
+                      {order.timeline.map((step) => (
+                        <li
+                          className={`ready-stock-timeline-step is-${step.state}`}
+                          key={step.key}
+                          aria-current={step.state === "current" ? "step" : undefined}
+                        >
+                          <span className="ready-stock-timeline-marker" aria-hidden="true" />
+                          <div>
+                            <strong>{step.label}</strong>
+                            <span className="subtle">
+                              {step.state === "complete" ? "Selesai" : step.state === "current" ? "Sekarang" : "Berikutnya"}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
                   <div className="form-actions">
                     {order.invoiceId ? (
                       <LinkButton href={`/admin/invoices/${order.invoiceId}`} variant="secondary">
