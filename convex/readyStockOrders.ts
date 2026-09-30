@@ -13,6 +13,15 @@ import { positiveQuantity } from "./lib/validation";
 
 type DataCtx = QueryCtx | MutationCtx;
 const adminStageValidator = v.union(v.literal("packing"), v.literal("shipping"), v.literal("delivered"));
+const operationalStatusValidator = v.union(
+  v.literal("waiting_payment"),
+  v.literal("verifying_payment"),
+  v.literal("paid"),
+  v.literal("packing"),
+  v.literal("shipping"),
+  v.literal("delivered"),
+  v.literal("cancelled"),
+);
 
 const TIMELINE = [
   { key: "waiting_payment", label: "Blessy menunggu pembayaran" },
@@ -227,19 +236,19 @@ export const listMine = query({
 });
 
 export const listForAdmin = query({
-  args: { search: v.optional(v.string()) },
+  args: { search: v.optional(v.string()), status: v.optional(operationalStatusValidator) },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "orders.manage");
     const rows = await ctx.db.query("readyStockOrders").withIndex("by_created_at").order("desc").take(500);
     const views = await Promise.all(rows.map((order) => orderView(ctx, order)));
     const search = args.search?.trim().toLowerCase() || "";
-    return search
-      ? views.filter((row) =>
-          [row.customerName, row.customerEmail, row.customerMemberCode, row.title, row.invoiceNumber]
-            .filter((value): value is string => Boolean(value))
-            .some((value) => value.toLowerCase().includes(search)),
-        )
-      : views;
+    return views.filter((row) => {
+      if (args.status && row.operationalStatus !== args.status) return false;
+      if (!search) return true;
+      return [row.customerName, row.customerEmail, row.customerMemberCode, row.title, row.invoiceNumber]
+        .filter((value): value is string => Boolean(value))
+        .some((value) => value.toLowerCase().includes(search));
+    });
   },
 });
 
