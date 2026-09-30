@@ -73,6 +73,7 @@ import type * as paymentConfirmations from "../paymentConfirmations.js";
 import type * as prototypeSessions from "../prototypeSessions.js";
 import type * as publishers from "../publishers.js";
 import type * as readyStock from "../readyStock.js";
+import type * as readyStockManual from "../readyStockManual.js";
 import type * as refunds from "../refunds.js";
 import type * as reports from "../reports.js";
 import type * as secretCatalogs from "../secretCatalogs.js";
@@ -155,6 +156,7 @@ declare const fullApi: ApiFromModules<{
   prototypeSessions: typeof prototypeSessions;
   publishers: typeof publishers;
   readyStock: typeof readyStock;
+  readyStockManual: typeof readyStockManual;
   refunds: typeof refunds;
   reports: typeof reports;
   secretCatalogs: typeof secretCatalogs;
