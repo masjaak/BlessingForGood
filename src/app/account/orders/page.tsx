@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { formatCargoEta, shipmentStageLabels } from "@/domain/prototype/operations";
 import { CustomerManualPoSection } from "@/features/manual-po/manual-po";
+import { CustomerReadyStockSection } from "@/features/ready-stock/customer-ready-stock";
 import {
   calendarDateKey,
   calendarDateToEndTimestamp,
@@ -86,6 +87,7 @@ function CustomerBooks() {
       </Card>
 
       <CustomerManualPoSection />
+      <CustomerReadyStockSection />
 
       {overview === undefined ? (
         <LoadingRegion label="Memuat Buku Saya">
