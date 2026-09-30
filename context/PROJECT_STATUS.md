@@ -1,5 +1,18 @@
 # BFG Project Status
 
+## Standalone manual Ready Stock storefront — 2026-09-30
+
+Status: `ENGINEERING_GREEN_PREVIEW_BLOCKED`
+
+Client direction supersedes the previous Master-book-coupled Ready Stock price-override model. Ready Stock is now a standalone manual storefront with its own title, price, format, physical quantity, one real cover image, and up to eight gallery images. Customer checkout is direct from the Ready Stock detail page and does not enter the normal Cart. Checkout creates a standalone Ready Stock order plus an issued Invoice, snapshots price and shipping data, reserves stock, and exposes the Blessy timeline from waiting payment through delivered on both Admin and Customer surfaces.
+
+Master Buku, Secret Catalog, regular Cart/Order, Random PO, Batch, and historical Ready Stock records remain separate. The separate Secret Catalog high-index detail bug is already merged to main at `fdfb51a2efd1c3f9f4d57791d99b21b1c237c8dc`.
+
+Focused Ready Stock backend/component regression, TypeScript, production Next.js build, and diff validation pass in GitHub Actions. PR #24 remains draft because Vercel Preview is still failing in the Vercel/Convex deployment path; production merge is intentionally blocked until Preview is green and runtime smoke is complete.
+
+The previous Ready Stock independent price-override direction below is superseded for the customer-facing Ready Stock storefront. Its historical implementation remains documented for audit context only.
+
+
 ## Ready Stock independent price override — 2026-09-30
 
 Status: `PREVIEW_VERIFIED_PENDING_PRODUCTION`
