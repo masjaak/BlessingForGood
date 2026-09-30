@@ -32,6 +32,15 @@ const role = v.union(v.literal("owner"), v.literal("admin"), v.literal("customer
 const userStatus = v.union(v.literal("active"), v.literal("suspended"), v.literal("removed"));
 const catalogStatus = v.union(v.literal("draft"), v.literal("open"), v.literal("closed"), v.literal("archived"));
 const orderStatus = v.union(v.literal("submitted"), v.literal("cancelled"), v.literal("completed"));
+const readyStockListingStatus = v.union(v.literal("draft"), v.literal("published"), v.literal("archived"));
+const readyStockOrderStage = v.union(
+  v.literal("waiting_payment"),
+  v.literal("paid"),
+  v.literal("packing"),
+  v.literal("shipping"),
+  v.literal("delivered"),
+  v.literal("cancelled"),
+);
 const uploadPurpose = v.union(
   v.literal("book-cover"),
   v.literal("book-gallery"),
@@ -325,6 +334,73 @@ export default defineSchema({
     .index("by_order_item", ["orderItemId"])
     .index("by_variant", ["bookVariantId"])
     .index("by_status", ["status"]),
+
+  readyStockListings: defineTable({
+    slug: v.string(),
+    title: v.string(),
+    priceAmount: v.number(),
+    format: bookFormat,
+    quantity: v.number(),
+    reservedQuantity: v.number(),
+    coverStorageId: v.optional(v.id("_storage")),
+    status: readyStockListingStatus,
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+    updatedByUserId: v.id("appUsers"),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_cover_storage_id", ["coverStorageId"]),
+
+  readyStockListingMedia: defineTable({
+    listingId: v.id("readyStockListings"),
+    storageId: v.id("_storage"),
+    displayOrder: v.number(),
+    altText: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_listing_and_order", ["listingId", "displayOrder"])
+    .index("by_storage_id", ["storageId"]),
+
+  readyStockOrders: defineTable({
+    customerUserId: v.id("appUsers"),
+    listingId: v.id("readyStockListings"),
+    invoiceId: v.optional(v.id("invoices")),
+    titleSnapshot: v.string(),
+    formatSnapshot: bookFormat,
+    unitPriceAmountSnapshot: v.number(),
+    quantity: v.number(),
+    totalAmount: v.number(),
+    stage: readyStockOrderStage,
+    recipientName: v.string(),
+    recipientPhone: v.string(),
+    addressLine1: v.string(),
+    addressLine2: v.optional(v.string()),
+    city: v.string(),
+    province: v.string(),
+    postalCode: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdByUserId: v.id("appUsers"),
+  })
+    .index("by_customer_and_created_at", ["customerUserId", "createdAt"])
+    .index("by_listing_and_created_at", ["listingId", "createdAt"])
+    .index("by_stage_and_created_at", ["stage", "createdAt"])
+    .index("by_invoice", ["invoiceId"])
+    .index("by_created_at", ["createdAt"]),
+
+  readyStockOrderEvents: defineTable({
+    orderId: v.id("readyStockOrders"),
+    stage: readyStockOrderStage,
+    actorUserId: v.id("appUsers"),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_order_and_created_at", ["orderId", "createdAt"]),
 
   secretCatalogs: defineTable({
     name: v.string(),
@@ -755,6 +831,7 @@ export default defineSchema({
   invoices: defineTable({
     orderId: v.optional(v.id("orders")),
     manualPoEntryId: v.optional(v.id("manualPoEntries")),
+    readyStockOrderId: v.optional(v.id("readyStockOrders")),
     customerUserId: v.id("appUsers"),
     batchId: v.optional(v.id("batches")),
     invoiceNumber: v.string(),
@@ -782,6 +859,7 @@ export default defineSchema({
   })
     .index("by_order", ["orderId"])
     .index("by_manual_po_entry", ["manualPoEntryId"])
+    .index("by_ready_stock_order", ["readyStockOrderId"])
     .index("by_batch", ["batchId"])
     .index("by_customer_user_id", ["customerUserId"])
     .index("by_status", ["status"])
@@ -841,6 +919,7 @@ export default defineSchema({
     invoiceId: v.id("invoices"),
     orderItemId: v.optional(v.id("orderItems")),
     manualPoEntryId: v.optional(v.id("manualPoEntries")),
+    readyStockOrderId: v.optional(v.id("readyStockOrders")),
     descriptionSnapshot: v.string(),
     bookTitleSnapshot: v.string(),
     publisherNameSnapshot: v.optional(v.string()),
@@ -853,7 +932,8 @@ export default defineSchema({
   })
     .index("by_invoice", ["invoiceId"])
     .index("by_order_item", ["orderItemId"])
-    .index("by_manual_po_entry", ["manualPoEntryId"]),
+    .index("by_manual_po_entry", ["manualPoEntryId"])
+    .index("by_ready_stock_order", ["readyStockOrderId"]),
 
   refundObligations: defineTable({
     customerUserId: v.id("appUsers"),
