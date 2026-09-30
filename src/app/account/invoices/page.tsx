@@ -43,7 +43,7 @@ function PersistentCustomerInvoices() {
       {invoices.length === 0 ? (
         <EmptyState
           title="Belum ada tagihan"
-          description="Tagihan akan tampil setelah admin menerbitkan invoice reguler atau tagihan Pesanan Khusus."
+          description="Tagihan akan tampil dari pesanan reguler, Pesanan Khusus, atau checkout Ready Stock."
           action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
         />
       ) : (
