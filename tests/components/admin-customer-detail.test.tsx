@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AdminCustomerDetailPage from "@/app/admin/customers/[customerId]/page";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useProduct } from "@/domain/prototype/store";
 import { useOperations } from "@/domain/prototype/operations-context";
 
