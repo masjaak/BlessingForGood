@@ -139,6 +139,105 @@ describe("Catalog read contract characterization", () => {
     });
   });
 
+  it("loads a customer book detail directly even when the title is beyond the 600th catalog position", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const customerUser = await customer.query(api.users.current, {});
+    const adminUser = await admin.query(api.users.current, {});
+    if (!customerUser || !adminUser) throw new Error("catalog detail fixture missing");
+
+    const publisherId = await admin.mutation(api.publishers.create, { name: "Large Detail Publisher" });
+    const catalogId = await admin.mutation(api.secretCatalogs.create, { name: "Large Customer Detail Catalog" });
+    await admin.mutation(api.secretCatalogs.open, { catalogId });
+
+    const target = await t.run(async (ctx) => {
+      const now = Date.now();
+      let targetBookId: Id<"books"> | null = null;
+      let targetVariantId: Id<"bookVariants"> | null = null;
+      for (let index = 0; index < 630; index += 1) {
+        const bookId = await ctx.db.insert("books", {
+          publisherId,
+          title: `Large Catalog Book ${index + 1}`,
+          slug: `large-catalog-book-${index + 1}`,
+          author: `Author ${index + 1}`,
+          description: `Detail for book ${index + 1}`,
+          categories: ["Children Books"],
+          publicationStatus: "published",
+          isActive: true,
+          createdAt: now + index,
+          updatedAt: now + index,
+          createdByUserId: adminUser.appUserId,
+        });
+        const variantId = await ctx.db.insert("bookVariants", {
+          bookId,
+          format: "PB",
+          isbn: `9789${String(index + 1).padStart(9, "0")}`,
+          priceAmount: 100000 + index,
+          currency: "IDR",
+          isAvailable: true,
+          createdAt: now + index,
+          updatedAt: now + index,
+        });
+        await ctx.db.insert("catalogItems", {
+          catalogId,
+          bookVariantId: variantId,
+          bookId,
+          isAvailable: true,
+          sortOrder: index,
+          createdAt: now + index,
+          updatedAt: now + index,
+        });
+        await ctx.db.insert("catalogTitles", {
+          catalogId,
+          bookId,
+          createdAt: now + index,
+          updatedAt: now + index,
+        });
+        if (index === 627) {
+          targetBookId = bookId;
+          targetVariantId = variantId;
+        }
+      }
+      await ctx.db.patch(catalogId, { titleCount: 630, updatedAt: now + 631 });
+      await ctx.db.insert("catalogAccessGrants", {
+        appUserId: customerUser.appUserId,
+        catalogId,
+        grantedAt: now,
+        expiresAt: now + 60 * 60 * 1000,
+      });
+      if (!targetBookId || !targetVariantId) throw new Error("large detail target missing");
+      return { targetBookId, targetVariantId };
+    });
+
+    const browse = await customer.query(api.catalogAccess.getUnlocked, {
+      catalogId,
+      pageNumber: 7,
+      pageSize: 100,
+      search: "",
+      publishers: [],
+      formats: [],
+    });
+    expect(browse?.books.some((book) => book.id === target.targetBookId)).toBe(true);
+
+    await expect(
+      customer.query(api.catalogAccess.getBookUnlocked, {
+        catalogId,
+        bookId: target.targetBookId,
+      }),
+    ).resolves.toMatchObject({
+      id: target.targetBookId,
+      title: "Large Catalog Book 628",
+      description: "Detail for book 628",
+      variants: [
+        expect.objectContaining({
+          id: target.targetVariantId,
+          catalogItemId: expect.any(String),
+          price: 100627,
+        }),
+      ],
+    });
+  });
+
   it("keeps the Admin-list title counter idempotent across concurrent formats and eligibility changes", async () => {
     const t = testConvex();
     const { admin } = await setupUsers(t);

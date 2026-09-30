@@ -12,7 +12,7 @@ import {
 import { findCurrentUser, requireActiveCustomer, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { catalogSummaryFromCatalog, getCatalogSummary } from "./lib/catalogSummary";
-import { catalogIsOpen, getCatalogView } from "./lib/catalogView";
+import { catalogIsOpen, getCatalogBookView, getCatalogView } from "./lib/catalogView";
 import { constantTimeEqual, keyedDigest } from "./lib/crypto";
 import { fail } from "./lib/errors";
 import { requireConfiguredSecret } from "./lib/previewCapability";
@@ -643,6 +643,65 @@ export const getUnlocked = query({
     if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) return null;
     if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
     return getCatalogView(ctx, args.catalogId, viewOptions);
+  },
+});
+
+export const getBookUnlocked = query({
+  args: {
+    catalogId: v.id("secretCatalogs"),
+    bookId: v.id("books"),
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.sessionToken) {
+      const sessionDigest = await catalogSessionDigest(args.sessionToken);
+      const session = await ctx.db
+        .query("catalogAccessSessions")
+        .withIndex("by_session_digest", (query) => query.eq("sessionDigest", sessionDigest))
+        .first();
+      if (!session || session.revokedAt || session.expiresAt <= Date.now()) return null;
+
+      if (session.accessCodeId) {
+        const code = await ctx.db.get(session.accessCodeId);
+        if (!code || !code.isActive || (code.expiresAt && code.expiresAt <= Date.now())) return null;
+        if (code.scope === "global") {
+          const catalogs = await eligibleGlobalCatalogs(ctx);
+          if (!catalogs.some((catalog) => catalog._id === args.catalogId)) return null;
+          return getCatalogBookView(ctx, args.catalogId, args.bookId);
+        }
+        if (session.catalogId !== args.catalogId || code.catalogId !== args.catalogId) return null;
+        if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
+        return getCatalogBookView(ctx, args.catalogId, args.bookId);
+      }
+
+      if (session.accessPeriodId) {
+        const period = await ctx.db.get(session.accessPeriodId);
+        const catalog = await ctx.db.get(args.catalogId);
+        if (
+          !period ||
+          accessPeriodStatus(period) !== "active" ||
+          !catalog ||
+          catalog.accessPeriodId !== session.accessPeriodId ||
+          !(await catalogIsOpen(ctx, args.catalogId))
+        ) {
+          return null;
+        }
+        return getCatalogBookView(ctx, args.catalogId, args.bookId);
+      }
+
+      return null;
+    }
+
+    const user = await requirePermission(ctx, "catalog.read");
+    const grant = await ctx.db
+      .query("catalogAccessGrants")
+      .withIndex("by_app_user_id_and_catalog_id", (query) =>
+        query.eq("appUserId", user._id).eq("catalogId", args.catalogId),
+      )
+      .first();
+    if (!grant || grant.revokedAt || grant.expiresAt <= Date.now()) return null;
+    if (!(await catalogIsOpen(ctx, args.catalogId))) return null;
+    return getCatalogBookView(ctx, args.catalogId, args.bookId);
   },
 });
 

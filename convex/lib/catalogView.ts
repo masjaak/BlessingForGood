@@ -41,6 +41,84 @@ export async function catalogIsOpen(ctx: QueryCtx, catalogId: Id<"secretCatalogs
   return Boolean(catalog && catalog.status === "open" && (!catalog.closesAt || catalog.closesAt > Date.now()));
 }
 
+export async function getCatalogBookView(
+  ctx: QueryCtx,
+  catalogId: Id<"secretCatalogs">,
+  bookId: Id<"books">,
+) {
+  const [catalog, book] = await Promise.all([ctx.db.get(catalogId), ctx.db.get(bookId)]);
+  if (!catalog || !book || !book.isActive) return null;
+  if (book.publicationStatus !== "published" && book.publicationStatus !== "special") return null;
+
+  const [publisher, variants, media] = await Promise.all([
+    ctx.db.get(book.publisherId),
+    ctx.db
+      .query("bookVariants")
+      .withIndex("by_book", (query) => query.eq("bookId", bookId))
+      .collect(),
+    ctx.db
+      .query("bookMedia")
+      .withIndex("by_book_and_order", (query) => query.eq("bookId", bookId))
+      .order("asc")
+      .take(8),
+  ]);
+  if (!publisher) return null;
+
+  const catalogVariants = (
+    await Promise.all(
+      variants.map(async (variant) => {
+        if (!variant.isAvailable) return null;
+        const item = await ctx.db
+          .query("catalogItems")
+          .withIndex("by_catalog_and_variant", (query) =>
+            query.eq("catalogId", catalogId).eq("bookVariantId", variant._id),
+          )
+          .unique();
+        if (!item?.isAvailable) return null;
+        return {
+          id: variant._id,
+          catalogItemId: item._id,
+          format: variant.format,
+          isbn: variant.isbn,
+          price: item.priceOverrideAmount ?? variant.priceAmount,
+          currency: variant.currency,
+          availability: "available" as const,
+        };
+      }),
+    )
+  ).filter((variant): variant is NonNullable<typeof variant> => Boolean(variant));
+  if (!catalogVariants.length) return null;
+
+  const [coverImageUrl, gallery] = await Promise.all([
+    book.coverStorageId ? ctx.storage.getUrl(book.coverStorageId) : Promise.resolve(book.coverImageUrl ?? null),
+    Promise.all(
+      media.map(async (item) => ({
+        mediaId: item._id,
+        displayOrder: item.displayOrder,
+        altText: item.altText,
+        url: await ctx.storage.getUrl(item.storageId),
+      })),
+    ).then((items) => items.filter((item): item is typeof item & { url: string } => Boolean(item.url))),
+  ]);
+
+  return {
+    id: book._id,
+    title: book.title,
+    publisher: publisher.name,
+    author: book.author ?? null,
+    description: book.description ?? null,
+    categories: book.categories,
+    coverImageUrl,
+    coverPresentation: book.coverPresentation ?? null,
+    gallery,
+    externalPreview:
+      book.externalPreviewUrl && book.externalPreviewLabel
+        ? { label: book.externalPreviewLabel, url: book.externalPreviewUrl }
+        : null,
+    variants: catalogVariants,
+  };
+}
+
 export async function getCatalogView(
   ctx: QueryCtx,
   catalogId: Id<"secretCatalogs">,
