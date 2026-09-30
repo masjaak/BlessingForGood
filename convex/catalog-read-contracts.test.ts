@@ -141,7 +141,7 @@ describe("Catalog read contract characterization", () => {
 
   it("loads a customer book detail directly even when the title is beyond the 600th catalog position", async () => {
     const t = testConvex();
-    const { admin, customer } = await setupUsers(t);
+    const { admin, customer, secondCustomer } = await setupUsers(t);
     const customerUser = await customer.query(api.users.current, {});
     const adminUser = await admin.query(api.users.current, {});
     if (!customerUser || !adminUser) throw new Error("catalog detail fixture missing");
@@ -152,9 +152,9 @@ describe("Catalog read contract characterization", () => {
 
     const target = await t.run(async (ctx) => {
       const now = Date.now();
-      let targetBookId: Id<"books"> | null = null;
-      let targetVariantId: Id<"bookVariants"> | null = null;
-      for (let index = 0; index < 630; index += 1) {
+      const targets: Array<{ bookId: Id<"books">; variantId: Id<"bookVariants">; position: number }> = [];
+      const coverStorageId = await ctx.storage.store(new Blob(["catalog media fixture"]));
+      for (let index = 0; index < 660; index += 1) {
         const bookId = await ctx.db.insert("books", {
           publisherId,
           title: `Large Catalog Book ${index + 1}`,
@@ -163,6 +163,7 @@ describe("Catalog read contract characterization", () => {
           description: `Detail for book ${index + 1}`,
           categories: ["Children Books"],
           publicationStatus: "published",
+          coverStorageId,
           isActive: true,
           createdAt: now + index,
           updatedAt: now + index,
@@ -193,49 +194,77 @@ describe("Catalog read contract characterization", () => {
           createdAt: now + index,
           updatedAt: now + index,
         });
-        if (index === 627) {
-          targetBookId = bookId;
-          targetVariantId = variantId;
+        if ([24, 597, 600, 614, 627].includes(index)) {
+          targets.push({ bookId, variantId, position: index + 1 });
+          await ctx.db.insert("bookMedia", {
+            bookId,
+            storageId: coverStorageId,
+            displayOrder: 0,
+            altText: "Inside pages",
+            createdAt: now,
+            updatedAt: now,
+            createdByUserId: adminUser.appUserId,
+          });
         }
       }
-      await ctx.db.patch(catalogId, { titleCount: 630, updatedAt: now + 631 });
+      await ctx.db.patch(catalogId, { titleCount: 660, updatedAt: now + 661 });
       await ctx.db.insert("catalogAccessGrants", {
         appUserId: customerUser.appUserId,
         catalogId,
         grantedAt: now,
         expiresAt: now + 60 * 60 * 1000,
       });
-      if (!targetBookId || !targetVariantId) throw new Error("large detail target missing");
-      return { targetBookId, targetVariantId };
+      return targets;
     });
 
-    const browse = await customer.query(api.catalogAccess.getUnlocked, {
-      catalogId,
-      pageNumber: 7,
-      pageSize: 100,
-      search: "",
-      publishers: [],
-      formats: [],
-    });
-    expect(browse?.books.some((book) => book.id === target.targetBookId)).toBe(true);
-
-    await expect(
-      customer.query(api.catalogAccess.getBookUnlocked, {
+    for (const item of target) {
+      const search = await customer.query(api.catalogAccess.getUnlocked, {
         catalogId,
-        bookId: target.targetBookId,
-      }),
-    ).resolves.toMatchObject({
-      id: target.targetBookId,
-      title: "Large Catalog Book 628",
-      description: "Detail for book 628",
-      variants: [
-        expect.objectContaining({
-          id: target.targetVariantId,
-          catalogItemId: expect.any(String),
-          price: 100627,
-        }),
-      ],
+        pageNumber: 1,
+        pageSize: 25,
+        search: `Large Catalog Book ${item.position}`,
+        publishers: [],
+        formats: [],
+      });
+      expect(search?.books.some((book) => book.id === item.bookId)).toBe(true);
+      const args = { catalogId, bookId: item.bookId };
+      const detail = await customer.query(api.catalogAccess.getBookUnlocked, args);
+      expect(detail).toMatchObject({
+        id: item.bookId,
+        title: `Large Catalog Book ${item.position}`,
+        description: `Detail for book ${item.position}`,
+        coverImageUrl: expect.any(String),
+        gallery: [expect.objectContaining({ altText: "Inside pages", url: expect.any(String) })],
+        variants: [
+          expect.objectContaining({
+            id: item.variantId,
+            catalogItemId: expect.any(String),
+            price: 100000 + item.position - 1,
+          }),
+        ],
+      });
+      expect(await customer.query(api.catalogAccess.getBookUnlocked, args)).toEqual(detail);
+      expect(await secondCustomer.query(api.catalogAccess.getBookUnlocked, args)).toBeNull();
+    }
+    const args = { catalogId, bookId: target.at(-1)!.bookId };
+    await expect(t.query(api.catalogAccess.getBookUnlocked, args)).rejects.toThrow("IDENTITY_REQUIRED");
+    expect(await t.query(api.catalogAccess.getBookUnlocked, { ...args, sessionToken: "invalid-session" })).toBeNull();
+    const other = await createOpenCatalog(admin, "Outside catalog", "9009", "outside-code");
+    expect(await customer.query(api.catalogAccess.getBookUnlocked, { catalogId, bookId: other.bookId })).toBeNull();
+    const code = await admin.mutation(api.catalogAccess.generateCode, { catalogId });
+    const unlocked = await t.mutation(api.catalogAccess.unlock, {
+      accessCode: code.code,
+      attemptKey: "large-catalog-verification",
     });
+    if ("errorCode" in unlocked) throw Error(unlocked.errorCode);
+    expect(
+      await t.query(api.catalogAccess.getBookUnlocked, { ...args, sessionToken: unlocked.sessionToken }),
+    ).toMatchObject({ id: args.bookId });
+    await admin.mutation(api.secretCatalogs.close, { catalogId });
+    expect(await customer.query(api.catalogAccess.getBookUnlocked, args)).toBeNull();
+    expect(
+      await t.query(api.catalogAccess.getBookUnlocked, { ...args, sessionToken: unlocked.sessionToken }),
+    ).toBeNull();
   });
 
   it("keeps the Admin-list title counter idempotent across concurrent formats and eligibility changes", async () => {
