@@ -80,7 +80,7 @@ export function createPageMetadata({ title, description, path, index = true }: P
 export function createBookMetadata(book: PublicReadyStockBook): Metadata {
   const title = `${book.title} — Ready Stock | ${SITE_NAME}`;
   const description = publicBookDescription(book);
-  const image = book.coverImageUrl ? [{ url: book.coverImageUrl, alt: publicBookAlt(book) }] : undefined;
+  const image = book.coverUrl ? [{ url: book.coverUrl, alt: publicBookAlt(book) }] : undefined;
   return {
     ...createPageMetadata({ title, description, path: `/ready-stock/${book.slug}` }),
     openGraph: {
