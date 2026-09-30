@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AdminNav } from "@/components/admin-nav";
 import { ProductAccessGuard } from "@/components/product-access-guard";
-import { Card, EmptyState, LinkButton, LoadingRegion, Money, PageHeader, StatusBadge } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, Money, PageHeader, StatusBadge } from "@/components/ui";
 import { SkeletonListCard, SkeletonPanel } from "@/components/workspace-skeleton-primitives";
 import { SiteShell } from "@/components/site-shell";
 import { orderReference } from "@/domain/prototype/order-reference";
@@ -17,6 +18,107 @@ import { useProduct } from "@/domain/prototype/store";
 import { asOrderList, type OrderListView } from "@/domain/prototype/convex-store";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { AdminManualPoPanel } from "@/features/manual-po/manual-po";
+
+function AdminCustomerNameEditor({
+  customerUserId,
+  currentName,
+}: {
+  customerUserId: Id<"appUsers">;
+  currentName: string;
+}) {
+  const updateDisplayName = useMutation(api.customerProfiles.updateDisplayNameForAdmin);
+  const [editing, setEditing] = useState(false);
+  const [displayName, setDisplayName] = useState(currentName);
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    const nextName = displayName.trim();
+    if (!nextName) {
+      setError("Nama customer wajib diisi.");
+      return;
+    }
+    setPending(true);
+    setMessage("");
+    setError("");
+    try {
+      await updateDisplayName({ userId: customerUserId, displayName: nextName });
+      setDisplayName(nextName);
+      setEditing(false);
+      setMessage("Nama customer berhasil diperbarui.");
+    } catch {
+      setError("Nama customer belum berhasil diperbarui. Coba lagi.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="content-stack customer-name-admin-editor">
+        <div className="form-actions">
+          <Button
+            type="button"
+            variant="tertiary"
+            size="compact"
+            onClick={() => {
+              setDisplayName(currentName);
+              setMessage("");
+              setError("");
+              setEditing(true);
+            }}
+          >
+            Edit nama customer
+          </Button>
+        </div>
+        {message ? (
+          <p className="success-banner" role="status">
+            {message}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <form className="content-stack customer-name-admin-editor" onSubmit={save}>
+      <Field label="Nama customer">
+        <input
+          className="input"
+          value={displayName}
+          maxLength={200}
+          autoFocus
+          onChange={(event) => setDisplayName(event.target.value)}
+        />
+      </Field>
+      {error ? (
+        <p className="error-text" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="form-actions">
+        <Button type="submit" size="compact" loading={pending} loadingLabel="Menyimpan…">
+          Simpan nama
+        </Button>
+        <Button
+          type="button"
+          variant="tertiary"
+          size="compact"
+          disabled={pending}
+          onClick={() => {
+            setDisplayName(currentName);
+            setError("");
+            setEditing(false);
+          }}
+        >
+          Batal
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 function CustomerDetail() {
   const customerId = String(useParams<{ customerId: string }>().customerId);
@@ -121,6 +223,10 @@ function CustomerDetail() {
                 <br />
                 {profile?.whatsappNumber || "WhatsApp belum diisi"}
               </p>
+              <AdminCustomerNameEditor
+                customerUserId={customerId as Id<"appUsers">}
+                currentName={name}
+              />
             </Card>
             <Card>
               <span className="card-kicker">Alamat</span>
