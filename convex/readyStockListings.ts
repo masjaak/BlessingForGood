@@ -12,7 +12,7 @@ import { consumeClaim } from "./uploads";
 import { nonNegativeQuantity, positiveMoney, requiredText, slugify } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 
-export const READY_STOCK_GALLERY_LIMIT = 8;
+const READY_STOCK_GALLERY_LIMIT = 8;
 const listingStatusValidator = v.union(v.literal("draft"), v.literal("published"), v.literal("archived"));
 const sortValidator = v.union(v.literal("newest"), v.literal("title"), v.literal("price"));
 
