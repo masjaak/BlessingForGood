@@ -24,8 +24,12 @@ source: conversation
 
 - Typecheck, lint, build, 319 backend tests and focused components pass. Isolated
   browser checkout, invoice, history, reset and responsive DOM checks pass.
-- Release blocked by five baseline frontend failures, CDP screenshot timeout
-  and unavailable Production authenticated smoke. No merge or deployment.
+- Client accepts the five inherited frontend failures; they remain out of scope.
+- Branch pushed, PR #22 opened, Vercel Preview succeeds and canonical Development
+  backend is deployed. Real Clerk sessions verify price → Order → Invoice,
+  immutable history, reset, assisted checkout and release. Playwright screenshot
+  fallback verifies every requested width. Feature source remains frozen.
+- Merge and Production smoke are pending.
 - Evidence: [verification report](context/implementation/BFG-READY-STOCK-PRICE-OVERRIDE.md).
 
 ## [homepage-ui-finalized] — 2026-09-28

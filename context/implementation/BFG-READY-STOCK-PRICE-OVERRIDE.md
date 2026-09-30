@@ -1,9 +1,60 @@
 # BFG — Ready Stock Price Override Verification
 
-Date: 2026-09-30. Status: **BLOCKED**. Branch: `fix/ready-stock-price-override`.
+Date: 2026-09-30. Status: **Preview verified; Production pending**.
+Branch: `fix/ready-stock-price-override`.
 Baseline: `origin/main` at `3f2a4913a69919e4985f1976bcf5aac9241f14ca`.
 Original checkout contained unrelated work; implementation uses an isolated worktree.
 Mandatory rules loaded from `/Users/masjak/Downloads/kumpulan skills/agent_rule.txt`.
+
+## Closure evidence
+
+Implementation reference remains `6eaefe5954f60c945a5b7db422c0ccd9b5645ba4`.
+No feature source, existing assertion, dependency or protected system changed
+during closure. The five frontend failures listed below are **accepted inherited
+baseline failures**, as instructed by the client. New branch-specific failures: 0.
+
+- Remote branch verified at the implementation SHA.
+- [PR #22](https://github.com/masjaak/BlessingForGood/pull/22):
+  `Add independent Ready Stock price override` → `main`.
+- [Vercel Preview](https://blessing-for-good-ecsiwrxpj-masjaaks-projects.vercel.app):
+  READY / Vercel check SUCCESS for implementation SHA; deployment
+  `dpl_8FatCoq9tS7QZHfJxQFweF3mn6QG`.
+- Build credential gate confirms Clerk Development and canonical Convex
+  Development `content-snake-214`. Preview's wrapper disables automatic backend
+  deploy; the frozen backend was deployed to verified `palevvi/blessingforgood`
+  Development before smoke. Production `clean-eel-522` was not mutated.
+- Existing active Development Owner and Customer establish real Clerk sessions.
+  Protected operations use their real Clerk-issued Convex JWTs. Vercel CLI's
+  supported automation cookie provides deployment access; BFG authorization
+  remains active. Customer/anonymous price edits are rejected at runtime.
+- Dedicated Development fixture starts at Master 175000 and quantity 3. Admin
+  editor sets 195000; listing, detail and rendered Product Offer match. Customer
+  quantity 2 stores unit 195000/subtotal 390000; issued Invoice stores 390000.
+  Changing to 210000 preserves that Order/Invoice and a new Customer Order
+  snapshots 210000. Existing release restores availability, reset falls back to
+  175000, assisted Order snapshots 195000, and Catalog override remains 180000.
+- Last-unit checkout removes the zero-stock public detail, as before this change.
+  The harness verifies its successfully created Order from server records rather
+  than relying on a transient message in an unmounted detail component.
+- Real Preview screenshots: Admin 1440/1024/768/390; Public and Detail
+  1440/768/390. Editor, success and invalid-input state were captured. Desktop
+  and mobile amounts/actions are readable; horizontal scrolling stays inside
+  the Admin table. Mobile viewport captures scroll prices into view and use the
+  existing Blessy dismiss control. No product CSS or Blessy code changed.
+- Closure rerun: Ready Stock components 17/17; commerce regressions 41/41.
+  Original full backend 319/319, typecheck/lint/build PASS remain valid for the
+  unchanged feature source. Browser page errors: 0.
+
+Representative authenticated Preview artifacts:
+
+- [Admin mobile editor / Master and Ready prices](evidence/ready-stock-price-override/admin-390.png)
+- [Public mobile effective price](evidence/ready-stock-price-override/public-390.png)
+- [Detail mobile effective price and Customer checkout](evidence/ready-stock-price-override/detail-390.png)
+
+All 16 Preview captures and transactional record evidence remain under ignored
+`artifacts/browser-qa/ready-stock-price/preview-visual/` and `preview-smoke.json`.
+The earlier local verification and screenshot timeout below are implementation
+history, superseded by this authenticated Preview evidence.
 
 ## Root cause and ownership
 
@@ -111,7 +162,8 @@ components,final-backend,focused,build,lint-final}.log` and baseline comparison 
 
 ## Release
 
-PR: not created. Preview: not run. Merge: not performed. Production: not deployed.
-The requested green gates are not satisfied, so release is deliberately blocked.
-Resolve baseline frontend failures in their owning scope, restore browser capture,
-then verify authenticated preview/Production with an authorized account and variant.
+PR #22 is open and Preview/visual/authenticated transaction gates pass.
+Inherited baseline frontend failures are accepted and stay outside this PR.
+Merge and Production deployment/smoke remain pending. Previous Production target:
+`blessing-for-good-crzi1s9sw-masjaaks-projects.vercel.app`; previous main SHA is
+the baseline above. No Production test business records were created.
