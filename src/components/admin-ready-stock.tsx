@@ -182,7 +182,7 @@ function ReadyStockListingEditor({
         storageId,
         fileName: galleryFile.name,
         mimeType: galleryFile.type,
-        altText: listing.title,
+        altText: currentTitle,
       });
       setGalleryFile(null);
       setMessage("Gambar isi Ready Stock tersimpan.");
