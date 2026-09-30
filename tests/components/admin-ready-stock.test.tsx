@@ -74,7 +74,7 @@ describe("Admin standalone Ready Stock", () => {
     update.mockResolvedValue({});
     updateStage.mockResolvedValue({});
     vi.mocked(useAction).mockReturnValue(vi.fn() as never);
-    vi.mocked(useQuery).mockImplementation((reference) => {
+    vi.mocked(useQuery).mockImplementation((reference, ..._args) => {
       const name = getFunctionName(reference as never);
       if (name.endsWith("readyStockListings:listForAdmin")) return [listing] as never;
       if (name.endsWith("readyStockOrders:listForAdmin")) return [paidOrder] as never;
@@ -105,7 +105,7 @@ describe("Admin standalone Ready Stock", () => {
     render(<AdminReadyStock />);
     fireEvent.click(screen.getByRole("button", { name: "Tambah Ready Stock" }));
 
-    const fields = screen.getByText("Tambah ke etalase Ready Stock").closest(".card")!;
+    const fields = screen.getByText("Tambah ke etalase Ready Stock").closest(".card") as HTMLElement;
     fireEvent.change(within(fields).getByLabelText("Judul"), { target: { value: "New Real Book" } });
     fireEvent.change(within(fields).getByLabelText("Harga"), { target: { value: "225000" } });
     fireEvent.change(within(fields).getByLabelText("Qty tersedia"), { target: { value: "4" } });
