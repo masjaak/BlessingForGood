@@ -18,4 +18,5 @@ jobs:
       - run: npm install --package-lock=false --no-audit --no-fund
       - run: npm run typecheck
       - run: npx vitest run convex/readyStock-standalone.test.ts convex/readyStock.test.ts convex/readyStock-price-override.test.ts tests/components/admin-ready-stock.test.tsx tests/components/ready-stock-catalog.test.tsx tests/components/ready-stock-detail.test.tsx tests/components/customer-ready-stock-orders.test.tsx tests/components/customer-invoices.test.tsx
+      - run: npm run build
       - run: git diff --check
