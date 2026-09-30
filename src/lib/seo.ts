@@ -10,9 +10,9 @@ const SITE_NAME = "Blessing For Good";
 const HOMEPAGE_DESCRIPTION =
   "Blessing For Good adalah community-led imported bookstore untuk menemukan Ready Stock, preorder, dan curated titles pilihan.";
 
-export type PublicReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
-export type PublicReadyStockList = FunctionReturnType<typeof api.readyStock.list>;
-export type PublicReadyStockSitemapPage = FunctionReturnType<typeof api.readyStock.listForSitemap>;
+export type PublicReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStockManual.getBySlug>>;
+export type PublicReadyStockList = FunctionReturnType<typeof api.readyStockManual.list>;
+export type PublicReadyStockSitemapPage = FunctionReturnType<typeof api.readyStockManual.listForSitemap>;
 
 function publicDataClient() {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -21,12 +21,12 @@ function publicDataClient() {
 
 export const getPublicReadyStockBook = cache(async (slug: string): Promise<PublicReadyStockBook | null | undefined> => {
   const client = publicDataClient();
-  return client ? client.query(api.readyStock.getBySlug, { slug }) : undefined;
+  return client ? client.query(api.readyStockManual.getBySlug, { slug }) : undefined;
 });
 
 export async function getPublicReadyStockList(): Promise<PublicReadyStockList | undefined> {
   const client = publicDataClient();
-  return client ? client.query(api.readyStock.list, {}) : undefined;
+  return client ? client.query(api.readyStockManual.list, {}) : undefined;
 }
 
 export async function getPublicReadyStockSlugs(): Promise<string[] | undefined> {
@@ -36,7 +36,7 @@ export async function getPublicReadyStockSlugs(): Promise<string[] | undefined> 
   let cursor: string | null = null;
   let isDone = false;
   while (!isDone) {
-    const page: PublicReadyStockSitemapPage = await client.query(api.readyStock.listForSitemap, {
+    const page: PublicReadyStockSitemapPage = await client.query(api.readyStockManual.listForSitemap, {
       paginationOpts: { numItems: 100, cursor },
     });
     slugs.push(...page.page.map((book) => book.slug));
@@ -50,18 +50,12 @@ export function publicBookUrl(book: Pick<PublicReadyStockBook, "slug">) {
   return `${SITE_URL}/ready-stock/${book.slug}`;
 }
 
-export function publicBookAlt(book: Pick<PublicReadyStockBook, "title" | "author">) {
-  return `Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`;
+export function publicBookAlt(book: Pick<PublicReadyStockBook, "title">) {
+  return `Foto Ready Stock ${book.title}`;
 }
 
 export function publicBookDescription(book: PublicReadyStockBook) {
-  const facts = [
-    book.author ? `oleh ${book.author}` : null,
-    `penerbit ${book.publisher.name}`,
-    book.variants.length ? `format ${book.variants.map((variant) => variant.format).join(", ")}` : null,
-  ].filter((value): value is string => Boolean(value));
-  const base = book.description?.trim() || book.title;
-  return `${base} ${facts.join(", ")}. Tersedia di Ready Stock ${SITE_NAME}.`;
+  return `${book.title}, format ${book.format}, tersedia ${book.availableQuantity} buku. Foto asli Ready Stock ${SITE_NAME}.`;
 }
 
 type PageMetadataOptions = {
@@ -128,7 +122,7 @@ export function createHomepageStructuredData() {
 
 export function createBookStructuredData(book: PublicReadyStockBook) {
   const url = publicBookUrl(book);
-  const images = [book.coverImageUrl, ...book.gallery.map((image) => image.url)].filter((image): image is string =>
+  const images = [book.coverUrl, ...book.gallery.map((image) => image.url)].filter((image): image is string =>
     Boolean(image),
   );
   return {
@@ -139,18 +133,15 @@ export function createBookStructuredData(book: PublicReadyStockBook) {
     description: publicBookDescription(book),
     ...(images.length ? { image: [...new Set(images)] } : {}),
     url,
-    additionalProperty: book.variants.flatMap((variant) => [
-      { "@type": "PropertyValue", name: "Format", value: variant.format },
-      { "@type": "PropertyValue", name: "ISBN", value: variant.isbn },
-    ]),
-    offers: book.variants.map((variant) => ({
+    additionalProperty: [{ "@type": "PropertyValue", name: "Format", value: book.format }],
+    offers: {
       "@type": "Offer",
       url,
-      price: variant.priceAmount,
-      priceCurrency: variant.currency,
-      availability: variant.stockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      sku: variant.isbn,
-    })),
+      price: book.priceAmount,
+      priceCurrency: "IDR",
+      availability: book.availableQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      sku: String(book.listingId),
+    },
   };
 }
 
