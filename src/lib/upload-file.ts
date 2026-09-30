@@ -1,6 +1,12 @@
 import type { Id } from "../../convex/_generated/dataModel";
 
-export type BfgUploadPurpose = "book-cover" | "book-gallery" | "payment-proof" | "deposit-proof";
+export type BfgUploadPurpose =
+  | "book-cover"
+  | "book-gallery"
+  | "ready-stock-cover"
+  | "ready-stock-gallery"
+  | "payment-proof"
+  | "deposit-proof";
 export type BfgUploadErrorCode = "UPLOAD_RATE_LIMITED" | "UPLOAD_REJECTED";
 type ConvexToken = (options: { template?: "convex" }) => Promise<string | null>;
 
