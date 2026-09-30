@@ -33,7 +33,7 @@ function stockQuantity(value: number) {
 }
 
 async function uniqueSlug(ctx: MutationCtx, title: string, requested?: string, ignoreId?: Id<"readyStockListings">) {
-  const base = slugify(requested?.trim() || title);
+  const base = slugify(requested?.trim() || title, "slug Ready Stock");
   if (!base) fail("VALIDATION_FAILED", "slug Ready Stock tidak valid");
   let slug = base;
   for (let suffix = 2; suffix < 1000; suffix += 1) {
@@ -217,7 +217,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
-    const title = requiredText(args.title, "judul", 200);
+    const title = requiredText(args.title, "judul");
+    if (title.length > 200) fail("VALIDATION_FAILED", "judul terlalu panjang");
     const priceAmount = positiveMoney(args.priceAmount);
     const quantity = stockQuantity(args.quantity);
     const status = args.status ?? "draft";
@@ -254,7 +255,8 @@ export const update = mutation({
     const user = await requirePermission(ctx, "books.manage");
     const listing = await ctx.db.get(args.listingId);
     if (!listing || listing.status === "archived") fail("VALIDATION_FAILED", "Ready Stock tidak tersedia");
-    const title = requiredText(args.title, "judul", 200);
+    const title = requiredText(args.title, "judul");
+    if (title.length > 200) fail("VALIDATION_FAILED", "judul terlalu panjang");
     const priceAmount = positiveMoney(args.priceAmount);
     const quantity = stockQuantity(args.quantity);
     if (quantity < listing.reservedQuantity) fail("INVALID_STOCK_QUANTITY", "QTY tidak boleh di bawah stok yang sedang dipesan");
