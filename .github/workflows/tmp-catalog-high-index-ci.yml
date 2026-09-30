@@ -1,0 +1,20 @@
+name: tmp-catalog-high-index-ci
+
+on:
+  push:
+    branches:
+      - fix/catalog-detail-high-index-items
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --package-lock=false --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx vitest run convex/catalog-read-contracts.test.ts tests/components/secret-catalog-book-detail.test.tsx tests/components/customer-catalog.test.tsx
