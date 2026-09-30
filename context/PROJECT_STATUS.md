@@ -2,7 +2,7 @@
 
 ## Ready Stock independent price override — 2026-09-30
 
-Status: `PREVIEW_VERIFIED_PENDING_PRODUCTION`
+Status: `DEPLOYED_PRODUCTION_PRICE_SMOKE_BLOCKED_NO_STOCK`
 
 Implemented the optional per-variant inventory override, audited Admin editor,
 effective public prices and shared server-side checkout snapshots. Master and
@@ -17,7 +17,14 @@ created. Vercel Preview succeeds on the frozen implementation. Canonical
 Development backend is deployed, real Clerk Owner/Customer smoke passes, and
 Playwright captures all requested viewports. Price editing, two Customer Orders,
 Invoice, history, reset, assisted Order and reservation release pass on Preview.
-No feature source changed during closure. Merge and Production smoke remain.
+No feature source changed during closure. PR #22 merged normally at
+`075f2d8ad141266dd9775aef5ba604b569afb7fb`; Production deployment and Convex
+backend push succeed. Real Production Owner authentication, Admin price columns,
+Master/effective fallback consistency and public empty-state smoke pass without
+business-data mutation. The Admin projection has 214 variants, 211 inventory
+records, zero available stock and no overrides; public Ready Stock is empty.
+The remaining gate is Production listing/detail effective-price smoke using an
+existing safe stocked variant. No dummy Production data was created.
 See the
 [verification report](implementation/BFG-READY-STOCK-PRICE-OVERRIDE.md).
 

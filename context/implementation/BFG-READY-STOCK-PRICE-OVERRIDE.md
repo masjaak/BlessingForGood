@@ -1,6 +1,6 @@
 # BFG — Ready Stock Price Override Verification
 
-Date: 2026-09-30. Status: **Preview verified; Production pending**.
+Date: 2026-09-30. Status: **Deployed; Production price smoke blocked by no stock**.
 Branch: `fix/ready-stock-price-override`.
 Baseline: `origin/main` at `3f2a4913a69919e4985f1976bcf5aac9241f14ca`.
 Original checkout contained unrelated work; implementation uses an isolated worktree.
@@ -162,8 +162,35 @@ components,final-backend,focused,build,lint-final}.log` and baseline comparison 
 
 ## Release
 
-PR #22 is open and Preview/visual/authenticated transaction gates pass.
-Inherited baseline frontend failures are accepted and stay outside this PR.
-Merge and Production deployment/smoke remain pending. Previous Production target:
-`blessing-for-good-crzi1s9sw-masjaaks-projects.vercel.app`; previous main SHA is
-the baseline above. No Production test business records were created.
+PR #22 merged normally at `075f2d8ad141266dd9775aef5ba604b569afb7fb`.
+Vercel check SUCCESS is attached to that merge SHA. Production deployment
+`dpl_3FpJNVstbHzAMtuixP4npuhHVGVg` is READY and serves
+[`www.blessingforgood.com`](https://www.blessingforgood.com) from
+`blessing-for-good-d31izolsp-masjaaks-projects.vercel.app`.
+Build logs confirm schema validation, typecheck and successful backend deployment
+to canonical Production `clean-eel-522`.
+
+Preview, visual and authenticated transaction gates pass. Inherited baseline
+frontend failures are accepted and stay outside this PR. Production read-only
+smoke uses the existing configured Owner identity and a real short-lived Clerk
+sign-in session; no user, role, auth configuration or business record changed.
+Production uses native Clerk session audience `convex`, which the existing
+Convex provider supports. The QA harness was corrected to follow that rule;
+requesting a legacy `convex` JWT template returned 404. No feature fix was needed.
+
+Authenticated Admin Ready Stock loads and visibly renders both price columns.
+All 214 variants in its bounded projection resolve `override ?? master` correctly.
+There are 211 existing inventory rows, zero available quantity and zero saved
+overrides; the public query returns zero books and the public empty state renders.
+Master values are present: this is existing client book data with no available
+Ready Stock, not deleted or empty Master data. Browser page errors: 0.
+
+Remaining blocker: Production effective-price listing/detail smoke requires an
+existing safe published variant with available Ready Stock. No dummy Production
+records, stock edits, price edits, orders or invoices were created. Client input
+is requested to identify such a variant. COMPLETE is not claimed.
+
+Read-only Production evidence remains under ignored
+`artifacts/browser-qa/ready-stock-price/production/` (`admin.png`, `public.png`,
+`smoke.json`). Deployment build/status logs remain in
+`/private/tmp/bfg-ready-stock-production-{build.log,inspect.json,smoke.log}`.

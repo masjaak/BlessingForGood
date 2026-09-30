@@ -29,7 +29,10 @@ source: conversation
   backend is deployed. Real Clerk sessions verify price → Order → Invoice,
   immutable history, reset, assisted checkout and release. Playwright screenshot
   fallback verifies every requested width. Feature source remains frozen.
-- Merge and Production smoke are pending.
+- PR #22 merged at `075f2d8`; Production frontend and backend deployed successfully.
+  Authenticated Admin price/fallback smoke passes. Production has no available
+  Ready Stock or saved override, so listing/detail price smoke awaits an existing
+  safe stocked variant. Production business data remains untouched.
 - Evidence: [verification report](context/implementation/BFG-READY-STOCK-PRICE-OVERRIDE.md).
 
 ## [homepage-ui-finalized] — 2026-09-28
