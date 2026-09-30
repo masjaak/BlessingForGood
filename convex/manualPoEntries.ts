@@ -13,6 +13,8 @@ const queueStatusValidator = v.union(
   v.literal("awaiting_payment"),
   v.literal("payment_submitted"),
   v.literal("paid"),
+  v.literal("paid_waiting_arrival"),
+  v.literal("received"),
 );
 
 function normalizedTitle(value: string) {
@@ -64,6 +66,17 @@ async function targetEntry(ctx: QueryCtx | MutationCtx, entryId: Id<"manualPoEnt
   return entry;
 }
 
+function operationalStatus(
+  entry: Doc<"manualPoEntries">,
+  invoice: Doc<"invoices"> | null | undefined,
+) {
+  if (entry.status === "arrived") return "received" as const;
+  if (!invoice || invoice.status === "void") return "unbilled" as const;
+  if (invoice.paymentStatus === "paid") return "paid_waiting_arrival" as const;
+  if (invoice.paymentStatus === "payment_submitted") return "payment_submitted" as const;
+  return "awaiting_payment" as const;
+}
+
 export const listMine = query({
   args: {},
   handler: async (ctx) => {
@@ -73,7 +86,19 @@ export const listMine = query({
       .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", customer._id))
       .order("desc")
       .take(200);
-    return entries.filter((entry) => !entry.archivedAt && entry.status === "active").map(view);
+    const visible = entries.filter((entry) => !entry.archivedAt && entry.status !== "cancelled");
+    return Promise.all(
+      visible.map(async (entry) => {
+        const invoice = entry.invoiceId ? await ctx.db.get(entry.invoiceId) : null;
+        return {
+          ...view(entry),
+          invoiceStatus: invoice?.status ?? null,
+          paymentStatus: invoice?.paymentStatus ?? null,
+          outstandingAmount: invoice?.status === "void" ? 0 : (invoice?.outstandingAmount ?? 0),
+          operationalStatus: operationalStatus(entry, invoice),
+        };
+      }),
+    );
   },
 });
 
@@ -111,7 +136,7 @@ export const listForAdmin = query({
       .order("desc")
       .take(500);
     return entries
-      .filter((entry) => (args.includeArchived ? true : !entry.archivedAt && entry.status === "active"))
+      .filter((entry) => (args.includeArchived ? true : !entry.archivedAt && entry.status !== "cancelled"))
       .map(view);
   },
 });
@@ -131,7 +156,7 @@ export const listQueueForAdmin = query({
     const truncated = rawEntries.length > 500;
     const entries = rawEntries
       .slice(0, 500)
-      .filter((entry) => !entry.archivedAt && entry.status === "active");
+      .filter((entry) => !entry.archivedAt && entry.status !== "cancelled");
 
     const customerIds = [...new Set(entries.map((entry) => String(entry.customerUserId)))];
     const invoiceIds = [
@@ -169,20 +194,14 @@ export const listQueueForAdmin = query({
           profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
         const email = customer.emailSnapshot ?? null;
         const memberCode = customer.memberCode ?? null;
-        const queueStatus =
-          !invoice || invoice.status === "void"
-            ? ("unbilled" as const)
-            : invoice.paymentStatus === "paid"
-              ? ("paid" as const)
-              : invoice.paymentStatus === "payment_submitted"
-                ? ("payment_submitted" as const)
-                : ("awaiting_payment" as const);
+        const queueStatus = operationalStatus(entry, invoice);
         const searchable = [displayName, email, memberCode, entry.title, entry.etaText]
           .filter((value): value is string => Boolean(value))
           .join(" ")
           .toLowerCase();
         if (search && !searchable.includes(search)) return null;
-        if (statusFilter !== "all" && queueStatus !== statusFilter) return null;
+        const normalizedStatusFilter = statusFilter === "paid" ? "paid_waiting_arrival" : statusFilter;
+        if (normalizedStatusFilter !== "all" && queueStatus !== normalizedStatusFilter) return null;
         return {
           entryId: entry._id,
           customerUserId: entry.customerUserId,
@@ -210,14 +229,7 @@ export const listQueueForAdmin = query({
         const customer = customerRecord?.customer;
         if (!customer || customer.role !== "customer" || customer.status === "removed") return null;
         const invoice = entry.invoiceId ? invoiceMap.get(String(entry.invoiceId)) ?? null : null;
-        const queueStatus =
-          !invoice || invoice.status === "void"
-            ? ("unbilled" as const)
-            : invoice.paymentStatus === "paid"
-              ? ("paid" as const)
-              : invoice.paymentStatus === "payment_submitted"
-                ? ("payment_submitted" as const)
-                : ("awaiting_payment" as const);
+        const queueStatus = operationalStatus(entry, invoice);
         return {
           customerUserId: entry.customerUserId,
           priceAmount: entry.priceAmount,
@@ -241,6 +253,7 @@ export const listQueueForAdmin = query({
         awaitingPaymentCount: number;
         paymentSubmittedCount: number;
         paidCount: number;
+        receivedCount: number;
         entries: typeof rows;
       }
     >();
@@ -258,6 +271,7 @@ export const listQueueForAdmin = query({
         awaitingPaymentCount: 0,
         paymentSubmittedCount: 0,
         paidCount: 0,
+        receivedCount: 0,
         entries: [],
       };
       current.latestCreatedAt = Math.max(current.latestCreatedAt, row.createdAt);
@@ -266,7 +280,8 @@ export const listQueueForAdmin = query({
       if (row.queueStatus === "unbilled") current.unbilledCount += 1;
       if (row.queueStatus === "awaiting_payment") current.awaitingPaymentCount += 1;
       if (row.queueStatus === "payment_submitted") current.paymentSubmittedCount += 1;
-      if (row.queueStatus === "paid") current.paidCount += 1;
+      if (row.queueStatus === "paid_waiting_arrival") current.paidCount += 1;
+      if (row.queueStatus === "received") current.receivedCount += 1;
       current.entries.push(row);
       grouped.set(key, current);
     }
@@ -280,7 +295,8 @@ export const listQueueForAdmin = query({
         unbilledCount: summarySource.filter((row) => row.queueStatus === "unbilled").length,
         awaitingPaymentCount: summarySource.filter((row) => row.queueStatus === "awaiting_payment").length,
         paymentSubmittedCount: summarySource.filter((row) => row.queueStatus === "payment_submitted").length,
-        paidCount: summarySource.filter((row) => row.queueStatus === "paid").length,
+        paidCount: summarySource.filter((row) => row.queueStatus === "paid_waiting_arrival").length,
+        receivedCount: summarySource.filter((row) => row.queueStatus === "received").length,
         outstandingAmount: summarySource.reduce((sum, row) => sum + row.outstandingAmount, 0),
       },
       truncated,
