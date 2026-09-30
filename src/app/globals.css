@@ -9948,3 +9948,291 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
     justify-content: flex-start;
   }
 }
+
+
+/* Standalone Ready Stock storefront + fulfillment */
+.ready-stock-controls-standalone {
+  grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(150px, 1fr));
+}
+
+.ready-stock-standalone-detail .ready-stock-detail-price {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1;
+}
+
+.ready-stock-direct-checkout {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-summary-grid > .card {
+  display: grid;
+  min-height: 160px;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  gap: var(--space-sm);
+}
+
+.admin-ready-stock-summary-grid .metric-money {
+  margin: 0;
+}
+
+.admin-ready-stock-summary-grid > .card > .subtle {
+  align-self: end;
+}
+
+.admin-ready-stock-toolbar,
+.admin-ready-stock-create-card,
+.admin-ready-stock-editor,
+.admin-ready-stock-orders-panel {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-create-grid,
+.admin-ready-stock-editor-fields {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-ready-stock-editor-fields {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.admin-ready-stock-table {
+  min-width: 980px;
+}
+
+.admin-ready-stock-media-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+  align-items: stretch;
+}
+
+.admin-ready-stock-media-frame {
+  min-width: 0;
+  height: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.admin-ready-stock-media-frame .cover-upload-field {
+  height: 100%;
+}
+
+.admin-ready-stock-gallery-editor {
+  display: grid;
+  align-content: start;
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-gallery-list {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.admin-ready-stock-order-list {
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-order-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-order-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(80px, 0.45fr) minmax(120px, 0.75fr) minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
+.admin-ready-stock-order-grid > div,
+.customer-ready-stock-shipping {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-xxs);
+}
+
+.customer-ready-stock-orders {
+  margin-top: var(--space-lg);
+}
+
+.customer-ready-stock-order-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.customer-ready-stock-order-total {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-xs);
+}
+
+.ready-stock-timeline {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ready-stock-timeline-step {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: var(--space-xs);
+  padding-top: 28px;
+  padding-right: var(--space-sm);
+}
+
+.ready-stock-timeline-step::before {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: var(--line);
+}
+
+.ready-stock-timeline-step:first-child::before {
+  left: 12px;
+}
+
+.ready-stock-timeline-step:last-child::before {
+  right: calc(100% - 12px);
+}
+
+.ready-stock-timeline-marker {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  left: 6px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.ready-stock-timeline-step.is-complete::before,
+.ready-stock-timeline-step.is-current::before {
+  background: var(--color-brand-primary);
+}
+
+.ready-stock-timeline-step.is-complete .ready-stock-timeline-marker,
+.ready-stock-timeline-step.is-current .ready-stock-timeline-marker {
+  border-color: var(--color-brand-primary);
+  background: var(--color-brand-primary);
+}
+
+.ready-stock-timeline-step.is-current strong {
+  color: var(--color-brand-primary-strong);
+}
+
+.ready-stock-timeline-step strong,
+.ready-stock-timeline-step .subtle {
+  min-width: 0;
+  font-size: var(--font-size-caption);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .admin-ready-stock-summary-grid,
+  .admin-ready-stock-create-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-ready-stock-editor-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-ready-stock-order-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ready-stock-timeline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md) 0;
+  }
+
+  .ready-stock-timeline-step:nth-child(3n + 1)::before {
+    left: 12px;
+  }
+
+  .ready-stock-timeline-step:nth-child(3n)::before {
+    right: calc(100% - 12px);
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-ready-stock-media-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ready-stock-controls-standalone {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-ready-stock-summary-grid,
+  .admin-ready-stock-create-grid,
+  .admin-ready-stock-editor-fields,
+  .admin-ready-stock-order-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-ready-stock-summary-grid > .card {
+    min-height: 138px;
+  }
+
+  .customer-ready-stock-order-total {
+    justify-items: start;
+  }
+
+  .ready-stock-timeline {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .ready-stock-timeline-step {
+    min-height: 64px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: var(--space-md);
+    padding-left: 32px;
+  }
+
+  .ready-stock-timeline-step::before,
+  .ready-stock-timeline-step:first-child::before,
+  .ready-stock-timeline-step:last-child::before,
+  .ready-stock-timeline-step:nth-child(3n + 1)::before,
+  .ready-stock-timeline-step:nth-child(3n)::before {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    left: 8px;
+    width: 2px;
+    height: auto;
+  }
+
+  .ready-stock-timeline-step:last-child::before {
+    bottom: calc(100% - 12px);
+  }
+
+  .ready-stock-timeline-marker {
+    top: 0;
+    left: 2px;
+  }
+}
