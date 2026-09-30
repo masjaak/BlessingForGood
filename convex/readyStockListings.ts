@@ -1,11 +1,14 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { recordAudit } from "./lib/audit";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
+import { IMAGE_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
+import { consumeClaim } from "./uploads";
 import { nonNegativeQuantity, positiveMoney, requiredText, slugify } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
 
@@ -219,5 +222,66 @@ export const update = mutation({
       priceAmount: String(priceAmount),
     });
     return listingView(ctx, (await ctx.db.get(listing._id))!, true);
+  },
+});
+
+
+export const assertUploadAccess = internalQuery({
+  args: { listingId: v.id("readyStockListings") },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "books.manage");
+    const listing = await ctx.db.get(args.listingId);
+    if (!listing || listing.status === "archived") fail("VALIDATION_FAILED", "Ready Stock item tidak tersedia");
+    return null;
+  },
+});
+
+export const attachCover = action({
+  args: {
+    listingId: v.id("readyStockListings"),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    mimeType: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ storageId: Id<"_storage"> }> => {
+    await ctx.runQuery(internal.readyStockListings.assertUploadAccess, { listingId: args.listingId });
+    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
+    await validateUploadedFile(
+      ctx,
+      args.storageId,
+      args.fileName,
+      args.mimeType,
+      IMAGE_CONTENT_TYPES,
+      "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
+    );
+    return ctx.runMutation(internal.readyStockListings.attachCoverValidated, {
+      listingId: args.listingId,
+      storageId: args.storageId,
+    });
+  },
+});
+
+export const attachCoverValidated = internalMutation({
+  args: { listingId: v.id("readyStockListings"), storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const listing = await ctx.db.get(args.listingId);
+    if (!listing || listing.status === "archived") fail("VALIDATION_FAILED", "Ready Stock item tidak tersedia");
+    await consumeClaim(ctx, args.storageId, "book-cover", user._id);
+    await validateStoredFile(
+      ctx,
+      args.storageId,
+      IMAGE_CONTENT_TYPES,
+      "cover must be a JPG, PNG, or WebP image up to 5 MB",
+    );
+    const previous = listing.coverStorageId;
+    await ctx.db.patch(listing._id, {
+      coverStorageId: args.storageId,
+      updatedAt: Date.now(),
+      updatedByUserId: user._id,
+    });
+    if (previous && previous !== args.storageId) await ctx.storage.delete(previous);
+    await recordAudit(ctx, user._id, "ready_stock_listing.cover_attached", "readyStockListing", listing._id);
+    return { storageId: args.storageId };
   },
 });
