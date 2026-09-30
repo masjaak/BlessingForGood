@@ -1,5 +1,14 @@
 # BFG SOURCE OF TRUTH
 
+## Ready Stock independent selling price — 2026-09-30
+
+Ready Stock owns optional `readyStockInventory.priceOverrideAmount` per variant.
+Its only effective-price rule is override-or-Master fallback. Public prices,
+ranges, sorting, checkout, and SEO Offers share that rule; both checkout paths
+snapshot the server-resolved price. Master and Secret Catalog pricing remain
+independent; price edits cannot rewrite stock, reservations, Orders or Invoices.
+See [the Ready Stock contract](catalog/READY-STOCK.md).
+
 ## Final homepage UI — 2026-09-28
 
 The production homepage access-card sequence is Join WhatsApp Group → Secret

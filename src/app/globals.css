@@ -4047,6 +4047,40 @@ p {
   min-width: 850px;
 }
 
+.admin-stock-table {
+  min-width: 1180px;
+}
+
+.admin-stock-table .admin-ready-stock-price,
+.admin-stock-table .form-actions {
+  white-space: nowrap;
+}
+
+.admin-stock-table .form-actions {
+  flex-wrap: nowrap;
+}
+
+.admin-stock-table .form-actions > .button {
+  width: auto;
+}
+
+.admin-ready-stock-price-editor {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+}
+
+.admin-ready-stock-price-editor > [role="alert"] {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .admin-ready-stock-price-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .admin-page .data-table th {
   background: #faf8f2;
   white-space: nowrap;

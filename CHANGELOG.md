@@ -8,6 +8,26 @@ source: conversation
 
 # Changelog
 
+## [ready-stock-price-override] — 2026-09-30
+
+### Changed
+
+- Added optional Ready Stock selling-price ownership to the existing inventory
+  row. Admin can set/reset safe positive integer IDR with permission and audit.
+- Public listing, detail, ranges, sorting and Product Offers use the effective
+  price. Customer and assisted orders share server resolution and immutable
+  snapshots; invoices keep consuming those snapshots.
+- Added a compact Admin price editor and two price columns with scoped table
+  scrolling styles. Master, Catalog and reservation behavior remain unchanged.
+
+### Verification
+
+- Typecheck, lint, build, 319 backend tests and focused components pass. Isolated
+  browser checkout, invoice, history, reset and responsive DOM checks pass.
+- Release blocked by five baseline frontend failures, CDP screenshot timeout
+  and unavailable Production authenticated smoke. No merge or deployment.
+- Evidence: [verification report](context/implementation/BFG-READY-STOCK-PRICE-OVERRIDE.md).
+
 ## [homepage-ui-finalized] — 2026-09-28
 
 ### Changed

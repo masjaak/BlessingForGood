@@ -12,6 +12,7 @@ import { OPEN_ENDED_TIMESTAMP_MS } from "./lib/sessions";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { fulfillableQuantityFromExceptions, hasUnresolvedException, needsResolution } from "./lib/orderExceptionState";
 import { fulfillReadyStockReservationsForOrder, reserveReadyStock } from "./lib/readyStockReservations";
+import { effectiveReadyStockPrice } from "./lib/readyStockPricing";
 import { nonNegativeMoney, positiveQuantity, requiredText } from "./lib/validation";
 import { nextOrderCode } from "./lib/orderCodes";
 import { enforceRateLimit } from "./lib/rateLimit";
@@ -696,9 +697,10 @@ async function resolveReadyStockItem(
   if (available < quantity) {
     fail("READY_STOCK_UNAVAILABLE", available > 0 ? "Jumlah melebihi stok." : "Stok baru saja habis.");
   }
-  const subtotalAmount = variant.priceAmount * quantity;
+  const unitPriceAmount = effectiveReadyStockPrice(variant, inventory);
+  const subtotalAmount = unitPriceAmount * quantity;
   if (!Number.isSafeInteger(subtotalAmount)) fail("INVOICE_TOTAL_INVALID");
-  return { variant, book, publisher, quantity, subtotalAmount };
+  return { variant, book, publisher, quantity, unitPriceAmount, subtotalAmount };
 }
 
 async function createReadyStockOrder(
@@ -771,7 +773,7 @@ async function createReadyStockOrder(
       publisherNameSnapshot: item.publisher.name,
       formatSnapshot: item.variant.format,
       isbnSnapshot: item.variant.isbn,
-      unitPriceAmountSnapshot: item.variant.priceAmount,
+      unitPriceAmountSnapshot: item.unitPriceAmount,
       currencySnapshot: "IDR",
       quantity: item.quantity,
       subtotalAmount: item.subtotalAmount,

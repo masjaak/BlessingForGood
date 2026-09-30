@@ -1,5 +1,21 @@
 # BFG Project Status
 
+## Ready Stock independent price override — 2026-09-30
+
+Status: `BLOCKED_RELEASE_GATES`
+
+Implemented the optional per-variant inventory override, audited Admin editor,
+effective public prices and shared server-side checkout snapshots. Master and
+Secret Catalog prices, inventory semantics and historical invoices are preserved.
+Typecheck, lint, production build, all 319 backend tests and focused Ready Stock
+component checks pass. Isolated browser transactions and responsive DOM checks pass.
+
+Release remains blocked: the frontend suite has five failures also reproduced
+on unchanged `origin/main`; browser screenshots time out in CDP; Production has
+no usable authenticated session or identified smoke-test variant. No PR, merge,
+Convex deployment or Production release has been performed. See the
+[verification report](implementation/BFG-READY-STOCK-PRICE-OVERRIDE.md).
+
 ## Final homepage UI correction — 2026-09-28
 
 Status: `FINAL_HOMEPAGE_UI_VERIFIED`

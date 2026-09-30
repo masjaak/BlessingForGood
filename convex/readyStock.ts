@@ -6,7 +6,8 @@ import { mutation, query } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
-import { nonNegativeQuantity } from "./lib/validation";
+import { nonNegativeQuantity, positiveMoney } from "./lib/validation";
+import { effectiveReadyStockPrice } from "./lib/readyStockPricing";
 import { bookFormatValidator, bookSortValidator } from "./validators";
 
 async function availableStockQuantity(ctx: QueryCtx, variant: Doc<"bookVariants">) {
@@ -37,13 +38,18 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">, includeMedia = 
   const stocked = (
     await Promise.all(
       variants.map(async (variant) => {
-        const availableQuantity = await availableStockQuantity(ctx, variant);
+        const inventory = await ctx.db
+          .query("readyStockInventory")
+          .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", variant._id))
+          .unique();
+        const availableQuantity =
+          variant.isAvailable && inventory ? Math.max(0, inventory.quantity - (inventory.reservedQuantity ?? 0)) : 0;
         return availableQuantity > 0
           ? {
               id: variant._id,
               format: variant.format,
               isbn: variant.isbn,
-              priceAmount: variant.priceAmount,
+              priceAmount: effectiveReadyStockPrice(variant, inventory),
               currency: variant.currency,
               stockQuantity: availableQuantity,
             }
@@ -199,7 +205,10 @@ export const listForAdmin = query({
               variantId: variant._id,
               format: variant.format,
               isbn: variant.isbn,
-              priceAmount: variant.priceAmount,
+              masterPriceAmount: variant.priceAmount,
+              priceOverrideAmount: inventory?.priceOverrideAmount ?? null,
+              effectivePriceAmount: effectiveReadyStockPrice(variant, inventory),
+              hasInventory: inventory !== null,
               isAvailable: variant.isAvailable,
               onHandQuantity,
               reservedQuantity,
@@ -263,6 +272,40 @@ export const setQuantity = mutation({
       to: String(quantity),
     });
     return inventoryId;
+  },
+});
+
+export const setPriceOverride = mutation({
+  args: { bookVariantId: v.id("bookVariants"), priceOverrideAmount: v.union(v.number(), v.null()) },
+  handler: async (ctx, args) => {
+    const user = await requirePermission(ctx, "books.manage");
+    const variant = await ctx.db.get(args.bookVariantId);
+    if (!variant) fail("BOOK_VARIANT_NOT_FOUND");
+    const amount = args.priceOverrideAmount === null ? undefined : positiveMoney(args.priceOverrideAmount);
+    const inventory = await ctx.db
+      .query("readyStockInventory")
+      .withIndex("by_book_variant_id", (index) => index.eq("bookVariantId", args.bookVariantId))
+      .unique();
+    if (!inventory) fail("READY_STOCK_UNAVAILABLE");
+    if (inventory.priceOverrideAmount === amount) return inventory._id;
+    await ctx.db.patch(inventory._id, {
+      priceOverrideAmount: amount,
+      updatedAt: Date.now(),
+      updatedByUserId: user._id,
+    });
+    await recordAudit(
+      ctx,
+      user._id,
+      amount === undefined ? "ready_stock.price_override_cleared" : "ready_stock.price_override_changed",
+      "readyStockInventory",
+      inventory._id,
+      {
+        bookVariantId: String(args.bookVariantId),
+        from: String(inventory.priceOverrideAmount ?? null),
+        to: String(amount ?? null),
+      },
+    );
+    return inventory._id;
   },
 });
 
