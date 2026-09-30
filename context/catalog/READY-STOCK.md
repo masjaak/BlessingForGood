@@ -36,6 +36,22 @@ The anonymous public query reads only this projection. It does not read Secret C
 
 ## Inventory mutation
 
+### Independent selling price — 2026-09-30
+
+`readyStockInventory.priceOverrideAmount` is optional positive safe-integer IDR
+per variant. Effective price is `inventory.priceOverrideAmount ?? variant.priceAmount`.
+`readyStock.setPriceOverride` requires `books.manage`, an existing variant and
+inventory; `null` clears the override. It never changes Master/Catalog prices or
+inventory quantities. Each actual transition writes safe from/to audit metadata.
+Public prices, range/sort, and Product Offers use this effective price. Both
+Customer and assisted checkout resolve it server-side and snapshot it once;
+invoices consume that historical Order Item snapshot.
+
+States: fallback → override (set); override → override (replace);
+override → fallback (clear). Same-value requests are no-ops. Invalid amount,
+missing reference, or denied permission rejects atomically with no side effects.
+Existing rows need no migration and continue to follow Master price.
+
 `readyStock.setQuantity` requires `books.manage`, validates an existing variant and a safe non-negative integer, upserts one inventory row by variant, and writes an audit event in the same Convex transaction.
 
 Creating a Ready Stock order atomically reserves quantity. Available quantity

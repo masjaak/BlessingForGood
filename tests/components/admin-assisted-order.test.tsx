@@ -149,6 +149,44 @@ describe("Admin assisted-order discovery", () => {
     vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
   });
 
+  it("shows the effective Ready Stock price in the assisted-order form", () => {
+    vi.mocked(useQuery).mockImplementation((query, args?) => {
+      if (args === "skip") return undefined;
+      const name = getFunctionName(query as never);
+      if (name.endsWith(":listEligibleCustomers"))
+        return {
+          page: [{ customerUserId: "customer-1", displayName: "A Customer", memberCode: "BFG-0001" }],
+          isDone: true,
+          continueCursor: "",
+        };
+      if (name === "readyStock:listForAdmin")
+        return [
+          {
+            variantId: "variant-carry-me",
+            title: "Carry Me!",
+            publisherName: "BFG House",
+            author: null,
+            format: "PB",
+            isbn: "9780000000502",
+            masterPriceAmount: 175000,
+            priceOverrideAmount: 195000,
+            effectivePriceAmount: 195000,
+            isAvailable: true,
+            availableQuantity: 3,
+          },
+        ];
+      if (name.endsWith(":listForAdmin")) return { page: [], isDone: true, continueCursor: "" };
+      return undefined;
+    });
+    render(<AdminOrdersPage />);
+    fireEvent.click(screen.getByRole("combobox", { name: "Sumber" }));
+    fireEvent.click(screen.getByRole("option", { name: "Ready Stock" }));
+    fireEvent.click(screen.getByRole("combobox", { name: "Buku / varian" }));
+    fireEvent.click(screen.getByRole("option", { name: /Carry Me!/ }));
+    expect(screen.getByText(/Harga server:/).textContent).toContain("195.000");
+    expect(screen.getByText(/Harga server:/).textContent).not.toContain("175.000");
+  });
+
   it("searches Catalog by name and searches scoped variants by title, ISBN, publisher, and author", () => {
     render(<AdminOrdersPage />);
 

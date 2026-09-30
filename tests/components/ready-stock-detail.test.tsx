@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
 import { ReadyStockDetail, ReadyStockOrderAction } from "@/components/ready-stock-detail";
@@ -39,6 +39,43 @@ const book = {
 } as never;
 
 describe("Ready Stock checkout role boundary", () => {
+  it("displays the effective price and submits only the selected variant and quantity", async () => {
+    const overrideBook = {
+      ...(book as object),
+      variants: [
+        {
+          id: "variant-1",
+          format: "PB",
+          isbn: "9780000000010",
+          priceAmount: 195000,
+          currency: "IDR",
+          stockQuantity: 3,
+        },
+      ],
+    };
+    const createOrder = vi.fn().mockResolvedValue({ orderId: "order-1" });
+    vi.mocked(useQuery).mockReturnValue(overrideBook as never);
+    vi.mocked(useMutation).mockReturnValue(createOrder as never);
+    vi.mocked(useProduct).mockReturnValue({
+      dataSource: "convex",
+      authState: "authenticated",
+      sessionRole: "customer",
+    } as never);
+    render(<ReadyStockDetail slug="ready-book" />);
+    expect(screen.getByText(/195\.000/)).toBeTruthy();
+    expect(screen.queryByText(/175\.000/)).toBeNull();
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "2" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Pesan Ready Stock" })));
+    expect(createOrder).toHaveBeenCalledExactlyOnceWith({ variantId: "variant-1", quantity: 2 });
+  });
+
+  it("requires sign-in for signed-out checkout", () => {
+    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    vi.mocked(useProduct).mockReturnValue({ authState: "signed-out", sessionRole: null } as never);
+    render(<ReadyStockOrderAction book={book} />);
+    expect(screen.getByRole("link", { name: "Masuk untuk memesan" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Pesan Ready Stock" })).toBeNull();
+  });
   it.each(["admin", "owner"] as const)("does not offer Customer checkout to %s", (role) => {
     vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
     vi.mocked(useProduct).mockReturnValue({ authState: "authenticated", sessionRole: role } as never);

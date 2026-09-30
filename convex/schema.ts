@@ -301,6 +301,7 @@ export default defineSchema({
 
   readyStockInventory: defineTable({
     bookVariantId: v.id("bookVariants"),
+    priceOverrideAmount: v.optional(v.number()),
     quantity: v.number(),
     reservedQuantity: v.optional(v.number()),
     createdAt: v.number(),

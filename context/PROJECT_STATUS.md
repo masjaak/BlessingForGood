@@ -1,5 +1,26 @@
 # BFG Project Status
 
+## Ready Stock independent price override — 2026-09-30
+
+Status: `PREVIEW_VERIFIED_PENDING_PRODUCTION`
+
+Implemented the optional per-variant inventory override, audited Admin editor,
+effective public prices and shared server-side checkout snapshots. Master and
+Secret Catalog prices, inventory semantics and historical invoices are preserved.
+Typecheck, lint, production build, all 319 backend tests and focused Ready Stock
+component checks pass. Isolated browser transactions and responsive DOM checks pass.
+
+The five frontend failures reproduced on unchanged main are accepted inherited
+failures under the client's closure instruction; no new branch-specific failure
+was found. Branch pushed and [PR #22](https://github.com/masjaak/BlessingForGood/pull/22)
+created. Vercel Preview succeeds on the frozen implementation. Canonical
+Development backend is deployed, real Clerk Owner/Customer smoke passes, and
+Playwright captures all requested viewports. Price editing, two Customer Orders,
+Invoice, history, reset, assisted Order and reservation release pass on Preview.
+No feature source changed during closure. Merge and Production smoke remain.
+See the
+[verification report](implementation/BFG-READY-STOCK-PRICE-OVERRIDE.md).
+
 ## Final homepage UI correction — 2026-09-28
 
 Status: `FINAL_HOMEPAGE_UI_VERIFIED`

@@ -1,5 +1,13 @@
 # Decisions
 
+## Ready Stock price ownership — 2026-09-30
+
+Use the existing per-variant inventory row for an optional positive integer IDR
+selling-price override, with `null` reset and audited `books.manage` permission.
+Reuse the same resolver for public/Admin projections and the shared Customer /
+assisted order path. Keep Master and Catalog prices independent and historical
+Order/Invoice snapshots immutable. Optional field addition needs no backfill.
+
 ## Final homepage UI — 2026-09-28
 
 Status: `FINAL_HOMEPAGE_UI_VERIFIED`

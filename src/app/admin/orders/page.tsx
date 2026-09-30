@@ -286,7 +286,7 @@ function ConvexAssistedOrderForm() {
         author: row.author,
         format: row.format,
         isbn: row.isbn,
-        price: row.priceAmount,
+        price: row.effectivePriceAmount,
       })) || [];
   const variants = source === "ready_stock" ? readyStockVariants : preorderVariants;
   const productOptionsLoading = source === "preorder" ? catalogsLoading : readyStockRows === undefined;
