@@ -6,7 +6,6 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { BookCover } from "@/components/book-cover";
 import { ProductGallery, type ProductGalleryImage } from "@/components/product-gallery";
-import { BFGSelect } from "@/components/bfg-select";
 import {
   Button,
   Card,
@@ -24,27 +23,30 @@ import { useProduct } from "@/domain/prototype/store";
 import { productErrorMessage } from "@/domain/prototype/errors";
 import type { PublicReadyStockBook } from "@/lib/seo";
 
-type ReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStock.getBySlug>>;
+type ReadyStockBook = NonNullable<FunctionReturnType<typeof api.readyStockManual.getBySlug>>;
 
 function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: PublicReadyStockBook }) {
-  const liveBook = useQuery(api.readyStock.getBySlug, { slug });
+  const liveBook = useQuery(api.readyStockManual.getBySlug, { slug });
   const book = liveBook === undefined ? initialBook : liveBook;
+
   if (book === undefined) {
     return (
-      <LoadingRegion label="Memuat detail buku">
+      <LoadingRegion label="Memuat detail Ready Stock">
         <SkeletonCard variant="book" />
         <SkeletonCard />
       </LoadingRegion>
     );
   }
-  if (!book)
+  if (!book) {
     return (
       <EmptyState
-        title="Buku tidak tersedia."
-        description="Buku ini tidak dipublikasikan atau stoknya sedang kosong."
+        title="Ready Stock tidak tersedia."
+        description="Item ini tidak dipublikasikan atau stoknya sedang habis."
         action={<LinkButton href="/ready-stock">Kembali ke Ready Stock</LinkButton>}
       />
     );
+  }
+
   const gallery = book.gallery
     .filter((image) => Boolean(image.url))
     .map((image): ProductGalleryImage => ({
@@ -53,47 +55,40 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
       altText: image.altText,
       displayOrder: image.displayOrder,
     }));
+
   return (
     <>
-      <PageHeader eyebrow="Ready Stock" title={book.title} description={book.author || book.publisher.name} />
+      <PageHeader eyebrow="Ready Stock" title={book.title} description={`${book.format} · Foto asli stok BFG`} />
       <div className="ready-stock-detail">
         <BookCover
           title={book.title}
-          publisher={book.publisher.name}
-          src={book.coverImageUrl || undefined}
-          alt={`Cover ${book.title}${book.author ? ` by ${book.author}` : ""}`}
+          publisher="Ready Stock BFG"
+          format={book.format}
+          src={book.coverUrl || undefined}
+          alt={`Foto cover Ready Stock ${book.title}`}
         />
         <div className="content-stack">
           <div className="form-actions">
-            <StatusBadge tone="positive">{book.totalStock} tersedia</StatusBadge>
-            <span className="subtle">{book.publisher.name}</span>
+            <StatusBadge tone="positive">{book.availableQuantity} tersedia</StatusBadge>
+            <span className="subtle">{book.format}</span>
           </div>
-          {book.description ? <p style={{ whiteSpace: "pre-line" }}>{book.description}</p> : null}
-          {book.categories.length ? <p className="subtle">{book.categories.join(" · ")}</p> : null}
+
+          <Card className="ready-stock-manual-price-card">
+            <span className="card-kicker">Harga Ready Stock</span>
+            <strong className="metric-money">
+              <Money amount={book.priceAmount} />
+            </strong>
+            <span className="subtle">Harga khusus untuk stok yang sedang tersedia.</span>
+          </Card>
+
           {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}
-          {book.externalPreview ? (
-            <LinkButton variant="secondary" href={book.externalPreview.url} rel="noreferrer noopener" target="_blank">
-              {book.externalPreview.label} ↗
-            </LinkButton>
-          ) : null}
-          <div className="content-stack">
-            {book.variants.map((variant) => (
-              <Card className="ready-stock-variant" key={variant.id}>
-                <div>
-                  <strong>{variant.format}</strong>
-                  <span className="subtle">ISBN {variant.isbn}</span>
-                </div>
-                <div>
-                  <Money amount={variant.priceAmount} />
-                  <span className="subtle">{variant.stockQuantity} tersedia</span>
-                </div>
-              </Card>
-            ))}
-          </div>
+
           <Card className="notice-card">
-            <h2>Pesan melalui BFG</h2>
-            <p>Pemesanan Ready Stock dicatat ke akun BFG dan dilanjutkan melalui invoice serta konfirmasi admin.</p>
-            <ReadyStockOrderAction book={book} />
+            <h2>Checkout langsung</h2>
+            <p>
+              Ready Stock tidak masuk keranjang. Setelah checkout, stok langsung diamankan dan tagihan muncul di akunmu.
+            </p>
+            <ReadyStockOrderAction book={book as ReadyStockBook} />
           </Card>
         </div>
       </div>
@@ -103,17 +98,16 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
 
 export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
   const { authState, retryAuth, sessionRole } = useProduct();
-  const createOrder = useMutation(api.orders.createReadyStock);
-  const [variantId, setVariantId] = useState(book.variants[0]?.id || "");
+  const checkout = useMutation(api.readyStockManual.checkout);
   const [quantity, setQuantity] = useState("1");
   const [message, setMessage] = useState("");
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [invoiceId, setInvoiceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const selected = book.variants.find((variant) => variant.id === variantId);
 
   if (authState === "loading" || authState === "convex-loading" || authState === "provisioning") {
     return <p className="subtle">Menyiapkan akun BFG…</p>;
-  } else if (authState === "convex-error" || authState === "network-error") {
+  }
+  if (authState === "convex-error" || authState === "network-error") {
     return (
       <ErrorState
         title="Sesi BFG belum siap."
@@ -121,7 +115,8 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
         action={<Button onClick={retryAuth}>Coba lagi</Button>}
       />
     );
-  } else if (authState === "admission-required") {
+  }
+  if (authState === "admission-required") {
     return (
       <div className="catalog-member-note">
         <p>Akunmu belum aktif sebagai Blessfriend.</p>
@@ -130,7 +125,8 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
         </LinkButton>
       </div>
     );
-  } else if (authState === "removed") {
+  }
+  if (authState === "removed") {
     return (
       <div className="catalog-member-note">
         <p>Membership BFG-mu telah dihapus.</p>
@@ -139,49 +135,49 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
         </LinkButton>
       </div>
     );
-  } else if (authState === "authenticated" && sessionRole === "customer") {
-    // Keep this exact role boundary aligned with orders:createReadyStock.
-  } else if (sessionRole === "admin" || sessionRole === "owner") {
+  }
+  if (sessionRole === "admin" || sessionRole === "owner") {
     return (
       <div className="catalog-member-note">
-        <p>Pesanan pelanggan dibuat melalui ruang kerja Admin.</p>
-        <LinkButton href="/admin/orders" variant="secondary">
-          Buka Pesanan Admin
-        </LinkButton>
-      </div>
-    );
-  } else if (authState === "suspended") {
-    return <p className="subtle">Akunmu sedang ditangguhkan. Hubungi admin BFG untuk bantuan.</p>;
-  } else if (authState === "signed-out") {
-    return (
-      <div className="form-actions">
-        <LinkButton href="/account" variant="secondary">
-          Masuk untuk memesan
-        </LinkButton>
-      </div>
-    );
-  } else {
-    return (
-      <div className="catalog-member-note">
-        <p>Pesanan pelanggan dibuat melalui ruang kerja Admin.</p>
-        <LinkButton href="/admin/orders" variant="secondary">
-          Buka Pesanan Admin
+        <p>Checkout Ready Stock dilakukan dari akun customer.</p>
+        <LinkButton href="/admin/ready-stock" variant="secondary">
+          Buka Ready Stock Admin
         </LinkButton>
       </div>
     );
   }
+  if (authState === "suspended") {
+    return <p className="subtle">Akunmu sedang ditangguhkan. Hubungi admin BFG untuk bantuan.</p>;
+  }
+  if (authState === "signed-out") {
+    return (
+      <div className="form-actions">
+        <LinkButton href="/account" variant="secondary">
+          Masuk untuk checkout
+        </LinkButton>
+      </div>
+    );
+  }
+  if (!(authState === "authenticated" && sessionRole === "customer")) {
+    return null;
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selected || pending) return;
+    if (pending) return;
+    const qty = Number(quantity);
+    if (!Number.isSafeInteger(qty) || qty < 1 || qty > book.availableQuantity) {
+      setMessage("Jumlah Ready Stock tidak valid.");
+      return;
+    }
     setMessage("");
     setPending(true);
     try {
-      const order = await createOrder({ variantId: selected.id, quantity: Number(quantity) });
-      setOrderId(order.orderId);
-      setMessage("Ready Stock berhasil dicatat dan stok sudah diamankan.");
+      const result = await checkout({ listingId: book.listingId, quantity: qty });
+      setInvoiceId(result.invoiceId);
+      setMessage("Checkout berhasil. Stok sudah diamankan dan tagihan siap dibayar.");
     } catch (error) {
-      setMessage(productErrorMessage(error, "Pesanan belum berhasil dibuat. Silakan coba lagi."));
+      setMessage(productErrorMessage(error, "Checkout belum berhasil. Silakan coba lagi."));
     } finally {
       setPending(false);
     }
@@ -189,21 +185,12 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
 
   return (
     <form className="form-card" onSubmit={submit}>
-      <Field label="Format">
-        <BFGSelect value={variantId} onChange={(event) => setVariantId(event.target.value)}>
-          {book.variants.map((variant) => (
-            <option value={variant.id} key={variant.id}>
-              {variant.format} · {variant.stockQuantity} tersedia
-            </option>
-          ))}
-        </BFGSelect>
-      </Field>
-      <Field label="Jumlah" hint={selected ? `Maksimum ${selected.stockQuantity}` : undefined}>
+      <Field label="Jumlah" hint={`Maksimum ${book.availableQuantity}`}>
         <input
           className="input"
           type="number"
           min="1"
-          max={selected?.stockQuantity}
+          max={book.availableQuantity}
           step="1"
           value={quantity}
           onChange={(event) => setQuantity(event.target.value)}
@@ -211,11 +198,11 @@ export function ReadyStockOrderAction({ book }: { book: ReadyStockBook }) {
       </Field>
       <div className="form-actions">
         <Button type="submit" loading={pending} loadingLabel="Mengamankan stok…">
-          Pesan Ready Stock
+          Checkout sekarang
         </Button>
-        {orderId ? (
-          <LinkButton href={`/account/orders/${orderId}`} variant="secondary">
-            Lihat pesanan
+        {invoiceId ? (
+          <LinkButton href={`/account/invoices/${invoiceId}`} variant="secondary">
+            Buka tagihan
           </LinkButton>
         ) : null}
       </div>
@@ -236,7 +223,7 @@ export function ReadyStockDetail({ slug, initialBook }: { slug: string; initialB
         <ConnectedDetail slug={slug} initialBook={initialBook} />
       ) : (
         <EmptyState
-          title="Buku tidak tersedia."
+          title="Ready Stock tidak tersedia."
           description="Detail Ready Stock belum dapat ditampilkan saat ini."
           action={<LinkButton href="/ready-stock">Kembali ke Ready Stock</LinkButton>}
         />
