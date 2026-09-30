@@ -223,6 +223,14 @@ describe("Secret Catalog book detail preorder", () => {
     const product = setup() as { authState: string; sessionRole: string | null };
     product.authState = "signed-out";
     product.sessionRole = null;
+    window.sessionStorage.setItem(
+      "bfg-catalog-session",
+      JSON.stringify({
+        catalogId: "catalog-1",
+        sessionToken: "catalog-session-token",
+        expiresAt: Date.now() + 60_000,
+      }),
+    );
     render(<SecretCatalogBookDetail />);
 
     fireEvent.change(screen.getByLabelText("Jumlah"), { target: { value: "2" } });
