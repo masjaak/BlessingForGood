@@ -1,5 +1,7 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { recordAudit } from "./lib/audit";
@@ -18,7 +20,7 @@ function availableQuantity(listing: { quantity: number; reservedQuantity: number
   return Math.max(0, listing.quantity - listing.reservedQuantity);
 }
 
-async function listingView(ctx: Parameters<typeof query>[0] extends never ? never : any, listing: any, includeMedia = false) {
+async function listingView(ctx: QueryCtx, listing: any, includeMedia = false) {
   const gallery = includeMedia
     ? await ctx.db
         .query("readyStockListingMedia")
@@ -99,7 +101,7 @@ export const getBySlug = query({
 });
 
 export const listForSitemap = query({
-  args: { paginationOpts: v.object({ numItems: v.number(), cursor: v.union(v.string(), v.null()) }) },
+  args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
     const page = await ctx.db
       .query("readyStockListings")
