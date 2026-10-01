@@ -16,7 +16,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm install --package-lock=false --no-audit --no-fund
-      - run: npx convex dev --once --local --typecheck enable --codegen enable
+      - run: npx convex codegen
       - run: npm run typecheck
       - run: npx vitest run convex/readyStock-standalone.test.ts tests/components/admin-ready-stock.test.tsx tests/components/ready-stock-detail.test.tsx tests/components/customer-invoices.test.tsx
       - run: npm run build
