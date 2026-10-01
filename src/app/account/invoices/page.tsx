@@ -79,13 +79,17 @@ function PersistentCustomerInvoices() {
                   <Money amount={item.subtotalAmount} />
                 </div>
               ))}
-              <div className="summary-line">
-                <span>Deposit yang diperlukan</span>
+              <div className="summary-line invoice-finance-row invoice-dp-required-row">
+                <strong>DP yang harus dibayar</strong>
                 <strong>{formatIdr(invoice.depositRequiredAmount)}</strong>
               </div>
               <div className="summary-line invoice-finance-row">
-                <span>Deposit teralokasi</span>
+                <span>Deposit dari saldo</span>
                 <strong>{formatIdr(invoice.allocatedDepositAmount)}</strong>
+              </div>
+              <div className="summary-line invoice-finance-row">
+                <span>Pembayaran terverifikasi</span>
+                <strong>{formatIdr(invoice.verifiedPaymentAmount)}</strong>
               </div>
               <div className="summary-line invoice-finance-row">
                 <span>Sisa tagihan</span>
@@ -94,10 +98,6 @@ function PersistentCustomerInvoices() {
               <div className="summary-line invoice-finance-row">
                 <span>Status pembayaran</span>
                 <strong>{invoicePaymentStatusLabel(invoice.paymentStatus)}</strong>
-              </div>
-              <div className="summary-line invoice-finance-row">
-                <span>Terverifikasi</span>
-                <strong>{formatIdr(invoice.verifiedPaymentAmount)}</strong>
               </div>
               <LinkButton href={`/account/invoices/${invoice.invoiceId}`} variant="secondary">
                 Buka invoice dan riwayat
