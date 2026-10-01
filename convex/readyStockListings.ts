@@ -16,6 +16,13 @@ const READY_STOCK_GALLERY_LIMIT = 8;
 const listingStatusValidator = v.union(v.literal("draft"), v.literal("published"), v.literal("archived"));
 const sortValidator = v.union(v.literal("newest"), v.literal("title"), v.literal("price"));
 
+function optionalDescription(value: string | undefined) {
+  if (value === undefined) return undefined;
+  const normalized = value.trim();
+  if (normalized.length > 2000) fail("VALIDATION_FAILED", "description is too long");
+  return normalized || undefined;
+}
+
 function availableQuantity(listing: { quantity: number; reservedQuantity: number }) {
   return Math.max(0, listing.quantity - listing.reservedQuantity);
 }
@@ -41,6 +48,7 @@ async function listingView(ctx: QueryCtx, listing: Doc<"readyStockListings">, in
     listingId: listing._id,
     slug: listing.slug,
     title: listing.title,
+    description: listing.description ?? null,
     priceAmount: listing.priceAmount,
     format: listing.format,
     quantity: listing.quantity,
@@ -148,6 +156,7 @@ export const getForAdmin = query({
 export const create = mutation({
   args: {
     title: v.string(),
+    description: v.optional(v.string()),
     priceAmount: v.number(),
     format: bookFormatValidator,
     quantity: v.number(),
@@ -155,6 +164,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const title = requiredText(args.title, "title");
+    const description = optionalDescription(args.description);
     const priceAmount = positiveMoney(args.priceAmount);
     const quantity = nonNegativeQuantity(args.quantity);
     const baseSlug = slugify(title, "ready stock slug");
@@ -172,6 +182,7 @@ export const create = mutation({
     const listingId = await ctx.db.insert("readyStockListings", {
       slug,
       title,
+      description,
       priceAmount,
       format: args.format,
       quantity,
@@ -191,6 +202,7 @@ export const update = mutation({
   args: {
     listingId: v.id("readyStockListings"),
     title: v.optional(v.string()),
+    description: v.optional(v.string()),
     priceAmount: v.optional(v.number()),
     format: v.optional(bookFormatValidator),
     quantity: v.optional(v.number()),
@@ -201,6 +213,8 @@ export const update = mutation({
     const listing = await ctx.db.get(args.listingId);
     if (!listing) fail("VALIDATION_FAILED", "Ready Stock item tidak ditemukan");
     const title = args.title === undefined ? listing.title : requiredText(args.title, "title");
+    const description =
+      args.description === undefined ? listing.description : optionalDescription(args.description);
     const priceAmount = args.priceAmount === undefined ? listing.priceAmount : positiveMoney(args.priceAmount);
     const quantity = args.quantity === undefined ? listing.quantity : nonNegativeQuantity(args.quantity);
     if (quantity < listing.reservedQuantity) fail("READY_STOCK_ON_HAND_BELOW_RESERVED");
@@ -215,6 +229,7 @@ export const update = mutation({
     const now = Date.now();
     await ctx.db.patch(listing._id, {
       title,
+      description,
       priceAmount,
       format: args.format ?? listing.format,
       quantity,

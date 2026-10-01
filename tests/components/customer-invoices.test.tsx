@@ -101,12 +101,13 @@ describe("Customer invoice payment visibility", () => {
     expect(screen.getAllByText(/Perlu dibayar/)).toHaveLength(2);
     expect(screen.getByText(/Dibayar sebagian/)).toBeTruthy();
     expect(screen.getByText(/Lunas terverifikasi/)).toBeTruthy();
-    expect(screen.getAllByText("Deposit teralokasi")).toHaveLength(4);
+    expect(screen.getAllByText("DP yang harus dibayar")).toHaveLength(4);
+    expect(screen.getAllByText("Deposit dari saldo")).toHaveLength(4);
+    expect(screen.getAllByText("Pembayaran terverifikasi")).toHaveLength(4);
     expect(screen.getAllByText("Sisa tagihan")).toHaveLength(4);
     expect(screen.getAllByText("Status pembayaran")).toHaveLength(4);
-    expect(screen.getAllByText("Terverifikasi")).toHaveLength(4);
-    expect(screen.queryByText("Deposit teralokasi · sisa tagihan")).toBeNull();
-    expect(screen.queryByText("Status pembayaran · terverifikasi")).toBeNull();
+    const highlightedDpRows = document.querySelectorAll(".invoice-dp-required-row");
+    expect(highlightedDpRows).toHaveLength(4);
     expect(screen.getByText("Pesanan Khusus / Random PO")).toBeTruthy();
     expect(screen.getByText("1 × Random PO Book · ETA Maret 2027")).toBeTruthy();
     expect(screen.getAllByText("Rp 99.000").length).toBeGreaterThanOrEqual(3);

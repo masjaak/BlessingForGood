@@ -55,7 +55,10 @@ export function publicBookAlt(book: Pick<PublicReadyStockBook, "title">) {
 }
 
 export function publicBookDescription(book: PublicReadyStockBook) {
-  return `${book.title}, format ${book.format}, tersedia ${book.availableQuantity} item di Ready Stock ${SITE_NAME}.`;
+  return (
+    book.description ||
+    `${book.title}, format ${book.format}, tersedia ${book.availableQuantity} item di Ready Stock ${SITE_NAME}.`
+  );
 }
 
 type PageMetadataOptions = {

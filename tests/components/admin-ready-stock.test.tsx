@@ -25,6 +25,7 @@ const listing = {
   listingId: "listing-1",
   slug: "real-ready-book",
   title: "Real Ready Book",
+  description: "Foto asli dan deskripsi Ready Stock.",
   priceAmount: 195000,
   format: "PB",
   quantity: 3,
@@ -119,12 +120,16 @@ describe("Admin standalone Ready Stock", () => {
 
     const fields = screen.getByText("Tambah ke etalase Ready Stock").closest(".card") as HTMLElement;
     fireEvent.change(within(fields).getByLabelText("Judul"), { target: { value: "New Real Book" } });
+    fireEvent.change(within(fields).getByLabelText("Deskripsi"), {
+      target: { value: "Deskripsi singkat untuk etalase." },
+    });
     fireEvent.change(within(fields).getByLabelText("Harga"), { target: { value: "225000" } });
     fireEvent.change(within(fields).getByLabelText("Qty tersedia"), { target: { value: "4" } });
     await act(async () => fireEvent.click(within(fields).getByRole("button", { name: "Buat draf Ready Stock" })));
 
     expect(create).toHaveBeenCalledWith({
       title: "New Real Book",
+      description: "Deskripsi singkat untuk etalase.",
       priceAmount: 225000,
       format: "PB",
       quantity: 4,
@@ -135,6 +140,7 @@ describe("Admin standalone Ready Stock", () => {
     render(<AdminReadyStock />);
     fireEvent.click(screen.getByRole("button", { name: "Kelola" }));
     expect(screen.getByText("Data ini berdiri sendiri dan tidak mengubah Master Buku.")).toBeTruthy();
+    expect(screen.getByDisplayValue("Foto asli dan deskripsi Ready Stock.")).toBeTruthy();
     expect(screen.getByText("0/8")).toBeTruthy();
     expect(screen.getByLabelText("Pilih file cover")).toBeTruthy();
     expect(screen.getByLabelText("Pilih gambar isi Ready Stock")).toBeTruthy();
@@ -157,12 +163,16 @@ describe("Admin standalone Ready Stock", () => {
     render(<AdminReadyStock />);
     fireEvent.click(screen.getByRole("button", { name: "Kelola" }));
     const editor = screen.getByText("Data ini berdiri sendiri dan tidak mengubah Master Buku.").closest(".card")!;
+    fireEvent.change(within(editor as HTMLElement).getByLabelText("Deskripsi"), {
+      target: { value: "Deskripsi Ready Stock diperbarui." },
+    });
     fireEvent.change(within(editor as HTMLElement).getByLabelText("Harga"), { target: { value: "210000" } });
     fireEvent.change(within(editor as HTMLElement).getByLabelText(/Qty tersedia/), { target: { value: "5" } });
     await act(async () => fireEvent.click(within(editor as HTMLElement).getByRole("button", { name: "Simpan data" })));
     expect(update).toHaveBeenCalledWith({
       listingId: "listing-1",
       title: "Real Ready Book",
+      description: "Deskripsi Ready Stock diperbarui.",
       priceAmount: 210000,
       format: "PB",
       quantity: 5,

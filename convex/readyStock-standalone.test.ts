@@ -11,6 +11,7 @@ describe("Standalone Ready Stock", () => {
 
     const created = await admin.mutation(api.readyStockListings.create, {
       title: "Are We Ready For A Pet?",
+      description: "Buku interaktif untuk mengenal tanggung jawab merawat hewan peliharaan.",
       priceAmount: 195000,
       format: "HB",
       quantity: 3,
@@ -37,6 +38,7 @@ describe("Standalone Ready Stock", () => {
     await expect(t.query(api.readyStockListings.getBySlug, { slug: created.slug })).resolves.toMatchObject({
       listingId: created.listingId,
       title: "Are We Ready For A Pet?",
+      description: "Buku interaktif untuk mengenal tanggung jawab merawat hewan peliharaan.",
       priceAmount: 195000,
       format: "HB",
       quantity: 3,

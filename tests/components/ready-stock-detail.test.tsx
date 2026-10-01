@@ -17,6 +17,7 @@ const book = {
   listingId: "listing-1",
   slug: "ready-book",
   title: "Ready Book",
+  description: "Deskripsi produk Ready Stock untuk customer.",
   priceAmount: 195000,
   format: "PB" as const,
   quantity: 3,
@@ -44,6 +45,7 @@ describe("Standalone Ready Stock checkout", () => {
 
     expect(screen.getAllByText(/195\.000/).length).toBeGreaterThan(0);
     expect(screen.getByText("PB · 3 tersedia")).toBeTruthy();
+    expect(screen.getByText("Deskripsi produk Ready Stock untuk customer.")).toBeTruthy();
     fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "2" } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Checkout sekarang" })));
 

@@ -37,6 +37,7 @@ export function ReadyStockListingEditor({
   const { getToken, sessionClaims } = useAuth();
 
   const [title, setTitle] = useState<string | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
   const [price, setPrice] = useState<string | null>(null);
   const [format, setFormat] = useState<BookFormat | null>(null);
   const [quantity, setQuantity] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export function ReadyStockListingEditor({
   }
 
   const currentTitle = title ?? listing.title;
+  const currentDescription = description ?? listing.description ?? "";
   const currentPrice = price ?? String(listing.priceAmount);
   const currentFormat = format ?? listing.format;
   const currentQuantity = quantity ?? String(listing.quantity);
@@ -80,12 +82,14 @@ export function ReadyStockListingEditor({
       await update({
         listingId,
         title: currentTitle,
+        description: currentDescription,
         priceAmount: Number(currentPrice),
         format: currentFormat,
         quantity: Number(currentQuantity),
         status: currentStatus,
       });
       setTitle(null);
+      setDescription(null);
       setPrice(null);
       setFormat(null);
       setQuantity(null);
@@ -210,6 +214,17 @@ export function ReadyStockListingEditor({
             <option value="archived">Diarsipkan</option>
           </BFGSelect>
         </Field>
+        <div className="admin-ready-stock-description-field">
+          <Field label="Deskripsi">
+            <textarea
+              className="textarea"
+              maxLength={2000}
+              placeholder="Tulis deskripsi singkat buku Ready Stock"
+              value={currentDescription}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </Field>
+        </div>
       </div>
 
       <div className="form-actions">

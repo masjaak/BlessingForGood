@@ -31,6 +31,7 @@ function ReadyStockContent() {
   const [selectedListingId, setSelectedListingId] = useState<Id<"readyStockListings"> | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newFormat, setNewFormat] = useState<BookFormat>("PB");
   const [newQuantity, setNewQuantity] = useState("1");
@@ -68,12 +69,14 @@ function ReadyStockContent() {
     try {
       const result = await createListing({
         title: newTitle,
+        description: newDescription,
         priceAmount: Number(newPrice),
         format: newFormat,
         quantity: Number(newQuantity),
       });
       setSelectedListingId(result.listingId);
       setNewTitle("");
+      setNewDescription("");
       setNewPrice("");
       setNewQuantity("1");
       setCreateOpen(false);
@@ -204,6 +207,17 @@ function ReadyStockContent() {
                 onChange={(event) => setNewQuantity(event.target.value)}
               />
             </Field>
+            <div className="admin-ready-stock-description-field">
+              <Field label="Deskripsi">
+                <textarea
+                  className="textarea"
+                  maxLength={2000}
+                  placeholder="Tulis deskripsi singkat buku Ready Stock"
+                  value={newDescription}
+                  onChange={(event) => setNewDescription(event.target.value)}
+                />
+              </Field>
+            </div>
           </div>
           <Button
             type="button"

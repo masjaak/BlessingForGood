@@ -338,6 +338,7 @@ export default defineSchema({
   readyStockListings: defineTable({
     slug: v.string(),
     title: v.string(),
+    description: v.optional(v.string()),
     priceAmount: v.number(),
     format: bookFormat,
     quantity: v.number(),

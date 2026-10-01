@@ -91,6 +91,7 @@ function ConnectedDetail({ slug, initialBook }: { slug: string; initialBook?: Pu
           <strong className="ready-stock-detail-price">
             <Money amount={book.priceAmount} />
           </strong>
+          {book.description ? <p className="ready-stock-product-description">{book.description}</p> : null}
           {gallery.length ? <ProductGallery images={gallery} title={book.title} /> : null}
           <Card className="notice-card">
             <span className="card-kicker">Checkout langsung</span>
