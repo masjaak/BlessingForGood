@@ -10161,6 +10161,7 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
 
 .ready-stock-timeline-step strong,
 .ready-stock-timeline-step .subtle {
+  display: block;
   min-width: 0;
   font-size: var(--font-size-caption);
   line-height: 1.35;

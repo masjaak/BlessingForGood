@@ -39,3 +39,26 @@ updated to the new source shape; existing protected assertions remain intact.
 
 Authenticated Preview, screenshots at 1440/1024/768/430/390, merge and readonly
 Production smoke must pass before completion. Runtime evidence will be appended.
+
+Authenticated Preview now proves Admin create, cover + two gallery uploads,
+publish, search/sort, Product JSON-LD, direct Customer checkout (2 × 100000), real
+200000 Invoice, native payment-proof submission, Admin approval and packing →
+shipping → delivered. Customer observes every stage and delivered history. A
+later 150000 order preserves the old 100000 snapshot; void releases its stock.
+All four surface families have captured 1440/1024/768/430/390 views without page
+overflow. API tokens are refreshed in long-running QA; no role or auth changes.
+
+Visual QA exposed two Ready Stock-only layout gaps: stretched cover frames had
+492px unused space (corrected to 17px), and timeline state captions flowed into
+stage labels. Scoped CSS uses natural frame height and block captions. Browser
+geometry checks supply red/green evidence; final Preview images will verify both.
+Final focused frontend: 29 PASS. Full frontend: 508 PASS plus exactly five accepted
+inherited failures; no branch-specific failure. All 341 backend tests, typecheck,
+lint (one inherited Random PO warning), production build and diff checks pass.
+Whole-repo formatting has inherited out-of-scope findings; changed TS/TSX sources
+pass scoped format checks. Protected source files are not reformatted.
+
+Ticket B Production readonly smoke opened and refreshed the last-page book in an
+existing 594-title Catalog using an existing active Customer grant. Full Book,
+Variant price, cover and gallery render; no browser error and no dummy Production
+data. Original PR #23 and follow-up PR #25 are already deployed.

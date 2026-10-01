@@ -2,13 +2,13 @@
 
 ## Standalone manual Ready Stock storefront — 2026-09-30
 
-Status: `ENGINEERING_GREEN_RUNTIME_VERIFICATION`
+Status: `PREVIEW_TRANSACTION_VERIFIED_FINAL_VISUAL_QA`
 
 Client direction supersedes the previous Master-book-coupled Ready Stock price-override model. Ready Stock is now a standalone manual storefront with its own title, price, format, physical quantity, one real cover image, and up to eight gallery images. Customer checkout is direct from the Ready Stock detail page and does not enter the normal Cart. Checkout creates a standalone Ready Stock order plus an issued Invoice, snapshots price and shipping data, reserves stock, and exposes the Blessy timeline from waiting payment through delivered on both Admin and Customer surfaces.
 
 Master Buku, Secret Catalog, regular Cart/Order, Random PO, Batch, and historical Ready Stock records remain separate. The separate Secret Catalog high-index detail bug is already merged to main at `fdfb51a2efd1c3f9f4d57791d99b21b1c237c8dc`.
 
-Existing canonical branch and PR #24 are reused. Preview failed because canonical Development lacked `readyStockListings:list` during prerender; credential gates and compilation passed. The tested backend has now been deployed to Development without changing security gates. All 340 backend tests and the local production build pass. Additional contracts cover idempotent checkout, real Finance payment states, media ownership/cleanup, gallery ordering, immutable snapshots and last-unit success. Authenticated Preview and responsive visual verification remain required before merge.
+Existing canonical branch and PR #24 are reused. Preview initially lacked `readyStockListings:list` during prerender, then hit a temporary remote build limit. Canonical Development deploy and official Vercel prebuilt Preview resolved these environmental issues without changing credential gates; latest Git Preview also succeeds. Explicit Development Preview upload origins fix native upload CORS while default Production boundaries remain intact. All 341 backend tests, 29 focused frontend tests, typecheck, lint, production build and diff checks pass. Full frontend has only the five accepted inherited failures. Authenticated Preview proves create/upload/publish, direct checkout, real Invoice/payment, fulfillment, price history and release. Final scoped visual corrections and Production rollout remain.
 
 Ticket B follow-up PR #25 is merged at `b47065e32cc86cd7c867cabc5b83ffd7f7bcebb8`: 660-item fixture, existing hydration pattern, Preview direct URL/refresh/auth proof and successful Production deployment. Original lookup fix remains PR #23.
 
