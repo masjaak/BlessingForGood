@@ -129,12 +129,12 @@ function CustomerInvoiceDetail() {
               <Money amount={item.subtotalAmount} />
             </div>
           ))}
-          <div className="summary-line">
-            <span>Deposit yang diperlukan</span>
+          <div className="summary-line invoice-dp-required-row">
+            <strong>DP yang harus dibayar</strong>
             <strong>{formatIdr(currentCustomerInvoice.depositRequiredAmount)}</strong>
           </div>
           <div className="summary-line">
-            <span>Deposit teralokasi</span>
+            <span>Deposit dari saldo</span>
             <strong>{formatIdr(currentCustomerInvoice.allocatedDepositAmount)}</strong>
           </div>
           <div className="summary-line">
