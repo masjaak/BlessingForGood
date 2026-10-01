@@ -43,7 +43,7 @@ function PersistentCustomerInvoices() {
       {invoices.length === 0 ? (
         <EmptyState
           title="Belum ada tagihan"
-          description="Tagihan akan tampil setelah admin menerbitkan invoice reguler atau tagihan Pesanan Khusus."
+          description="Tagihan akan tampil dari pesanan reguler, Pesanan Khusus, atau checkout Ready Stock."
           action={<LinkButton href="/catalog">Lihat katalog</LinkButton>}
         />
       ) : (
@@ -63,9 +63,12 @@ function PersistentCustomerInvoices() {
               <div className="summary-line">
                 <span>Referensi pesanan</span>
                 <span>
-                  {invoice.source === "manual_po"
-                    ? "Pesanan Khusus / Random PO"
-                    : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
+                  {invoice.source === "ready_stock"
+                    ? "Ready Stock"
+                    : invoice.source === "manual_po"
+                      ? "Pesanan Khusus / Random PO"
+                      : invoice.orderCode ||
+                        (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
                 </span>
               </div>
               {invoice.items.map((item) => (

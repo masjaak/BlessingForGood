@@ -93,12 +93,14 @@ function CustomerInvoiceDetail() {
         eyebrow="Detail invoice"
         title={invoiceReference(currentCustomerInvoice.invoiceNumber)}
         description={`${currentCustomerInvoice.customerName} · ${
-          currentCustomerInvoice.source === "manual_po"
-            ? "Pesanan Khusus / Random PO"
-            : currentCustomerInvoice.orderCode ||
-              (currentCustomerInvoice.orderId
-                ? `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`
-                : "Pesanan")
+          currentCustomerInvoice.source === "ready_stock"
+            ? "Ready Stock"
+            : currentCustomerInvoice.source === "manual_po"
+              ? "Pesanan Khusus / Random PO"
+              : currentCustomerInvoice.orderCode ||
+                (currentCustomerInvoice.orderId
+                  ? `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`
+                  : "Pesanan")
         }`}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">

@@ -11,27 +11,16 @@ import {
 import type { PublicReadyStockBook } from "@/lib/seo";
 
 const book = {
-  bookId: "book-1",
+  listingId: "listing-1",
   slug: "the-public-book",
   title: "The Public Book",
-  author: "A. Writer",
-  description: "A real customer-facing description.",
-  categories: ["Fiction"],
   coverImageUrl: "https://clean-eel-522.convex.cloud/api/storage/cover-1",
   coverPresentation: null,
   gallery: [],
   externalPreview: null,
-  publisher: { id: "publisher-1", name: "BFG Press" },
-  variants: [
-    {
-      id: "variant-1",
-      format: "PB" as const,
-      isbn: "9780000000010",
-      priceAmount: 125000,
-      currency: "IDR" as const,
-      stockQuantity: 2,
-    },
-  ],
+  format: "PB" as const,
+  priceAmount: 125000,
+  availableQuantity: 2,
   minPrice: 125000,
   maxPrice: 125000,
   totalStock: 2,
@@ -108,14 +97,11 @@ describe("BFG search discovery foundation", () => {
       "@type": "Product",
       name: book.title,
       url: "https://www.blessingforgood.com/ready-stock/the-public-book",
-      offers: [
-        {
-          price: 125000,
-          priceCurrency: "IDR",
-          availability: "https://schema.org/InStock",
-          sku: "9780000000010",
-        },
-      ],
+      offers: {
+        price: 125000,
+        priceCurrency: "IDR",
+        availability: "https://schema.org/InStock",
+      },
     });
     expect(JSON.stringify(product)).not.toContain("rating");
     expect(JSON.stringify(product)).not.toContain("review");
@@ -128,7 +114,7 @@ describe("BFG search discovery foundation", () => {
       alternates: { canonical: "/ready-stock/the-public-book" },
       robots: { index: true, follow: true },
     });
-    expect(createBookMetadata(book).description).toContain("A real customer-facing description.");
+    expect(createBookMetadata(book).description).toContain("format PB, tersedia 2 item");
   });
 
   it("keeps the canonical public route server-rendered for metadata and not-found handling", () => {

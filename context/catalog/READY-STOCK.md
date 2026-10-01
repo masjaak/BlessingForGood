@@ -1,5 +1,22 @@
 # Ready Stock
 
+## Current storefront — standalone manual listings
+
+`readyStockListings` and `readyStockListingMedia` are the new public/Admin source.
+They require no Master Book, Variant, ISBN, Publisher, Catalog or Cart. Cover is
+separate from the maximum eight gallery photos. Draft may lack a cover; publication
+requires valid title/price/format, cover and positive quantity. Available stock is
+physical quantity minus reservations. Only published available products are public.
+
+`readyStockOrders` snapshots title, format, price, quantity and shipping at direct
+checkout. The issued Invoice links through `readyStockOrderId`, without a fake
+preorder Order. Existing Finance owns payment state; Ready Stock owns post-payment
+packing/shipping/delivery. Unpaid Invoice void safely cancels and releases stock.
+Same-key checkout retries return the original Order and Invoice. Delivered orders
+remain visible in customer history. See the latest client decision in Source of Truth.
+
+## Legacy / superseded architecture (retained for historical transactions)
+
 Status: Phase 06.7 policy-closed; runtime QA is part of the release gate
 
 ## Data flow
