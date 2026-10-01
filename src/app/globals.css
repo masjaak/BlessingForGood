@@ -1548,6 +1548,31 @@ p {
 .summary-line + .action-group {
   margin-top: var(--space-xs);
 }
+
+.invoice-dp-required-row {
+  color: var(--color-brand-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.invoice-dp-required-row strong {
+  color: inherit;
+}
+
+.admin-ready-stock-description-field {
+  grid-column: 1 / -1;
+}
+
+.admin-ready-stock-description-field .textarea {
+  min-height: 116px;
+}
+
+.ready-stock-product-description {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.65;
+  white-space: pre-line;
+}
 .summary-total {
   display: flex;
   align-items: baseline;
