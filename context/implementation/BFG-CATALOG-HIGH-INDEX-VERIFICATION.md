@@ -23,5 +23,19 @@ outside-Catalog Book and closed Catalog reject or return unavailable. An anonymo
 valid unlocked session continues to resolve the high-index detail.
 
 Focused backend: 4 PASS. Detail/auth components: 13 PASS. Typecheck and scoped
-lint/format/diff: PASS. Runtime Preview/Production evidence will be appended after
-the follow-up deployment. No business fixture is created in Production.
+lint/format/diff: PASS. No business fixture is created in Production.
+
+Follow-up PR #25 https://github.com/masjaak/BlessingForGood/pull/25 merged normally
+at `b47065e32cc86cd7c867cabc5b83ffd7f7bcebb8`. Preview
+`dpl_D1Dmn823o6RmLeRw8zqoRZhvZhqx` was READY; native authenticated direct URL,
+refresh, media, price, desktop/mobile and unauthorized-session checks passed.
+Production `dpl_4T2Va9mpHzMkHaedjXPYtEvWH6Xi` was READY and aliased to the
+canonical domains. Readonly Customer smoke used an existing active grant and the
+last-page book of an existing 594-title Catalog, with cover/gallery and variants.
+
+After standalone Ready Stock release `720deea52c8c7b79c088d70b846978ee5c0dc6a4`,
+the same readonly Production check passes again: the live Catalog now contains
+596 titles, direct detail and refresh return full Book/Variant/media without
+browser errors. No Catalog code, grant or business data was changed by smoke.
+Evidence: local ignored `artifacts/browser-qa/two-ticket/catalog-production-evidence.json`
+and visually inspected `catalog-production.png`. Status: `ALREADY_FIXED_VERIFIED`.

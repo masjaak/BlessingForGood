@@ -1,16 +1,18 @@
 # BFG Project Status
 
-## Standalone manual Ready Stock storefront — 2026-09-30
+## Standalone manual Ready Stock storefront — 2026-10-01
 
-Status: `PREVIEW_TRANSACTION_VERIFIED_FINAL_VISUAL_QA`
+Status: `PRODUCTION_VERIFIED`
 
 Client direction supersedes the previous Master-book-coupled Ready Stock price-override model. Ready Stock is now a standalone manual storefront with its own title, price, format, physical quantity, one real cover image, and up to eight gallery images. Customer checkout is direct from the Ready Stock detail page and does not enter the normal Cart. Checkout creates a standalone Ready Stock order plus an issued Invoice, snapshots price and shipping data, reserves stock, and exposes the Blessy timeline from waiting payment through delivered on both Admin and Customer surfaces.
 
 Master Buku, Secret Catalog, regular Cart/Order, Random PO, Batch, and historical Ready Stock records remain separate. The separate Secret Catalog high-index detail bug is already merged to main at `fdfb51a2efd1c3f9f4d57791d99b21b1c237c8dc`.
 
-Existing canonical branch and PR #24 are reused. Preview initially lacked `readyStockListings:list` during prerender, then hit a temporary remote build limit. Canonical Development deploy and official Vercel prebuilt Preview resolved these environmental issues without changing credential gates; latest Git Preview also succeeds. Explicit Development Preview upload origins fix native upload CORS while default Production boundaries remain intact. All 341 backend tests, 29 focused frontend tests, typecheck, lint, production build and diff checks pass. Full frontend has only the five accepted inherited failures. Authenticated Preview proves create/upload/publish, direct checkout, real Invoice/payment, fulfillment, price history and release. Final scoped visual corrections and Production rollout remain.
+Existing canonical branch and PR #24 are reused and merged at `720deea52c8c7b79c088d70b846978ee5c0dc6a4`. Final automatic Preview `dpl_2Rsf4tNdNJQ1b9zV62XSvZKbDKjD` succeeds. All 341 backend tests, 29 focused frontend tests, typecheck, lint, production build and diff checks pass. Full frontend has 508 passes and exactly the five accepted inherited failures. Authenticated Preview proves create/upload/publish, direct checkout, real Invoice/payment, fulfillment, price/shipping history, last-unit success, no Cart interaction and release. Final screenshots prove all four surfaces at 1440/1024/768/430/390 without page overflow or browser errors.
 
-Ticket B follow-up PR #25 is merged at `b47065e32cc86cd7c867cabc5b83ffd7f7bcebb8`: 660-item fixture, existing hydration pattern, Preview direct URL/refresh/auth proof and successful Production deployment. Original lookup fix remains PR #23.
+Production `dpl_93knque1vbJa8LgMK2cQWWZfF35y` is READY and aliased to the canonical domains. Its initial build called the new public function before Convex deployed it; an explicit additive backend deploy followed by a same-commit Vercel redeploy resolved the ordering issue without source or credential-gate changes. Readonly authenticated Production smoke passes Admin manual form, public empty storefront, unavailable-detail protection, sitemap, Customer Buku Saya/Tagihan and permission boundaries. Standalone Production has no listings/orders yet; the 213 legacy variants remain available to their existing API. No dummy business record, upload, checkout, payment or stock edit was made in Production. Full transactional proof is Development/Preview-only.
+
+Ticket B follow-up PR #25 is merged at `b47065e32cc86cd7c867cabc5b83ffd7f7bcebb8`: 660-item fixture, existing hydration pattern, Preview direct URL/refresh/auth proof and successful Production deployment. Original lookup fix remains PR #23. Production direct detail and refresh were reverified after the standalone release on the last page of an existing 596-title Catalog, with an existing active Customer grant and no business-data mutation. Detailed evidence is recorded in the two ticket verification documents under `context/implementation/`.
 
 The previous Ready Stock independent price-override direction below is superseded for the customer-facing Ready Stock storefront. Its historical implementation remains documented for audit context only.
 

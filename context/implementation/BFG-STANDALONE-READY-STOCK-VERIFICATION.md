@@ -31,14 +31,14 @@ MIME, size, authentication and permission checks remain intact. Development alon
 configures this Preview origin. Red → green HTTP tests include unconfigured and
 foreign/insecure origins; all 30 focused upload/standalone contracts pass.
 
-All 340 backend tests pass, including real payment APIs, oversell, idempotency,
+All 341 backend tests pass, including real payment APIs, oversell, idempotency,
 shipping/price history, invalid uploads and gallery limits. Local production build
 passes. Five known frontend baseline failures remain out of scope: assisted
 discovery ×2, Admin skeleton ×1 and homepage ×2. Standalone contract fixtures are
 updated to the new source shape; existing protected assertions remain intact.
 
 Authenticated Preview, screenshots at 1440/1024/768/430/390, merge and readonly
-Production smoke must pass before completion. Runtime evidence will be appended.
+Production smoke are the release gates. Their final evidence follows.
 
 Authenticated Preview now proves Admin create, cover + two gallery uploads,
 publish, search/sort, Product JSON-LD, direct Customer checkout (2 × 100000), real
@@ -51,7 +51,7 @@ overflow. API tokens are refreshed in long-running QA; no role or auth changes.
 Visual QA exposed two Ready Stock-only layout gaps: stretched cover frames had
 492px unused space (corrected to 17px), and timeline state captions flowed into
 stage labels. Scoped CSS uses natural frame height and block captions. Browser
-geometry checks supply red/green evidence; final Preview images will verify both.
+geometry checks supply red/green evidence; final Preview images verify both.
 Final focused frontend: 29 PASS. Full frontend: 508 PASS plus exactly five accepted
 inherited failures; no branch-specific failure. All 341 backend tests, typecheck,
 lint (one inherited Random PO warning), production build and diff checks pass.
@@ -62,3 +62,51 @@ Ticket B Production readonly smoke opened and refreshed the last-page book in an
 existing 594-title Catalog using an existing active Customer grant. Full Book,
 Variant price, cover and gallery render; no browser error and no dummy Production
 data. Original PR #23 and follow-up PR #25 are already deployed.
+
+## Final release — 2026-10-01
+
+Frozen source: `33ebd9a7502d08ddacd6bbb4ab8f2d9e965fcdb3`.
+PR #24: https://github.com/masjaak/BlessingForGood/pull/24
+Normal merge: `720deea52c8c7b79c088d70b846978ee5c0dc6a4`.
+Automatic Preview: `dpl_2Rsf4tNdNJQ1b9zV62XSvZKbDKjD`, READY at
+https://blessing-for-good-fqucaaemp-masjaaks-projects.vercel.app.
+
+Final Preview repeats guarded gallery add/remove, server-price checkout of the
+last unit, persistent success/Invoice link after stock reaches zero, exact Invoice,
+reservation release, unchanged Cart, historical delivered snapshot and standalone
+sitemap/Product JSON-LD. All twenty final viewport captures pass without document
+overflow or page errors. Cover-frame unused space is 17px and timeline captions
+occupy separate lines. The isolated fixture is archived after verification.
+
+Initial Production build failed prerender because `convex deploy --cmd` runs the
+frontend build before pushing new backend functions. Production did not yet have
+`readyStockListings:list`; compile and TypeScript already passed. Explicit deploy
+to canonical `clean-eel-522` passed schema validation/typecheck, added only the
+required indexes, and deleted no indexes. Redeploying the same merged commit
+through the unchanged Vercel build/credential gate succeeded.
+
+Production: `dpl_93knque1vbJa8LgMK2cQWWZfF35y`, READY at
+https://blessing-for-good-2ojl7ptvy-masjaaks-projects.vercel.app and aliased to
+https://www.blessingforgood.com. Readonly existing Owner/Customer sessions prove
+Admin operational workspace and manual form, public empty state, unavailable
+detail returning 404, standalone sitemap, Customer own-orders/Tagihan and exact
+anonymous/Customer Admin-permission rejection. Six desktop/mobile captures have
+no document overflow or page errors. Production currently has zero standalone
+listings/orders and 213 legacy variants in the retained API. No business mutation
+or dummy record was made there; populated product/transaction/media proof remains
+the authenticated Preview fixture. Existing Catalog direct URL/refresh still
+passes after this release on the last page of a real 596-title Catalog.
+
+Local ignored evidence under `artifacts/browser-qa/two-ticket/`:
+`standalone-preview-evidence.json` (full finance/fulfillment),
+`standalone-final-preview-evidence.json` (source commit, final twenty views,
+last-unit checkout, history/release), `standalone-production-evidence.json`
+(readonly checks/counts/no mutations), `catalog-production-evidence.json`.
+Visual artifacts: `final-{admin,public,detail,timeline}-{width}.png`,
+`production-{admin,public}-{width}.png`, `production-account-390.png`,
+`production-invoices-390.png`, `catalog-production.png`. Screenshots were opened
+and visually inspected. They and temporary credentials are not committed.
+
+Status: `COMPLETE`. Five inherited frontend failures remain accepted and outside
+both tickets; no new branch-specific failure remains. Context-only closure
+documentation does not change the deployed feature source.
