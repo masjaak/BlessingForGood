@@ -89,6 +89,10 @@ describe("Admin Analytics V1", () => {
     expect(screen.getByRole("heading", { name: "Buku paling diminati" })).toBeTruthy();
     expect(screen.getByText("The Useful Book")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Aktivitas Customer" })).toBeTruthy();
+    expect(screen.getByText("Geser tabel ke kanan/kiri untuk melihat semua detail.")).toBeTruthy();
+    const customerTableRegion = screen.getByRole("region", { name: "Tabel aktivitas Customer" });
+    expect(customerTableRegion.classList.contains("analytics-customer-table-wrap")).toBe(true);
+    expect(customerTableRegion.querySelector(".analytics-status-cell")?.textContent).toContain("Masih di keranjang");
     expect(screen.getByRole("link", { name: "Undo" }).getAttribute("href")).toBe("/admin/customers/customer-1");
 
     fireEvent.click(screen.getByRole("combobox", { name: "Periode analytics" }));
