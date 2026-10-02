@@ -246,6 +246,16 @@ describe("BFG invoice persistence", () => {
         expect.objectContaining({ bookTitleSnapshot: "Pooled Invoice Catalog B Book", quantity: 2 }),
       ]),
     });
+    expect(
+      await admin.query(api.invoices.listReadyForIssuance, {
+        paginationOpts: { numItems: 25, cursor: null },
+        batchId: batch.batchId,
+        statusFilter: "draft",
+      }),
+    ).toMatchObject({
+      page: [expect.objectContaining({ customerUserId: customerUser.appUserId, queueStatus: "draft" })],
+    });
+
     const issued = await admin.mutation(api.invoices.issueCustomerBatch, {
       customerUserId: customerUser.appUserId,
       batchId: batch.batchId,
@@ -253,6 +263,49 @@ describe("BFG invoice persistence", () => {
       depositRequirementValue: 2500,
     });
     expect(issued).toMatchObject({ invoiceId: draft.invoiceId, status: "issued", totalAmount: 375000 });
+    expect(
+      await admin.query(api.invoices.listReadyForIssuance, {
+        paginationOpts: { numItems: 25, cursor: null },
+        batchId: batch.batchId,
+        statusFilter: "issued",
+      }),
+    ).toMatchObject({
+      page: [expect.objectContaining({ customerUserId: customerUser.appUserId, queueStatus: "issued" })],
+    });
+
+    await admin.mutation(api.depositTransactions.recordCredit, {
+      invoiceId: issued.invoiceId,
+      amount: 375000,
+      note: "Queue payment status test",
+    });
+    await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
+      invoiceId: issued.invoiceId,
+      amount: 93750,
+    });
+    expect(
+      await admin.query(api.invoices.listReadyForIssuance, {
+        paginationOpts: { numItems: 25, cursor: null },
+        batchId: batch.batchId,
+        statusFilter: "deposit_paid",
+      }),
+    ).toMatchObject({
+      page: [expect.objectContaining({ customerUserId: customerUser.appUserId, queueStatus: "deposit_paid" })],
+    });
+
+    await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
+      invoiceId: issued.invoiceId,
+      amount: 281250,
+    });
+    expect(
+      await admin.query(api.invoices.listReadyForIssuance, {
+        paginationOpts: { numItems: 25, cursor: null },
+        batchId: batch.batchId,
+        statusFilter: "paid",
+      }),
+    ).toMatchObject({
+      page: [expect.objectContaining({ customerUserId: customerUser.appUserId, queueStatus: "paid" })],
+    });
+
     await expect(
       admin.mutation(api.invoices.issueCustomerBatch, {
         customerUserId: customerUser.appUserId,

@@ -34,6 +34,19 @@ import { percentageToBasisPoints } from "@/lib/percentage";
 import { useAdminCursorPagination } from "@/domain/prototype/pagination";
 import { UatPurgeDialog } from "@/components/uat-purge-dialog";
 
+type InvoiceQueueStatus = "draft" | "issued" | "deposit_paid" | "paid" | "review";
+
+function invoiceQueueStatusBadge(
+  status: InvoiceQueueStatus | null,
+): { label: string; tone: "neutral" | "positive" | "warning" } | null {
+  if (status === "paid") return { label: "Sudah lunas", tone: "positive" };
+  if (status === "deposit_paid") return { label: "Sudah bayar DP", tone: "warning" };
+  if (status === "issued") return { label: "Sudah terbit", tone: "neutral" };
+  if (status === "draft") return { label: "Draf invoice", tone: "neutral" };
+  if (status === "review") return { label: "Perlu ditinjau", tone: "warning" };
+  return null;
+}
+
 function InvoiceQueueSkeleton() {
   return (
     <Card className="workspace-skeleton-invoice-queue" aria-hidden="true">
@@ -211,6 +224,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   const pagination = useAdminCursorPagination();
   const [customerId, setCustomerId] = useState(requestedCustomerId || "");
   const [batchId, setBatchId] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | InvoiceQueueStatus>("");
   const customers = useQuery(api.orders.listEligibleCustomers, {
     paginationOpts: { numItems: 100, cursor: null },
   });
@@ -221,6 +235,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
     paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
     customerUserId: customerId ? (customerId as Id<"appUsers">) : undefined,
     batchId: batchId ? (batchId as Id<"batches">) : undefined,
+    statusFilter: statusFilter || undefined,
   });
   const issueCustomerBatch = useMutation(api.invoices.issueCustomerBatch);
   const [mode, setMode] = useState<InvoiceRequirementMode>("none");
@@ -242,9 +257,9 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   );
   const purgeCandidate = useMutation(api.uatCleanup.purgeOrderCandidate);
   const pageRows = rows?.page || [];
-  const hasFilters = Boolean(customerId || batchId);
+  const hasFilters = Boolean(customerId || batchId || statusFilter);
 
-  function updateFilter(setter: (value: string) => void, value: string) {
+  function updateFilter<T extends string>(setter: (value: T) => void, value: T) {
     setter(value);
     pagination.reset();
     setSelected([]);
@@ -349,7 +364,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
       <p className="subtle">
         Satu Customer dalam satu Batch hanya memiliki satu invoice aktif. Pilih Customer secara eksplisit untuk bulk.
       </p>
-      <div className="admin-finance-filter-grid">
+      <div className="admin-finance-filter-grid invoice-queue-filter-grid">
         <Field label="Pelanggan">
           <BFGSelect
             aria-label="Pelanggan"
@@ -383,6 +398,21 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
               ))}
           </BFGSelect>
         </Field>
+        <Field label="Status tag">
+          <BFGSelect
+            aria-label="Status tag"
+            className="select"
+            value={statusFilter}
+            onChange={(event) => updateFilter(setStatusFilter, event.target.value as "" | InvoiceQueueStatus)}
+          >
+            <option value="">Semua tag</option>
+            <option value="issued">Sudah terbit</option>
+            <option value="deposit_paid">Sudah bayar DP</option>
+            <option value="paid">Sudah lunas</option>
+            <option value="review">Perlu ditinjau</option>
+            <option value="draft">Draf invoice</option>
+          </BFGSelect>
+        </Field>
         <Button
           type="button"
           variant="tertiary"
@@ -390,6 +420,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           onClick={() => {
             setCustomerId("");
             setBatchId("");
+            setStatusFilter("");
             pagination.reset();
             setSelected([]);
             setReport("");
@@ -454,6 +485,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
         <div className="content-stack invoice-issue-list">
           {pageRows.map((row) => {
             const rowKey = `${row.batchId}:${row.customerUserId}`;
+            const statusBadge = invoiceQueueStatusBadge(row.queueStatus);
             return (
               <div className="invoice-issue-row" data-testid="invoice-issue-row" key={rowKey}>
                 <label className="invoice-issue-select">
@@ -477,13 +509,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
                   </span>
                 </div>
                 <div className="invoice-issue-status">
-                  {row.invoiceStatus ? (
-                    <StatusBadge tone={row.invoiceStatus === "issued" ? "positive" : "neutral"}>
-                      {row.invoiceStatus === "issued" ? "Sudah terbit" : row.invoiceStatus}
-                    </StatusBadge>
-                  ) : !row.eligible ? (
-                    <StatusBadge tone="warning">Perlu ditinjau</StatusBadge>
-                  ) : null}
+                  {statusBadge ? <StatusBadge tone={statusBadge.tone}>{statusBadge.label}</StatusBadge> : null}
                 </div>
                 <div className="invoice-issue-action">
                   {row.invoiceId ? (

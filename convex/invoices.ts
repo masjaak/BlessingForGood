@@ -120,6 +120,8 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
   };
 }
 
+type InvoiceQueueStatus = "draft" | "issued" | "deposit_paid" | "paid" | "review";
+
 async function activeInvoiceForCustomerBatch(ctx: DataCtx, customerUserId: Id<"appUsers">, batchId: Id<"batches">) {
   const invoices = await ctx.db
     .query("invoices")
@@ -128,6 +130,14 @@ async function activeInvoiceForCustomerBatch(ctx: DataCtx, customerUserId: Id<"a
     )
     .take(50);
   return invoices.find((invoice) => invoice.status !== "void") || null;
+}
+
+function invoiceQueueStatus(invoice: Doc<"invoices"> | null, eligible: boolean): InvoiceQueueStatus | null {
+  if (!invoice) return eligible ? null : "review";
+  if (invoice.status === "draft") return "draft";
+  if (invoice.paymentStatus === "paid") return "paid";
+  if (invoice.paymentStatus === "partially_paid") return "deposit_paid";
+  return "issued";
 }
 
 async function invoiceLinesForCustomerBatch(
@@ -650,6 +660,15 @@ export const listReadyForIssuance = query({
     paginationOpts: paginationOptsValidator,
     customerUserId: v.optional(v.id("appUsers")),
     batchId: v.optional(v.id("batches")),
+    statusFilter: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("issued"),
+        v.literal("deposit_paid"),
+        v.literal("paid"),
+        v.literal("review"),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "invoices.read.all");
@@ -721,16 +740,18 @@ export const listReadyForIssuance = query({
           totalAmount: group.totalAmount,
           invoiceId: existing?._id ?? null,
           invoiceStatus: existing?.status ?? null,
+          queueStatus: invoiceQueueStatus(existing, !existing && group.eligible),
           eligible: !existing && group.eligible,
           eligibilityReason: existing ? "customer × batch invoice already exists" : group.eligibilityReason,
         });
       }
     }
-    rows.sort(
+    const filteredRows = args.statusFilter ? rows.filter((row) => row.queueStatus === args.statusFilter) : rows;
+    filteredRows.sort(
       (left, right) =>
         left.customerName.localeCompare(right.customerName) || left.batchName.localeCompare(right.batchName),
     );
-    return { ...batchPage, page: rows };
+    return { ...batchPage, page: filteredRows };
   },
 });
 
