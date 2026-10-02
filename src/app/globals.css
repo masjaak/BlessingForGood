@@ -8535,6 +8535,47 @@ p {
   gap: var(--space-md);
 }
 
+.customer-shell .customer-invoice-card {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.customer-shell .invoice-context-head {
+  display: grid;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--line);
+}
+
+.customer-shell .invoice-context-head h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .invoice-context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+  color: var(--ink-muted);
+  font-size: var(--type-label-size);
+  line-height: 1.45;
+}
+
+.customer-shell .invoice-context-meta > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-shell .invoice-amount-heading {
+  margin-bottom: 0;
+}
+
+.customer-shell .invoice-amount-heading h3 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.15rem);
+  line-height: 1.05;
+}
+
 .customer-shell .invoice-finance-row {
   grid-template-columns: minmax(0, 1fr) max-content;
   display: grid;
