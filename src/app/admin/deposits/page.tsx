@@ -364,6 +364,9 @@ function DepositOperations() {
                   <strong>
                     {row.direction === "in" ? "+" : "−"} {formatIdr(row.amount)}
                   </strong>
+                  {row.availableBalanceAfter !== null ? (
+                    <span className="subtle">Sisa saldo {formatIdr(row.availableBalanceAfter)}</span>
+                  ) : null}
                 </div>
                 <div className="deposit-history-description">
                   <strong>{row.source}</strong>
