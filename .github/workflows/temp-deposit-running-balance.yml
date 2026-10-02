@@ -21,7 +21,5 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
       - run: npx vitest run convex/deposit.test.ts
-      - run: |
-          npx prettier --write convex/depositTransactions.ts convex/deposit.test.ts src/app/admin/deposits/page.tsx
-          git diff -- convex/depositTransactions.ts convex/deposit.test.ts src/app/admin/deposits/page.tsx
+      - run: npx prettier --check convex/depositTransactions.ts convex/deposit.test.ts src/app/admin/deposits/page.tsx
       - run: npx eslint convex/depositTransactions.ts convex/deposit.test.ts src/app/admin/deposits/page.tsx
