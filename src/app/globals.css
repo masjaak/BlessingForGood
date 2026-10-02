@@ -1890,7 +1890,6 @@ p {
   max-width: 100%;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
 }
 
 .analytics-customer-table {
