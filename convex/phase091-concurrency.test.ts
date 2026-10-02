@@ -119,7 +119,7 @@ describe("Phase 09.1 deterministic concurrency assurance", () => {
     })();
 
     const attempts = await Promise.allSettled([
-      customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId }),
+      customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId, amount: 100000 }),
       admin.mutation(api.invoiceDepositAllocations.allocate, { invoiceId: invoice.invoiceId, amount: 80000 }),
     ]);
     expect(attempts.filter((attempt) => attempt.status === "fulfilled").length).toBeGreaterThanOrEqual(1);
