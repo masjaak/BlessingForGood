@@ -122,12 +122,19 @@ async function historyView(ctx: DataCtx, transaction: Doc<"depositTransactions">
   };
 }
 
-function decodeHistoryCursor(value: string | null): { cursor: string | null; skip: number } {
+function decodeHistoryCursor(value: string | null): { cursor: string | null; skip: number; availableBalance?: number } {
   if (!value) return { cursor: null, skip: 0 };
   try {
-    const decoded = JSON.parse(value) as { cursor?: unknown; skip?: unknown };
+    const decoded = JSON.parse(value) as { cursor?: unknown; skip?: unknown; availableBalance?: unknown };
     if (typeof decoded.cursor === "string" || decoded.cursor === null) {
-      return { cursor: decoded.cursor, skip: typeof decoded.skip === "number" ? Math.max(0, decoded.skip) : 0 };
+      return {
+        cursor: decoded.cursor,
+        skip: typeof decoded.skip === "number" ? Math.max(0, decoded.skip) : 0,
+        availableBalance:
+          typeof decoded.availableBalance === "number" && Number.isSafeInteger(decoded.availableBalance)
+            ? decoded.availableBalance
+            : undefined,
+      };
     }
   } catch {
     // A stale Convex cursor can still resume the canonical index from its raw value.
@@ -135,8 +142,8 @@ function decodeHistoryCursor(value: string | null): { cursor: string | null; ski
   return { cursor: value, skip: 0 };
 }
 
-function encodeHistoryCursor(cursor: string | null, skip = 0) {
-  return JSON.stringify({ cursor, skip });
+function encodeHistoryCursor(cursor: string | null, skip = 0, availableBalance?: number) {
+  return JSON.stringify({ cursor, skip, availableBalance });
 }
 
 export const recordCredit = mutation({
@@ -334,13 +341,28 @@ export const listForAdmin = query({
           .withIndex("by_created_at")
           .order("desc")
           .paginate({ numItems: MAX_HISTORY_SCAN, cursor: decoded.cursor });
+    let runningAvailableBalance = account
+      ? decoded.cursor && decoded.availableBalance === undefined
+        ? null
+        : (decoded.availableBalance ?? account.availableAmount)
+      : null;
+    const sourceRows = sourcePage.page.map((transaction) => {
+      const availableBalanceAfter = runningAvailableBalance;
+      if (runningAvailableBalance !== null) runningAvailableBalance -= transaction.availableDelta;
+      return { transaction, availableBalanceAfter };
+    });
     const matchingTransactions = args.direction
-      ? sourcePage.page.filter((transaction) => historyDirection(transaction) === args.direction)
-      : sourcePage.page;
+      ? sourceRows.filter(({ transaction }) => historyDirection(transaction) === args.direction)
+      : sourceRows;
     const visibleTransactions = matchingTransactions.slice(decoded.skip, decoded.skip + requested);
     const nextSkip = decoded.skip + visibleTransactions.length;
     const hasMoreMatchesInPage = matchingTransactions.length > nextSkip;
-    const rows = await Promise.all(visibleTransactions.map((transaction) => historyView(ctx, transaction)));
+    const rows = await Promise.all(
+      visibleTransactions.map(async ({ transaction, availableBalanceAfter }) => ({
+        ...(await historyView(ctx, transaction)),
+        availableBalanceAfter,
+      })),
+    );
     const isDone = !hasMoreMatchesInPage && sourcePage.isDone;
     return {
       page: rows,
@@ -350,6 +372,7 @@ export const listForAdmin = query({
         : encodeHistoryCursor(
             hasMoreMatchesInPage ? decoded.cursor : sourcePage.continueCursor,
             hasMoreMatchesInPage ? nextSkip : 0,
+            hasMoreMatchesInPage ? decoded.availableBalance : (runningAvailableBalance ?? undefined),
           ),
     };
   },

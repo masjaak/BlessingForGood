@@ -149,14 +149,18 @@ describe("BFG append-only deposit ledger", () => {
 
     const firstCreditPage = await admin.query(api.depositTransactions.listForAdmin, {
       paginationOpts: { numItems: 1, cursor: null },
+      customerUserId: currentCustomer.appUserId,
       direction: "in",
     });
     const secondCreditPage = await admin.query(api.depositTransactions.listForAdmin, {
       paginationOpts: { numItems: 1, cursor: firstCreditPage.continueCursor },
+      customerUserId: currentCustomer.appUserId,
       direction: "in",
     });
     expect(firstCreditPage.page.map((row) => row.amount)).toEqual([25000]);
+    expect(firstCreditPage.page.map((row) => row.availableBalanceAfter)).toEqual([75000]);
     expect(secondCreditPage.page.map((row) => row.amount)).toEqual([100000]);
+    expect(secondCreditPage.page.map((row) => row.availableBalanceAfter)).toEqual([100000]);
     expect(secondCreditPage.isDone).toBe(true);
 
     const customerHistory = await admin.query(api.depositTransactions.listForAdmin, {
@@ -164,6 +168,7 @@ describe("BFG append-only deposit ledger", () => {
       customerUserId: currentCustomer.appUserId,
     });
     expect(customerHistory.page).toHaveLength(4);
+    expect(customerHistory.page.map((row) => row.availableBalanceAfter)).toEqual([65000, 75000, 50000, 100000]);
   });
 
   it("starts empty and records admin credit for the invoice customer", async () => {
