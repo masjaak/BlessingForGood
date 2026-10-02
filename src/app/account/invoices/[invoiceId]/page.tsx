@@ -219,6 +219,7 @@ function CustomerInvoiceDetail() {
             ) : (
               <PaymentConfirmationForm
                 invoiceId={currentCustomerInvoice.invoiceId}
+                minAmount={currentCustomerInvoice.minimumPaymentAmount}
                 maxAmount={currentCustomerInvoice.outstandingAmount}
                 submitPaymentConfirmation={submitPaymentConfirmation}
               />
@@ -327,10 +328,12 @@ function CustomerInvoiceDetail() {
 
 function PaymentConfirmationForm({
   invoiceId,
+  minAmount,
   maxAmount,
   submitPaymentConfirmation,
 }: {
   invoiceId: string;
+  minAmount: number;
   maxAmount: number;
   submitPaymentConfirmation: (
     invoiceId: string,
@@ -364,8 +367,16 @@ function PaymentConfirmationForm({
     setError("");
     setMessage("");
     const paidAtTimestamp = new Date(`${paidAt}T00:00:00`).getTime();
+    const numericAmount = Number(amount);
     setIsSubmitting(true);
     try {
+      if (!Number.isSafeInteger(numericAmount) || numericAmount < minAmount || numericAmount > maxAmount) {
+        throw new Error(
+          numericAmount < minAmount
+            ? "Jumlah pembayaran masih di bawah minimal DP yang harus dibayar."
+            : "Jumlah pembayaran tidak valid.",
+        );
+      }
       if (
         !proofFile ||
         !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
@@ -376,7 +387,7 @@ function PaymentConfirmationForm({
         throw new Error("Bukti pembayaran tidak valid.");
       const storageId = await uploadBfgFile(proofFile, "payment-proof", getToken, sessionClaims);
       await submitPaymentConfirmation(invoiceId, {
-        amount: Number(amount),
+        amount: numericAmount,
         paymentMethod,
         transferReference: transferReference || undefined,
         paidAt: paidAtTimestamp,
@@ -425,17 +436,20 @@ function PaymentConfirmationForm({
         </p>
       ) : null}
       <div className="form-grid">
-        <Field label={`Jumlah dibayar (maks. ${formatIdr(maxAmount)})`}>
+        <Field label={`Jumlah dibayar (min. ${formatIdr(minAmount)} · maks. ${formatIdr(maxAmount)})`}>
           <input
             className="input"
             type="number"
-            min="1"
+            min={minAmount}
             max={maxAmount}
             step="1"
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             required
           />
+          {minAmount > 1 ? (
+            <span className="subtle">Minimal pembayaran saat ini mengikuti sisa DP: {formatIdr(minAmount)}.</span>
+          ) : null}
         </Field>
         <Field label="Metode pembayaran">
           <input
