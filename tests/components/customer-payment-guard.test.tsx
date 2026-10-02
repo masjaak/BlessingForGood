@@ -138,7 +138,7 @@ describe("Customer payment amount guard", () => {
     fireEvent.change(amountInput, { target: { value: "600000" } });
     expect(screen.getByText("Rp 295.000")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Gunakan Rp 600.000" }));
+    fireEvent.click(screen.getByRole("button", { name: /Gunakan Rp\s*600\.000/ }));
     await waitFor(() =>
       expect(allocateDeposit).toHaveBeenCalledWith({ invoiceId: "invoice-1", amount: 600000 }),
     );
