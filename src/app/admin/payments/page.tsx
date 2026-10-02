@@ -41,6 +41,11 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
   const belowMinimumDp = Boolean(
     invoice && invoice.minimumPaymentAmount > 1 && confirmation.amount < invoice.minimumPaymentAmount,
   );
+  const exceedsOutstanding = Boolean(invoice && confirmation.amount > invoice.outstandingAmount);
+  const approvalBlocked = belowMinimumDp || exceedsOutstanding;
+  const remainingAfterApproval = invoice
+    ? Math.max(0, invoice.outstandingAmount - confirmation.amount)
+    : 0;
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage("");
@@ -95,6 +100,23 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
           Nominal ini di bawah minimal DP saat ini. Pembayaran tidak dapat disetujui.
         </p>
       ) : null}
+      {exceedsOutstanding ? (
+        <p className="error-text" role="alert">
+          Nominal ini lebih besar dari sisa invoice saat ini. Pembayaran tidak dapat disetujui.
+        </p>
+      ) : null}
+      {invoice && !approvalBlocked ? (
+        <div className="notice-card payment-approval-preview">
+          <div className="summary-line">
+            <span>Jika pembayaran disetujui</span>
+            <strong>{remainingAfterApproval > 0 ? formatIdr(remainingAfterApproval) : "Lunas"}</strong>
+          </div>
+          <p className="subtle">
+            {formatIdr(confirmation.amount)} akan masuk sebagai pembayaran terverifikasi dan otomatis mengurangi sisa
+            invoice.
+          </p>
+        </div>
+      ) : null}
       <div className="summary-line">
         <span>Metode · tanggal bayar</span>
         <span>
@@ -141,7 +163,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
               type="button"
               loading={pendingAction === "Pembayaran disetujui."}
               loadingLabel="Menyetujui…"
-              disabled={belowMinimumDp}
+              disabled={approvalBlocked}
               onClick={() =>
                 void run(
                   () => approvePaymentConfirmation(confirmation.confirmationId, reviewNote || undefined),
