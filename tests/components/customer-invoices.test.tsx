@@ -26,6 +26,8 @@ describe("Customer invoice payment visibility", () => {
             invoiceNumber: "BFG-INV-MANUAL",
             source: "manual_po",
             manualPoEntryId: "manual-1",
+            manualPoTitle: "Random PO Book",
+            manualPoEtaText: "Maret 2027",
             status: "issued",
             paymentStatus: "unpaid",
             totalAmount: 99000,
