@@ -374,7 +374,7 @@ function DepositOperations() {
                   <span>Invoice: {row.invoiceNumber || "—"}</span>
                   <span>Pesanan: {row.orderCode || "—"}</span>
                   <span>Batch / Cargo: {row.batchName || "—"}</span>
-                  <span>Admin: {row.actorName || "—"}</span>
+                  <span>Aktor: {row.actorName || "—"}</span>
                 </div>
               </div>
             ))}
