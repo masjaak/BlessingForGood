@@ -1873,6 +1873,79 @@ p {
   display: grid;
   gap: 4px;
 }
+
+.analytics-table-scroll-hint {
+  display: none;
+  margin: 0 0 8px;
+}
+
+.analytics-customer-table-wrap {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.analytics-customer-table {
+  min-width: 920px;
+}
+
+.analytics-customer-table th:nth-child(1),
+.analytics-customer-table td:nth-child(1) {
+  min-width: 150px;
+}
+
+.analytics-customer-table th:nth-child(2),
+.analytics-customer-table td:nth-child(2) {
+  min-width: 130px;
+}
+
+.analytics-customer-table th:nth-child(3),
+.analytics-customer-table td:nth-child(3) {
+  min-width: 310px;
+}
+
+.analytics-customer-table th:nth-child(4),
+.analytics-customer-table td:nth-child(4) {
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.analytics-customer-table th:nth-child(5),
+.analytics-customer-table td:nth-child(5) {
+  width: 210px;
+  min-width: 210px;
+}
+
+.analytics-status-cell,
+.analytics-status-cell .table-secondary,
+.analytics-status-cell .status-badge {
+  white-space: normal;
+}
+
+.analytics-status-cell .table-secondary {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .analytics-table-scroll-hint {
+    display: block;
+  }
+
+  .analytics-customer-table th:last-child,
+  .analytics-customer-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: var(--surface);
+    box-shadow: -10px 0 16px -16px var(--ink-muted);
+  }
+
+  .analytics-customer-table th:last-child {
+    z-index: 3;
+  }
+}
 .analytics-skeleton-trend {
   width: 100%;
   height: 52px;
