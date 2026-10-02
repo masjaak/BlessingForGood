@@ -61,7 +61,7 @@ function analyticsFixture() {
                   ${metricMarkup("Menjadi pesanan", 1)}
                 </section>
                 <section class="admin-dashboard-section analytics-books-section"><div class="admin-section-heading"><div><span class="card-kicker">Minat &amp; keranjang</span><h2>Buku paling diminati</h2></div><p>Semua intent buku · Total 3 intent.</p></div><div class="table-wrap"><table class="data-table"><tbody><tr><td>Buku A</td><td>PB</td><td>3</td><td>2</td><td>2</td><td>1</td><td>33%</td></tr></tbody></table></div></section>
-                <section class="admin-dashboard-section analytics-customers-section"><div class="admin-section-heading"><div><span class="card-kicker">Customer</span><h2>Aktivitas Customer</h2></div><p>Nama dan Member Code saja untuk evaluasi operasional.</p></div><div class="table-wrap"><table class="data-table"><tbody><tr><td>Customer A</td><td>BFG-001</td><td>Buku A · 1</td><td>22/09/2026</td><td>Masih di keranjang</td></tr></tbody></table></div></section>
+                <section class="admin-dashboard-section analytics-customers-section"><div class="admin-section-heading"><div><span class="card-kicker">Customer</span><h2>Aktivitas Customer</h2></div><p>Nama dan Member Code saja untuk evaluasi operasional.</p></div><p class="subtle analytics-table-scroll-hint">Geser tabel ke kanan/kiri untuk melihat semua detail.</p><div class="table-wrap analytics-customer-table-wrap" role="region" aria-label="Tabel aktivitas Customer" tabindex="0"><table class="data-table analytics-customer-table"><tbody><tr><td>Customer A</td><td>BFG-001</td><td>Buku A · 1</td><td>22/09/2026</td><td class="analytics-status-cell"><div class="analytics-status-summary"><span class="table-secondary">3 · Sudah menjadi pesanan</span><span class="table-secondary">2 · Belum checkout</span><span class="table-secondary">1 · Masih di keranjang</span></div></td></tr></tbody></table></div></section>
               </div></div>
             </div>
           </div>
@@ -119,6 +119,25 @@ test.describe("@admin Admin Analytics responsive composition", () => {
             const box = table.getBoundingClientRect();
             return { left: box.left, right: box.right, width: box.width, scrollWidth: table.scrollWidth };
           }),
+          customerTable: (() => {
+            const wrap = route.querySelector<HTMLElement>(".analytics-customer-table-wrap");
+            const status = route.querySelector<HTMLElement>(".analytics-status-cell");
+            if (!wrap || !status) throw new Error("Missing customer analytics table");
+            const wrapBox = wrap.getBoundingClientRect();
+            const statusBox = status.getBoundingClientRect();
+            const styles = getComputedStyle(status);
+            return {
+              wrapLeft: wrapBox.left,
+              wrapRight: wrapBox.right,
+              wrapWidth: wrapBox.width,
+              scrollWidth: wrap.scrollWidth,
+              statusLeft: statusBox.left,
+              statusRight: statusBox.right,
+              statusWidth: statusBox.width,
+              statusPosition: styles.position,
+              statusWhiteSpace: styles.whiteSpace,
+            };
+          })(),
         };
       });
 
@@ -142,7 +161,20 @@ test.describe("@admin Admin Analytics responsive composition", () => {
         );
       }
 
+      expect(geometry.customerTable.statusWidth, `${viewport.width}px readable status width`).toBeGreaterThanOrEqual(200);
+      expect(geometry.customerTable.statusWhiteSpace, `${viewport.width}px status wraps instead of clipping`).toBe("normal");
+
       if (viewport.width <= 900) {
+        expect(geometry.customerTable.scrollWidth, `${viewport.width}px customer table scrolls internally`).toBeGreaterThan(
+          geometry.customerTable.wrapWidth,
+        );
+        expect(geometry.customerTable.statusPosition, `${viewport.width}px sticky status`).toBe("sticky");
+        expect(geometry.customerTable.statusRight, `${viewport.width}px status stays visible`).toBeLessThanOrEqual(
+          geometry.customerTable.wrapRight + 1,
+        );
+        expect(geometry.customerTable.statusLeft, `${viewport.width}px status stays inside frame`).toBeGreaterThanOrEqual(
+          geometry.customerTable.wrapLeft - 1,
+        );
         expect(geometry.nav.display, `${viewport.width}px compact nav`).toBe("flex");
         expect(geometry.nav.height, `${viewport.width}px nav height`).toBeLessThanOrEqual(72);
         expect(geometry.nav.overflowY, `${viewport.width}px nav vertical overflow`).toBe("hidden");
