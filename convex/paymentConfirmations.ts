@@ -8,6 +8,7 @@ import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { invoiceProjection } from "./lib/invoiceProjection";
+import { minimumPaymentConfirmationAmount } from "./lib/invoiceCalculations";
 import { paymentConfirmationStatusValidator } from "./validators";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { PROOF_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
@@ -163,6 +164,17 @@ export const submitValidated = internalMutation({
     eligibleInvoice(invoice);
     validateAmount(args.amount);
     validatePaidAt(args.paidAt);
+    const minimumPaymentAmount = minimumPaymentConfirmationAmount(
+      invoice.depositRequiredAmount,
+      invoice.allocatedDepositAmount,
+      invoice.verifiedPaymentAmount,
+      invoice.outstandingAmount,
+    );
+    if (args.amount < minimumPaymentAmount) {
+      fail("PAYMENT_CONFIRMATION_BELOW_MINIMUM", "payment amount is below the current DP requirement", {
+        minimumPaymentAmount,
+      });
+    }
     if (args.amount > invoice.outstandingAmount) fail("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
     const proofContentType = args.proofStorageId
       ? await validateStoredFile(
