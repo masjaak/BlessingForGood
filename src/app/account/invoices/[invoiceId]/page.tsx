@@ -368,15 +368,16 @@ function PaymentConfirmationForm({
     setMessage("");
     const paidAtTimestamp = new Date(`${paidAt}T00:00:00`).getTime();
     const numericAmount = Number(amount);
+    if (!Number.isSafeInteger(numericAmount) || numericAmount < minAmount || numericAmount > maxAmount) {
+      setError(
+        numericAmount < minAmount
+          ? `Minimal pembayaran saat ini ${formatIdr(minAmount)} sesuai sisa DP.`
+          : "Jumlah pembayaran tidak valid.",
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
-      if (!Number.isSafeInteger(numericAmount) || numericAmount < minAmount || numericAmount > maxAmount) {
-        throw new Error(
-          numericAmount < minAmount
-            ? "Jumlah pembayaran masih di bawah minimal DP yang harus dibayar."
-            : "Jumlah pembayaran tidak valid.",
-        );
-      }
       if (
         !proofFile ||
         !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
