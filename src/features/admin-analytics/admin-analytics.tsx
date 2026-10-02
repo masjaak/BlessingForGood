@@ -252,8 +252,14 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
           </div>
           <p>Nama dan Member Code saja untuk evaluasi operasional.</p>
         </div>
-        <div className="table-wrap">
-          <table className="data-table">
+        <p className="subtle analytics-table-scroll-hint">Geser tabel ke kanan/kiri untuk melihat semua detail.</p>
+        <div
+          className="table-wrap analytics-customer-table-wrap"
+          role="region"
+          aria-label="Tabel aktivitas Customer"
+          tabIndex={0}
+        >
+          <table className="data-table analytics-customer-table">
             <caption className="sr-only">Aktivitas Customer dari keranjang</caption>
             <thead>
               <tr>
@@ -284,7 +290,7 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
                     ) : null}
                   </td>
                   <td>{new Date(customer.lastActivityAt).toLocaleDateString("id-ID")}</td>
-                  <td>
+                  <td className="analytics-status-cell">
                     {Object.entries(customer.statusCounts).filter(([, count]) => count > 0).length > 1 ? (
                       <div className="analytics-status-summary">
                         {Object.entries(customer.statusCounts)
