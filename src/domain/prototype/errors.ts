@@ -109,6 +109,9 @@ export function productErrorMessage(reason: unknown, fallback: string): string {
     if (message.includes("resolve payment")) return "Selesaikan konfirmasi pembayaran sebelum membatalkan invoice.";
     return "Invoice belum berada pada keadaan yang dapat dibatalkan.";
   }
+  if (code === "PAYMENT_CONFIRMATION_BELOW_MINIMUM" || message.includes("PAYMENT_CONFIRMATION_BELOW_MINIMUM")) {
+    return "Jumlah pembayaran masih di bawah minimal DP yang harus dibayar.";
+  }
   if (code === "INVOICE_VOID" || message.includes("INVOICE_VOID")) return "Invoice ini sudah dibatalkan.";
   if (code === "DEPOSIT_BALANCE_INSUFFICIENT" || message.includes("DEPOSIT_BALANCE_INSUFFICIENT")) {
     return "Saldo deposit yang tersedia belum mencukupi.";
