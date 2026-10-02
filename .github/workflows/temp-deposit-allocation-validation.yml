@@ -23,10 +23,6 @@ jobs:
           cache: npm
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
-      - run: npx vitest run convex/deposit.test.ts tests/components/customer-payment-guard.test.tsx
-      - name: Show Prettier diff
-        run: |
-          npx prettier --write convex/invoiceDepositAllocations.ts convex/deposit.test.ts src/app/account/invoices/[invoiceId]/page.tsx src/app/admin/deposits/page.tsx src/app/admin/invoices/[invoiceId]/page.tsx tests/components/customer-payment-guard.test.tsx
-          git diff -- convex/invoiceDepositAllocations.ts convex/deposit.test.ts src/app/account/invoices/[invoiceId]/page.tsx src/app/admin/deposits/page.tsx src/app/admin/invoices/[invoiceId]/page.tsx tests/components/customer-payment-guard.test.tsx
-          exit 1
-      - run: npx eslint convex/invoiceDepositAllocations.ts convex/deposit.test.ts src/app/account/invoices/[invoiceId]/page.tsx src/app/admin/deposits/page.tsx src/app/admin/invoices/[invoiceId]/page.tsx tests/components/customer-payment-guard.test.tsx
+      - run: npx vitest run convex/deposit.test.ts convex/phase091-concurrency.test.ts tests/components/customer-payment-guard.test.tsx
+      - run: npx prettier --check convex/invoiceDepositAllocations.ts convex/deposit.test.ts convex/phase091-concurrency.test.ts src/app/admin/deposits/page.tsx src/app/admin/invoices/[invoiceId]/page.tsx tests/components/customer-payment-guard.test.tsx
+      - run: npx eslint convex/invoiceDepositAllocations.ts convex/deposit.test.ts convex/phase091-concurrency.test.ts src/app/account/invoices/[invoiceId]/page.tsx src/app/admin/deposits/page.tsx src/app/admin/invoices/[invoiceId]/page.tsx tests/components/customer-payment-guard.test.tsx
