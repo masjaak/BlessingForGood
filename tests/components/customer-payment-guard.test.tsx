@@ -36,6 +36,11 @@ vi.mock("@/components/back-button", () => ({
   BackButton: () => null,
 }));
 
+Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+  configurable: true,
+  value: vi.fn(),
+});
+
 const invoice = {
   invoiceId: "invoice-1",
   invoiceNumber: "BFG-INV-261001-0014",
