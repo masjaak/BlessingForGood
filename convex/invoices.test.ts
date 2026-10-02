@@ -175,6 +175,12 @@ describe("BFG invoice persistence", () => {
     const secondCustomerUser = await secondCustomer.query(api.users.current, {});
     if (!customerUser || !secondCustomerUser) throw new Error("invoice customer fixture missing");
     const batch = await admin.mutation(api.batches.create, { name: "Invoice PO Lavender" });
+    await t.run((ctx) =>
+      ctx.db.patch(batch.batchId, {
+        poDeadlineAt: Date.parse("2026-09-30T16:59:59.999Z"),
+        etaCargoMonth: "2027-03",
+      }),
+    );
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: firstCatalog.catalogId });
     await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: secondCatalog.catalogId });
     await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
@@ -297,7 +303,13 @@ describe("BFG invoice persistence", () => {
       await customer.query(api.invoices.listMine, { paginationOpts: { numItems: 10, cursor: null } }),
     ).toMatchObject({
       page: expect.arrayContaining([
-        expect.objectContaining({ invoiceId: issued.invoiceId, batchId: batch.batchId }),
+        expect.objectContaining({
+          invoiceId: issued.invoiceId,
+          batchId: batch.batchId,
+          batchName: "Invoice PO Lavender",
+          batchPoDeadlineAt: Date.parse("2026-09-30T16:59:59.999Z"),
+          batchEtaCargoMonth: "2027-03",
+        }),
         expect.objectContaining({ invoiceId: otherInvoice.invoiceId, batchId: otherBatch.batchId }),
       ]),
     });
