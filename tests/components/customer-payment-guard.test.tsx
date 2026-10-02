@@ -38,7 +38,9 @@ vi.mock("@/components/back-button", () => ({
 
 Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
   configurable: true,
-  value: vi.fn(),
+  value: vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  }),
 });
 
 const invoice = {
