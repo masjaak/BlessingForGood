@@ -146,7 +146,7 @@ async function allocateInternal(
 }
 
 export const allocateMine = mutation({
-  args: { invoiceId: v.id("invoices") },
+  args: { invoiceId: v.id("invoices"), amount: v.number() },
   handler: async (ctx, args) => {
     const user = await requireActiveUser(ctx);
     if (user.role !== "customer") fail("PERMISSION_DENIED");
@@ -155,12 +155,7 @@ export const allocateMine = mutation({
     await requireOwnedResource(ctx, invoice.customerUserId, "INVOICE_ACCESS_DENIED");
     const { account } = await invoiceAndAccount(ctx, args.invoiceId);
     if (invoice.status !== "issued") fail("INVOICE_INVALID_STATE");
-    const amount = Math.min(account.availableAmount, invoice.outstandingAmount);
-    if (!Number.isSafeInteger(amount) || amount <= 0) {
-      if (account.availableAmount <= 0) fail("DEPOSIT_BALANCE_INSUFFICIENT");
-      fail("DEPOSIT_ALLOCATION_EXCEEDS_OUTSTANDING");
-    }
-    return allocateInternal(ctx, user, invoice, account, amount);
+    return allocateInternal(ctx, user, invoice, account, args.amount);
   },
 });
 
