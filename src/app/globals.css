@@ -8820,6 +8820,10 @@ p {
   width: fit-content;
 }
 
+.admin-shell .invoice-queue-filter-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+
 .admin-shell .invoice-issue-requirement + .invoice-issue-bulk-actions {
   margin-top: var(--space-action-stack);
 }
@@ -9243,6 +9247,7 @@ p {
 
 .admin-shell .invoice-issue-action > .button,
 .admin-shell .invoice-issue-action > a.button {
+  width: 168px;
   min-width: 168px;
 }
 
@@ -9373,7 +9378,7 @@ p {
 
   .admin-shell .invoice-issue-action > .button,
   .admin-shell .invoice-issue-action > a.button {
-    width: fit-content;
+    width: 168px;
   }
 
   .admin-shell .deposit-history-heading {
