@@ -47,6 +47,27 @@ export function settlementAmounts(
   };
 }
 
+export function minimumPaymentConfirmationAmount(
+  depositRequiredAmount: number,
+  allocatedDepositAmount: number,
+  verifiedPaymentAmount: number,
+  outstandingAmountValue: number,
+): number {
+  safeNonNegativeInteger(depositRequiredAmount, "deposit required amount");
+  safeNonNegativeInteger(allocatedDepositAmount, "allocated deposit amount");
+  safeNonNegativeInteger(verifiedPaymentAmount, "verified payment amount");
+  safeNonNegativeInteger(outstandingAmountValue, "outstanding amount");
+
+  if (outstandingAmountValue === 0) return 0;
+
+  const settledAmount = allocatedDepositAmount + verifiedPaymentAmount;
+  if (!Number.isSafeInteger(settledAmount)) throw new Error("settled payment amount is invalid");
+
+  const remainingDepositRequirement = Math.max(0, depositRequiredAmount - settledAmount);
+  if (remainingDepositRequirement === 0) return 1;
+  return Math.min(outstandingAmountValue, remainingDepositRequirement);
+}
+
 export function invoicePaymentStatus(
   totalAmount: number,
   allocatedAmount: number,
