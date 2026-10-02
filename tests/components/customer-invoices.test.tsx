@@ -26,6 +26,8 @@ describe("Customer invoice payment visibility", () => {
             invoiceNumber: "BFG-INV-MANUAL",
             source: "manual_po",
             manualPoEntryId: "manual-1",
+            manualPoTitle: "Random PO Book",
+            manualPoEtaText: "Maret 2027",
             status: "issued",
             paymentStatus: "unpaid",
             totalAmount: 99000,
@@ -48,6 +50,12 @@ describe("Customer invoice payment visibility", () => {
           {
             invoiceId: "invoice-unpaid",
             invoiceNumber: "BFG-INV-UNPAID",
+            source: "order",
+            batchId: "batch-cargo-2",
+            batchName: "CARGO 2",
+            batchReferenceCode: "CARGO-2",
+            batchPoDeadlineAt: Date.parse("2026-09-30T16:59:59.999Z"),
+            batchEtaCargoMonth: "2027-03",
             status: "issued",
             paymentStatus: "unpaid",
             totalAmount: 100000,
@@ -109,6 +117,11 @@ describe("Customer invoice payment visibility", () => {
     const highlightedDpRows = document.querySelectorAll(".invoice-dp-required-row");
     expect(highlightedDpRows).toHaveLength(4);
     expect(screen.getByText("Pesanan Khusus / Random PO")).toBeTruthy();
+    expect(screen.getByText("PO Random")).toBeTruthy();
+    expect(screen.getByText("Random PO Book")).toBeTruthy();
+    expect(screen.getByText("CARGO 2")).toBeTruthy();
+    expect(screen.getByText(/Close PO 30 Sep 2026/i)).toBeTruthy();
+    expect(screen.getAllByText("ETA Maret 2027").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("1 × Random PO Book · ETA Maret 2027")).toBeTruthy();
     expect(screen.getAllByText("Rp 99.000").length).toBeGreaterThanOrEqual(3);
     expect(screen.getAllByRole("link", { name: "Buka invoice dan riwayat" })).toHaveLength(4);
