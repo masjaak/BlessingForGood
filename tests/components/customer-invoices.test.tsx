@@ -117,10 +117,9 @@ describe("Customer invoice payment visibility", () => {
     expect(screen.getByText("Pesanan Khusus / Random PO")).toBeTruthy();
     expect(screen.getByText("PO Random")).toBeTruthy();
     expect(screen.getByText("Random PO Book")).toBeTruthy();
-    expect(screen.getByText("ETA Maret 2027")).toBeTruthy();
     expect(screen.getByText("CARGO 2")).toBeTruthy();
     expect(screen.getByText(/Close PO 30 Sep 2026/i)).toBeTruthy();
-    expect(screen.getByText("ETA Maret 2027")).toBeTruthy();
+    expect(screen.getAllByText("ETA Maret 2027").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("1 × Random PO Book · ETA Maret 2027")).toBeTruthy();
     expect(screen.getAllByText("Rp 99.000").length).toBeGreaterThanOrEqual(3);
     expect(screen.getAllByRole("link", { name: "Buka invoice dan riwayat" })).toHaveLength(4);
