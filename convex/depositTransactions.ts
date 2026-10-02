@@ -122,9 +122,7 @@ async function historyView(ctx: DataCtx, transaction: Doc<"depositTransactions">
   };
 }
 
-function decodeHistoryCursor(
-  value: string | null,
-): { cursor: string | null; skip: number; availableBalance?: number } {
+function decodeHistoryCursor(value: string | null): { cursor: string | null; skip: number; availableBalance?: number } {
   if (!value) return { cursor: null, skip: 0 };
   try {
     const decoded = JSON.parse(value) as { cursor?: unknown; skip?: unknown; availableBalance?: unknown };
