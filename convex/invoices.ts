@@ -5,7 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireOwnedResource, requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
-import { calculateDepositRequired } from "./lib/invoiceCalculations";
+import { calculateDepositRequired, minimumPaymentConfirmationAmount } from "./lib/invoiceCalculations";
 import { effectiveInvoiceTotal, invoiceProjection } from "./lib/invoiceProjection";
 import {
   invoiceDatePart,
@@ -89,6 +89,12 @@ async function invoiceView(ctx: DataCtx, invoiceId: Id<"invoices">) {
     allocatedDepositAmount: invoice.allocatedDepositAmount,
     verifiedPaymentAmount: invoice.verifiedPaymentAmount,
     outstandingAmount: invoice.outstandingAmount,
+    minimumPaymentAmount: minimumPaymentConfirmationAmount(
+      invoice.depositRequiredAmount,
+      invoice.allocatedDepositAmount,
+      invoice.verifiedPaymentAmount,
+      invoice.outstandingAmount,
+    ),
     overpaymentAmount: invoice.overpaymentAmount,
     refundObligationAmount: invoice.refundObligationAmount,
     refundObligationStatus: invoice.refundObligationStatus,

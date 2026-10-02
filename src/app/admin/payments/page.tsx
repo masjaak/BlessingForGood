@@ -38,6 +38,9 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const invoice = confirmation.invoice;
+  const belowMinimumDp = Boolean(
+    invoice && invoice.minimumPaymentAmount > 1 && confirmation.amount < invoice.minimumPaymentAmount,
+  );
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage("");
@@ -75,6 +78,23 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
         <span>Sisa invoice saat ini</span>
         <strong>{formatIdr(invoice?.outstandingAmount || 0)}</strong>
       </div>
+      {invoice?.depositRequiredAmount ? (
+        <>
+          <div className="summary-line">
+            <span>DP yang harus dibayar</span>
+            <strong>{formatIdr(invoice.depositRequiredAmount)}</strong>
+          </div>
+          <div className="summary-line">
+            <span>Minimal pembayaran saat ini</span>
+            <strong>{formatIdr(invoice.minimumPaymentAmount)}</strong>
+          </div>
+        </>
+      ) : null}
+      {belowMinimumDp ? (
+        <p className="error-text" role="alert">
+          Nominal ini di bawah minimal DP saat ini. Pembayaran tidak dapat disetujui.
+        </p>
+      ) : null}
       <div className="summary-line">
         <span>Metode · tanggal bayar</span>
         <span>
@@ -121,6 +141,7 @@ function PaymentReviewCard({ confirmation }: { confirmation: AdminPaymentQueue[n
               type="button"
               loading={pendingAction === "Pembayaran disetujui."}
               loadingLabel="Menyetujui…"
+              disabled={belowMinimumDp}
               onClick={() =>
                 void run(
                   () => approvePaymentConfirmation(confirmation.confirmationId, reviewNote || undefined),

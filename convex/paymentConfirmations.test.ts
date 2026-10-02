@@ -21,6 +21,24 @@ async function createIssuedInvoice(t: ReturnType<typeof testConvex>) {
   return { ...users, invoice: issued };
 }
 
+async function createIssuedInvoiceWithFixedDp(t: ReturnType<typeof testConvex>, depositRequiredAmount: number) {
+  const users = await setupUsers(t);
+  const bundle = await createOpenCatalog(users.admin, "Payment DP Catalog", "2402", "payment-dp-code");
+  await users.customer.mutation(api.catalogAccess.unlock, { accessCode: "payment-dp-code" });
+  const order = await users.customer.mutation(api.orders.submit, {
+    catalogId: bundle.catalogId,
+    customerName: "Payment DP Customer",
+    items: [{ variantId: bundle.variantIds[0], quantity: 2, expectedUnitPriceAmount: 125000 }],
+  });
+  const invoice = await users.admin.mutation(api.invoices.create, {
+    orderId: order.orderId,
+    depositRequirementMode: "fixed",
+    depositRequirementValue: depositRequiredAmount,
+  });
+  const issued = await users.admin.mutation(api.invoices.issue, { invoiceId: invoice.invoiceId });
+  return { ...users, invoice: issued };
+}
+
 function paymentInput(amount: number) {
   return {
     amount,
@@ -67,6 +85,58 @@ describe("BFG payment confirmation workflow", () => {
     expect((await admin.query(api.paymentConfirmations.listPendingForAdmin, {}))[0]).toMatchObject({
       confirmationId: confirmation.confirmationId,
       status: "submitted",
+    });
+  });
+
+  it("blocks payment confirmation below the remaining DP requirement and accounts for allocated deposit", async () => {
+    const t = testConvex();
+    const { customer, admin, invoice } = await createIssuedInvoiceWithFixedDp(t, 100000);
+
+    expect(await customer.query(api.invoices.getMine, { invoiceId: invoice.invoiceId })).toMatchObject({
+      depositRequiredAmount: 100000,
+      minimumPaymentAmount: 100000,
+      outstandingAmount: 250000,
+    });
+
+    await expect(
+      customer.action(api.paymentConfirmations.submit, {
+        invoiceId: invoice.invoiceId,
+        ...paymentInput(99999),
+      }),
+    ).rejects.toThrow("PAYMENT_CONFIRMATION_BELOW_MINIMUM");
+
+    await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 40000 });
+    await admin.mutation(api.invoiceDepositAllocations.allocate, {
+      invoiceId: invoice.invoiceId,
+      amount: 40000,
+    });
+
+    expect(await customer.query(api.invoices.getMine, { invoiceId: invoice.invoiceId })).toMatchObject({
+      depositRequiredAmount: 100000,
+      allocatedDepositAmount: 40000,
+      minimumPaymentAmount: 60000,
+      outstandingAmount: 210000,
+    });
+
+    await expect(
+      customer.action(api.paymentConfirmations.submit, {
+        invoiceId: invoice.invoiceId,
+        ...paymentInput(59999),
+      }),
+    ).rejects.toThrow("PAYMENT_CONFIRMATION_BELOW_MINIMUM");
+
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      ...paymentInput(60000),
+    });
+    await admin.mutation(api.paymentConfirmations.approve, { confirmationId: confirmation.confirmationId });
+
+    expect(await customer.query(api.invoices.getMine, { invoiceId: invoice.invoiceId })).toMatchObject({
+      allocatedDepositAmount: 40000,
+      verifiedPaymentAmount: 60000,
+      minimumPaymentAmount: 1,
+      outstandingAmount: 150000,
+      paymentStatus: "partially_paid",
     });
   });
 

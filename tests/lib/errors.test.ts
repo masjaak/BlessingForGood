@@ -30,6 +30,15 @@ describe("prototype error boundary", () => {
     ).toBe("Pesanan belum berhasil dibuat.");
   });
 
+  it("maps minimum DP payment failures to safe customer copy", () => {
+    expect(
+      productErrorMessage(
+        new Error("[CONVEX M(paymentConfirmations:submit)] PAYMENT_CONFIRMATION_BELOW_MINIMUM"),
+        "fallback",
+      ),
+    ).toBe("Jumlah pembayaran masih di bawah minimal DP yang harus dibayar.");
+  });
+
   it("maps Batch transition failures to safe operational copy", () => {
     expect(
       productErrorMessage(new Error("[CONVEX M(batchTracking:updateShipmentStage)] BATCH_ROSTER_REQUIRED"), "fallback"),

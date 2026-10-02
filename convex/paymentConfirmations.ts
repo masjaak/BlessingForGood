@@ -8,6 +8,7 @@ import { requirePermission } from "./lib/auth";
 import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { invoiceProjection } from "./lib/invoiceProjection";
+import { minimumPaymentConfirmationAmount } from "./lib/invoiceCalculations";
 import { paymentConfirmationStatusValidator } from "./validators";
 import { notifyAdmins, notifyUser } from "./lib/notifications";
 import { PROOF_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
@@ -90,9 +91,16 @@ async function confirmationView(ctx: DataCtx, confirmation: Doc<"paymentConfirma
           paymentStatus: invoice.paymentStatus,
           totalAmount: invoice.totalAmount,
           adjustedTotalAmount: invoice.adjustedTotalAmount,
+          depositRequiredAmount: invoice.depositRequiredAmount,
           allocatedDepositAmount: invoice.allocatedDepositAmount,
           verifiedPaymentAmount: invoice.verifiedPaymentAmount,
           outstandingAmount: invoice.outstandingAmount,
+          minimumPaymentAmount: minimumPaymentConfirmationAmount(
+            invoice.depositRequiredAmount,
+            invoice.allocatedDepositAmount,
+            invoice.verifiedPaymentAmount,
+            invoice.outstandingAmount,
+          ),
           overpaymentAmount: invoice.overpaymentAmount,
           refundObligationAmount: invoice.refundObligationAmount,
           refundObligationStatus: invoice.refundObligationStatus,
@@ -163,6 +171,17 @@ export const submitValidated = internalMutation({
     eligibleInvoice(invoice);
     validateAmount(args.amount);
     validatePaidAt(args.paidAt);
+    const minimumPaymentAmount = minimumPaymentConfirmationAmount(
+      invoice.depositRequiredAmount,
+      invoice.allocatedDepositAmount,
+      invoice.verifiedPaymentAmount,
+      invoice.outstandingAmount,
+    );
+    if (args.amount < minimumPaymentAmount) {
+      fail("PAYMENT_CONFIRMATION_BELOW_MINIMUM", "payment amount is below the current DP requirement", {
+        minimumPaymentAmount,
+      });
+    }
     if (args.amount > invoice.outstandingAmount) fail("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
     const proofContentType = args.proofStorageId
       ? await validateStoredFile(
@@ -254,6 +273,17 @@ export const approve = mutation({
     const invoice = await ctx.db.get(confirmation.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     eligibleInvoice(invoice);
+    const minimumPaymentAmount = minimumPaymentConfirmationAmount(
+      invoice.depositRequiredAmount,
+      invoice.allocatedDepositAmount,
+      invoice.verifiedPaymentAmount,
+      invoice.outstandingAmount,
+    );
+    if (confirmation.amount < minimumPaymentAmount) {
+      fail("PAYMENT_CONFIRMATION_BELOW_MINIMUM", "payment amount is below the current DP requirement", {
+        minimumPaymentAmount,
+      });
+    }
     if (confirmation.amount > invoice.outstandingAmount) {
       fail("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
     }
