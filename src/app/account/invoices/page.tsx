@@ -16,6 +16,7 @@ import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { useOperations } from "@/domain/prototype/operations-context";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
+import { customerInvoiceContext } from "@/lib/customer-invoice-context";
 
 function PersistentCustomerInvoices() {
   const { customerInvoiceList } = useOperations();
@@ -48,12 +49,25 @@ function PersistentCustomerInvoices() {
         />
       ) : (
         <div className="content-stack">
-          {invoices.map((invoice) => (
-            <Card key={invoice.invoiceId}>
-              <div className="split-heading">
+          {invoices.map((invoice) => {
+            const context = customerInvoiceContext(invoice);
+            return (
+            <Card key={invoice.invoiceId} className="customer-invoice-card">
+              <div className="invoice-context-head">
+                <span className="card-kicker">{context.label}</span>
+                <h2>{context.title}</h2>
+                {context.details.length ? (
+                  <div className="invoice-context-meta">
+                    {context.details.map((detail) => (
+                      <span key={detail}>{detail}</span>
+                    ))}
+                  </div>
+                ) : null}
+                <span className="subtle">{invoiceReference(invoice.invoiceNumber)}</span>
+              </div>
+              <div className="split-heading invoice-amount-heading">
                 <div>
-                  <span className="card-kicker">{invoiceReference(invoice.invoiceNumber)}</span>
-                  <h2>{formatIdr(invoice.totalAmount)}</h2>
+                  <h3>{formatIdr(invoice.totalAmount)}</h3>
                   <span className="subtle">{invoice.customerName}</span>
                 </div>
                 <StatusBadge tone={invoice.status === "issued" ? "positive" : "warning"}>
@@ -103,7 +117,8 @@ function PersistentCustomerInvoices() {
                 Buka invoice dan riwayat
               </LinkButton>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
