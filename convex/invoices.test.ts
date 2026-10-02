@@ -175,14 +175,14 @@ describe("BFG invoice persistence", () => {
     const secondCustomerUser = await secondCustomer.query(api.users.current, {});
     if (!customerUser || !secondCustomerUser) throw new Error("invoice customer fixture missing");
     const batch = await admin.mutation(api.batches.create, { name: "Invoice PO Lavender" });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: firstCatalog.catalogId });
+    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: secondCatalog.catalogId });
     await t.run((ctx) =>
       ctx.db.patch(batch.batchId, {
         poDeadlineAt: Date.parse("2026-09-30T16:59:59.999Z"),
         etaCargoMonth: "2027-03",
       }),
     );
-    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: firstCatalog.catalogId });
-    await admin.mutation(api.batches.linkCatalog, { batchId: batch.batchId, catalogId: secondCatalog.catalogId });
     await admin.mutation(api.batchTracking.updateShipmentStage, { batchId: batch.batchId, toStage: "po_closed" });
     const ready = await admin.query(api.invoices.listReadyForIssuance, {
       paginationOpts: { numItems: 25, cursor: null },
