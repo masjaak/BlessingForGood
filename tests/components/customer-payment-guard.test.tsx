@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMutation, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
@@ -63,9 +63,12 @@ const invoice = {
 };
 
 describe("Customer payment amount guard", () => {
+  const allocateDeposit = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useMutation).mockReturnValue(vi.fn() as never);
+    allocateDeposit.mockResolvedValue({});
+    vi.mocked(useMutation).mockReturnValue(allocateDeposit as never);
     vi.mocked(useQuery).mockReturnValue(null as never);
     vi.mocked(useAuth).mockReturnValue({
       getToken: vi.fn(),
@@ -107,5 +110,30 @@ describe("Customer payment amount guard", () => {
 
     expect(screen.getByText(/tidak boleh melebihi sisa tagihan Rp 895\.000/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Kirim konfirmasi" })).toHaveProperty("disabled", true);
+  });
+
+  it("allocates exactly the deposit amount chosen by the Customer", async () => {
+    vi.mocked(useOperations).mockReturnValue({
+      currentCustomerInvoice: invoice,
+      customerAccount: { account: { availableAmount: 700000, reservedAmount: 0 } },
+      customerTransactions: { page: [] },
+      customerAllocations: [],
+      customerPaymentConfirmations: [],
+      submitPaymentConfirmation: vi.fn(),
+    } as never);
+
+    render(<CustomerInvoiceDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Gunakan saldo deposit" }));
+
+    const amountInput = screen.getByLabelText(/Jumlah deposit/i);
+    expect(screen.getByRole("button", { name: "Gunakan deposit" })).toHaveProperty("disabled", true);
+
+    fireEvent.change(amountInput, { target: { value: "600000" } });
+    expect(screen.getByText("Rp 295.000")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Gunakan Rp 600.000" }));
+    await waitFor(() =>
+      expect(allocateDeposit).toHaveBeenCalledWith({ invoiceId: "invoice-1", amount: 600000 }),
+    );
   });
 });
