@@ -34,6 +34,7 @@ import { BackButton } from "@/components/back-button";
 import { normalizeUploadMimeType, uploadBfgFile } from "@/lib/upload-file";
 import { invoiceReference } from "@/domain/prototype/invoice-reference";
 import { productErrorMessage } from "@/domain/prototype/errors";
+import { customerInvoiceContext } from "@/lib/customer-invoice-context";
 
 function CustomerInvoiceDetail() {
   const { dataSource } = useProduct();
@@ -71,6 +72,7 @@ function CustomerInvoiceDetail() {
   }
   const account = customerAccount?.account;
   const invoiceId = currentCustomerInvoice.invoiceId;
+  const invoiceContext = customerInvoiceContext(currentCustomerInvoice);
   const maxDepositAllocation = Math.min(account?.availableAmount || 0, currentCustomerInvoice.outstandingAmount);
 
   async function confirmDepositAllocation() {
@@ -90,18 +92,13 @@ function CustomerInvoiceDetail() {
   return (
     <div className="page narrow-page">
       <PageHeader
-        eyebrow="Detail invoice"
-        title={invoiceReference(currentCustomerInvoice.invoiceNumber)}
-        description={`${currentCustomerInvoice.customerName} · ${
-          currentCustomerInvoice.source === "ready_stock"
-            ? "Ready Stock"
-            : currentCustomerInvoice.source === "manual_po"
-              ? "Pesanan Khusus / Random PO"
-              : currentCustomerInvoice.orderCode ||
-                (currentCustomerInvoice.orderId
-                  ? `BFG-ORD-LEGACY-${currentCustomerInvoice.orderId.slice(-8).toUpperCase()}`
-                  : "Pesanan")
-        }`}
+        eyebrow={invoiceContext.label}
+        title={invoiceContext.title}
+        description={[
+          ...invoiceContext.details,
+          invoiceReference(currentCustomerInvoice.invoiceNumber),
+          currentCustomerInvoice.customerName,
+        ].join(" · ")}
         actions={
           <LinkButton href="/account/invoices" variant="secondary">
             Kembali ke invoice
