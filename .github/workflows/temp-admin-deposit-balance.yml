@@ -1,0 +1,25 @@
+name: Temporary admin deposit balance validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx vitest run convex/deposit.test.ts
+      - run: npx prettier --check convex/depositTransactions.ts convex/deposit.test.ts
+      - run: npx eslint convex/depositTransactions.ts convex/deposit.test.ts
