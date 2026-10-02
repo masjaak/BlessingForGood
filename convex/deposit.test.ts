@@ -205,7 +205,7 @@ describe("BFG append-only deposit ledger", () => {
     });
   });
 
-  it("lets the Customer allocate the current minimum and records Customer traceability", async () => {
+  it("lets the Customer choose an allocation amount and records Customer traceability", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer, invoice } = await createIssuedInvoice(t);
     const currentCustomer = await customer.query(api.users.current, {});
@@ -214,20 +214,21 @@ describe("BFG append-only deposit ledger", () => {
 
     const allocation = await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
       invoiceId: invoice.invoiceId,
+      amount: 60000,
     });
-    expect(allocation).toMatchObject({ amount: 100000, status: "active" });
-    expect(allocation.account).toMatchObject({ availableAmount: 0, reservedAmount: 100000 });
+    expect(allocation).toMatchObject({ amount: 60000, status: "active" });
+    expect(allocation.account).toMatchObject({ availableAmount: 40000, reservedAmount: 60000 });
     expect(allocation.invoice).toMatchObject({
       totalAmount: 250000,
-      allocatedDepositAmount: 100000,
-      outstandingAmount: 150000,
+      allocatedDepositAmount: 60000,
+      outstandingAmount: 190000,
       paymentStatus: "partially_paid",
     });
     await expect(
-      secondCustomer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId }),
+      secondCustomer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId, amount: 1 }),
     ).rejects.toThrow("INVOICE_ACCESS_DENIED");
     await expect(
-      customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId }),
+      customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId, amount: 40001 }),
     ).rejects.toThrow("DEPOSIT_BALANCE_INSUFFICIENT");
 
     const history = await customer.query(api.depositTransactions.listMine, {
@@ -237,7 +238,7 @@ describe("BFG append-only deposit ledger", () => {
       expect.arrayContaining([
         expect.objectContaining({
           type: "reservation",
-          amount: 100000,
+          amount: 60000,
           direction: "out",
           source: "Alokasi ke invoice",
           invoiceNumber: expect.any(String),
@@ -256,7 +257,7 @@ describe("BFG append-only deposit ledger", () => {
     expect(trace.audit).toMatchObject({
       actorUserId: currentCustomer.appUserId,
       targetType: "invoice",
-      safeMetadata: { amount: "100000", actorRole: "customer" },
+      safeMetadata: { amount: "60000", actorRole: "customer" },
     });
     expect(trace.notification).toMatchObject({
       relatedEntityType: "invoice",
@@ -264,13 +265,21 @@ describe("BFG append-only deposit ledger", () => {
     });
   });
 
-  it("caps Customer allocation at outstanding and leaves excess deposit available", async () => {
+  it("rejects Customer allocation above outstanding and leaves excess deposit available", async () => {
     const t = testConvex();
     const { admin, customer, invoice } = await createIssuedInvoice(t);
     await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 300000 });
 
+    await expect(
+      customer.mutation(api.invoiceDepositAllocations.allocateMine, {
+        invoiceId: invoice.invoiceId,
+        amount: 250001,
+      }),
+    ).rejects.toThrow("DEPOSIT_ALLOCATION_EXCEEDS_OUTSTANDING");
+
     const allocation = await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
       invoiceId: invoice.invoiceId,
+      amount: 250000,
     });
     expect(allocation).toMatchObject({ amount: 250000 });
     expect(allocation.account).toMatchObject({ availableAmount: 50000, reservedAmount: 250000 });
@@ -284,7 +293,10 @@ describe("BFG append-only deposit ledger", () => {
     const t = testConvex();
     const { admin, customer, invoice } = await createIssuedInvoice(t);
     await admin.mutation(api.depositTransactions.recordCredit, { invoiceId: invoice.invoiceId, amount: 100000 });
-    await customer.mutation(api.invoiceDepositAllocations.allocateMine, { invoiceId: invoice.invoiceId });
+    await customer.mutation(api.invoiceDepositAllocations.allocateMine, {
+      invoiceId: invoice.invoiceId,
+      amount: 100000,
+    });
 
     const confirmation = await customer.action(api.paymentConfirmations.submit, {
       invoiceId: invoice.invoiceId,

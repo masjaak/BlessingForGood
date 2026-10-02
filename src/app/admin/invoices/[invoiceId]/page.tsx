@@ -365,6 +365,10 @@ function AdminInvoiceDetail() {
                 <h2>Reservasi invoice</h2>
               </div>
             </div>
+            <p className="subtle">
+              Koreksi nominal dengan melepas alokasi aktif lalu alokasikan ulang nominal yang benar. Riwayat ledger
+              tetap tersimpan.
+            </p>
             {adminAllocations === undefined ? (
               <LoadingRegion label="Memuat alokasi">
                 <SkeletonText width="48%" />

@@ -51,6 +51,7 @@ function CustomerInvoiceDetail() {
   const [depositPending, setDepositPending] = useState(false);
   const [depositMessage, setDepositMessage] = useState("");
   const [depositError, setDepositError] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
   if (dataSource !== "convex") return <div className="state-panel">Invoice belum tersedia saat ini.</div>;
   if (currentCustomerInvoice === undefined) {
     return (
@@ -74,13 +75,24 @@ function CustomerInvoiceDetail() {
   const invoiceId = currentCustomerInvoice.invoiceId;
   const invoiceContext = customerInvoiceContext(currentCustomerInvoice);
   const maxDepositAllocation = Math.min(account?.availableAmount || 0, currentCustomerInvoice.outstandingAmount);
+  const depositAmountValue = Number(depositAmount);
+  const depositAmountValid =
+    depositAmount.trim() !== "" &&
+    Number.isSafeInteger(depositAmountValue) &&
+    depositAmountValue > 0 &&
+    depositAmountValue <= maxDepositAllocation;
 
   async function confirmDepositAllocation() {
+    if (!depositAmountValid) {
+      setDepositError("Masukkan nominal deposit yang valid.");
+      return;
+    }
     setDepositPending(true);
     setDepositError("");
     try {
-      await allocateDeposit({ invoiceId });
+      await allocateDeposit({ invoiceId, amount: depositAmountValue });
       setDepositDialogOpen(false);
+      setDepositAmount("");
       setDepositMessage("Deposit berhasil digunakan untuk invoice ini.");
     } catch (reason) {
       setDepositError(productErrorMessage(reason, "Deposit belum dapat digunakan."));
@@ -147,9 +159,9 @@ function CustomerInvoiceDetail() {
         <ConfirmationDialog
           open={depositDialogOpen}
           title="Gunakan saldo deposit?"
-          description="Saldo deposit tidak digunakan otomatis saat invoice diterbitkan. Periksa jumlah yang akan digunakan sebelum melanjutkan."
-          confirmLabel={`Gunakan ${formatIdr(maxDepositAllocation)}`}
-          disabled={depositPending || maxDepositAllocation <= 0}
+          description="Saldo deposit tidak digunakan otomatis saat invoice diterbitkan. Masukkan nominal yang memang ingin digunakan."
+          confirmLabel={depositAmountValid ? `Gunakan ${formatIdr(depositAmountValue)}` : "Gunakan deposit"}
+          disabled={depositPending || !depositAmountValid}
           onCancel={() => setDepositDialogOpen(false)}
           onConfirm={() => void confirmDepositAllocation()}
         >
@@ -158,13 +170,31 @@ function CustomerInvoiceDetail() {
               <span>Saldo tersedia</span>
               <strong>{formatIdr(account?.availableAmount || 0)}</strong>
             </div>
-            <div className="summary-line">
-              <span>Akan digunakan</span>
-              <strong>− {formatIdr(maxDepositAllocation)}</strong>
-            </div>
+            <Field label={`Jumlah deposit (maks. ${formatIdr(maxDepositAllocation)})`}>
+              <input
+                className="input"
+                type="number"
+                min="1"
+                max={maxDepositAllocation}
+                step="1"
+                value={depositAmount}
+                onChange={(event) => setDepositAmount(event.target.value)}
+                required
+              />
+              <span className="subtle">
+                {currentCustomerInvoice.minimumPaymentAmount > 1
+                  ? `Sisa minimum DP saat ini ${formatIdr(currentCustomerInvoice.minimumPaymentAmount)}. `
+                  : ""}
+                Saldo tidak ditarik seluruhnya otomatis.
+              </span>
+            </Field>
             <div className="summary-line">
               <span>Sisa tagihan setelah deposit</span>
-              <strong>{formatIdr(Math.max(0, currentCustomerInvoice.outstandingAmount - maxDepositAllocation))}</strong>
+              <strong>
+                {formatIdr(
+                  Math.max(0, currentCustomerInvoice.outstandingAmount - (depositAmountValid ? depositAmountValue : 0)),
+                )}
+              </strong>
             </div>
             {depositError ? <p className="error-text">{depositError}</p> : null}
           </div>
@@ -253,11 +283,12 @@ function CustomerInvoiceDetail() {
                     <span>Tagihan tersisa</span>
                     <strong>{formatIdr(currentCustomerInvoice.outstandingAmount)}</strong>
                   </div>
-                  <p className="subtle">Saldo yang digunakan akan otomatis menyesuaikan dengan sisa tagihan.</p>
+                  <p className="subtle">Pilih sendiri nominal deposit yang ingin digunakan untuk tagihan ini.</p>
                   <Button
                     type="button"
                     variant="secondary"
                     onClick={() => {
+                      setDepositAmount("");
                       setDepositError("");
                       setDepositDialogOpen(true);
                     }}
