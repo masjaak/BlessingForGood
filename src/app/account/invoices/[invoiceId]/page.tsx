@@ -358,13 +358,18 @@ function PaymentConfirmationForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const paymentSettings = useQuery(api.settings.getForCustomer, {});
   const { getToken, sessionClaims } = useAuth();
+  const numericAmount = Number(amount);
+  const amountIsValid =
+    amount.trim() !== "" &&
+    Number.isSafeInteger(numericAmount) &&
+    numericAmount >= minAmount &&
+    numericAmount <= maxAmount;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setMessage("");
     const paidAtTimestamp = new Date(`${paidAt}T00:00:00`).getTime();
-    const numericAmount = Number(amount);
     if (!Number.isSafeInteger(numericAmount) || numericAmount < minAmount || numericAmount > maxAmount) {
       setError(
         numericAmount < minAmount
@@ -448,6 +453,18 @@ function PaymentConfirmationForm({
           {minAmount > 1 ? (
             <span className="subtle">Minimal pembayaran saat ini mengikuti sisa DP: {formatIdr(minAmount)}.</span>
           ) : null}
+          {amount.trim() !== "" && !amountIsValid ? (
+            <span className="error-text" role="alert">
+              {numericAmount < minAmount
+                ? `Nominal belum memenuhi minimal pembayaran ${formatIdr(minAmount)}.`
+                : `Nominal tidak boleh melebihi sisa tagihan ${formatIdr(maxAmount)}.`}
+            </span>
+          ) : null}
+          {amountIsValid ? (
+            <span className="subtle">
+              Setelah diverifikasi Admin, {formatIdr(numericAmount)} otomatis mengurangi sisa tagihan.
+            </span>
+          ) : null}
         </Field>
         <Field label="Metode pembayaran">
           <input
@@ -489,7 +506,12 @@ function PaymentConfirmationForm({
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>
       <div className="form-actions">
-        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…">
+        <Button
+          type="submit"
+          loading={isSubmitting}
+          loadingLabel="Mengirim…"
+          disabled={!amountIsValid || isSubmitting}
+        >
           Kirim konfirmasi
         </Button>
         {message ? (

@@ -140,6 +140,36 @@ describe("BFG payment confirmation workflow", () => {
     });
   });
 
+  it("allows payment above the DP minimum and subtracts the exact approved amount from the remaining invoice", async () => {
+    const t = testConvex();
+    const { customer, admin, invoice } = await createIssuedInvoiceWithFixedDp(t, 75000);
+
+    const confirmation = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      ...paymentInput(100000),
+    });
+    await admin.mutation(api.paymentConfirmations.approve, { confirmationId: confirmation.confirmationId });
+
+    expect(await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).toMatchObject({
+      depositRequiredAmount: 75000,
+      verifiedPaymentAmount: 100000,
+      outstandingAmount: 150000,
+      paymentStatus: "partially_paid",
+    });
+
+    const final = await customer.action(api.paymentConfirmations.submit, {
+      invoiceId: invoice.invoiceId,
+      ...paymentInput(150000),
+    });
+    await admin.mutation(api.paymentConfirmations.approve, { confirmationId: final.confirmationId });
+
+    expect(await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId })).toMatchObject({
+      verifiedPaymentAmount: 250000,
+      outstandingAmount: 0,
+      paymentStatus: "paid",
+    });
+  });
+
   it("reviews and approves atomically, updates invoice payment state, and records audit history", async () => {
     const t = testConvex();
     const { customer, admin, invoice } = await createIssuedInvoice(t);
