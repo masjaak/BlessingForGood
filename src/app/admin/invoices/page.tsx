@@ -259,7 +259,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   const pageRows = rows?.page || [];
   const hasFilters = Boolean(customerId || batchId || statusFilter);
 
-  function updateFilter(setter: (value: string) => void, value: string) {
+  function updateFilter<T extends string>(setter: (value: T) => void, value: T) {
     setter(value);
     pagination.reset();
     setSelected([]);
