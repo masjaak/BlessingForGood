@@ -266,6 +266,17 @@ export const approve = mutation({
     const invoice = await ctx.db.get(confirmation.invoiceId);
     if (!invoice) fail("INVOICE_NOT_FOUND");
     eligibleInvoice(invoice);
+    const minimumPaymentAmount = minimumPaymentConfirmationAmount(
+      invoice.depositRequiredAmount,
+      invoice.allocatedDepositAmount,
+      invoice.verifiedPaymentAmount,
+      invoice.outstandingAmount,
+    );
+    if (confirmation.amount < minimumPaymentAmount) {
+      fail("PAYMENT_CONFIRMATION_BELOW_MINIMUM", "payment amount is below the current DP requirement", {
+        minimumPaymentAmount,
+      });
+    }
     if (confirmation.amount > invoice.outstandingAmount) {
       fail("PAYMENT_CONFIRMATION_EXCEEDS_OUTSTANDING");
     }
