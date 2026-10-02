@@ -119,6 +119,7 @@ describe("BFG append-only deposit ledger", () => {
     expect(history.page).toHaveLength(4);
     expect(history.page.map((row) => row.direction)).toEqual(["out", "in", "out", "in"]);
     expect(history.page.map((row) => row.amount)).toEqual([10000, 25000, 50000, 100000]);
+    expect(history.page.map((row) => row.availableBalanceAfter)).toEqual([65000, 75000, 50000, 100000]);
     expect(history.page.map((row) => row.description)).toEqual([
       "Manual debit correction",
       "Manual credit correction",

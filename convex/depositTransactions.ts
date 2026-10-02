@@ -146,6 +146,40 @@ function encodeHistoryCursor(cursor: string | null, skip = 0, availableBalance?:
   return JSON.stringify({ cursor, skip, availableBalance });
 }
 
+async function availableBalancesAfter(
+  ctx: DataCtx,
+  transactions: Doc<"depositTransactions">[],
+): Promise<Map<Id<"depositTransactions">, number>> {
+  const accountIds = [...new Set(transactions.map((transaction) => transaction.accountId))];
+  const accountBalances = await Promise.all(
+    accountIds.map(async (accountId) => {
+      const account = await ctx.db.get(accountId);
+      const balances = new Map<Id<"depositTransactions">, number>();
+      if (!account) return [accountId, balances] as const;
+
+      let runningAvailableBalance = account.availableAmount;
+      const accountHistory = await ctx.db
+        .query("depositTransactions")
+        .withIndex("by_account_and_created_at", (index) => index.eq("accountId", accountId))
+        .order("desc")
+        .take(MAX_HISTORY_SCAN);
+      for (const transaction of accountHistory) {
+        balances.set(transaction._id, runningAvailableBalance);
+        runningAvailableBalance -= transaction.availableDelta;
+      }
+      return [accountId, balances] as const;
+    }),
+  );
+
+  const byAccount = new Map(accountBalances);
+  const result = new Map<Id<"depositTransactions">, number>();
+  for (const transaction of transactions) {
+    const balance = byAccount.get(transaction.accountId)?.get(transaction._id);
+    if (balance !== undefined) result.set(transaction._id, balance);
+  }
+  return result;
+}
+
 export const recordCredit = mutation({
   args: {
     invoiceId: v.id("invoices"),
@@ -357,10 +391,16 @@ export const listForAdmin = query({
     const visibleTransactions = matchingTransactions.slice(decoded.skip, decoded.skip + requested);
     const nextSkip = decoded.skip + visibleTransactions.length;
     const hasMoreMatchesInPage = matchingTransactions.length > nextSkip;
+    const fallbackBalances = account
+      ? null
+      : await availableBalancesAfter(
+          ctx,
+          visibleTransactions.map(({ transaction }) => transaction),
+        );
     const rows = await Promise.all(
       visibleTransactions.map(async ({ transaction, availableBalanceAfter }) => ({
         ...(await historyView(ctx, transaction)),
-        availableBalanceAfter,
+        availableBalanceAfter: availableBalanceAfter ?? fallbackBalances?.get(transaction._id) ?? null,
       })),
     );
     const isDone = !hasMoreMatchesInPage && sourcePage.isDone;
