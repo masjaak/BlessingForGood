@@ -126,6 +126,8 @@ test.describe("@admin Admin Analytics responsive composition", () => {
             const wrapBox = wrap.getBoundingClientRect();
             const statusBox = status.getBoundingClientRect();
             const styles = getComputedStyle(status);
+            const secondary = wrap.querySelector<HTMLElement>(".table-secondary");
+            const secondaryStyles = secondary ? getComputedStyle(secondary) : null;
             return {
               wrapLeft: wrapBox.left,
               wrapRight: wrapBox.right,
@@ -136,6 +138,9 @@ test.describe("@admin Admin Analytics responsive composition", () => {
               statusWidth: statusBox.width,
               statusPosition: styles.position,
               statusWhiteSpace: styles.whiteSpace,
+              secondaryOverflow: secondaryStyles?.overflow ?? "",
+              secondaryTextOverflow: secondaryStyles?.textOverflow ?? "",
+              secondaryWhiteSpace: secondaryStyles?.whiteSpace ?? "",
             };
           })(),
         };
@@ -161,20 +166,26 @@ test.describe("@admin Admin Analytics responsive composition", () => {
         );
       }
 
-      expect(geometry.customerTable.statusWidth, `${viewport.width}px readable status width`).toBeGreaterThanOrEqual(200);
+      expect(geometry.customerTable.statusWidth, `${viewport.width}px readable status width`).toBeGreaterThanOrEqual(260);
       expect(geometry.customerTable.statusWhiteSpace, `${viewport.width}px status wraps instead of clipping`).toBe("normal");
+      expect(geometry.customerTable.secondaryOverflow, `${viewport.width}px secondary text overflow`).toBe("visible");
+      expect(geometry.customerTable.secondaryTextOverflow, `${viewport.width}px no ellipsis`).toBe("clip");
+      expect(geometry.customerTable.secondaryWhiteSpace, `${viewport.width}px secondary text wraps`).toBe("normal");
+      expect(geometry.customerTable.statusPosition, `${viewport.width}px sticky status`).toBe("sticky");
+      expect(geometry.customerTable.statusRight, `${viewport.width}px status stays visible`).toBeLessThanOrEqual(
+        geometry.customerTable.wrapRight + 1,
+      );
+      expect(geometry.customerTable.statusLeft, `${viewport.width}px status stays inside frame`).toBeGreaterThanOrEqual(
+        geometry.customerTable.wrapLeft - 1,
+      );
 
-      if (viewport.width <= 900) {
+      if (geometry.customerTable.scrollWidth > geometry.customerTable.wrapWidth + 1) {
         expect(geometry.customerTable.scrollWidth, `${viewport.width}px customer table scrolls internally`).toBeGreaterThan(
           geometry.customerTable.wrapWidth,
         );
-        expect(geometry.customerTable.statusPosition, `${viewport.width}px sticky status`).toBe("sticky");
-        expect(geometry.customerTable.statusRight, `${viewport.width}px status stays visible`).toBeLessThanOrEqual(
-          geometry.customerTable.wrapRight + 1,
-        );
-        expect(geometry.customerTable.statusLeft, `${viewport.width}px status stays inside frame`).toBeGreaterThanOrEqual(
-          geometry.customerTable.wrapLeft - 1,
-        );
+      }
+
+      if (viewport.width <= 900) {
         expect(geometry.nav.display, `${viewport.width}px compact nav`).toBe("flex");
         expect(geometry.nav.height, `${viewport.width}px nav height`).toBeLessThanOrEqual(72);
         expect(geometry.nav.overflowY, `${viewport.width}px nav vertical overflow`).toBe("hidden");
