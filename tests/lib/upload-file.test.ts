@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BfgUploadError, uploadBfgFile, type BfgUploadPurpose } from "@/lib/upload-file";
+import {
+  BfgUploadError,
+  optimizeBfgFileForUpload,
+  uploadBfgFile,
+  type BfgUploadPurpose,
+} from "@/lib/upload-file";
 
 describe("BFG upload client", () => {
   afterEach(() => {
@@ -34,6 +39,14 @@ describe("BFG upload client", () => {
       expect(request).toMatchObject({ method: "POST", body: file });
     },
   );
+
+  it("keeps small public media unchanged and never rewrites private proofs", async () => {
+    const smallCover = new File(["small-cover"], "cover.jpg", { type: "image/jpeg" });
+    const largeProof = new File([new Uint8Array(900_000)], "proof.jpg", { type: "image/jpeg" });
+
+    await expect(optimizeBfgFileForUpload(smallCover, "book-cover")).resolves.toBe(smallCover);
+    await expect(optimizeBfgFileForUpload(largeProof, "payment-proof")).resolves.toBe(largeProof);
+  });
 
   it("derives the Convex site endpoint when Production only injects the cloud URL", async () => {
     vi.stubEnv("NEXT_PUBLIC_CONVEX_SITE_URL", "");
