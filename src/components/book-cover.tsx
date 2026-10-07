@@ -18,8 +18,11 @@ export function BookCover({
   const [imageFailed, setImageFailed] = useState(false);
   const localSource = src?.startsWith("/") ? src : undefined;
   const storageSource = /^https:\/\/[^/]+\.convex\.cloud\/api\/storage\//.test(src || "") ? src : undefined;
+  const publicR2Source = /^https:\/\/pub-726660f62a4443c99263aff51b169a30\.r2\.dev(?:\/|$)/.test(src || "")
+    ? src
+    : undefined;
   const previewSource = src?.startsWith("blob:") ? src : undefined;
-  const imageSource = storageSource || previewSource || localSource;
+  const imageSource = storageSource || publicR2Source || previewSource || localSource;
   const showImage = Boolean(imageSource) && !imageFailed;
 
   return (
