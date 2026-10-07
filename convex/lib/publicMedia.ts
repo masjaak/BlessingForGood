@@ -10,9 +10,9 @@ const R2_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 export function publicMediaR2Enabled(): boolean {
   return Boolean(
     process.env.R2_BUCKET &&
-      process.env.R2_ENDPOINT &&
-      process.env.R2_ACCESS_KEY_ID &&
-      process.env.R2_SECRET_ACCESS_KEY,
+    process.env.R2_ENDPOINT &&
+    process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_SECRET_ACCESS_KEY,
   );
 }
 
@@ -30,11 +30,7 @@ function publicObjectUrl(key: string): string | null {
     .join("/")}`;
 }
 
-export async function storePublicMedia(
-  ctx: ActionCtx,
-  blob: Blob,
-  contentType: string,
-): Promise<string | null> {
+export async function storePublicMedia(ctx: ActionCtx, blob: Blob, contentType: string): Promise<string | null> {
   if (!publicMediaR2Enabled()) return null;
   return r2.store(ctx, blob, {
     type: contentType,

@@ -67,8 +67,7 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">, includeMedia = 
     author: book.author,
     description: book.description,
     categories: book.categories,
-    coverImageUrl:
-      (await publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key)) ?? book.coverImageUrl ?? null,
+    coverImageUrl: (await publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key)) ?? book.coverImageUrl ?? null,
     coverPresentation: book.coverPresentation ?? null,
     gallery: await Promise.all(
       gallery.map(async (media) => ({

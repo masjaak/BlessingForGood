@@ -214,8 +214,7 @@ export const update = mutation({
     const listing = await ctx.db.get(args.listingId);
     if (!listing) fail("VALIDATION_FAILED", "Ready Stock item tidak ditemukan");
     const title = args.title === undefined ? listing.title : requiredText(args.title, "title");
-    const description =
-      args.description === undefined ? listing.description : optionalDescription(args.description);
+    const description = args.description === undefined ? listing.description : optionalDescription(args.description);
     const priceAmount = args.priceAmount === undefined ? listing.priceAmount : positiveMoney(args.priceAmount);
     const quantity = args.quantity === undefined ? listing.quantity : nonNegativeQuantity(args.quantity);
     if (quantity < listing.reservedQuantity) fail("READY_STOCK_ON_HAND_BELOW_RESERVED");

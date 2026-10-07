@@ -148,8 +148,7 @@ export const getForAdmin = query({
     ]);
     return {
       ...book,
-      coverUrl:
-        (await publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key)) ?? book.coverImageUrl ?? null,
+      coverUrl: (await publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key)) ?? book.coverImageUrl ?? null,
       gallery: await Promise.all(
         gallery.map(async (media) => ({
           mediaId: media._id,

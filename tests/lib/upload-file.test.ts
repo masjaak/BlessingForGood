@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  BfgUploadError,
-  optimizeBfgFileForUpload,
-  uploadBfgFile,
-  type BfgUploadPurpose,
-} from "@/lib/upload-file";
+import { BfgUploadError, optimizeBfgFileForUpload, uploadBfgFile, type BfgUploadPurpose } from "@/lib/upload-file";
 
 describe("BFG upload client", () => {
   afterEach(() => {

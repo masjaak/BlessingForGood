@@ -43,11 +43,7 @@ export async function catalogIsOpen(ctx: QueryCtx, catalogId: Id<"secretCatalogs
   return Boolean(catalog && catalog.status === "open" && (!catalog.closesAt || catalog.closesAt > Date.now()));
 }
 
-export async function getCatalogBookView(
-  ctx: QueryCtx,
-  catalogId: Id<"secretCatalogs">,
-  bookId: Id<"books">,
-) {
+export async function getCatalogBookView(ctx: QueryCtx, catalogId: Id<"secretCatalogs">, bookId: Id<"books">) {
   const [catalog, book] = await Promise.all([ctx.db.get(catalogId), ctx.db.get(bookId)]);
   if (!catalog || !book || !book.isActive) return null;
   if (book.publicationStatus !== "published" && book.publicationStatus !== "special") return null;
