@@ -1,0 +1,24 @@
+name: Temporary public media efficiency validation
+
+on:
+  push:
+    branches:
+      - fix/public-media-upload-efficiency-20261007
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx vitest run tests/lib/upload-file.test.ts convex/product-media.test.ts convex/readyStock-standalone.test.ts
+      - run: npx eslint src/lib/upload-file.ts convex/lib/publicMedia.ts convex/books.ts convex/readyStockListings.ts convex/lib/catalogView.ts
