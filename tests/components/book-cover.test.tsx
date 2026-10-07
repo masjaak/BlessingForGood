@@ -26,6 +26,30 @@ describe("BookCover", () => {
     expect(screen.getByRole("img", { name: "Cover placeholder for A Quiet Book" })).toBeTruthy();
   });
 
+  it("renders public covers from the configured R2 domain", () => {
+    render(
+      <BookCover
+        title="A Quiet Book"
+        publisher="BFG Press"
+        src="https://pub-726660f62a4443c99263aff51b169a30.r2.dev/books/test/cover.png"
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "A Quiet Book cover" }).getAttribute("src")).toContain("r2.dev");
+  });
+
+  it("rejects lookalike R2 domains", () => {
+    render(
+      <BookCover
+        title="A Quiet Book"
+        publisher="BFG Press"
+        src="https://pub-726660f62a4443c99263aff51b169a30.r2.dev.example.com/cover.png"
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "Cover placeholder for A Quiet Book" })).toBeTruthy();
+  });
+
   it("renders a trusted Convex storage cover", () => {
     render(
       <BookCover
