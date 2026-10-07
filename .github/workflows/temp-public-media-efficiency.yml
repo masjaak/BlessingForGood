@@ -1,4 +1,5 @@
 name: Temporary public media efficiency validation
+# Final validation trigger
 
 on:
   push:
