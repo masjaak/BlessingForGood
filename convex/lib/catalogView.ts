@@ -4,6 +4,7 @@ import { matchesCustomerCatalogBook, normalizeDiscoveryQuery } from "../../src/l
 import { catalogSummaryFromCatalog } from "./catalogSummary";
 import { fail } from "./errors";
 import { sortCatalogItems } from "./catalogOrdering";
+import { publicMediaUrl } from "./publicMedia";
 
 type CatalogBrowse = {
   pageNumber: number;
@@ -22,6 +23,7 @@ type CatalogBook = {
   description: string | null;
   categories: string[];
   coverStorageId?: Id<"_storage">;
+  coverR2Key?: string;
   fallbackCoverImageUrl: string | null;
   coverPresentation: { zoom: number; x: number; y: number } | null;
   externalPreview: { label: string; url: string } | null;
@@ -41,11 +43,7 @@ export async function catalogIsOpen(ctx: QueryCtx, catalogId: Id<"secretCatalogs
   return Boolean(catalog && catalog.status === "open" && (!catalog.closesAt || catalog.closesAt > Date.now()));
 }
 
-export async function getCatalogBookView(
-  ctx: QueryCtx,
-  catalogId: Id<"secretCatalogs">,
-  bookId: Id<"books">,
-) {
+export async function getCatalogBookView(ctx: QueryCtx, catalogId: Id<"secretCatalogs">, bookId: Id<"books">) {
   const [catalog, book] = await Promise.all([ctx.db.get(catalogId), ctx.db.get(bookId)]);
   if (!catalog || !book || !book.isActive) return null;
   if (book.publicationStatus !== "published" && book.publicationStatus !== "special") return null;
@@ -90,13 +88,13 @@ export async function getCatalogBookView(
   if (!catalogVariants.length) return null;
 
   const [coverImageUrl, gallery] = await Promise.all([
-    book.coverStorageId ? ctx.storage.getUrl(book.coverStorageId) : Promise.resolve(book.coverImageUrl ?? null),
+    publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key).then((url) => url ?? book.coverImageUrl ?? null),
     Promise.all(
       media.map(async (item) => ({
         mediaId: item._id,
         displayOrder: item.displayOrder,
         altText: item.altText,
-        url: await ctx.storage.getUrl(item.storageId),
+        url: await publicMediaUrl(ctx, item.storageId, item.r2Key),
       })),
     ).then((items) => items.filter((item): item is typeof item & { url: string } => Boolean(item.url))),
   ]);
@@ -152,6 +150,7 @@ export async function getCatalogView(
       description: book.description ?? null,
       categories: book.categories,
       coverStorageId: book.coverStorageId,
+      coverR2Key: book.coverR2Key,
       fallbackCoverImageUrl: book.coverImageUrl ?? null,
       coverPresentation: book.coverPresentation ?? null,
       externalPreview:
@@ -189,7 +188,7 @@ export async function getCatalogView(
   const pageBooks = browse ? filteredBooks.slice((pageNumber - 1) * pageSize, pageNumber * pageSize) : filteredBooks;
   const coverUrls = await Promise.all(
     pageBooks.map((book) =>
-      book.coverStorageId ? ctx.storage.getUrl(book.coverStorageId) : Promise.resolve(book.fallbackCoverImageUrl),
+      publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key).then((url) => url ?? book.fallbackCoverImageUrl),
     ),
   );
   const galleries = browse
@@ -206,7 +205,7 @@ export async function getCatalogView(
               mediaId: item._id,
               displayOrder: item.displayOrder,
               altText: item.altText,
-              url: await ctx.storage.getUrl(item.storageId),
+              url: await publicMediaUrl(ctx, item.storageId, item.r2Key),
             })),
           ).then((items) => items.filter((item): item is typeof item & { url: string } => Boolean(item.url)));
         }),

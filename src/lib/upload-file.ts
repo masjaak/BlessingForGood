@@ -19,6 +19,47 @@ export function normalizeUploadMimeType(value: string): string {
   return normalized === "image/jpg" || normalized === "image/pjpeg" ? "image/jpeg" : normalized;
 }
 
+const PUBLIC_MEDIA_OPTIMIZE_ABOVE_BYTES = 750_000;
+const PUBLIC_MEDIA_MAX_DIMENSION = 1_800;
+const PUBLIC_MEDIA_WEBP_QUALITY = 0.82;
+
+export async function optimizeBfgFileForUpload(file: File, purpose: BfgUploadPurpose): Promise<File> {
+  if (
+    (purpose !== "book-cover" && purpose !== "book-gallery") ||
+    file.size <= PUBLIC_MEDIA_OPTIMIZE_ABOVE_BYTES ||
+    !["image/jpeg", "image/png", "image/webp"].includes(normalizeUploadMimeType(file.type)) ||
+    typeof createImageBitmap !== "function" ||
+    typeof document === "undefined"
+  ) {
+    return file;
+  }
+
+  let bitmap: ImageBitmap | null = null;
+  try {
+    bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, PUBLIC_MEDIA_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", PUBLIC_MEDIA_WEBP_QUALITY),
+    );
+    if (!blob || blob.size >= file.size) return file;
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "upload";
+    return new File([blob], `${baseName}.webp`, {
+      type: "image/webp",
+      lastModified: file.lastModified,
+    });
+  } catch {
+    return file;
+  } finally {
+    bitmap?.close();
+  }
+}
+
 function convexSiteUrl(): string | null {
   const configured = process.env.NEXT_PUBLIC_CONVEX_SITE_URL?.trim();
   if (configured) return configured;
@@ -43,6 +84,7 @@ export async function uploadBfgFile(
   getToken: ConvexToken,
   sessionClaims?: unknown,
 ): Promise<Id<"_storage">> {
+  const uploadFile = await optimizeBfgFileForUpload(file, purpose);
   const siteUrl = convexSiteUrl();
   if (!siteUrl) throw new BfgUploadError("UPLOAD_REJECTED");
   const nativeConvexSession =
@@ -54,15 +96,15 @@ export async function uploadBfgFile(
   if (!token) throw new BfgUploadError("UPLOAD_REJECTED");
   const url = new URL("/bfg/upload", siteUrl);
   url.searchParams.set("purpose", purpose);
-  url.searchParams.set("fileName", file.name);
+  url.searchParams.set("fileName", uploadFile.name);
   const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": normalizeUploadMimeType(file.type),
-      "X-BFG-File-Size": String(file.size),
+      "Content-Type": normalizeUploadMimeType(uploadFile.type),
+      "X-BFG-File-Size": String(uploadFile.size),
     },
-    body: file,
+    body: uploadFile,
   });
   let result: { code?: string; retryAfterSeconds?: number; storageId?: string } = {};
   try {

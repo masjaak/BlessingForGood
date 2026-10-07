@@ -8,6 +8,7 @@ import { recordAudit } from "./lib/audit";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { IMAGE_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
+import { deletePublicMedia, publicMediaUrl, storePublicMedia } from "./lib/publicMedia";
 import { consumeClaim } from "./uploads";
 import { nonNegativeQuantity, positiveMoney, requiredText, slugify } from "./lib/validation";
 import { bookFormatValidator } from "./validators";
@@ -35,13 +36,13 @@ async function listingView(ctx: QueryCtx, listing: Doc<"readyStockListings">, in
         .order("asc")
         .take(READY_STOCK_GALLERY_LIMIT)
     : [];
-  const coverUrl = listing.coverStorageId ? await ctx.storage.getUrl(listing.coverStorageId) : null;
+  const coverUrl = await publicMediaUrl(ctx, listing.coverStorageId, listing.coverR2Key);
   const galleryView = await Promise.all(
     gallery.map(async (media) => ({
       mediaId: media._id,
       displayOrder: media.displayOrder,
       altText: media.altText,
-      url: await ctx.storage.getUrl(media.storageId),
+      url: await publicMediaUrl(ctx, media.storageId, media.r2Key),
     })),
   );
   return {
@@ -213,14 +214,14 @@ export const update = mutation({
     const listing = await ctx.db.get(args.listingId);
     if (!listing) fail("VALIDATION_FAILED", "Ready Stock item tidak ditemukan");
     const title = args.title === undefined ? listing.title : requiredText(args.title, "title");
-    const description =
-      args.description === undefined ? listing.description : optionalDescription(args.description);
+    const description = args.description === undefined ? listing.description : optionalDescription(args.description);
     const priceAmount = args.priceAmount === undefined ? listing.priceAmount : positiveMoney(args.priceAmount);
     const quantity = args.quantity === undefined ? listing.quantity : nonNegativeQuantity(args.quantity);
     if (quantity < listing.reservedQuantity) fail("READY_STOCK_ON_HAND_BELOW_RESERVED");
     const status = args.status ?? listing.status;
     if (status === "published") {
-      if (!listing.coverStorageId) fail("VALIDATION_FAILED", "Cover wajib diunggah sebelum Ready Stock diterbitkan");
+      if (!listing.coverStorageId && !listing.coverR2Key)
+        fail("VALIDATION_FAILED", "Cover wajib diunggah sebelum Ready Stock diterbitkan");
       if (quantity < 1) fail("VALIDATION_FAILED", "Qty Ready Stock harus lebih dari 0 sebelum diterbitkan");
     }
     if (status === "archived" && listing.reservedQuantity > 0) {
@@ -275,10 +276,18 @@ export const attachCover = action({
         IMAGE_CONTENT_TYPES,
         "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
       );
-      return await ctx.runMutation(internal.readyStockListings.attachCoverValidated, {
-        listingId: args.listingId,
-        storageId: args.storageId,
-      });
+      const blob = await ctx.storage.get(args.storageId);
+      const r2Key = blob ? await storePublicMedia(ctx, blob, args.mimeType) : null;
+      try {
+        return await ctx.runMutation(internal.readyStockListings.attachCoverValidated, {
+          listingId: args.listingId,
+          storageId: args.storageId,
+          r2Key: r2Key ?? undefined,
+        });
+      } catch (error) {
+        if (r2Key) await deletePublicMedia(ctx, undefined, r2Key);
+        throw error;
+      }
     } catch (error) {
       await ctx
         .runMutation(internal.uploads.disposeClaimedUpload, {
@@ -292,7 +301,11 @@ export const attachCover = action({
 });
 
 export const attachCoverValidated = internalMutation({
-  args: { listingId: v.id("readyStockListings"), storageId: v.id("_storage") },
+  args: {
+    listingId: v.id("readyStockListings"),
+    storageId: v.id("_storage"),
+    r2Key: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const listing = await ctx.db.get(args.listingId);
@@ -304,13 +317,18 @@ export const attachCoverValidated = internalMutation({
       IMAGE_CONTENT_TYPES,
       "cover must be a JPG, PNG, or WebP image up to 5 MB",
     );
-    const previous = listing.coverStorageId;
+    const previousStorageId = listing.coverStorageId;
+    const previousR2Key = listing.coverR2Key;
     await ctx.db.patch(listing._id, {
-      coverStorageId: args.storageId,
+      coverStorageId: args.r2Key ? undefined : args.storageId,
+      coverR2Key: args.r2Key,
       updatedAt: Date.now(),
       updatedByUserId: user._id,
     });
-    if (previous && previous !== args.storageId) await ctx.storage.delete(previous);
+    if (args.r2Key) await ctx.storage.delete(args.storageId);
+    if (previousStorageId !== args.storageId || previousR2Key !== args.r2Key) {
+      await deletePublicMedia(ctx, previousStorageId, previousR2Key);
+    }
     await recordAudit(ctx, user._id, "ready_stock_listing.cover_attached", "readyStockListing", listing._id);
     return { storageId: args.storageId };
   },
@@ -336,11 +354,19 @@ export const attachGalleryImage = action({
         IMAGE_CONTENT_TYPES,
         "gallery image must be a valid JPG, PNG, or WebP image up to 5 MB",
       );
-      return await ctx.runMutation(internal.readyStockListings.attachGalleryImageValidated, {
-        listingId: args.listingId,
-        storageId: args.storageId,
-        altText: args.altText,
-      });
+      const blob = await ctx.storage.get(args.storageId);
+      const r2Key = blob ? await storePublicMedia(ctx, blob, args.mimeType) : null;
+      try {
+        return await ctx.runMutation(internal.readyStockListings.attachGalleryImageValidated, {
+          listingId: args.listingId,
+          storageId: args.storageId,
+          r2Key: r2Key ?? undefined,
+          altText: args.altText,
+        });
+      } catch (error) {
+        if (r2Key) await deletePublicMedia(ctx, undefined, r2Key);
+        throw error;
+      }
     } catch (error) {
       await ctx
         .runMutation(internal.uploads.disposeClaimedUpload, {
@@ -357,6 +383,7 @@ export const attachGalleryImageValidated = internalMutation({
   args: {
     listingId: v.id("readyStockListings"),
     storageId: v.id("_storage"),
+    r2Key: v.optional(v.string()),
     altText: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -387,13 +414,15 @@ export const attachGalleryImageValidated = internalMutation({
     const now = Date.now();
     const mediaId = await ctx.db.insert("readyStockListingMedia", {
       listingId: listing._id,
-      storageId: args.storageId,
+      storageId: args.r2Key ? undefined : args.storageId,
+      r2Key: args.r2Key,
       displayOrder: (gallery.at(-1)?.displayOrder ?? -1) + 1,
       altText: (args.altText?.trim() || listing.title).slice(0, 160),
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,
     });
+    if (args.r2Key) await ctx.storage.delete(args.storageId);
     await ctx.db.patch(listing._id, { updatedAt: now, updatedByUserId: user._id });
     await recordAudit(ctx, user._id, "ready_stock_listing.gallery_added", "readyStockListingMedia", mediaId);
     return mediaId;
@@ -407,11 +436,14 @@ export const removeGalleryImage = mutation({
     const media = await ctx.db.get(args.mediaId);
     if (!media) fail("VALIDATION_FAILED", "Gambar Ready Stock tidak ditemukan");
     await ctx.db.delete(media._id);
-    const stillUsed = await ctx.db
-      .query("readyStockListingMedia")
-      .withIndex("by_storage_id", (q) => q.eq("storageId", media.storageId))
-      .first();
-    if (!stillUsed) await ctx.storage.delete(media.storageId);
+    if (media.storageId) {
+      const stillUsed = await ctx.db
+        .query("readyStockListingMedia")
+        .withIndex("by_storage_id", (q) => q.eq("storageId", media.storageId))
+        .first();
+      if (!stillUsed) await ctx.storage.delete(media.storageId);
+    }
+    if (media.r2Key) await deletePublicMedia(ctx, undefined, media.r2Key);
     await recordAudit(ctx, user._id, "ready_stock_listing.gallery_removed", "readyStockListing", media.listingId);
     return { removed: true };
   },

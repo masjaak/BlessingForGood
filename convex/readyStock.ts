@@ -8,6 +8,7 @@ import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { nonNegativeQuantity, positiveMoney } from "./lib/validation";
 import { effectiveReadyStockPrice } from "./lib/readyStockPricing";
+import { publicMediaUrl } from "./lib/publicMedia";
 import { bookFormatValidator, bookSortValidator } from "./validators";
 
 async function availableStockQuantity(ctx: QueryCtx, variant: Doc<"bookVariants">) {
@@ -66,14 +67,14 @@ async function publicBookView(ctx: QueryCtx, book: Doc<"books">, includeMedia = 
     author: book.author,
     description: book.description,
     categories: book.categories,
-    coverImageUrl: book.coverStorageId ? await ctx.storage.getUrl(book.coverStorageId) : book.coverImageUrl,
+    coverImageUrl: (await publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key)) ?? book.coverImageUrl ?? null,
     coverPresentation: book.coverPresentation ?? null,
     gallery: await Promise.all(
       gallery.map(async (media) => ({
         mediaId: media._id,
         displayOrder: media.displayOrder,
         altText: media.altText,
-        url: await ctx.storage.getUrl(media.storageId),
+        url: await publicMediaUrl(ctx, media.storageId, media.r2Key),
       })),
     ).then((items) => items.filter((item): item is typeof item & { url: string } => Boolean(item.url))),
     externalPreview:

@@ -256,6 +256,7 @@ export default defineSchema({
     categories: v.array(v.string()),
     coverImageUrl: v.optional(v.string()),
     coverStorageId: v.optional(v.id("_storage")),
+    coverR2Key: v.optional(v.string()),
     coverPresentation: v.optional(
       v.object({
         zoom: v.number(),
@@ -283,7 +284,8 @@ export default defineSchema({
 
   bookMedia: defineTable({
     bookId: v.id("books"),
-    storageId: v.id("_storage"),
+    storageId: v.optional(v.id("_storage")),
+    r2Key: v.optional(v.string()),
     displayOrder: v.number(),
     altText: v.string(),
     createdAt: v.number(),
@@ -344,6 +346,7 @@ export default defineSchema({
     quantity: v.number(),
     reservedQuantity: v.number(),
     coverStorageId: v.optional(v.id("_storage")),
+    coverR2Key: v.optional(v.string()),
     status: readyStockListingStatus,
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -357,7 +360,8 @@ export default defineSchema({
 
   readyStockListingMedia: defineTable({
     listingId: v.id("readyStockListings"),
-    storageId: v.id("_storage"),
+    storageId: v.optional(v.id("_storage")),
+    r2Key: v.optional(v.string()),
     displayOrder: v.number(),
     altText: v.string(),
     createdAt: v.number(),

@@ -6,6 +6,7 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 import type { QueryCtx } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
 import { IMAGE_CONTENT_TYPES, validateStoredFile, validateUploadedFile } from "./lib/storage";
+import { deletePublicMedia, publicMediaUrl, storePublicMedia } from "./lib/publicMedia";
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { normalizedCategories, requiredText, slugify } from "./lib/validation";
@@ -147,14 +148,14 @@ export const getForAdmin = query({
     ]);
     return {
       ...book,
-      coverUrl: book.coverStorageId ? await ctx.storage.getUrl(book.coverStorageId) : (book.coverImageUrl ?? null),
+      coverUrl: (await publicMediaUrl(ctx, book.coverStorageId, book.coverR2Key)) ?? book.coverImageUrl ?? null,
       gallery: await Promise.all(
         gallery.map(async (media) => ({
           mediaId: media._id,
           storageId: media.storageId,
           displayOrder: media.displayOrder,
           altText: media.altText,
-          url: await ctx.storage.getUrl(media.storageId),
+          url: await publicMediaUrl(ctx, media.storageId, media.r2Key),
         })),
       ),
       publisher,
@@ -221,16 +222,29 @@ export const attachCover = action({
       IMAGE_CONTENT_TYPES,
       "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
     );
-    return ctx.runMutation(internal.books.attachCoverValidated, {
-      bookId: args.bookId,
-      storageId: args.storageId,
-      presentation: args.presentation,
-    });
+    const blob = await ctx.storage.get(args.storageId);
+    const r2Key = blob ? await storePublicMedia(ctx, blob, args.mimeType) : null;
+    try {
+      return await ctx.runMutation(internal.books.attachCoverValidated, {
+        bookId: args.bookId,
+        storageId: args.storageId,
+        r2Key: r2Key ?? undefined,
+        presentation: args.presentation,
+      });
+    } catch (error) {
+      if (r2Key) await deletePublicMedia(ctx, undefined, r2Key);
+      throw error;
+    }
   },
 });
 
 export const attachCoverValidated = internalMutation({
-  args: { bookId: v.id("books"), storageId: v.id("_storage"), presentation: v.optional(coverPresentationValidator) },
+  args: {
+    bookId: v.id("books"),
+    storageId: v.id("_storage"),
+    r2Key: v.optional(v.string()),
+    presentation: v.optional(coverPresentationValidator),
+  },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
@@ -244,13 +258,18 @@ export const attachCoverValidated = internalMutation({
     );
     const coverPresentation = normalizeCoverPresentation(args.presentation);
     const previousStorageId = book.coverStorageId;
+    const previousR2Key = book.coverR2Key;
     await ctx.db.patch(book._id, {
-      coverStorageId: args.storageId,
+      coverStorageId: args.r2Key ? undefined : args.storageId,
+      coverR2Key: args.r2Key,
       coverImageUrl: undefined,
       coverPresentation,
       updatedAt: Date.now(),
     });
-    if (previousStorageId && previousStorageId !== args.storageId) await ctx.storage.delete(previousStorageId);
+    if (args.r2Key) await ctx.storage.delete(args.storageId);
+    if (previousStorageId !== args.storageId || previousR2Key !== args.r2Key) {
+      await deletePublicMedia(ctx, previousStorageId, previousR2Key);
+    }
     await recordAudit(ctx, user._id, "book.cover_attached", "book", book._id);
     return { storageId: args.storageId };
   },
@@ -262,7 +281,8 @@ export const updateCoverPresentation = mutation({
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
     if (!book) fail("BOOK_NOT_FOUND");
-    if (!book.coverStorageId && !book.coverImageUrl) fail("VALIDATION_FAILED", "book has no cover to present");
+    if (!book.coverStorageId && !book.coverR2Key && !book.coverImageUrl)
+      fail("VALIDATION_FAILED", "book has no cover to present");
     const coverPresentation = normalizeCoverPresentation(args.presentation);
     await ctx.db.patch(book._id, { coverPresentation, updatedAt: Date.now() });
     await recordAudit(ctx, user._id, "book.cover_presentation_updated", "book", book._id);
@@ -290,11 +310,19 @@ export const attachGalleryImage = action({
         IMAGE_CONTENT_TYPES,
         "gallery image must be a valid JPG, PNG, or WebP image up to 5 MB",
       );
-      return await ctx.runMutation(internal.books.attachGalleryImageValidated, {
-        bookId: args.bookId,
-        storageId: args.storageId,
-        altText: args.altText,
-      });
+      const blob = await ctx.storage.get(args.storageId);
+      const r2Key = blob ? await storePublicMedia(ctx, blob, args.mimeType) : null;
+      try {
+        return await ctx.runMutation(internal.books.attachGalleryImageValidated, {
+          bookId: args.bookId,
+          storageId: args.storageId,
+          r2Key: r2Key ?? undefined,
+          altText: args.altText,
+        });
+      } catch (error) {
+        if (r2Key) await deletePublicMedia(ctx, undefined, r2Key);
+        throw error;
+      }
     } catch (error) {
       if (isTerminalGalleryAttachmentError(error)) {
         await ctx.runMutation(internal.uploads.disposeClaimedUpload, {
@@ -308,7 +336,12 @@ export const attachGalleryImage = action({
 });
 
 export const attachGalleryImageValidated = internalMutation({
-  args: { bookId: v.id("books"), storageId: v.id("_storage"), altText: v.optional(v.string()) },
+  args: {
+    bookId: v.id("books"),
+    storageId: v.id("_storage"),
+    r2Key: v.optional(v.string()),
+    altText: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const book = await ctx.db.get(args.bookId);
@@ -345,13 +378,15 @@ export const attachGalleryImageValidated = internalMutation({
     const now = Date.now();
     const mediaId = await ctx.db.insert("bookMedia", {
       bookId: book._id,
-      storageId: args.storageId,
+      storageId: args.r2Key ? undefined : args.storageId,
+      r2Key: args.r2Key,
       displayOrder: gallery.length,
       altText,
       createdAt: now,
       updatedAt: now,
       createdByUserId: user._id,
     });
+    if (args.r2Key) await ctx.storage.delete(args.storageId);
     await ctx.db.patch(book._id, { updatedAt: now });
     await recordAudit(ctx, user._id, "book.gallery_image_added", "bookMedia", mediaId);
     return mediaId;
@@ -368,17 +403,20 @@ export const removeGalleryImage = mutation({
     if (!book) fail("BOOK_NOT_FOUND");
     if (book.publicationStatus === "archived") fail("VALIDATION_FAILED", "archived books cannot change media");
     await ctx.db.delete(media._id);
-    const [otherMedia, coverStorage] = await Promise.all([
-      ctx.db
-        .query("bookMedia")
-        .withIndex("by_storage_id", (query) => query.eq("storageId", media.storageId))
-        .first(),
-      ctx.db
-        .query("books")
-        .withIndex("by_cover_storage_id", (query) => query.eq("coverStorageId", media.storageId))
-        .first(),
-    ]);
-    if (!otherMedia && !coverStorage) await ctx.storage.delete(media.storageId);
+    if (media.storageId) {
+      const [otherMedia, coverStorage] = await Promise.all([
+        ctx.db
+          .query("bookMedia")
+          .withIndex("by_storage_id", (query) => query.eq("storageId", media.storageId))
+          .first(),
+        ctx.db
+          .query("books")
+          .withIndex("by_cover_storage_id", (query) => query.eq("coverStorageId", media.storageId))
+          .first(),
+      ]);
+      if (!otherMedia && !coverStorage) await ctx.storage.delete(media.storageId);
+    }
+    if (media.r2Key) await deletePublicMedia(ctx, undefined, media.r2Key);
     const now = Date.now();
     await ctx.db.patch(book._id, { updatedAt: now });
     await recordAudit(ctx, user._id, "book.gallery_image_removed", "book", book._id);
@@ -721,19 +759,23 @@ export const remove = mutation({
       await refreshAdminCatalogPreview(ctx, catalogId);
     }
     const coverStorageId = book.coverStorageId;
+    const coverR2Key = book.coverR2Key;
     for (const image of media) {
       await ctx.db.delete(image._id);
-      const [otherMedia, otherCover] = await Promise.all([
-        ctx.db
-          .query("bookMedia")
-          .withIndex("by_storage_id", (query) => query.eq("storageId", image.storageId))
-          .first(),
-        ctx.db
-          .query("books")
-          .withIndex("by_cover_storage_id", (query) => query.eq("coverStorageId", image.storageId))
-          .first(),
-      ]);
-      if (!otherMedia && !otherCover && image.storageId !== coverStorageId) await ctx.storage.delete(image.storageId);
+      if (image.storageId) {
+        const [otherMedia, otherCover] = await Promise.all([
+          ctx.db
+            .query("bookMedia")
+            .withIndex("by_storage_id", (query) => query.eq("storageId", image.storageId))
+            .first(),
+          ctx.db
+            .query("books")
+            .withIndex("by_cover_storage_id", (query) => query.eq("coverStorageId", image.storageId))
+            .first(),
+        ]);
+        if (!otherMedia && !otherCover && image.storageId !== coverStorageId) await ctx.storage.delete(image.storageId);
+      }
+      if (image.r2Key && image.r2Key !== coverR2Key) await deletePublicMedia(ctx, undefined, image.r2Key);
     }
     for (const variant of variants) {
       const inventory = await ctx.db
@@ -757,6 +799,7 @@ export const remove = mutation({
       ]);
       if (!otherCover && !otherMedia) await ctx.storage.delete(coverStorageId);
     }
+    if (coverR2Key) await deletePublicMedia(ctx, undefined, coverR2Key);
     await recordAudit(ctx, user._id, "book.deleted", "book", book._id);
     return { removed: true };
   },
