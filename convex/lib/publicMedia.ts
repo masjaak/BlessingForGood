@@ -1,9 +1,10 @@
 import { R2 } from "@convex-dev/r2";
+import type { ComponentApi } from "@convex-dev/r2/_generated/component.js";
 import { components } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
 
-const r2 = new R2(components.r2);
+const r2 = new R2((components as unknown as { r2: ComponentApi<"r2"> }).r2);
 const R2_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 export function publicMediaR2Enabled(): boolean {
