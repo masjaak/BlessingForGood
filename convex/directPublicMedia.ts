@@ -1,6 +1,6 @@
 import { R2 } from "@convex-dev/r2";
 import type { ComponentApi } from "@convex-dev/r2/_generated/component.js";
-import { ConvexError, v } from "convex/values";
+import { v } from "convex/values";
 import { components, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
@@ -118,6 +118,14 @@ export const attach = action({
       IMAGE_CONTENT_TYPES,
       imageError,
     );
+    // Never replace a visible image until its public CDN address is reachable.
+    if (process.env.R2_BUCKET === "bfg-public-media") {
+      const publicUrl = `https://media.blessingforgood.com/${args.key.split("/").map(encodeURIComponent).join("/")}`;
+      const publicResponse = await fetch(publicUrl, { method: "HEAD" });
+      if (!publicResponse.ok || normalizeContentType(publicResponse.headers.get("content-type")) !== normalizeContentType(args.mimeType)) {
+        fail("VALIDATION_FAILED", "media CDN is not ready; previous image is unchanged");
+      }
+    }
     await ctx.runMutation(internal.directPublicMedia.attachValidated, {
       bookId: args.bookId,
       listingId: args.listingId,
