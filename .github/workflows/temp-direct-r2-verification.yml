@@ -1,0 +1,20 @@
+name: Temporary direct R2 media verification
+on:
+  push:
+    branches:
+      - feat/direct-r2-admin-book-media-20261008
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx vitest run convex/lib/publicMedia.test.ts convex/product-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx tests/lib/upload-file.test.ts tests/components/book-cover-r2.test.tsx
+      - run: npx eslint convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx
+      - run: npx prettier --check convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx
