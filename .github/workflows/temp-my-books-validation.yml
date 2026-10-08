@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - fix/my-books-section-error-isolation-20261008
+permissions:
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -12,6 +14,16 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
+      - name: Format touched files and push cleanup
+        run: |
+          npx prettier --write src/components/my-books-section-boundary.tsx src/app/account/orders/page.tsx tests/components/customer-my-books.test.tsx
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/components/my-books-section-boundary.tsx src/app/account/orders/page.tsx tests/components/customer-my-books.test.tsx
+            git commit -m "Format Buku Saya containment files"
+            git push
+          fi
       - run: npm run typecheck
       - run: npx vitest run tests/components/customer-my-books.test.tsx
       - run: npx eslint src/components/my-books-section-boundary.tsx src/app/account/orders/page.tsx tests/components/customer-my-books.test.tsx
