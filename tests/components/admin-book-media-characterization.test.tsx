@@ -32,10 +32,20 @@ vi.mock("@/components/admin-nav", () => ({
   AdminNav: () => <nav aria-label="Admin navigation" />,
 }));
 
-vi.mock("@/lib/upload-file", async () => ({
-  ...(await vi.importActual<typeof import("@/lib/upload-file")>("@/lib/upload-file")),
-  uploadBfgFile: vi.fn(),
-}));
+vi.mock("@/lib/upload-file", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/upload-file")>("@/lib/upload-file");
+  const uploadBfgFile = vi.fn();
+  return {
+    ...actual,
+    uploadBfgFile,
+    uploadBfgFileWithMetadata: vi.fn(async (file: File, ...args: unknown[]) => ({
+      storageId: await uploadBfgFile(file, ...args),
+      fileName: file.name,
+      mimeType: actual.normalizeUploadMimeType(file.type),
+      size: file.size,
+    })),
+  };
+});
 
 type TestGalleryImage = {
   mediaId: string;
