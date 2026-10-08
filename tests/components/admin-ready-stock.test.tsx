@@ -212,6 +212,7 @@ describe("Admin standalone Ready Stock", () => {
       { listingId: "listing-1", purpose: "cover" },
       expect.any(Function),
       expect.any(Function),
+      undefined,
     );
     expect(attachCover).toHaveBeenCalledWith({
       listingId: "listing-1",
