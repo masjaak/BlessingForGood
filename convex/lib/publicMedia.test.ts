@@ -36,9 +36,16 @@ describe("public product media URL routing", () => {
     expect(storage.getUrl).toHaveBeenCalledWith("legacy-id");
   });
 
-  it("never claims an R2 object URL when the R2 connection is not configured", async () => {
+  it("still serves existing public media during an R2 credential outage", async () => {
     vi.stubEnv("R2_BUCKET", "");
-    const url = await publicMediaUrl({} as QueryCtx, undefined, "orphan-key");
+    const url = await publicMediaUrl({} as QueryCtx, undefined, "existing-r2-object");
+    expect(url).toBe("https://media.blessingforgood.com/existing-r2-object");
+  });
+
+  it("does not fabricate an R2 URL when neither a public domain nor credentials are configured", async () => {
+    vi.stubEnv("R2_BUCKET", "");
+    vi.stubEnv("R2_PUBLIC_BASE_URL", "");
+    const url = await publicMediaUrl({} as QueryCtx, undefined, "unavailable-r2-object");
     expect(url).toBeNull();
   });
 });
