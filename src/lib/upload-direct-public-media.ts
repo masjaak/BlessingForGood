@@ -48,10 +48,10 @@ export async function uploadDirectPublicMedia(
   let upload: Response;
   try {
     upload = await fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": mimeType },
-    body: uploadFile,
-  });
+      method: "PUT",
+      headers: { "Content-Type": mimeType },
+      body: uploadFile,
+    });
   } catch {
     throw new DirectR2TransportError();
   }

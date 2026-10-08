@@ -71,13 +71,18 @@ export function AdminBookMedia({
       );
       if (purpose === "cover") {
         await attachLegacyCover({
-          bookId: book._id, storageId: uploaded.storageId,
-          fileName: uploaded.fileName, mimeType: uploaded.mimeType,
+          bookId: book._id,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
         });
       } else {
         await attachLegacyGallery({
-          bookId: book._id, storageId: uploaded.storageId,
-          fileName: uploaded.fileName, mimeType: uploaded.mimeType, altText,
+          bookId: book._id,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+          altText,
         });
       }
     }

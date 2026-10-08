@@ -111,13 +111,7 @@ export function ReadyStockListingEditor({
 
   async function uploadMediaWithFallback(file: File, purpose: "cover" | "gallery", altText?: string) {
     try {
-      await uploadDirectPublicMedia(
-        file,
-        { listingId, purpose },
-        preparePublicUpload,
-        attachPublicUpload,
-        altText,
-      );
+      await uploadDirectPublicMedia(file, { listingId, purpose }, preparePublicUpload, attachPublicUpload, altText);
     } catch (reason) {
       if (!(reason instanceof DirectR2TransportError)) throw reason;
       const uploaded = await uploadBfgFileWithMetadata(
@@ -128,13 +122,18 @@ export function ReadyStockListingEditor({
       );
       if (purpose === "cover") {
         await attachLegacyCover({
-          listingId, storageId: uploaded.storageId,
-          fileName: uploaded.fileName, mimeType: uploaded.mimeType,
+          listingId,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
         });
       } else {
         await attachLegacyGallery({
-          listingId, storageId: uploaded.storageId,
-          fileName: uploaded.fileName, mimeType: uploaded.mimeType, altText,
+          listingId,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+          altText,
         });
       }
     }
