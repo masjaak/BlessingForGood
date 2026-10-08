@@ -49,9 +49,7 @@ describe("Direct public R2 upload contract", () => {
     const prepare = vi.fn(async () => ({ key: "key-2", url: "https://r2.example/signed" }));
     const attach = vi.fn();
     const file = new File(["fake"], "cover.png", { type: "image/png" });
-    await expect(uploadDirectPublicMedia(file, target, prepare, attach)).rejects.toThrow(
-      "DIRECT_R2_TRANSPORT_FAILED",
-    );
+    await expect(uploadDirectPublicMedia(file, target, prepare, attach)).rejects.toThrow("DIRECT_R2_TRANSPORT_FAILED");
     expect(attach).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
