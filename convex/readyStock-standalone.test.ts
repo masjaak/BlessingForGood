@@ -5,6 +5,14 @@ import { configureTestEnvironment, setupUsers, testConvex } from "../tests/conve
 describe("Standalone Ready Stock", () => {
   beforeEach(configureTestEnvironment);
 
+  it("lets staff read an empty own-order view without granting access to customer orders", async () => {
+    const t = testConvex();
+    const { admin } = await setupUsers(t);
+    const options = { paginationOpts: { numItems: 10, cursor: null } };
+    await expect(admin.query(api.readyStockOrders.listMine, options)).resolves.toMatchObject({ page: [] });
+    await expect(t.query(api.readyStockOrders.listMine, options)).rejects.toThrow("IDENTITY_REQUIRED");
+  });
+
   it("keeps the manual storefront independent and runs checkout through invoice and delivery", async () => {
     const t = testConvex();
     const { admin, customer } = await setupUsers(t);

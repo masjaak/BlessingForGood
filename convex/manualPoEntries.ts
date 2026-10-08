@@ -66,10 +66,7 @@ async function targetEntry(ctx: QueryCtx | MutationCtx, entryId: Id<"manualPoEnt
   return entry;
 }
 
-function operationalStatus(
-  entry: Doc<"manualPoEntries">,
-  invoice: Doc<"invoices"> | null | undefined,
-) {
+function operationalStatus(entry: Doc<"manualPoEntries">, invoice: Doc<"invoices"> | null | undefined) {
   if (entry.status === "arrived") return "received" as const;
   if (!invoice || invoice.status === "void") return "unbilled" as const;
   if (invoice.paymentStatus === "paid") return "paid_waiting_arrival" as const;
@@ -80,7 +77,7 @@ function operationalStatus(
 export const listMine = query({
   args: {},
   handler: async (ctx) => {
-    const customer = await requireActiveCustomer(ctx);
+    const customer = await requirePermission(ctx, "orders.read.own");
     const entries = await ctx.db
       .query("manualPoEntries")
       .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", customer._id))
@@ -114,9 +111,7 @@ export const listBilledMine = query({
     return entries
       .filter(
         (entry) =>
-          !entry.archivedAt &&
-          entry.status !== "cancelled" &&
-          (entry.billingStatus ?? "unbilled") === "billed",
+          !entry.archivedAt && entry.status !== "cancelled" && (entry.billingStatus ?? "unbilled") === "billed",
       )
       .map(view);
   },
@@ -160,19 +155,15 @@ export const listQueueForAdmin = query({
   },
   handler: async (ctx, args) => {
     await requirePermission(ctx, "customers.read");
-    const rawEntries = await ctx.db
-      .query("manualPoEntries")
-      .withIndex("by_created_at")
-      .order("desc")
-      .take(501);
+    const rawEntries = await ctx.db.query("manualPoEntries").withIndex("by_created_at").order("desc").take(501);
     const truncated = rawEntries.length > 500;
-    const entries = rawEntries
-      .slice(0, 500)
-      .filter((entry) => !entry.archivedAt && entry.status !== "cancelled");
+    const entries = rawEntries.slice(0, 500).filter((entry) => !entry.archivedAt && entry.status !== "cancelled");
 
     const customerIds = [...new Set(entries.map((entry) => String(entry.customerUserId)))];
     const invoiceIds = [
-      ...new Set(entries.map((entry) => entry.invoiceId).filter((invoiceId): invoiceId is Id<"invoices"> => Boolean(invoiceId))),
+      ...new Set(
+        entries.map((entry) => entry.invoiceId).filter((invoiceId): invoiceId is Id<"invoices"> => Boolean(invoiceId)),
+      ),
     ];
 
     const customerPairs = await Promise.all(
@@ -201,7 +192,7 @@ export const listQueueForAdmin = query({
         const customer = customerRecord?.customer;
         if (!customer || customer.role !== "customer" || customer.status === "removed") return null;
         const profile = customerRecord?.profile;
-        const invoice = entry.invoiceId ? invoiceMap.get(String(entry.invoiceId)) ?? null : null;
+        const invoice = entry.invoiceId ? (invoiceMap.get(String(entry.invoiceId)) ?? null) : null;
         const displayName =
           profile?.displayName || customer.displayNameSnapshot || customer.emailSnapshot || "BFG customer";
         const email = customer.emailSnapshot ?? null;
@@ -240,7 +231,7 @@ export const listQueueForAdmin = query({
         const customerRecord = customerMap.get(String(entry.customerUserId));
         const customer = customerRecord?.customer;
         if (!customer || customer.role !== "customer" || customer.status === "removed") return null;
-        const invoice = entry.invoiceId ? invoiceMap.get(String(entry.invoiceId)) ?? null : null;
+        const invoice = entry.invoiceId ? (invoiceMap.get(String(entry.invoiceId)) ?? null) : null;
         const queueStatus = operationalStatus(entry, invoice);
         return {
           customerUserId: entry.customerUserId,

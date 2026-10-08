@@ -246,7 +246,7 @@ export const checkout = mutation({
 export const listMine = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    const customer = await requireActiveCustomer(ctx);
+    const customer = await requirePermission(ctx, "orders.read.own");
     const page = await ctx.db
       .query("readyStockOrders")
       .withIndex("by_customer_and_created_at", (q) => q.eq("customerUserId", customer._id))
