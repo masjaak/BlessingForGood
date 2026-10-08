@@ -99,11 +99,13 @@ describe("Admin standalone Ready Stock", () => {
     create.mockResolvedValue({ listingId: "listing-new", slug: "new-item" });
     update.mockResolvedValue({});
     updateStage.mockResolvedValue({});
-    vi.mocked(useAction).mockImplementation(
-      () =>
-        (async (args: { purpose: string }) =>
-          args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never,
-    );
+    vi.mocked(useAction).mockImplementation((reference) => {
+      const name = getFunctionName(reference as never);
+      if (name === "readyStockListings:attachCover") return attachCover as never;
+      if (name === "readyStockListings:attachGalleryImage") return attachGallery as never;
+      return (async (args: { purpose: string }) =>
+        args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never;
+    });
     vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
       const [reference] = args;
       const name = getFunctionName(reference as never);
