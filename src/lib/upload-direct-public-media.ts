@@ -1,6 +1,13 @@
 import type { Id } from "../../convex/_generated/dataModel";
 import { optimizeBfgFileForUpload, normalizeUploadMimeType } from "@/lib/upload-file";
 
+export class DirectR2TransportError extends Error {
+  constructor() {
+    super("DIRECT_R2_TRANSPORT_FAILED");
+    this.name = "DirectR2TransportError";
+  }
+}
+
 export type DirectMediaTarget = {
   bookId?: Id<"books">;
   listingId?: Id<"readyStockListings">;
@@ -30,13 +37,25 @@ export async function uploadDirectPublicMedia(
   if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType) || uploadFile.size > 5_000_000) {
     throw new Error("File gambar tidak sesuai format atau melebihi 5 MB");
   }
-  const { url, key } = await prepare(target);
-  const upload = await fetch(url, {
+  let prepared: PreparedDirectUpload;
+  try {
+    prepared = await prepare(target);
+  } catch (error) {
+    if (String(error).includes("R2 unavailable")) throw new DirectR2TransportError();
+    throw error;
+  }
+  const { url, key } = prepared;
+  let upload: Response;
+  try {
+    upload = await fetch(url, {
     method: "PUT",
     headers: { "Content-Type": mimeType },
     body: uploadFile,
   });
-  if (!upload.ok) throw new Error(`R2 direct upload rejected (${upload.status})`);
+  } catch {
+    throw new DirectR2TransportError();
+  }
+  if (!upload.ok) throw new DirectR2TransportError();
   return attach({
     ...target,
     key,
