@@ -46,8 +46,10 @@ export async function publicMediaUrl(
   storageId?: Id<"_storage">,
   r2Key?: string,
 ): Promise<string | null> {
-  if (r2Key && publicMediaR2Enabled()) {
-    return publicObjectUrl(r2Key) ?? r2.getUrl(r2Key, { expiresIn: R2_URL_TTL_SECONDS });
+  if (r2Key) {
+    const publicUrl = publicObjectUrl(r2Key);
+    if (publicUrl) return publicUrl;
+    if (publicMediaR2Enabled()) return r2.getUrl(r2Key, { expiresIn: R2_URL_TTL_SECONDS });
   }
   return storageId ? ctx.storage.getUrl(storageId) : null;
 }
