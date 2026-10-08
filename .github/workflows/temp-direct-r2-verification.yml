@@ -14,7 +14,17 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
+      - name: Format touched files
+        run: |
+          npx prettier --write convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx tests/lib/upload-direct-public-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx tests/lib/upload-direct-public-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx
+            git commit -m "Format direct R2 upload code and tests"
+            git push
+          fi
       - run: npm run typecheck
-      - run: npx vitest run convex/lib/publicMedia.test.ts convex/product-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx tests/lib/upload-file.test.ts tests/components/book-cover-r2.test.tsx
-      - run: npx eslint convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx
-      - run: npx prettier --check convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx
+      - run: npx vitest run convex/lib/publicMedia.test.ts convex/product-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx tests/lib/upload-file.test.ts tests/lib/upload-direct-public-media.test.ts tests/components/book-cover-r2.test.tsx
+      - run: npx eslint convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx tests/lib/upload-direct-public-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx
+      - run: npx prettier --check convex/directPublicMedia.ts src/lib/upload-direct-public-media.ts src/features/admin-books/media/admin-book-media.tsx src/features/ready-stock/admin-listing-editor.tsx tests/lib/upload-direct-public-media.test.ts tests/components/admin-book-media-characterization.test.tsx tests/components/admin-ready-stock.test.tsx
