@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - fix/my-books-role-consistency-20261008
+permissions:
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -12,6 +14,16 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
+      - name: Format and push touched tests
+        run: |
+          npx prettier --write convex/readyStockOrders.ts convex/manualPoEntries.ts convex/manualPoEntries.test.ts convex/readyStock-standalone.test.ts
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add convex/readyStockOrders.ts convex/manualPoEntries.ts convex/manualPoEntries.test.ts convex/readyStock-standalone.test.ts
+            git commit -m "Format role consistency regression tests"
+            git push
+          fi
       - run: npm run typecheck
       - run: npx vitest run convex/manualPoEntries.test.ts convex/readyStock-standalone.test.ts tests/components/customer-my-books.test.tsx
       - run: npx eslint convex/readyStockOrders.ts convex/manualPoEntries.ts convex/manualPoEntries.test.ts convex/readyStock-standalone.test.ts
