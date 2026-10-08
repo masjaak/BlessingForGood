@@ -149,13 +149,15 @@ function mockActions({
   moveGallery?: ReturnType<typeof vi.fn>;
   updateExternalPreview?: ReturnType<typeof vi.fn>;
 } = {}) {
-  vi.mocked(useAction).mockImplementation(
-    () =>
-      (async (args: { purpose: string }) =>
-        args.purpose === "cover"
-          ? (attachCover as unknown as (input: unknown) => Promise<string>)(args)
-          : (attachGallery as unknown as (input: unknown) => Promise<string>)(args)) as never,
-  );
+  vi.mocked(useAction).mockImplementation((reference) => {
+    const name = getFunctionName(reference as never);
+    if (name === "books:attachCover") return attachCover as never;
+    if (name === "books:attachGalleryImage") return attachGallery as never;
+    return (async (args: { purpose: string }) =>
+      args.purpose === "cover"
+        ? (attachCover as unknown as (input: unknown) => Promise<string>)(args)
+        : (attachGallery as unknown as (input: unknown) => Promise<string>)(args)) as never;
+  });
   let mutationIndex = 0;
   const mutations = [vi.fn(), vi.fn(), vi.fn()];
   vi.mocked(useMutation).mockImplementation((reference) => {
