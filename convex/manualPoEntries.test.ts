@@ -7,6 +7,19 @@ import { configureTestEnvironment, setupUsers, testConvex } from "../tests/conve
 describe("Manual PO domain", () => {
   beforeEach(configureTestEnvironment);
 
+  it("lets staff read only their own Random PO without exposing customer entries", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const user = await customer.query(api.users.current, {});
+    if (!user) throw new Error("fixture missing");
+    await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: user.appUserId, title: "Private book", priceAmount: 10000, etaText: "October",
+    });
+    await expect(admin.query(api.manualPoEntries.listMine, {})).resolves.toEqual([]);
+    expect(await customer.query(api.manualPoEntries.listMine, {})).toHaveLength(1);
+    await expect(t.query(api.manualPoEntries.listMine, {})).rejects.toThrow("IDENTITY_REQUIRED");
+  });
+
   it("lets Admin create a lightweight Customer record without creating commerce entities", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer } = await setupUsers(t);
