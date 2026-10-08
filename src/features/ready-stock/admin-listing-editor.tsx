@@ -10,7 +10,7 @@ import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-f
 import { ProductGallery } from "@/components/product-gallery";
 import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, SkeletonCard } from "@/components/ui";
 import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
-import { uploadBfgFile, BfgUploadError } from "@/lib/upload-file";
+import { uploadBfgFileWithMetadata, BfgUploadError } from "@/lib/upload-file";
 type ListingStatus = "draft" | "published" | "archived";
 function uploadFailure(label: string, reason: unknown) {
   if (reason instanceof BfgUploadError && reason.code === "UPLOAD_RATE_LIMITED") {
@@ -117,12 +117,12 @@ export function ReadyStockListingEditor({
         setCoverError(validation);
         return;
       }
-      const storageId = await uploadBfgFile(coverFile, "book-cover", getToken, sessionClaims);
+      const uploaded = await uploadBfgFileWithMetadata(coverFile, "book-cover", getToken, sessionClaims);
       await attachCover({
         listingId,
-        storageId,
-        fileName: coverFile.name,
-        mimeType: coverFile.type,
+        storageId: uploaded.storageId,
+        fileName: uploaded.fileName,
+        mimeType: uploaded.mimeType,
       });
       setCoverFile(null);
       setMessage("Cover Ready Stock tersimpan.");
@@ -144,12 +144,12 @@ export function ReadyStockListingEditor({
         setGalleryError(validation.replace("Cover", "Gambar isi"));
         return;
       }
-      const storageId = await uploadBfgFile(galleryFile, "book-gallery", getToken, sessionClaims);
+      const uploaded = await uploadBfgFileWithMetadata(galleryFile, "book-gallery", getToken, sessionClaims);
       await attachGallery({
         listingId,
-        storageId,
-        fileName: galleryFile.name,
-        mimeType: galleryFile.type,
+        storageId: uploaded.storageId,
+        fileName: uploaded.fileName,
+        mimeType: uploaded.mimeType,
         altText: currentTitle,
       });
       setGalleryFile(null);

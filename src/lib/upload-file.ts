@@ -78,12 +78,19 @@ function convexSiteUrl(): string | null {
   }
 }
 
-export async function uploadBfgFile(
+export type BfgUploadedFile = {
+  storageId: Id<"_storage">;
+  fileName: string;
+  mimeType: string;
+  size: number;
+};
+
+export async function uploadBfgFileWithMetadata(
   file: File,
   purpose: BfgUploadPurpose,
   getToken: ConvexToken,
   sessionClaims?: unknown,
-): Promise<Id<"_storage">> {
+): Promise<BfgUploadedFile> {
   const uploadFile = await optimizeBfgFileForUpload(file, purpose);
   const siteUrl = convexSiteUrl();
   if (!siteUrl) throw new BfgUploadError("UPLOAD_REJECTED");
@@ -123,5 +130,19 @@ export async function uploadBfgFile(
     throw new BfgUploadError("UPLOAD_RATE_LIMITED", retryAfterSeconds);
   }
   if (!response.ok || !result.storageId) throw new BfgUploadError("UPLOAD_REJECTED");
-  return result.storageId as Id<"_storage">;
+  return {
+    storageId: result.storageId as Id<"_storage">,
+    fileName: uploadFile.name,
+    mimeType: normalizeUploadMimeType(uploadFile.type),
+    size: uploadFile.size,
+  };
+}
+
+export async function uploadBfgFile(
+  file: File,
+  purpose: BfgUploadPurpose,
+  getToken: ConvexToken,
+  sessionClaims?: unknown,
+): Promise<Id<"_storage">> {
+  return (await uploadBfgFileWithMetadata(file, purpose, getToken, sessionClaims)).storageId;
 }

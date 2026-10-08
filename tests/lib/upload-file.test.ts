@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BfgUploadError, optimizeBfgFileForUpload, uploadBfgFile, type BfgUploadPurpose } from "@/lib/upload-file";
+import {
+  BfgUploadError,
+  optimizeBfgFileForUpload,
+  uploadBfgFile,
+  uploadBfgFileWithMetadata,
+  type BfgUploadPurpose,
+} from "@/lib/upload-file";
 
 describe("BFG upload client", () => {
   afterEach(() => {
@@ -41,6 +47,61 @@ describe("BFG upload client", () => {
 
     await expect(optimizeBfgFileForUpload(smallCover, "book-cover")).resolves.toBe(smallCover);
     await expect(optimizeBfgFileForUpload(largeProof, "payment-proof")).resolves.toBe(largeProof);
+  });
+
+  it("returns the optimized file metadata used by server-side validation", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CONVEX_SITE_URL", "https://clean-eel-522.convex.site");
+    const optimizedBytes = new Uint8Array(300_000);
+    const optimizedBlob = new Blob([optimizedBytes], { type: "image/webp" });
+
+    vi.stubGlobal(
+      "createImageBitmap",
+      vi.fn(async () => ({
+        width: 1500,
+        height: 1500,
+        close: vi.fn(),
+      })),
+    );
+    vi.stubGlobal("document", {
+      createElement: vi.fn(() => ({
+        width: 0,
+        height: 0,
+        getContext: vi.fn(() => ({ drawImage: vi.fn() })),
+        toBlob: (callback: (blob: Blob | null) => void) => callback(optimizedBlob),
+      })),
+    });
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ storageId: "optimized-storage-id" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const original = new File([new Uint8Array(900_000)], "large-cover.jpg", {
+      type: "image/jpeg",
+      lastModified: 123,
+    });
+
+    await expect(
+      uploadBfgFileWithMetadata(
+        original,
+        "book-cover",
+        vi.fn(async () => "token"),
+        { aud: "convex" },
+      ),
+    ).resolves.toMatchObject({
+      storageId: "optimized-storage-id",
+      fileName: "large-cover.webp",
+      mimeType: "image/webp",
+      size: 300_000,
+    });
+
+    const [url, request] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toContain("fileName=large-cover.webp");
+    expect(request).toMatchObject({
+      method: "POST",
+      body: expect.objectContaining({ name: "large-cover.webp", type: "image/webp" }),
+    });
   });
 
   it("derives the Convex site endpoint when Production only injects the cloud URL", async () => {
