@@ -32,7 +32,9 @@ describe("BookCover production media URLs", () => {
   });
 
   it("does not trust arbitrary external, spoofed, or protocol-relative sources", () => {
-    const { rerender } = render(<BookCover title="Sample" publisher="BFG" src="https://media.blessingforgood.com.evil.example/x" />);
+    const { rerender } = render(
+      <BookCover title="Sample" publisher="BFG" src="https://media.blessingforgood.com.evil.example/x" />,
+    );
     expect(screen.getByRole("img", { name: "Cover placeholder for Sample" })).toBeTruthy();
     for (const src of ["//evil.example/img", "http://media.blessingforgood.com/img", "https://evil.example/img"]) {
       rerender(<BookCover title="Sample" publisher="BFG" src={src} />);

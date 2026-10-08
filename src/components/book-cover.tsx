@@ -4,23 +4,21 @@ import { useState } from "react";
 
 function supportedCoverSource(src?: string): string | undefined {
   if (!src) return undefined;
-  if (src.startsWith("/") && !src.startsWith("//") && !src.startsWith("/\\"))
-    return src;
+  if (src.startsWith("/") && !src.startsWith("//") && !src.startsWith("/\\")) return src;
   if (src.startsWith("blob:")) return src;
 
   try {
     const url = new URL(src);
     if (url.protocol !== "https:" || url.username || url.password) return undefined;
     if (url.hostname.endsWith(".convex.cloud") && url.pathname.startsWith("/api/storage/")) return src;
-    if (
-      url.hostname === "media.blessingforgood.com" ||
-      url.hostname === "pub-726660f62a4443c99263aff51b169a30.r2.dev"
-    ) return src;
+    if (url.hostname === "media.blessingforgood.com" || url.hostname === "pub-726660f62a4443c99263aff51b169a30.r2.dev")
+      return src;
     // Legacy presigned GET URLs when R2_PUBLIC_BASE_URL was not configured.
     if (
       /^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$/.test(url.hostname) &&
       url.pathname.startsWith("/bfg-public-media/")
-    ) return src;
+    )
+      return src;
   } catch {
     return undefined;
   }
