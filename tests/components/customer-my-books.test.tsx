@@ -100,3 +100,44 @@ describe("Customer Buku Saya layout contract", () => {
     expect(screen.getByLabelText("Memuat Buku Saya")).toBeTruthy();
   });
 });
+
+it("keeps Buku Saya overview visible when Ready Stock query fails", () => {
+  vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
+    const name = getFunctionName(args[0]);
+    if (name === "readyStockOrders:listMine") throw new Error("Ready Stock subscription failed");
+    if (name === "manualPoEntries:listMine") return randomPo;
+    if (name === "batchTracking:getBookOverview") return overview;
+    throw new Error(`Unexpected query: ${name}`);
+  });
+
+  const originalError = console.error;
+  console.error = vi.fn();
+  try {
+    render(<CustomerOrdersPage />);
+    expect(screen.getByText("Pesanan Ready Stock belum dapat dimuat.")).toBeTruthy();
+    expect(screen.getByText("TOTAL SPENDING")).toBeTruthy();
+    expect(screen.getByText("Random PO Book")).toBeTruthy();
+  } finally {
+    console.error = originalError;
+  }
+});
+
+it("keeps other Buku Saya sections visible when overview query fails", () => {
+  vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
+    const name = getFunctionName(args[0]);
+    if (name === "batchTracking:getBookOverview") throw new Error("Overview subscription failed");
+    if (name === "manualPoEntries:listMine") return randomPo;
+    if (name === "readyStockOrders:listMine") return { page: [], isDone: true, continueCursor: "" };
+    throw new Error(`Unexpected query: ${name}`);
+  });
+
+  const originalError = console.error;
+  console.error = vi.fn();
+  try {
+    render(<CustomerOrdersPage />);
+    expect(screen.getByText("Ringkasan Buku Saya belum dapat dimuat.")).toBeTruthy();
+    expect(screen.getByText("Random PO Book")).toBeTruthy();
+  } finally {
+    console.error = originalError;
+  }
+});
