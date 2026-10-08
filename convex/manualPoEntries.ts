@@ -80,7 +80,7 @@ function operationalStatus(
 export const listMine = query({
   args: {},
   handler: async (ctx) => {
-    const customer = await requireActiveCustomer(ctx);
+    const customer = await requirePermission(ctx, "orders.read.own");
     const entries = await ctx.db
       .query("manualPoEntries")
       .withIndex("by_customer_and_created_at", (index) => index.eq("customerUserId", customer._id))
