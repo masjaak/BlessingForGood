@@ -1,6 +1,5 @@
 "use client";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -10,7 +9,8 @@ import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-f
 import { ProductGallery } from "@/components/product-gallery";
 import { Button, Card, EmptyState, Field, LinkButton, LoadingRegion, SkeletonCard } from "@/components/ui";
 import { BOOK_FORMATS, type BookFormat } from "@/domain/prototype/types";
-import { uploadBfgFileWithMetadata, BfgUploadError } from "@/lib/upload-file";
+import { BfgUploadError } from "@/lib/upload-file";
+import { uploadDirectPublicMedia } from "@/lib/upload-direct-public-media";
 type ListingStatus = "draft" | "published" | "archived";
 function uploadFailure(label: string, reason: unknown) {
   if (reason instanceof BfgUploadError && reason.code === "UPLOAD_RATE_LIMITED") {
@@ -30,11 +30,10 @@ export function ReadyStockListingEditor({
 }) {
   const listing = useQuery(api.readyStockListings.getForAdmin, { listingId });
   const update = useMutation(api.readyStockListings.update);
-  const attachCover = useAction(api.readyStockListings.attachCover);
-  const attachGallery = useAction(api.readyStockListings.attachGalleryImage);
+  const preparePublicUpload = useMutation(api.directPublicMedia.prepare);
+  const attachPublicUpload = useAction(api.directPublicMedia.attach);
   const removeGallery = useMutation(api.readyStockListings.removeGalleryImage);
   const moveGallery = useMutation(api.readyStockListings.moveGalleryImage);
-  const { getToken, sessionClaims } = useAuth();
 
   const [title, setTitle] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
@@ -117,13 +116,7 @@ export function ReadyStockListingEditor({
         setCoverError(validation);
         return;
       }
-      const uploaded = await uploadBfgFileWithMetadata(coverFile, "book-cover", getToken, sessionClaims);
-      await attachCover({
-        listingId,
-        storageId: uploaded.storageId,
-        fileName: uploaded.fileName,
-        mimeType: uploaded.mimeType,
-      });
+      await uploadDirectPublicMedia(coverFile, { listingId, purpose: "cover" }, preparePublicUpload, attachPublicUpload);
       setCoverFile(null);
       setMessage("Cover Ready Stock tersimpan.");
     } catch (reason) {
@@ -144,14 +137,7 @@ export function ReadyStockListingEditor({
         setGalleryError(validation.replace("Cover", "Gambar isi"));
         return;
       }
-      const uploaded = await uploadBfgFileWithMetadata(galleryFile, "book-gallery", getToken, sessionClaims);
-      await attachGallery({
-        listingId,
-        storageId: uploaded.storageId,
-        fileName: uploaded.fileName,
-        mimeType: uploaded.mimeType,
-        altText: currentTitle,
-      });
+      await uploadDirectPublicMedia(galleryFile, { listingId, purpose: "gallery" }, preparePublicUpload, attachPublicUpload, currentTitle);
       setGalleryFile(null);
       setMessage("Gambar isi Ready Stock tersimpan.");
     } catch (reason) {
