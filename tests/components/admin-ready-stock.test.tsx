@@ -12,7 +12,8 @@ vi.mock("@/lib/upload-file", async (importOriginal) => ({
   uploadBfgFile: vi.fn().mockResolvedValue("storage-upload"),
 }));
 
-vi.mock("@/lib/upload-direct-public-media", () => ({
+vi.mock("@/lib/upload-direct-public-media", async (original) => ({
+  ...(await original<typeof import("@/lib/upload-direct-public-media")>()),
   uploadDirectPublicMedia: vi.fn(
     async (
       file: File,
