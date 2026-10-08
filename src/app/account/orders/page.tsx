@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { ProductAccessGuard } from "@/components/product-access-guard";
+import { MyBooksSectionBoundary } from "@/components/my-books-section-boundary";
 import { SiteShell } from "@/components/site-shell";
 import {
   Card,
@@ -86,11 +87,16 @@ function CustomerBooks() {
         ) : null}
       </Card>
 
-      <CustomerReadyStockOrdersSection />
+      <MyBooksSectionBoundary section="Pesanan Ready Stock">
+        <CustomerReadyStockOrdersSection />
+      </MyBooksSectionBoundary>
 
-      <CustomerManualPoSection />
+      <MyBooksSectionBoundary section="Pesanan Khusus">
+        <CustomerManualPoSection />
+      </MyBooksSectionBoundary>
 
-      {overview === undefined ? (
+      <MyBooksSectionBoundary section="Ringkasan Buku Saya">
+        {overview === undefined ? (
         <LoadingRegion label="Memuat Buku Saya">
           <SkeletonCard />
           <SkeletonCard />
@@ -210,7 +216,8 @@ function CustomerBooks() {
             )}
           </div>
         </>
-      ) : null}
+        ) : null}
+      </MyBooksSectionBoundary>
     </div>
   );
 }
