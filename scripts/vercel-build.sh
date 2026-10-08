@@ -117,6 +117,8 @@ case "${VERCEL_ENV:-}" in
     printf '%s\n' 'VERCEL_ENV=production'
     printf '%s' "$CLERK_JWT_ISSUER_DOMAIN" | npx convex env set --prod CLERK_JWT_ISSUER_DOMAIN
     printf '%s' "$CLERK_SECRET_KEY" | npx convex env set --prod CLERK_SECRET_KEY
+    # Public product media must resolve through the production R2 CDN, not rate-limited r2.dev or expiring S3 links.
+    printf '%s' "https://media.blessingforgood.com" | npx convex env set --prod R2_PUBLIC_BASE_URL
     ;;
   *)
     printf '%s\n' 'VERCEL_ENV=UNKNOWN' 'CREDENTIAL_GATE=FAIL' >&2
