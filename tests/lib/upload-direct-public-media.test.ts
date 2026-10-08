@@ -27,20 +27,31 @@ describe("Direct public R2 upload contract", () => {
     await expect(uploadDirectPublicMedia(original, target, prepare, attach)).resolves.toBe("key-1");
     expect(prepare).toHaveBeenCalledWith(target);
     expect(fetchMock).toHaveBeenCalledWith("https://r2.example/signed", {
-      method: "PUT", headers: { "Content-Type": "image/webp" }, body: optimized,
+      method: "PUT",
+      headers: { "Content-Type": "image/webp" },
+      body: optimized,
     });
     expect(attach).toHaveBeenCalledWith({
-      ...target, key: "key-1", fileName: "picture.webp", mimeType: "image/webp", altText: undefined,
+      ...target,
+      key: "key-1",
+      fileName: "picture.webp",
+      mimeType: "image/webp",
+      altText: undefined,
     });
     vi.unstubAllGlobals();
   });
 
   it("keeps existing media untouched when R2 upload fails", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 403 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 403 })),
+    );
     const prepare = vi.fn(async () => ({ key: "key-2", url: "https://r2.example/signed" }));
     const attach = vi.fn();
     const file = new File(["fake"], "cover.png", { type: "image/png" });
-    await expect(uploadDirectPublicMedia(file, target, prepare, attach)).rejects.toThrow("R2 direct upload rejected (403)");
+    await expect(uploadDirectPublicMedia(file, target, prepare, attach)).rejects.toThrow(
+      "R2 direct upload rejected (403)",
+    );
     expect(attach).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });

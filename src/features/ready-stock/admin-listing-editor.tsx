@@ -116,7 +116,12 @@ export function ReadyStockListingEditor({
         setCoverError(validation);
         return;
       }
-      await uploadDirectPublicMedia(coverFile, { listingId, purpose: "cover" }, preparePublicUpload, attachPublicUpload);
+      await uploadDirectPublicMedia(
+        coverFile,
+        { listingId, purpose: "cover" },
+        preparePublicUpload,
+        attachPublicUpload,
+      );
       setCoverFile(null);
       setMessage("Cover Ready Stock tersimpan.");
     } catch (reason) {
@@ -137,7 +142,13 @@ export function ReadyStockListingEditor({
         setGalleryError(validation.replace("Cover", "Gambar isi"));
         return;
       }
-      await uploadDirectPublicMedia(galleryFile, { listingId, purpose: "gallery" }, preparePublicUpload, attachPublicUpload, currentTitle);
+      await uploadDirectPublicMedia(
+        galleryFile,
+        { listingId, purpose: "gallery" },
+        preparePublicUpload,
+        attachPublicUpload,
+        currentTitle,
+      );
       setGalleryFile(null);
       setMessage("Gambar isi Ready Stock tersimpan.");
     } catch (reason) {

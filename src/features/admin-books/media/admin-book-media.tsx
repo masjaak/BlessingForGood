@@ -47,7 +47,6 @@ export function AdminBookMedia({
   const [galleryPendingMediaId, setGalleryPendingMediaId] = useState<string | null>(null);
   const [confirmGalleryMedia, setConfirmGalleryMedia] = useState<GalleryImage | null>(null);
 
-
   async function saveCover() {
     setCoverMessage("");
     setCoverError("");
@@ -59,7 +58,12 @@ export function AdminBookMedia({
           setCoverError(validationError);
           return;
         }
-        await uploadDirectPublicMedia(coverFile, { bookId: book._id, purpose: "cover" }, preparePublicUpload, attachPublicUpload);
+        await uploadDirectPublicMedia(
+          coverFile,
+          { bookId: book._id, purpose: "cover" },
+          preparePublicUpload,
+          attachPublicUpload,
+        );
         setCoverFile(null);
         setCoverMessage("Cover tersimpan.");
       }
@@ -81,7 +85,13 @@ export function AdminBookMedia({
         setGalleryError(validationError.replace("Cover", "Gambar galeri"));
         return;
       }
-      await uploadDirectPublicMedia(galleryFile, { bookId: book._id, purpose: "gallery" }, preparePublicUpload, attachPublicUpload, galleryAltText);
+      await uploadDirectPublicMedia(
+        galleryFile,
+        { bookId: book._id, purpose: "gallery" },
+        preparePublicUpload,
+        attachPublicUpload,
+        galleryAltText,
+      );
       setGalleryFile(null);
       setGalleryMessage("Gambar galeri tersimpan.");
     } catch (reason) {

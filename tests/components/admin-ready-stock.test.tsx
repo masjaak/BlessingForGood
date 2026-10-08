@@ -13,16 +13,18 @@ vi.mock("@/lib/upload-file", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/upload-direct-public-media", () => ({
-  uploadDirectPublicMedia: vi.fn(async (
-    file: File,
-    target: { listingId: string; purpose: "cover" | "gallery" },
-    _prepare: unknown,
-    attach: (args: unknown) => Promise<string>,
-    altText?: string,
-  ) => {
-    const key = await uploadBfgFile(file, target.purpose === "cover" ? "book-cover" : "book-gallery", vi.fn(), null);
-    return attach({ ...target, key, fileName: file.name, mimeType: file.type, altText });
-  }),
+  uploadDirectPublicMedia: vi.fn(
+    async (
+      file: File,
+      target: { listingId: string; purpose: "cover" | "gallery" },
+      _prepare: unknown,
+      attach: (args: unknown) => Promise<string>,
+      altText?: string,
+    ) => {
+      const key = await uploadBfgFile(file, target.purpose === "cover" ? "book-cover" : "book-gallery", vi.fn(), null);
+      return attach({ ...target, key, fileName: file.name, mimeType: file.type, altText });
+    },
+  ),
 }));
 
 vi.mock("convex/react", () => ({ useQuery: vi.fn(), useMutation: vi.fn(), useAction: vi.fn() }));
@@ -96,8 +98,10 @@ describe("Admin standalone Ready Stock", () => {
     create.mockResolvedValue({ listingId: "listing-new", slug: "new-item" });
     update.mockResolvedValue({});
     updateStage.mockResolvedValue({});
-    vi.mocked(useAction).mockImplementation(() =>
-      (async (args: { purpose: string }) => args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never,
+    vi.mocked(useAction).mockImplementation(
+      () =>
+        (async (args: { purpose: string }) =>
+          args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never,
     );
     vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
       const [reference] = args;
@@ -200,7 +204,12 @@ describe("Admin standalone Ready Stock", () => {
     const file = new File(["component fixture"], "photo.webp", { type: "image/webp" });
     fireEvent.change(screen.getByLabelText("Pilih file cover"), { target: { files: [file] } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Simpan cover" })));
-    expect(uploadDirectPublicMedia).toHaveBeenCalledWith(file, {listingId: "listing-1",purpose:"cover"},expect.any(Function),expect.any(Function));
+    expect(uploadDirectPublicMedia).toHaveBeenCalledWith(
+      file,
+      { listingId: "listing-1", purpose: "cover" },
+      expect.any(Function),
+      expect.any(Function),
+    );
     expect(attachCover).toHaveBeenCalledWith({
       listingId: "listing-1",
       purpose: "cover",

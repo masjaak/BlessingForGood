@@ -7,7 +7,12 @@ import { action, internalMutation, internalQuery, mutation } from "./_generated/
 import { requirePermission } from "./lib/auth";
 import { fail } from "./lib/errors";
 import { enforceRateLimit } from "./lib/rateLimit";
-import { IMAGE_CONTENT_TYPES, MAX_STORED_FILE_BYTES, normalizeContentType, validateUploadedContent } from "./lib/storage";
+import {
+  IMAGE_CONTENT_TYPES,
+  MAX_STORED_FILE_BYTES,
+  normalizeContentType,
+  validateUploadedContent,
+} from "./lib/storage";
 import { publicMediaR2Enabled } from "./lib/publicMedia";
 
 const r2 = new R2((components as unknown as { r2: ComponentApi<"r2"> }).r2);
@@ -27,7 +32,10 @@ function mediaPrefix(ownerId: Id<"appUsers">, target: string, kind: "cover" | "g
   return `bfg-direct/${ownerId}/${target}/${kind}/`;
 }
 function ownsUpload(key: string, prefix: string): boolean {
-  return key.startsWith(prefix) && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key.slice(prefix.length));
+  return (
+    key.startsWith(prefix) &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key.slice(prefix.length))
+  );
 }
 
 export const prepare = mutation({
@@ -37,7 +45,11 @@ export const prepare = mutation({
     const user = await requirePermission(ctx, "books.manage");
     const target = entityKey(args.bookId, args.listingId);
     const record = args.bookId ? await ctx.db.get(args.bookId) : await ctx.db.get(args.listingId!);
-    if (!record || (("publicationStatus" in record && record.publicationStatus === "archived") || ("status" in record && record.status === "archived"))) {
+    if (
+      !record ||
+      ("publicationStatus" in record && record.publicationStatus === "archived") ||
+      ("status" in record && record.status === "archived")
+    ) {
       fail("VALIDATION_FAILED", "media target unavailable");
     }
     await enforceRateLimit(ctx, "bookUploadUser", String(user._id));
@@ -52,10 +64,15 @@ export const authorizeAttach = internalQuery({
     const user = await requirePermission(ctx, "books.manage");
     const target = entityKey(args.bookId, args.listingId);
     const record = args.bookId ? await ctx.db.get(args.bookId) : await ctx.db.get(args.listingId!);
-    if (!record || (("publicationStatus" in record && record.publicationStatus === "archived") || ("status" in record && record.status === "archived"))) {
+    if (
+      !record ||
+      ("publicationStatus" in record && record.publicationStatus === "archived") ||
+      ("status" in record && record.status === "archived")
+    ) {
       fail("VALIDATION_FAILED", "media target unavailable");
     }
-    if (!ownsUpload(args.key, mediaPrefix(user._id, target, args.purpose))) fail("VALIDATION_FAILED", "upload ownership mismatch");
+    if (!ownsUpload(args.key, mediaPrefix(user._id, target, args.purpose)))
+      fail("VALIDATION_FAILED", "upload ownership mismatch");
     return { ownerId: user._id };
   },
 });
@@ -122,7 +139,10 @@ export const attach = action({
     if (process.env.R2_BUCKET === "bfg-public-media") {
       const publicUrl = `https://media.blessingforgood.com/${args.key.split("/").map(encodeURIComponent).join("/")}`;
       const publicResponse = await fetch(publicUrl, { method: "HEAD" });
-      if (!publicResponse.ok || normalizeContentType(publicResponse.headers.get("content-type")) !== normalizeContentType(args.mimeType)) {
+      if (
+        !publicResponse.ok ||
+        normalizeContentType(publicResponse.headers.get("content-type")) !== normalizeContentType(args.mimeType)
+      ) {
         fail("VALIDATION_FAILED", "media CDN is not ready; previous image is unchanged");
       }
     }
@@ -142,17 +162,27 @@ export const attachValidated = internalMutation({
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "books.manage");
     const target = entityKey(args.bookId, args.listingId);
-    if (!ownsUpload(args.key, mediaPrefix(user._id, target, args.purpose))) fail("VALIDATION_FAILED", "upload ownership mismatch");
+    if (!ownsUpload(args.key, mediaPrefix(user._id, target, args.purpose)))
+      fail("VALIDATION_FAILED", "upload ownership mismatch");
     const now = Date.now();
     if (args.bookId) {
       const book = await ctx.db.get(args.bookId);
       if (!book || book.publicationStatus === "archived") fail("BOOK_NOT_FOUND");
-      const gallery = await ctx.db.query("bookMedia").withIndex("by_book_and_order", q => q.eq("bookId", book._id)).take(9);
-      if (book.coverR2Key === args.key || gallery.some(row => row.r2Key === args.key)) fail("VALIDATION_FAILED", "image already attached");
+      const gallery = await ctx.db
+        .query("bookMedia")
+        .withIndex("by_book_and_order", (q) => q.eq("bookId", book._id))
+        .take(9);
+      if (book.coverR2Key === args.key || gallery.some((row) => row.r2Key === args.key))
+        fail("VALIDATION_FAILED", "image already attached");
       if (args.purpose === "cover") {
         const oldId = book.coverStorageId;
         const oldKey = book.coverR2Key;
-        await ctx.db.patch(book._id, { coverStorageId: undefined, coverR2Key: args.key, coverImageUrl: undefined, updatedAt: now });
+        await ctx.db.patch(book._id, {
+          coverStorageId: undefined,
+          coverR2Key: args.key,
+          coverImageUrl: undefined,
+          updatedAt: now,
+        });
         if (oldId) await ctx.storage.delete(oldId);
         if (oldKey) await r2.deleteObject(ctx, oldKey);
       } else {
@@ -160,29 +190,46 @@ export const attachValidated = internalMutation({
         const altText = (args.altText?.trim() || book.title).trim();
         if (altText.length > 160) fail("VALIDATION_FAILED", "gallery alt text too long");
         await ctx.db.insert("bookMedia", {
-          bookId: book._id, r2Key: args.key, displayOrder: gallery.length, altText,
-          createdAt: now, updatedAt: now, createdByUserId: user._id,
+          bookId: book._id,
+          r2Key: args.key,
+          displayOrder: gallery.length,
+          altText,
+          createdAt: now,
+          updatedAt: now,
+          createdByUserId: user._id,
         });
         await ctx.db.patch(book._id, { updatedAt: now });
       }
     } else {
       const listing = await ctx.db.get(args.listingId!);
       if (!listing || listing.status === "archived") fail("VALIDATION_FAILED", "Ready Stock unavailable");
-      const gallery = await ctx.db.query("readyStockListingMedia").withIndex("by_listing_and_order", q => q.eq("listingId", listing._id)).take(9);
-      if (listing.coverR2Key === args.key || gallery.some(row => row.r2Key === args.key)) fail("VALIDATION_FAILED", "image already attached");
+      const gallery = await ctx.db
+        .query("readyStockListingMedia")
+        .withIndex("by_listing_and_order", (q) => q.eq("listingId", listing._id))
+        .take(9);
+      if (listing.coverR2Key === args.key || gallery.some((row) => row.r2Key === args.key))
+        fail("VALIDATION_FAILED", "image already attached");
       if (args.purpose === "cover") {
         const oldId = listing.coverStorageId;
         const oldKey = listing.coverR2Key;
-        await ctx.db.patch(listing._id, { coverStorageId: undefined, coverR2Key: args.key, updatedAt: now, updatedByUserId: user._id });
+        await ctx.db.patch(listing._id, {
+          coverStorageId: undefined,
+          coverR2Key: args.key,
+          updatedAt: now,
+          updatedByUserId: user._id,
+        });
         if (oldId) await ctx.storage.delete(oldId);
         if (oldKey) await r2.deleteObject(ctx, oldKey);
       } else {
         if (gallery.length >= 8) fail("VALIDATION_FAILED", "gallery full");
         await ctx.db.insert("readyStockListingMedia", {
-          listingId: listing._id, r2Key: args.key,
+          listingId: listing._id,
+          r2Key: args.key,
           displayOrder: (gallery.at(-1)?.displayOrder ?? -1) + 1,
           altText: (args.altText?.trim() || listing.title).slice(0, 160),
-          createdAt: now, updatedAt: now, createdByUserId: user._id,
+          createdAt: now,
+          updatedAt: now,
+          createdByUserId: user._id,
         });
         await ctx.db.patch(listing._id, { updatedAt: now, updatedByUserId: user._id });
       }

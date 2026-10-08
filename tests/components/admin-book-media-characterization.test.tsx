@@ -49,16 +49,20 @@ vi.mock("@/lib/upload-file", async () => {
 });
 
 vi.mock("@/lib/upload-direct-public-media", () => ({
-  uploadDirectPublicMedia: vi.fn(async (
-    file: File,
-    target: { bookId?: string; listingId?: string; purpose: "cover" | "gallery" },
-    _prepare: unknown,
-    attach: (args: unknown) => Promise<string>,
-    altText?: string,
-  ) => {
-    const key = await uploadBfgFile(file, target.purpose === "cover" ? "book-cover" : "book-gallery", vi.fn(), { aud: "convex" });
-    return attach({ ...target, key, fileName: file.name, mimeType: file.type, altText });
-  }),
+  uploadDirectPublicMedia: vi.fn(
+    async (
+      file: File,
+      target: { bookId?: string; listingId?: string; purpose: "cover" | "gallery" },
+      _prepare: unknown,
+      attach: (args: unknown) => Promise<string>,
+      altText?: string,
+    ) => {
+      const key = await uploadBfgFile(file, target.purpose === "cover" ? "book-cover" : "book-gallery", vi.fn(), {
+        aud: "convex",
+      });
+      return attach({ ...target, key, fileName: file.name, mimeType: file.type, altText });
+    },
+  ),
 }));
 
 type TestGalleryImage = {
@@ -144,8 +148,11 @@ function mockActions({
   moveGallery?: ReturnType<typeof vi.fn>;
   updateExternalPreview?: ReturnType<typeof vi.fn>;
 } = {}) {
-  vi.mocked(useAction).mockImplementation(() => (async (args: { purpose: string }) =>
-    args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never);
+  vi.mocked(useAction).mockImplementation(
+    () =>
+      (async (args: { purpose: string }) =>
+        args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never,
+  );
   let mutationIndex = 0;
   const mutations = [vi.fn(), vi.fn(), vi.fn()];
   vi.mocked(useMutation).mockImplementation((reference) => {
@@ -297,23 +304,21 @@ describe("Admin Book media characterization", () => {
   });
 
   it("uploads gallery media with alt text and renders it after the query refresh", async () => {
-    const attachGallery = vi
-      .fn()
-      .mockImplementation(async ({ key, altText }: { key: string; altText: string }) => {
-        state.currentBook = {
-          ...state.currentBook,
-          gallery: [
-            ...state.currentBook.gallery,
-            {
-              mediaId: key,
-              storageId: key,
-              displayOrder: state.currentBook.gallery.length,
-              altText,
-              url: storageUrl(key),
-            },
-          ],
-        };
-      });
+    const attachGallery = vi.fn().mockImplementation(async ({ key, altText }: { key: string; altText: string }) => {
+      state.currentBook = {
+        ...state.currentBook,
+        gallery: [
+          ...state.currentBook.gallery,
+          {
+            mediaId: key,
+            storageId: key,
+            displayOrder: state.currentBook.gallery.length,
+            altText,
+            url: storageUrl(key),
+          },
+        ],
+      };
+    });
     mockActions({ attachGallery });
     const { state, view } = renderAdminBook();
     vi.mocked(uploadBfgFile).mockResolvedValue("storage-gallery-1" as never);
