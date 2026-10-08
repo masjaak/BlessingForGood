@@ -87,6 +87,25 @@ describe("Customer Buku Saya layout contract", () => {
     expect(document.querySelector(".my-books-batch-footer .my-books-batch-cta")).toBeTruthy();
   });
 
+  it("keeps Buku Saya overview accessible when Random PO rendering fails", () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
+        const name = getFunctionName(args[0]);
+        if (name === "batchTracking:getBookOverview") return overview;
+        if (name === "readyStockOrders:listMine") return { page: [], isDone: true, continueCursor: "" };
+        if (name === "manualPoEntries:listMine") throw new Error("Simulated Random PO failure");
+        throw new Error(`Unexpected query: ${name}`);
+      });
+      render(<CustomerOrdersPage />);
+      expect(screen.getByText("TOTAL SPENDING")).toBeTruthy();
+      expect(screen.getByRole("alert").textContent).toContain("Random PO");
+      expect(screen.getByRole("button", { name: "Coba lagi" })).toBeTruthy();
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
   it("keeps Random PO visible even while the regular order overview is still loading", () => {
     vi.mocked(useQuery).mockReset();
     mockQueries(undefined);
