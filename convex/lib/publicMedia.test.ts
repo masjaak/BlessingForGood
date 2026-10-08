@@ -20,6 +20,16 @@ describe("BFG R2 public media delivery", () => {
     );
   });
 
+  it("keeps existing public images accessible without R2 upload credentials", async () => {
+    vi.stubEnv("R2_BUCKET", "bfg-public-media");
+    vi.stubEnv("R2_ENDPOINT", "");
+    vi.stubEnv("R2_ACCESS_KEY_ID", "");
+    vi.stubEnv("R2_SECRET_ACCESS_KEY", "");
+    await expect(publicMediaUrl(fakeCtx, undefined, "saved-image-key")).resolves.toBe(
+      "https://media.blessingforgood.com/saved-image-key",
+    );
+  });
+
   it("retains a custom base URL for unrelated R2 buckets", async () => {
     vi.stubEnv("R2_BUCKET", "other-test-bucket");
     vi.stubEnv("R2_ENDPOINT", "https://example.r2.cloudflarestorage.com");
