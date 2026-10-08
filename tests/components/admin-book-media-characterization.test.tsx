@@ -9,7 +9,7 @@ import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { ProductGallery } from "@/components/product-gallery";
 import { useProduct } from "@/domain/prototype/store";
 import { BfgUploadError, uploadBfgFile } from "@/lib/upload-file";
-import { uploadDirectPublicMedia } from "@/lib/upload-direct-public-media";
+import { DirectR2TransportError, uploadDirectPublicMedia } from "@/lib/upload-direct-public-media";
 
 vi.mock("@clerk/nextjs", () => ({
   useAuth: vi.fn(),
@@ -263,6 +263,25 @@ describe("Admin Book media characterization", () => {
     expect(screen.getByRole("img", { name: "Media Book cover preview" }).getAttribute("src")).toBe(
       storageUrl("storage-cover-new"),
     );
+  });
+
+  it("falls back to the established validated upload when R2 transport is unavailable", async () => {
+    const attachCover = vi.fn().mockResolvedValue(undefined);
+    mockActions({ attachCover });
+    renderAdminBook({ ...baseBook, coverUrl: storageUrl("existing-cover") });
+    vi.mocked(uploadDirectPublicMedia).mockRejectedValueOnce(new DirectR2TransportError());
+    vi.mocked(uploadBfgFile).mockResolvedValueOnce("legacy-storage-id" as never);
+    const file = imageFile("fallback.png");
+    fireEvent.change(screen.getByLabelText("Pilih file cover"), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan cover" }));
+    await waitFor(() => expect(screen.getByText("Cover tersimpan.")).toBeTruthy());
+    expect(uploadBfgFile).toHaveBeenCalledWith(file, "book-cover", expect.any(Function), { aud: "convex" });
+    expect(attachCover).toHaveBeenCalledWith({
+      bookId: "book-1",
+      storageId: "legacy-storage-id",
+      fileName: "fallback.png",
+      mimeType: "image/png",
+    });
   });
 
   it("blocks invalid cover selection before transport", () => {
