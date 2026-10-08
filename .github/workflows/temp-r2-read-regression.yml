@@ -1,0 +1,18 @@
+name: Temporary R2 rendering regression check
+on:
+  push:
+    branches:
+      - fix/bfg-r2-media-read-credential-independence-20261008
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx vitest run convex/lib/publicMedia.test.ts convex/product-media.test.ts tests/components/book-cover-r2.test.tsx tests/components/admin-book-media-characterization.test.tsx
+      - run: npx eslint convex/lib/publicMedia.ts convex/lib/publicMedia.test.ts tests/components/admin-book-media-characterization.test.tsx
+      - run: npx prettier --check convex/lib/publicMedia.ts convex/lib/publicMedia.test.ts tests/components/admin-book-media-characterization.test.tsx
