@@ -5,6 +5,7 @@ import { components, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
 import { requirePermission } from "./lib/auth";
+import { recordAudit } from "./lib/audit";
 import { fail } from "./lib/errors";
 import { enforceRateLimit } from "./lib/rateLimit";
 import {
@@ -185,11 +186,12 @@ export const attachValidated = internalMutation({
         });
         if (oldId) await ctx.storage.delete(oldId);
         if (oldKey) await r2.deleteObject(ctx, oldKey);
+        await recordAudit(ctx, user._id, "book.cover_attached", "book", book._id);
       } else {
         if (gallery.length >= 8) fail("VALIDATION_FAILED", "gallery full");
         const altText = (args.altText?.trim() || book.title).trim();
         if (altText.length > 160) fail("VALIDATION_FAILED", "gallery alt text too long");
-        await ctx.db.insert("bookMedia", {
+        const mediaId = await ctx.db.insert("bookMedia", {
           bookId: book._id,
           r2Key: args.key,
           displayOrder: gallery.length,
@@ -199,6 +201,7 @@ export const attachValidated = internalMutation({
           createdByUserId: user._id,
         });
         await ctx.db.patch(book._id, { updatedAt: now });
+        await recordAudit(ctx, user._id, "book.gallery_image_added", "bookMedia", mediaId);
       }
     } else {
       const listing = await ctx.db.get(args.listingId!);
@@ -220,9 +223,10 @@ export const attachValidated = internalMutation({
         });
         if (oldId) await ctx.storage.delete(oldId);
         if (oldKey) await r2.deleteObject(ctx, oldKey);
+        await recordAudit(ctx, user._id, "ready_stock_listing.cover_attached", "readyStockListing", listing._id);
       } else {
         if (gallery.length >= 8) fail("VALIDATION_FAILED", "gallery full");
-        await ctx.db.insert("readyStockListingMedia", {
+        const mediaId = await ctx.db.insert("readyStockListingMedia", {
           listingId: listing._id,
           r2Key: args.key,
           displayOrder: (gallery.at(-1)?.displayOrder ?? -1) + 1,
@@ -232,6 +236,7 @@ export const attachValidated = internalMutation({
           createdByUserId: user._id,
         });
         await ctx.db.patch(listing._id, { updatedAt: now, updatedByUserId: user._id });
+        await recordAudit(ctx, user._id, "ready_stock_listing.gallery_added", "readyStockListingMedia", mediaId);
       }
     }
   },
