@@ -39,7 +39,9 @@ describe("Direct R2 admin media authorization", () => {
     const key = `bfg-direct/${owner.appUserId}/book/${bookId}/cover/7e7fb0d7-46d0-43c3-a37a-cae45f41834b`;
     const args = { bookId, purpose: "cover" as const, key };
     await admin.mutation(internal.directPublicMedia.attachValidated, args);
-    await expect(admin.mutation(internal.directPublicMedia.attachValidated, args)).rejects.toThrow("image already attached");
+    await expect(admin.mutation(internal.directPublicMedia.attachValidated, args)).rejects.toThrow(
+      "image already attached",
+    );
     expect(await admin.query(api.books.getForAdmin, { bookId })).toMatchObject({ coverR2Key: key });
   });
 });
