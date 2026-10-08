@@ -106,6 +106,24 @@ describe("Customer Buku Saya layout contract", () => {
     }
   });
 
+  it("keeps Random PO accessible when overview query fails", () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      vi.mocked(useQuery).mockImplementation((...args: Parameters<typeof useQuery>) => {
+        const name = getFunctionName(args[0]);
+        if (name === "batchTracking:getBookOverview") throw new Error("Simulated overview failure");
+        if (name === "readyStockOrders:listMine") return { page: [], isDone: true, continueCursor: "" };
+        if (name === "manualPoEntries:listMine") return randomPo;
+        throw new Error(`Unexpected query: ${name}`);
+      });
+      render(<CustomerOrdersPage />);
+      expect(screen.getByText("Random PO Book")).toBeTruthy();
+      expect(screen.getByRole("alert").textContent).toContain("ringkasan Buku Saya");
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
   it("keeps Random PO visible even while the regular order overview is still loading", () => {
     vi.mocked(useQuery).mockReset();
     mockQueries(undefined);
