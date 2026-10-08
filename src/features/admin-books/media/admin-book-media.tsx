@@ -9,7 +9,7 @@ import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import { ProductGallery } from "@/components/product-gallery";
 import { Button, ConfirmationDialog, Field, IconButton } from "@/components/ui";
-import { BfgUploadError, uploadBfgFile } from "@/lib/upload-file";
+import { BfgUploadError, uploadBfgFileWithMetadata } from "@/lib/upload-file";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type GalleryImage = AdminBook["gallery"][number];
@@ -59,12 +59,12 @@ export function AdminBookMedia({
           setCoverError(validationError);
           return;
         }
-        const storageId = await uploadBfgFile(coverFile, "book-cover", getToken, sessionClaims);
+        const uploaded = await uploadBfgFileWithMetadata(coverFile, "book-cover", getToken, sessionClaims);
         await attachCover({
           bookId: book._id,
-          storageId,
-          fileName: coverFile.name,
-          mimeType: coverFile.type,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
         });
         setCoverFile(null);
         setCoverMessage("Cover tersimpan.");
@@ -87,12 +87,12 @@ export function AdminBookMedia({
         setGalleryError(validationError.replace("Cover", "Gambar galeri"));
         return;
       }
-      const storageId = await uploadBfgFile(galleryFile, "book-gallery", getToken, sessionClaims);
+      const uploaded = await uploadBfgFileWithMetadata(galleryFile, "book-gallery", getToken, sessionClaims);
       await attachGalleryImage({
         bookId: book._id,
-        storageId,
-        fileName: galleryFile.name,
-        mimeType: galleryFile.type,
+        storageId: uploaded.storageId,
+        fileName: uploaded.fileName,
+        mimeType: uploaded.mimeType,
         altText: galleryAltText,
       });
       setGalleryFile(null);
