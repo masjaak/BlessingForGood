@@ -17,6 +17,9 @@ export function publicMediaR2Enabled(): boolean {
 }
 
 function publicBaseUrl(): string | null {
+  // This production bucket is publicly served by Cloudflare at its verified custom domain.
+  // Prefer the stable media URL to presigned S3 links or the rate-limited r2.dev endpoint.
+  if (process.env.R2_BUCKET === "bfg-public-media") return "https://media.blessingforgood.com";
   const value = process.env.R2_PUBLIC_BASE_URL?.trim().replace(/\/$/, "");
   return value || null;
 }
