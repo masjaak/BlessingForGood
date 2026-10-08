@@ -1,8 +1,9 @@
+import type { Id } from "../../convex/_generated/dataModel";
 import { optimizeBfgFileForUpload, normalizeUploadMimeType } from "@/lib/upload-file";
 
 export type DirectMediaTarget = {
-  bookId?: string;
-  listingId?: string;
+  bookId?: Id<"books">;
+  listingId?: Id<"readyStockListings">;
   purpose: "cover" | "gallery";
 };
 
