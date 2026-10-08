@@ -9,6 +9,7 @@ import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { ProductGallery } from "@/components/product-gallery";
 import { useProduct } from "@/domain/prototype/store";
 import { BfgUploadError, uploadBfgFile } from "@/lib/upload-file";
+import { DirectR2TransportError, uploadDirectPublicMedia } from "@/lib/upload-direct-public-media";
 
 vi.mock("@clerk/nextjs", () => ({
   useAuth: vi.fn(),
@@ -46,6 +47,24 @@ vi.mock("@/lib/upload-file", async () => {
     })),
   };
 });
+
+vi.mock("@/lib/upload-direct-public-media", async (original) => ({
+  ...(await original<typeof import("@/lib/upload-direct-public-media")>()),
+  uploadDirectPublicMedia: vi.fn(
+    async (
+      file: File,
+      target: { bookId?: string; listingId?: string; purpose: "cover" | "gallery" },
+      _prepare: unknown,
+      attach: (args: unknown) => Promise<string>,
+      altText?: string,
+    ) => {
+      const key = await uploadBfgFile(file, target.purpose === "cover" ? "book-cover" : "book-gallery", vi.fn(), {
+        aud: "convex",
+      });
+      return attach({ ...target, key, fileName: file.name, mimeType: file.type, altText });
+    },
+  ),
+}));
 
 type TestGalleryImage = {
   mediaId: string;
@@ -130,9 +149,15 @@ function mockActions({
   moveGallery?: ReturnType<typeof vi.fn>;
   updateExternalPreview?: ReturnType<typeof vi.fn>;
 } = {}) {
-  let actionIndex = 0;
-  const actions = [attachCover, attachGallery];
-  vi.mocked(useAction).mockImplementation(() => actions[actionIndex++ % actions.length] as never);
+  vi.mocked(useAction).mockImplementation((reference) => {
+    const name = getFunctionName(reference as never);
+    if (name === "books:attachCover") return attachCover as never;
+    if (name === "books:attachGalleryImage") return attachGallery as never;
+    return (async (args: { purpose: string }) =>
+      args.purpose === "cover"
+        ? (attachCover as unknown as (input: unknown) => Promise<string>)(args)
+        : (attachGallery as unknown as (input: unknown) => Promise<string>)(args)) as never;
+  });
   let mutationIndex = 0;
   const mutations = [vi.fn(), vi.fn(), vi.fn()];
   vi.mocked(useMutation).mockImplementation((reference) => {
@@ -161,6 +186,7 @@ describe("Admin Book media characterization", () => {
     vi.mocked(useMutation).mockReset();
     vi.mocked(useQuery).mockReset();
     vi.mocked(uploadBfgFile).mockReset();
+    vi.mocked(uploadDirectPublicMedia).mockClear();
     vi.mocked(useProduct).mockReturnValue({ dataSource: "convex" } as never);
     vi.mocked(useAuth).mockReturnValue({ getToken: vi.fn(), sessionClaims: { aud: "convex" } } as never);
     HTMLDialogElement.prototype.showModal = function showModal() {
@@ -199,8 +225,8 @@ describe("Admin Book media characterization", () => {
   });
 
   it("uploads a replacement cover, passes the file through, and follows the refreshed cover query", async () => {
-    const attachCover = vi.fn().mockImplementation(async ({ storageId }: { storageId: string }) => {
-      state.currentBook = { ...state.currentBook, coverUrl: storageUrl(storageId) };
+    const attachCover = vi.fn().mockImplementation(async ({ key }: { key: string }) => {
+      state.currentBook = { ...state.currentBook, coverUrl: storageUrl(key) };
     });
     mockActions({ attachCover });
     const { state, view } = renderAdminBook({ ...baseBook, coverUrl: storageUrl("cover-old") });
@@ -226,15 +252,36 @@ describe("Admin Book media characterization", () => {
     expect(uploadBfgFile).toHaveBeenCalledWith(file, "book-cover", expect.any(Function), { aud: "convex" });
     expect(attachCover).toHaveBeenCalledWith({
       bookId: "book-1",
-      storageId: "storage-cover-new",
+      purpose: "cover",
+      key: "storage-cover-new",
       fileName: "cover-new.png",
       mimeType: "image/png",
+      altText: undefined,
     });
     expect(save.getAttribute("data-loading")).toBeNull();
     expect(within(document.querySelector(".cover-upload-field")!).getByText("Belum ada file dipilih")).toBeTruthy();
     expect(screen.getByRole("img", { name: "Media Book cover preview" }).getAttribute("src")).toBe(
       storageUrl("storage-cover-new"),
     );
+  });
+
+  it("falls back to the established validated upload when R2 transport is unavailable", async () => {
+    const attachCover = vi.fn().mockResolvedValue(undefined);
+    mockActions({ attachCover });
+    renderAdminBook({ ...baseBook, coverUrl: storageUrl("existing-cover") });
+    vi.mocked(uploadDirectPublicMedia).mockRejectedValueOnce(new DirectR2TransportError());
+    vi.mocked(uploadBfgFile).mockResolvedValueOnce("legacy-storage-id" as never);
+    const file = imageFile("fallback.png");
+    fireEvent.change(screen.getByLabelText("Pilih file cover"), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan cover" }));
+    await waitFor(() => expect(screen.getByText("Cover tersimpan.")).toBeTruthy());
+    expect(uploadBfgFile).toHaveBeenCalledWith(file, "book-cover", expect.any(Function), { aud: "convex" });
+    expect(attachCover).toHaveBeenCalledWith({
+      bookId: "book-1",
+      storageId: "legacy-storage-id",
+      fileName: "fallback.png",
+      mimeType: "image/png",
+    });
   });
 
   it("blocks invalid cover selection before transport", () => {
@@ -281,23 +328,21 @@ describe("Admin Book media characterization", () => {
   });
 
   it("uploads gallery media with alt text and renders it after the query refresh", async () => {
-    const attachGallery = vi
-      .fn()
-      .mockImplementation(async ({ storageId, altText }: { storageId: string; altText: string }) => {
-        state.currentBook = {
-          ...state.currentBook,
-          gallery: [
-            ...state.currentBook.gallery,
-            {
-              mediaId: storageId,
-              storageId,
-              displayOrder: state.currentBook.gallery.length,
-              altText,
-              url: storageUrl(storageId),
-            },
-          ],
-        };
-      });
+    const attachGallery = vi.fn().mockImplementation(async ({ key, altText }: { key: string; altText: string }) => {
+      state.currentBook = {
+        ...state.currentBook,
+        gallery: [
+          ...state.currentBook.gallery,
+          {
+            mediaId: key,
+            storageId: key,
+            displayOrder: state.currentBook.gallery.length,
+            altText,
+            url: storageUrl(key),
+          },
+        ],
+      };
+    });
     mockActions({ attachGallery });
     const { state, view } = renderAdminBook();
     vi.mocked(uploadBfgFile).mockResolvedValue("storage-gallery-1" as never);
@@ -312,7 +357,8 @@ describe("Admin Book media characterization", () => {
     expect(uploadBfgFile).toHaveBeenCalledWith(file, "book-gallery", expect.any(Function), { aud: "convex" });
     expect(attachGallery).toHaveBeenCalledWith({
       bookId: "book-1",
-      storageId: "storage-gallery-1",
+      purpose: "gallery",
+      key: "storage-gallery-1",
       fileName: "gallery.png",
       mimeType: "image/png",
       altText: "Inside page",

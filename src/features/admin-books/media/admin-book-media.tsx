@@ -2,14 +2,15 @@
 
 import type { FunctionReturnType } from "convex/server";
 import { useAction, useMutation } from "convex/react";
-import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../../convex/_generated/api";
 import { BFGFilePicker } from "@/components/bfg-file-picker";
 import { CoverUploadField, validateCoverFile } from "@/components/cover-upload-field";
 import { ProductGallery } from "@/components/product-gallery";
 import { Button, ConfirmationDialog, Field, IconButton } from "@/components/ui";
 import { BfgUploadError, uploadBfgFileWithMetadata } from "@/lib/upload-file";
+import { DirectR2TransportError, uploadDirectPublicMedia } from "@/lib/upload-direct-public-media";
 
 type AdminBook = NonNullable<FunctionReturnType<typeof api.books.getForAdmin>>;
 type GalleryImage = AdminBook["gallery"][number];
@@ -33,8 +34,11 @@ export function AdminBookMedia({
   pendingAction: MediaPendingAction | null;
   onPendingActionChange: (action: MediaPendingAction | null) => void;
 }) {
-  const attachCover = useAction(api.books.attachCover);
-  const attachGalleryImage = useAction(api.books.attachGalleryImage);
+  const preparePublicUpload = useMutation(api.directPublicMedia.prepare);
+  const attachPublicUpload = useAction(api.directPublicMedia.attach);
+  const attachLegacyCover = useAction(api.books.attachCover);
+  const attachLegacyGallery = useAction(api.books.attachGalleryImage);
+  const { getToken, sessionClaims } = useAuth();
   const removeGalleryImage = useMutation(api.books.removeGalleryImage);
   const moveGalleryImage = useMutation(api.books.moveGalleryImage);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -46,7 +50,43 @@ export function AdminBookMedia({
   const [galleryError, setGalleryError] = useState("");
   const [galleryPendingMediaId, setGalleryPendingMediaId] = useState<string | null>(null);
   const [confirmGalleryMedia, setConfirmGalleryMedia] = useState<GalleryImage | null>(null);
-  const { getToken, sessionClaims } = useAuth();
+
+  async function uploadMediaWithFallback(file: File, purpose: "cover" | "gallery", altText?: string) {
+    try {
+      await uploadDirectPublicMedia(
+        file,
+        { bookId: book._id, purpose },
+        preparePublicUpload,
+        attachPublicUpload,
+        altText,
+      );
+    } catch (reason) {
+      if (!(reason instanceof DirectR2TransportError)) throw reason;
+      // Transport outage only: retain the previously validated Convex upload path.
+      const uploaded = await uploadBfgFileWithMetadata(
+        file,
+        purpose === "cover" ? "book-cover" : "book-gallery",
+        getToken,
+        sessionClaims,
+      );
+      if (purpose === "cover") {
+        await attachLegacyCover({
+          bookId: book._id,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+        });
+      } else {
+        await attachLegacyGallery({
+          bookId: book._id,
+          storageId: uploaded.storageId,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+          altText,
+        });
+      }
+    }
+  }
 
   async function saveCover() {
     setCoverMessage("");
@@ -59,13 +99,7 @@ export function AdminBookMedia({
           setCoverError(validationError);
           return;
         }
-        const uploaded = await uploadBfgFileWithMetadata(coverFile, "book-cover", getToken, sessionClaims);
-        await attachCover({
-          bookId: book._id,
-          storageId: uploaded.storageId,
-          fileName: uploaded.fileName,
-          mimeType: uploaded.mimeType,
-        });
+        await uploadMediaWithFallback(coverFile, "cover");
         setCoverFile(null);
         setCoverMessage("Cover tersimpan.");
       }
@@ -87,14 +121,7 @@ export function AdminBookMedia({
         setGalleryError(validationError.replace("Cover", "Gambar galeri"));
         return;
       }
-      const uploaded = await uploadBfgFileWithMetadata(galleryFile, "book-gallery", getToken, sessionClaims);
-      await attachGalleryImage({
-        bookId: book._id,
-        storageId: uploaded.storageId,
-        fileName: uploaded.fileName,
-        mimeType: uploaded.mimeType,
-        altText: galleryAltText,
-      });
+      await uploadMediaWithFallback(galleryFile, "gallery", galleryAltText);
       setGalleryFile(null);
       setGalleryMessage("Gambar galeri tersimpan.");
     } catch (reason) {
