@@ -2,6 +2,31 @@
 
 import { useState } from "react";
 
+function supportedCoverSource(src?: string): string | undefined {
+  if (!src) return undefined;
+  if (src.startsWith("/") && !src.startsWith("//") && !src.startsWith("/\\"))
+    return src;
+  if (src.startsWith("blob:")) return src;
+
+  try {
+    const url = new URL(src);
+    if (url.protocol !== "https:" || url.username || url.password) return undefined;
+    if (url.hostname.endsWith(".convex.cloud") && url.pathname.startsWith("/api/storage/")) return src;
+    if (
+      url.hostname === "media.blessingforgood.com" ||
+      url.hostname === "pub-726660f62a4443c99263aff51b169a30.r2.dev"
+    ) return src;
+    // Legacy presigned GET URLs when R2_PUBLIC_BASE_URL was not configured.
+    if (
+      /^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$/.test(url.hostname) &&
+      url.pathname.startsWith("/bfg-public-media/")
+    ) return src;
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
 export function BookCover({
   title,
   publisher,
@@ -15,20 +40,14 @@ export function BookCover({
   src?: string;
   alt?: string;
 }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const localSource = src?.startsWith("/") ? src : undefined;
-  const storageSource = /^https:\/\/[^/]+\.convex\.cloud\/api\/storage\//.test(src || "") ? src : undefined;
-  const publicR2Source = /^https:\/\/pub-726660f62a4443c99263aff51b169a30\.r2\.dev(?:\/|$)/.test(src || "")
-    ? src
-    : undefined;
-  const previewSource = src?.startsWith("blob:") ? src : undefined;
-  const imageSource = storageSource || publicR2Source || previewSource || localSource;
-  const showImage = Boolean(imageSource) && !imageFailed;
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const imageSource = supportedCoverSource(src);
+  const showImage = Boolean(imageSource) && failedSource !== imageSource;
 
   return (
     <div className={`book-cover${showImage ? "" : " is-empty"}`}>
       {showImage ? (
-        // Convex returns short-lived signed storage URLs whose hostname is deployment-specific.
+        // Convex and public R2 images are served from explicit trusted HTTPS hosts.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           className="book-cover-image"
@@ -36,7 +55,7 @@ export function BookCover({
           alt={alt || `${title} cover`}
           loading="lazy"
           decoding="async"
-          onError={() => setImageFailed(true)}
+          onError={() => setFailedSource(imageSource ?? null)}
         />
       ) : (
         <div className="book-cover-fallback" role="img" aria-label={`Cover placeholder for ${title}`}>
