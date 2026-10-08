@@ -14,6 +14,6 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
       - run: npx vitest run convex/lib/publicMedia.test.ts convex/product-media.test.ts tests/components/admin-book-media-characterization.test.tsx
-      - run: npx eslint convex/lib/publicMedia.test.ts
-      - run: npx prettier --check convex/lib/publicMedia.test.ts
+      - run: npx eslint convex/lib/publicMedia.ts convex/lib/publicMedia.test.ts tests/components/admin-book-media-characterization.test.tsx
+      - run: npx prettier --check convex/lib/publicMedia.ts convex/lib/publicMedia.test.ts tests/components/admin-book-media-characterization.test.tsx
       - run: sh -n scripts/vercel-build.sh
