@@ -212,27 +212,37 @@ export const attachCover = action({
     presentation: v.optional(coverPresentationValidator),
   },
   handler: async (ctx, args): Promise<{ storageId: Id<"_storage"> }> => {
-    await ctx.runQuery(internal.books.assertBookUploadAccess, { bookId: args.bookId });
-    await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
-    await validateUploadedFile(
-      ctx,
-      args.storageId,
-      args.fileName,
-      args.mimeType,
-      IMAGE_CONTENT_TYPES,
-      "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
-    );
-    const blob = await ctx.storage.get(args.storageId);
-    const r2Key = blob ? await storePublicMedia(ctx, blob, args.mimeType) : null;
     try {
-      return await ctx.runMutation(internal.books.attachCoverValidated, {
-        bookId: args.bookId,
-        storageId: args.storageId,
-        r2Key: r2Key ?? undefined,
-        presentation: args.presentation,
-      });
+      await ctx.runQuery(internal.books.assertBookUploadAccess, { bookId: args.bookId });
+      await ctx.runQuery(internal.uploads.assertClaim, { storageId: args.storageId, purpose: "book-cover" });
+      await validateUploadedFile(
+        ctx,
+        args.storageId,
+        args.fileName,
+        args.mimeType,
+        IMAGE_CONTENT_TYPES,
+        "cover must be a valid JPG, PNG, or WebP image up to 5 MB",
+      );
+      const blob = await ctx.storage.get(args.storageId);
+      const r2Key = blob ? await storePublicMedia(ctx, blob, args.mimeType) : null;
+      try {
+        return await ctx.runMutation(internal.books.attachCoverValidated, {
+          bookId: args.bookId,
+          storageId: args.storageId,
+          r2Key: r2Key ?? undefined,
+          presentation: args.presentation,
+        });
+      } catch (error) {
+        if (r2Key) await deletePublicMedia(ctx, undefined, r2Key);
+        throw error;
+      }
     } catch (error) {
-      if (r2Key) await deletePublicMedia(ctx, undefined, r2Key);
+      await ctx
+        .runMutation(internal.uploads.disposeClaimedUpload, {
+          storageId: args.storageId,
+          purpose: "book-cover",
+        })
+        .catch(() => undefined);
       throw error;
     }
   },
