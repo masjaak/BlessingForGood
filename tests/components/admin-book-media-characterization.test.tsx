@@ -151,7 +151,9 @@ function mockActions({
   vi.mocked(useAction).mockImplementation(
     () =>
       (async (args: { purpose: string }) =>
-        args.purpose === "cover" ? attachCover(args) : attachGallery(args)) as never,
+        args.purpose === "cover"
+          ? (attachCover as unknown as (input: unknown) => Promise<string>)(args)
+          : (attachGallery as unknown as (input: unknown) => Promise<string>)(args)) as never,
   );
   let mutationIndex = 0;
   const mutations = [vi.fn(), vi.fn(), vi.fn()];
