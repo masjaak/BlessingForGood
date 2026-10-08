@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { useState } from "react";
+import { Component, useState, type ErrorInfo, type ReactNode } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { ProductAccessGuard } from "@/components/product-access-guard";
 import { SiteShell } from "@/components/site-shell";
@@ -32,7 +32,36 @@ function defaultRange() {
   return { start: calendarDateKey(start), end: calendarDateKey(Date.now()) };
 }
 
-function CustomerBooks() {
+type SectionErrorBoundaryProps = { section: string; children: ReactNode };
+type SectionErrorBoundaryState = { failed: boolean };
+
+class SectionErrorBoundary extends Component<SectionErrorBoundaryProps, SectionErrorBoundaryState> {
+  state: SectionErrorBoundaryState = { failed: false };
+
+  static getDerivedStateFromError(): SectionErrorBoundaryState {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`BFG Buku Saya: ${this.props.section} failed`, error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <Card>
+          <p role="alert">Bagian {this.props.section} belum dapat dimuat. Bagian lain tetap bisa diakses.</p>
+          <button className="button button-secondary" type="button" onClick={() => this.setState({ failed: false })}>
+            Coba lagi
+          </button>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function CustomerBooksOverview() {
   const initialRange = defaultRange();
   const [startDate, setStartDate] = useState(initialRange.start);
   const [endDate, setEndDate] = useState(initialRange.end);
@@ -85,10 +114,6 @@ function CustomerBooks() {
           </p>
         ) : null}
       </Card>
-
-      <CustomerReadyStockOrdersSection />
-
-      <CustomerManualPoSection />
 
       {overview === undefined ? (
         <LoadingRegion label="Memuat Buku Saya">
@@ -211,6 +236,22 @@ function CustomerBooks() {
           </div>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function CustomerBooks() {
+  return (
+    <div className="content-stack">
+      <SectionErrorBoundary section="ringkasan Buku Saya">
+        <CustomerBooksOverview />
+      </SectionErrorBoundary>
+      <SectionErrorBoundary section="pesanan Ready Stock">
+        <CustomerReadyStockOrdersSection />
+      </SectionErrorBoundary>
+      <SectionErrorBoundary section="Random PO">
+        <CustomerManualPoSection />
+      </SectionErrorBoundary>
     </div>
   );
 }
