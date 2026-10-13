@@ -13,6 +13,7 @@ import {
   ActionGroup,
   Button,
   Card,
+  ConfirmationDialog,
   EmptyState,
   Field,
   LinkButton,
@@ -579,6 +580,197 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   );
 }
 
+function SettlementReminderQueue() {
+  const pagination = useAdminCursorPagination();
+  const pageKey = `${pagination.cursor ?? "first"}:${pagination.pageSize}`;
+  const rows = useQuery(api.invoiceReminders.listForAdmin, {
+    paginationOpts: { numItems: pagination.pageSize, cursor: pagination.cursor },
+  });
+  const sendReminder = useMutation(api.invoiceReminders.send);
+  const [selection, setSelection] = useState<{ pageKey: string; invoiceIds: string[] }>({
+    pageKey: "",
+    invoiceIds: [],
+  });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [report, setReport] = useState("");
+  const [results, setResults] = useState<Record<string, "sent" | "failed">>({});
+
+  // Selection belongs exclusively to the current page; never silently send
+  // hidden invoices left selected from another page.
+  const selectedIds = selection.pageKey === pageKey ? selection.invoiceIds : [];
+  const candidates = rows?.page ?? [];
+  const eligible = candidates.filter((invoice) => invoice.canSend);
+  const selected = eligible.filter((invoice) => selectedIds.includes(String(invoice.invoiceId)));
+  const totalOutstanding = selected.reduce((sum, invoice) => sum + invoice.outstandingAmount, 0);
+
+  async function sendSelectedReminders() {
+    if (isSending || selected.length === 0) return;
+    // Confirmation is intentionally required, and both client and server
+    // enforce eligibility immediately before sending each individual notice.
+    const targets = selected.slice(0, 50);
+    setConfirmOpen(false);
+    setIsSending(true);
+    setReport("");
+    try {
+      const settled = await Promise.allSettled(
+        targets.map((invoice) => sendReminder({ invoiceId: invoice.invoiceId })),
+      );
+      const successCount = settled.filter((result) => result.status === "fulfilled").length;
+      const failedIds = targets
+        .filter((_, index) => settled[index].status === "rejected")
+        .map((invoice) => String(invoice.invoiceId));
+      setSelection({ pageKey, invoiceIds: failedIds });
+      setResults((previous) => ({
+        ...previous,
+        ...Object.fromEntries(
+          targets.map((invoice, index) => [
+            String(invoice.invoiceId),
+            settled[index].status === "fulfilled" ? "sent" : "failed",
+          ]),
+        ),
+      }));
+      setReport(
+        `${successCount} pengingat berhasil dikirim${failedIds.length ? `, ${failedIds.length} gagal. Invoice gagal tetap dipilih jika masih eligible.` : "."}`,
+      );
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  return (
+    <Card className="settlement-reminder-queue">
+      <div className="split-heading">
+        <div>
+          <span className="card-kicker">PO Reguler · Finance</span>
+          <h2>Pengingat pelunasan massal</h2>
+        </div>
+        <StatusBadge tone={eligible.length ? "positive" : "neutral"}>
+          {eligible.length} bisa diingatkan
+        </StatusBadge>
+      </div>
+      <p className="subtle">
+        Pilih invoice yang DP-nya sudah terpenuhi tetapi belum lunas.
+        Setiap customer menerima notifikasi BFG pada invoice masing-masing, bukan WhatsApp.
+        Pengingat dibatasi sekali setiap 24 jam.
+      </p>
+      <div className="invoice-reminder-bulk-actions">
+        <label className="invoice-reminder-select-all">
+          <input
+            aria-label="Pilih semua invoice eligible pada halaman ini"
+            type="checkbox"
+            checked={eligible.length > 0 && selected.length === eligible.length}
+            disabled={!eligible.length || isSending}
+            onChange={(event) =>
+              setSelection({
+                pageKey,
+                invoiceIds: event.target.checked ? eligible.map((invoice) => String(invoice.invoiceId)) : [],
+              })
+            }
+          />
+          Pilih semua eligible di halaman ini
+        </label>
+        <span className="subtle">
+          {selected.length} dipilih · Sisa tagihan {formatIdr(totalOutstanding)}
+        </span>
+        <Button
+          type="button"
+          loading={isSending}
+          loadingLabel="Mengirim pengingat…"
+          disabled={!selected.length || isSending || selected.length > 50}
+          onClick={() => setConfirmOpen(true)}
+        >
+          Ingatkan Pelunasan Terpilih
+        </Button>
+      </div>
+      {report ? <p className="subtle" role="status">{report}</p> : null}
+      {rows === undefined ? (
+        <LoadingRegion label="Memuat invoice pelunasan">
+          <SkeletonText width="72%" />
+          <SkeletonText width="54%" />
+        </LoadingRegion>
+      ) : candidates.length ? (
+        <div className="content-stack invoice-issue-list">
+          {candidates.map((invoice) => {
+            const invoiceId = String(invoice.invoiceId);
+            return (
+              <div className="invoice-issue-row" data-testid="settlement-reminder-row" key={invoiceId}>
+                <label className="invoice-issue-select">
+                  <input
+                    aria-label={`Pilih pengingat ${invoice.invoiceNumber} · ${invoice.customerName}`}
+                    type="checkbox"
+                    checked={invoice.canSend && selectedIds.includes(invoiceId)}
+                    disabled={!invoice.canSend || isSending}
+                    onChange={(event) =>
+                      setSelection({
+                        pageKey,
+                        invoiceIds: event.target.checked
+                          ? [...selectedIds, invoiceId]
+                          : selectedIds.filter((id) => id !== invoiceId),
+                      })
+                    }
+                  />
+                </label>
+                <div className="invoice-issue-main">
+                  <strong>{invoice.customerName}</strong>
+                  <span className="subtle">
+                    {invoiceReference(invoice.invoiceNumber)} · {invoice.batchName || "PO reguler"}
+                    {invoice.memberCode ? ` · ${invoice.memberCode}` : ""}
+                  </span>
+                  <span className="subtle">Sisa pelunasan {formatIdr(invoice.outstandingAmount)}</span>
+                  {invoice.reason ? <span className="subtle">{invoice.reason}</span> : null}
+                  {invoice.lastSentAt ? (
+                    <span className="subtle">
+                      Pengingat terakhir {new Date(invoice.lastSentAt).toLocaleString("id-ID")}
+                    </span>
+                  ) : null}
+                  {results[invoiceId] === "sent" ? (
+                    <span className="subtle" role="status">Pengingat berhasil dikirim</span>
+                  ) : results[invoiceId] === "failed" ? (
+                    <span className="error-text" role="alert">Pengiriman gagal — periksa status lalu coba lagi</span>
+                  ) : null}
+                </div>
+                <div className="invoice-issue-status">
+                  <StatusBadge tone={invoice.canSend ? "positive" : "warning"}>
+                    {invoice.canSend ? "Siap diingatkan" : "Tidak eligible"}
+                  </StatusBadge>
+                </div>
+                <div className="invoice-issue-action">
+                  <LinkButton href={`/admin/invoices/${invoiceId}`} variant="secondary">
+                    Buka invoice
+                  </LinkButton>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="subtle">Tidak ada invoice PO reguler dengan DP dan sisa tagihan pada halaman ini.</p>
+      )}
+      <AdminPagination
+        {...pagination}
+        rowCount={candidates.length}
+        isDone={rows?.isDone ?? true}
+        continueCursor={rows?.continueCursor ?? ""}
+      />
+      <ConfirmationDialog
+        open={confirmOpen}
+        title="Kirim pengingat pelunasan terpilih?"
+        description={`Kirim ${selected.length} notifikasi internal ke customer untuk invoice yang dipilih. Status pembayaran dicek ulang sebelum setiap pengiriman. Tidak membuat invoice baru.`}
+        confirmLabel={`Kirim ${selected.length} pengingat`}
+        disabled={isSending || selected.length === 0 || selected.length > 50}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => void sendSelectedReminders()}
+      >
+        <div className="summary-line">
+          <span>Total sisa tagihan terpilih</span>
+          <strong>{formatIdr(totalOutstanding)}</strong>
+        </div>
+      </ConfirmationDialog>
+    </Card>
+  );
+}
+
 function PersistentAdminInvoices() {
   const { adminInvoiceList } = useOperations();
   const searchParams = useSearchParams();
@@ -646,6 +838,7 @@ function PersistentAdminInvoices() {
             ) : null}
           </Card>
           <CustomerBatchInvoiceQueue customerId={requestedCustomerId} />
+          <SettlementReminderQueue />
           {visibleInvoices.length ? (
             <div className="content-stack">
               {visibleInvoices.map((invoice) => (
