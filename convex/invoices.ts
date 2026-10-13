@@ -473,7 +473,12 @@ async function issueInvoiceRecord(ctx: MutationCtx, user: Doc<"appUsers">, invoi
 }
 
 export const issueManualPo = mutation({
-  args: { entryId: v.id("manualPoEntries") },
+  args: {
+    entryId: v.id("manualPoEntries"),
+    // Optional for backward compatibility with existing Random PO billing calls.
+    // Value uses basis points: 3000 = 30%, 10000 = 100%.
+    depositPercentageBasisPoints: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     const user = await requirePermission(ctx, "invoices.manage");
     const entry = await ctx.db.get(args.entryId);
@@ -506,6 +511,13 @@ export const issueManualPo = mutation({
       return existing.status === "draft" ? issueInvoiceRecord(ctx, user, existing) : invoiceView(ctx, existing._id);
     }
 
+    const depositRequirementMode = args.depositPercentageBasisPoints === undefined ? "none" : "percentage";
+    const depositRequirementValue = args.depositPercentageBasisPoints;
+    const depositRequiredAmount = requiredAmount(
+      entry.priceAmount,
+      depositRequirementMode,
+      depositRequirementValue,
+    );
     const now = Date.now();
     const invoiceNumber = await nextInvoiceNumber(ctx, now);
     const invoiceId = await ctx.db.insert("invoices", {
@@ -518,8 +530,9 @@ export const issueManualPo = mutation({
       totalAmount: entry.priceAmount,
       adjustedTotalAmount: entry.priceAmount,
       financialAdjustmentAmount: 0,
-      depositRequirementMode: "none",
-      depositRequiredAmount: 0,
+      depositRequirementMode,
+      depositRequirementValue,
+      depositRequiredAmount,
       allocatedDepositAmount: 0,
       verifiedPaymentAmount: 0,
       outstandingAmount: entry.priceAmount,
