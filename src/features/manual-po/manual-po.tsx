@@ -5,6 +5,9 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Button, Card, EmptyState, Field, LinkButton, Money, StatusBadge } from "@/components/ui";
+import { BFGSelect } from "@/components/bfg-select";
+import { percentageToBasisPoints } from "@/lib/percentage";
+import { calculateDepositRequired } from "../../../convex/lib/invoiceCalculations";
 
 function manualPoStatusLabel(status: string) {
   if (status === "unbilled") return "Menunggu tagihan";
@@ -31,10 +34,26 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
   const [etaText, setEtaText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [billingPendingId, setBillingPendingId] = useState<string | null>(null);
+  const [dpMode, setDpMode] = useState<"none" | "percentage">("none");
+  const [dpPercentage, setDpPercentage] = useState("30");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const visibleEntries = entries ?? [];
+  const dpValue = Number(dpPercentage);
+  const dpValid =
+    dpPercentage.trim() !== "" &&
+    Number.isFinite(dpValue) &&
+    dpValue >= 0 &&
+    dpValue <= 100 &&
+    Number.isSafeInteger(dpValue * 100);
+  const dpBasisPoints = dpMode === "percentage" && dpValid ? percentageToBasisPoints(dpValue) : null;
+
+  function invoiceArgs(entryId: Id<"manualPoEntries">) {
+    if (dpMode === "none") return { entryId };
+    if (!dpValid) throw new Error("Persentase DP harus berada di antara 0–100%.");
+    return { entryId, depositPercentageBasisPoints: percentageToBasisPoints(dpValue) };
+  }
 
   function resetForm() {
     setTitle("");
@@ -58,7 +77,9 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     try {
       await createEntry({ customerUserId, title, priceAmount, etaText });
       resetForm();
-      setSuccess("Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.");
+      setSuccess(
+        "Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.",
+      );
     } catch {
       setError("Pesanan Khusus belum berhasil ditambahkan. Coba lagi.");
     } finally {
@@ -71,10 +92,14 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     setSuccess("");
     setBillingPendingId(String(entryId));
     try {
-      await issueManualPo({ entryId });
+      await issueManualPo(invoiceArgs(entryId));
       setSuccess("Tagihan Pesanan Khusus diterbitkan. Customer sekarang bisa membuka dan membayar dari menu Tagihan.");
-    } catch {
-      setError("Tagihan belum berhasil diterbitkan. Coba lagi.");
+    } catch (reason) {
+      setError(
+        reason instanceof Error && reason.message.includes("Persentase DP")
+          ? reason.message
+          : "Tagihan belum berhasil diterbitkan. Coba lagi.",
+      );
     } finally {
       setBillingPendingId(null);
     }
@@ -164,6 +189,40 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
         </div>
       </form>
 
+      <div className="manual-po-billing-settings">
+        <Field label="Syarat DP saat menerbitkan invoice">
+          <BFGSelect
+            aria-label="Mode DP Pesanan Khusus"
+            value={dpMode}
+            disabled={billingPendingId !== null}
+            onChange={(event) => setDpMode(event.target.value as "none" | "percentage")}
+          >
+            <option value="none">Tanpa minimum DP (seperti sebelumnya)</option>
+            <option value="percentage">DP persentase (%)</option>
+          </BFGSelect>
+        </Field>
+        {dpMode === "percentage" ? (
+          <Field label="DP (%)">
+            <input
+              className="input"
+              aria-label="DP Pesanan Khusus (%)"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={dpPercentage}
+              disabled={billingPendingId !== null}
+              onChange={(event) => setDpPercentage(event.target.value)}
+            />
+          </Field>
+        ) : null}
+        {dpMode === "percentage" && !dpValid ? (
+          <p className="error-text" role="alert">
+            DP harus antara 0–100% (maksimal 2 desimal).
+          </p>
+        ) : null}
+      </div>
+
       <div className="content-stack manual-po-admin-list">
         {entries === undefined ? (
           <p className="subtle">Memuat Pesanan Khusus…</p>
@@ -180,6 +239,18 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                 </span>
                 <span className="manual-po-admin-row-actions">
                   <Money amount={entry.priceAmount} />
+                  {!entry.invoiceId && dpBasisPoints !== null ? (
+                    <small className="subtle">
+                      DP minimum{" "}
+                      <Money amount={calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)} /> · Sisa
+                      setelah DP{" "}
+                      <Money
+                        amount={
+                          entry.priceAmount - calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)
+                        }
+                      />
+                    </small>
+                  ) : null}
                   <StatusBadge
                     tone={
                       entry.operationalStatus
@@ -209,7 +280,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                       variant="secondary"
                       loading={billingPendingId === String(entry.entryId)}
                       loadingLabel="Menerbitkan…"
-                      disabled={billingPendingId !== null}
+                      disabled={billingPendingId !== null || (dpMode === "percentage" && !dpValid)}
                       onClick={() => void createInvoice(entry.entryId)}
                     >
                       Buat tagihan
@@ -267,9 +338,7 @@ export function CustomerManualPoSection() {
         <StatusBadge>{visibleEntries.length}</StatusBadge>
       </div>
 
-      <p className="subtle">
-        Pantau Random PO dari penagihan, pembayaran, menunggu barang datang, sampai diterima.
-      </p>
+      <p className="subtle">Pantau Random PO dari penagihan, pembayaran, menunggu barang datang, sampai diterima.</p>
 
       <div className="content-stack">
         {visibleEntries.map((entry) => (
