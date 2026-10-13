@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -60,6 +61,54 @@ async function reminderState(ctx: DataCtx, invoice: Doc<"invoices">) {
     outstandingAmount: invoice.outstandingAmount,
   };
 }
+
+/**
+ * Admin-only, paginated Regular PO settlement queue.
+ * Filters invoice categories on the backend before pagination; the per-invoice
+ * reminderState still enforces all payment, permission and cooldown guards.
+ * Displaying blocked rows lets Admin understand why an invoice is not selectable.
+ */
+export const listForAdmin = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "invoices.read.all");
+    const page = await ctx.db
+      .query("invoices")
+      .withIndex("by_status", (index) => index.eq("status", "issued"))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("manualPoEntryId"), undefined),
+          q.eq(q.field("readyStockOrderId"), undefined),
+          q.gt(q.field("depositRequiredAmount"), 0),
+          q.gt(q.field("outstandingAmount"), 0),
+        ),
+      )
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...page,
+      page: await Promise.all(
+        page.page.map(async (invoice) => {
+          const [customer, batch, status] = await Promise.all([
+            ctx.db.get(invoice.customerUserId),
+            invoice.batchId ? ctx.db.get(invoice.batchId) : Promise.resolve(null),
+            reminderState(ctx, invoice),
+          ]);
+          return {
+            invoiceId: invoice._id,
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: customer?.displayNameSnapshot || "Pelanggan BFG",
+            memberCode: customer?.memberCode ?? null,
+            batchName: batch?.name ?? null,
+            depositRequiredAmount: invoice.depositRequiredAmount,
+            ...status,
+          };
+        }),
+      ),
+    };
+  },
+});
 
 export const getStatus = query({
   args: { invoiceId: v.id("invoices") },
