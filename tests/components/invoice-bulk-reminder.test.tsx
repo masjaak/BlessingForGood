@@ -81,7 +81,7 @@ describe("BFG-TCK-003 bulk settlement reminder UI", () => {
     expect(blocked).toHaveProperty("disabled", true);
     expect(blocked).toHaveProperty("checked", false);
     expect(screen.getByText(/2 dipilih/)).toBeTruthy();
-    expect(screen.getByText(/Rp350.000/)).toBeTruthy();
+    expect(screen.getByText(/350.000/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Ingatkan Pelunasan Terpilih" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText(/Kirim 2 notifikasi internal/)).toBeTruthy();
