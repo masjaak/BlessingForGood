@@ -8849,6 +8849,84 @@ p {
   justify-content: center;
 }
 
+.admin-shell .admin-invoice-workflow {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.admin-shell .admin-invoice-workflow-heading {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
+}
+
+.admin-shell .admin-invoice-workflow-heading h2 {
+  margin: 0;
+}
+
+.admin-shell .admin-invoice-workflow-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.admin-shell .admin-invoice-workflow-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 0;
+  min-height: 78px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+
+.admin-shell .admin-invoice-workflow-tab.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--color-white);
+}
+
+.admin-shell .admin-invoice-workflow-tab:not(.is-active):hover {
+  border-color: var(--accent);
+  background: var(--mint);
+}
+
+.admin-shell .admin-invoice-workflow-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.admin-shell .admin-invoice-workflow-tab-caption {
+  font-size: var(--font-size-small);
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.admin-shell .admin-invoice-workflow [role="tabpanel"] {
+  min-width: 0;
+}
+
+@media (max-width: 540px) {
+  .admin-shell .admin-invoice-workflow-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .admin-invoice-workflow-tab {
+    min-height: 66px;
+  }
+}
+
 .admin-shell .invoice-reminder-bulk-actions {
   display: flex;
   align-items: center;
