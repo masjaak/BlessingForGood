@@ -263,13 +263,9 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   const reminderMode = statusFilter === "deposit_paid";
   const reminderEligibility = useQuery(
     api.invoiceReminders.getEligibilityForInvoices,
-    reminderMode
-      ? { invoiceIds: pageRows.flatMap((row) => row.invoiceId ? [row.invoiceId] : []) }
-      : "skip",
+    reminderMode ? { invoiceIds: pageRows.flatMap((row) => (row.invoiceId ? [row.invoiceId] : [])) } : "skip",
   );
-  const reminderStatusById = new Map(
-    (reminderEligibility || []).map((state) => [String(state.invoiceId), state]),
-  );
+  const reminderStatusById = new Map((reminderEligibility || []).map((state) => [String(state.invoiceId), state]));
   const reminderEligibleIds = reminderMode
     ? pageRows
         .filter((row) => row.invoiceId && reminderStatusById.get(String(row.invoiceId))?.canSend)
@@ -373,9 +369,7 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
       for (let index = 0; index < targets.length; index += 10) {
         settled.push(
           ...(await Promise.allSettled(
-            targets.slice(index, index + 10).map((row) =>
-              sendSettlementReminder({ invoiceId: row.invoiceId! }),
-            ),
+            targets.slice(index, index + 10).map((row) => sendSettlementReminder({ invoiceId: row.invoiceId! })),
           )),
         );
       }
@@ -500,34 +494,34 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
         </Button>
       </div>
       {!reminderMode ? (
-      <div className="form-grid invoice-issue-requirement">
-        <label className="field">
-          <span className="field-label">Syarat deposit</span>
-          <BFGSelect
-            className="select"
-            value={mode}
-            onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
-          >
-            <option value="none">Tidak ada</option>
-            <option value="fixed">Nominal tetap (IDR)</option>
-            <option value="percentage">Persentase (%)</option>
-          </BFGSelect>
-        </label>
-        {mode !== "none" ? (
-          <Field label={mode === "fixed" ? "Nominal (IDR)" : "Persentase (0–100%)"}>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              max={mode === "percentage" ? 100 : undefined}
-              step={mode === "percentage" ? "0.01" : "1"}
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              required
-            />
-          </Field>
-        ) : null}
-      </div>
+        <div className="form-grid invoice-issue-requirement">
+          <label className="field">
+            <span className="field-label">Syarat deposit</span>
+            <BFGSelect
+              className="select"
+              value={mode}
+              onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
+            >
+              <option value="none">Tidak ada</option>
+              <option value="fixed">Nominal tetap (IDR)</option>
+              <option value="percentage">Persentase (%)</option>
+            </BFGSelect>
+          </label>
+          {mode !== "none" ? (
+            <Field label={mode === "fixed" ? "Nominal (IDR)" : "Persentase (0–100%)"}>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                max={mode === "percentage" ? 100 : undefined}
+                step={mode === "percentage" ? "0.01" : "1"}
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                required
+              />
+            </Field>
+          ) : null}
+        </div>
       ) : null}
       <ActionGroup className="invoice-issue-bulk-actions" variant="responsive">
         {reminderMode ? (

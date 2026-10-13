@@ -137,7 +137,12 @@ export const getEligibilityForInvoices = query({
           return { invoiceId, canSend: false, reason: "Invoice tidak ditemukan.", outstandingAmount: 0 };
         }
         const status = await reminderState(ctx, invoice);
-        return { invoiceId, canSend: status.canSend, reason: status.reason, outstandingAmount: status.outstandingAmount };
+        return {
+          invoiceId,
+          canSend: status.canSend,
+          reason: status.reason,
+          outstandingAmount: status.outstandingAmount,
+        };
       }),
     );
   },
