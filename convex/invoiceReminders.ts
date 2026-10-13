@@ -102,7 +102,6 @@ export const listForAdmin = query({
             memberCode: customer?.memberCode ?? null,
             batchName: batch?.name ?? null,
             depositRequiredAmount: invoice.depositRequiredAmount,
-            outstandingAmount: invoice.outstandingAmount,
             ...status,
           };
         }),
