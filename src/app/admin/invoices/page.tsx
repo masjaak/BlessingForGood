@@ -270,6 +270,11 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   const reminderStatusById = new Map(
     (reminderEligibility || []).map((state) => [String(state.invoiceId), state]),
   );
+  const reminderEligibleIds = reminderMode
+    ? pageRows
+        .filter((row) => row.invoiceId && reminderStatusById.get(String(row.invoiceId))?.canSend)
+        .map((row) => String(row.invoiceId))
+    : [];
   const reminderTargets = reminderMode
     ? pageRows.filter(
         (row) =>
@@ -542,9 +547,21 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           </Button>
         )}
         {reminderMode ? (
-          <span className="subtle">
-            {reminderTargets.length} dipilih · Total sisa pelunasan {formatIdr(reminderTotalOutstanding)}
-          </span>
+          <>
+            <label className="invoice-reminder-select-all">
+              <input
+                type="checkbox"
+                aria-label="Pilih semua invoice yang bisa diingatkan dalam halaman ini"
+                checked={reminderEligibleIds.length > 0 && reminderTargets.length === reminderEligibleIds.length}
+                disabled={pending !== null || reminderEligibleIds.length === 0}
+                onChange={(event) => setSelected(event.target.checked ? reminderEligibleIds : [])}
+              />
+              Pilih semua yang eligible
+            </label>
+            <span className="subtle">
+              {reminderTargets.length} dipilih · Total sisa pelunasan {formatIdr(reminderTotalOutstanding)}
+            </span>
+          </>
         ) : null}
         {report ? (
           <span className="subtle action-support" role="status">
