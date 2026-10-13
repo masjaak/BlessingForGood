@@ -9969,6 +9969,61 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
 
 
 /* Admin Random PO queue */
+.admin-shell .random-po-invoice-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: var(--space-md);
+}
+
+.admin-shell .random-po-bulk-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.admin-shell .random-po-bulk-controls > .button {
+  margin-left: auto;
+}
+
+.admin-shell .random-po-select-label,
+.admin-shell .random-po-entry-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--space-sm);
+}
+
+.admin-shell .random-po-select-label {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-shell .random-po-entry-title > strong {
+  overflow-wrap: anywhere;
+}
+
+.admin-shell .random-po-select-label input[type="checkbox"],
+.admin-shell .random-po-entry-title input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .admin-shell .random-po-invoice-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .random-po-bulk-controls > .button {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+
 .admin-shell .random-po-summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
