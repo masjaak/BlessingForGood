@@ -68,21 +68,25 @@ describe("BFG-TCK-003 regular PO settlement reminders", () => {
     const ready = await admin.query(api.invoiceReminders.listForAdmin, {
       paginationOpts: { numItems: 1, cursor: null },
     });
-    expect(ready.page).toMatchObject([{
-      invoiceId: invoice.invoiceId,
-      canSend: true,
-      outstandingAmount: 175000,
-    }]);
+    expect(ready.page).toMatchObject([
+      {
+        invoiceId: invoice.invoiceId,
+        canSend: true,
+        outstandingAmount: 175000,
+      },
+    ]);
 
     await admin.mutation(api.invoiceReminders.send, { invoiceId: invoice.invoiceId });
     const cooldown = await admin.query(api.invoiceReminders.listForAdmin, {
       paginationOpts: { numItems: 10, cursor: null },
     });
-    expect(cooldown.page).toMatchObject([{
-      invoiceId: invoice.invoiceId,
-      canSend: false,
-      lastSentAt: expect.any(Number),
-    }]);
+    expect(cooldown.page).toMatchObject([
+      {
+        invoiceId: invoice.invoiceId,
+        canSend: false,
+        lastSentAt: expect.any(Number),
+      },
+    ]);
     expect(cooldown.page[0].reason).toContain("24 jam");
   });
 

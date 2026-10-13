@@ -652,14 +652,11 @@ function SettlementReminderQueue() {
           <span className="card-kicker">PO Reguler · Finance</span>
           <h2>Pengingat pelunasan massal</h2>
         </div>
-        <StatusBadge tone={eligible.length ? "positive" : "neutral"}>
-          {eligible.length} bisa diingatkan
-        </StatusBadge>
+        <StatusBadge tone={eligible.length ? "positive" : "neutral"}>{eligible.length} bisa diingatkan</StatusBadge>
       </div>
       <p className="subtle">
-        Pilih invoice yang DP-nya sudah terpenuhi tetapi belum lunas.
-        Setiap customer menerima notifikasi BFG pada invoice masing-masing, bukan WhatsApp.
-        Pengingat dibatasi sekali setiap 24 jam.
+        Pilih invoice yang DP-nya sudah terpenuhi tetapi belum lunas. Setiap customer menerima notifikasi BFG pada
+        invoice masing-masing, bukan WhatsApp. Pengingat dibatasi sekali setiap 24 jam.
       </p>
       <div className="invoice-reminder-bulk-actions">
         <label className="invoice-reminder-select-all">
@@ -690,7 +687,11 @@ function SettlementReminderQueue() {
           Ingatkan Pelunasan Terpilih
         </Button>
       </div>
-      {report ? <p className="subtle" role="status">{report}</p> : null}
+      {report ? (
+        <p className="subtle" role="status">
+          {report}
+        </p>
+      ) : null}
       {rows === undefined ? (
         <LoadingRegion label="Memuat invoice pelunasan">
           <SkeletonText width="72%" />
@@ -732,9 +733,13 @@ function SettlementReminderQueue() {
                     </span>
                   ) : null}
                   {results[invoiceId] === "sent" ? (
-                    <span className="subtle" role="status">Pengingat berhasil dikirim</span>
+                    <span className="subtle" role="status">
+                      Pengingat berhasil dikirim
+                    </span>
                   ) : results[invoiceId] === "failed" ? (
-                    <span className="error-text" role="alert">Pengiriman gagal — periksa status lalu coba lagi</span>
+                    <span className="error-text" role="alert">
+                      Pengiriman gagal — periksa status lalu coba lagi
+                    </span>
                   ) : null}
                 </div>
                 <div className="invoice-issue-status">
@@ -864,10 +869,11 @@ function PersistentAdminInvoices() {
                   <div className="summary-line">
                     <span>Referensi pesanan</span>
                     <span>
-                    {invoice.source === "manual_po"
-                      ? "Pesanan Khusus / Random PO"
-                      : invoice.orderCode || (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
-                  </span>
+                      {invoice.source === "manual_po"
+                        ? "Pesanan Khusus / Random PO"
+                        : invoice.orderCode ||
+                          (invoice.orderId ? `BFG-ORD-LEGACY-${invoice.orderId.slice(-8).toUpperCase()}` : "Pesanan")}
+                    </span>
                   </div>
                   <div className="summary-line">
                     <span>Sisa tagihan</span>
