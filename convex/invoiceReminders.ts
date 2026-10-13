@@ -90,15 +90,24 @@ export const listForAdmin = query({
       ...page,
       page: await Promise.all(
         page.page.map(async (invoice) => {
-          const [customer, batch, status] = await Promise.all([
+          const [customer, order, batch, status] = await Promise.all([
             ctx.db.get(invoice.customerUserId),
+            invoice.orderId ? ctx.db.get(invoice.orderId) : Promise.resolve(null),
             invoice.batchId ? ctx.db.get(invoice.batchId) : Promise.resolve(null),
             reminderState(ctx, invoice),
           ]);
           return {
             invoiceId: invoice._id,
             invoiceNumber: invoice.invoiceNumber,
-            customerName: customer?.displayNameSnapshot || "Pelanggan BFG",
+            // Use the immutable order customer name first, matching invoiceView().
+            // Older appUsers may have no displayNameSnapshot even though the order
+            // (and printed invoice) already knows the customer's actual name.
+            customerName:
+              (order?.customerUserId === invoice.customerUserId ? order.customerName?.trim() : "") ||
+              customer?.displayNameSnapshot?.trim() ||
+              customer?.emailSnapshot?.trim() ||
+              customer?.memberCode ||
+              "Nama pelanggan belum tersedia",
             memberCode: customer?.memberCode ?? null,
             batchName: batch?.name ?? null,
             depositRequiredAmount: invoice.depositRequiredAmount,
