@@ -39,6 +39,74 @@ async function settleDp(
 describe("BFG-TCK-003 regular PO settlement reminders", () => {
   beforeEach(configureTestEnvironment);
 
+  it("lists paginated Regular PO invoices with DP and outstanding, including eligibility reasons", async () => {
+    const t = testConvex();
+    const { admin, customer, secondCustomer, draft } = await setupRegularInvoice(t);
+    const invoice = await admin.mutation(api.invoices.issue, { invoiceId: draft.invoiceId });
+
+    // Do not leak the Admin finance queue to a customer.
+    await expect(
+      customer.query(api.invoiceReminders.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      secondCustomer.query(api.invoiceReminders.listForAdmin, { paginationOpts: { numItems: 10, cursor: null } }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+
+    const before = await admin.query(api.invoiceReminders.listForAdmin, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(before.page).toHaveLength(1);
+    expect(before.page[0]).toMatchObject({
+      invoiceId: invoice.invoiceId,
+      outstandingAmount: 250000,
+      depositRequiredAmount: 75000,
+      canSend: false,
+    });
+    expect(before.page[0].reason).toContain("DP belum terpenuhi");
+
+    await settleDp(admin, customer, invoice.invoiceId);
+    const ready = await admin.query(api.invoiceReminders.listForAdmin, {
+      paginationOpts: { numItems: 1, cursor: null },
+    });
+    expect(ready.page).toMatchObject([{
+      invoiceId: invoice.invoiceId,
+      canSend: true,
+      outstandingAmount: 175000,
+    }]);
+
+    await admin.mutation(api.invoiceReminders.send, { invoiceId: invoice.invoiceId });
+    const cooldown = await admin.query(api.invoiceReminders.listForAdmin, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(cooldown.page).toMatchObject([{
+      invoiceId: invoice.invoiceId,
+      canSend: false,
+      lastSentAt: expect.any(Number),
+    }]);
+    expect(cooldown.page[0].reason).toContain("24 jam");
+  });
+
+  it("does not list Random PO invoices in the Regular PO bulk reminder queue", async () => {
+    const t = testConvex();
+    const { admin, customer } = await setupUsers(t);
+    const current = await customer.query(api.users.current, {});
+    if (!current) throw new Error("Customer fixture missing");
+    const entry = await admin.mutation(api.manualPoEntries.create, {
+      customerUserId: current.appUserId,
+      title: "Random PO excluded",
+      priceAmount: 200000,
+      etaText: "April 2027",
+    });
+    await admin.mutation(api.invoices.issueManualPo, {
+      entryId: entry.entryId,
+      depositPercentageBasisPoints: 3000,
+    });
+    const candidates = await admin.query(api.invoiceReminders.listForAdmin, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(candidates.page).toHaveLength(0);
+  });
+
   it("sends a guarded in-app reminder for the existing invoice, records audit, and enforces cooldown", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer, draft } = await setupRegularInvoice(t);
