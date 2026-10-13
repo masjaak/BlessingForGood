@@ -608,14 +608,21 @@ function SettlementReminderQueue() {
     if (isSending || selected.length === 0) return;
     // Confirmation is intentionally required, and both client and server
     // enforce eligibility immediately before sending each individual notice.
-    const targets = selected.slice(0, 50);
+    const targets = selected.slice(0, 100);
     setConfirmOpen(false);
     setIsSending(true);
     setReport("");
     try {
-      const settled = await Promise.allSettled(
-        targets.map((invoice) => sendReminder({ invoiceId: invoice.invoiceId })),
-      );
+      // Bound concurrent writes to avoid overwhelming Convex when Admin
+      // selects an entire 100-item page. Every invoice remains independent.
+      const settled: PromiseSettledResult<unknown>[] = [];
+      for (let index = 0; index < targets.length; index += 10) {
+        settled.push(
+          ...(await Promise.allSettled(
+            targets.slice(index, index + 10).map((invoice) => sendReminder({ invoiceId: invoice.invoiceId })),
+          )),
+        );
+      }
       const successCount = settled.filter((result) => result.status === "fulfilled").length;
       const failedIds = targets
         .filter((_, index) => settled[index].status === "rejected")
@@ -677,7 +684,7 @@ function SettlementReminderQueue() {
           type="button"
           loading={isSending}
           loadingLabel="Mengirim pengingat…"
-          disabled={!selected.length || isSending || selected.length > 50}
+          disabled={!selected.length || isSending || selected.length > 100}
           onClick={() => setConfirmOpen(true)}
         >
           Ingatkan Pelunasan Terpilih
@@ -758,7 +765,7 @@ function SettlementReminderQueue() {
         title="Kirim pengingat pelunasan terpilih?"
         description={`Kirim ${selected.length} notifikasi internal ke customer untuk invoice yang dipilih. Status pembayaran dicek ulang sebelum setiap pengiriman. Tidak membuat invoice baru.`}
         confirmLabel={`Kirim ${selected.length} pengingat`}
-        disabled={isSending || selected.length === 0 || selected.length > 50}
+        disabled={isSending || selected.length === 0 || selected.length > 100}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => void sendSelectedReminders()}
       >
