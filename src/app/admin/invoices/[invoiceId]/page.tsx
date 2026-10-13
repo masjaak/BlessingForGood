@@ -106,6 +106,13 @@ function AdminInvoiceDetail() {
   } = useOperations();
   const [message, setMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+  const [reminderError, setReminderError] = useState("");
+  const sendSettlementReminder = useMutation(api.invoiceReminders.send);
+  const reminderStatus = useQuery(
+    api.invoiceReminders.getStatus,
+    dataSource === "convex" ? { invoiceId: invoiceId as Id<"invoices"> } : "skip",
+  );
   const [showDeleteExplanation, setShowDeleteExplanation] = useState(false);
   const [uatPurgeOpen, setUatPurgeOpen] = useState(false);
   const [uatPurgeError, setUatPurgeError] = useState("");
@@ -172,6 +179,21 @@ function AdminInvoiceDetail() {
     }
   }
 
+  async function sendReminder() {
+    setReminderDialogOpen(false);
+    setReminderError("");
+    setMessage("");
+    setPendingAction("settlement-reminder");
+    try {
+      await sendSettlementReminder({ invoiceId: invoiceId as Id<"invoices"> });
+      setMessage("Pengingat pelunasan dikirim ke notifikasi customer pada invoice yang sama.");
+    } catch (reason) {
+      setReminderError(productErrorMessage(reason, "Pengingat belum berhasil dikirim. Periksa status invoice."));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function confirmInvoiceUatPurge() {
     setPendingAction("uat-delete");
     setUatPurgeError("");
@@ -216,6 +238,11 @@ function AdminInvoiceDetail() {
           {message ? (
             <p className="success-banner" role="status">
               {message}
+            </p>
+          ) : null}
+          {reminderError ? (
+            <p className="error-text" role="alert">
+              {reminderError}
             </p>
           ) : null}
           <Card className="invoice-card">
@@ -278,6 +305,34 @@ function AdminInvoiceDetail() {
               <LinkButton href="/admin/payments" variant="secondary">
                 Tinjau konfirmasi pembayaran
               </LinkButton>
+              {currentAdminInvoice.source === "order" &&
+              currentAdminInvoice.status === "issued" &&
+              currentAdminInvoice.depositRequiredAmount > 0 &&
+              currentAdminInvoice.outstandingAmount > 0 ? (
+                <div className="action-region action-region-separated">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={pendingAction === "settlement-reminder"}
+                    loadingLabel="Mengirim pengingat…"
+                    disabled={pendingAction !== null || !reminderStatus?.canSend}
+                    onClick={() => setReminderDialogOpen(true)}
+                  >
+                    Ingatkan pelunasan
+                  </Button>
+                  <p className="subtle action-support">
+                    {reminderStatus === undefined
+                      ? "Memeriksa status pembayaran dan pengingat…"
+                      : reminderStatus.reason ||
+                        "Kirim notifikasi BFG ke customer untuk melunasi sisa tagihan dari invoice ini."}
+                  </p>
+                  {reminderStatus?.lastSentAt ? (
+                    <p className="subtle action-support">
+                      Terakhir dikirim {new Date(reminderStatus.lastSentAt).toLocaleString("id-ID")}.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <ActionGroup variant="responsive">
                 {currentAdminInvoice.status === "draft" ? (
                   <Button
@@ -474,6 +529,20 @@ function AdminInvoiceDetail() {
               <p className="subtle">Belum ada transaksi deposit yang tercatat.</p>
             )}
           </Card>
+          <ConfirmationDialog
+            open={reminderDialogOpen}
+            title="Kirim pengingat pelunasan?"
+            description={`Notifikasi internal BFG akan dikirim ke ${currentAdminInvoice.customerName} dengan tautan ke invoice yang sama. Tidak ada invoice baru.`}
+            confirmLabel="Kirim pengingat"
+            disabled={pendingAction !== null || !reminderStatus?.canSend}
+            onCancel={() => setReminderDialogOpen(false)}
+            onConfirm={() => void sendReminder()}
+          >
+            <div className="summary-line">
+              <span>Sisa tagihan saat ini</span>
+              <strong>{formatIdr(currentAdminInvoice.outstandingAmount)}</strong>
+            </div>
+          </ConfirmationDialog>
           <ConfirmationDialog
             open={showDeleteExplanation}
             title="Invoice tidak dapat dihapus permanen"

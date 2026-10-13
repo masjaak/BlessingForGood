@@ -81,6 +81,20 @@ function CustomerInvoiceDetail() {
     Number.isSafeInteger(depositAmountValue) &&
     depositAmountValue > 0 &&
     depositAmountValue <= maxDepositAllocation;
+  const regularPoDp =
+    currentCustomerInvoice.source === "order" &&
+    currentCustomerInvoice.depositRequiredAmount > 0 &&
+    currentCustomerInvoice.status === "issued";
+  const dpSettled =
+    currentCustomerInvoice.allocatedDepositAmount + currentCustomerInvoice.verifiedPaymentAmount >=
+    currentCustomerInvoice.depositRequiredAmount;
+  const pendingPaymentReview =
+    currentCustomerInvoice.paymentStatus === "payment_submitted" ||
+    customerPaymentConfirmations?.some(
+      (confirmation) => confirmation.status === "submitted" || confirmation.status === "under_review",
+    );
+  const settlementStage =
+    regularPoDp && dpSettled && currentCustomerInvoice.outstandingAmount > 0 && !pendingPaymentReview;
 
   async function confirmDepositAllocation() {
     if (!depositAmountValid) {
@@ -200,6 +214,45 @@ function CustomerInvoiceDetail() {
           </div>
         </ConfirmationDialog>
 
+        {regularPoDp ? (
+          <Card className="invoice-settlement-guidance">
+            <span className="card-kicker">
+              {currentCustomerInvoice.outstandingAmount === 0
+                ? "Lunas"
+                : pendingPaymentReview
+                  ? "Menunggu verifikasi"
+                  : dpSettled
+                    ? "DP terpenuhi"
+                    : "Menunggu DP"}
+            </span>
+            <h2>
+              {currentCustomerInvoice.outstandingAmount === 0
+                ? "Tagihan sudah lunas"
+                : pendingPaymentReview
+                  ? "Pembayaran sedang ditinjau"
+                  : dpSettled
+                    ? "Lanjutkan pelunasan"
+                    : "Selesaikan DP dahulu"}
+            </h2>
+            <div className="summary-line">
+              <span>Sisa tagihan invoice yang sama</span>
+              <strong>{formatIdr(currentCustomerInvoice.outstandingAmount)}</strong>
+            </div>
+            <p className="subtle">
+              {pendingPaymentReview
+                ? "Bukti pembayaran sudah dikirim. Tunggu verifikasi Admin sebelum mengirim pembayaran lagi."
+                : dpSettled
+                  ? "DP sudah terpenuhi. Pelunasan dilakukan pada invoice ini, bukan dengan invoice 70% baru."
+                  : "DP merupakan pembayaran awal dari total invoice, bukan invoice terpisah. Setelah DP diverifikasi, sisa tagihan akan diperbarui otomatis."}
+            </p>
+            {settlementStage ? (
+              <LinkButton href="#payment-confirmation" size="compact">
+                Bayar sisa tagihan
+              </LinkButton>
+            ) : null}
+          </Card>
+        ) : null}
+
         <Card>
           <div className="split-heading">
             <div>
@@ -249,6 +302,7 @@ function CustomerInvoiceDetail() {
                 minAmount={currentCustomerInvoice.minimumPaymentAmount}
                 maxAmount={currentCustomerInvoice.outstandingAmount}
                 submitPaymentConfirmation={submitPaymentConfirmation}
+                settlementMode={Boolean(settlementStage)}
               />
             )
           ) : null}
@@ -358,11 +412,13 @@ function PaymentConfirmationForm({
   invoiceId,
   minAmount,
   maxAmount,
+  settlementMode,
   submitPaymentConfirmation,
 }: {
   invoiceId: string;
   minAmount: number;
   maxAmount: number;
+  settlementMode: boolean;
   submitPaymentConfirmation: (
     invoiceId: string,
     input: {
@@ -378,7 +434,7 @@ function PaymentConfirmationForm({
     },
   ) => Promise<unknown>;
 }) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(settlementMode ? String(maxAmount) : "");
   const [paymentMethod, setPaymentMethod] = useState("Transfer bank");
   const [transferReference, setTransferReference] = useState("");
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
@@ -443,8 +499,13 @@ function PaymentConfirmationForm({
   }
 
   return (
-    <form className="content-stack" onSubmit={submit}>
-      <h3>Kirim konfirmasi pembayaran</h3>
+    <form className="content-stack" id="payment-confirmation" onSubmit={submit}>
+      <h3>{settlementMode ? "Konfirmasi pelunasan" : "Kirim konfirmasi pembayaran"}</h3>
+      {settlementMode ? (
+        <p className="subtle">
+          Nominal terisi sesuai sisa tagihan terkini. Kamu tetap bisa mengubah jumlah pembayaran jika dibutuhkan.
+        </p>
+      ) : null}
       {paymentSettings ? (
         <p className="notice-card">
           <strong>{paymentSettings.storeName}</strong>
@@ -483,6 +544,10 @@ function PaymentConfirmationForm({
           />
           {minAmount > 1 ? (
             <span className="subtle">Minimal pembayaran saat ini mengikuti sisa DP: {formatIdr(minAmount)}.</span>
+          ) : settlementMode ? (
+            <Button type="button" size="compact" variant="tertiary" onClick={() => setAmount(String(maxAmount))}>
+              Gunakan nominal sisa tagihan
+            </Button>
           ) : null}
           {amount.trim() !== "" && !amountIsValid ? (
             <span className="error-text" role="alert">
@@ -537,12 +602,7 @@ function PaymentConfirmationForm({
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>
       <div className="form-actions">
-        <Button
-          type="submit"
-          loading={isSubmitting}
-          loadingLabel="Mengirim…"
-          disabled={!amountIsValid || isSubmitting}
-        >
+        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…" disabled={!amountIsValid || isSubmitting}>
           Kirim konfirmasi
         </Button>
         {message ? (

@@ -27,6 +27,7 @@ import type * as depositTransactions from "../depositTransactions.js";
 import type * as directPublicMedia from "../directPublicMedia.js";
 import type * as http from "../http.js";
 import type * as invoiceDepositAllocations from "../invoiceDepositAllocations.js";
+import type * as invoiceReminders from "../invoiceReminders.js";
 import type * as invoices from "../invoices.js";
 import type * as joinRequestInvitationState from "../joinRequestInvitationState.js";
 import type * as joinRequestInvitations from "../joinRequestInvitations.js";
@@ -112,6 +113,7 @@ declare const fullApi: ApiFromModules<{
   directPublicMedia: typeof directPublicMedia;
   http: typeof http;
   invoiceDepositAllocations: typeof invoiceDepositAllocations;
+  invoiceReminders: typeof invoiceReminders;
   invoices: typeof invoices;
   joinRequestInvitationState: typeof joinRequestInvitationState;
   joinRequestInvitations: typeof joinRequestInvitations;
