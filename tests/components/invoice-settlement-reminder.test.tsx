@@ -56,7 +56,7 @@ describe("BFG-TCK-003 settlement reminder UX", () => {
       if (name.endsWith(":send")) return send as never;
       return vi.fn() as never;
     });
-    vi.mocked(useQuery).mockImplementation((query) => {
+    vi.mocked(useQuery).mockImplementation((query, ..._args) => {
       const name = getFunctionName(query as never);
       if (name.endsWith(":getStatus")) {
         return {
