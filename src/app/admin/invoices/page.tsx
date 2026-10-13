@@ -788,6 +788,7 @@ function PersistentAdminInvoices() {
   const searchParams = useSearchParams();
   const requestedCustomerId = searchParams.get("customerId");
   const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [activeWorkflow, setActiveWorkflow] = useState<"reminders" | "issuance">("reminders");
   const searchedInvoice = useQuery(
     api.invoices.getByInvoiceNumberForAdmin,
     invoiceSearch.trim() ? { invoiceNumber: invoiceSearch.trim() } : "skip",
@@ -849,8 +850,50 @@ function PersistentAdminInvoices() {
               </p>
             ) : null}
           </Card>
-          <CustomerBatchInvoiceQueue customerId={requestedCustomerId} />
-          <SettlementReminderQueue />
+          <div className="admin-invoice-workflow" aria-label="Aksi finance">
+            <div className="admin-invoice-workflow-heading">
+              <span className="card-kicker">Kelola invoice</span>
+              <h2>Pilih pekerjaan finance</h2>
+              <p className="subtle">
+                Penerbitan dan pengingat pelunasan dipisah supaya antrian lebih mudah dipantau.
+              </p>
+            </div>
+            <div className="admin-invoice-workflow-tabs" role="tablist" aria-label="Workflow invoice">
+              <button
+                type="button"
+                role="tab"
+                id="invoice-reminder-tab"
+                aria-selected={activeWorkflow === "reminders"}
+                aria-controls="invoice-reminder-panel"
+                className={`admin-invoice-workflow-tab${activeWorkflow === "reminders" ? " is-active" : ""}`}
+                onClick={() => setActiveWorkflow("reminders")}
+              >
+                Pengingat Pelunasan
+                <span className="admin-invoice-workflow-tab-caption">Kirim reminder massal</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="invoice-issuance-tab"
+                aria-selected={activeWorkflow === "issuance"}
+                aria-controls="invoice-issuance-panel"
+                className={`admin-invoice-workflow-tab${activeWorkflow === "issuance" ? " is-active" : ""}`}
+                onClick={() => setActiveWorkflow("issuance")}
+              >
+                Penerbitan Invoice
+                <span className="admin-invoice-workflow-tab-caption">Antrian Customer × Cargo</span>
+              </button>
+            </div>
+            {activeWorkflow === "reminders" ? (
+              <div role="tabpanel" id="invoice-reminder-panel" aria-labelledby="invoice-reminder-tab">
+                <SettlementReminderQueue />
+              </div>
+            ) : (
+              <div role="tabpanel" id="invoice-issuance-panel" aria-labelledby="invoice-issuance-tab">
+                <CustomerBatchInvoiceQueue customerId={requestedCustomerId} />
+              </div>
+            )}
+          </div>
           {visibleInvoices.length ? (
             <div className="content-stack">
               {visibleInvoices.map((invoice) => (
