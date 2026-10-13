@@ -70,6 +70,22 @@ describe("BFG-TCK-003 bulk settlement reminder UI", () => {
     };
   });
 
+  it("puts the reminder workflow first and separates it from invoice issuance", () => {
+    render(<AdminInvoicesPage />);
+    const reminderTab = screen.getByRole("tab", { name: /Pengingat Pelunasan/ });
+    const issuanceTab = screen.getByRole("tab", { name: /Penerbitan Invoice/ });
+    expect(reminderTab.getAttribute("aria-selected")).toBe("true");
+    expect(issuanceTab.getAttribute("aria-selected")).toBe("false");
+    expect(screen.getByRole("heading", { name: "Pengingat pelunasan massal" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Antrian invoice siap terbit" })).toBeNull();
+    fireEvent.click(issuanceTab);
+    expect(issuanceTab.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("heading", { name: "Antrian invoice siap terbit" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Pengingat pelunasan massal" })).toBeNull();
+    fireEvent.click(reminderTab);
+    expect(screen.getByRole("heading", { name: "Pengingat pelunasan massal" })).toBeTruthy();
+  });
+
   it("selects eligible invoices only and confirms each individual reminder", async () => {
     render(<AdminInvoicesPage />);
     const all = screen.getByRole("checkbox", { name: "Pilih semua invoice eligible pada halaman ini" });
