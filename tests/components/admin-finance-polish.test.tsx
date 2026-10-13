@@ -184,6 +184,9 @@ function setupQueryMocks() {
         preserve: [],
       } as never;
     }
+    if (functionName.endsWith("invoiceReminders:listForAdmin")) {
+      return { page: [], isDone: true, continueCursor: "" } as never;
+    }
     if (functionName.endsWith(":listForAdmin") && !(args && typeof args === "object" && "paginationOpts" in args)) {
       return topUpRows as never;
     }
