@@ -8888,7 +8888,9 @@ p {
   font-weight: 800;
   text-align: left;
   cursor: pointer;
-  transition: background var(--motion-fast), border-color var(--motion-fast);
+  transition:
+    background var(--motion-fast),
+    border-color var(--motion-fast);
 }
 
 .admin-shell .admin-invoice-workflow-tab.is-active {

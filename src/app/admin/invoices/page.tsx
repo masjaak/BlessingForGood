@@ -854,9 +854,7 @@ function PersistentAdminInvoices() {
             <div className="admin-invoice-workflow-heading">
               <span className="card-kicker">Kelola invoice</span>
               <h2>Pilih pekerjaan finance</h2>
-              <p className="subtle">
-                Penerbitan dan pengingat pelunasan dipisah supaya antrian lebih mudah dipantau.
-              </p>
+              <p className="subtle">Penerbitan dan pengingat pelunasan dipisah supaya antrian lebih mudah dipantau.</p>
             </div>
             <div className="admin-invoice-workflow-tabs" role="tablist" aria-label="Workflow invoice">
               <button
