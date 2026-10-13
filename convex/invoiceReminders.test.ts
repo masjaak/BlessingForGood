@@ -43,6 +43,11 @@ describe("BFG-TCK-003 regular PO settlement reminders", () => {
     const t = testConvex();
     const { admin, customer, secondCustomer, draft } = await setupRegularInvoice(t);
     const invoice = await admin.mutation(api.invoices.issue, { invoiceId: draft.invoiceId });
+    // Reproduce production records with no displayNameSnapshot. An invoice
+    // still has a customer name on the original order snapshot.
+    await t.run(async (ctx) => {
+      await ctx.db.patch(invoice.customerUserId, { displayNameSnapshot: undefined });
+    });
 
     // Do not leak the Admin finance queue to a customer.
     await expect(
@@ -58,6 +63,7 @@ describe("BFG-TCK-003 regular PO settlement reminders", () => {
     expect(before.page).toHaveLength(1);
     expect(before.page[0]).toMatchObject({
       invoiceId: invoice.invoiceId,
+      customerName: "Reminder Customer",
       outstandingAmount: 250000,
       depositRequiredAmount: 75000,
       canSend: false,
