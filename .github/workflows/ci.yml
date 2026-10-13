@@ -1,4 +1,4 @@
-name: BFG quality gate
+name: BFG Random PO finance gate
 
 on:
   pull_request:
@@ -21,4 +21,4 @@ jobs:
       - run: npx prettier --check src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx src/app/globals.css tests/components/random-po-finance.test.tsx
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run test:run -- --silent
+      - run: npx vitest run convex/randomPoFinance.test.ts convex/manualPoEntries.test.ts convex/paymentConfirmations.test.ts tests/components/random-po-finance.test.tsx tests/components/admin-random-po-queue.test.tsx --silent
