@@ -9920,6 +9920,19 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   grid-template-columns: minmax(0, 1.5fr) minmax(160px, 0.7fr) minmax(0, 1fr);
 }
 
+.manual-po-billing-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: var(--space-md);
+}
+
+@media (max-width: 800px) {
+  .manual-po-billing-settings {
+    grid-template-columns: 1fr;
+  }
+}
+
 .manual-po-admin-row {
   align-items: flex-start;
 }
