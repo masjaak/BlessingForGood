@@ -240,7 +240,11 @@ function AdminInvoiceDetail() {
               {message}
             </p>
           ) : null}
-          {reminderError ? <p className="error-text" role="alert">{reminderError}</p> : null}
+          {reminderError ? (
+            <p className="error-text" role="alert">
+              {reminderError}
+            </p>
+          ) : null}
           <Card className="invoice-card">
             <div className="split-heading">
               <div>

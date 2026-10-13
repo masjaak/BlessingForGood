@@ -81,7 +81,8 @@ function CustomerInvoiceDetail() {
     Number.isSafeInteger(depositAmountValue) &&
     depositAmountValue > 0 &&
     depositAmountValue <= maxDepositAllocation;
-  const regularPoDp = currentCustomerInvoice.source === "order" &&
+  const regularPoDp =
+    currentCustomerInvoice.source === "order" &&
     currentCustomerInvoice.depositRequiredAmount > 0 &&
     currentCustomerInvoice.status === "issued";
   const dpSettled =
@@ -92,9 +93,8 @@ function CustomerInvoiceDetail() {
     customerPaymentConfirmations?.some(
       (confirmation) => confirmation.status === "submitted" || confirmation.status === "under_review",
     );
-  const settlementStage = regularPoDp && dpSettled &&
-    currentCustomerInvoice.outstandingAmount > 0 &&
-    !pendingPaymentReview;
+  const settlementStage =
+    regularPoDp && dpSettled && currentCustomerInvoice.outstandingAmount > 0 && !pendingPaymentReview;
 
   async function confirmDepositAllocation() {
     if (!depositAmountValid) {
@@ -502,7 +502,9 @@ function PaymentConfirmationForm({
     <form className="content-stack" id="payment-confirmation" onSubmit={submit}>
       <h3>{settlementMode ? "Konfirmasi pelunasan" : "Kirim konfirmasi pembayaran"}</h3>
       {settlementMode ? (
-        <p className="subtle">Nominal terisi sesuai sisa tagihan terkini. Kamu tetap bisa mengubah jumlah pembayaran jika dibutuhkan.</p>
+        <p className="subtle">
+          Nominal terisi sesuai sisa tagihan terkini. Kamu tetap bisa mengubah jumlah pembayaran jika dibutuhkan.
+        </p>
       ) : null}
       {paymentSettings ? (
         <p className="notice-card">
@@ -600,12 +602,7 @@ function PaymentConfirmationForm({
         <textarea className="textarea" value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} />
       </Field>
       <div className="form-actions">
-        <Button
-          type="submit"
-          loading={isSubmitting}
-          loadingLabel="Mengirim…"
-          disabled={!amountIsValid || isSubmitting}
-        >
+        <Button type="submit" loading={isSubmitting} loadingLabel="Mengirim…" disabled={!amountIsValid || isSubmitting}>
           Kirim konfirmasi
         </Button>
         {message ? (

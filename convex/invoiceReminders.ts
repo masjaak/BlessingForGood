@@ -42,9 +42,7 @@ async function reminderState(ctx: DataCtx, invoice: Doc<"invoices">) {
       const pendingConfirmation = await ctx.db
         .query("paymentConfirmations")
         .withIndex("by_invoice", (index) => index.eq("invoiceId", invoice._id))
-        .filter((q) =>
-          q.or(q.eq(q.field("status"), "submitted"), q.eq(q.field("status"), "under_review")),
-        )
+        .filter((q) => q.or(q.eq(q.field("status"), "submitted"), q.eq(q.field("status"), "under_review")))
         .first();
       if (pendingConfirmation || invoice.paymentStatus === "payment_submitted") {
         reason = "Ada konfirmasi pembayaran yang sedang ditinjau.";

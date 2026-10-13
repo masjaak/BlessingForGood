@@ -48,9 +48,9 @@ describe("BFG-TCK-003 regular PO settlement reminders", () => {
 
     const ready = await admin.query(api.invoiceReminders.getStatus, { invoiceId: invoice.invoiceId });
     expect(ready).toMatchObject({ canSend: true, outstandingAmount: 175000 });
-    await expect(
-      customer.mutation(api.invoiceReminders.send, { invoiceId: invoice.invoiceId }),
-    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(customer.mutation(api.invoiceReminders.send, { invoiceId: invoice.invoiceId })).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
     await expect(
       secondCustomer.query(api.invoiceReminders.getStatus, { invoiceId: invoice.invoiceId }),
     ).rejects.toThrow("PERMISSION_DENIED");
@@ -69,14 +69,19 @@ describe("BFG-TCK-003 regular PO settlement reminders", () => {
     expect(reminder?.body).toContain(invoice.invoiceNumber);
     expect(
       await t.run((ctx) =>
-        ctx.db.query("auditEvents").filter((q) =>
-          q.eq(q.field("action"), "invoice.settlement_reminder.sent"),
-        ).collect(),
+        ctx.db
+          .query("auditEvents")
+          .filter((q) => q.eq(q.field("action"), "invoice.settlement_reminder.sent"))
+          .collect(),
       ),
     ).toHaveLength(1);
 
     const cooldown = await admin.query(api.invoiceReminders.getStatus, { invoiceId: invoice.invoiceId });
-    expect(cooldown).toMatchObject({ canSend: false, lastSentAt: expect.any(Number), nextAllowedAt: expect.any(Number) });
+    expect(cooldown).toMatchObject({
+      canSend: false,
+      lastSentAt: expect.any(Number),
+      nextAllowedAt: expect.any(Number),
+    });
     await expect(admin.mutation(api.invoiceReminders.send, { invoiceId: invoice.invoiceId })).rejects.toThrow(
       "INVOICE_INVALID_STATE",
     );

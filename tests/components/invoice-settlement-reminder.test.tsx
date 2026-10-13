@@ -59,11 +59,19 @@ describe("BFG-TCK-003 settlement reminder UX", () => {
     vi.mocked(useQuery).mockImplementation((query) => {
       const name = getFunctionName(query as never);
       if (name.endsWith(":getStatus")) {
-        return { canSend: true, reason: null, lastSentAt: null, nextAllowedAt: null, outstandingAmount: 175000 } as never;
+        return {
+          canSend: true,
+          reason: null,
+          lastSentAt: null,
+          nextAllowedAt: null,
+          outstandingAmount: 175000,
+        } as never;
       }
       return undefined as never;
     });
-    HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+    HTMLDialogElement.prototype.showModal = function () {
+      this.open = true;
+    };
   });
 
   it("shows a guarded admin reminder action and sends to the same invoice", async () => {
@@ -116,7 +124,15 @@ describe("BFG-TCK-003 settlement reminder UX", () => {
       customerAccount: { account: { availableAmount: 0, reservedAmount: 0 } },
       customerTransactions: { page: [] },
       customerAllocations: [],
-      customerPaymentConfirmations: [{ confirmationId: "confirm-1", status: "submitted", paymentMethod: "Bank transfer", submittedAt: Date.now(), amount: 175000 }],
+      customerPaymentConfirmations: [
+        {
+          confirmationId: "confirm-1",
+          status: "submitted",
+          paymentMethod: "Bank transfer",
+          submittedAt: Date.now(),
+          amount: 175000,
+        },
+      ],
     } as never);
     render(<CustomerInvoiceDetailPage />);
     expect(screen.getByRole("heading", { name: "Pembayaran sedang ditinjau" })).toBeTruthy();
