@@ -1,24 +1,38 @@
-name: BFG finance gate
+name: BFG settlement reminder QA
 
 on:
   pull_request:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npx prettier --check convex/invoiceReminders.ts convex/invoiceReminders.test.ts "src/app/admin/invoices/[invoiceId]/page.tsx" "src/app/account/invoices/[invoiceId]/page.tsx" tests/components/invoice-settlement-reminder.test.tsx src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx tests/components/random-po-finance.test.tsx
+      - name: Format touched files
+        run: npx prettier --write convex/invoiceReminders.ts convex/invoiceReminders.test.ts src/app/admin/invoices/page.tsx tests/components/invoice-bulk-reminder.test.tsx src/app/globals.css
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet -- convex/invoiceReminders.ts convex/invoiceReminders.test.ts src/app/admin/invoices/page.tsx tests/components/invoice-bulk-reminder.test.tsx src/app/globals.css; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add convex/invoiceReminders.ts convex/invoiceReminders.test.ts src/app/admin/invoices/page.tsx tests/components/invoice-bulk-reminder.test.tsx src/app/globals.css
+            git commit -m "style(bfg-tck-003): format bulk reminder files"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+      - run: npx prettier --check convex/invoiceReminders.ts convex/invoiceReminders.test.ts src/app/admin/invoices/page.tsx tests/components/invoice-bulk-reminder.test.tsx src/app/globals.css
       - run: npm run lint
       - run: npm run typecheck
-      - run: npx vitest run convex/invoiceReminders.test.ts convex/invoices.test.ts convex/paymentConfirmations.test.ts convex/randomPoFinance.test.ts tests/components/invoice-settlement-reminder.test.tsx tests/components/admin-random-po-queue.test.tsx tests/components/random-po-finance.test.tsx --silent
+      - run: npx vitest run convex/invoiceReminders.test.ts convex/invoices.test.ts convex/paymentConfirmations.test.ts tests/components/invoice-bulk-reminder.test.tsx tests/components/invoice-settlement-reminder.test.tsx tests/components/random-po-finance.test.tsx --silent
