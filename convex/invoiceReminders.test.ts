@@ -39,6 +39,46 @@ async function settleDp(
 describe("BFG-TCK-003 regular PO settlement reminders", () => {
   beforeEach(configureTestEnvironment);
 
+  it("supports issued DP-paid batch rows without ever enabling duplicate invoice issuance", async () => {
+    const t = testConvex();
+    const { admin, customer, draft } = await setupRegularInvoice(t);
+    const invoice = await admin.mutation(api.invoices.issue, { invoiceId: draft.invoiceId });
+
+    await expect(
+      customer.query(api.invoiceReminders.getEligibilityForInvoices, { invoiceIds: [invoice.invoiceId] }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+
+    const before = await admin.query(api.invoiceReminders.getEligibilityForInvoices, {
+      invoiceIds: [invoice.invoiceId],
+    });
+    expect(before).toMatchObject([
+      { invoiceId: invoice.invoiceId, canSend: false, reason: expect.stringContaining("DP belum terpenuhi") },
+    ]);
+
+    await settleDp(admin, customer, invoice.invoiceId);
+    const ready = await admin.query(api.invoiceReminders.getEligibilityForInvoices, {
+      invoiceIds: [invoice.invoiceId, invoice.invoiceId],
+    });
+    expect(ready).toMatchObject([{ invoiceId: invoice.invoiceId, canSend: true, outstandingAmount: 175000 }]);
+    expect(ready).toHaveLength(1);
+
+    const send = await admin.mutation(api.invoiceReminders.send, { invoiceId: invoice.invoiceId });
+    expect(send.sent).toBe(true);
+    const after = await admin.query(api.invoiceReminders.getEligibilityForInvoices, {
+      invoiceIds: [invoice.invoiceId],
+    });
+    expect(after).toMatchObject([{ canSend: false, reason: expect.stringContaining("24 jam") }]);
+
+    const original = await admin.query(api.invoices.getForAdmin, { invoiceId: invoice.invoiceId });
+    expect(original).toMatchObject({
+      totalAmount: 250000,
+      depositRequiredAmount: 75000,
+      outstandingAmount: 175000,
+      paymentStatus: "partially_paid",
+    });
+    expect(await t.run(async (ctx) => (await ctx.db.query("invoices").collect()).length)).toBe(1);
+  });
+
   it("lists paginated Regular PO invoices with DP and outstanding, including eligibility reasons", async () => {
     const t = testConvex();
     const { admin, customer, secondCustomer, draft } = await setupRegularInvoice(t);

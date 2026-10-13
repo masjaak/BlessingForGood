@@ -244,6 +244,8 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string | null>(null);
   const [report, setReport] = useState("");
+  const [reminderConfirmOpen, setReminderConfirmOpen] = useState(false);
+  const sendSettlementReminder = useMutation(api.invoiceReminders.send);
   const [purgeTarget, setPurgeTarget] = useState<{
     customerUserId: Id<"appUsers">;
     batchId: Id<"batches">;
@@ -258,6 +260,29 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
   );
   const purgeCandidate = useMutation(api.uatCleanup.purgeOrderCandidate);
   const pageRows = rows?.page || [];
+  const reminderMode = statusFilter === "deposit_paid";
+  const reminderEligibility = useQuery(
+    api.invoiceReminders.getEligibilityForInvoices,
+    reminderMode ? { invoiceIds: pageRows.flatMap((row) => (row.invoiceId ? [row.invoiceId] : [])) } : "skip",
+  );
+  const reminderStatusById = new Map((reminderEligibility || []).map((state) => [String(state.invoiceId), state]));
+  const reminderEligibleIds = reminderMode
+    ? pageRows
+        .filter((row) => row.invoiceId && reminderStatusById.get(String(row.invoiceId))?.canSend)
+        .map((row) => String(row.invoiceId))
+    : [];
+  const reminderTargets = reminderMode
+    ? pageRows.filter(
+        (row) =>
+          row.invoiceId &&
+          selected.includes(String(row.invoiceId)) &&
+          reminderStatusById.get(String(row.invoiceId))?.canSend,
+      )
+    : [];
+  const reminderTotalOutstanding = reminderTargets.reduce(
+    (total, row) => total + (reminderStatusById.get(String(row.invoiceId))?.outstandingAmount ?? 0),
+    0,
+  );
   const hasFilters = Boolean(customerId || batchId || statusFilter);
 
   function updateFilter<T extends string>(setter: (value: T) => void, value: T) {
@@ -331,6 +356,38 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
     }
   }
 
+  async function remindSelectedDpInvoices() {
+    if (pending || reminderTargets.length === 0) return;
+    // This action reuses the existing atomic reminder mutation. It never
+    // calls issueCustomerBatch or modifies any invoice or payment fields.
+    const targets = reminderTargets.slice(0, 100);
+    setReminderConfirmOpen(false);
+    setPending("reminders");
+    setReport("");
+    try {
+      const settled: PromiseSettledResult<unknown>[] = [];
+      for (let index = 0; index < targets.length; index += 10) {
+        settled.push(
+          ...(await Promise.allSettled(
+            targets.slice(index, index + 10).map((row) => sendSettlementReminder({ invoiceId: row.invoiceId! })),
+          )),
+        );
+      }
+      const successful = settled.filter((result) => result.status === "fulfilled").length;
+      const failures = targets
+        .filter((_, index) => settled[index].status === "rejected")
+        .map((row) => String(row.invoiceId));
+      setSelected(failures);
+      setReport(
+        `${successful} pengingat berhasil dikirim${failures.length ? `, ${failures.length} gagal. Yang gagal bisa dicoba lagi setelah statusnya diperiksa.` : "."}`,
+      );
+    } catch (reason) {
+      setReport(productErrorMessage(reason, "Pengingat pelunasan belum dapat dikirim."));
+    } finally {
+      setPending(null);
+    }
+  }
+
   async function confirmCandidatePurge() {
     if (!purgeTarget) return;
     setPending("purge");
@@ -360,10 +417,16 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           <span className="card-kicker">Customer × Batch</span>
           <h2>Antrian invoice siap terbit</h2>
         </div>
-        <StatusBadge>{pageRows.filter((row) => row.eligible).length} eligible</StatusBadge>
+        <StatusBadge>
+          {reminderMode
+            ? `${pageRows.filter((row) => row.invoiceId && reminderStatusById.get(String(row.invoiceId))?.canSend).length} siap diingatkan`
+            : `${pageRows.filter((row) => row.eligible).length} eligible`}
+        </StatusBadge>
       </div>
       <p className="subtle">
-        Satu Customer dalam satu Batch hanya memiliki satu invoice aktif. Pilih Customer secara eksplisit untuk bulk.
+        {reminderMode
+          ? "Mode pengingat pelunasan: checklist memilih invoice lama untuk dikirimi notifikasi. Invoice tidak akan diterbitkan ulang."
+          : "Satu Customer dalam satu Batch hanya memiliki satu invoice aktif. Pilih Customer secara eksplisit untuk bulk."}
       </p>
       <div className="admin-finance-filter-grid invoice-queue-filter-grid">
         <Field label="Pelanggan">
@@ -430,38 +493,70 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
           Reset filter
         </Button>
       </div>
-      <div className="form-grid invoice-issue-requirement">
-        <label className="field">
-          <span className="field-label">Syarat deposit</span>
-          <BFGSelect
-            className="select"
-            value={mode}
-            onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
-          >
-            <option value="none">Tidak ada</option>
-            <option value="fixed">Nominal tetap (IDR)</option>
-            <option value="percentage">Persentase (%)</option>
-          </BFGSelect>
-        </label>
-        {mode !== "none" ? (
-          <Field label={mode === "fixed" ? "Nominal (IDR)" : "Persentase (0–100%)"}>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              max={mode === "percentage" ? 100 : undefined}
-              step={mode === "percentage" ? "0.01" : "1"}
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              required
-            />
-          </Field>
-        ) : null}
-      </div>
+      {!reminderMode ? (
+        <div className="form-grid invoice-issue-requirement">
+          <label className="field">
+            <span className="field-label">Syarat deposit</span>
+            <BFGSelect
+              className="select"
+              value={mode}
+              onChange={(event) => setMode(event.target.value as InvoiceRequirementMode)}
+            >
+              <option value="none">Tidak ada</option>
+              <option value="fixed">Nominal tetap (IDR)</option>
+              <option value="percentage">Persentase (%)</option>
+            </BFGSelect>
+          </label>
+          {mode !== "none" ? (
+            <Field label={mode === "fixed" ? "Nominal (IDR)" : "Persentase (0–100%)"}>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                max={mode === "percentage" ? 100 : undefined}
+                step={mode === "percentage" ? "0.01" : "1"}
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                required
+              />
+            </Field>
+          ) : null}
+        </div>
+      ) : null}
       <ActionGroup className="invoice-issue-bulk-actions" variant="responsive">
-        <Button type="button" variant="primary" loading={pending === "bulk"} onClick={() => void issueSelected()}>
-          Terbitkan invoice terpilih
-        </Button>
+        {reminderMode ? (
+          <Button
+            type="button"
+            variant="primary"
+            loading={pending === "reminders"}
+            loadingLabel="Mengirim pengingat…"
+            disabled={pending !== null || reminderTargets.length === 0 || reminderEligibility === undefined}
+            onClick={() => setReminderConfirmOpen(true)}
+          >
+            Ingatkan Pelunasan Terpilih
+          </Button>
+        ) : (
+          <Button type="button" variant="primary" loading={pending === "bulk"} onClick={() => void issueSelected()}>
+            Terbitkan invoice terpilih
+          </Button>
+        )}
+        {reminderMode ? (
+          <>
+            <label className="invoice-reminder-select-all">
+              <input
+                type="checkbox"
+                aria-label="Pilih semua invoice yang bisa diingatkan dalam halaman ini"
+                checked={reminderEligibleIds.length > 0 && reminderTargets.length === reminderEligibleIds.length}
+                disabled={pending !== null || reminderEligibleIds.length === 0}
+                onChange={(event) => setSelected(event.target.checked ? reminderEligibleIds : [])}
+              />
+              Pilih semua yang eligible
+            </label>
+            <span className="subtle">
+              {reminderTargets.length} dipilih · Total sisa pelunasan {formatIdr(reminderTotalOutstanding)}
+            </span>
+          </>
+        ) : null}
         {report ? (
           <span className="subtle action-support" role="status">
             {report}
@@ -491,15 +586,21 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
               <div className="invoice-issue-row" data-testid="invoice-issue-row" key={rowKey}>
                 <label className="invoice-issue-select">
                   <input
-                    aria-label={`Pilih ${row.customerName} · ${row.batchName}`}
+                    aria-label={`${reminderMode ? "Pilih pengingat" : "Pilih"} ${row.customerName} · ${row.batchName}`}
                     type="checkbox"
-                    checked={selected.includes(rowKey)}
-                    disabled={!row.eligible || pending !== null}
-                    onChange={(event) =>
-                      setSelected((current) =>
-                        event.target.checked ? [...current, rowKey] : current.filter((key) => key !== rowKey),
-                      )
+                    checked={selected.includes(reminderMode ? String(row.invoiceId) : rowKey)}
+                    disabled={
+                      pending !== null ||
+                      (reminderMode
+                        ? !row.invoiceId || !reminderStatusById.get(String(row.invoiceId))?.canSend
+                        : !row.eligible)
                     }
+                    onChange={(event) => {
+                      const key = reminderMode ? String(row.invoiceId) : rowKey;
+                      setSelected((current) =>
+                        event.target.checked ? [...current, key] : current.filter((item) => item !== key),
+                      );
+                    }}
                   />
                 </label>
                 <div className="invoice-issue-main">
@@ -508,6 +609,14 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
                     {row.customerMemberCode ? `${row.customerMemberCode} · ` : ""}
                     {row.batchName} · {row.bookCount} buku · <Money amount={row.totalAmount} />
                   </span>
+                  {reminderMode && row.invoiceId ? (
+                    <span className="subtle">
+                      {reminderEligibility === undefined
+                        ? "Memeriksa kelayakan pengingat…"
+                        : reminderStatusById.get(String(row.invoiceId))?.reason ||
+                          `Sisa pelunasan ${formatIdr(reminderStatusById.get(String(row.invoiceId))?.outstandingAmount || 0)} · Siap diingatkan`}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="invoice-issue-status">
                   {statusBadge ? <StatusBadge tone={statusBadge.tone}>{statusBadge.label}</StatusBadge> : null}
@@ -568,6 +677,20 @@ function CustomerBatchInvoiceQueue({ customerId: requestedCustomerId }: { custom
         isDone={rows?.isDone ?? true}
         continueCursor={rows?.continueCursor ?? ""}
       />
+      <ConfirmationDialog
+        open={reminderConfirmOpen}
+        title="Kirim pengingat pelunasan terpilih?"
+        description={`Kirim ${reminderTargets.length} notifikasi internal BFG ke customer terpilih pada invoice yang sudah terbit. Tidak ada invoice baru. Status pembayaran dan cooldown 24 jam dicek ulang sebelum pengiriman.`}
+        confirmLabel={`Kirim ${reminderTargets.length} pengingat`}
+        disabled={pending !== null || reminderTargets.length === 0}
+        onCancel={() => setReminderConfirmOpen(false)}
+        onConfirm={() => void remindSelectedDpInvoices()}
+      >
+        <div className="summary-line">
+          <span>Total sisa tagihan terpilih</span>
+          <strong>{formatIdr(reminderTotalOutstanding)}</strong>
+        </div>
+      </ConfirmationDialog>
       <UatPurgeDialog
         open={purgeTarget !== null}
         impact={purgeImpact}
