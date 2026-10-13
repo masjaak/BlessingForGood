@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { configureTestEnvironment, createOpenCatalog, setupUsers, testConvex } from "../tests/convex-helpers";
 
 async function setupRegularInvoice(t: ReturnType<typeof testConvex>, withDp = true) {
@@ -22,9 +23,9 @@ async function setupRegularInvoice(t: ReturnType<typeof testConvex>, withDp = tr
 }
 
 async function settleDp(
-  admin: ReturnType<typeof testConvex> extends never ? never : any,
-  customer: ReturnType<typeof testConvex> extends never ? never : any,
-  invoiceId: any,
+  admin: Awaited<ReturnType<typeof setupUsers>>["admin"],
+  customer: Awaited<ReturnType<typeof setupUsers>>["customer"],
+  invoiceId: Id<"invoices">,
 ) {
   const submitted = await customer.action(api.paymentConfirmations.submit, {
     invoiceId,
