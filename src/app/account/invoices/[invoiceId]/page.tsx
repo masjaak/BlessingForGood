@@ -200,6 +200,26 @@ function CustomerInvoiceDetail() {
           </div>
         </ConfirmationDialog>
 
+        {currentCustomerInvoice.source === "order" &&
+        currentCustomerInvoice.status === "issued" &&
+        currentCustomerInvoice.depositRequiredAmount > 0 &&
+        currentCustomerInvoice.outstandingAmount > 0 &&
+        currentCustomerInvoice.allocatedDepositAmount + currentCustomerInvoice.verifiedPaymentAmount >=
+          currentCustomerInvoice.depositRequiredAmount ? (
+          <Card className="invoice-settlement-guidance">
+            <span className="card-kicker">DP terpenuhi</span>
+            <h2>Lanjutkan pelunasan</h2>
+            <div className="summary-line">
+              <span>Sisa yang perlu dibayar</span>
+              <strong>{formatIdr(currentCustomerInvoice.outstandingAmount)}</strong>
+            </div>
+            <p className="subtle">
+              Pelunasan dilakukan melalui invoice ini. Tidak perlu membuat pesanan atau invoice baru.
+              Jika pembayaran sudah dikirim, tunggu verifikasi admin.
+            </p>
+          </Card>
+        ) : null}
+
         <Card>
           <div className="split-heading">
             <div>
