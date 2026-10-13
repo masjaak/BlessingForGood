@@ -237,7 +237,7 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                   <Money amount={entry.priceAmount} />
                   {!entry.invoiceId && dpBasisPoints !== null ? (
                     <small className="subtle">
-                      DP minimum {calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints).toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}
+                      DP minimum <Money amount={calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)} />
                     </small>
                   ) : null}
                   <StatusBadge
