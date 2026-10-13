@@ -348,7 +348,7 @@ function AdminRandomPoQueue() {
                   </label>
                   <span className="subtle">
                     {selectedEntries.length} dipilih · {formatIdr(selectedValue)} total
-                    {dpBasisPoints !== null ? ` · DP minimum ${formatIdr(selectedDp)}` : ""}
+                    {dpBasisPoints !== null ? ` · DP minimum ${formatIdr(selectedDp)} · Sisa setelah DP ${formatIdr(selectedValue - selectedDp)}` : ""}
                   </span>
                   <Button
                     type="button"
@@ -469,7 +469,7 @@ function AdminRandomPoQueue() {
                               ) : null}
                               {entry.queueStatus === "unbilled" && dpBasisPoints !== null ? (
                                 <span className="subtle">
-                                  DP {formatIdr(calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints))}
+                                  DP {formatIdr(calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints))} · Sisa setelah DP {formatIdr(entry.priceAmount - calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints))}
                                 </span>
                               ) : null}
                             </div>
