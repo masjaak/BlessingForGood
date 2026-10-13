@@ -119,6 +119,30 @@ export const listForAdmin = query({
   },
 });
 
+/**
+ * Read-only eligibility lookup for already-issued invoice rows in
+ * Admin -> Invoice -> Penerbitan Invoice -> Status tag: Sudah bayar DP.
+ * The actual reminder mutation independently checks the same conditions.
+ */
+export const getEligibilityForInvoices = query({
+  args: { invoiceIds: v.array(v.id("invoices")) },
+  handler: async (ctx, args) => {
+    await requirePermission(ctx, "invoices.read.all");
+    if (args.invoiceIds.length > 100) fail("INVOICE_INVALID_STATE", "Maksimal 100 invoice.");
+    const uniqueIds = [...new Set(args.invoiceIds)];
+    return Promise.all(
+      uniqueIds.map(async (invoiceId) => {
+        const invoice = await ctx.db.get(invoiceId);
+        if (!invoice) {
+          return { invoiceId, canSend: false, reason: "Invoice tidak ditemukan.", outstandingAmount: 0 };
+        }
+        const status = await reminderState(ctx, invoice);
+        return { invoiceId, canSend: status.canSend, reason: status.reason, outstandingAmount: status.outstandingAmount };
+      }),
+    );
+  },
+});
+
 export const getStatus = query({
   args: { invoiceId: v.id("invoices") },
   handler: async (ctx, args) => {
