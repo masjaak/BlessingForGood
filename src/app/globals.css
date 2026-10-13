@@ -8849,6 +8849,39 @@ p {
   justify-content: center;
 }
 
+.admin-shell .invoice-reminder-bulk-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.admin-shell .invoice-reminder-bulk-actions > .button {
+  margin-left: auto;
+}
+
+.admin-shell .invoice-reminder-select-all {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-shell .invoice-reminder-select-all input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .admin-shell .invoice-reminder-bulk-actions > .button {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 .admin-shell .invoice-issue-select input {
   width: 18px;
   height: 18px;
