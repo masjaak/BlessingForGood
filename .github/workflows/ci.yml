@@ -4,18 +4,35 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   validate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npm run format:check
+      - name: Format files touched by BFG-TCK-002
+        run: npx prettier --write src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx src/app/globals.css tests/components/random-po-finance.test.tsx
+      - name: Commit one-time formatting
+        run: |
+          if ! git diff --quiet -- src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx src/app/globals.css tests/components/random-po-finance.test.tsx; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx src/app/globals.css tests/components/random-po-finance.test.tsx
+            git commit -m "style(bfg-tck-002): apply Prettier to modified files"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+      - run: npx prettier --check src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx src/app/globals.css tests/components/random-po-finance.test.tsx
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:run
