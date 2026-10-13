@@ -229,6 +229,7 @@ describe("Admin finance polish", () => {
 
   it("applies Customer and Batch filters through the queue query and resets pagination", async () => {
     render(<AdminInvoicesPage />);
+    fireEvent.click(screen.getByRole("tab", { name: /Penerbitan Invoice/ }));
 
     const customerFilter = screen.getByRole("combobox", { name: "Pelanggan" });
     fireEvent.click(customerFilter);
@@ -257,6 +258,7 @@ describe("Admin finance polish", () => {
 
   it("keeps invoice status and action regions framed and visually ranked", () => {
     render(<AdminInvoicesPage />);
+    fireEvent.click(screen.getByRole("tab", { name: /Penerbitan Invoice/ }));
     const rows = screen.getAllByTestId("invoice-issue-row");
     const eligibleRow = rows[0];
     const issuedRow = rows[1];
@@ -280,6 +282,7 @@ describe("Admin finance polish", () => {
     } as never);
 
     const { unmount } = render(<AdminInvoicesPage />);
+    fireEvent.click(screen.getByRole("tab", { name: /Penerbitan Invoice/ }));
     const candidateRow = screen.getAllByTestId("invoice-issue-row")[0];
     fireEvent.click(within(candidateRow).getByRole("button", { name: "Hapus permanen" }));
     const dialog = screen.getByRole("dialog");
@@ -293,11 +296,13 @@ describe("Admin finance polish", () => {
       adminInvoiceList: { page: [], isDone: true, continueCursor: "" },
     } as never);
     render(<AdminInvoicesPage />);
+    fireEvent.click(screen.getByRole("tab", { name: /Penerbitan Invoice/ }));
     expect(screen.getAllByTestId("invoice-issue-row")[0].textContent).not.toContain("Hapus permanen");
   });
 
   it("separates invoice deposit controls, the bulk CTA, and the invoice list", () => {
     render(<AdminInvoicesPage />);
+    fireEvent.click(screen.getByRole("tab", { name: /Penerbitan Invoice/ }));
 
     expect(screen.getByRole("combobox", { name: "Syarat deposit" }).closest(".invoice-issue-requirement")).toBeTruthy();
     expect(
