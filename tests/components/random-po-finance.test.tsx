@@ -19,13 +19,33 @@ const entries = [
 ].map((entry) => ({ ...entry, etaText: "April 2027", outstandingAmount: 0, createdAt: Date.now() }));
 
 const queue = {
-  customers: [{ customerUserId: "customer", customerName: "Customer", memberCode: "BF-001",
-    customerEmail: "test@example.com", itemCount: 3, totalAmount: 900000,
-    unbilledCount: 2, awaitingPaymentCount: 1, paymentSubmittedCount: 0,
-    paidCount: 0, receivedCount: 0, entries }],
-  summary: { customerCount: 1, itemCount: 3, totalAmount: 900000,
-    unbilledCount: 2, awaitingPaymentCount: 1, paymentSubmittedCount: 0,
-    paidCount: 0, receivedCount: 0, outstandingAmount: 100000 },
+  customers: [
+    {
+      customerUserId: "customer",
+      customerName: "Customer",
+      memberCode: "BF-001",
+      customerEmail: "test@example.com",
+      itemCount: 3,
+      totalAmount: 900000,
+      unbilledCount: 2,
+      awaitingPaymentCount: 1,
+      paymentSubmittedCount: 0,
+      paidCount: 0,
+      receivedCount: 0,
+      entries,
+    },
+  ],
+  summary: {
+    customerCount: 1,
+    itemCount: 3,
+    totalAmount: 900000,
+    unbilledCount: 2,
+    awaitingPaymentCount: 1,
+    paymentSubmittedCount: 0,
+    paidCount: 0,
+    receivedCount: 0,
+    outstandingAmount: 100000,
+  },
   truncated: false,
 };
 
@@ -41,7 +61,9 @@ describe("BFG-TCK-002 Random PO bulk invoices", () => {
       if (name.endsWith(":setStatus")) return vi.fn() as never;
       throw new Error(name);
     });
-    HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+    HTMLDialogElement.prototype.showModal = function () {
+      this.open = true;
+    };
   });
 
   it("only issues the eligible checked Random PO entries", async () => {

@@ -9908,7 +9908,6 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   }
 }
 
-
 /* Manual PO / Pesanan Khusus */
 .manual-po-admin-card,
 .manual-po-customer-card {
@@ -9980,7 +9979,6 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
   }
 }
 
-
 /* Admin Random PO queue */
 .admin-shell .random-po-invoice-settings {
   display: grid;
@@ -10035,7 +10033,6 @@ body:has(.customer-shell .how-to-order-page) .floating-blessy__close-layer {
     margin-left: 0;
   }
 }
-
 
 .admin-shell .random-po-summary-grid {
   display: grid;

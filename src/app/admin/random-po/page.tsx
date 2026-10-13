@@ -25,13 +25,7 @@ import { formatIdr } from "@/domain/prototype/logic";
 import { percentageToBasisPoints } from "@/lib/percentage";
 import { calculateDepositRequired } from "../../../../convex/lib/invoiceCalculations";
 
-type QueueFilter =
-  | "all"
-  | "unbilled"
-  | "awaiting_payment"
-  | "payment_submitted"
-  | "paid_waiting_arrival"
-  | "received";
+type QueueFilter = "all" | "unbilled" | "awaiting_payment" | "payment_submitted" | "paid_waiting_arrival" | "received";
 
 const filterOptions: Array<{ value: QueueFilter; label: string }> = [
   { value: "all", label: "Semua status" },
@@ -163,10 +157,12 @@ function AdminRandomPoQueue() {
       const failed = targets.filter((_, index) => results[index].status === "rejected");
       setEntryResults((previous) => ({
         ...previous,
-        ...Object.fromEntries(targets.map((entry, index) => [
-          String(entry.entryId),
-          results[index].status === "fulfilled" ? "success" : "failed",
-        ])),
+        ...Object.fromEntries(
+          targets.map((entry, index) => [
+            String(entry.entryId),
+            results[index].status === "fulfilled" ? "success" : "failed",
+          ]),
+        ),
       }));
       setSelectedEntryIds(failed.map((entry) => String(entry.entryId)));
       setMessage(
@@ -331,7 +327,9 @@ function AdminRandomPoQueue() {
                   ) : null}
                 </div>
                 {dpMode === "percentage" && !dpValid ? (
-                  <p className="error-text" role="alert">Persentase DP harus antara 0–100% (maksimal 2 desimal).</p>
+                  <p className="error-text" role="alert">
+                    Persentase DP harus antara 0–100% (maksimal 2 desimal).
+                  </p>
                 ) : null}
                 <div className="random-po-bulk-controls">
                   <label className="random-po-select-label">
@@ -341,18 +339,27 @@ function AdminRandomPoQueue() {
                       checked={eligibleEntries.length > 0 && selectedEntries.length === eligibleEntries.length}
                       disabled={!eligibleEntries.length || bulkPending || pendingEntryId !== null}
                       onChange={(event) =>
-                        setSelectedEntryIds(event.target.checked ? eligibleEntries.map((entry) => String(entry.entryId)) : [])
+                        setSelectedEntryIds(
+                          event.target.checked ? eligibleEntries.map((entry) => String(entry.entryId)) : [],
+                        )
                       }
                     />
                     Pilih semua belum ditagih ({eligibleEntries.length})
                   </label>
                   <span className="subtle">
                     {selectedEntries.length} dipilih · {formatIdr(selectedValue)} total
-                    {dpBasisPoints !== null ? ` · DP minimum ${formatIdr(selectedDp)} · Sisa setelah DP ${formatIdr(selectedValue - selectedDp)}` : ""}
+                    {dpBasisPoints !== null
+                      ? ` · DP minimum ${formatIdr(selectedDp)} · Sisa setelah DP ${formatIdr(selectedValue - selectedDp)}`
+                      : ""}
                   </span>
                   <Button
                     type="button"
-                    disabled={!selectedEntries.length || bulkPending || pendingEntryId !== null || (dpMode === "percentage" && !dpValid)}
+                    disabled={
+                      !selectedEntries.length ||
+                      bulkPending ||
+                      pendingEntryId !== null ||
+                      (dpMode === "percentage" && !dpValid)
+                    }
                     loading={bulkPending}
                     loadingLabel="Menerbitkan…"
                     onClick={() => setConfirmBulkOpen(true)}
@@ -361,8 +368,8 @@ function AdminRandomPoQueue() {
                   </Button>
                 </div>
                 <p className="subtle">
-                  Setiap PO terpilih menghasilkan invoice terpisah. DP diatur sebelum invoice terbit;
-                  invoice lama tidak berubah.
+                  Setiap PO terpilih menghasilkan invoice terpisah. DP diatur sebelum invoice terbit; invoice lama tidak
+                  berubah.
                 </p>
               </Card>
               <ConfirmationDialog
@@ -377,7 +384,12 @@ function AdminRandomPoQueue() {
                 <div className="content-stack">
                   <p>Total nilai PO: {formatIdr(selectedValue)}</p>
                   <p>
-                    Syarat DP: {dpMode === "none" ? "Tanpa minimum DP" : dpValid ? `${dpPercentage}% — total ${formatIdr(selectedDp)}` : "Tidak valid"}
+                    Syarat DP:{" "}
+                    {dpMode === "none"
+                      ? "Tanpa minimum DP"
+                      : dpValid
+                        ? `${dpPercentage}% — total ${formatIdr(selectedDp)}`
+                        : "Tidak valid"}
                   </p>
                 </div>
               </ConfirmationDialog>
@@ -418,9 +430,7 @@ function AdminRandomPoQueue() {
                       <div className="random-po-customer-meta">
                         <span>{formatIdr(customer.totalAmount)} total</span>
                         <span>{customer.unbilledCount} belum ditagih</span>
-                        <span>
-                          {customer.awaitingPaymentCount + customer.paymentSubmittedCount} proses pembayaran
-                        </span>
+                        <span>{customer.awaitingPaymentCount + customer.paymentSubmittedCount} proses pembayaran</span>
                         <span>{customer.paidCount} menunggu datang</span>
                         <span>{customer.receivedCount} diterima</span>
                       </div>
@@ -452,9 +462,13 @@ function AdminRandomPoQueue() {
                                 Dibuat {new Date(entry.createdAt).toLocaleDateString("id-ID")}
                               </span>
                               {entryResults[String(entry.entryId)] === "success" ? (
-                                <small className="subtle" role="status">Invoice berhasil diterbitkan</small>
+                                <small className="subtle" role="status">
+                                  Invoice berhasil diterbitkan
+                                </small>
                               ) : entryResults[String(entry.entryId)] === "failed" ? (
-                                <small className="error-text" role="alert">Gagal diterbitkan — bisa dicoba lagi</small>
+                                <small className="error-text" role="alert">
+                                  Gagal diterbitkan — bisa dicoba lagi
+                                </small>
                               ) : null}
                             </div>
 
@@ -469,14 +483,24 @@ function AdminRandomPoQueue() {
                               ) : null}
                               {entry.queueStatus === "unbilled" && dpBasisPoints !== null ? (
                                 <span className="subtle">
-                                  DP {formatIdr(calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints))} · Sisa setelah DP {formatIdr(entry.priceAmount - calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints))}
+                                  DP{" "}
+                                  {formatIdr(calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints))}{" "}
+                                  · Sisa setelah DP{" "}
+                                  {formatIdr(
+                                    entry.priceAmount -
+                                      calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints),
+                                  )}
                                 </span>
                               ) : null}
                             </div>
 
                             <div className="random-po-queue-actions">
                               {entry.invoiceId ? (
-                                <LinkButton href={`/admin/invoices/${entry.invoiceId}`} variant="secondary" size="compact">
+                                <LinkButton
+                                  href={`/admin/invoices/${entry.invoiceId}`}
+                                  variant="secondary"
+                                  size="compact"
+                                >
                                   Buka tagihan
                                 </LinkButton>
                               ) : (
@@ -485,7 +509,9 @@ function AdminRandomPoQueue() {
                                   size="compact"
                                   loading={pendingEntryId === String(entry.entryId)}
                                   loadingLabel="Menerbitkan…"
-                                  disabled={pendingEntryId !== null || bulkPending || (dpMode === "percentage" && !dpValid)}
+                                  disabled={
+                                    pendingEntryId !== null || bulkPending || (dpMode === "percentage" && !dpValid)
+                                  }
                                   onClick={() => void issueInvoice(entry.entryId)}
                                 >
                                   Buat tagihan

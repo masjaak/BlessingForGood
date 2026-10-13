@@ -77,7 +77,9 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
     try {
       await createEntry({ customerUserId, title, priceAmount, etaText });
       resetForm();
-      setSuccess("Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.");
+      setSuccess(
+        "Pesanan Khusus ditambahkan. Customer melihatnya di Buku Saya → Random PO berjalan, bukan di Tagihan.",
+      );
     } catch {
       setError("Pesanan Khusus belum berhasil ditambahkan. Coba lagi.");
     } finally {
@@ -215,7 +217,9 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
           </Field>
         ) : null}
         {dpMode === "percentage" && !dpValid ? (
-          <p className="error-text" role="alert">DP harus antara 0–100% (maksimal 2 desimal).</p>
+          <p className="error-text" role="alert">
+            DP harus antara 0–100% (maksimal 2 desimal).
+          </p>
         ) : null}
       </div>
 
@@ -237,7 +241,14 @@ export function AdminManualPoPanel({ customerUserId }: { customerUserId: Id<"app
                   <Money amount={entry.priceAmount} />
                   {!entry.invoiceId && dpBasisPoints !== null ? (
                     <small className="subtle">
-                      DP minimum <Money amount={calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)} /> · Sisa setelah DP <Money amount={entry.priceAmount - calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)} />
+                      DP minimum{" "}
+                      <Money amount={calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)} /> · Sisa
+                      setelah DP{" "}
+                      <Money
+                        amount={
+                          entry.priceAmount - calculateDepositRequired(entry.priceAmount, "percentage", dpBasisPoints)
+                        }
+                      />
                     </small>
                   ) : null}
                   <StatusBadge
@@ -327,9 +338,7 @@ export function CustomerManualPoSection() {
         <StatusBadge>{visibleEntries.length}</StatusBadge>
       </div>
 
-      <p className="subtle">
-        Pantau Random PO dari penagihan, pembayaran, menunggu barang datang, sampai diterima.
-      </p>
+      <p className="subtle">Pantau Random PO dari penagihan, pembayaran, menunggu barang datang, sampai diterima.</p>
 
       <div className="content-stack">
         {visibleEntries.map((entry) => (
