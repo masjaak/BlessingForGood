@@ -186,6 +186,9 @@ function setupQueryMocks() {
         preserve: [],
       } as never;
     }
+    if (functionName.endsWith("invoiceReminders:getEligibilityForInvoices")) {
+      return [{ invoiceId: "invoice-b", canSend: true, reason: null, outstandingAmount: 35000 }] as never;
+    }
     if (functionName.endsWith("invoiceReminders:listForAdmin")) {
       return { page: [], isDone: true, continueCursor: "" } as never;
     }
@@ -278,6 +281,51 @@ describe("Admin finance polish", () => {
       true,
     );
     expect(within(issuedRow).getByText("Sudah terbit")).toBeTruthy();
+  });
+
+  it("reuses filtered DP-paid rows for reminder selection but never reissues invoices", async () => {
+    const previousStatus = invoiceRows[1].queueStatus;
+    const sendReminder = vi.fn().mockResolvedValue({ sent: true });
+    vi.mocked(useMutation).mockImplementation((mutation) =>
+      getFunctionName(mutation as never).endsWith("invoiceReminders:send")
+        ? (sendReminder as never)
+        : (vi.fn() as never),
+    );
+    invoiceRows[1].queueStatus = "deposit_paid";
+    try {
+      render(<AdminInvoicesPage />);
+      fireEvent.click(screen.getByRole("tab", { name: /Penerbitan Invoice/ }));
+
+      const issuedRow = screen.getAllByTestId("invoice-issue-row")[1];
+      expect(within(issuedRow).getByRole("checkbox")).toHaveProperty("disabled", true);
+
+      fireEvent.click(screen.getByRole("combobox", { name: "Batch / Cargo" }));
+      fireEvent.click(screen.getByRole("option", { name: "BFG-BAT-Y · September Cargo" }));
+      fireEvent.click(screen.getByRole("combobox", { name: "Status tag" }));
+      fireEvent.click(screen.getByRole("option", { name: "Sudah bayar DP" }));
+
+      expect(screen.queryByRole("button", { name: "Terbitkan invoice terpilih" })).toBeNull();
+      expect(screen.queryByRole("combobox", { name: "Syarat deposit" })).toBeNull();
+      const reminderCheckbox = screen.getByRole("checkbox", { name: /Pilih pengingat Customer B/ });
+      expect(reminderCheckbox).toHaveProperty("disabled", false);
+      fireEvent.click(reminderCheckbox);
+      fireEvent.click(screen.getByRole("button", { name: "Ingatkan Pelunasan Terpilih" }));
+      const dialog = screen.getByRole("dialog");
+      expect(within(dialog).getByText(/Tidak ada invoice baru/)).toBeTruthy();
+      fireEvent.click(within(dialog).getByRole("button", { name: "Kirim 1 pengingat" }));
+      await waitFor(() => expect(sendReminder).toHaveBeenCalledWith({ invoiceId: "invoice-b" }));
+      expect(screen.getByText("1 pengingat berhasil dikirim.")).toBeTruthy();
+
+      fireEvent.click(screen.getByRole("combobox", { name: "Status tag" }));
+      fireEvent.click(screen.getByRole("option", { name: "Semua tag" }));
+      expect(screen.getByRole("button", { name: "Terbitkan invoice terpilih" })).toBeTruthy();
+      expect(screen.getAllByTestId("invoice-issue-row")[1].querySelector("input[type=checkbox]")).toHaveProperty(
+        "disabled",
+        true,
+      );
+    } finally {
+      invoiceRows[1].queueStatus = previousStatus;
+    }
   });
 
   it("exposes UAT purge only to Owner on an unissued candidate", () => {
