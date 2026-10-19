@@ -13,12 +13,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npx prettier --check convex/invoiceReminders.ts convex/invoiceReminders.test.ts src/app/admin/invoices/page.tsx tests/components/admin-finance-polish.test.tsx tests/components/invoice-bulk-reminder.test.tsx src/app/globals.css "src/app/admin/invoices/[invoiceId]/page.tsx" "src/app/account/invoices/[invoiceId]/page.tsx" tests/components/invoice-settlement-reminder.test.tsx src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx tests/components/random-po-finance.test.tsx
+      - run: npx prettier --check convex/ownerHandover.ts convex/ownerHandover.test.ts convex/invoiceReminders.ts convex/invoiceReminders.test.ts src/app/admin/invoices/page.tsx tests/components/admin-finance-polish.test.tsx tests/components/invoice-bulk-reminder.test.tsx src/app/globals.css "src/app/admin/invoices/[invoiceId]/page.tsx" "src/app/account/invoices/[invoiceId]/page.tsx" tests/components/invoice-settlement-reminder.test.tsx src/app/admin/random-po/page.tsx src/features/manual-po/manual-po.tsx tests/components/random-po-finance.test.tsx
       - run: npm run lint
       - run: npm run typecheck
-      - run: npx vitest run convex/invoiceReminders.test.ts convex/invoices.test.ts convex/paymentConfirmations.test.ts convex/randomPoFinance.test.ts tests/components/invoice-bulk-reminder.test.tsx tests/components/invoice-settlement-reminder.test.tsx tests/components/random-po-finance.test.tsx tests/components/admin-random-po-queue.test.tsx tests/components/admin-finance-polish.test.tsx --silent
+      - run: npx vitest run convex/ownerHandover.test.ts convex/invoiceReminders.test.ts convex/invoices.test.ts convex/paymentConfirmations.test.ts convex/randomPoFinance.test.ts tests/components/invoice-bulk-reminder.test.tsx tests/components/invoice-settlement-reminder.test.tsx tests/components/random-po-finance.test.tsx tests/components/admin-random-po-queue.test.tsx tests/components/admin-finance-polish.test.tsx --silent
