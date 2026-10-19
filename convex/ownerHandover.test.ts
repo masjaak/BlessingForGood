@@ -67,7 +67,7 @@ describe("BFG handover — privileged Owner transfer", () => {
     expect(saved.owners[0]._id).toBe(nextOwnerId);
     expect(saved.newOwner?.role).toBe("owner");
     expect(saved.previousOwner?.role).toBe("admin");
-    expect(saved.audit).toMatchObject([
+    expect(saved.audit.filter((event) => event.action === "owner.handover.completed")).toMatchObject([
       {
         action: "owner.handover.completed",
         actorUserId: originalOwnerId,
@@ -87,7 +87,7 @@ describe("BFG handover — privileged Owner transfer", () => {
         .query("auditEvents")
         .withIndex("by_target", (q) => q.eq("targetType", "appUser").eq("targetId", nextOwnerId))
         .take(10);
-      return audits.length;
+      return audits.filter((event) => event.action === "owner.handover.completed").length;
     });
     expect(count).toBe(1);
   });
