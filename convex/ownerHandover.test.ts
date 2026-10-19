@@ -2,7 +2,13 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { api, internal } from "./_generated/api";
-import { ADMIN_SUBJECT, OWNER_SUBJECT, configureTestEnvironment, setupUsers, testConvex } from "../tests/convex-helpers";
+import {
+  ADMIN_SUBJECT,
+  OWNER_SUBJECT,
+  configureTestEnvironment,
+  setupUsers,
+  testConvex,
+} from "../tests/convex-helpers";
 
 const TARGET_EMAIL = `${ADMIN_SUBJECT}@example.com`;
 
@@ -47,7 +53,10 @@ describe("BFG handover — privileged Owner transfer", () => {
     const saved = await t.run(async (ctx) => {
       const newOwner = await ctx.db.get(nextOwnerId);
       const previousOwner = await ctx.db.get(originalOwnerId);
-      const owners = await ctx.db.query("appUsers").withIndex("by_role", (q) => q.eq("role", "owner")).take(2);
+      const owners = await ctx.db
+        .query("appUsers")
+        .withIndex("by_role", (q) => q.eq("role", "owner"))
+        .take(2);
       const audit = await ctx.db
         .query("auditEvents")
         .withIndex("by_target", (q) => q.eq("targetType", "appUser").eq("targetId", nextOwnerId))
@@ -74,9 +83,10 @@ describe("BFG handover — privileged Owner transfer", () => {
 
     await expect(t.mutation(internal.ownerHandover.execute, transferArgs)).rejects.toThrow("OWNER_TRANSFER_BLOCKED");
     const count = await t.run(async (ctx) => {
-      const audits = await ctx.db.query("auditEvents").withIndex("by_target", (q) =>
-        q.eq("targetType", "appUser").eq("targetId", nextOwnerId),
-      ).take(10);
+      const audits = await ctx.db
+        .query("auditEvents")
+        .withIndex("by_target", (q) => q.eq("targetType", "appUser").eq("targetId", nextOwnerId))
+        .take(10);
       return audits.length;
     });
     expect(count).toBe(1);
