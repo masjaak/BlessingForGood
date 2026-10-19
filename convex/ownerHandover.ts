@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { recordAudit } from "./lib/audit";
@@ -15,8 +14,6 @@ import { recordAudit } from "./lib/audit";
  * reference the CURRENT owner when execute is called. Change it to the NEW
  * owner's Clerk subject only AFTER the database role swap and owner login QA.
  */
-const MAX_STALE_LOGIN_MS = 30 * 24 * 60 * 60 * 1000;
-
 function normalizedEmail(email: string): string {
   const result = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result) || result.length > 254) {
@@ -48,9 +45,6 @@ async function loadHandoverPlan(ctx: QueryCtx | MutationCtx, email: string) {
   if (recipient?.status !== "active") issues.push("RECIPIENT_NOT_ACTIVE");
   if (recipient && recipient.role === "owner") issues.push("RECIPIENT_ALREADY_OWNER");
   if (currentOwner && recipient && currentOwner._id === recipient._id) issues.push("SAME_USER");
-  if (recipient && Date.now() - recipient.lastSeenAt > MAX_STALE_LOGIN_MS) {
-    issues.push("RECIPIENT_NEEDS_FRESH_SIGN_IN");
-  }
   if (!currentOwner || process.env.BFG_OWNER_CLERK_USER_ID?.trim() !== currentOwner.clerkUserId) {
     issues.push("OWNER_ENV_NOT_MATCHING_CURRENT_OWNER");
   }
