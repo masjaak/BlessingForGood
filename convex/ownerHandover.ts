@@ -12,7 +12,7 @@ import { recordAudit } from "./lib/audit";
  *
  * Important: the Convex environment variable BFG_OWNER_CLERK_USER_ID must still
  * reference the CURRENT owner when execute is called. Change it to the NEW
- * owner's Clerk subject only AFTER the database role swap and owner login QA.
+ * owner's Clerk subject immediately AFTER the database role swap, before login QA.
  */
 function normalizedEmail(email: string): string {
   const result = email.trim().toLowerCase();
